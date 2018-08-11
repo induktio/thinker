@@ -1,0 +1,6 @@
+build/
+rel/
+patch/
+utils/
+*.layout
+*.depend
