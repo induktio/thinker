@@ -59,7 +59,9 @@ const int offset[] = {
 
 struct Config {
     int free_formers;
-    int free_satellites;
+    int satellites_nutrient;
+    int satellites_mineral;
+    int satellites_energy;
     int factions_enabled;
     int terraform_ai;
     int production_ai;

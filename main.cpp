@@ -16,8 +16,12 @@ static int handler(void* user, const char* section, const char* name, const char
     #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
     if (MATCH("thinker", "free_formers")) {
         pconfig->free_formers = atoi(value);
-    } else if (MATCH("thinker", "free_satellites")) {
-        pconfig->free_satellites = max(0, atoi(value));
+    } else if (MATCH("thinker", "satellites_nutrient")) {
+        pconfig->satellites_nutrient = max(0, atoi(value));
+    } else if (MATCH("thinker", "satellites_mineral")) {
+        pconfig->satellites_mineral = max(0, atoi(value));
+    } else if (MATCH("thinker", "satellites_energy")) {
+        pconfig->satellites_energy = max(0, atoi(value));
     } else if (MATCH("thinker", "factions_enabled")) {
         pconfig->factions_enabled = atoi(value);
     } else if (MATCH("thinker", "terraform_ai")) {
@@ -37,7 +41,9 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
         case DLL_PROCESS_ATTACH:
             memset(base_mins, 0, BASES);
             conf.free_formers = 0;
-            conf.free_satellites = 0;
+            conf.satellites_nutrient = 0;
+            conf.satellites_mineral = 0;
+            conf.satellites_energy = 0;
             conf.factions_enabled = 7;
             conf.terraform_ai = 1;
             conf.production_ai = 1;
@@ -136,9 +142,9 @@ int turn_upkeep() {
                     int veh = tx_veh_init(BSC_FORMERS, v.faction_id, v.x_coord, v.y_coord);
                     tx_vehicles[veh].home_base_id = -1;
                 }
-                tx_factions[v.faction_id].satellites_nutrient = conf.free_satellites;
-                tx_factions[v.faction_id].satellites_mineral = conf.free_satellites;
-                tx_factions[v.faction_id].satellites_energy = conf.free_satellites;
+                tx_factions[v.faction_id].satellites_nutrient = conf.satellites_nutrient;
+                tx_factions[v.faction_id].satellites_mineral = conf.satellites_mineral;
+                tx_factions[v.faction_id].satellites_energy = conf.satellites_energy;
             }
         }
     }
@@ -151,6 +157,13 @@ int turn_upkeep() {
 }
 
 int tech_value(int tech, int fac, int value) {
+    if (conf.tech_balance && fac <= conf.factions_enabled) {
+        if (tech == TECH_Ecology || tech == tx_basic->tech_preq_allow_3_energy_sq
+        || tech == tx_basic->tech_preq_allow_3_minerals_sq
+        || tech == tx_basic->tech_preq_allow_3_nutrients_sq) {
+            value *= 2;
+        }
+    }
     debuglog("tech_value %d %d %d %s\n", tech, fac, value, tx_techs[tech].name);
     return value;
 }
@@ -220,7 +233,7 @@ bool project_capacity(int fac) {
         if (tx_bases[i].faction_id == fac && tx_bases[i].queue_production_id[0] <= -70)
             n++;
     }
-    return (n < 3 && 4*n < bases && bases >= 4);
+    return (n < 3 && n < bases/4);
 }
 
 int find_project(int faction, int max_cost) {
