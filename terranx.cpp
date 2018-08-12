@@ -2,8 +2,8 @@
 #include "terranx.h"
 
 
-char* tx_version = (char*)0x691B40;
-char* tx_date = (char*)0x691B4C;
+const char** tx_version = (const char**)0x691870;
+const char** tx_date = (const char**)0x691874;
 
 int*  tx_current_base_id = (int*)0x689370;
 BASE* tx_current_base_ptr = (BASE*)0x90EA30;

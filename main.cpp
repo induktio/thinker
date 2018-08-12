@@ -53,8 +53,8 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
                 return FALSE;
             if (ini_parse("thinker.ini", handler, &conf) < 0)
                 return FALSE;
-            strcpy(tx_version, VERSION);
-            strcpy(tx_date, VERSION_DATE);
+            *tx_version = VERSION;
+            *tx_date = VERSION_DATE;
             break;
 
         case DLL_PROCESS_DETACH:

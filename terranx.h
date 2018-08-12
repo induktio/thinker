@@ -5,8 +5,8 @@
 #include "terranx_enums.h"
 #include "terranx_types.h"
 
-extern char* tx_version;
-extern char* tx_date;
+extern const char** tx_version;
+extern const char** tx_date;
 
 extern int*  tx_current_base_id;
 extern BASE* tx_current_base_ptr;
