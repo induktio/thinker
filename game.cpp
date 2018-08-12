@@ -41,4 +41,53 @@ MAP* mapsq(int x, int y) {
         return NULL;
 }
 
+void TileSearch::init(int x, int y, int tp) {
+    head = 0;
+    tail = 0;
+    items = 0;
+    type = tp;
+    oldtiles.clear();
+    tile = mapsq(x, y);
+    if (tile) {
+        items++;
+        int p = x | y << 16;
+        oldtiles.insert(p);
+        newtiles[0] = p;
+    }
+}
+
+int TileSearch::visited() {
+    return oldtiles.size();
+}
+
+MAP* TileSearch::get_next() {
+    while (items > 0) {
+        int p = newtiles[head];
+        head = (head + 1) % QSIZE;
+        items--;
+        cur_x = p & 0xffff;
+        cur_y = p >> 16;
+        if (!(tile = mapsq(cur_x, cur_y)))
+            continue;
+        bool skip = (type == LAND_ONLY && tile->altitude < ALTITUDE_MIN_LAND) ||
+                    (type == WATER_ONLY && tile->altitude >= ALTITUDE_MIN_LAND);
+        if (oldtiles.size() > 1 && skip)
+            continue;
+        for (int i=0; i<16; i+=2) {
+            int x2 = wrap(cur_x + offset[i], *tx_map_axis_x);
+            int y2 = cur_y + offset[i+1];
+            p = x2 | y2 << 16;
+            if (items < QSIZE && oldtiles.count(p) == 0 && y2 >= 0 && y2 < *tx_map_axis_x) {
+                newtiles[tail] = p;
+                tail = (tail + 1) % QSIZE;
+                items++;
+                oldtiles.insert(p);
+            }
+        }
+        return tile;
+    }
+    return NULL;
+}
+
+
 

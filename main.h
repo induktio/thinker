@@ -48,6 +48,8 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define MAX_SAT 8
 #define SYNC 0
 #define NO_SYNC 1
+#define LAND_ONLY 0
+#define WATER_ONLY 1
 
 #define BASE_DISALLOWED (TERRA_BASE_IN_TILE | TERRA_MONOLITH | TERRA_FUNGUS | TERRA_THERMAL_BORE)
 #define ALTITUDE_MIN_LAND 60

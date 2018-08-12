@@ -11,5 +11,20 @@ int wrap(int a, int b);
 int map_range(int x1, int y1, int x2, int y2);
 MAP* mapsq(int x, int y);
 
+class TileSearch {
+    int type;
+    int head;
+    int tail;
+    int items;
+    MAP* tile;
+    int newtiles[QSIZE];
+    std::set<int> oldtiles;
+    public:
+    int cur_x, cur_y;
+    void init(int, int, int);
+    int visited();
+    MAP* get_next();
+};
+
 
 #endif // __GAME_H__

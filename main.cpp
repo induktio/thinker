@@ -263,33 +263,12 @@ int count_sea_tiles(int x, int y, int limit) {
         return -1;
     }
     int n = 0;
-    int vp = 1;
-    set<int> visited;
-    int tovisit[QSIZE];
-    tovisit[0] = x | y << 16;
-    visited.insert(tovisit[0]);
-
-    while (vp > 0 && n < limit) {
-        int p = tovisit[--vp];
-        int x1 = p & 0xffff;
-        int y1 = p >> 16;
-        tile = mapsq(x1, y1);
-        if (!tile || (visited.size() > 1 && tile->altitude >= ALTITUDE_MIN_LAND))
-            continue;
-        if (tile->altitude < ALTITUDE_MIN_LAND) {
-            n++;
-        }
-        for (int i=0; i<16; i+=2) {
-            int x2 = wrap(x1 + offset[i], *tx_map_axis_x);
-            int y2 = y1 + offset[i+1];
-            p = x2 | y2 << 16;
-            if (vp < QSIZE && visited.count(p) == 0) {
-                tovisit[vp++] = p;
-                visited.insert(p);
-            }
-        }
+    TileSearch ts;
+    ts.init(x, y, WATER_ONLY);
+    while (n < limit && (tile = ts.get_next()) != NULL) {
+        n++;
     }
-    if (DEBUG) fprintf(debug_log, "count_sea_tiles %d %d %d\n", x, y, n);
+    debuglog("count_sea_tiles %d %d %d\n", x, y, n);
     return n;
 }
 
@@ -299,41 +278,16 @@ bool switch_to_sea(int x, int y) {
     if (tile && tile->altitude < ALTITUDE_MIN_LAND) {
         return true;
     }
-    int items = 1;
-    int head = 0;
-    int tail = 0;
     int land = 0;
     int bases = 0;
-    set<int> visited;
-    int tovisit[QSIZE];
-    tovisit[0] = x | y << 16;
-    visited.insert(tovisit[0]);
-
-    while (items > 0 && visited.size() < limit) {
-        int p = tovisit[head];
-        head = (head + 1) % QSIZE;
-        items--;
-        int x1 = p & 0xffff;
-        int y1 = p >> 16;
-        tile = mapsq(x1, y1);
-        if (!tile || (visited.size() > 1 && tile->altitude < ALTITUDE_MIN_LAND))
-            continue;
+    TileSearch ts;
+    ts.init(x, y, LAND_ONLY);
+    while (ts.visited() < limit && (tile = ts.get_next()) != NULL) {
         land++;
         if (tile->built_items & TERRA_BASE_IN_TILE)
             bases++;
-        for (int i=0; i<16; i+=2) {
-            int x2 = wrap(x1 + offset[i], *tx_map_axis_x);
-            int y2 = y1 + offset[i+1];
-            p = x2 | y2 << 16;
-            if (items < QSIZE && visited.count(p) == 0) {
-                tovisit[tail] = p;
-                tail = (tail + 1) % QSIZE;
-                items++;
-                visited.insert(p);
-            }
-        }
     }
-    if (DEBUG) fprintf(debug_log, "switch_to_sea %d %d %d %d\n", x, y, land, bases);
+    debuglog("switch_to_sea %d %d %d %d\n", x, y, land, bases);
     return land / max(1, bases) < 12;
 }
 
