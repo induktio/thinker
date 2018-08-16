@@ -588,5 +588,23 @@ enum former_action
     FORMER_MONOLITH = 19,
 };
 
+enum terrain_level
+{
+    LEVEL_OCEAN = 1,
+    LEVEL_OCEAN_SHELF = 2,
+    LEVEL_SHORE_LINE = 3,
+    LEVEL_ONE_ABOVE_SEA = 4,
+    LEVEL_TWO_ABOVE_SEA = 5,
+    LEVEL_THREE_ABOVE_SEA = 6,
+    LEVEL_FOUR_ABOVE_SEA = 7,
+};
+
+enum terrain_basic_flags
+{
+    TILE_MOIST = 0x8,
+    TILE_RAINY = 0x10,
+    TILE_ROLLING = 0x40,
+    TILE_ROCKY = 0x80,
+};
 
 #endif // __TERRANX_ENUMS_H__

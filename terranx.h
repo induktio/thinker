@@ -56,6 +56,7 @@ extern fp_7intstr* tx_propose_proto;
 // params: prototype_id, faction, x, y
 extern fp_4int* tx_veh_init;
 
+extern fp_1int* tx_veh_skip;
 extern fp_1int* tx_enemy_move;
 extern fp_2int* tx_action_build;
 extern fp_3int* tx_action_terraform;

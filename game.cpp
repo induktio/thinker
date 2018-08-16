@@ -41,6 +41,27 @@ MAP* mapsq(int x, int y) {
         return NULL;
 }
 
+int unit_in_tile(MAP* sq) {
+    if (!sq || (sq->flags & 0xf) == 0xf)
+        return -1;
+    return sq->flags & 0xf;
+}
+
+bool water_base(int id) {
+    MAP* sq = mapsq(tx_bases[id].x_coord, tx_bases[id].y_coord);
+    return (sq && sq->altitude < ALTITUDE_MIN_LAND);
+}
+
+bool convoy_not_used(int x, int y) {
+    for (int i=0; i<*tx_total_num_vehicles; i++) {
+        VEH* veh = &tx_vehicles[i];
+        if (veh->x_coord == x && veh->y_coord == y && veh->move_status == STATUS_CONVOY) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void TileSearch::init(int x, int y, int tp) {
     head = 0;
     tail = 0;
@@ -77,7 +98,7 @@ MAP* TileSearch::get_next() {
             int x2 = wrap(cur_x + offset[i], *tx_map_axis_x);
             int y2 = cur_y + offset[i+1];
             p = x2 | y2 << 16;
-            if (items < QSIZE && oldtiles.count(p) == 0 && y2 >= 0 && y2 < *tx_map_axis_x) {
+            if (items < QSIZE && oldtiles.count(p) == 0 && y2 >= 0 && y2 < *tx_map_axis_y) {
                 newtiles[tail] = p;
                 tail = (tail + 1) % QSIZE;
                 items++;

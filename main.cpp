@@ -80,8 +80,11 @@ DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2) {
     } else if (mode == 4) {
         VEH* veh = &tx_vehicles[id];
         if (conf.terraform_ai && veh->faction_id <= conf.factions_enabled) {
-            if (tx_units[veh->proto_id].weapon_mode == WMODE_COLONIST)
+            int wmode = tx_units[veh->proto_id].weapon_mode;
+            if (wmode == WMODE_COLONIST)
                 return consider_base(id);
+            else if (wmode == WMODE_CONVOY)
+                return consider_convoy(id);
         }
         return tx_enemy_move(id);
     } else if (mode == 5) {
@@ -259,7 +262,7 @@ int mineral_cost(int fac, int prod) {
 
 int count_sea_tiles(int x, int y, int limit) {
     MAP* tile = mapsq(x, y);
-    if (!tile || (tile->level >> 5) > 4) {
+    if (!tile || (tile->level >> 5) > LEVEL_SHORE_LINE) {
         return -1;
     }
     int n = 0;
@@ -310,7 +313,7 @@ int bases_in_range(int x, int y, int range) {
 int consider_base(int id) {
     VEH* veh = &tx_vehicles[id];
     MAP* tile = mapsq(veh->x_coord, veh->y_coord);
-    if (!tile || (tile->rocks & 0x80) || (tile->built_items & BASE_DISALLOWED)
+    if (!tile || (tile->rocks & TILE_ROCKY) || (tile->built_items & BASE_DISALLOWED)
     || bases_in_range(veh->x_coord, veh->y_coord, 2) > 0
     || (unit_triad(veh->proto_id) == TRIAD_LAND && tile->altitude < ALTITUDE_MIN_LAND)
     || tile->altitude < 30)
@@ -319,9 +322,60 @@ int consider_base(int id) {
     return SYNC;
 }
 
-bool can_borehole(int x, int y) {
+int want_convoy(int fac, int x, int y, MAP* tile) {
+    if (tile && tile->owner == fac) {
+        int bonus = tx_bonus_at(x, y);
+        if (tile->built_items & TERRA_CONDENSER)
+            return RES_NUTRIENT;
+        else if (tile->built_items & TERRA_MINE && tile->rocks & TILE_ROCKY)
+            return RES_MINERAL;
+        else if (tile->built_items & TERRA_FOREST && bonus == RES_NONE
+        && !knows_tech(fac, TECH_EcoEng))
+            return RES_MINERAL;
+    }
+    return RES_NONE;
+}
+
+int consider_convoy(int id) {
+    VEH* veh = &tx_vehicles[id];
+    MAP* tile = mapsq(veh->x_coord, veh->y_coord);
+    int convoy = want_convoy(veh->faction_id, veh->x_coord, veh->y_coord, tile);
+    if (convoy && convoy_not_used(veh->x_coord, veh->y_coord)) {
+        veh->type_crawling = convoy-1;
+        veh->move_status = STATUS_CONVOY;
+        veh->target_action = 'C';
+        return tx_veh_skip(id);
+    }
+    int i = 0;
+    TileSearch ts;
+    ts.init(veh->x_coord, veh->y_coord, LAND_ONLY);
+
+    while (i++ < 30 && (tile = ts.get_next()) != NULL) {
+        int other = unit_in_tile(tile);
+        if (other >= 0 && tx_factions[veh->faction_id].diplo_status[other] & DIPLO_VENDETTA) {
+            debuglog("convoy_skip %d %d %d %d %d %d\n", veh->x_coord, veh->y_coord,
+                ts.cur_x, ts.cur_y, veh->faction_id, other);
+            return tx_veh_skip(id);
+        }
+        convoy = want_convoy(veh->faction_id, ts.cur_x, ts.cur_y, tile);
+        if (convoy && tx_can_convoy(ts.cur_x, ts.cur_y)) {
+            veh->waypoint_1_x_coord = ts.cur_x;
+            veh->waypoint_1_y_coord = ts.cur_y;
+            veh->move_status = STATUS_GOTO;
+            veh->target_action = 'G';
+            return SYNC;
+        }
+    }
+    return tx_veh_skip(id);
+}
+
+bool can_borehole(int x, int y, int bonus) {
     MAP* tile = mapsq(x, y);
-    if (!tile || tile->built_items & TERRA_THERMAL_BORE)
+    if (!tile || tile->built_items & BASE_DISALLOWED || bonus == RES_NUTRIENT)
+        return false;
+    if (bonus == RES_NONE && (tile->level & TILE_RAINY || tile->rocks & TILE_ROLLING))
+        return false;
+    if (bases_in_range(x, y, 2) < (bonus > RES_NUTRIENT ? 1 : 2))
         return false;
     int level = tile->level >> 5;
     for (int i=0; i<16; i+=2) {
@@ -331,7 +385,7 @@ bool can_borehole(int x, int y) {
         if (!tile || tile->built_items & TERRA_THERMAL_BORE)
             return false;
         int level2 = tile->level >> 5;
-        if (level2 < level && level2 > 2)
+        if (level2 < level && level2 > LEVEL_OCEAN_SHELF)
             return false;
     }
     return true;
@@ -340,20 +394,23 @@ bool can_borehole(int x, int y) {
 int terraform_action(int id, int action, int flag) {
     VEH* veh = &tx_vehicles[id];
     MAP* sq = mapsq(veh->x_coord, veh->y_coord);
-    bool land_sq = sq->altitude >= ALTITUDE_MIN_LAND;
-    bool rocky_sq = sq->rocks & 0x80;
-    bool rainy_sq = sq->level & 0x10;
 
     if (conf.terraform_ai && veh->faction_id <= conf.factions_enabled
-    && (1 << veh->faction_id) & ~(*tx_human_players) && land_sq) {
+    && (1 << veh->faction_id) & ~(*tx_human_players) && sq) {
+        if (sq->altitude < ALTITUDE_MIN_LAND)
+            return tx_action_terraform(id, action, flag);
+        bool rocky_sq = sq->rocks & TILE_ROCKY;
+        bool rainy_sq = sq->level & TILE_RAINY;
         int bonus = tx_bonus_at(veh->x_coord, veh->y_coord);
         bool has_eco = knows_tech(veh->faction_id, TECH_EcoEng);
 
-        if ((rocky_sq || bonus > 1) && has_eco && can_borehole(veh->x_coord, veh->y_coord)) {
+        if (has_eco && can_borehole(veh->x_coord, veh->y_coord, bonus)) {
             return tx_action_terraform(id, FORMER_THERMAL_BOREHOLE, flag);
         }
         if (!rocky_sq && sq->built_items & TERRA_CONDENSER && !(sq->built_items & TERRA_FARM))
             return tx_action_terraform(id, FORMER_FARM, flag);
+        if (rocky_sq && bonus == RES_NUTRIENT)
+            return tx_action_terraform(id, FORMER_LEVEL_TERRAIN, flag);
         if (sq->landmarks & 0x4) { // Jungle
             if (rocky_sq)
                 return tx_action_terraform(id, FORMER_LEVEL_TERRAIN, flag);
@@ -362,7 +419,7 @@ int terraform_action(int id, int action, int flag) {
         } else if (rocky_sq && action==FORMER_SOLAR_COLLECTOR) {
             return tx_action_terraform(id, FORMER_MINE, flag);
         }
-        if (action == FORMER_FARM && bonus != 1) {
+        if (action == FORMER_FARM && bonus != RES_NUTRIENT) {
             if (has_eco && rainy_sq)
                 return tx_action_terraform(id, FORMER_FARM, flag);
             else
@@ -424,7 +481,7 @@ int find_proto(int fac, int triad, int mode, bool defend) {
     return best;
 }
 
-int find_facility(int base_id, int faction) {
+int find_facility(int base_id, int fac) {
     const int build_order[] = {
         FAC_RECYCLING_TANKS,
         FAC_RECREATION_COMMONS,
@@ -441,59 +498,59 @@ int find_facility(int base_id, int faction) {
         FAC_HABITATION_DOME,
         FAC_RESEARCH_HOSPITAL
     };
-    BASE base = tx_bases[base_id];
-    if (base.drone_total > 0 && can_build(base_id, FAC_RECREATION_COMMONS))
-        return -FAC_RECREATION_COMMONS;
-    int minerals = base.mineral_surplus;
-    int extra = base.minerals_accumulated/10;
-    int threshold = 4 + *tx_current_turn/40;
-    int hab_complex_limit =  7 - tx_factions_meta[faction].rule_population;
+    BASE* base = &tx_bases[base_id];
+    Faction* faction = &tx_factions[fac];
+    int minerals = base->mineral_surplus;
+    int extra = base->minerals_accumulated/10;
+    int threshold = min(10, 4 + *tx_current_turn/30);
+    int hab_complex_limit = tx_basic->pop_limit_wo_hab_complex
+        - tx_factions_meta[fac].rule_population;
 
     if (*tx_climate_future_change > 0) {
-        MAP* tile = mapsq(base.x_coord, base.y_coord);
-        if (tile && (tile->level >> 5) == 4 && can_build(base_id, FAC_PRESSURE_DOME))
+        MAP* tile = mapsq(base->x_coord, base->y_coord);
+        if (tile && (tile->level >> 5) == LEVEL_SHORE_LINE && can_build(base_id, FAC_PRESSURE_DOME))
             return -FAC_PRESSURE_DOME;
     }
+    if (base->drone_total > 0 && can_build(base_id, FAC_RECREATION_COMMONS))
+        return -FAC_RECREATION_COMMONS;
     if (can_build(base_id, FAC_RECYCLING_TANKS))
         return -FAC_RECYCLING_TANKS;
-    if (base.pop_size >= hab_complex_limit && can_build(base_id, FAC_HAB_COMPLEX))
+    if (base->pop_size >= hab_complex_limit && can_build(base_id, FAC_HAB_COMPLEX))
         return -FAC_HAB_COMPLEX;
-    if (minerals+extra >= threshold && project_capacity(faction)) {
-        int proj = find_project(faction, 5*minerals + extra);
+    if (minerals+extra >= threshold && project_capacity(fac)) {
+        int proj = find_project(fac, 5*minerals + extra);
         if (proj != 0) return proj;
     }
     if (minerals+extra > threshold && has_facility(base_id, FAC_AEROSPACE_COMPLEX)) {
-        if (knows_tech(faction, TECH_HAL9000)) {
-            if (tx_factions[faction].satellites_ODP < MAX_SAT)
-                return -FAC_ORBITAL_DEFENSE_POD;
-            else if (tx_factions[faction].satellites_mineral < MAX_SAT)
-                return -FAC_NESSUS_MINING_STATION;
-        }
-        if (knows_tech(faction, TECH_Space) && tx_factions[faction].satellites_energy < MAX_SAT)
+        if (faction->satellites_ODP < MAX_SAT && can_build(base_id, FAC_ORBITAL_DEFENSE_POD))
+            return -FAC_ORBITAL_DEFENSE_POD;
+        if (faction->satellites_mineral < MAX_SAT && can_build(base_id, FAC_NESSUS_MINING_STATION))
+            return -FAC_NESSUS_MINING_STATION;
+        if (faction->satellites_energy < MAX_SAT && can_build(base_id, FAC_ORBITAL_POWER_TRANS))
             return -FAC_ORBITAL_POWER_TRANS;
-        if (knows_tech(faction, TECH_Orbital) && tx_factions[faction].satellites_nutrient < MAX_SAT)
+        if (faction->satellites_nutrient < MAX_SAT && can_build(base_id, FAC_SKY_HYDRO_LAB))
             return -FAC_SKY_HYDRO_LAB;
     }
-    if (minerals >= 5 && base.energy_inefficiency >= 5 && find_hq(faction) < 0)
+    if (minerals >= 5 && find_hq(fac) < 0 && bases_in_range(base->x_coord, base->y_coord, 4) >= 5)
         return -FAC_HEADQUARTERS;
 
     for (int f : build_order) {
-        if (f == FAC_CHILDREN_CRECHE && tx_factions[faction].SE_morale > 0)
+        if (f == FAC_CHILDREN_CRECHE && faction->SE_morale > 0)
             continue;
         if (can_build(base_id, f) && (tx_facilities[f].maint < 2 || *tx_current_turn > 40)) {
             return -1*f;
         }
     }
-    if (knows_tech(faction, TECH_IndAuto))
+    if (knows_tech(fac, TECH_IndAuto))
         return BSC_SUPPLY_CRAWLER;
-    return find_proto(faction, TRIAD_LAND, COMBAT, false);
+    return find_proto(fac, TRIAD_LAND, COMBAT, false);
 }
 
 int select_prod(int id) {
     BASE base = tx_bases[id];
     int owner = base.faction_id;
     int prod = base.queue_production_id[0];
-    Faction fac = tx_factions[owner];
+    Faction* faction = &tx_factions[owner];
 
     if (prod < 0 && !can_build(id, abs(prod))) {
         if (DEBUG) fprintf(debug_log, "BUILD CHANGE\n");
@@ -509,33 +566,38 @@ int select_prod(int id) {
     int formers = 0;
     int probes = 0;
     int pods = 0;
-    int borders = 0;
     int enemies = 0;
     int enemymask = 1;
+    int enemyrange = 40;
     double enemymil = 0;
     double enemydist = 0;
-    int border[] = {1,0,0,0,0,0,0,0};
 
     for (int i=1; i<8; i++) {
-        if (i==owner || ~fac.diplo_status[i] & DIPLO_COMMLINK)
+        if (i==owner || ~faction->diplo_status[i] & DIPLO_COMMLINK)
             continue;
-        border[i] = tx_contiguous(owner, i, 0, 1);
-        double mil = ((border[i] ? 2.0 : 1.0) * tx_factions[i].mil_strength_1)
-            / max(1, tx_factions[owner].mil_strength_1);
-        if (border[i]) {
-            borders++;
-        }
-        if (fac.diplo_status[i] & DIPLO_VENDETTA) {
+        double mil = (1.0 * tx_factions[i].mil_strength_1)
+            / max(1, faction->mil_strength_1);
+        if (faction->diplo_status[i] & DIPLO_VENDETTA) {
             enemymask |= (1 << i);
             enemymil = max(enemymil, 1.0 * mil);
-        } else if (~fac.diplo_status[i] & DIPLO_PACT) {
+        } else if (~faction->diplo_status[i] & DIPLO_PACT) {
             enemymil = max(enemymil, 0.5 * mil);
         }
     }
+    for (int i=0; i<*tx_total_num_bases; i++) {
+        BASE* b = &tx_bases[i];
+        if ((1 << b->faction_id) & enemymask) {
+            enemyrange = min(enemyrange,
+                map_range(base.x_coord, base.y_coord, b->x_coord, b->y_coord));
+        }
+    }
+    enemymil = enemymil / sqrt(2 + enemyrange) * 3.0;
 
     for (int i=0; i<*tx_total_num_vehicles; i++) {
         VEH* veh = &tx_vehicles[i];
         UNIT* unit = &tx_units[veh->proto_id];
+        if (veh->faction_id != owner && (1 << veh->faction_id) & ~enemymask)
+            continue;
         if (veh->home_base_id == id) {
             if (unit->weapon_type == WPN_TERRAFORMING_UNIT)
                 formers++;
@@ -546,13 +608,17 @@ int select_prod(int id) {
             else if (unit->weapon_type == WPN_SUPPLY_TRANSPORT)
                 crawlers++;
         }
-        if (veh->x_coord == base.x_coord && veh->y_coord == base.y_coord) {
-            if (unit_triad(veh->proto_id) == TRIAD_LAND && unit->weapon_type <= WPN_PSI_ATTACK)
-                defenders++;
+        int range = map_range(base.x_coord, base.y_coord, veh->x_coord, veh->y_coord);
+
+        if (veh->faction_id == owner && range <= 3) {
+            if (unit_triad(veh->proto_id) == TRIAD_LAND && unit->weapon_type <= WPN_PSI_ATTACK) {
+                if (range == 0)
+                    defenders++;
+                enemydist -= 0.2 / max(1, range);
+            }
         } else if ((1 << veh->faction_id) & enemymask) {
-            int range = max(2, map_range(base.x_coord, base.y_coord, veh->x_coord, veh->y_coord));
             if (range <= 10) {
-                enemydist += (veh->faction_id == 0 ? 0.8 : 1.0) / range;
+                enemydist += (veh->faction_id == 0 ? 0.8 : 1.0) / max(1, range);
                 enemies++;
                 //debuglog("enemy %d %d %d %d\n", veh->x_coord, veh->y_coord, veh->faction_id, range);
             }
@@ -561,52 +627,56 @@ int select_prod(int id) {
     int has_ecology = knows_tech(owner, TECH_Ecology);
     int has_docflex = knows_tech(owner, TECH_DocFlex);
     int has_docair = knows_tech(owner, TECH_DocAir);
-    int has_networks = knows_tech(owner, TECH_PlaNets);
+    int has_probes = knows_tech(owner, tx_weapon[WPN_PROBE_TEAM].preq_tech);
+    int has_supply = knows_tech(owner, tx_weapon[WPN_SUPPLY_TRANSPORT].preq_tech);
     int minerals = base.mineral_surplus;
     bool can_build_ships = has_docflex && count_sea_tiles(base.x_coord, base.y_coord, 25) >= 25;
-    bool expand_to_sea = can_build_ships && switch_to_sea(base.x_coord, base.y_coord);
+    bool land_area_full = switch_to_sea(base.x_coord, base.y_coord);
     bool build_pods = (base.pop_size > 1 || base.nutrient_surplus > 1)
         && pods < (*tx_current_turn < 60 ? 2 : 1)
-        && fac.current_num_bases * 2 < min(80, *tx_map_area_sq_root);
+        && faction->current_num_bases * 2 < min(80, *tx_map_area_sq_root);
     if (has_facility(id, FAC_PERIMETER_DEFENSE))
         enemydist *= 0.5;
-    if (minerals > 4 && expand_to_sea)
-        enemymil = max(0.3, enemymil);
-    double threat = 1 - (1 / (1 + enemymil + enemydist));
+    if (land_area_full)
+        enemymil = max((faction->AI_fight * 0.2 + 0.5), enemymil);
+    int mineral_cap = (enemyrange < 30 ? 0.6 : 0.4) * base.mineral_intake_1;
+    double threat = 1 - (1 / (1 + max(0.0, enemymil) + max(0.0, enemydist)));
 
-    debuglog("select_prod %d %d %d | %d %d %d %d %d %d | %d %d %.4f %.4f %.4f\n",
+    debuglog("select_prod %d %d %d | %d %d %d %d %d %d %d | %d %d %.4f %.4f %.4f\n",
     *tx_current_turn, owner, id,
-    defenders, formers, pods, crawlers, base.mineral_consumption, build_pods,
-    borders, enemies, enemymil, enemydist, threat);
+    defenders, formers, pods, crawlers, mineral_cap, build_pods, land_area_full,
+    enemyrange, enemies, enemymil, enemydist, threat);
 
     if (defenders == 0 && (minerals > 2 || enemydist > 0.2)) {
         return find_proto(owner, TRIAD_LAND, COMBAT, true);
-    } else if (minerals > 2 && random(100) < (int)(100.0 * threat)
-    && base.mineral_consumption <= (int)(0.8 * threat * base.mineral_intake_1)) {
-        if (defenders > 2 && borders && can_build(id, FAC_PERIMETER_DEFENSE))
+    } else if (minerals > 2 && base.mineral_consumption <= mineral_cap
+    && random(100) < (int)(100.0 * threat)) {
+        if (defenders > 2 && enemyrange < 12 && can_build(id, FAC_PERIMETER_DEFENSE))
             return -FAC_PERIMETER_DEFENSE;
-        if (has_docair && fac.SE_police >= -3 && random(3) == 0)
+        if (has_docair && faction->SE_police >= -3 && random(3) == 0)
             return find_proto(owner, TRIAD_AIR, COMBAT, false);
-        else if (has_networks && probes < 1 && random(3) == 0)
+        else if (has_probes && probes < 1 && random(3) == 0)
             if (can_build_ships)
                 return find_proto(owner, TRIAD_SEA, WMODE_INFOWAR, true);
             else
                 return find_proto(owner, TRIAD_LAND, WMODE_INFOWAR, true);
-        else if (expand_to_sea || (can_build_ships && enemydist < 0.5 && random(3) == 0))
+        else if (water_base(id) || (can_build_ships && enemydist < 0.5 && random(3) == 0))
             if (random(3) == 0)
                 return find_proto(owner, TRIAD_SEA, WMODE_TRANSPORT, true);
             else
                 return find_proto(owner, TRIAD_SEA, COMBAT, false);
         else
-            return find_proto(owner, TRIAD_LAND, COMBAT, (random(3) == 0 ? true : false));
+            return find_proto(owner, TRIAD_LAND, COMBAT, false);
     } else if (has_ecology && formers <= min(2, base.pop_size/3)) {
-        if (expand_to_sea)
+        if (water_base(id))
             return find_proto(owner, TRIAD_SEA, WMODE_TERRAFORMER, true);
         else
             return find_proto(owner, TRIAD_LAND, WMODE_TERRAFORMER, true);
     } else {
+        if (has_supply && crawlers <= min(2, base.pop_size/3) && !water_base(id))
+            return BSC_SUPPLY_CRAWLER;
         if (build_pods && !can_build(id, FAC_RECYCLING_TANKS))
-            if (expand_to_sea)
+            if (can_build_ships && land_area_full)
                 return find_proto(owner, TRIAD_SEA, WMODE_COLONIST, true);
             else
                 return BSC_COLONY_POD;
@@ -614,10 +684,6 @@ int select_prod(int id) {
             return find_facility(id, owner);
     }
 }
-
-
-
-
 
 
 

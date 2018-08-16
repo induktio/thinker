@@ -44,6 +44,7 @@ R_Weapon* tx_weapon = (R_Weapon *)0x94AE60;
 fp_7intstr* tx_propose_proto = (fp_7intstr*)0x580860;
 fp_4int* tx_veh_init = (fp_4int*)0x5C03D0;
 
+fp_1int* tx_veh_skip = (fp_1int*)0x5C1D20;
 fp_1int* tx_enemy_move = (fp_1int*)0x56B5B0;
 fp_2int* tx_action_build = (fp_2int*)0x4C96E0;
 fp_3int* tx_action_terraform = (fp_3int*)0x4C9B00;

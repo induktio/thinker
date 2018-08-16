@@ -7,7 +7,7 @@
     #define debuglog(...) fprintf(debug_log, __VA_ARGS__);
 #else
     #define DEBUG 0
-    #define NDEBUG
+    #define NDEBUG /* Disable assertions */
     #define debuglog(...) /* Nothing */
 #endif
 
@@ -40,6 +40,7 @@ extern FILE* debug_log;
 
 static_assert(sizeof(struct Faction) == 8396, "");
 static_assert(sizeof(struct BASE) == 308, "");
+static_assert(sizeof(struct VEH) == 52, "");
 static_assert(sizeof(struct MAP) == 44, "");
 
 #define QSIZE 512
@@ -50,6 +51,12 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define NO_SYNC 1
 #define LAND_ONLY 0
 #define WATER_ONLY 1
+#define RES_NONE 0
+#define RES_NUTRIENT 1
+#define RES_MINERAL 2
+#define RES_ENERGY 3
+#define STATUS_CONVOY 3
+#define STATUS_GOTO 24
 
 #define BASE_DISALLOWED (TERRA_BASE_IN_TILE | TERRA_MONOLITH | TERRA_FUNGUS | TERRA_THERMAL_BORE)
 #define ALTITUDE_MIN_LAND 60
@@ -73,6 +80,7 @@ struct Config {
 int turn_upkeep();
 int select_prod(int id);
 int consider_base(int id);
+int consider_convoy(int id);
 int terraform_action(int veh, int action, int flag);
 int tech_value(int tech, int fac, int trading);
 void print_veh(int id);

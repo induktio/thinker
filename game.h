@@ -10,6 +10,9 @@ int random(int n);
 int wrap(int a, int b);
 int map_range(int x1, int y1, int x2, int y2);
 MAP* mapsq(int x, int y);
+int unit_in_tile(MAP* sq);
+bool water_base(int id);
+bool convoy_not_used(int x, int y);
 
 class TileSearch {
     int type;
