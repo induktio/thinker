@@ -22,7 +22,7 @@ int* tx_climate_future_change = (int*)0x9A67D8;
 
 byte* tx_tech_discovered = (byte*)0x9A6670;
 int* tx_secret_projects = (int*)0x9A6514;
-FactMeta* tx_factions_meta = (FactMeta *)0x946FEC;
+FactMeta* tx_factions_meta = (FactMeta *)0x946A50;
 Faction* tx_factions = (Faction *)0x96C9E0;
 BASE* tx_bases = (BASE *)0x97D040;
 UNIT* tx_units = (UNIT *)0x9AB868;

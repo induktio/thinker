@@ -346,10 +346,10 @@ struct Faction
     int satellites_mineral;
     int satellites_energy;
     int satellites_ODP;
-    int unk_54;
+    int best_weapon_value;
     int unk_55;
     int unk_56;
-    int unk_57;
+    int best_armor_value;
     int unk_58;
     int unk_59;
     int unk_60;

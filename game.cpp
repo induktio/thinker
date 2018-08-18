@@ -17,6 +17,16 @@ int unit_triad(int id) {
     return tx_chassis[tx_units[id].chassis_type].triad;
 }
 
+int offense_value(UNIT* u) {
+    if (u->weapon_type == WPN_CONVENTIONAL_PAYLOAD)
+        return tx_factions[*tx_active_faction].best_weapon_value * u->reactor_type;
+    return tx_weapon[u->weapon_type].offense_value * u->reactor_type;
+}
+
+int defense_value(UNIT* u) {
+    return tx_defense[u->armor_type].defense_value * u->reactor_type;
+}
+
 int random(int n) {
     return rand() % (n != 0 ? n : 1);
 }

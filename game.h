@@ -6,6 +6,8 @@
 char* prod_name(int prod);
 bool knows_tech(int fac, int tech);
 int unit_triad(int id);
+int offense_value(UNIT* u);
+int defense_value(UNIT* u);
 int random(int n);
 int wrap(int a, int b);
 int map_range(int x1, int y1, int x2, int y2);
