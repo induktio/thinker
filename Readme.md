@@ -1,16 +1,25 @@
 
-Thinker AI Mod
-==============
+SMACX Thinker Mod
+=================
 
 Features
 --------
 
-Thinker is an AI improvement mod for Alpha Centauri: Alien Crossfire. By patching the game to use an additional dll, new functionality can be coded in C++, unlike previous patches. Currently AI improvements include significant changes to terraforming and base production, among other things. The goal of the mod is to only improve AI behaviour without changing the game mechanics. This mod requires the [GOG version](https://www.gog.com/game/sid_meiers_alpha_centauri) of Alpha Centauri to play.
+Thinker is an AI improvement mod for Alpha Centauri: Alien Crossfire. By patching the game to use an additional dll, new functionality can be coded in C++, unlike previous patches. Some of the features include:
+
+* New production AI for bases
+* Improved terraforming AI (lots of condenser-farms, boreholes and forests)
+* AI builds more crawlers and deploys them better
+* AI will deploy colony pods much sooner instead of wandering on the map
+* Customizable options for free formers and satellites for AI factions
+* Does not affect player-run factions or game mechanics
+
+This mod requires the [GOG version](https://www.gog.com/game/sid_meiers_alpha_centauri) of Alpha Centauri to play.
 
 
 Download
 --------
-[Get the compiled binaries.](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAp6ioWxdo7vnG6Ity5W3o1a?dl=0)
+[Get the compiled binaries.](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAp6ioWxdo7vnG6Ity5W3o1a?dl=0&lst=)
 
 
 Installation
