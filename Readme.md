@@ -2,9 +2,6 @@
 SMACX Thinker Mod
 =================
 
-Features
---------
-
 Thinker is an AI improvement mod for Alpha Centauri: Alien Crossfire. By patching the game to use an additional dll, new functionality can be coded in C++, unlike previous patches. Some of the features include:
 
 * New production AI for bases
@@ -39,4 +36,6 @@ License
 -------
 This software is licensed under the GNU General Public License version 2, or (at your option) any later version of the GPL. See [License.txt](License.txt) for details.
 
+The original game assets are not covered by this license and remain property of Firaxis Games Inc and Electronic Arts Inc.
 
+Sid Meier's Alpha Centauri and Sid Meier's Alien Crossfire is Copyright © 1997, 1998 by Firaxis Games Inc and Electronic Arts Inc.
