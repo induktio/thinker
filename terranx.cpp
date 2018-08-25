@@ -48,6 +48,7 @@ fp_1int* tx_veh_skip = (fp_1int*)0x5C1D20;
 fp_1int* tx_enemy_move = (fp_1int*)0x56B5B0;
 fp_2int* tx_action_build = (fp_2int*)0x4C96E0;
 fp_3int* tx_action_terraform = (fp_3int*)0x4C9B00;
+fp_3int* tx_terraform_cost = (fp_3int*)0x4C9420;
 fp_2int* tx_bonus_at = (fp_2int*)0x592030;
 fp_2int* tx_can_convoy = (fp_2int*)0x564D90;
 fp_4int* tx_contiguous = (fp_4int*)0x53A780;

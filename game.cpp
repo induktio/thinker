@@ -9,6 +9,13 @@ char* prod_name(int prod) {
         return (char*)&(tx_units[prod].name);
 }
 
+int mineral_cost(int fac, int prod) {
+    if (prod >= 0)
+        return tx_units[prod].cost * tx_cost_factor(fac, 1, -1);
+    else
+        return tx_facilities[-prod].cost * tx_cost_factor(fac, 1, -1);
+}
+
 bool knows_tech(int fac, int tech) {
     return tx_tech_discovered[tech] & (1 << fac);
 }
@@ -72,6 +79,31 @@ bool convoy_not_used(int x, int y) {
     return true;
 }
 
+bool workable_tile(int x, int y, int fac) {
+    MAP* tile;
+    for (const int* t : offset_20) {
+        int x2 = wrap(x + t[0], *tx_map_axis_x);
+        int y2 = y + t[1];
+        tile = mapsq(x2, y2);
+        if (tile && tile->owner == fac && tile->built_items & TERRA_BASE_IN_TILE) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int coast_tiles(int x, int y) {
+    MAP* tile;
+    int n = 0;
+    for (const int* t : offset) {
+        tile = mapsq(wrap(x + t[0], *tx_map_axis_x), y + t[1]);
+        if (tile && tile->altitude < ALTITUDE_MIN_LAND) {
+            n++;
+        }
+    }
+    return n;
+}
+
 void TileSearch::init(int x, int y, int tp) {
     head = 0;
     tail = 0;
@@ -82,7 +114,7 @@ void TileSearch::init(int x, int y, int tp) {
     if (tile) {
         items++;
         int p = x | y << 16;
-        oldtiles.insert(p);
+        oldtiles.insert(mp(x, y));
         newtiles[0] = p;
     }
 }
@@ -104,15 +136,15 @@ MAP* TileSearch::get_next() {
                     (type == WATER_ONLY && tile->altitude >= ALTITUDE_MIN_LAND);
         if (oldtiles.size() > 1 && skip)
             continue;
-        for (int i=0; i<16; i+=2) {
-            int x2 = wrap(cur_x + offset[i], *tx_map_axis_x);
-            int y2 = cur_y + offset[i+1];
+        for (const int* t : offset) {
+            int x2 = wrap(cur_x + t[0], *tx_map_axis_x);
+            int y2 = cur_y + t[1];
             p = x2 | y2 << 16;
-            if (items < QSIZE && oldtiles.count(p) == 0 && y2 >= 0 && y2 < *tx_map_axis_y) {
+            if (items < QSIZE && y2 >= 0 && y2 < *tx_map_axis_y && oldtiles.count(mp(x2, y2)) == 0) {
                 newtiles[tail] = p;
                 tail = (tail + 1) % QSIZE;
                 items++;
-                oldtiles.insert(p);
+                oldtiles.insert(mp(x2, y2));
             }
         }
         return tile;

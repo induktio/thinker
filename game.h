@@ -3,7 +3,20 @@
 
 #include "main.h"
 
+#define mp(x, y) std::make_pair(x, y)
+
+const int offset[][2] = {
+    {2,0},{-2,0},{0,2},{0,-2},{1,1},{1,-1},{-1,1},{-1,-1}
+};
+
+const int offset_20[][2] = {
+    {2,0},{-2,0},{0,2},{0,-2},{1,1},{1,-1},{-1,1},{-1,-1},
+    {1,-3},{2,-2},{3,-1},{3,1},{2,2},{1,3},
+    {-1,3},{-2,2},{-3,1},{-3,-1},{-2,-2},{-1,-3},
+};
+
 char* prod_name(int prod);
+int mineral_cost(int fac, int prod);
 bool knows_tech(int fac, int tech);
 int unit_triad(int id);
 int offense_value(UNIT* u);
@@ -15,6 +28,8 @@ MAP* mapsq(int x, int y);
 int unit_in_tile(MAP* sq);
 bool water_base(int id);
 bool convoy_not_used(int x, int y);
+bool workable_tile(int x, int y, int fac);
+int coast_tiles(int x, int y);
 
 class TileSearch {
     int type;
@@ -23,10 +38,10 @@ class TileSearch {
     int items;
     MAP* tile;
     int newtiles[QSIZE];
-    std::set<int> oldtiles;
     public:
     int cur_x, cur_y;
     void init(int, int, int);
+    std::set<std::pair <int, int>> oldtiles;
     int visited();
     MAP* get_next();
 };

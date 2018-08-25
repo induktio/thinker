@@ -258,13 +258,6 @@ int find_project(int fac) {
     return (n > 0 ? -1*projs[random(n)] : 0);
 }
 
-int mineral_cost(int fac, int prod) {
-    if (prod >= 0)
-        return tx_units[prod].cost * tx_cost_factor(fac, 1, -1);
-    else
-        return tx_facilities[-prod].cost * tx_cost_factor(fac, 1, -1);
-}
-
 int count_sea_tiles(int x, int y, int limit) {
     MAP* tile = mapsq(x, y);
     if (!tile || (tile->level >> 5) > LEVEL_SHORE_LINE) {
@@ -375,18 +368,44 @@ int consider_convoy(int id) {
     return tx_veh_skip(id);
 }
 
+bool can_bridge(int x, int y) {
+    if (coast_tiles(x, y) < 3)
+        return false;
+    const int range = 4;
+    MAP* tile;
+    TileSearch ts;
+    ts.init(x, y, LAND_ONLY);
+    while (ts.visited() < 120 && ts.get_next() != NULL);
+
+    int n = 0;
+    for (int i=-range*2; i<=range*2; i++) {
+        for (int j=-range*2 + abs(i); j<=range*2 - abs(i); j+=2) {
+            int x2 = wrap(x + i, *tx_map_axis_x);
+            int y2 = y + j;
+            tile = mapsq(x2, y2);
+            if (tile && y2 > 0 && y2 < *tx_map_axis_y-1
+            && tile->altitude >= ALTITUDE_MIN_LAND
+            && ts.oldtiles.count(mp(x2, y2)) == 0) {
+                n++;
+            }
+        }
+    }
+    debuglog("bridge %d %d %d %d\n", x, y, ts.visited(), n);
+    return n > 4;
+}
+
 bool can_borehole(int x, int y, int bonus) {
     MAP* tile = mapsq(x, y);
     if (!tile || tile->built_items & BASE_DISALLOWED || bonus == RES_NUTRIENT)
         return false;
     if (bonus == RES_NONE && (tile->level & TILE_RAINY || tile->rocks & TILE_ROLLING))
         return false;
-    if (bases_in_range(x, y, 2) < (bonus > RES_NUTRIENT ? 1 : 2))
+    if (!workable_tile(x, y, tile->owner))
         return false;
     int level = tile->level >> 5;
-    for (int i=0; i<16; i+=2) {
-        int x2 = wrap(x + offset[i], *tx_map_axis_x);
-        int y2 = y + offset[i+1];
+    for (const int* t : offset) {
+        int x2 = wrap(x + t[0], *tx_map_axis_x);
+        int y2 = y + t[1];
         tile = mapsq(x2, y2);
         if (!tile || tile->built_items & TERRA_THERMAL_BORE)
             return false;
@@ -406,16 +425,27 @@ bool can_borehole(int x, int y, int bonus) {
 int terraform_action(int id, int action, int flag) {
     VEH* veh = &tx_vehicles[id];
     MAP* sq = mapsq(veh->x_coord, veh->y_coord);
+    int fac = veh->faction_id;
 
-    if (conf.terraform_ai && veh->faction_id <= conf.factions_enabled
-    && (1 << veh->faction_id) & ~(*tx_human_players) && sq) {
-        if (sq->altitude < ALTITUDE_MIN_LAND)
+    if (conf.terraform_ai && fac <= conf.factions_enabled
+    && (1 << fac) & ~(*tx_human_players) && sq) {
+        if (sq->altitude < ALTITUDE_MIN_LAND || action >= FORMER_CONDENSER)
             return tx_action_terraform(id, action, flag);
         bool rocky_sq = sq->rocks & TILE_ROCKY;
         bool rainy_sq = sq->level & TILE_RAINY;
         int bonus = tx_bonus_at(veh->x_coord, veh->y_coord);
-        bool has_eco = knows_tech(veh->faction_id, TECH_EcoEng);
+        bool has_wp = has_project(fac, FAC_WEATHER_PARADIGM);
+        bool has_eco = has_wp || knows_tech(fac, tx_terraform[FORMER_CONDENSER].preq_tech);
+        bool has_land = has_wp || knows_tech(fac, tx_terraform[FORMER_RAISE_LAND].preq_tech);
 
+        if (has_land && can_bridge(veh->x_coord, veh->y_coord)) {
+            int cost = tx_terraform_cost(veh->x_coord, veh->y_coord, fac);
+            if (cost < tx_factions[fac].energy_credits/10) {
+                debuglog("bridge_cost %d %d %d %d\n", veh->x_coord, veh->y_coord, fac, cost);
+                tx_factions[fac].energy_credits -= cost;
+                return tx_action_terraform(id, FORMER_RAISE_LAND, flag);
+            }
+        }
         if (has_eco && can_borehole(veh->x_coord, veh->y_coord, bonus)) {
             return tx_action_terraform(id, FORMER_THERMAL_BOREHOLE, flag);
         }

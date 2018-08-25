@@ -61,11 +61,6 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define BASE_DISALLOWED (TERRA_BASE_IN_TILE | TERRA_MONOLITH | TERRA_FUNGUS | TERRA_THERMAL_BORE)
 #define ALTITUDE_MIN_LAND 60
 
-const int offset[] = {
-    2,0,-2,0, 0,2, 0,-2,
-    1,1,1,-1,-1,1,-1,-1
-};
-
 struct Config {
     int free_formers;
     int satellites_nutrient;
@@ -82,7 +77,7 @@ int select_prod(int id);
 int consider_base(int id);
 int consider_convoy(int id);
 int terraform_action(int veh, int action, int flag);
-int tech_value(int tech, int fac, int trading);
+int tech_value(int tech, int fac, int value);
 void print_veh(int id);
 
 #endif // __MAIN_H__

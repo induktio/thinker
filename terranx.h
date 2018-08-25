@@ -60,6 +60,7 @@ extern fp_1int* tx_veh_skip;
 extern fp_1int* tx_enemy_move;
 extern fp_2int* tx_action_build;
 extern fp_3int* tx_action_terraform;
+extern fp_3int* tx_terraform_cost;
 extern fp_2int* tx_bonus_at;
 extern fp_2int* tx_can_convoy;
 extern fp_4int* tx_contiguous;
