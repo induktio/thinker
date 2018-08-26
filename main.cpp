@@ -431,8 +431,8 @@ int terraform_action(int id, int action, int flag) {
     && (1 << fac) & ~(*tx_human_players) && sq) {
         if (sq->altitude < ALTITUDE_MIN_LAND || action >= FORMER_CONDENSER)
             return tx_action_terraform(id, action, flag);
+
         bool rocky_sq = sq->rocks & TILE_ROCKY;
-        bool rainy_sq = sq->level & TILE_RAINY;
         int bonus = tx_bonus_at(veh->x_coord, veh->y_coord);
         bool has_wp = has_project(fac, FAC_WEATHER_PARADIGM);
         bool has_eco = has_wp || knows_tech(fac, tx_terraform[FORMER_CONDENSER].preq_tech);
@@ -458,11 +458,11 @@ int terraform_action(int id, int action, int flag) {
                 return tx_action_terraform(id, FORMER_LEVEL_TERRAIN, flag);
             else if (action==FORMER_SOLAR_COLLECTOR)
                 return tx_action_terraform(id, FORMER_FOREST, flag);
-        } else if (rocky_sq && action==FORMER_SOLAR_COLLECTOR) {
-            return tx_action_terraform(id, FORMER_MINE, flag);
         }
-        if (action == FORMER_FARM && bonus != RES_NUTRIENT) {
-            if (has_eco && rainy_sq)
+        if (rocky_sq && action==FORMER_SOLAR_COLLECTOR) {
+            return tx_action_terraform(id, FORMER_MINE, flag);
+        } else if (action == FORMER_FARM && bonus != RES_NUTRIENT) {
+            if (has_eco && (sq->level & TILE_RAINY || sq->rocks & TILE_ROLLING))
                 return tx_action_terraform(id, FORMER_FARM, flag);
             else
                 return tx_action_terraform(id, FORMER_FOREST, flag);
@@ -470,11 +470,6 @@ int terraform_action(int id, int action, int flag) {
             return tx_action_terraform(id, FORMER_MINE, flag);
         } else if (action == FORMER_MINE && !rocky_sq) {
             return tx_action_terraform(id, FORMER_FOREST, flag);
-        } else if (action == FORMER_BUNKER) {
-            if (rocky_sq)
-                return tx_action_terraform(id, FORMER_MINE, flag);
-            else
-                return tx_action_terraform(id, FORMER_FOREST, flag);
         } else if (sq->built_items & TERRA_FARM) {
             if (has_eco && !(sq->built_items & TERRA_CONDENSER))
                 return tx_action_terraform(id, FORMER_CONDENSER, flag);
