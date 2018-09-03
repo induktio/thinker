@@ -22,6 +22,8 @@ extern int* tx_map_axis_x;
 extern int* tx_map_axis_y;
 extern int* tx_map_half_x;
 extern int* tx_climate_future_change;
+extern int* tx_un_charter_repeals;
+extern int* tx_un_charter_reinstates;
 
 extern byte* tx_tech_discovered;
 extern int* tx_secret_projects;

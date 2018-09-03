@@ -93,7 +93,7 @@ struct UNIT
     char factions;
     char icon_offset;
     char unk1;
-    short unk2_flags;
+    short unit_flags;
     short tech_preq_id;
 };
 

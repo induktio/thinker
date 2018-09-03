@@ -20,6 +20,10 @@ bool knows_tech(int fac, int tech) {
     return tx_tech_discovered[tech] & (1 << fac);
 }
 
+bool has_weapon(int fac, int wpn) {
+    return knows_tech(fac, tx_weapon[wpn].preq_tech);
+}
+
 int unit_triad(int id) {
     return tx_chassis[tx_units[id].chassis_type].triad;
 }

@@ -18,6 +18,7 @@ const int offset_20[][2] = {
 char* prod_name(int prod);
 int mineral_cost(int fac, int prod);
 bool knows_tech(int fac, int tech);
+bool has_weapon(int fac, int wpn);
 int unit_triad(int id);
 int offense_value(UNIT* u);
 int defense_value(UNIT* u);

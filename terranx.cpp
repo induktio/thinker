@@ -19,6 +19,8 @@ int* tx_map_axis_x = (int*)0x949870;
 int* tx_map_axis_y = (int*)0x949874;
 int* tx_map_half_x = (int*)0x68FAF0;
 int* tx_climate_future_change = (int*)0x9A67D8;
+int* tx_un_charter_repeals = (int*)0x9A6638;
+int* tx_un_charter_reinstates = (int*)0x9A663C;
 
 byte* tx_tech_discovered = (byte*)0x9A6670;
 int* tx_secret_projects = (int*)0x9A6514;

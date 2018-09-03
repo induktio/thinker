@@ -81,10 +81,11 @@ DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2) {
         VEH* veh = &tx_vehicles[id];
         if (conf.terraform_ai && veh->faction_id <= conf.factions_enabled) {
             int wmode = tx_units[veh->proto_id].weapon_mode;
-            if (wmode == WMODE_COLONIST)
+            if (wmode == WMODE_COLONIST) {
                 return consider_base(id);
-            else if (wmode == WMODE_CONVOY)
+            } else if (wmode == WMODE_CONVOY) {
                 return consider_convoy(id);
+            }
         }
         return tx_enemy_move(id);
     } else if (mode == 5) {
@@ -98,7 +99,7 @@ DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2) {
     int last_choice = 0;
 
     if (DEBUG) {
-        fprintf(debug_log, "[ turn: %d faction: %d base: %2d x: %2d y: %2d "\
+        debuglog("[ turn: %d faction: %d base: %2d x: %2d y: %2d "\
         "pop: %d tal: %d dro: %d mins: %2d acc: %2d prod: %3d | %s | %s ]\n",
         *tx_current_turn, owner, id, base.x_coord, base.y_coord,
         base.pop_size, base.talent_total, base.drone_total,
@@ -108,14 +109,14 @@ DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2) {
     }
 
     if (1 << owner & *tx_human_players) {
-        if (DEBUG) fprintf(debug_log, "skipping human base\n");
+        debuglog("skipping human base\n");
         last_choice = base.queue_production_id[0];
     } else if (!conf.production_ai || owner > conf.factions_enabled) {
-        if (DEBUG) fprintf(debug_log, "skipping computer base\n");
+        debuglog("skipping computer base\n");
         last_choice = tx_base_prod_choices(id, 0, 0, 0);
     } else {
         last_choice = select_prod(id);
-        if (DEBUG) fprintf(debug_log, "choice: %d %s\n", last_choice, prod_name(last_choice));
+        debuglog("choice: %d %s\n", last_choice, prod_name(last_choice));
     }
     base_mins[id] = tx_bases[id].minerals_accumulated;
     fflush(debug_log);
@@ -236,26 +237,50 @@ bool can_build(int base_id, int id) {
     && !has_facility(base_id, id);
 }
 
-bool project_capacity(int fac) {
-    int bases = tx_factions[fac].current_num_bases;
-    int n = 0;
-    for (int i=0; i<*tx_total_num_bases; i++) {
-        if (tx_bases[i].faction_id == fac && tx_bases[i].queue_production_id[0] <= -70)
-            n++;
-    }
-    return (n < 3 && n < bases/4);
-}
-
 int find_project(int fac) {
-    int projs[40];
-    int n = 0;
-    for (int i=70; i<107; i++) {
-        if (tx_secret_projects[i-70] == -1 && knows_tech(fac, tx_facilities[i].preq)) {
-            debuglog("find_project %d %d %s\n", fac, i, (char*)tx_facilities[i].name);
-            projs[n++] = i;
+    int bases = tx_factions[fac].current_num_bases;
+    int nuke_limit = (tx_factions[fac].planet_busters < 2 ? 1 : 0);
+    int projs = 0;
+    int nukes = 0;
+
+    bool build_nukes = (*tx_un_charter_repeals > *tx_un_charter_reinstates &&
+        has_weapon(fac, WPN_PLANET_BUSTER));
+
+    for (int i=0; i<*tx_total_num_bases; i++) {
+        if (tx_bases[i].faction_id == fac) {
+            int prod = tx_bases[i].queue_production_id[0];
+            if (prod <= -70)
+                projs++;
+            else if (prod >= 0 && tx_units[prod].weapon_type == WPN_PLANET_BUSTER)
+                nukes++;
         }
     }
-    return (n > 0 ? -1*projs[random(n)] : 0);
+    if (build_nukes && nukes < nuke_limit && nukes < bases/8) {
+        int best = 0;
+        for(int i=0; i<64; i++) {
+            int id = fac*64 + i;
+            UNIT* u = &tx_units[id];
+            if (u->weapon_type == WPN_PLANET_BUSTER && strlen(u->name) > 0
+            && offense_value(u) > offense_value(&tx_units[best])) {
+                debuglog("find_project %d %d %s\n", fac, id, (char*)tx_units[id].name);
+                best = id;
+            }
+        }
+        if (best)
+            return best;
+    }
+    if (projs+nukes < (build_nukes ? 4 : 3) && projs+nukes < bases/4) {
+        int projects[40];
+        int n = 0;
+        for (int i=70; i<107; i++) {
+            if (tx_secret_projects[i-70] == -1 && knows_tech(fac, tx_facilities[i].preq)) {
+                debuglog("find_project %d %d %s\n", fac, i, (char*)tx_facilities[i].name);
+                projects[n++] = i;
+            }
+        }
+        return (n > 0 ? -1*projects[random(n)] : 0);
+    }
+    return 0;
 }
 
 int count_sea_tiles(int x, int y, int limit) {
@@ -305,7 +330,7 @@ int bases_in_range(int x, int y, int range) {
                 bases++;
         }
     }
-    if (DEBUG) fprintf(debug_log, "bases_in_range %d %d %d %d %d\n", x, y, range, n, bases);
+    debuglog("bases_in_range %d %d %d %d %d\n", x, y, range, n, bases);
     return bases;
 }
 
@@ -535,10 +560,11 @@ int find_facility(int base_id, int fac) {
         FAC_RESEARCH_HOSPITAL
     };
     BASE* base = &tx_bases[base_id];
-    int has_supply = knows_tech(fac, tx_weapon[WPN_SUPPLY_TRANSPORT].preq_tech);
+    int proj;
+    int has_supply = has_weapon(fac, WPN_SUPPLY_TRANSPORT);
     int minerals = base->mineral_surplus;
     int extra = base->minerals_accumulated/10;
-    int threshold = min(10, 4 + *tx_current_turn/30) + (has_supply ? 2 : 0);
+    int threshold = min(12, 4 + *tx_current_turn / (has_supply ? 20 : 30));
     int hab_complex_limit = tx_basic->pop_limit_wo_hab_complex
         - tx_factions_meta[fac].rule_population;
 
@@ -553,9 +579,8 @@ int find_facility(int base_id, int fac) {
         return -FAC_RECYCLING_TANKS;
     if (base->pop_size >= hab_complex_limit && can_build(base_id, FAC_HAB_COMPLEX))
         return -FAC_HAB_COMPLEX;
-    if (minerals+extra >= threshold && project_capacity(fac)) {
-        int proj = find_project(fac);
-        if (proj != 0) return proj;
+    if (minerals+extra >= threshold && (proj = find_project(fac)) != 0) {
+        return proj;
     }
     if (minerals+extra >= threshold && knows_tech(fac, tx_facilities[FAC_SKY_HYDRO_LAB].preq)) {
         if (can_build(base_id, FAC_AEROSPACE_COMPLEX))
@@ -577,8 +602,9 @@ int find_facility(int base_id, int fac) {
             return -1*f;
         }
     }
-    if (has_supply)
-        return BSC_SUPPLY_CRAWLER;
+    if (has_weapon(fac, WPN_PROBE_TEAM)) {
+        return find_proto(fac, TRIAD_LAND, WMODE_INFOWAR, true);
+    }
     return find_proto(fac, TRIAD_LAND, COMBAT, false);
 }
 
@@ -589,11 +615,11 @@ int select_prod(int id) {
     Faction* faction = &tx_factions[owner];
 
     if (prod < 0 && !can_build(id, abs(prod))) {
-        if (DEBUG) fprintf(debug_log, "BUILD CHANGE\n");
+        debuglog("BUILD CHANGE\n");
         if (base.minerals_accumulated > 10)
             return find_facility(id, owner);
     } else if (prod < 0 || (base.minerals_accumulated > 10 && base_mins[id] < base.minerals_accumulated)) {
-        if (DEBUG) fprintf(debug_log, "BUILD OLD\n");
+        debuglog("BUILD OLD\n");
         return prod;
     }
 
