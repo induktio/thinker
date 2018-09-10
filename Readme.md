@@ -25,6 +25,15 @@ Installation
 2. Check the readme for release notes
 3. Change configuration from thinker.ini
 4. Start the game from terranx_mod.exe
+5. Mod version should now be visible in the game version menu
+
+
+Pracx notes
+-----------
+This mod can also be used together with [Pracx](https://github.com/DrazharLn/pracx) graphics enhancement patch.
+1. Extract Thinker mod files and rename terranx_mod.exe to terranx.exe
+2. Install Pracx and make sure the installer patches the previous file
+3. Start the game normally from terranx.exe
 
 
 Compiling
