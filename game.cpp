@@ -28,6 +28,10 @@ int unit_triad(int id) {
     return tx_chassis[tx_units[id].chassis_type].triad;
 }
 
+int unit_speed(int id) {
+    return tx_chassis[tx_units[id].chassis_type].speed;
+}
+
 int offense_value(UNIT* u) {
     if (u->weapon_type == WPN_CONVENTIONAL_PAYLOAD)
         return tx_factions[*tx_active_faction].best_weapon_value * u->reactor_type;
@@ -43,7 +47,7 @@ int random(int n) {
 }
 
 int wrap(int a, int b) {
-    return (a < 0 ? a + b : a);
+    return (!*tx_map_toggle_flat && a < 0 ? a + b : a);
 }
 
 int map_range(int x1, int y1, int x2, int y2) {
@@ -55,11 +59,12 @@ int map_range(int x1, int y1, int x2, int y2) {
 }
 
 MAP* mapsq(int x, int y) {
-    int i = x/2 + (*tx_map_half_x) * y;
-    if (i >= 0 && i < *tx_map_half_x * *tx_map_axis_y)
+    if (x >= 0 && y >= 0 && x < *tx_map_axis_x && y < *tx_map_axis_y) {
+        int i = x/2 + (*tx_map_half_x) * y;
         return &((*tx_map_ptr)[i]);
-    else
+    } else {
         return NULL;
+    }
 }
 
 int unit_in_tile(MAP* sq) {
@@ -117,9 +122,8 @@ void TileSearch::init(int x, int y, int tp) {
     tile = mapsq(x, y);
     if (tile) {
         items++;
-        int p = x | y << 16;
+        newtiles[0] = mp(x, y);
         oldtiles.insert(mp(x, y));
-        newtiles[0] = p;
     }
 }
 
@@ -129,11 +133,10 @@ int TileSearch::visited() {
 
 MAP* TileSearch::get_next() {
     while (items > 0) {
-        int p = newtiles[head];
+        cur_x = newtiles[head].first;
+        cur_y = newtiles[head].second;
         head = (head + 1) % QSIZE;
         items--;
-        cur_x = p & 0xffff;
-        cur_y = p >> 16;
         if (!(tile = mapsq(cur_x, cur_y)))
             continue;
         bool skip = (type == LAND_ONLY && tile->altitude < ALTITUDE_MIN_LAND) ||
@@ -143,9 +146,8 @@ MAP* TileSearch::get_next() {
         for (const int* t : offset) {
             int x2 = wrap(cur_x + t[0], *tx_map_axis_x);
             int y2 = cur_y + t[1];
-            p = x2 | y2 << 16;
             if (items < QSIZE && y2 >= 0 && y2 < *tx_map_axis_y && oldtiles.count(mp(x2, y2)) == 0) {
-                newtiles[tail] = p;
+                newtiles[tail] = mp(x2, y2);
                 tail = (tail + 1) % QSIZE;
                 items++;
                 oldtiles.insert(mp(x2, y2));

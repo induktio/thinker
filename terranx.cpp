@@ -7,6 +7,8 @@ const char** tx_date = (const char**)0x691874;
 
 int*  tx_current_base_id = (int*)0x689370;
 BASE* tx_current_base_ptr = (BASE*)0x90EA30;
+int* tx_game_rules_basic = (int*)0x9A64C0;
+int* tx_game_rules_scenario = (int*)0x9A649C;
 int* tx_human_players = (int*)0x9A64E8;
 int* tx_current_turn = (int*)0x9A64D4;
 int* tx_active_faction = (int*)0x9A6820;

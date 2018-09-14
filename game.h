@@ -20,6 +20,7 @@ int mineral_cost(int fac, int prod);
 bool knows_tech(int fac, int tech);
 bool has_weapon(int fac, int wpn);
 int unit_triad(int id);
+int unit_speed(int id);
 int offense_value(UNIT* u);
 int defense_value(UNIT* u);
 int random(int n);
@@ -38,11 +39,11 @@ class TileSearch {
     int tail;
     int items;
     MAP* tile;
-    int newtiles[QSIZE];
+    std::pair<int, int> newtiles[QSIZE];
     public:
     int cur_x, cur_y;
-    void init(int, int, int);
     std::set<std::pair <int, int>> oldtiles;
+    void init(int, int, int);
     int visited();
     MAP* get_next();
 };

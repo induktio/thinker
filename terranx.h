@@ -10,6 +10,8 @@ extern const char** tx_date;
 
 extern int*  tx_current_base_id;
 extern BASE* tx_current_base_ptr;
+extern int* tx_game_rules_basic;
+extern int* tx_game_rules_scenario;
 extern int* tx_human_players;
 extern int* tx_current_turn;
 extern int* tx_active_faction;
