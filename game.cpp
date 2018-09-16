@@ -17,7 +17,17 @@ int mineral_cost(int fac, int prod) {
 }
 
 bool knows_tech(int fac, int tech) {
+    if (tech < 0)
+        return true;
     return tx_tech_discovered[tech] & (1 << fac);
+}
+
+bool has_ability(int fac, int abl) {
+    return knows_tech(fac, tx_ability[abl].preq_tech);
+}
+
+bool has_chassis(int fac, int chs) {
+    return knows_tech(fac, tx_chassis[chs].preq_tech);
 }
 
 bool has_weapon(int fac, int wpn) {
@@ -30,6 +40,15 @@ int unit_triad(int id) {
 
 int unit_speed(int id) {
     return tx_chassis[tx_units[id].chassis_type].speed;
+}
+
+int best_reactor(int fac) {
+    for (const int r : {REC_SINGULARITY, REC_QUANTUM, REC_FUSION}) {
+        if (knows_tech(fac, tx_reactor[r - 1].preq_tech)) {
+            return r;
+        }
+    }
+    return REC_FISSION;
 }
 
 int offense_value(UNIT* u) {
@@ -53,7 +72,7 @@ int wrap(int a, int b) {
 int map_range(int x1, int y1, int x2, int y2) {
     int xd = abs(x1-x2);
     int yd = abs(y1-y2);
-    if (xd > *tx_map_axis_x/2)
+    if (!*tx_map_toggle_flat && xd > *tx_map_axis_x/2)
         xd = *tx_map_axis_x - xd;
     return (xd + yd)/2;
 }

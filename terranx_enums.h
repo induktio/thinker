@@ -229,7 +229,7 @@ enum techology_id
     TECH_BFG9000 = 86,
     TECH_User = 87,
     TECH_TranT = 88,
-    TECH_disabled = 0xFFFFFFFF,
+    TECH_None = -1,
 };
 
 enum tech_flags
@@ -273,7 +273,7 @@ enum unit_basic_id
     BSC_ISLE_OF_THE_DEEP = 0x9,
     BSC_LOCUSTS_OF_CHIRON = 0xA,
     BSC_UNITY_ROVER = 0xB,
-    BSC_UNITY_SCOUT_CHOPPEr = 0xC,
+    BSC_UNITY_SCOUT_CHOPPER = 0xC,
     BSC_UNITY_FOIL = 0xD,
     BSC_SEALURK = 0xE,
     BSC_SPORE_LAUNCHER = 0xF,
@@ -288,23 +288,23 @@ enum unit_basic_id
 
 enum unit_chassis_type
 {
-    CHSI_INFANTRY = 0x0,
-    CHSI_SPEEDER = 0x1,
-    CHSI_HOVERTANK = 0x2,
-    CHSI_FOIL = 0x3,
-    CHSI_CRUISER = 0x4,
-    CHSI_NEEDLEJET = 0x5,
-    CHSI_COPTER = 0x6,
-    CHSI_GRAVSHIP = 0x7,
-    CHSI_MISSILE = 0x8,
+    CHS_INFANTRY = 0x0,
+    CHS_SPEEDER = 0x1,
+    CHS_HOVERTANK = 0x2,
+    CHS_FOIL = 0x3,
+    CHS_CRUISER = 0x4,
+    CHS_NEEDLEJET = 0x5,
+    CHS_COPTER = 0x6,
+    CHS_GRAVSHIP = 0x7,
+    CHS_MISSILE = 0x8,
 };
 
 enum unit_reactor
 {
-    RECT_FISSION = 0x1,
-    RECT_FUSION = 0x2,
-    RECT_QUANTUM = 0x3,
-    RECT_SINGULARITY = 0x4,
+    REC_FISSION = 0x1,
+    REC_FUSION = 0x2,
+    REC_QUANTUM = 0x3,
+    REC_SINGULARITY = 0x4,
 };
 
 enum unit_triad
@@ -395,7 +395,40 @@ enum unit_plan
     PLAN_AUTO_CALCULATE = 0xFFFFFFFF,
 };
 
-enum unit_abilities
+enum unit_ability_id
+{
+    ABL_ID_SUPER_TERRAFORMER = 0x0,
+    ABL_ID_DEEP_RADAR = 0x1,
+    ABL_ID_CLOAKED = 0x2,
+    ABL_ID_AMPHIBIOUS = 0x3,
+    ABL_ID_DROP_POD = 0x4,
+    ABL_ID_AIR_SUPERIORITY = 0x5,
+    ABL_ID_DEEP_PRESSURE_HULL = 0x6,
+    ABL_ID_CARRIER = 0x7,
+    ABL_ID_AAA = 0x8,
+    ABL_ID_COMM_JAMMER = 0x9,
+    ABL_ID_ANTIGRAV_STRUTS = 0xA,
+    ABL_ID_EMPATHIC = 0xB,
+    ABL_ID_POLY_ENCRYPTION = 0xC,
+    ABL_ID_FUNGICIDAL = 0xD,
+    ABL_ID_TRAINED = 0xE,
+    ABL_ID_ARTILLERY = 0xF,
+    ABL_ID_CLEAN_REACTOR = 0x10,
+    ABL_ID_BLINK_DISPLACER = 0x11,
+    ABL_ID_TRANCE = 0x12,
+    ABL_ID_HEAVY_TRANSPORT = 0x13,
+    ABL_ID_NERVE_GAS = 0x14,
+    ABL_ID_REPAIR = 0x15,
+    ABL_ID_POLICE_2X = 0x16,
+    ABL_ID_SLOW = 0x17,
+    ABL_ID_SOPORIFIC_GAS = 0x18,
+    ABL_ID_DISSOCIATIVE_WAVE = 0x19,
+    ABL_ID_MARINE_DETACHMENT = 0x1A,
+    ABL_ID_FUEL_NANOCELLS = 0x1B,
+    ABL_ID_ALGO_ENHANCEMENT = 0x1C,
+};
+
+enum unit_ability_flags
 {
     ABL_SUPER_TERRAFORMER = 0x1,
     ABL_DEEP_RADAR = 0x2,

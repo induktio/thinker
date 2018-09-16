@@ -66,6 +66,7 @@ struct Config {
     int satellites_nutrient;
     int satellites_mineral;
     int satellites_energy;
+    int design_units;
     int factions_enabled;
     int terraform_ai;
     int production_ai;
