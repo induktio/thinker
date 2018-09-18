@@ -3,9 +3,6 @@ using namespace std;
 #include "main.h"
 #include "game.h"
 
-const char* VERSION = "Thinker Mod v0.6";
-const char* VERSION_DATE = __DATE__;
-
 FILE* debug_log;
 Config conf;
 
@@ -57,7 +54,7 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             if (ini_parse("thinker.ini", handler, &conf) < 0)
                 return FALSE;
             *tx_version = VERSION;
-            *tx_date = VERSION_DATE;
+            *tx_date = __DATE__;
             break;
 
         case DLL_PROCESS_DETACH:

@@ -13,18 +13,30 @@
 				<Option compiler="gcc" />
 				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
-				<Option projectCompilerOptionsRelation="1" />
 				<Compiler>
-					<Add option="-g -Og -std=c++11 -pedantic -Wall -Wextra -Wshadow -Wpointer-arith -Wcast-align" />
+					<Add option="-g -Og" />
 					<Add option="-DBUILD_DLL" />
 					<Add option="-DBUILD_DEBUG" />
 				</Compiler>
 				<Linker>
 					<Add library="user32" />
 				</Linker>
-				<ExtraCommands>
-					<Add after='cmd /c copy &quot;$(PROJECT_DIR)$(TARGET_OUTPUT_FILE)&quot; patch\' />
-				</ExtraCommands>
+			</Target>
+			<Target title="Develop">
+				<Option output="build/bin/develop/thinker" prefix_auto="1" extension_auto="1" />
+				<Option object_output="build/obj/develop/" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Option createDefFile="1" />
+				<Option createStaticLib="1" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-DBUILD_DLL" />
+				</Compiler>
+				<Linker>
+					<Add option="-s -static" />
+					<Add library="user32" />
+				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="build/bin/release/thinker" prefix_auto="1" extension_auto="1" />
@@ -33,29 +45,31 @@
 				<Option compiler="gcc" />
 				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
-				<Option projectCompilerOptionsRelation="1" />
 				<Compiler>
 					<Add option="-O2" />
-					<Add option="-std=c++11 -pedantic -Wall -Wextra -Wshadow -Wpointer-arith -Wcast-align" />
 					<Add option="-DBUILD_DLL" />
+					<Add option="-DBUILD_REL" />
 				</Compiler>
 				<Linker>
 					<Add option="-s -static" />
 					<Add library="user32" />
 				</Linker>
-				<ExtraCommands>
-					<Add after='cmd /c copy &quot;$(PROJECT_DIR)$(TARGET_OUTPUT_FILE)&quot; patch\' />
-				</ExtraCommands>
 			</Target>
 		</Build>
+		<Compiler>
+			<Add option="-std=c++11 -pedantic -Wall -Wextra -Wshadow -Wpointer-arith -Wcast-align" />
+		</Compiler>
+		<ExtraCommands>
+			<Add after='cmd /c copy &quot;$(PROJECT_DIR)$(TARGET_OUTPUT_FILE)&quot; patch\' />
+		</ExtraCommands>
+		<Unit filename="game.cpp" />
+		<Unit filename="game.h" />
 		<Unit filename="inih/ini.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="inih/ini.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="main.h" />
-		<Unit filename="game.cpp" />
-		<Unit filename="game.h" />
 		<Unit filename="terranx.cpp" />
 		<Unit filename="terranx.h" />
 		<Unit filename="terranx_enums.h" />

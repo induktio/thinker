@@ -2,6 +2,12 @@
 #ifndef __MAIN_H__
 #define __MAIN_H__
 
+#ifdef BUILD_REL
+    #define VERSION "Thinker Mod v0.6"
+#else
+    #define VERSION "Thinker Mod develop build"
+#endif
+
 #ifdef BUILD_DEBUG
     #define DEBUG 1
     #define debuglog(...) fprintf(debug_log, __VA_ARGS__);
