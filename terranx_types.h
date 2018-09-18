@@ -126,7 +126,7 @@ struct VEH
     char road_moves_spent;
     char unk5;
     char unk6;
-    char target_action;
+    char status_icon;
     char unk8;
     char unk9;
     short home_base_id;
@@ -232,12 +232,10 @@ struct Faction
     int map_trade_done;
     int governor_def_flags;
     int unk_2;
+    int major_atrocities;
     int unk_3;
-    int probe_count1;
-    int probe_count2;
-    char unk_4[28];
-    int probe_count3;
-    char unk_5[28];
+    int unk_4[8];
+    int unk_5[8];
     int energy_credits;
     int energy_cost;
     int SE_POLITICS_pending;

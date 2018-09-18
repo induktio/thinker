@@ -7,6 +7,7 @@ FILE* debug_log;
 Config conf;
 
 int base_mins[BASES];
+set<pair <int, int>> convoys;
 
 static int handler(void* user, const char* section, const char* name, const char* value) {
     Config* pconfig = (Config*)user;
@@ -167,6 +168,7 @@ int turn_upkeep() {
     if (DEBUG) {
         *tx_game_rules_basic |= RULES_DEBUG_MODE;
     }
+    convoys.clear();
 
     return 0;
 }
@@ -187,9 +189,9 @@ int tech_value(int tech, int fac, int value) {
 
 void print_veh(int id) {
     VEH v = tx_vehicles[id];
-    fprintf(debug_log, "VEH %16s %2d | %08x %04x | %2d %3d | %2d %2d %2d %2d | %d %d %d %d %d\n",
+    debuglog("VEH %16s %2d | %08x %04x | %2d %3d | %2d %2d %2d %2d | %d %d %d %d %d\n",
         (char*)&(tx_units[v.proto_id].name), id,
-        v.flags_1, v.flags_2, v.move_status, v.target_action,
+        v.flags_1, v.flags_2, v.move_status, v.status_icon,
         v.x_coord, v.y_coord, v.waypoint_1_x_coord, v.waypoint_1_y_coord,
         v.unk4, v.unk5, v.unk6, v.unk8, v.unk9);
 }
@@ -359,14 +361,16 @@ int consider_base(int id) {
 }
 
 int want_convoy(int fac, int x, int y, MAP* tile) {
-    if (tile && tile->owner == fac) {
+    if (tile && tile->owner == fac && !convoys.count(mp(x, y))) {
         int bonus = tx_bonus_at(x, y);
-        if (tile->built_items & TERRA_CONDENSER)
+        if (bonus == RES_ENERGY)
+            return RES_NONE;
+        else if (tile->built_items & TERRA_CONDENSER)
             return RES_NUTRIENT;
         else if (tile->built_items & TERRA_MINE && tile->rocks & TILE_ROCKY)
             return RES_MINERAL;
-        else if (tile->built_items & TERRA_FOREST && bonus == RES_NONE
-        && !knows_tech(fac, TECH_EcoEng))
+        else if (tile->built_items & TERRA_FOREST && ~tile->built_items & TERRA_RIVER
+        && bonus != RES_NUTRIENT)
             return RES_MINERAL;
     }
     return RES_NONE;
@@ -375,33 +379,50 @@ int want_convoy(int fac, int x, int y, MAP* tile) {
 int consider_convoy(int id) {
     VEH* veh = &tx_vehicles[id];
     MAP* tile = mapsq(veh->x_coord, veh->y_coord);
-    int convoy = want_convoy(veh->faction_id, veh->x_coord, veh->y_coord, tile);
-    if (convoy && convoy_not_used(veh->x_coord, veh->y_coord)) {
-        veh->type_crawling = convoy-1;
+    if (!at_target(veh))
+        return SYNC;
+    if (veh->home_base_id < 0)
+        return tx_veh_skip(id);
+    int res = want_convoy(veh->faction_id, veh->x_coord, veh->y_coord, tile);
+    if (res) {
+        convoys.insert(mp(veh->x_coord, veh->y_coord));
+        veh->type_crawling = res-1;
         veh->move_status = STATUS_CONVOY;
-        veh->target_action = 'C';
+        veh->status_icon = 'C';
         return tx_veh_skip(id);
     }
     int i = 0;
+    int cx = -1;
+    int cy = -1;
     TileSearch ts;
     ts.init(veh->x_coord, veh->y_coord, LAND_ONLY);
+    BASE* base = &tx_bases[veh->home_base_id];
+
+    bool prefer_min = base->mineral_surplus < 8 || base->nutrient_surplus > 3
+        || base->mineral_surplus < base->nutrient_surplus*3;
 
     while (i++ < 30 && (tile = ts.get_next()) != NULL) {
         int other = unit_in_tile(tile);
-        if (other >= 0 && tx_factions[veh->faction_id].diplo_status[other] & DIPLO_VENDETTA) {
+        if (other > 0 && tx_factions[veh->faction_id].diplo_status[other] & DIPLO_VENDETTA) {
             debuglog("convoy_skip %d %d %d %d %d %d\n", veh->x_coord, veh->y_coord,
                 ts.cur_x, ts.cur_y, veh->faction_id, other);
             return tx_veh_skip(id);
         }
-        convoy = want_convoy(veh->faction_id, ts.cur_x, ts.cur_y, tile);
-        if (convoy && tx_can_convoy(ts.cur_x, ts.cur_y)) {
-            veh->waypoint_1_x_coord = ts.cur_x;
-            veh->waypoint_1_y_coord = ts.cur_y;
-            veh->move_status = STATUS_GOTO;
-            veh->target_action = 'G';
-            return SYNC;
+        res = want_convoy(veh->faction_id, ts.cur_x, ts.cur_y, tile);
+        if (res && tx_can_convoy(ts.cur_x, ts.cur_y)) {
+            if (prefer_min && res == RES_MINERAL && ~tile->built_items & TERRA_FOREST) {
+                return veh_move_to(veh, ts.cur_x, ts.cur_y);
+            } else if (!prefer_min && res == RES_NUTRIENT) {
+                return veh_move_to(veh, ts.cur_x, ts.cur_y);
+            }
+            if (res == RES_MINERAL && cx == -1) {
+                cx = ts.cur_x;
+                cy = ts.cur_y;
+            }
         }
     }
+    if (cx >= 0)
+        return veh_move_to(veh, cx, cy);
     return tx_veh_skip(id);
 }
 
@@ -680,7 +701,6 @@ int select_prod(int id) {
                 map_range(base->x_coord, base->y_coord, b->x_coord, b->y_coord));
         }
     }
-    enemymil = enemymil / sqrt(2 + enemyrange) * 3.0;
 
     for (int i=0; i<*tx_total_num_vehicles; i++) {
         VEH* veh = &tx_vehicles[i];
@@ -699,11 +719,11 @@ int select_prod(int id) {
         }
         int range = map_range(base->x_coord, base->y_coord, veh->x_coord, veh->y_coord);
 
-        if (veh->faction_id == owner && range <= 3) {
+        if (veh->faction_id == owner && range <= 2) {
             if (unit_triad(veh->proto_id) == TRIAD_LAND && unit->weapon_type <= WPN_PSI_ATTACK) {
                 if (range == 0)
                     defenders++;
-                enemydist -= 0.2 / max(1, range);
+                enemydist -= 0.2;
             }
         } else if ((1 << veh->faction_id) & enemymask) {
             if (range <= 10) {
@@ -722,12 +742,13 @@ int select_prod(int id) {
     bool build_pods = (base->pop_size > 1 || base->nutrient_surplus > 1)
         && pods < (*tx_current_turn < 60 || (can_build_ships && land_area_full) ? 2 : 1)
         && faction->current_num_bases * 2 < min(80, *tx_map_area_sq_root);
-    if (has_facility(id, FAC_PERIMETER_DEFENSE))
-        enemydist *= 0.5;
+
+    enemymil = sqrt(enemymil / (2 + enemyrange)) * 5.0;
     if (land_area_full)
         enemymil = max((faction->AI_fight * 0.2 + 0.5), enemymil);
-    int reserve = max(2.0, (enemyrange < 12 ? 0.4 : 0.6) * base->mineral_intake_1);
-    double threat = 1 - (1 / (1 + max(0.0, enemymil) + max(0.0, enemydist)));
+    int reserve = max(2, base->mineral_intake_1 / 2);
+    double w = (has_facility(id, FAC_PERIMETER_DEFENSE) ? 0.7 : 1.0);
+    double threat = 1 - (1 / (1 + w * max(0.0, enemymil + enemydist)));
 
     debuglog("select_prod %d %d %d | %d %d %d %d %d %d %d %d | %d %d %.4f %.4f %.4f\n",
     *tx_current_turn, owner, id,

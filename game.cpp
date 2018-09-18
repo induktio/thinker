@@ -92,19 +92,23 @@ int unit_in_tile(MAP* sq) {
     return sq->flags & 0xf;
 }
 
+int veh_move_to(VEH* veh, int x, int y) {
+    veh->waypoint_1_x_coord = x;
+    veh->waypoint_1_y_coord = y;
+    veh->move_status = STATUS_GOTO;
+    veh->status_icon = 'G';
+    debuglog("veh_move_to %d %d %d %d\n", veh->x_coord, veh->y_coord, x, y);
+    return SYNC;
+}
+
+int at_target(VEH* veh) {
+    return (veh->waypoint_1_x_coord < 0 && veh->waypoint_1_y_coord < 0)
+    || (veh->x_coord == veh->waypoint_1_x_coord && veh->y_coord == veh->waypoint_1_y_coord);
+}
+
 bool water_base(int id) {
     MAP* sq = mapsq(tx_bases[id].x_coord, tx_bases[id].y_coord);
     return (sq && sq->altitude < ALTITUDE_MIN_LAND);
-}
-
-bool convoy_not_used(int x, int y) {
-    for (int i=0; i<*tx_total_num_vehicles; i++) {
-        VEH* veh = &tx_vehicles[i];
-        if (veh->x_coord == x && veh->y_coord == y && veh->move_status == STATUS_CONVOY) {
-            return false;
-        }
-    }
-    return true;
 }
 
 bool workable_tile(int x, int y, int fac) {
