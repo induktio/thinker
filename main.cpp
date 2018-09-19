@@ -348,13 +348,21 @@ int bases_in_range(int x, int y, int range) {
     return bases;
 }
 
+int want_base(MAP* tile, int triad) {
+    if (triad != TRIAD_SEA && tile->altitude >= ALTITUDE_MIN_LAND) {
+        return true;
+    } else if (triad == TRIAD_SEA && (tile->level >> 5) == LEVEL_OCEAN_SHELF) {
+        return true;
+    }
+    return false;
+}
+
 int consider_base(int id) {
     VEH* veh = &tx_vehicles[id];
     MAP* tile = mapsq(veh->x_coord, veh->y_coord);
     if (!tile || (tile->rocks & TILE_ROCKY) || (tile->built_items & BASE_DISALLOWED)
     || bases_in_range(veh->x_coord, veh->y_coord, 2) > 0
-    || (unit_triad(veh->proto_id) == TRIAD_LAND && tile->altitude < ALTITUDE_MIN_LAND)
-    || tile->altitude < 30)
+    || !want_base(tile, unit_triad(veh->proto_id)))
         return tx_enemy_move(id);
     tx_action_build(id, 0);
     return SYNC;
@@ -742,6 +750,7 @@ int select_prod(int id) {
     bool build_pods = (base->pop_size > 1 || base->nutrient_surplus > 1)
         && pods < (*tx_current_turn < 60 || (can_build_ships && land_area_full) ? 2 : 1)
         && faction->current_num_bases * 2 < min(80, *tx_map_area_sq_root);
+    bool sea_base = water_base(id);
 
     enemymil = sqrt(enemymil / (2 + enemyrange)) * 5.0;
     if (land_area_full)
@@ -762,20 +771,20 @@ int select_prod(int id) {
             return -FAC_PERIMETER_DEFENSE;
         if (has_planes && faction->SE_police >= -3 && random(3) == 0)
             return find_proto(owner, TRIAD_AIR, COMBAT, false);
-        else if (water_base(id) || (can_build_ships && enemydist < 0.5 && random(3) == 0))
+        else if (sea_base || (can_build_ships && enemydist < 0.5 && random(3) == 0))
             if (random(3) == 0)
                 return find_proto(owner, TRIAD_SEA, WMODE_TRANSPORT, true);
             else
                 return find_proto(owner, TRIAD_SEA, COMBAT, false);
         else
             return find_proto(owner, TRIAD_LAND, COMBAT, false);
-    } else if (has_formers && formers <= min(1, base->pop_size/3)) {
-        if (water_base(id))
+    } else if (has_formers && formers <= min(1, base->pop_size/(sea_base ? 6 : 3))) {
+        if (sea_base)
             return find_proto(owner, TRIAD_SEA, WMODE_TERRAFORMER, true);
         else
             return find_proto(owner, TRIAD_LAND, WMODE_TERRAFORMER, true);
     } else {
-        if (has_supply && crawlers <= min(2, base->pop_size/3) && !water_base(id))
+        if (has_supply && crawlers <= min(2, base->pop_size/3) && !sea_base)
             return BSC_SUPPLY_CRAWLER;
         if (build_pods && !can_build(id, FAC_RECYCLING_TANKS))
             if (can_build_ships && land_area_full)
