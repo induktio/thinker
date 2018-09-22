@@ -62,18 +62,18 @@
 		<ExtraCommands>
 			<Add after='cmd /c copy &quot;$(PROJECT_DIR)$(TARGET_OUTPUT_FILE)&quot; patch\' />
 		</ExtraCommands>
-		<Unit filename="game.cpp" />
-		<Unit filename="game.h" />
-		<Unit filename="inih/ini.c">
+		<Unit filename="src/game.cpp" />
+		<Unit filename="src/game.h" />
+		<Unit filename="src/inih/ini.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="inih/ini.h" />
-		<Unit filename="main.cpp" />
-		<Unit filename="main.h" />
-		<Unit filename="terranx.cpp" />
-		<Unit filename="terranx.h" />
-		<Unit filename="terranx_enums.h" />
-		<Unit filename="terranx_types.h" />
+		<Unit filename="src/inih/ini.h" />
+		<Unit filename="src/main.cpp" />
+		<Unit filename="src/main.h" />
+		<Unit filename="src/terranx.cpp" />
+		<Unit filename="src/terranx.h" />
+		<Unit filename="src/terranx_enums.h" />
+		<Unit filename="src/terranx_types.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />
