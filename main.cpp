@@ -81,10 +81,10 @@ DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2) {
     } else if (mode == 4) {
         VEH* veh = &tx_vehicles[id];
         if (conf.terraform_ai && veh->faction_id <= conf.factions_enabled) {
-            int wmode = tx_units[veh->proto_id].weapon_mode;
-            if (wmode == WMODE_COLONIST) {
+            int w = tx_units[veh->proto_id].weapon_mode;
+            if (w == WMODE_COLONIST) {
                 return consider_base(id);
-            } else if (wmode == WMODE_CONVOY) {
+            } else if (w == WMODE_CONVOY) {
                 return consider_convoy(id);
             }
         }
@@ -104,7 +104,7 @@ DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2) {
         "pop: %d tal: %d dro: %d mins: %2d acc: %2d prod: %3d | %s | %s ]\n",
         *tx_current_turn, owner, id, base.x_coord, base.y_coord,
         base.pop_size, base.talent_total, base.drone_total,
-        base.mineral_intake_1, base.minerals_accumulated,
+        base.mineral_intake, base.minerals_accumulated,
         base.queue_production_id[0], prod_name(base.queue_production_id[0]),
         (char*)&(base.name));
     }
@@ -194,33 +194,6 @@ void print_veh(int id) {
         v.flags_1, v.flags_2, v.move_status, v.status_icon,
         v.x_coord, v.y_coord, v.waypoint_1_x_coord, v.waypoint_1_y_coord,
         v.unk4, v.unk5, v.unk6, v.unk8, v.unk9);
-}
-
-bool has_project(int fac, int id) {
-    int i = tx_secret_projects[id-70];
-    if (i >= 0 && tx_bases[i].faction_id == fac)
-        return true;
-    return false;
-}
-
-bool has_facility(int base_id, int id) {
-    if (id >= 70)
-        return tx_secret_projects[id-70] != -1;
-    int fac = tx_bases[base_id].faction_id;
-    const int freebies[] = {
-        FAC_COMMAND_CENTER, FAC_COMMAND_NEXUS,
-        FAC_NAVAL_YARD, FAC_MARITIME_CONTROL_CENTER,
-        FAC_ENERGY_BANK, FAC_PLANETARY_ENERGY_GRID,
-        FAC_PERIMETER_DEFENSE, FAC_CITIZENS_DEFENSE_FORCE,
-        FAC_AEROSPACE_COMPLEX, FAC_CLOUDBASE_ACADEMY,
-        FAC_BIOENHANCEMENT_CENTER, FAC_CYBORG_FACTORY};
-    for (int i=0; i<12; i+=2) {
-        if (freebies[i] == id && has_project(fac, freebies[i+1]))
-            return true;
-    }
-    BASE* base = &tx_bases[base_id];
-    int val = base->facilities_built[ id/8 ] & (1 << (id % 8));
-    return val != 0;
 }
 
 int find_hq(int faction) {
@@ -391,23 +364,20 @@ int consider_convoy(int id) {
         return SYNC;
     if (veh->home_base_id < 0)
         return tx_veh_skip(id);
+    BASE* base = &tx_bases[veh->home_base_id];
     int res = want_convoy(veh->faction_id, veh->x_coord, veh->y_coord, tile);
-    if (res) {
-        convoys.insert(mp(veh->x_coord, veh->y_coord));
-        veh->type_crawling = res-1;
-        veh->move_status = STATUS_CONVOY;
-        veh->status_icon = 'C';
-        return tx_veh_skip(id);
+    bool prefer_min = base->nutrient_surplus > min(8, 4 + base->pop_size/2);
+    bool forest_sq = tile->built_items & TERRA_FOREST && res == RES_MINERAL
+        && veh->move_status == STATUS_CONVOY;
+
+    if (res && !forest_sq) {
+        return set_convoy(id, res);
     }
     int i = 0;
     int cx = -1;
     int cy = -1;
     TileSearch ts;
     ts.init(veh->x_coord, veh->y_coord, LAND_ONLY);
-    BASE* base = &tx_bases[veh->home_base_id];
-
-    bool prefer_min = base->mineral_surplus < 8 || base->nutrient_surplus > 3
-        || base->mineral_surplus < base->nutrient_surplus*3;
 
     while (i++ < 30 && (tile = ts.get_next()) != NULL) {
         int other = unit_in_tile(tile);
@@ -417,7 +387,7 @@ int consider_convoy(int id) {
             return tx_veh_skip(id);
         }
         res = want_convoy(veh->faction_id, ts.cur_x, ts.cur_y, tile);
-        if (res && tx_can_convoy(ts.cur_x, ts.cur_y)) {
+        if (res) {
             if (prefer_min && res == RES_MINERAL && ~tile->built_items & TERRA_FOREST) {
                 return veh_move_to(veh, ts.cur_x, ts.cur_y);
             } else if (!prefer_min && res == RES_NUTRIENT) {
@@ -429,6 +399,8 @@ int consider_convoy(int id) {
             }
         }
     }
+    if (forest_sq)
+        return set_convoy(id, RES_MINERAL);
     if (cx >= 0)
         return veh_move_to(veh, cx, cy);
     return tx_veh_skip(id);
@@ -603,10 +575,11 @@ int find_facility(int base_id, int fac) {
         FAC_HAB_COMPLEX,
         FAC_AEROSPACE_COMPLEX,
         FAC_COMMAND_CENTER,
-        FAC_ENERGY_BANK,
+        FAC_HYBRID_FOREST,
         FAC_FUSION_LAB,
+        FAC_ENERGY_BANK,
+        FAC_RESEARCH_HOSPITAL,
         FAC_HABITATION_DOME,
-        FAC_RESEARCH_HOSPITAL
     };
     BASE* base = &tx_bases[base_id];
     int proj;
@@ -650,7 +623,9 @@ int find_facility(int base_id, int fac) {
         if (base->energy_surplus < 6 && (f == FAC_NETWORK_NODE || f == FAC_ENERGY_BANK
         || f == FAC_FUSION_LAB || f == FAC_RESEARCH_HOSPITAL))
             continue;
-        if (base->mineral_surplus < 10 && f == FAC_GENEJACK_FACTORY)
+        if (f == FAC_GENEJACK_FACTORY && base->mineral_intake < 16)
+            continue;
+        if (f == FAC_HYBRID_FOREST && base->eco_damage < 2)
             continue;
         if (can_build(base_id, f)) {
             return -1*f;
@@ -755,7 +730,7 @@ int select_prod(int id) {
     enemymil = sqrt(enemymil / (2 + enemyrange)) * 5.0;
     if (land_area_full)
         enemymil = max((faction->AI_fight * 0.2 + 0.5), enemymil);
-    int reserve = max(2, base->mineral_intake_1 / 2);
+    int reserve = max(2, base->mineral_intake / 2);
     double w = (has_facility(id, FAC_PERIMETER_DEFENSE) ? 0.7 : 1.0);
     double threat = 1 - (1 / (1 + w * max(0.0, enemymil + enemydist)));
 

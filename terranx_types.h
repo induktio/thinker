@@ -28,7 +28,7 @@ struct BASE
     int eco_damage;
     int queue_size;
     int queue_production_id[10];
-    int resource_squares_flags;
+    int worked_tiles;
     int specialist_total;
     int pad3;
     int pad4;
@@ -40,10 +40,10 @@ struct BASE
     int pad7;
     int pad8;
     int pad9;
-    int nutrient_intake_1;
-    int mineral_intake_1;
-    int energy_intake_1;
-    int unused_intake_1;
+    int nutrient_intake;
+    int mineral_intake;
+    int energy_intake;
+    int unused_intake;
     int nutrient_intake_2;
     int mineral_intake_2;
     int energy_intake_2;

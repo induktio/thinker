@@ -34,6 +34,39 @@ bool has_weapon(int fac, int wpn) {
     return knows_tech(fac, tx_weapon[wpn].preq_tech);
 }
 
+bool has_terra(int fac, int act) {
+    if (act >= FORMER_CONDENSER && act <= FORMER_LOWER_LAND
+    && has_project(fac, FAC_WEATHER_PARADIGM))
+        return true;
+    return knows_tech(fac, tx_terraform[act].preq_tech);
+}
+
+bool has_project(int fac, int id) {
+    int i = tx_secret_projects[id-70];
+    if (i >= 0 && tx_bases[i].faction_id == fac)
+        return true;
+    return false;
+}
+
+bool has_facility(int base_id, int id) {
+    if (id >= 70)
+        return tx_secret_projects[id-70] != -1;
+    int fac = tx_bases[base_id].faction_id;
+    const int freebies[] = {
+        FAC_COMMAND_CENTER, FAC_COMMAND_NEXUS,
+        FAC_NAVAL_YARD, FAC_MARITIME_CONTROL_CENTER,
+        FAC_ENERGY_BANK, FAC_PLANETARY_ENERGY_GRID,
+        FAC_PERIMETER_DEFENSE, FAC_CITIZENS_DEFENSE_FORCE,
+        FAC_AEROSPACE_COMPLEX, FAC_CLOUDBASE_ACADEMY,
+        FAC_BIOENHANCEMENT_CENTER, FAC_CYBORG_FACTORY};
+    for (int i=0; i<12; i+=2) {
+        if (freebies[i] == id && has_project(fac, freebies[i+1]))
+            return true;
+    }
+    int val = tx_bases[base_id].facilities_built[ id/8 ] & (1 << (id % 8));
+    return val != 0;
+}
+
 int unit_triad(int id) {
     return tx_chassis[tx_units[id].chassis_type].triad;
 }
@@ -99,6 +132,23 @@ int veh_move_to(VEH* veh, int x, int y) {
     veh->status_icon = 'G';
     debuglog("veh_move_to %d %d %d %d\n", veh->x_coord, veh->y_coord, x, y);
     return SYNC;
+}
+
+int set_action(int id, int act, char icon) {
+    VEH* veh = &tx_vehicles[id];
+    veh->move_status = act;
+    veh->status_icon = icon;
+    veh->flags_1 &= 0xFFFEFFFF;
+    return SYNC;
+}
+
+int set_convoy(int id, int res) {
+    VEH* veh = &tx_vehicles[id];
+    convoys.insert(mp(veh->x_coord, veh->y_coord));
+    veh->type_crawling = res-1;
+    veh->move_status = STATUS_CONVOY;
+    veh->status_icon = 'C';
+    return tx_veh_skip(id);
 }
 
 int at_target(VEH* veh) {

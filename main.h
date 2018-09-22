@@ -40,10 +40,6 @@
 #include "inih/ini.h"
 #include "terranx.h"
 
-DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2);
-
-extern FILE* debug_log;
-
 static_assert(sizeof(struct Faction) == 8396, "");
 static_assert(sizeof(struct BASE) == 308, "");
 static_assert(sizeof(struct VEH) == 52, "");
@@ -61,11 +57,17 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define RES_NUTRIENT 1
 #define RES_MINERAL 2
 #define RES_ENERGY 3
+#define STATUS_IDLE 0
 #define STATUS_CONVOY 3
 #define STATUS_GOTO 24
 
 #define BASE_DISALLOWED (TERRA_BASE_IN_TILE | TERRA_MONOLITH | TERRA_FUNGUS | TERRA_THERMAL_BORE)
 #define ALTITUDE_MIN_LAND 60
+
+DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2);
+
+extern FILE* debug_log;
+extern std::set<std::pair <int, int>> convoys;
 
 struct Config {
     int free_formers;
