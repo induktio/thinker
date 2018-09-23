@@ -30,16 +30,18 @@ int best_reactor(int fac);
 int offense_value(UNIT* u);
 int defense_value(UNIT* u);
 int random(int n);
-int wrap(int a, int b);
+int wrap(int a);
 int map_range(int x1, int y1, int x2, int y2);
 MAP* mapsq(int x, int y);
 int unit_in_tile(MAP* sq);
 int veh_move_to(VEH* veh, int x, int y);
+int set_road_to(int id, int x, int y);
 int set_action(int id, int act, char icon);
 int set_convoy(int id, int res);
 int at_target(VEH* veh);
 bool water_base(int id);
 bool workable_tile(int x, int y, int fac);
+int bases_in_range(int x, int y, int range);
 int coast_tiles(int x, int y);
 
 class TileSearch {

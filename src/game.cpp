@@ -98,8 +98,11 @@ int random(int n) {
     return rand() % (n != 0 ? n : 1);
 }
 
-int wrap(int a, int b) {
-    return (!*tx_map_toggle_flat && a < 0 ? a + b : a);
+int wrap(int a) {
+    if (!*tx_map_toggle_flat)
+        return (a < 0 ? a + *tx_map_axis_x : a % *tx_map_axis_x);
+    else
+        return a;
 }
 
 int map_range(int x1, int y1, int x2, int y2) {
@@ -134,6 +137,16 @@ int veh_move_to(VEH* veh, int x, int y) {
     return SYNC;
 }
 
+int set_road_to(int id, int x, int y) {
+    VEH* veh = &tx_vehicles[id];
+    veh->waypoint_1_x_coord = x;
+    veh->waypoint_1_y_coord = y;
+    veh->move_status = STATUS_ROAD_TO;
+    veh->status_icon = 'R';
+    veh->flags_1 &= 0xFFFEFFFF;
+    return SYNC;
+}
+
 int set_action(int id, int act, char icon) {
     VEH* veh = &tx_vehicles[id];
     veh->move_status = act;
@@ -164,7 +177,7 @@ bool water_base(int id) {
 bool workable_tile(int x, int y, int fac) {
     MAP* tile;
     for (const int* t : offset_20) {
-        int x2 = wrap(x + t[0], *tx_map_axis_x);
+        int x2 = wrap(x + t[0]);
         int y2 = y + t[1];
         tile = mapsq(x2, y2);
         if (tile && tile->owner == fac && tile->built_items & TERRA_BASE_IN_TILE) {
@@ -174,11 +187,27 @@ bool workable_tile(int x, int y, int fac) {
     return false;
 }
 
+int bases_in_range(int x, int y, int range) {
+    MAP* tile;
+    int n = 0;
+    int bases = 0;
+    for (int i=-range*2; i<=range*2; i++) {
+        for (int j=-range*2 + abs(i); j<=range*2 - abs(i); j+=2) {
+            tile = mapsq(wrap(x + i), y + j);
+            n++;
+            if (tile && tile->built_items & TERRA_BASE_IN_TILE)
+                bases++;
+        }
+    }
+    debuglog("bases_in_range %d %d %d %d %d\n", x, y, range, n, bases);
+    return bases;
+}
+
 int coast_tiles(int x, int y) {
     MAP* tile;
     int n = 0;
     for (const int* t : offset) {
-        tile = mapsq(wrap(x + t[0], *tx_map_axis_x), y + t[1]);
+        tile = mapsq(wrap(x + t[0]), y + t[1]);
         if (tile && tile->altitude < ALTITUDE_MIN_LAND) {
             n++;
         }
@@ -195,6 +224,7 @@ void TileSearch::init(int x, int y, int tp) {
     tile = mapsq(x, y);
     if (tile) {
         items++;
+        tail = 1;
         newtiles[0] = mp(x, y);
         oldtiles.insert(mp(x, y));
     }
@@ -206,6 +236,7 @@ int TileSearch::visited() {
 
 MAP* TileSearch::get_next() {
     while (items > 0) {
+        bool first = oldtiles.size() == 1;
         cur_x = newtiles[head].first;
         cur_y = newtiles[head].second;
         head = (head + 1) % QSIZE;
@@ -214,10 +245,10 @@ MAP* TileSearch::get_next() {
             continue;
         bool skip = (type == LAND_ONLY && tile->altitude < ALTITUDE_MIN_LAND) ||
                     (type == WATER_ONLY && tile->altitude >= ALTITUDE_MIN_LAND);
-        if (oldtiles.size() > 1 && skip)
+        if (!first && skip)
             continue;
         for (const int* t : offset) {
-            int x2 = wrap(cur_x + t[0], *tx_map_axis_x);
+            int x2 = wrap(cur_x + t[0]);
             int y2 = cur_y + t[1];
             if (items < QSIZE && y2 >= 0 && y2 < *tx_map_axis_y && oldtiles.count(mp(x2, y2)) == 0) {
                 newtiles[tail] = mp(x2, y2);
@@ -226,7 +257,9 @@ MAP* TileSearch::get_next() {
                 oldtiles.insert(mp(x2, y2));
             }
         }
-        return tile;
+        if (!first) {
+            return tile;
+        }
     }
     return NULL;
 }

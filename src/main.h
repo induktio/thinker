@@ -34,9 +34,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <windows.h>
+#include <limits.h>
 #include <math.h>
 #include <set>
-#include <limits>
 #include "inih/ini.h"
 #include "terranx.h"
 
@@ -45,6 +45,7 @@ static_assert(sizeof(struct BASE) == 308, "");
 static_assert(sizeof(struct VEH) == 52, "");
 static_assert(sizeof(struct MAP) == 44, "");
 
+#define MAPSZ 256
 #define QSIZE 512
 #define BASES 512
 #define COMBAT 0
@@ -60,6 +61,7 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define STATUS_IDLE 0
 #define STATUS_CONVOY 3
 #define STATUS_GOTO 24
+#define STATUS_ROAD_TO 27
 
 #define BASE_DISALLOWED (TERRA_BASE_IN_TILE | TERRA_MONOLITH | TERRA_FUNGUS | TERRA_THERMAL_BORE)
 #define ALTITUDE_MIN_LAND 60
@@ -68,6 +70,7 @@ DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2);
 
 extern FILE* debug_log;
 extern std::set<std::pair <int, int>> convoys;
+extern std::set<std::pair <int, int>> boreholes;
 
 struct Config {
     int free_formers;

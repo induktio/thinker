@@ -2,12 +2,14 @@ using namespace std;
 
 #include "main.h"
 #include "game.h"
+#include "move.h"
 
 FILE* debug_log;
 Config conf;
 
 int base_mins[BASES];
 set<pair <int, int>> convoys;
+set<pair <int, int>> boreholes;
 
 static int handler(void* user, const char* section, const char* name, const char* value) {
     Config* pconfig = (Config*)user;
@@ -86,6 +88,8 @@ DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2) {
                 return consider_base(id);
             } else if (w == WMODE_CONVOY) {
                 return consider_convoy(id);
+            } else if (w == WMODE_TERRAFORMER && unit_triad(veh->proto_id) != TRIAD_SEA) {
+                return former_move(id);
             }
         }
         return tx_enemy_move(id);
@@ -168,7 +172,7 @@ int turn_upkeep() {
     if (DEBUG) {
         *tx_game_rules_basic |= RULES_DEBUG_MODE;
     }
-    convoys.clear();
+    move_upkeep();
 
     return 0;
 }
@@ -305,22 +309,6 @@ bool switch_to_sea(int x, int y) {
     return land / max(1, bases) < 14;
 }
 
-int bases_in_range(int x, int y, int range) {
-    MAP* tile;
-    int n = 0;
-    int bases = 0;
-    for (int i=-range*2; i<=range*2; i++) {
-        for (int j=-range*2 + abs(i); j<=range*2 - abs(i); j+=2) {
-            tile = mapsq(wrap(x + i, *tx_map_axis_x), y + j);
-            n++;
-            if (tile && tile->built_items & TERRA_BASE_IN_TILE)
-                bases++;
-        }
-    }
-    debuglog("bases_in_range %d %d %d %d %d\n", x, y, range, n, bases);
-    return bases;
-}
-
 int want_base(MAP* tile, int triad) {
     if (triad != TRIAD_SEA && tile->altitude >= ALTITUDE_MIN_LAND) {
         return true;
@@ -379,7 +367,7 @@ int consider_convoy(int id) {
     TileSearch ts;
     ts.init(veh->x_coord, veh->y_coord, LAND_ONLY);
 
-    while (i++ < 30 && (tile = ts.get_next()) != NULL) {
+    while (i++ < 40 && (tile = ts.get_next()) != NULL) {
         int other = unit_in_tile(tile);
         if (other > 0 && tx_factions[veh->faction_id].diplo_status[other] & DIPLO_VENDETTA) {
             debuglog("convoy_skip %d %d %d %d %d %d\n", veh->x_coord, veh->y_coord,
@@ -406,113 +394,7 @@ int consider_convoy(int id) {
     return tx_veh_skip(id);
 }
 
-bool can_bridge(int x, int y) {
-    if (coast_tiles(x, y) < 3)
-        return false;
-    const int range = 4;
-    MAP* tile;
-    TileSearch ts;
-    ts.init(x, y, LAND_ONLY);
-    while (ts.visited() < 120 && ts.get_next() != NULL);
-
-    int n = 0;
-    for (int i=-range*2; i<=range*2; i++) {
-        for (int j=-range*2 + abs(i); j<=range*2 - abs(i); j+=2) {
-            int x2 = wrap(x + i, *tx_map_axis_x);
-            int y2 = y + j;
-            tile = mapsq(x2, y2);
-            if (tile && y2 > 0 && y2 < *tx_map_axis_y-1
-            && tile->altitude >= ALTITUDE_MIN_LAND
-            && ts.oldtiles.count(mp(x2, y2)) == 0) {
-                n++;
-            }
-        }
-    }
-    debuglog("bridge %d %d %d %d\n", x, y, ts.visited(), n);
-    return n > 4;
-}
-
-bool can_borehole(int x, int y, int bonus) {
-    MAP* tile = mapsq(x, y);
-    if (!tile || tile->built_items & BASE_DISALLOWED || bonus == RES_NUTRIENT)
-        return false;
-    if (bonus == RES_NONE && (tile->level & TILE_RAINY || tile->rocks & TILE_ROLLING))
-        return false;
-    if (!workable_tile(x, y, tile->owner))
-        return false;
-    int level = tile->level >> 5;
-    for (const int* t : offset) {
-        int x2 = wrap(x + t[0], *tx_map_axis_x);
-        int y2 = y + t[1];
-        tile = mapsq(x2, y2);
-        if (!tile || tile->built_items & TERRA_THERMAL_BORE)
-            return false;
-        int level2 = tile->level >> 5;
-        if (level2 < level && level2 > LEVEL_OCEAN_SHELF)
-            return false;
-        for (int j=0; j<*tx_total_num_vehicles; j++) {
-            VEH* veh = &tx_vehicles[j];
-            if (veh->x_coord == x2 && veh->y_coord == y2 && veh->move_status == 18) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
 int terraform_action(int id, int action, int flag) {
-    VEH* veh = &tx_vehicles[id];
-    MAP* sq = mapsq(veh->x_coord, veh->y_coord);
-    int fac = veh->faction_id;
-
-    if (conf.terraform_ai && fac <= conf.factions_enabled
-    && (1 << fac) & ~(*tx_human_players) && sq) {
-        if (sq->altitude < ALTITUDE_MIN_LAND || action >= FORMER_CONDENSER)
-            return tx_action_terraform(id, action, flag);
-
-        bool rocky_sq = sq->rocks & TILE_ROCKY;
-        int bonus = tx_bonus_at(veh->x_coord, veh->y_coord);
-        bool has_wp = has_project(fac, FAC_WEATHER_PARADIGM);
-        bool has_eco = has_wp || knows_tech(fac, tx_terraform[FORMER_CONDENSER].preq_tech);
-        bool has_land = has_wp || knows_tech(fac, tx_terraform[FORMER_RAISE_LAND].preq_tech);
-
-        if (has_land && can_bridge(veh->x_coord, veh->y_coord)) {
-            int cost = tx_terraform_cost(veh->x_coord, veh->y_coord, fac);
-            if (cost < tx_factions[fac].energy_credits/10) {
-                debuglog("bridge_cost %d %d %d %d\n", veh->x_coord, veh->y_coord, fac, cost);
-                tx_factions[fac].energy_credits -= cost;
-                return tx_action_terraform(id, FORMER_RAISE_LAND, flag);
-            }
-        }
-        if (has_eco && can_borehole(veh->x_coord, veh->y_coord, bonus)) {
-            return tx_action_terraform(id, FORMER_THERMAL_BOREHOLE, flag);
-        }
-        if (!rocky_sq && sq->built_items & TERRA_CONDENSER && !(sq->built_items & TERRA_FARM))
-            return tx_action_terraform(id, FORMER_FARM, flag);
-        if (rocky_sq && bonus == RES_NUTRIENT)
-            return tx_action_terraform(id, FORMER_LEVEL_TERRAIN, flag);
-        if (sq->landmarks & 0x4) { // Jungle
-            if (rocky_sq)
-                return tx_action_terraform(id, FORMER_LEVEL_TERRAIN, flag);
-            else if (action==FORMER_SOLAR_COLLECTOR)
-                return tx_action_terraform(id, FORMER_FOREST, flag);
-        }
-        if (rocky_sq && action==FORMER_SOLAR_COLLECTOR) {
-            return tx_action_terraform(id, FORMER_MINE, flag);
-        } else if (action == FORMER_FARM && bonus != RES_NUTRIENT) {
-            if (has_eco && (sq->level & TILE_RAINY || sq->rocks & TILE_ROLLING))
-                return tx_action_terraform(id, FORMER_FARM, flag);
-            else
-                return tx_action_terraform(id, FORMER_FOREST, flag);
-        } else if (action == FORMER_CONDENSER && rocky_sq) {
-            return tx_action_terraform(id, FORMER_MINE, flag);
-        } else if (action == FORMER_MINE && !rocky_sq) {
-            return tx_action_terraform(id, FORMER_FOREST, flag);
-        } else if (sq->built_items & TERRA_FARM) {
-            if (has_eco && !(sq->built_items & TERRA_CONDENSER))
-                return tx_action_terraform(id, FORMER_CONDENSER, flag);
-        }
-    }
     return tx_action_terraform(id, action, flag);
 }
 
