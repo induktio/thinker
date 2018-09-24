@@ -128,12 +128,12 @@ int unit_in_tile(MAP* sq) {
     return sq->flags & 0xf;
 }
 
-int veh_move_to(VEH* veh, int x, int y) {
+int set_move_to(int id, int x, int y) {
+    VEH* veh = &tx_vehicles[id];
     veh->waypoint_1_x_coord = x;
     veh->waypoint_1_y_coord = y;
     veh->move_status = STATUS_GOTO;
     veh->status_icon = 'G';
-    debuglog("veh_move_to %d %d %d %d\n", veh->x_coord, veh->y_coord, x, y);
     return SYNC;
 }
 
@@ -143,12 +143,13 @@ int set_road_to(int id, int x, int y) {
     veh->waypoint_1_y_coord = y;
     veh->move_status = STATUS_ROAD_TO;
     veh->status_icon = 'R';
-    veh->flags_1 &= 0xFFFEFFFF;
     return SYNC;
 }
 
 int set_action(int id, int act, char icon) {
     VEH* veh = &tx_vehicles[id];
+    if (act == FORMER_THERMAL_BORE+4)
+        boreholes.insert(mp(veh->x_coord, veh->y_coord));
     veh->move_status = act;
     veh->status_icon = icon;
     veh->flags_1 &= 0xFFFEFFFF;
@@ -185,6 +186,19 @@ bool workable_tile(int x, int y, int fac) {
         }
     }
     return false;
+}
+
+int nearby_items(int x, int y, int item) {
+    int n = 0;
+    for (const int* t : offset) {
+        int x2 = wrap(x + t[0]);
+        int y2 = y + t[1];
+        MAP* tile = mapsq(x2, y2);
+        if (tile && tile->built_items & item) {
+            n++;
+        }
+    }
+    return n;
 }
 
 int bases_in_range(int x, int y, int range) {

@@ -1,4 +1,3 @@
-using namespace std;
 
 #include "main.h"
 #include "game.h"
@@ -8,8 +7,8 @@ FILE* debug_log;
 Config conf;
 
 int base_mins[BASES];
-set<pair <int, int>> convoys;
-set<pair <int, int>> boreholes;
+std::set<std::pair <int, int>> convoys;
+std::set<std::pair <int, int>> boreholes;
 
 static int handler(void* user, const char* section, const char* name, const char* value) {
     Config* pconfig = (Config*)user;
@@ -173,6 +172,7 @@ int turn_upkeep() {
         *tx_game_rules_basic |= RULES_DEBUG_MODE;
     }
     move_upkeep();
+    fflush(debug_log);
 
     return 0;
 }
@@ -330,7 +330,8 @@ int consider_base(int id) {
 }
 
 int want_convoy(int fac, int x, int y, MAP* tile) {
-    if (tile && tile->owner == fac && !convoys.count(mp(x, y))) {
+    if (tile && tile->owner == fac && !convoys.count(mp(x, y))
+    && ~tile->built_items & TERRA_BASE_IN_TILE) {
         int bonus = tx_bonus_at(x, y);
         if (bonus == RES_ENERGY)
             return RES_NONE;
@@ -377,9 +378,9 @@ int consider_convoy(int id) {
         res = want_convoy(veh->faction_id, ts.cur_x, ts.cur_y, tile);
         if (res) {
             if (prefer_min && res == RES_MINERAL && ~tile->built_items & TERRA_FOREST) {
-                return veh_move_to(veh, ts.cur_x, ts.cur_y);
+                return set_move_to(id, ts.cur_x, ts.cur_y);
             } else if (!prefer_min && res == RES_NUTRIENT) {
-                return veh_move_to(veh, ts.cur_x, ts.cur_y);
+                return set_move_to(id, ts.cur_x, ts.cur_y);
             }
             if (res == RES_MINERAL && cx == -1) {
                 cx = ts.cur_x;
@@ -390,7 +391,7 @@ int consider_convoy(int id) {
     if (forest_sq)
         return set_convoy(id, RES_MINERAL);
     if (cx >= 0)
-        return veh_move_to(veh, cx, cy);
+        return set_move_to(id, cx, cy);
     return tx_veh_skip(id);
 }
 
@@ -457,7 +458,6 @@ int find_facility(int base_id, int fac) {
         FAC_HAB_COMPLEX,
         FAC_AEROSPACE_COMPLEX,
         FAC_COMMAND_CENTER,
-        FAC_HYBRID_FOREST,
         FAC_FUSION_LAB,
         FAC_ENERGY_BANK,
         FAC_RESEARCH_HOSPITAL,
@@ -506,8 +506,6 @@ int find_facility(int base_id, int fac) {
         || f == FAC_FUSION_LAB || f == FAC_RESEARCH_HOSPITAL))
             continue;
         if (f == FAC_GENEJACK_FACTORY && base->mineral_intake < 16)
-            continue;
-        if (f == FAC_HYBRID_FOREST && base->eco_damage < 2)
             continue;
         if (can_build(base_id, f)) {
             return -1*f;
