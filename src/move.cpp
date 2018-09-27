@@ -44,6 +44,95 @@ void move_upkeep() {
     }
 }
 
+int want_convoy(int fac, int x, int y, MAP* sq) {
+    if (sq && sq->owner == fac && !convoys.count(mp(x, y))
+    && ~sq->built_items & TERRA_BASE_IN_TILE) {
+        int bonus = tx_bonus_at(x, y);
+        if (bonus == RES_ENERGY)
+            return RES_NONE;
+        else if (sq->built_items & TERRA_CONDENSER)
+            return RES_NUTRIENT;
+        else if (sq->built_items & TERRA_MINE && sq->rocks & TILE_ROCKY)
+            return RES_MINERAL;
+        else if (sq->built_items & TERRA_FOREST && ~sq->built_items & TERRA_RIVER
+        && bonus != RES_NUTRIENT)
+            return RES_MINERAL;
+    }
+    return RES_NONE;
+}
+
+int crawler_move(int id) {
+    VEH* veh = &tx_vehicles[id];
+    MAP* sq = mapsq(veh->x_coord, veh->y_coord);
+    if (!sq || veh->home_base_id < 0)
+        return tx_veh_skip(id);
+    if (!at_target(veh))
+        return SYNC;
+    BASE* base = &tx_bases[veh->home_base_id];
+    int res = want_convoy(veh->faction_id, veh->x_coord, veh->y_coord, sq);
+    bool prefer_min = base->nutrient_surplus > min(8, 4 + base->pop_size/2);
+    bool forest_sq = sq->built_items & TERRA_FOREST && res == RES_MINERAL
+        && veh->move_status == STATUS_CONVOY;
+
+    if (res && !forest_sq) {
+        return set_convoy(id, res);
+    }
+    int i = 0;
+    int cx = -1;
+    int cy = -1;
+    TileSearch ts;
+    ts.init(veh->x_coord, veh->y_coord, LAND_ONLY);
+
+    while (i++ < 40 && (sq = ts.get_next()) != NULL) {
+        int other = unit_in_tile(sq);
+        if (other > 0 && tx_factions[veh->faction_id].diplo_status[other] & DIPLO_VENDETTA) {
+            debuglog("convoy_skip %d %d %d %d %d %d\n", veh->x_coord, veh->y_coord,
+                ts.cur_x, ts.cur_y, veh->faction_id, other);
+            return tx_veh_skip(id);
+        }
+        res = want_convoy(veh->faction_id, ts.cur_x, ts.cur_y, sq);
+        if (res) {
+            if (prefer_min && res == RES_MINERAL && ~sq->built_items & TERRA_FOREST) {
+                return set_move_to(id, ts.cur_x, ts.cur_y);
+            } else if (!prefer_min && res == RES_NUTRIENT) {
+                return set_move_to(id, ts.cur_x, ts.cur_y);
+            }
+            if (res == RES_MINERAL && cx == -1) {
+                cx = ts.cur_x;
+                cy = ts.cur_y;
+            }
+        }
+    }
+    if (forest_sq)
+        return set_convoy(id, RES_MINERAL);
+    if (cx >= 0)
+        return set_move_to(id, cx, cy);
+    return tx_veh_skip(id);
+}
+
+int want_base(MAP* sq, int triad) {
+    if (triad != TRIAD_SEA && sq->altitude >= ALTITUDE_MIN_LAND) {
+        return true;
+    } else if (triad == TRIAD_SEA && (sq->level >> 5) == LEVEL_OCEAN_SHELF) {
+        return true;
+    }
+    return false;
+}
+
+int colony_move(int id) {
+    VEH* veh = &tx_vehicles[id];
+    MAP* sq = mapsq(veh->x_coord, veh->y_coord);
+
+    if (sq && !(sq->rocks & TILE_ROCKY)
+    && !(sq->built_items & (BASE_DISALLOWED | TERRA_CONDENSER))
+    && !bases_in_range(veh->x_coord, veh->y_coord, 2)
+    && want_base(sq, unit_triad(veh->proto_id))) {
+        tx_action_build(id, 0);
+        return SYNC;
+    }
+    return tx_enemy_move(id);
+}
+
 bool can_bridge(int x, int y) {
     if (coast_tiles(x, y) < 3)
         return false;
@@ -71,7 +160,7 @@ bool can_bridge(int x, int y) {
 
 bool can_borehole(int x, int y, int bonus) {
     MAP* sq = mapsq(x, y);
-    if (!sq || sq->built_items & BASE_DISALLOWED || bonus == RES_NUTRIENT)
+    if (!sq || sq->built_items & (BASE_DISALLOWED | IMP_ADVANCED) || bonus == RES_NUTRIENT)
         return false;
     if (bonus == RES_NONE && sq->rocks & TILE_ROLLING)
         return false;

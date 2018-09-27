@@ -63,7 +63,6 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define STATUS_GOTO 24
 #define STATUS_ROAD_TO 27
 
-#define BASE_DISALLOWED (TERRA_BASE_IN_TILE | TERRA_MONOLITH | TERRA_FUNGUS | TERRA_THERMAL_BORE)
 #define ALTITUDE_MIN_LAND 60
 
 DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2);
@@ -86,10 +85,9 @@ struct Config {
 
 int turn_upkeep();
 int select_prod(int id);
-int consider_base(int id);
-int consider_convoy(int id);
-int terraform_action(int veh, int action, int flag);
+int find_facility(int id);
 int tech_value(int tech, int fac, int value);
+bool can_build(int base_id, int id);
 void print_veh(int id);
 
 #endif // __MAIN_H__

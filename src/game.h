@@ -28,6 +28,8 @@ bool has_project(int fac, int id);
 bool has_facility(int base_id, int id);
 int unit_triad(int id);
 int unit_speed(int id);
+int best_armor(int fac);
+int best_weapon(int fac);
 int best_reactor(int fac);
 int offense_value(UNIT* u);
 int defense_value(UNIT* u);

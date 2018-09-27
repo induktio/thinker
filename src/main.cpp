@@ -6,7 +6,6 @@
 FILE* debug_log;
 Config conf;
 
-int base_mins[BASES];
 std::set<std::pair <int, int>> convoys;
 std::set<std::pair <int, int>> boreholes;
 
@@ -40,7 +39,6 @@ static int handler(void* user, const char* section, const char* name, const char
 DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LPVOID UNUSED(lpvReserved)) {
     switch (fdwReason) {
         case DLL_PROCESS_ATTACH:
-            memset(base_mins, 0, BASES);
             conf.free_formers = 0;
             conf.satellites_nutrient = 0;
             conf.satellites_mineral = 0;
@@ -76,7 +74,7 @@ DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2) {
     assert(mode > 0 && val1 >= 0 && val2 > -128 && id >= 0 && id <= 2048);
 
     if (mode == 2) {
-        return terraform_action(id, val1-4, val2);
+        return tx_action_terraform(id, val1-4, val2);
     } else if (mode == 3) {
         return tech_value(id, val1, val2);
     } else if (mode == 4) {
@@ -84,9 +82,9 @@ DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2) {
         if (conf.terraform_ai && veh->faction_id <= conf.factions_enabled) {
             int w = tx_units[veh->proto_id].weapon_mode;
             if (w == WMODE_COLONIST) {
-                return consider_base(id);
+                return colony_move(id);
             } else if (w == WMODE_CONVOY) {
-                return consider_convoy(id);
+                return crawler_move(id);
             } else if (w == WMODE_TERRAFORMER && unit_triad(veh->proto_id) != TRIAD_SEA) {
                 return former_move(id);
             }
@@ -98,33 +96,43 @@ DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2) {
         return 0;
     }
 
-    BASE base = tx_bases[id];
-    int owner = base.faction_id;
-    int last_choice = 0;
+    BASE* base = &tx_bases[id];
+    int prod = base->queue_production_id[0];
+    int owner = base->faction_id;
+    int choice = 0;
 
     if (DEBUG) {
         debuglog("[ turn: %d faction: %d base: %2d x: %2d y: %2d "\
         "pop: %d tal: %d dro: %d mins: %2d acc: %2d prod: %3d | %s | %s ]\n",
-        *tx_current_turn, owner, id, base.x_coord, base.y_coord,
-        base.pop_size, base.talent_total, base.drone_total,
-        base.mineral_intake, base.minerals_accumulated,
-        base.queue_production_id[0], prod_name(base.queue_production_id[0]),
-        (char*)&(base.name));
+        *tx_current_turn, owner, id, base->x_coord, base->y_coord,
+        base->pop_size, base->talent_total, base->drone_total,
+        base->mineral_intake, base->minerals_accumulated,
+        prod, prod_name(prod), (char*)&(base->name));
     }
 
     if (1 << owner & *tx_human_players) {
         debuglog("skipping human base\n");
-        last_choice = base.queue_production_id[0];
+        choice = base->queue_production_id[0];
     } else if (!conf.production_ai || owner > conf.factions_enabled) {
         debuglog("skipping computer base\n");
-        last_choice = tx_base_prod_choices(id, 0, 0, 0);
+        choice = tx_base_prod_choices(id, 0, 0, 0);
     } else {
-        last_choice = select_prod(id);
-        debuglog("choice: %d %s\n", last_choice, prod_name(last_choice));
+        if (prod < 0 && !can_build(id, abs(prod))) {
+            debuglog("BUILD CHANGE\n");
+            if (base->minerals_accumulated > tx_basic->retool_exemption)
+                choice = find_facility(id);
+            else
+                choice = select_prod(id);
+        } else if (base->status_flags & BASE_PRODUCTION_DONE) {
+            choice = select_prod(id);
+        } else {
+            debuglog("BUILD OLD\n");
+            choice = prod;
+        }
+        debuglog("choice: %d %s\n", choice, prod_name(choice));
     }
-    base_mins[id] = tx_bases[id].minerals_accumulated;
     fflush(debug_log);
-    return last_choice;
+    return choice;
 }
 
 int turn_upkeep() {
@@ -132,6 +140,7 @@ int turn_upkeep() {
         if (1 << i & *tx_human_players || !tx_factions[i].current_num_bases)
             continue;
         int rec = best_reactor(i);
+
         if (has_weapon(i, WPN_PROBE_TEAM)) {
             if (has_chassis(i, CHS_FOIL)) {
                 tx_propose_proto(i, CHS_FOIL, WPN_PROBE_TEAM, ARM_NO_ARMOR, 0,
@@ -224,7 +233,7 @@ bool can_build(int base_id, int id) {
     || (id == FAC_NESSUS_MINING_STATION && faction->satellites_mineral >= MAX_SAT)
     || (id == FAC_ORBITAL_DEFENSE_POD && faction->satellites_ODP >= MAX_SAT))
         return false;
-    return knows_tech(base->faction_id, tx_facilities[id].preq)
+    return knows_tech(base->faction_id, tx_facility[id].preq_tech)
     && !has_facility(base_id, id);
 }
 
@@ -264,8 +273,8 @@ int find_project(int fac) {
         int projects[40];
         int n = 0;
         for (int i=70; i<107; i++) {
-            if (tx_secret_projects[i-70] == -1 && knows_tech(fac, tx_facilities[i].preq)) {
-                debuglog("find_project %d %d %s\n", fac, i, (char*)tx_facilities[i].name);
+            if (tx_secret_projects[i-70] == -1 && knows_tech(fac, tx_facility[i].preq_tech)) {
+                debuglog("find_project %d %d %s\n", fac, i, (char*)tx_facility[i].name);
                 projects[n++] = i;
             }
         }
@@ -307,96 +316,6 @@ bool switch_to_sea(int x, int y) {
     }
     debuglog("switch_to_sea %d %d %d %d\n", x, y, land, bases);
     return land / max(1, bases) < 14;
-}
-
-int want_base(MAP* tile, int triad) {
-    if (triad != TRIAD_SEA && tile->altitude >= ALTITUDE_MIN_LAND) {
-        return true;
-    } else if (triad == TRIAD_SEA && (tile->level >> 5) == LEVEL_OCEAN_SHELF) {
-        return true;
-    }
-    return false;
-}
-
-int consider_base(int id) {
-    VEH* veh = &tx_vehicles[id];
-    MAP* tile = mapsq(veh->x_coord, veh->y_coord);
-    if (!tile || (tile->rocks & TILE_ROCKY) || (tile->built_items & BASE_DISALLOWED)
-    || bases_in_range(veh->x_coord, veh->y_coord, 2) > 0
-    || !want_base(tile, unit_triad(veh->proto_id)))
-        return tx_enemy_move(id);
-    tx_action_build(id, 0);
-    return SYNC;
-}
-
-int want_convoy(int fac, int x, int y, MAP* tile) {
-    if (tile && tile->owner == fac && !convoys.count(mp(x, y))
-    && ~tile->built_items & TERRA_BASE_IN_TILE) {
-        int bonus = tx_bonus_at(x, y);
-        if (bonus == RES_ENERGY)
-            return RES_NONE;
-        else if (tile->built_items & TERRA_CONDENSER)
-            return RES_NUTRIENT;
-        else if (tile->built_items & TERRA_MINE && tile->rocks & TILE_ROCKY)
-            return RES_MINERAL;
-        else if (tile->built_items & TERRA_FOREST && ~tile->built_items & TERRA_RIVER
-        && bonus != RES_NUTRIENT)
-            return RES_MINERAL;
-    }
-    return RES_NONE;
-}
-
-int consider_convoy(int id) {
-    VEH* veh = &tx_vehicles[id];
-    MAP* tile = mapsq(veh->x_coord, veh->y_coord);
-    if (!at_target(veh))
-        return SYNC;
-    if (veh->home_base_id < 0)
-        return tx_veh_skip(id);
-    BASE* base = &tx_bases[veh->home_base_id];
-    int res = want_convoy(veh->faction_id, veh->x_coord, veh->y_coord, tile);
-    bool prefer_min = base->nutrient_surplus > min(8, 4 + base->pop_size/2);
-    bool forest_sq = tile->built_items & TERRA_FOREST && res == RES_MINERAL
-        && veh->move_status == STATUS_CONVOY;
-
-    if (res && !forest_sq) {
-        return set_convoy(id, res);
-    }
-    int i = 0;
-    int cx = -1;
-    int cy = -1;
-    TileSearch ts;
-    ts.init(veh->x_coord, veh->y_coord, LAND_ONLY);
-
-    while (i++ < 40 && (tile = ts.get_next()) != NULL) {
-        int other = unit_in_tile(tile);
-        if (other > 0 && tx_factions[veh->faction_id].diplo_status[other] & DIPLO_VENDETTA) {
-            debuglog("convoy_skip %d %d %d %d %d %d\n", veh->x_coord, veh->y_coord,
-                ts.cur_x, ts.cur_y, veh->faction_id, other);
-            return tx_veh_skip(id);
-        }
-        res = want_convoy(veh->faction_id, ts.cur_x, ts.cur_y, tile);
-        if (res) {
-            if (prefer_min && res == RES_MINERAL && ~tile->built_items & TERRA_FOREST) {
-                return set_move_to(id, ts.cur_x, ts.cur_y);
-            } else if (!prefer_min && res == RES_NUTRIENT) {
-                return set_move_to(id, ts.cur_x, ts.cur_y);
-            }
-            if (res == RES_MINERAL && cx == -1) {
-                cx = ts.cur_x;
-                cy = ts.cur_y;
-            }
-        }
-    }
-    if (forest_sq)
-        return set_convoy(id, RES_MINERAL);
-    if (cx >= 0)
-        return set_move_to(id, cx, cy);
-    return tx_veh_skip(id);
-}
-
-int terraform_action(int id, int action, int flag) {
-    return tx_action_terraform(id, action, flag);
 }
 
 bool random_switch(int id1, int id2) {
@@ -447,7 +366,7 @@ int find_proto(int fac, int triad, int mode, bool defend) {
     return best;
 }
 
-int find_facility(int base_id, int fac) {
+int find_facility(int base_id) {
     const int build_order[] = {
         FAC_RECREATION_COMMONS,
         FAC_CHILDREN_CRECHE,
@@ -464,6 +383,7 @@ int find_facility(int base_id, int fac) {
         FAC_HABITATION_DOME,
     };
     BASE* base = &tx_bases[base_id];
+    int fac = base->faction_id;
     int proj;
     int has_supply = has_weapon(fac, WPN_SUPPLY_TRANSPORT);
     int minerals = base->mineral_surplus;
@@ -486,7 +406,7 @@ int find_facility(int base_id, int fac) {
     if (minerals+extra >= threshold && (proj = find_project(fac)) != 0) {
         return proj;
     }
-    if (minerals+extra >= threshold && knows_tech(fac, tx_facilities[FAC_SKY_HYDRO_LAB].preq)) {
+    if (minerals+extra >= threshold && knows_tech(fac, tx_facility[FAC_SKY_HYDRO_LAB].preq_tech)) {
         if (can_build(base_id, FAC_AEROSPACE_COMPLEX))
             return -FAC_AEROSPACE_COMPLEX;
         if (can_build(base_id, FAC_ORBITAL_DEFENSE_POD))
@@ -520,19 +440,8 @@ int find_facility(int base_id, int fac) {
 int select_prod(int id) {
     BASE* base = &tx_bases[id];
     int owner = base->faction_id;
-    int prod = base->queue_production_id[0];
     int minerals = base->mineral_surplus;
-    int accumulated = base->minerals_accumulated;
     Faction* faction = &tx_factions[owner];
-
-    if (prod < 0 && !can_build(id, abs(prod))) {
-        debuglog("BUILD CHANGE\n");
-        if (accumulated > 10)
-            return find_facility(id, owner);
-    } else if (prod < 0 || (accumulated > 10 && base_mins[id] < accumulated)) {
-        debuglog("BUILD OLD\n");
-        return prod;
-    }
 
     int defenders = 0;
     int crawlers = 0;
@@ -652,7 +561,7 @@ int select_prod(int id) {
             else
                 return find_proto(owner, TRIAD_LAND, WMODE_INFOWAR, true);
         else
-            return find_facility(id, owner);
+            return find_facility(id);
     }
 }
 

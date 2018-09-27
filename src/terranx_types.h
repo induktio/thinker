@@ -525,7 +525,7 @@ struct R_Facility
     int pad;
     int cost;
     int maint;
-    int preq;
+    int preq_tech;
     int free;
     int AI_fight;
     int AI_growth;

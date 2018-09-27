@@ -571,6 +571,7 @@ enum base_status
     BASE_RESEARCH_DATA_STOLEN = 0x40,
     BASE_GENETIC_PLAGUE_INTRO = 0x20000,
     BASE_ENERGY_RESERVES_DRAINED = 0x400000,
+    BASE_PRODUCTION_DONE = 0x800000,
     BASE_HURRY_PRODUCTION = 0x40000000,
 };
 
@@ -595,6 +596,26 @@ enum terrain_flags
     TERRA_ECH_MIRROR = 0x800000,
     TERRA_THERMAL_BORE = 0x1000000,
     TERRA_SENSOR = 0x80000000,
+};
+
+enum terrain_landmarks
+{
+    LM_CRATER = 0x1,
+    LM_VOLCANO = 0x2,
+    LM_JUNGLE = 0x4,
+    LM_URANIUM = 0x8,
+    LM_SARGASSO = 0x10,
+    LM_RUINS = 0x20,
+    LM_DUNES = 0x40,
+    LM_FRESHWATER = 0x80,
+    LM_MESA = 0x100,
+    LM_CANYON = 0x200,
+    LM_GEOTHERMAL = 0x400,
+    LM_RIDGE = 0x800,
+    LM_BOREHOLE = 0x1000,
+    LM_NEXUS = 0x2000,
+    LM_UNITY = 0x4000,
+    LM_FOSSIL = 0x8000,
 };
 
 enum former_action

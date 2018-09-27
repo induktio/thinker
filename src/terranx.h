@@ -38,7 +38,7 @@ extern MAP** tx_map_ptr;
 
 extern R_Basic* tx_basic;
 extern R_Tech* tx_techs;
-extern R_Facility* tx_facilities;
+extern R_Facility* tx_facility;
 extern R_Ability* tx_ability;
 extern R_Chassis* tx_chassis;
 extern R_Citizen* tx_citizen;

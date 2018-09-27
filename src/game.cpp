@@ -3,17 +3,17 @@
 
 
 char* prod_name(int prod) {
-    if (prod < 0)
-        return (char*)(tx_facilities[-prod].name);
-    else
+    if (prod >= 0)
         return (char*)&(tx_units[prod].name);
+    else
+        return (char*)(tx_facility[-prod].name);
 }
 
 int mineral_cost(int fac, int prod) {
     if (prod >= 0)
         return tx_units[prod].cost * tx_cost_factor(fac, 1, -1);
     else
-        return tx_facilities[-prod].cost * tx_cost_factor(fac, 1, -1);
+        return tx_facility[-prod].cost * tx_cost_factor(fac, 1, -1);
 }
 
 bool knows_tech(int fac, int tech) {
@@ -73,6 +73,30 @@ int unit_triad(int id) {
 
 int unit_speed(int id) {
     return tx_chassis[tx_units[id].chassis_type].speed;
+}
+
+int best_armor(int fac) {
+    const int armors[] = {
+        ARM_RESONANCE_8_ARMOR,
+        ARM_PULSE_8_ARMOR,
+        ARM_RESONANCE_3_ARMOR,
+        ARM_PULSE_3_ARMOR,
+    };
+    for (const int i : armors) {
+        if (knows_tech(fac, tx_defense[i].preq_tech)) {
+            return i;
+        }
+    }
+    return ARM_NO_ARMOR;
+}
+
+int best_weapon(int fac) {
+    for (int i=WPN_SINGULARITY_LASER; i>=WPN_LASER; i--) {
+        if (knows_tech(fac, tx_weapon[i].preq_tech))  {
+            return i;
+        }
+    }
+    return WPN_HAND_WEAPONS;
 }
 
 int best_reactor(int fac) {

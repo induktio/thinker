@@ -35,7 +35,7 @@ MAP** tx_map_ptr = (MAP**)0x94A30C;
 
 R_Basic* tx_basic = (R_Basic *)0x949738;
 R_Tech* tx_techs = (R_Tech *)0x94F358;
-R_Facility* tx_facilities = (R_Facility *)0x9A4B68;
+R_Facility* tx_facility = (R_Facility *)0x9A4B68;
 R_Ability* tx_ability = (R_Ability *)0x9AB538;
 R_Chassis* tx_chassis = (R_Chassis *)0x94A330;
 R_Citizen* tx_citizen = (R_Citizen *)0x946020;
