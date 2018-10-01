@@ -36,7 +36,7 @@ bool has_weapon(int fac, int wpn) {
 
 bool has_terra(int fac, int act) {
     if (act >= FORMER_CONDENSER && act <= FORMER_LOWER_LAND
-    && has_project(fac, FAC_WEATHER_PARADIGM))
+    && act != FORMER_THERMAL_BORE && has_project(fac, FAC_WEATHER_PARADIGM))
         return true;
     return knows_tech(fac, tx_terraform[act].preq_tech);
 }
@@ -77,10 +77,13 @@ int unit_speed(int id) {
 
 int best_armor(int fac) {
     const int armors[] = {
-        ARM_RESONANCE_8_ARMOR,
         ARM_PULSE_8_ARMOR,
-        ARM_RESONANCE_3_ARMOR,
+        ARM_RESONANCE_8_ARMOR,
+        ARM_PROBABILITY_SHEATH,
+        ARM_PHOTON_WALL,
+        ARM_SILKSTEEL_ARMOR,
         ARM_PULSE_3_ARMOR,
+        ARM_RESONANCE_3_ARMOR,
     };
     for (const int i : armors) {
         if (knows_tech(fac, tx_defense[i].preq_tech)) {
@@ -119,7 +122,7 @@ int defense_value(UNIT* u) {
 }
 
 int random(int n) {
-    return rand() % (n != 0 ? n : 1);
+    return (n != 0 ? rand() % n : 0);
 }
 
 int wrap(int a) {

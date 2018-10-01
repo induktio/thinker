@@ -46,7 +46,7 @@ void move_upkeep() {
 
 int want_convoy(int fac, int x, int y, MAP* sq) {
     if (sq && sq->owner == fac && !convoys.count(mp(x, y))
-    && ~sq->built_items & TERRA_BASE_IN_TILE) {
+    && !(sq->built_items & BASE_DISALLOWED)) {
         int bonus = tx_bonus_at(x, y);
         if (bonus == RES_ENERGY)
             return RES_NONE;
@@ -70,11 +70,12 @@ int crawler_move(int id) {
         return SYNC;
     BASE* base = &tx_bases[veh->home_base_id];
     int res = want_convoy(veh->faction_id, veh->x_coord, veh->y_coord, sq);
-    bool prefer_min = base->nutrient_surplus > min(8, 4 + base->pop_size/2);
-    bool forest_sq = sq->built_items & TERRA_FOREST && res == RES_MINERAL
-        && veh->move_status == STATUS_CONVOY;
-
-    if (res && !forest_sq) {
+    bool prefer_min = base->nutrient_surplus > 4 + base->pop_size/2;
+    int v1 = 0;
+    if (res) {
+        v1 = (sq->built_items & TERRA_FOREST ? 1 : 2);
+    }
+    if (res && v1 > 1) {
         return set_convoy(id, res);
     }
     int i = 0;
@@ -85,28 +86,30 @@ int crawler_move(int id) {
 
     while (i++ < 40 && (sq = ts.get_next()) != NULL) {
         int other = unit_in_tile(sq);
-        if (other > 0 && tx_factions[veh->faction_id].diplo_status[other] & DIPLO_VENDETTA) {
+        if (other > 0 && other != veh->faction_id) {
             debuglog("convoy_skip %d %d %d %d %d %d\n", veh->x_coord, veh->y_coord,
                 ts.cur_x, ts.cur_y, veh->faction_id, other);
-            return tx_veh_skip(id);
+            continue;
         }
         res = want_convoy(veh->faction_id, ts.cur_x, ts.cur_y, sq);
-        if (res) {
-            if (prefer_min && res == RES_MINERAL && ~sq->built_items & TERRA_FOREST) {
+        if (res && pm_safety[ts.cur_x][ts.cur_y] >= PM_SAFE) {
+            int v2 = (sq->built_items & TERRA_FOREST ? 1 : 2);
+            if (prefer_min && res == RES_MINERAL && v2 > 1) {
                 return set_move_to(id, ts.cur_x, ts.cur_y);
             } else if (!prefer_min && res == RES_NUTRIENT) {
                 return set_move_to(id, ts.cur_x, ts.cur_y);
             }
-            if (res == RES_MINERAL && cx == -1) {
+            if (res == RES_MINERAL && v2 > v1) {
                 cx = ts.cur_x;
                 cy = ts.cur_y;
+                v1 = v2;
             }
         }
     }
-    if (forest_sq)
-        return set_convoy(id, RES_MINERAL);
     if (cx >= 0)
         return set_move_to(id, cx, cy);
+    if (v1 > 0)
+        return set_convoy(id, RES_MINERAL);
     return tx_veh_skip(id);
 }
 
@@ -125,6 +128,7 @@ int colony_move(int id) {
 
     if (sq && !(sq->rocks & TILE_ROCKY)
     && !(sq->built_items & (BASE_DISALLOWED | TERRA_CONDENSER))
+    && veh->y_coord > 1 && veh->y_coord < *tx_map_axis_y-2
     && !bases_in_range(veh->x_coord, veh->y_coord, 2)
     && want_base(sq, unit_triad(veh->proto_id))) {
         tx_action_build(id, 0);
@@ -260,7 +264,10 @@ int tile_score(int x1, int y1, int x2, int y2, MAP* sq) {
     int score = (sq->landmarks ? 3 : 0);
 
     if (bonus && !(items & IMP_ADVANCED)) {
-        int w = (items & IMP_SIMPLE ? 1 : 5);
+        bool bh = (bonus == RES_MINERAL || bonus == RES_ENERGY)
+            && has_terra(*tx_active_faction, FORMER_THERMAL_BORE)
+            && can_borehole(x2, y2, bonus);
+        int w = (bh || !(items & IMP_SIMPLE) ? 5 : 1);
         score += w * (bonus == RES_NUTRIENT ? 3 : 2);
     }
     for (const int* p : priority) {

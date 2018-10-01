@@ -36,6 +36,7 @@
 #include <windows.h>
 #include <limits.h>
 #include <math.h>
+#include <algorithm>
 #include <set>
 #include "inih/ini.h"
 #include "terranx.h"
@@ -62,8 +63,9 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define STATUS_CONVOY 3
 #define STATUS_GOTO 24
 #define STATUS_ROAD_TO 27
-
 #define ALTITUDE_MIN_LAND 60
+#define ATT false
+#define DEF true
 
 DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2);
 
@@ -86,6 +88,7 @@ struct Config {
 int turn_upkeep();
 int select_prod(int id);
 int find_facility(int id);
+int find_project(int fac);
 int tech_value(int tech, int fac, int value);
 bool can_build(int base_id, int id);
 void print_veh(int id);

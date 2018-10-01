@@ -256,7 +256,7 @@ enum probe_action_id
     PRB_MIND_CONTROL_CITY = 0x6,
     PRB_INTRODUCE_GENETIC_PLAGUE = 0x7,
     PRB_FREE_CAPTURED_FACTION_LEADER = 0x8,
-    PRB_MIND_CONTROL_UNIT = 0xFFFFFFFF,
+    PRB_MIND_CONTROL_UNIT = -1,
 };
 
 enum unit_basic_id
@@ -392,7 +392,7 @@ enum unit_plan
     PLAN_ALIEN_ARTIFACT = 0xC,
     PLAN_TECTONIC_MISSILE = 0xD,
     PLAN_FUNGAL_MISSILE = 0xE,
-    PLAN_AUTO_CALCULATE = 0xFFFFFFFF,
+    PLAN_AUTO_CALCULATE = -1,
 };
 
 enum unit_ability_id
@@ -408,7 +408,7 @@ enum unit_ability_id
     ABL_ID_AAA = 0x8,
     ABL_ID_COMM_JAMMER = 0x9,
     ABL_ID_ANTIGRAV_STRUTS = 0xA,
-    ABL_ID_EMPATHIC = 0xB,
+    ABL_ID_EMPATH = 0xB,
     ABL_ID_POLY_ENCRYPTION = 0xC,
     ABL_ID_FUNGICIDAL = 0xD,
     ABL_ID_TRAINED = 0xE,
@@ -441,7 +441,7 @@ enum unit_ability_flags
     ABL_AAA = 0x100,
     ABL_COMM_JAMMER = 0x200,
     ABL_ANTIGRAV_STRUTS = 0x400,
-    ABL_EMPATHIC = 0x800,
+    ABL_EMPATH = 0x800,
     ABL_POLY_ENCRYPTION = 0x1000,
     ABL_FUNGICIDAL = 0x2000,
     ABL_TRAINED = 0x4000,
