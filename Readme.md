@@ -8,6 +8,7 @@ Thinker is an AI improvement mod for Alpha Centauri: Alien Crossfire. By patchin
 * Improved terraforming AI (lots of condenser-farms, boreholes and forests)
 * AI builds more crawlers and deploys them better
 * AI will deploy colony pods much sooner instead of wandering on the map
+* Unit auto design feature creates improved probe teams and AAA garrisons
 * Customizable options for free formers and satellites for AI factions
 * Does not affect player-run factions or game mechanics
 * Game binary includes [Scient's patches](Details.md)
@@ -17,8 +18,10 @@ This mod requires the [GOG version](https://www.gog.com/game/sid_meiers_alpha_ce
 
 Download
 --------
+Currently the newest release is v0.7.
+
 * [Release versions](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAp6ioWxdo7vnG6Ity5W3o1a?dl=0&lst=)
-* [Develop builds](https://www.dropbox.com/sh/qsps5bhz8v020o9/AADv-0D0-bPq22pgoAIcDRC3a/develop?dl=0&lst=) (newest features)
+* [Develop builds](https://www.dropbox.com/sh/qsps5bhz8v020o9/AADv-0D0-bPq22pgoAIcDRC3a/develop?dl=0&lst=)
 
 
 Installation

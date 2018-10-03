@@ -68,6 +68,8 @@ extern fp_3int* tx_terraform_cost;
 extern fp_2int* tx_bonus_at;
 extern fp_2int* tx_can_convoy;
 extern fp_4int* tx_contiguous;
+extern fp_1int* tx_set_base;
+extern fp_1int* tx_base_compute;
 extern fp_4int* tx_base_prod_choices;
 extern fp_3int* tx_cost_factor;
 

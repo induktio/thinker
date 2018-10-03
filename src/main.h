@@ -3,7 +3,7 @@
 #define __MAIN_H__
 
 #ifdef BUILD_REL
-    #define VERSION "Thinker Mod v0.6"
+    #define VERSION "Thinker Mod v0.7"
 #else
     #define VERSION "Thinker Mod develop build"
 #endif
@@ -86,6 +86,7 @@ struct Config {
 };
 
 int turn_upkeep();
+int need_psych(int id);
 int select_prod(int id);
 int find_facility(int id);
 int find_project(int fac);

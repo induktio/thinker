@@ -45,7 +45,7 @@ int set_convoy(int id, int res);
 int at_target(VEH* veh);
 bool water_base(int id);
 bool workable_tile(int x, int y, int fac);
-int nearby_items(int x, int y, int item);
+int nearby_items(int x, int y, int range, uint32_t item);
 int bases_in_range(int x, int y, int range);
 int coast_tiles(int x, int y);
 

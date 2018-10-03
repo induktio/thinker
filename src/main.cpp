@@ -119,7 +119,11 @@ DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2) {
         debuglog("skipping computer base\n");
         choice = tx_base_prod_choices(id, 0, 0, 0);
     } else {
-        if (prod < 0 && !can_build(id, abs(prod))) {
+        tx_set_base(id);
+        tx_base_compute(1);
+        if ((choice = need_psych(id)) != 0) {
+            debuglog("BUILD PSYCH\n");
+        } else if (prod < 0 && !can_build(id, abs(prod))) {
             debuglog("BUILD CHANGE\n");
             if (base->minerals_accumulated > tx_basic->retool_exemption)
                 choice = find_facility(id);
@@ -145,17 +149,21 @@ int turn_upkeep() {
         int arm = best_armor(i);
         int abl = has_ability(i, ABL_ID_TRANCE) ? ABL_TRANCE : 0;
         bool twoabl = knows_tech(i, tx_basic->tech_preq_allow_2_spec_abil);
+        char* arm_n = tx_defense[arm].name_short;
+        char nm[100];
 
         if (has_weapon(i, WPN_PROBE_TEAM)) {
             int chs = has_chassis(i, CHS_HOVERTANK) ? CHS_HOVERTANK : CHS_SPEEDER;
             int algo = has_ability(i, ABL_ID_ALGO_ENHANCEMENT) ? ABL_ALGO_ENHANCEMENT : 0;
             if (has_chassis(i, CHS_FOIL)) {
-                tx_propose_proto(i, CHS_FOIL, WPN_PROBE_TEAM, ARM_NO_ARMOR, abl | (twoabl ? algo : 0),
+                tx_propose_proto(i, CHS_FOIL, WPN_PROBE_TEAM, (rec >= REC_FUSION ? arm : 0),
+                (rec >= REC_FUSION ? abl | (twoabl ? algo : 0) : 0),
                 rec, PLAN_INFO_WARFARE, "Foil Probe Team");
             }
             if (arm != ARM_NO_ARMOR && rec >= REC_FUSION) {
                 tx_propose_proto(i, chs, WPN_PROBE_TEAM, arm, abl | (twoabl ? algo : 0),
-                rec, PLAN_INFO_WARFARE, "Enhanced Probe Team");
+                rec, PLAN_INFO_WARFARE,
+                (strlen(arm_n) < 50 ? strcat(strcpy(nm, arm_n), " Probe Team") : NULL));
             }
         }
         if (has_ability(i, ABL_ID_AAA) && arm != ARM_NO_ARMOR) {
@@ -257,6 +265,9 @@ bool can_build(int base_id, int id) {
     if (id == FAC_HEADQUARTERS && find_hq(base->faction_id) >= 0)
         return false;
     if (id == FAC_RECYCLING_TANKS && has_facility(base_id, FAC_PRESSURE_DOME))
+        return false;
+    if (id == FAC_HOLOGRAM_THEATRE && (has_project(base->faction_id, FAC_VIRTUAL_WORLD)
+    || !has_facility(base_id, FAC_RECREATION_COMMONS)))
         return false;
     if (id == FAC_ASCENT_TO_TRANSCENDENCE)
         return has_facility(-1, FAC_VOICE_OF_PLANET)
@@ -432,6 +443,24 @@ int find_proto(int fac, int triad, int mode, bool defend) {
     return best;
 }
 
+int need_psych(int id) {
+    BASE* b = &tx_bases[id];
+    int fac = b->faction_id;
+    int unit = unit_in_tile(mapsq(b->x_coord, b->y_coord));
+    if (unit != fac || has_project(fac, FAC_TELEPATHIC_MATRIX))
+        return 0;
+    if (b->drone_total > b->talent_total || b->specialist_total > b->talent_total+1) {
+        if (can_build(id, FAC_RECREATION_COMMONS))
+            return -FAC_RECREATION_COMMONS;
+        if (has_project(fac, FAC_VIRTUAL_WORLD) && can_build(id, FAC_NETWORK_NODE))
+            return -FAC_NETWORK_NODE;
+        if (!b->assimilation_turns_left && b->pop_size > 7 && b->energy_surplus >= 12
+        && can_build(id, FAC_HOLOGRAM_THEATRE))
+            return -FAC_HOLOGRAM_THEATRE;
+    }
+    return 0;
+}
+
 int find_facility(int base_id) {
     const int build_order[] = {
         FAC_RECREATION_COMMONS,
@@ -439,9 +468,9 @@ int find_facility(int base_id) {
         FAC_PERIMETER_DEFENSE,
         FAC_GENEJACK_FACTORY,
         FAC_NETWORK_NODE,
+        FAC_AEROSPACE_COMPLEX,
         FAC_TREE_FARM,
         FAC_HAB_COMPLEX,
-        FAC_AEROSPACE_COMPLEX,
         FAC_COMMAND_CENTER,
         FAC_FUSION_LAB,
         FAC_ENERGY_BANK,
@@ -453,8 +482,9 @@ int find_facility(int base_id) {
     int proj;
     int minerals = base->mineral_surplus;
     int extra = base->minerals_accumulated/10;
-    int hab_complex_limit = tx_basic->pop_limit_wo_hab_complex
-        - tx_factions_meta[fac].rule_population;
+    int pop_rule = tx_factions_meta[fac].rule_population;
+    int hab_complex_limit = tx_basic->pop_limit_wo_hab_complex - pop_rule;
+    int hab_dome_limit = tx_basic->pop_limit_wo_hab_dome - pop_rule;
     Faction* fact = &tx_factions[fac];
 
     if (*tx_climate_future_change > 0) {
@@ -471,9 +501,7 @@ int find_facility(int base_id) {
     if (minerals+extra >= proj_limit[fac] && (proj = find_project(fac)) != 0) {
         return proj;
     }
-    if (minerals+extra >= proj_limit[fac] && knows_tech(fac, tx_facility[FAC_SKY_HYDRO_LAB].preq_tech)) {
-        if (can_build(base_id, FAC_AEROSPACE_COMPLEX))
-            return -FAC_AEROSPACE_COMPLEX;
+    if (minerals+extra >= proj_limit[fac] && has_facility(base_id, FAC_AEROSPACE_COMPLEX)) {
         if (can_build(base_id, FAC_ORBITAL_DEFENSE_POD))
             return -FAC_ORBITAL_DEFENSE_POD;
         if (can_build(base_id, FAC_NESSUS_MINING_STATION))
@@ -495,6 +523,8 @@ int find_facility(int base_id) {
         if (f == FAC_COMMAND_CENTER && fact->AI_fight < 1 && fact->AI_power < 1)
             continue;
         if (f == FAC_GENEJACK_FACTORY && base->mineral_intake < 16)
+            continue;
+        if (f == FAC_HABITATION_DOME && base->pop_size < hab_dome_limit)
             continue;
         if (can_build(base_id, f)) {
             return -1*f;

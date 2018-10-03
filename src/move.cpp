@@ -191,7 +191,7 @@ bool can_farm(int x, int y, int bonus, bool has_eco, MAP* sq) {
         return false;
     if (sq->landmarks & LM_JUNGLE && !has_eco)
         return false;
-    if (nearby_items(x, y, TERRA_FOREST) < (sq->built_items & TERRA_FOREST ? 3 : 1))
+    if (nearby_items(x, y, 1, TERRA_FOREST) < (sq->built_items & TERRA_FOREST ? 4 : 1))
         return false;
     if (sq->level & TILE_RAINY && sq->rocks & TILE_ROLLING)
         return true;
@@ -237,7 +237,7 @@ int select_item(int x, int y, int fac, MAP* sq) {
         else if (!has_eco && !(items & (TERRA_CONDENSER | TERRA_SOLAR)))
             return FORMER_SOLAR;
     } else if (!rocky_sq && !(items & (TERRA_FARM | TERRA_CONDENSER))) {
-        if (!(x % 3) && !(y % 3) && ~items & TERRA_SENSOR)
+        if (~items & TERRA_SENSOR && !nearby_items(x, y, 2, TERRA_SENSOR))
             return FORMER_SENSOR;
         else if (~items & TERRA_FOREST)
             return FORMER_FOREST;
@@ -275,6 +275,8 @@ int tile_score(int x1, int y1, int x2, int y2, MAP* sq) {
             score += p[1];
         }
     }
+    if (items & IMP_ADVANCED && items & TERRA_FUNGUS)
+        score += 20;
     return score - range + min(8, pm_former[x2][y2]) + pm_safety[x2][y2];
 }
 

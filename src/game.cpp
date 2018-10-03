@@ -203,45 +203,33 @@ bool water_base(int id) {
 }
 
 bool workable_tile(int x, int y, int fac) {
-    MAP* tile;
+    MAP* sq;
     for (const int* t : offset_20) {
-        int x2 = wrap(x + t[0]);
-        int y2 = y + t[1];
-        tile = mapsq(x2, y2);
-        if (tile && tile->owner == fac && tile->built_items & TERRA_BASE_IN_TILE) {
+        sq = mapsq(wrap(x + t[0]), y + t[1]);
+        if (sq && sq->owner == fac && sq->built_items & TERRA_BASE_IN_TILE) {
             return true;
         }
     }
     return false;
 }
 
-int nearby_items(int x, int y, int item) {
+int nearby_items(int x, int y, int range, uint32_t item) {
+    MAP* sq;
     int n = 0;
-    for (const int* t : offset) {
-        int x2 = wrap(x + t[0]);
-        int y2 = y + t[1];
-        MAP* tile = mapsq(x2, y2);
-        if (tile && tile->built_items & item) {
-            n++;
+    for (int i=-range*2; i<=range*2; i++) {
+        for (int j=-range*2 + abs(i); j<=range*2 - abs(i); j+=2) {
+            sq = mapsq(wrap(x + i), y + j);
+            if (sq && sq->built_items & item) {
+                n++;
+            }
         }
     }
+    debuglog("nearby_items %08x %d %d %d %d\n", item, x, y, range, n);
     return n;
 }
 
 int bases_in_range(int x, int y, int range) {
-    MAP* tile;
-    int n = 0;
-    int bases = 0;
-    for (int i=-range*2; i<=range*2; i++) {
-        for (int j=-range*2 + abs(i); j<=range*2 - abs(i); j+=2) {
-            tile = mapsq(wrap(x + i), y + j);
-            n++;
-            if (tile && tile->built_items & TERRA_BASE_IN_TILE)
-                bases++;
-        }
-    }
-    debuglog("bases_in_range %d %d %d %d %d\n", x, y, range, n, bases);
-    return bases;
+    return nearby_items(x, y, range, TERRA_BASE_IN_TILE);
 }
 
 int coast_tiles(int x, int y) {
