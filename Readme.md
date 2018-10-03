@@ -35,11 +35,7 @@ Installation
 
 Pracx notes
 -----------
-This mod can also be used together with [Pracx](https://github.com/DrazharLn/pracx) graphics enhancement patch.
-1. Extract Thinker mod files and rename terranx_mod.exe to terranx.exe
-2. Install Pracx and make sure the installer patches the previous file
-3. Start the game normally from terranx.exe
-
+This mod can also be used together with [Pracx](https://github.com/DrazharLn/pracx) graphics enhancement patch. Just download and install [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). If you already use Pracx 1.10 you can just rename terranx_mod.exe to terranx.exe and run pracxpatch.exe for the same effect.
 
 Compiling
 ---------
