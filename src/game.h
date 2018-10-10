@@ -26,6 +26,8 @@ bool has_weapon(int fac, int wpn);
 bool has_terra(int fac, int act);
 bool has_project(int fac, int id);
 bool has_facility(int base_id, int id);
+bool can_build(int base_id, int id);
+int find_hq(int fac);
 int unit_triad(int id);
 int unit_speed(int id);
 int best_armor(int fac);

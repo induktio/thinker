@@ -24,11 +24,8 @@
     #define UNUSED(x) UNUSED_ ## x
 #endif
 
-#ifdef BUILD_DLL
-    #define DLL_EXPORT extern "C" __declspec(dllexport)
-#else
-    #define DLL_EXPORT extern "C" __declspec(dllimport)
-#endif
+#define DLL_EXPORT extern "C" __declspec(dllexport)
+#define HOOK_API extern "C"
 
 #include <assert.h>
 #include <stdint.h>
@@ -49,6 +46,7 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define MAPSZ 256
 #define QSIZE 512
 #define BASES 512
+#define UNITS 2048
 #define COMBAT 0
 #define MAX_SAT 8
 #define SYNC 0
@@ -67,13 +65,12 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define ATT false
 #define DEF true
 
-DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2);
-
 extern FILE* debug_log;
 extern std::set<std::pair <int, int>> convoys;
 extern std::set<std::pair <int, int>> boreholes;
 
 struct Config {
+    int landmarks;
     int free_formers;
     int satellites_nutrient;
     int satellites_mineral;
@@ -85,13 +82,16 @@ struct Config {
     int tech_balance;
 };
 
-int turn_upkeep();
+DLL_EXPORT int ThinkerDecide();
+HOOK_API int turn_upkeep();
+HOOK_API int enemy_move(int id);
+HOOK_API int base_production(int id, int v1, int v2, int v3);
+HOOK_API int tech_value(int tech, int fac, int flag);
+
 int need_psych(int id);
 int select_prod(int id);
 int find_facility(int id);
 int find_project(int fac);
-int tech_value(int tech, int fac, int value);
-bool can_build(int base_id, int id);
 void print_veh(int id);
 
 #endif // __MAIN_H__

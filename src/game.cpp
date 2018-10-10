@@ -67,6 +67,39 @@ bool has_facility(int base_id, int id) {
     return val != 0;
 }
 
+bool can_build(int base_id, int id) {
+    BASE* base = &tx_bases[base_id];
+    Faction* fact = &tx_factions[base->faction_id];
+    if (id == FAC_STOCKPILE_ENERGY)
+        return false;
+    if (id == FAC_HEADQUARTERS && find_hq(base->faction_id) >= 0)
+        return false;
+    if (id == FAC_RECYCLING_TANKS && has_facility(base_id, FAC_PRESSURE_DOME))
+        return false;
+    if (id == FAC_HOLOGRAM_THEATRE && (has_project(base->faction_id, FAC_VIRTUAL_WORLD)
+    || !has_facility(base_id, FAC_RECREATION_COMMONS)))
+        return false;
+    if (id == FAC_ASCENT_TO_TRANSCENDENCE)
+        return has_facility(-1, FAC_VOICE_OF_PLANET)
+            && !has_facility(-1, FAC_ASCENT_TO_TRANSCENDENCE);
+    if ((id == FAC_SKY_HYDRO_LAB && fact->satellites_nutrient >= MAX_SAT)
+    || (id == FAC_ORBITAL_POWER_TRANS && fact->satellites_energy >= MAX_SAT)
+    || (id == FAC_NESSUS_MINING_STATION && fact->satellites_mineral >= MAX_SAT)
+    || (id == FAC_ORBITAL_DEFENSE_POD && fact->satellites_ODP >= MAX_SAT))
+        return false;
+    return knows_tech(base->faction_id, tx_facility[id].preq_tech) && !has_facility(base_id, id);
+}
+
+int find_hq(int fac) {
+    for(int i=0; i<*tx_total_num_bases; i++) {
+        BASE* base = &tx_bases[i];
+        if (base->faction_id == fac && has_facility(i, FAC_HEADQUARTERS)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 int unit_triad(int id) {
     return tx_chassis[tx_units[id].chassis_type].triad;
 }

@@ -48,11 +48,14 @@ extern R_Terraform* tx_terraform;
 extern R_Weapon* tx_weapon;
 
 
+typedef int __cdecl fp_void();
 typedef int __cdecl fp_1int(int);
 typedef int __cdecl fp_2int(int, int);
 typedef int __cdecl fp_3int(int, int, int);
 typedef int __cdecl fp_4int(int, int, int, int);
+typedef int __cdecl fp_5int(int, int, int, int, int);
 typedef int __cdecl fp_7intstr(int, int, int, int, int, int, int, const char*);
+
 
 // params: faction, chassis, module, armor, specials, reactor, unit_plan, name
 extern fp_7intstr* tx_propose_proto;
@@ -68,11 +71,13 @@ extern fp_3int* tx_terraform_cost;
 extern fp_2int* tx_bonus_at;
 extern fp_2int* tx_can_convoy;
 extern fp_4int* tx_contiguous;
+extern fp_3int* tx_cost_factor;
 extern fp_1int* tx_set_base;
 extern fp_1int* tx_base_compute;
 extern fp_4int* tx_base_prod_choices;
-extern fp_3int* tx_cost_factor;
-
+extern fp_void* tx_turn_upkeep;
+extern fp_3int* tx_tech_val;
+extern fp_5int* tx_crop_yield;
 
 
 #endif // __TERRANX_H__

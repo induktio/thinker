@@ -56,9 +56,11 @@ fp_3int* tx_terraform_cost = (fp_3int*)0x4C9420;
 fp_2int* tx_bonus_at = (fp_2int*)0x592030;
 fp_2int* tx_can_convoy = (fp_2int*)0x564D90;
 fp_4int* tx_contiguous = (fp_4int*)0x53A780;
+fp_3int* tx_cost_factor = (fp_3int*)0x4E4430;
 fp_1int* tx_set_base = (fp_1int*)0x4E39D0;
 fp_1int* tx_base_compute = (fp_1int*)0x4EC3B0;
 fp_4int* tx_base_prod_choices = (fp_4int*)0x4F81A0;
-fp_3int* tx_cost_factor = (fp_3int*)0x4E4430;
-
+fp_void* tx_turn_upkeep = (fp_void*)0x5258C0;
+fp_3int* tx_tech_val = (fp_3int*)0x5BCBE0;
+fp_5int* tx_crop_yield = (fp_5int*)0x4E6E50;
 

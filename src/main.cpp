@@ -1,5 +1,6 @@
 
 #include "main.h"
+#include "patch.h"
 #include "game.h"
 #include "move.h"
 
@@ -33,6 +34,12 @@ static int handler(void* user, const char* section, const char* name, const char
     } else if (MATCH("thinker", "tech_balance")) {
         pconfig->tech_balance = atoi(value);
     } else {
+        for (int i=0; i<16; i++) {
+            if (MATCH("thinker", lm_params[i])) {
+                pconfig->landmarks &= ~((atoi(value) ? 0 : 1) << i);
+                return 1;
+            }
+        }
         return 0;  /* unknown section/name, error */
     }
     return 1;
@@ -41,6 +48,7 @@ static int handler(void* user, const char* section, const char* name, const char
 DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LPVOID UNUSED(lpvReserved)) {
     switch (fdwReason) {
         case DLL_PROCESS_ATTACH:
+            conf.landmarks = 0xffff;
             conf.free_formers = 0;
             conf.satellites_nutrient = 0;
             conf.satellites_mineral = 0;
@@ -54,6 +62,8 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             if (!debug_log)
                 return FALSE;
             if (ini_parse("thinker.ini", handler, &conf) < 0)
+                return FALSE;
+            if (!patch_setup(&conf))
                 return FALSE;
             *tx_version = VERSION;
             *tx_date = __DATE__;
@@ -72,32 +82,12 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
     return TRUE;
 }
 
-DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2) {
-    assert(mode > 0 && val1 >= 0 && val2 > -128 && id >= 0 && id <= 2048);
+DLL_EXPORT int ThinkerDecide() {
+    return 0;
+}
 
-    if (mode == 2) {
-        return tx_action_terraform(id, val1-4, val2);
-    } else if (mode == 3) {
-        return tech_value(id, val1, val2);
-    } else if (mode == 4) {
-        VEH* veh = &tx_vehicles[id];
-        if (conf.terraform_ai && veh->faction_id <= conf.factions_enabled) {
-            int w = tx_units[veh->proto_id].weapon_mode;
-            if (w == WMODE_COLONIST) {
-                return colony_move(id);
-            } else if (w == WMODE_CONVOY) {
-                return crawler_move(id);
-            } else if (w == WMODE_TERRAFORMER && unit_triad(veh->proto_id) != TRIAD_SEA) {
-                return former_move(id);
-            }
-        }
-        return tx_enemy_move(id);
-    } else if (mode == 5) {
-        return turn_upkeep();
-    } else if (mode != 1) {
-        return 0;
-    }
-
+HOOK_API int base_production(int id, int v1, int v2, int v3) {
+    assert(id >= 0 && id < BASES);
     BASE* base = &tx_bases[id];
     int prod = base->queue_production_id[0];
     int owner = base->faction_id;
@@ -117,7 +107,7 @@ DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2) {
         choice = base->queue_production_id[0];
     } else if (!conf.production_ai || owner > conf.factions_enabled) {
         debuglog("skipping computer base\n");
-        choice = tx_base_prod_choices(id, 0, 0, 0);
+        choice = tx_base_prod_choices(id, v1, v2, v3);
     } else {
         tx_set_base(id);
         tx_base_compute(1);
@@ -141,7 +131,26 @@ DLL_EXPORT int ThinkerDecide(int mode, int id, int val1, int val2) {
     return choice;
 }
 
-int turn_upkeep() {
+HOOK_API int enemy_move(int id) {
+    assert(id >= 0 && id < UNITS);
+    VEH* veh = &tx_vehicles[id];
+    int fac = veh->faction_id;
+    if (conf.terraform_ai && fac <= conf.factions_enabled && (1 << fac) & ~*tx_human_players) {
+        int w = tx_units[veh->proto_id].weapon_mode;
+        if (w == WMODE_COLONIST) {
+            return colony_move(id);
+        } else if (w == WMODE_CONVOY) {
+            return crawler_move(id);
+        } else if (w == WMODE_TERRAFORMER && unit_triad(veh->proto_id) != TRIAD_SEA) {
+            return former_move(id);
+        }
+    }
+    return tx_enemy_move(id);
+}
+
+HOOK_API int turn_upkeep() {
+    tx_turn_upkeep();
+
     for (int i=1; i<8 && conf.design_units; i++) {
         if (1 << i & *tx_human_players || !tx_factions[i].current_num_bases)
             continue;
@@ -224,7 +233,8 @@ int turn_upkeep() {
     return 0;
 }
 
-int tech_value(int tech, int fac, int value) {
+HOOK_API int tech_value(int tech, int fac, int flag) {
+    int value = tx_tech_val(tech, fac, flag);
     if (conf.tech_balance && fac <= conf.factions_enabled) {
         if (tech == tx_weapon[WPN_TERRAFORMING_UNIT].preq_tech
         || tech == tx_weapon[WPN_SUPPLY_TRANSPORT].preq_tech
@@ -245,39 +255,6 @@ void print_veh(int id) {
         v.flags_1, v.flags_2, v.move_status, v.status_icon,
         v.x_coord, v.y_coord, v.waypoint_1_x_coord, v.waypoint_1_y_coord,
         v.unk4, v.unk5, v.unk6, v.unk8, v.unk9);
-}
-
-int find_hq(int faction) {
-    for(int i=0; i<*tx_total_num_bases; i++) {
-        BASE* base = &tx_bases[i];
-        if (base->faction_id == faction && has_facility(i, FAC_HEADQUARTERS)) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-bool can_build(int base_id, int id) {
-    BASE* base = &tx_bases[base_id];
-    Faction* faction = &tx_factions[base->faction_id];
-    if (id == FAC_STOCKPILE_ENERGY)
-        return false;
-    if (id == FAC_HEADQUARTERS && find_hq(base->faction_id) >= 0)
-        return false;
-    if (id == FAC_RECYCLING_TANKS && has_facility(base_id, FAC_PRESSURE_DOME))
-        return false;
-    if (id == FAC_HOLOGRAM_THEATRE && (has_project(base->faction_id, FAC_VIRTUAL_WORLD)
-    || !has_facility(base_id, FAC_RECREATION_COMMONS)))
-        return false;
-    if (id == FAC_ASCENT_TO_TRANSCENDENCE)
-        return has_facility(-1, FAC_VOICE_OF_PLANET)
-            && !has_facility(-1, FAC_ASCENT_TO_TRANSCENDENCE);
-    if ((id == FAC_SKY_HYDRO_LAB && faction->satellites_nutrient >= MAX_SAT)
-    || (id == FAC_ORBITAL_POWER_TRANS && faction->satellites_energy >= MAX_SAT)
-    || (id == FAC_NESSUS_MINING_STATION && faction->satellites_mineral >= MAX_SAT)
-    || (id == FAC_ORBITAL_DEFENSE_POD && faction->satellites_ODP >= MAX_SAT))
-        return false;
-    return knows_tech(base->faction_id, tx_facility[id].preq_tech) && !has_facility(base_id, id);
 }
 
 int project_score(int fac, int proj) {
