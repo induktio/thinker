@@ -230,9 +230,13 @@ int at_target(VEH* veh) {
     || (veh->x_coord == veh->waypoint_1_x_coord && veh->y_coord == veh->waypoint_1_y_coord);
 }
 
+bool is_ocean(MAP* sq) {
+    return (!sq || (sq->level >> 5) < LEVEL_SHORE_LINE);
+}
+
 bool water_base(int id) {
     MAP* sq = mapsq(tx_bases[id].x_coord, tx_bases[id].y_coord);
-    return (sq && sq->altitude < ALTITUDE_MIN_LAND);
+    return is_ocean(sq);
 }
 
 bool workable_tile(int x, int y, int fac) {
@@ -266,11 +270,11 @@ int bases_in_range(int x, int y, int range) {
 }
 
 int coast_tiles(int x, int y) {
-    MAP* tile;
+    MAP* sq;
     int n = 0;
     for (const int* t : offset) {
-        tile = mapsq(wrap(x + t[0]), y + t[1]);
-        if (tile && tile->altitude < ALTITUDE_MIN_LAND) {
+        sq = mapsq(wrap(x + t[0]), y + t[1]);
+        if (is_ocean(sq)) {
             n++;
         }
     }
@@ -305,8 +309,8 @@ MAP* TileSearch::get_next() {
         items--;
         if (!(tile = mapsq(cur_x, cur_y)))
             continue;
-        bool skip = (type == LAND_ONLY && tile->altitude < ALTITUDE_MIN_LAND) ||
-                    (type == WATER_ONLY && tile->altitude >= ALTITUDE_MIN_LAND);
+        bool skip = (type == LAND_ONLY && is_ocean(tile)) ||
+                    (type == WATER_ONLY && !is_ocean(tile));
         if (!first && skip)
             continue;
         for (const int* t : offset) {

@@ -1,9 +1,11 @@
 
 Game engine patches included
 ============================
-Terranx binary contains these custom patches:
+Terranx patches that are applied at runtime:
 
 1. Base governors of all factions will now prefer to work borehole tiles instead of always emphasizing food production. The patch makes governors assume borehole tiles produce 1 food but this will not affect the actual nutrient intake or anything else beyond tile selection.
+2. All landmarks that are placed on random maps can now be configured from `thinker.ini`.
+3. New faction placement algorithm tries to balance faction starting locations more evenly across the whole map area while keeping more distance to any nearest neighbors. The effect is most noticeable on huge map sizes. Can be selected with `faction_placement` option.
 
 
 The following fixes are applied from Scient's unofficial patch v2.0:
@@ -55,8 +57,8 @@ The following fixes are applied from Scient's unofficial patch v2.0:
 45. [BUG][SMAX] Interludes 6 and 7 would display incorrect string variables specific to Caretakers or Usurpers for non-Alien factions.  They now show correct values for human factions as well as Aliens.
 46. [BUG] Interlude 6 would sometimes be triggered by native life forms causing issues with variables and not making sense, this interlude (and it's follow up #7) are designed for another specific faction.  Add check to skip if faction killing unit is alien.
 47. [BUG] Fixed display when scenario editor is enabled for changing former owner inside a base (#CHANGEFORMER) since menu didn't load correctly.
-48. [BUG] Fixed parsing of alpha/x.txt of "retool strictness" to include "never free" which only really applies to giving penalty secret projects.
-49. [BUG][MOD] Giving FREEPROTO factions (spartans) undocumented retool strictness ability when learn necesseary tech.
-50. [EXPLOIT] Save/Load queue
-51. [BUG] Additional check to initial tile when build aquifer rather that tiles around it
-52. [BUG] Diplomacy dialog sometimes had wrong faction id set
+48. [BUG] Fixed the parsing of the "Retool strictness" value in alpha/x.txt so "Never Free" works correctly. This would only apply if you wanted to give a retooling penalty when switching to "Secret Projects".
+49. [BUG][MOD] Factions with the FREEPROTO flag (Spartans) will gain free retooling in their bases as long as the production switch is within the same category (unit to unit, base facility to base facility) and they've discovered the necessary tech ("Advanced Subatomic Theory"). This is to resolve the issue with FREEPROTO factions never being able to gain the undocumented retooling ability of "Skunkworks" when it is fairly clear that they should.
+50. [EXPLOIT] Using the right click "Save current list to template" and "Load template into list" features of base queue can be used to bypass retooling completely. Fixed so these queue template features only save and load the actual queue and not affect the item currently in production.
+51. [BUG] When drilling an aquifer, there isn't a check whether a river already exists in the initial square. Now, it checks the the initial square as well as the eight square around it.
+52. [BUG] Fixed an issue where diplomacy dialog could be incorrectly displayed due to faction id value being set incorrectly. This is best exhibited where Progenitors switch into "Human" dialog syntax.

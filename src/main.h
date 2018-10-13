@@ -92,8 +92,8 @@ HOOK_API int tech_value(int tech, int fac, int flag);
 
 int need_psych(int id);
 int select_prod(int id);
-int find_facility(int id);
-int find_project(int fac);
+int find_facility(int base_id);
+int find_project(int base_id);
 void print_veh(int id);
 
 #endif // __MAIN_H__

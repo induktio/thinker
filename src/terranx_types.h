@@ -278,13 +278,13 @@ struct Faction
     int SE_base_research;
     int unk_13;
     int unk_14;
-    int unk_15;
+    int tech_commerce_bonus;
     int unk_16;
     int unk_17;
     int unk_18;
-    int unk_19;
-    int unk_20;
-    int unk_21;
+    int tech_fungus_nutrient;
+    int tech_fungus_mineral;
+    int tech_fungus_energy;
     int unk_22;
     int unk_23;
     int unk_24;

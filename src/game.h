@@ -45,6 +45,7 @@ int set_road_to(int id, int x, int y);
 int set_action(int id, int act, char icon);
 int set_convoy(int id, int res);
 int at_target(VEH* veh);
+bool is_ocean(MAP* sq);
 bool water_base(int id);
 bool workable_tile(int x, int y, int fac);
 int nearby_items(int x, int y, int range, uint32_t item);

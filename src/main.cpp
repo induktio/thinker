@@ -163,12 +163,12 @@ HOOK_API int turn_upkeep() {
         int rec = best_reactor(i);
         int arm = best_armor(i);
         int abl = has_ability(i, ABL_ID_TRANCE) ? ABL_TRANCE : 0;
+        int chs = has_chassis(i, CHS_HOVERTANK) ? CHS_HOVERTANK : CHS_SPEEDER;
         bool twoabl = knows_tech(i, tx_basic->tech_preq_allow_2_spec_abil);
         char* arm_n = tx_defense[arm].name_short;
         char nm[100];
 
         if (has_weapon(i, WPN_PROBE_TEAM)) {
-            int chs = has_chassis(i, CHS_HOVERTANK) ? CHS_HOVERTANK : CHS_SPEEDER;
             int algo = has_ability(i, ABL_ID_ALGO_ENHANCEMENT) ? ABL_ALGO_ENHANCEMENT : 0;
             if (has_chassis(i, CHS_FOIL)) {
                 tx_propose_proto(i, CHS_FOIL, WPN_PROBE_TEAM, (rec >= REC_FUSION ? arm : 0),
@@ -186,6 +186,12 @@ HOOK_API int turn_upkeep() {
                 ABL_COMM_JAMMER : 0);
             tx_propose_proto(i, CHS_INFANTRY, WPN_LASER, arm, abls, rec, PLAN_DEFENSIVE, NULL);
         }
+        if (has_weapon(i, WPN_TERRAFORMING_UNIT) && rec >= REC_FUSION) {
+            int abls = has_ability(i, ABL_ID_SUPER_TERRAFORMER ? ABL_SUPER_TERRAFORMER : 0) |
+                (twoabl && has_ability(i, ABL_ID_FUNGICIDAL) ? ABL_FUNGICIDAL : 0);
+            tx_propose_proto(i, chs, WPN_TERRAFORMING_UNIT, ARM_NO_ARMOR, abls,
+            rec, PLAN_TERRAFORMING, NULL);
+        }
     }
     if (*tx_current_turn == 1) {
         int bonus = ~(*tx_human_players) & 0xfe;
@@ -194,8 +200,7 @@ HOOK_API int turn_upkeep() {
             if (1 << v->faction_id & bonus) {
                 bonus &= ~(1 << v->faction_id);
                 MAP* sq = mapsq(v->x_coord, v->y_coord);
-                int unit = (sq && sq->altitude < ALTITUDE_MIN_LAND ?
-                    BSC_SEA_FORMERS : BSC_FORMERS);
+                int unit = (is_ocean(sq) ? BSC_SEA_FORMERS : BSC_FORMERS);
                 for (int j=0; j<conf.free_formers; j++) {
                     int veh = tx_veh_init(unit, v->faction_id, v->x_coord, v->y_coord);
                     if (veh >= 0)
@@ -271,7 +276,9 @@ int project_score(int fac, int proj) {
         + (f->AI_tech+1) * p->AI_tech + (f->AI_wealth+1) * p->AI_wealth;
 }
 
-int find_project(int fac) {
+int find_project(int base_id) {
+    BASE* base = &tx_bases[base_id];
+    int fac = base->faction_id;
     Faction* fact = &tx_factions[fac];
     int bases = fact->current_num_bases;
     int nuke_limit = (fact->planet_busters < fact->AI_fight + 2 ? 1 : 0);
@@ -315,10 +322,9 @@ int find_project(int fac) {
         int score = INT_MIN;
         int choice = 0;
         for (int i=70; i<107; i++) {
-            bool ascent = (i == FAC_ASCENT_TO_TRANSCENDENCE && has_facility(-1, FAC_VOICE_OF_PLANET));
             if (alien && (i == FAC_ASCENT_TO_TRANSCENDENCE || i == FAC_VOICE_OF_PLANET))
                 continue;
-            if (tx_secret_projects[i-70] == -1 && (ascent || knows_tech(fac, tx_facility[i].preq_tech))) {
+            if (can_build(base_id, i)) {
                 int sc = project_score(fac, i);
                 choice = (sc > score ? i : choice);
                 score = max(score, sc);
@@ -348,7 +354,7 @@ int count_sea_tiles(int x, int y, int limit) {
 bool switch_to_sea(int x, int y) {
     const int limit = 250;
     MAP* tile = mapsq(x, y);
-    if (tile && tile->altitude < ALTITUDE_MIN_LAND) {
+    if (is_ocean(tile)) {
         return true;
     }
     int land = 0;
@@ -481,7 +487,7 @@ int find_facility(int base_id) {
         return -FAC_RECYCLING_TANKS;
     if (base->pop_size >= hab_complex_limit && can_build(base_id, FAC_HAB_COMPLEX))
         return -FAC_HAB_COMPLEX;
-    if (minerals+extra >= proj_limit[fac] && (proj = find_project(fac)) != 0) {
+    if (minerals+extra >= proj_limit[fac] && (proj = find_project(base_id)) != 0) {
         return proj;
     }
     if (minerals+extra >= proj_limit[fac] && has_facility(base_id, FAC_AEROSPACE_COMPLEX)) {

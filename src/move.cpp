@@ -70,7 +70,7 @@ int crawler_move(int id) {
         return SYNC;
     BASE* base = &tx_bases[veh->home_base_id];
     int res = want_convoy(veh->faction_id, veh->x_coord, veh->y_coord, sq);
-    bool prefer_min = base->nutrient_surplus > 4 + base->pop_size/2;
+    bool prefer_min = base->nutrient_surplus > 5;
     int v1 = 0;
     if (res) {
         v1 = (sq->built_items & TERRA_FOREST ? 1 : 2);
@@ -114,7 +114,7 @@ int crawler_move(int id) {
 }
 
 int want_base(MAP* sq, int triad) {
-    if (triad != TRIAD_SEA && sq->altitude >= ALTITUDE_MIN_LAND) {
+    if (triad != TRIAD_SEA && !is_ocean(sq)) {
         return true;
     } else if (triad == TRIAD_SEA && (sq->level >> 5) == LEVEL_OCEAN_SHELF) {
         return true;
@@ -152,8 +152,8 @@ bool can_bridge(int x, int y) {
             int x2 = wrap(x + i);
             int y2 = y + j;
             sq = mapsq(x2, y2);
-            if (sq && y2 > 0 && y2 < *tx_map_axis_y-1 && sq->altitude >= ALTITUDE_MIN_LAND
-            && ts.oldtiles.count(mp(x2, y2)) == 0) {
+            if (sq && y2 > 0 && y2 < *tx_map_axis_y-1 && !is_ocean(sq)
+            && !ts.oldtiles.count(mp(x2, y2))) {
                 n++;
             }
         }
@@ -277,7 +277,7 @@ int tile_score(int x1, int y1, int x2, int y2, MAP* sq) {
     }
     if (items & IMP_ADVANCED && items & TERRA_FUNGUS)
         score += 20;
-    return score - range + min(8, pm_former[x2][y2]) + pm_safety[x2][y2];
+    return score - range/2 + min(8, pm_former[x2][y2]) + pm_safety[x2][y2];
 }
 
 int former_move(int id) {
@@ -304,6 +304,12 @@ int former_move(int id) {
     int tscore = INT_MIN;
     int tx = -1;
     int ty = -1;
+    int bx = x;
+    int by = y;
+    if (veh->home_base_id >= 0) {
+        bx = tx_bases[veh->home_base_id].x_coord;
+        by = tx_bases[veh->home_base_id].y_coord;
+    }
     TileSearch ts;
     ts.init(x, y, LAND_ONLY);
 
@@ -313,7 +319,7 @@ int former_move(int id) {
         || pm_former[ts.cur_x][ts.cur_y] < 1
         || other_in_tile(fac, sq))
             continue;
-        int score = tile_score(x, y, ts.cur_x, ts.cur_y, sq);
+        int score = tile_score(bx, by, ts.cur_x, ts.cur_y, sq);
         if (score > tscore) {
             tx = ts.cur_x;
             ty = ts.cur_y;
