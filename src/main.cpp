@@ -33,6 +33,10 @@ static int handler(void* user, const char* section, const char* name, const char
         pconfig->production_ai = atoi(value);
     } else if (MATCH("thinker", "tech_balance")) {
         pconfig->tech_balance = atoi(value);
+    } else if (MATCH("thinker", "load_expansion")) {
+        pconfig->load_expansion = atoi(value);
+    } else if (MATCH("thinker", "faction_placement")) {
+        pconfig->faction_placement = atoi(value);
     } else {
         for (int i=0; i<16; i++) {
             if (MATCH("thinker", lm_params[i])) {
@@ -48,7 +52,6 @@ static int handler(void* user, const char* section, const char* name, const char
 DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LPVOID UNUSED(lpvReserved)) {
     switch (fdwReason) {
         case DLL_PROCESS_ATTACH:
-            conf.landmarks = 0xffff;
             conf.free_formers = 0;
             conf.satellites_nutrient = 0;
             conf.satellites_mineral = 0;
@@ -58,6 +61,9 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             conf.terraform_ai = 1;
             conf.production_ai = 1;
             conf.tech_balance = 1;
+            conf.load_expansion = 1;
+            conf.faction_placement = 1;
+            conf.landmarks = 0xffff;
             debug_log = fopen("debug.txt", "w");
             if (!debug_log)
                 return FALSE;

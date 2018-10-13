@@ -70,7 +70,6 @@ extern std::set<std::pair <int, int>> convoys;
 extern std::set<std::pair <int, int>> boreholes;
 
 struct Config {
-    int landmarks;
     int free_formers;
     int satellites_nutrient;
     int satellites_mineral;
@@ -80,6 +79,9 @@ struct Config {
     int terraform_ai;
     int production_ai;
     int tech_balance;
+    int load_expansion;
+    int faction_placement;
+    int landmarks;
 };
 
 DLL_EXPORT int ThinkerDecide();
