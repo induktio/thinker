@@ -35,7 +35,6 @@
 #include <math.h>
 #include <algorithm>
 #include <set>
-#include "inih/ini.h"
 #include "terranx.h"
 
 static_assert(sizeof(struct Faction) == 8396, "");

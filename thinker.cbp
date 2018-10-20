@@ -64,10 +64,10 @@
 		</ExtraCommands>
 		<Unit filename="src/game.cpp" />
 		<Unit filename="src/game.h" />
-		<Unit filename="src/inih/ini.c">
+		<Unit filename="src/lib/ini.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="src/inih/ini.h" />
+		<Unit filename="src/lib/ini.h" />
 		<Unit filename="src/main.cpp" />
 		<Unit filename="src/main.h" />
 		<Unit filename="src/move.cpp" />

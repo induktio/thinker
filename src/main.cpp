@@ -3,6 +3,7 @@
 #include "patch.h"
 #include "game.h"
 #include "move.h"
+#include "lib/ini.h"
 
 FILE* debug_log;
 Config conf;
