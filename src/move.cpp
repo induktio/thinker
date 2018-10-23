@@ -1,10 +1,12 @@
 
 #include "move.h"
 
-int pm_former[MAPSZ][MAPSZ];
-int pm_safety[MAPSZ][MAPSZ];
+typedef int PM_ARRAY[MAPSZ*2][MAPSZ];
 
-void adjust_value(int x, int y, int range, int value, int tbl[MAPSZ][MAPSZ]) {
+PM_ARRAY pm_former;
+PM_ARRAY pm_safety;
+
+void adjust_value(int x, int y, int range, int value, PM_ARRAY tbl) {
     for (int i=-range*2; i<=range*2; i++) {
         for (int j=-range*2 + abs(i); j<=range*2 - abs(i); j+=2) {
             int x2 = wrap(x + i);
@@ -24,8 +26,8 @@ bool other_in_tile(int fac, MAP* sq) {
 void move_upkeep() {
     convoys.clear();
     boreholes.clear();
-    memset(pm_former, 0, sizeof(int)*MAPSZ*MAPSZ);
-    memset(pm_safety, 0, sizeof(int)*MAPSZ*MAPSZ);
+    memset(pm_former, 0, sizeof(pm_former));
+    memset(pm_safety, 0, sizeof(pm_safety));
 
     for (int i=0; i<*tx_total_num_vehicles; i++) {
         VEH* veh = &tx_vehicles[i];
@@ -113,7 +115,13 @@ int crawler_move(int id) {
     return tx_veh_skip(id);
 }
 
-int want_base(MAP* sq, int triad) {
+int want_base(MAP* sq, VEH* veh) {
+    int fac = veh->faction_id;
+    int triad = unit_triad(veh->proto_id);
+    if (sq->owner > 0 && sq->owner != fac
+    && ~tx_factions[fac].diplo_status[sq->owner] & DIPLO_VENDETTA) {
+        return false;
+    }
     if (triad != TRIAD_SEA && !is_ocean(sq)) {
         return true;
     } else if (triad == TRIAD_SEA && (sq->level >> 5) == LEVEL_OCEAN_SHELF) {
@@ -130,7 +138,7 @@ int colony_move(int id) {
     && !(sq->built_items & (BASE_DISALLOWED | TERRA_CONDENSER))
     && veh->y_coord > 1 && veh->y_coord < *tx_map_axis_y-2
     && !bases_in_range(veh->x_coord, veh->y_coord, 2)
-    && want_base(sq, unit_triad(veh->proto_id))) {
+    && want_base(sq, veh)) {
         tx_action_build(id, 0);
         return SYNC;
     }
@@ -193,7 +201,7 @@ bool can_farm(int x, int y, int bonus, bool has_eco, MAP* sq) {
         return false;
     if (nearby_items(x, y, 1, TERRA_FOREST) < (sq->built_items & TERRA_FOREST ? 4 : 1))
         return false;
-    if (sq->level & TILE_RAINY && sq->rocks & TILE_ROLLING)
+    if (sq->level & TILE_RAINY && sq->rocks & TILE_ROLLING && ~sq->landmarks & LM_JUNGLE)
         return true;
     return (has_eco && !(x % 2) && !(y % 2) && !(abs(x-y) % 4));
 }

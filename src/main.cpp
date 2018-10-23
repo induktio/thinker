@@ -128,6 +128,8 @@ HOOK_API int base_production(int id, int v1, int v2, int v3) {
                 choice = select_prod(id);
         } else if (base->status_flags & BASE_PRODUCTION_DONE) {
             choice = select_prod(id);
+            if (choice <= -70)
+                base->status_flags &= ~BASE_PRODUCTION_DONE;
         } else {
             debuglog("BUILD OLD\n");
             choice = prod;
@@ -361,10 +363,9 @@ bool switch_to_sea(int x, int y) {
     int land = 0;
     int bases = 0;
     TileSearch ts;
-    ts.init(x, y, LAND_ONLY);
+    ts.init(x, y, LAND_ONLY, 2);
     while (ts.visited() < limit && (tile = ts.get_next()) != NULL) {
-        if (ts.cur_y != 0 && ts.cur_y != *tx_map_axis_y-1)
-            land++;
+        land++;
         if (tile->built_items & TERRA_BASE_IN_TILE)
             bases++;
     }
