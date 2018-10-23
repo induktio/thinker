@@ -57,12 +57,14 @@ class TileSearch {
     int head;
     int tail;
     int items;
+    int y_skip;
     MAP* tile;
     std::pair<int, int> newtiles[QSIZE];
     public:
     int cur_x, cur_y;
     std::set<std::pair <int, int>> oldtiles;
     void init(int, int, int);
+    void init(int, int, int, int);
     int visited();
     MAP* get_next();
 };

@@ -5,7 +5,7 @@ Terranx patches that are applied at runtime:
 
 1. Base governors of all factions will now prefer to work borehole tiles instead of always emphasizing food production. The patch makes governors assume borehole tiles produce 1 food but this will not affect the actual nutrient intake or anything else beyond tile selection.
 2. All landmarks that are placed on random maps can now be configured from `thinker.ini`.
-3. New faction placement algorithm tries to balance faction starting locations more evenly across the whole map area while keeping more distance to any nearest neighbors. The effect is most noticeable on huge map sizes. Can be selected with `faction_placement` option.
+3. New faction placement algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on huge map sizes. Can be selected with `faction_placement` option.
 
 
 The following fixes are applied from Scient's unofficial patch v2.0:

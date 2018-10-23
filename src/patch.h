@@ -2,7 +2,6 @@
 #define __PATCH_H__
 
 #include "main.h"
-#include "game.h"
 
 #define AC_IMAGE_BASE (LPVOID)0x401000
 #define AC_IMAGE_LEN  (SIZE_T)0x263000

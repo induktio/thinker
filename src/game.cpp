@@ -285,6 +285,7 @@ void TileSearch::init(int x, int y, int tp) {
     head = 0;
     tail = 0;
     items = 0;
+    y_skip = 0;
     type = tp;
     oldtiles.clear();
     tile = mapsq(x, y);
@@ -294,6 +295,11 @@ void TileSearch::init(int x, int y, int tp) {
         newtiles[0] = mp(x, y);
         oldtiles.insert(mp(x, y));
     }
+}
+
+void TileSearch::init(int x, int y, int tp, int skip) {
+    init(x, y, tp);
+    y_skip = skip;
 }
 
 int TileSearch::visited() {
@@ -316,7 +322,8 @@ MAP* TileSearch::get_next() {
         for (const int* t : offset) {
             int x2 = wrap(cur_x + t[0]);
             int y2 = cur_y + t[1];
-            if (items < QSIZE && y2 >= 0 && y2 < *tx_map_axis_y && oldtiles.count(mp(x2, y2)) == 0) {
+            if (y2 >= y_skip && y2 < *tx_map_axis_y - y_skip
+            && items < QSIZE && !oldtiles.count(mp(x2, y2))) {
                 newtiles[tail] = mp(x2, y2);
                 tail = (tail + 1) % QSIZE;
                 items++;
