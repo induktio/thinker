@@ -3,16 +3,14 @@
 #include "game.h"
 #include "move.h"
 
+fp_3int* tx_site_set = (fp_3int*)0x591B50;
+fp_3int* tx_world_site = (fp_3int*)0x5C4FD0;
+
 const char* ac_alpha = "ac_mod\\alphax";
 const char* ac_help = "ac_mod\\helpx";
 const char* ac_tutor = "ac_mod\\tutor";
 const char* ac_labels = "ac_mod\\labels";
 const char* ac_concepts = "ac_mod\\conceptsx";
-
-int prev_rnd = -1;
-
-std::set<std::pair<int,int>> spawns;
-std::set<std::pair<int,int>> goodtiles;
 
 const char* lm_params[] = {
     "crater", "volcano", "jungle", "uranium",
@@ -25,6 +23,10 @@ const byte asm_find_start[] = {
     0x8D,0x45,0xF8,0x50,0x8D,0x45,0xFC,0x50,0x8B,0x45,0x08,0x50,
     0xE8,0x00,0x00,0x00,0x00,0x83,0xC4,0x0C
 };
+
+int prev_rnd = -1;
+std::set<std::pair<int,int>> spawns;
+std::set<std::pair<int,int>> goodtiles;
 
 HOOK_API int crop_yield(int fac, int base, int x, int y, int tf) {
     int value = tx_crop_yield(fac, base, x, y, tf);
@@ -97,14 +99,15 @@ bool valid_start (int x, int y, int iter, bool aquatic) {
                     }
                 }
                 if (sq->built_items & TERRA_FUNGUS)
-                    sc -= range - map_range(x, y, x2, y2);
+                    sc -= range + 1 - map_range(x, y, x2, y2);
                 if (unit_in_tile(sq) == 0)
                     return false;
             }
         }
     }
-    debuglog("score %3d %3d %d %d\n", x, y, iter, sc);
-    return sc > (aquatic ? 20 : 120 - iter/3);
+    int min_sc = (aquatic ? 15 : 120 - iter/3);
+    debuglog("score %3d %3d %d %d %d\n", x, y, iter, min_sc, sc);
+    return sc >= min_sc;
 }
 
 HOOK_API void find_start(int fac, int* tx, int* ty) {
@@ -137,15 +140,15 @@ HOOK_API void find_start(int fac, int* tx, int* ty) {
             x = (random(*tx_map_axis_x) &~1) + (y&1);
         }
         z = spawn_range(x, y);
-        if (z > 5 && valid_start(x, y, i, aquatic)) {
+        if (z >= 8 && valid_start(x, y, i, aquatic)) {
             *tx = x;
             *ty = y;
-            if (z >= max(10, *tx_map_area_sq_root/3 - i/4)
-            && (!use_set || goodtiles.count(mp(x, y)))) {
+            if (z >= max(10, *tx_map_area_sq_root/3 - i/4)) {
                 break;
             }
         }
     }
+    tx_site_set(*tx, *ty, tx_world_site(*tx, *ty, 0));
     debuglog("find_start %d %d %d %d %d\n", fac, i, spawn_range(*tx, *ty), *tx, *ty);
     fflush(debug_log);
 }
@@ -196,6 +199,8 @@ bool patch_setup(Config* conf) {
         write_offset(0x42C7C2, ac_concepts);
     }
     if (conf->faction_placement) {
+        remove_call(0x5B1DFF);
+        remove_call(0x5B2137);
         memset((void*)0x5B220F, 0x90, 63);
         memset((void*)0x5B2257, 0x90, 11);
         memcpy((void*)0x5B220F, asm_find_start, sizeof(asm_find_start));

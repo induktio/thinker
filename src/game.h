@@ -51,6 +51,8 @@ bool workable_tile(int x, int y, int fac);
 int nearby_items(int x, int y, int range, uint32_t item);
 int bases_in_range(int x, int y, int range);
 int coast_tiles(int x, int y);
+void print_map(int x, int y);
+void print_veh(int id);
 
 class TileSearch {
     int type;
@@ -58,7 +60,7 @@ class TileSearch {
     int tail;
     int items;
     int y_skip;
-    MAP* tile;
+    MAP* sq;
     std::pair<int, int> newtiles[QSIZE];
     public:
     int cur_x, cur_y;

@@ -230,6 +230,7 @@ enum techology_id
     TECH_User = 87,
     TECH_TranT = 88,
     TECH_None = -1,
+    TECH_Disable = -2,
 };
 
 enum tech_flags
@@ -562,6 +563,12 @@ enum diplo_status
     DIPLO_WANT_TO_TALK = 0x2000,
     DIPLO_ATROCITY_VICTIM = 0x40000,
     DIPLO_HAVE_SURRENDERED = 0x2000000,
+};
+
+enum diplo_agenda
+{
+    DIPLO_FIGHT_TO_DEATH = 0x8,
+    DIPLO_PERMANENT = 0x2000,
 };
 
 enum base_status

@@ -1,8 +1,6 @@
 #ifndef __TERRANX_TYPES_H__
 #define __TERRANX_TYPES_H__
 
-typedef unsigned char byte;
-
 #pragma pack(push, 1)
 struct BASE
 {
@@ -122,7 +120,7 @@ struct VEH
     char morale;
     char terraforming_turns;
     char type_crawling;
-    char unk4;
+    char visibility;
     char road_moves_spent;
     char unk5;
     char unk6;

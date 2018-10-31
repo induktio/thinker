@@ -17,9 +17,9 @@ int mineral_cost(int fac, int prod) {
 }
 
 bool knows_tech(int fac, int tech) {
-    if (tech < 0)
+    if (tech == TECH_None)
         return true;
-    return tx_tech_discovered[tech] & (1 << fac);
+    return tech >= 0 && tx_tech_discovered[tech] & (1 << fac);
 }
 
 bool has_ability(int fac, int abl) {
@@ -109,30 +109,34 @@ int unit_speed(int id) {
 }
 
 int best_armor(int fac) {
-    const int armors[] = {
-        ARM_PULSE_8_ARMOR,
-        ARM_RESONANCE_8_ARMOR,
-        ARM_PROBABILITY_SHEATH,
-        ARM_PHOTON_WALL,
-        ARM_SILKSTEEL_ARMOR,
-        ARM_PULSE_3_ARMOR,
-        ARM_RESONANCE_3_ARMOR,
-    };
-    for (const int i : armors) {
+    int ci = ARM_NO_ARMOR;
+    int cv = 4;
+    for (int i=ARM_SYNTHMETAL_ARMOR; i<=ARM_RESONANCE_8_ARMOR; i++) {
         if (knows_tech(fac, tx_defense[i].preq_tech)) {
-            return i;
+            int iv = tx_defense[i].defense_value * (i >= ARM_PULSE_3_ARMOR ? 5 : 4);
+            if (iv > cv) {
+                cv = iv;
+                ci = i;
+            }
         }
     }
-    return ARM_NO_ARMOR;
+    return ci;
 }
 
 int best_weapon(int fac) {
-    for (int i=WPN_SINGULARITY_LASER; i>=WPN_LASER; i--) {
-        if (knows_tech(fac, tx_weapon[i].preq_tech))  {
-            return i;
+    int ci = WPN_HAND_WEAPONS;
+    int cv = 4;
+    for (int i=WPN_LASER; i<=WPN_STRING_DISRUPTOR; i++) {
+        if (knows_tech(fac, tx_weapon[i].preq_tech)) {
+            int iv = tx_weapon[i].offense_value *
+                (i == WPN_RESONANCE_LASER || i == WPN_RESONANCE_BOLT ? 5 : 4);
+            if (iv > cv) {
+                cv = iv;
+                ci = i;
+            }
         }
     }
-    return WPN_HAND_WEAPONS;
+    return ci;
 }
 
 int best_reactor(int fac) {
@@ -281,6 +285,23 @@ int coast_tiles(int x, int y) {
     return n;
 }
 
+void print_map(int x, int y) {
+    MAP m = *mapsq(x, y);
+    debuglog("MAP %2d %2d | %2d %d | %02x %02x %02x | %04x %02x | %02x %02x %02x | %08x %08x\n",
+        x, y, m.owner, tx_bonus_at(x, y), m.level, m.altitude, m.rocks,
+        m.flags, m.visibility, m.unk_1, m.unk_2, m.art_ref_id,
+        m.built_items, m.landmarks);
+}
+
+void print_veh(int id) {
+    VEH v = tx_vehicles[id];
+    debuglog("VEH %16s %2d | %08x %04x | %2d %3d | %2d %2d %2d %2d | %d %d %d %d %d\n",
+        (char*)&(tx_units[v.proto_id].name), id,
+        v.flags_1, v.flags_2, v.move_status, v.status_icon,
+        v.x_coord, v.y_coord, v.waypoint_1_x_coord, v.waypoint_1_y_coord,
+        v.visibility, v.unk5, v.unk6, v.unk8, v.unk9);
+}
+
 void TileSearch::init(int x, int y, int tp) {
     head = 0;
     tail = 0;
@@ -288,8 +309,8 @@ void TileSearch::init(int x, int y, int tp) {
     y_skip = 0;
     type = tp;
     oldtiles.clear();
-    tile = mapsq(x, y);
-    if (tile) {
+    sq = mapsq(x, y);
+    if (sq) {
         items++;
         tail = 1;
         newtiles[0] = mp(x, y);
@@ -313,10 +334,10 @@ MAP* TileSearch::get_next() {
         cur_y = newtiles[head].second;
         head = (head + 1) % QSIZE;
         items--;
-        if (!(tile = mapsq(cur_x, cur_y)))
+        if (!(sq = mapsq(cur_x, cur_y)))
             continue;
-        bool skip = (type == LAND_ONLY && is_ocean(tile)) ||
-                    (type == WATER_ONLY && !is_ocean(tile));
+        bool skip = (type == LAND_ONLY && is_ocean(sq)) ||
+                    (type == WATER_ONLY && !is_ocean(sq));
         if (!first && skip)
             continue;
         for (const int* t : offset) {
@@ -331,7 +352,7 @@ MAP* TileSearch::get_next() {
             }
         }
         if (!first) {
-            return tile;
+            return sq;
         }
     }
     return NULL;

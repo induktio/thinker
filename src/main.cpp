@@ -5,7 +5,7 @@
 #include "move.h"
 #include "lib/ini.h"
 
-FILE* debug_log;
+FILE* debug_log = NULL;
 Config conf;
 int proj_limit[8];
 int diplo_flags[8];
@@ -65,8 +65,7 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             conf.load_expansion = 1;
             conf.faction_placement = 1;
             conf.landmarks = 0xffff;
-            debug_log = fopen("debug.txt", "w");
-            if (!debug_log)
+            if (DEBUG && !(debug_log = fopen("debug.txt", "w")))
                 return FALSE;
             if (ini_parse("thinker.ini", handler, &conf) < 0)
                 return FALSE;
@@ -260,15 +259,6 @@ HOOK_API int tech_value(int tech, int fac, int flag) {
     }
     debuglog("tech_value %d %d %d %s\n", tech, fac, value, tx_techs[tech].name);
     return value;
-}
-
-void print_veh(int id) {
-    VEH v = tx_vehicles[id];
-    debuglog("VEH %16s %2d | %08x %04x | %2d %3d | %2d %2d %2d %2d | %d %d %d %d %d\n",
-        (char*)&(tx_units[v.proto_id].name), id,
-        v.flags_1, v.flags_2, v.move_status, v.status_icon,
-        v.x_coord, v.y_coord, v.waypoint_1_x_coord, v.waypoint_1_y_coord,
-        v.unk4, v.unk5, v.unk6, v.unk8, v.unk9);
 }
 
 int project_score(int fac, int proj) {

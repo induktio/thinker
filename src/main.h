@@ -1,4 +1,3 @@
-
 #ifndef __MAIN_H__
 #define __MAIN_H__
 
@@ -15,6 +14,9 @@
     #define DEBUG 0
     #define NDEBUG /* Disable assertions */
     #define debuglog(...) /* Nothing */
+    #ifdef __GNUC__
+    #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+    #endif
 #endif
 
 #ifdef __GNUC__
@@ -37,8 +39,10 @@
 #include <set>
 #include "terranx.h"
 
+static_assert(sizeof(struct FactMeta) == 1436, "");
 static_assert(sizeof(struct Faction) == 8396, "");
 static_assert(sizeof(struct BASE) == 308, "");
+static_assert(sizeof(struct UNIT) == 52, "");
 static_assert(sizeof(struct VEH) == 52, "");
 static_assert(sizeof(struct MAP) == 44, "");
 
@@ -93,7 +97,6 @@ int need_psych(int id);
 int select_prod(int id);
 int find_facility(int base_id);
 int find_project(int base_id);
-void print_veh(int id);
 
 #endif // __MAIN_H__
 

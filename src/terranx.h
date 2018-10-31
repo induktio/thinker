@@ -2,6 +2,8 @@
 #ifndef __TERRANX_H__
 #define __TERRANX_H__
 
+typedef unsigned char byte;
+
 #include "terranx_enums.h"
 #include "terranx_types.h"
 
