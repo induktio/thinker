@@ -90,6 +90,12 @@ bool can_build(int base_id, int id) {
     return knows_tech(base->faction_id, tx_facility[id].preq_tech) && !has_facility(base_id, id);
 }
 
+bool at_war(int a, int b) {
+    if (a == b)
+        return false;
+    return !a || !b || tx_factions[a].diplo_status[b] & DIPLO_VENDETTA;
+}
+
 int find_hq(int fac) {
     for(int i=0; i<*tx_total_num_bases; i++) {
         BASE* base = &tx_bases[i];
@@ -194,8 +200,8 @@ int unit_in_tile(MAP* sq) {
 
 int set_move_to(int id, int x, int y) {
     VEH* veh = &tx_vehicles[id];
-    veh->waypoint_1_x_coord = x;
-    veh->waypoint_1_y_coord = y;
+    veh->waypoint_1_x = x;
+    veh->waypoint_1_y = y;
     veh->move_status = STATUS_GOTO;
     veh->status_icon = 'G';
     return SYNC;
@@ -203,8 +209,8 @@ int set_move_to(int id, int x, int y) {
 
 int set_road_to(int id, int x, int y) {
     VEH* veh = &tx_vehicles[id];
-    veh->waypoint_1_x_coord = x;
-    veh->waypoint_1_y_coord = y;
+    veh->waypoint_1_x = x;
+    veh->waypoint_1_y = y;
     veh->move_status = STATUS_ROAD_TO;
     veh->status_icon = 'R';
     return SYNC;
@@ -213,7 +219,7 @@ int set_road_to(int id, int x, int y) {
 int set_action(int id, int act, char icon) {
     VEH* veh = &tx_vehicles[id];
     if (act == FORMER_THERMAL_BORE+4)
-        boreholes.insert(mp(veh->x_coord, veh->y_coord));
+        boreholes.insert(mp(veh->x, veh->y));
     veh->move_status = act;
     veh->status_icon = icon;
     veh->flags_1 &= 0xFFFEFFFF;
@@ -222,7 +228,7 @@ int set_action(int id, int act, char icon) {
 
 int set_convoy(int id, int res) {
     VEH* veh = &tx_vehicles[id];
-    convoys.insert(mp(veh->x_coord, veh->y_coord));
+    convoys.insert(mp(veh->x, veh->y));
     veh->type_crawling = res-1;
     veh->move_status = STATUS_CONVOY;
     veh->status_icon = 'C';
@@ -230,16 +236,20 @@ int set_convoy(int id, int res) {
 }
 
 int at_target(VEH* veh) {
-    return (veh->waypoint_1_x_coord < 0 && veh->waypoint_1_y_coord < 0)
-    || (veh->x_coord == veh->waypoint_1_x_coord && veh->y_coord == veh->waypoint_1_y_coord);
+    return (veh->waypoint_1_x < 0 && veh->waypoint_1_y < 0)
+        || (veh->x == veh->waypoint_1_x && veh->y == veh->waypoint_1_y);
 }
 
 bool is_ocean(MAP* sq) {
     return (!sq || (sq->level >> 5) < LEVEL_SHORE_LINE);
 }
 
+bool is_ocean_shelf(MAP* sq) {
+    return (sq && (sq->level >> 5) == LEVEL_OCEAN_SHELF);
+}
+
 bool water_base(int id) {
-    MAP* sq = mapsq(tx_bases[id].x_coord, tx_bases[id].y_coord);
+    MAP* sq = mapsq(tx_bases[id].x, tx_bases[id].y);
     return is_ocean(sq);
 }
 
@@ -265,12 +275,24 @@ int nearby_items(int x, int y, int range, uint32_t item) {
             }
         }
     }
-    debuglog("nearby_items %08x %d %d %d %d\n", item, x, y, range, n);
+    //debuglog("nearby_items %08x %d %d %d %d\n", item, x, y, range, n);
     return n;
 }
 
 int bases_in_range(int x, int y, int range) {
     return nearby_items(x, y, range, TERRA_BASE_IN_TILE);
+}
+
+int nearby_tiles(int x, int y, int type, int limit) {
+    MAP* sq;
+    int n = 0;
+    TileSearch ts;
+    ts.init(x, y, type, 2);
+    while (n < limit && (sq = ts.get_next()) != NULL) {
+        n++;
+    }
+    //debuglog("nearby_tiles %d %d %d %d\n", x, y, type, n);
+    return n;
 }
 
 int coast_tiles(int x, int y) {
@@ -298,7 +320,7 @@ void print_veh(int id) {
     debuglog("VEH %16s %2d | %08x %04x | %2d %3d | %2d %2d %2d %2d | %d %d %d %d %d\n",
         (char*)&(tx_units[v.proto_id].name), id,
         v.flags_1, v.flags_2, v.move_status, v.status_icon,
-        v.x_coord, v.y_coord, v.waypoint_1_x_coord, v.waypoint_1_y_coord,
+        v.x, v.y, v.waypoint_1_x, v.waypoint_1_y,
         v.visibility, v.unk5, v.unk6, v.unk8, v.unk9);
 }
 

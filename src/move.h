@@ -10,10 +10,16 @@
 #define IMP_ADVANCED (TERRA_CONDENSER | TERRA_THERMAL_BORE)
 
 #define PM_SAFE -20
+#define PM_NEAR_SAFE -40
 
+bool has_transport(int x, int y, int fac);
+bool non_combat_move(int x, int y, int fac, int triad);
+bool can_build_base(int x, int y, int fac, int triad);
+bool has_base_sites(int x, int y, int fac, int type);
 void move_upkeep();
 int crawler_move(int id);
 int colony_move(int id);
 int former_move(int id);
+int trans_move(int id);
 
 #endif // __MOVE_H__

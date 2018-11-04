@@ -122,7 +122,7 @@ HOOK_API void find_start(int fac, int* tx, int* ty) {
     for (int i=0; i<*tx_total_num_vehicles; i++) {
         VEH* v = &tx_vehicles[i];
         if (v->faction_id != 0 && v->faction_id != fac) {
-            spawns.insert(mp(v->x_coord, v->y_coord));
+            spawns.insert(mp(v->x, v->y));
         }
     }
     int z = 0;

@@ -4,8 +4,8 @@
 #pragma pack(push, 1)
 struct BASE
 {
-    short x_coord;
-    short y_coord;
+    short x;
+    short y;
     char faction_id;
     char faction_id_former;
     char pop_size;
@@ -97,8 +97,8 @@ struct UNIT
 
 struct VEH
 {
-    short x_coord;
-    short y_coord;
+    short x;
+    short y;
     int flags_1;
     short flags_2;
     short proto_id;
@@ -109,14 +109,14 @@ struct VEH
     char move_status;
     char waypoint_count;
     char patrol_current_point;
-    short waypoint_1_x_coord;
-    short waypoint_2_x_coord;
-    short waypoint_3_x_coord;
-    short waypoint_4_x_coord;
-    short waypoint_1_y_coord;
-    short waypoint_2_y_coord;
-    short waypoint_3_y_coord;
-    short waypoint_4_y_coord;
+    short waypoint_1_x;
+    short waypoint_2_x;
+    short waypoint_3_x;
+    short waypoint_4_x;
+    short waypoint_1_y;
+    short waypoint_2_y;
+    short waypoint_3_y;
+    short waypoint_4_y;
     char morale;
     char terraforming_turns;
     char type_crawling;

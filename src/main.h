@@ -68,10 +68,6 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define ATT false
 #define DEF true
 
-extern FILE* debug_log;
-extern std::set<std::pair <int, int>> convoys;
-extern std::set<std::pair <int, int>> boreholes;
-
 struct Config {
     int free_formers;
     int satellites_nutrient;
@@ -86,6 +82,17 @@ struct Config {
     int faction_placement;
     int landmarks;
 };
+
+struct AIPlans {
+    int diplo_flags;
+    int proj_limit;
+};
+
+extern FILE* debug_log;
+extern AIPlans plans[8];
+extern std::set<std::pair<int,int>> convoys;
+extern std::set<std::pair<int,int>> boreholes;
+extern std::set<std::pair<int,int>> needferry;
 
 DLL_EXPORT int ThinkerDecide();
 HOOK_API int turn_upkeep();
