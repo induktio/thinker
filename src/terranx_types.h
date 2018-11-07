@@ -92,7 +92,7 @@ struct UNIT
     char icon_offset;
     char unk1;
     short unit_flags;
-    short tech_preq_id;
+    short tech_preq;
 };
 
 struct VEH
@@ -514,6 +514,46 @@ struct R_Basic
     int tgl_oblit_base_atrocity;
     int base_size_subspace_gen;
     int subspace_gen_req;
+};
+
+struct R_Resource
+{
+    int ocean_sq_nutrient;
+    int ocean_sq_mineral;
+    int ocean_sq_energy;
+    int pad_0;
+    int base_sq_nutrient;
+    int base_sq_mineral;
+    int base_sq_energy;
+    int pad_1;
+    int bonus_sq_nutrient;
+    int bonus_sq_mineral;
+    int bonus_sq_energy;
+    int pad_2;
+    int forest_sq_nutrient;
+    int forest_sq_mineral;
+    int forest_sq_energy;
+    int pad_3;
+    int recycling_tanks_nutrient;
+    int recycling_tanks_mineral;
+    int recycling_tanks_energy;
+    int pad_4;
+    int improved_land_nutrient;
+    int improved_land_mineral;
+    int improved_land_energy;
+    int pad_5;
+    int improved_sea_nutrient;
+    int improved_sea_mineral;
+    int improved_sea_energy;
+    int pad_6;
+    int monolith_nutrient;
+    int monolith_mineral;
+    int monolith_energy;
+    int pad_7;
+    int borehole_sq_nutrient;
+    int borehole_sq_mineral;
+    int borehole_sq_energy;
+    int pad_8;
 };
 
 struct R_Facility

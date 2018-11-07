@@ -41,6 +41,7 @@ R_Chassis* tx_chassis = (R_Chassis *)0x94A330;
 R_Citizen* tx_citizen = (R_Citizen *)0x946020;
 R_Defense* tx_defense = (R_Defense *)0x94F278;
 R_Reactor* tx_reactor = (R_Reactor *)0x9527F8;
+R_Resource* tx_resource = (R_Resource *)0x945F50;
 R_Terraform* tx_terraform = (R_Terraform *)0x691878;
 R_Weapon* tx_weapon = (R_Weapon *)0x94AE60;
 

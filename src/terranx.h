@@ -46,6 +46,7 @@ extern R_Chassis* tx_chassis;
 extern R_Citizen* tx_citizen;
 extern R_Defense* tx_defense;
 extern R_Reactor* tx_reactor;
+extern R_Resource* tx_resource;
 extern R_Terraform* tx_terraform;
 extern R_Weapon* tx_weapon;
 

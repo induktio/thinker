@@ -86,6 +86,9 @@ struct Config {
 struct AIPlans {
     int diplo_flags;
     int proj_limit;
+    int psi_score;
+    int keep_fungus;
+    int plant_fungus;
 };
 
 extern FILE* debug_log;

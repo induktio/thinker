@@ -145,10 +145,11 @@ int want_convoy(int fac, int x, int y, MAP* sq) {
             return RES_NONE;
         else if (sq->built_items & TERRA_CONDENSER)
             return RES_NUTRIENT;
+        else if (bonus == RES_NUTRIENT)
+            return RES_NONE;
         else if (sq->built_items & TERRA_MINE && sq->rocks & TILE_ROCKY)
             return RES_MINERAL;
-        else if (sq->built_items & TERRA_FOREST && ~sq->built_items & TERRA_RIVER
-        && bonus != RES_NUTRIENT)
+        else if (sq->built_items & TERRA_FOREST && ~sq->built_items & TERRA_RIVER)
             return RES_MINERAL;
     }
     return RES_NONE;
@@ -236,8 +237,8 @@ bool can_build_base(int x, int y, int fac, int triad) {
 
 int base_tile_score(int x1, int y1, int range, int triad) {
     const int priority[][2] = {
-        {TERRA_RIVER, 1},
-        {TERRA_RIVER_SRC, 1},
+        {TERRA_RIVER, 2},
+        {TERRA_RIVER_SRC, 2},
         {TERRA_FUNGUS, -2},
         {TERRA_FARM, 2},
         {TERRA_FOREST, 2},
@@ -254,8 +255,8 @@ int base_tile_score(int x1, int y1, int range, int triad) {
         if (sq) {
             int items = sq->built_items;
             score += (tx_bonus_at(x2, y2) ? 6 : 0);
-            if (sq->landmarks && !(sq->landmarks & (LM_DUNES | LM_SARGASSO)))
-                score += (triad == TRIAD_SEA ? 2 : 1);
+            if (sq->landmarks && !(sq->landmarks & (LM_DUNES | LM_SARGASSO | LM_UNITY)))
+                score += (sq->landmarks & LM_JUNGLE ? 3 : 2);
             if (i < 8) {
                 if (triad == TRIAD_SEA && !is_ocean(sq)
                 && nearby_tiles(x2, y2, LAND_ONLY, 20) >= 20 && ++land < 4)
@@ -388,6 +389,12 @@ bool can_farm(int x, int y, int bonus, bool has_eco, MAP* sq) {
     return (has_eco && !(x % 2) && !(y % 2) && !(abs(x-y) % 4));
 }
 
+bool can_fungus(int x, int y, int bonus, MAP* sq) {
+    if (sq->built_items & (TERRA_BASE_IN_TILE | TERRA_MONOLITH | IMP_ADVANCED))
+        return false;
+    return !can_borehole(x, y, bonus) && nearby_items(x, y, 1, TERRA_FUNGUS) < 5;
+}
+
 int select_item(int x, int y, int fac, MAP* sq) {
     int items = sq->built_items;
     int bonus = tx_bonus_at(x, y);
@@ -396,8 +403,15 @@ int select_item(int x, int y, int fac, MAP* sq) {
 
     if (items & TERRA_BASE_IN_TILE)
         return -1;
-    if (items & TERRA_FUNGUS)
+    if (items & TERRA_FUNGUS) {
+        if (plans[fac].keep_fungus && can_fungus(x, y, bonus, sq)) {
+            if (~items & TERRA_ROAD && knows_tech(fac, tx_basic->tech_preq_build_road_fungus))
+                return FORMER_ROAD;
+            else
+                return -1;
+        }
         return FORMER_REMOVE_FUNGUS;
+    }
     if (~items & TERRA_ROAD)
         return FORMER_ROAD;
     if (has_terra(fac, FORMER_RAISE_LAND) && can_bridge(x, y)) {
@@ -408,9 +422,14 @@ int select_item(int x, int y, int fac, MAP* sq) {
             return FORMER_RAISE_LAND;
         }
     }
-    if (items & BASE_DISALLOWED || !workable_tile(x, y, fac))
+    if (workable_tile(x, y, fac)) {
+        if (plans[fac].plant_fungus && can_fungus(x, y, bonus, sq))
+            return FORMER_PLANT_FUNGUS;
+        else if (items & BASE_DISALLOWED)
+            return -1;
+    } else {
         return -1;
-
+    }
     if (has_terra(fac, FORMER_THERMAL_BORE) && can_borehole(x, y, bonus))
         return FORMER_THERMAL_BORE;
     if (rocky_sq && (bonus == RES_NUTRIENT || sq->landmarks & LM_JUNGLE))
@@ -435,11 +454,10 @@ int select_item(int x, int y, int fac, MAP* sq) {
     return -1;
 }
 
-int tile_score(int x1, int y1, int x2, int y2, MAP* sq) {
+int tile_score(int x1, int y1, int x2, int y2, int fac, MAP* sq) {
     const int priority[][2] = {
         {TERRA_RIVER, 2},
         {TERRA_RIVER_SRC, 2},
-        {TERRA_FUNGUS, -2},
         {TERRA_ROAD, -5},
         {TERRA_FARM, -2},
         {TERRA_FOREST, -4},
@@ -467,6 +485,10 @@ int tile_score(int x1, int y1, int x2, int y2, MAP* sq) {
     }
     if (items & IMP_ADVANCED && items & TERRA_FUNGUS)
         score += 20;
+    if (items & TERRA_FUNGUS) {
+        score += (plans[fac].keep_fungus ? -10 : -2);
+        score += (plans[fac].plant_fungus && (items & TERRA_ROAD) ? -8 : 0);
+    }
     return score - range/2 + min(8, pm_former[x2][y2]) + pm_safety[x2][y2];
 }
 
@@ -509,7 +531,7 @@ int former_move(int id) {
         || pm_former[ts.cur_x][ts.cur_y] < 1
         || other_in_tile(fac, sq))
             continue;
-        int score = tile_score(bx, by, ts.cur_x, ts.cur_y, sq);
+        int score = tile_score(bx, by, ts.cur_x, ts.cur_y, fac, sq);
         if (score > tscore) {
             tx = ts.cur_x;
             ty = ts.cur_y;
