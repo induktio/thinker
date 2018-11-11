@@ -11,6 +11,9 @@ const char* ac_help = "ac_mod\\helpx";
 const char* ac_tutor = "ac_mod\\tutor";
 const char* ac_labels = "ac_mod\\labels";
 const char* ac_concepts = "ac_mod\\conceptsx";
+const char* ac_movlist = "movlist";
+const char* ac_movlist_txt = "movlist.txt";
+const char* ac_movlistx_txt = "movlistx.txt";
 
 const char* lm_params[] = {
     "crater", "volcano", "jungle", "uranium",
@@ -27,6 +30,10 @@ const byte asm_find_start[] = {
 int prev_rnd = -1;
 std::set<std::pair<int,int>> spawns;
 std::set<std::pair<int,int>> goodtiles;
+
+bool FileExists(const char* path) {
+    return GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES;
+}
 
 HOOK_API int crop_yield(int fac, int base, int x, int y, int tf) {
     int value = tx_crop_yield(fac, base, x, y, tf);
@@ -187,6 +194,9 @@ bool patch_setup(Config* conf) {
     write_call_ptr(0x5BDC4C, (int)tech_value);
     write_call_ptr(0x579362, (int)enemy_move);
 
+    if (FileExists(ac_movlist_txt) && !FileExists(ac_movlistx_txt)) {
+        CopyFile(ac_movlist_txt, ac_movlistx_txt, TRUE);
+    }
     if (!conf->load_expansion) {
         *(int*)0x45F97A = 0;
         *(const char**)0x691AFC = ac_alpha;
@@ -197,6 +207,8 @@ bool patch_setup(Config* conf) {
         write_offset(0x42B49E, ac_concepts);
         write_offset(0x42C450, ac_concepts);
         write_offset(0x42C7C2, ac_concepts);
+        write_offset(0x403BA8, ac_movlist);
+        write_offset(0x4BEF8D, ac_movlist);
     }
     if (conf->faction_placement) {
         remove_call(0x5B1DFF);
