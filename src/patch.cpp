@@ -3,9 +3,6 @@
 #include "game.h"
 #include "move.h"
 
-fp_3int* tx_site_set = (fp_3int*)0x591B50;
-fp_3int* tx_world_site = (fp_3int*)0x5C4FD0;
-
 const char* ac_alpha = "ac_mod\\alphax";
 const char* ac_help = "ac_mod\\helpx";
 const char* ac_tutor = "ac_mod\\tutor";
@@ -65,7 +62,7 @@ void process_map(int k) {
             if (sq && !is_ocean(sq) && !visited.count(mp(x, y))) {
                 ts.init(x, y, LAND_ONLY, k);
                 while ((sq = ts.get_next()) != NULL) {
-                    std::pair<int,int> xy = mp(ts.cur_x, ts.cur_y);
+                    auto xy = mp(ts.rx, ts.ry);
                     visited.insert(xy);
                     current.insert(xy);
                 }
@@ -101,12 +98,15 @@ bool valid_start (int x, int y, int iter, bool aquatic) {
             if (sq) {
                 if (!is_ocean(sq)) {
                     sc += (sq->level & (TILE_RAINY | TILE_MOIST) ? 2 : 1);
-                    if (sq->built_items & TERRA_RIVER) {
+                    if (sq->built_items & TERRA_RIVER)
                         sc += 1;
-                    }
+                    if (sq->rocks & TILE_ROLLING)
+                        sc += 1;
                 }
+                if (tx_bonus_at(x2, y2))
+                    sc += 5;
                 if (sq->built_items & TERRA_FUNGUS)
-                    sc -= range + 1 - map_range(x, y, x2, y2);
+                    sc -= 1;
                 if (unit_in_tile(sq) == 0)
                     return false;
             }
@@ -189,6 +189,8 @@ bool patch_setup(Config* conf) {
 
     write_call_ptr(0x52768A, (int)turn_upkeep);
     write_call_ptr(0x52A4AD, (int)turn_upkeep);
+    write_call_ptr(0x528214, (int)faction_upkeep);
+    write_call_ptr(0x52918F, (int)faction_upkeep);
     write_call_ptr(0x4E61D0, (int)base_production);
     write_call_ptr(0x4E888C, (int)crop_yield);
     write_call_ptr(0x5BDC4C, (int)tech_value);

@@ -99,6 +99,7 @@ extern std::set<std::pair<int,int>> needferry;
 
 DLL_EXPORT int ThinkerDecide();
 HOOK_API int turn_upkeep();
+HOOK_API int faction_upkeep(int fac);
 HOOK_API int enemy_move(int id);
 HOOK_API int base_production(int id, int v1, int v2, int v3);
 HOOK_API int tech_value(int tech, int fac, int flag);

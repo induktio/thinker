@@ -8,13 +8,20 @@
 #define max(x, y) std::max(x, y)
 
 const int offset[][2] = {
-    {2,0},{-2,0},{0,2},{0,-2},{1,1},{1,-1},{-1,1},{-1,-1}
+    {1,-1},{2,0},{1,1},{0,2},{-1,1},{-2,0},{-1,-1},{0,-2}
 };
 
-const int offset_20[][2] = {
-    {2,0},{-2,0},{0,2},{0,-2},{1,1},{1,-1},{-1,1},{-1,-1},
-    {1,-3},{2,-2},{3,-1},{3,1},{2,2},{1,3},
-    {-1,3},{-2,2},{-3,1},{-3,-1},{-2,-2},{-1,-3},
+const int offset_tbl[][2] = {
+    {1,-1},{2,0},{1,1},{0,2},{-1,1},{-2,0},{-1,-1},{0,-2},
+    {2,-2},{2,2},{-2,2},{-2,-2},{1,-3},{3,-1},{3,1},{1,3},
+    {-1,3},{-3,1},{-3,-1},{-1,-3},{4,0},{-4,0},{0,4},{0,-4},
+    {1,-5},{2,-4},{3,-3},{4,-2},{5,-1},{5,1},{4,2},{3,3},
+    {2,4},{1,5},{-1,5},{-2,4},{-3,3},{-4,2},{-5,1},{-5,-1},
+    {-4,-2},{-3,-3},{-2,-4},{-1,-5},{0,6},{6,0},{0,-6},{-6,0},
+    {0,-8},{1,-7},{2,-6},{3,-5},{4,-4},{5,-3},{6,-2},{7,-1},
+    {8,0},{7,1},{6,2},{5,3},{4,4},{3,5},{2,6},{1,7},
+    {0,8},{-1,7},{-2,6},{-3,5},{-4,4},{-5,3},{-6,2},{-7,1},
+    {-8,0},{-7,-1},{-6,-2},{-5,-3},{-4,-4},{-3,-5},{-2,-6},{-1,-7},
 };
 
 char* prod_name(int prod);
@@ -29,9 +36,10 @@ bool has_facility(int base_id, int id);
 bool can_build(int base_id, int id);
 bool at_war(int a, int b);
 int find_hq(int fac);
+int veh_triad(int id);
 int unit_triad(int id);
 int unit_speed(int id);
-int best_armor(int fac);
+int best_armor(int fac, bool cheap);
 int best_weapon(int fac);
 int best_reactor(int fac);
 int offense_value(UNIT* u);
@@ -66,7 +74,7 @@ class TileSearch {
     MAP* sq;
     std::pair<int, int> newtiles[QSIZE];
     public:
-    int cur_x, cur_y;
+    int rx, ry;
     std::set<std::pair <int, int>> oldtiles;
     void init(int, int, int);
     void init(int, int, int, int);

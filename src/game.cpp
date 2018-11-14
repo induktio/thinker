@@ -106,20 +106,30 @@ int find_hq(int fac) {
     return -1;
 }
 
+int veh_triad(int id) {
+    return unit_triad(tx_vehicles[id].proto_id);
+}
+
 int unit_triad(int id) {
-    return tx_chassis[tx_units[id].chassis_type].triad;
+    int tr = tx_chassis[tx_units[id].chassis_type].triad;
+    assert(tr == TRIAD_LAND || tr == TRIAD_SEA || tr == TRIAD_AIR);
+    return tr;
 }
 
 int unit_speed(int id) {
     return tx_chassis[tx_units[id].chassis_type].speed;
 }
 
-int best_armor(int fac) {
+int best_armor(int fac, bool cheap) {
     int ci = ARM_NO_ARMOR;
     int cv = 4;
     for (int i=ARM_SYNTHMETAL_ARMOR; i<=ARM_RESONANCE_8_ARMOR; i++) {
         if (knows_tech(fac, tx_defense[i].preq_tech)) {
-            int iv = tx_defense[i].defense_value * (i >= ARM_PULSE_3_ARMOR ? 5 : 4);
+            int val = tx_defense[i].defense_value;
+            int cost = tx_defense[i].cost;
+            if (cheap && (cost > 6 || cost > val))
+                continue;
+            int iv = val * (i >= ARM_PULSE_3_ARMOR ? 5 : 4);
             if (iv > cv) {
                 cv = iv;
                 ci = i;
@@ -255,8 +265,8 @@ bool water_base(int id) {
 
 bool workable_tile(int x, int y, int fac) {
     MAP* sq;
-    for (const int* t : offset_20) {
-        sq = mapsq(wrap(x + t[0]), y + t[1]);
+    for (int i=0; i<20; i++) {
+        sq = mapsq(wrap(x + offset_tbl[i][0]), y + offset_tbl[i][1]);
         if (sq && sq->owner == fac && sq->built_items & TERRA_BASE_IN_TILE) {
             return true;
         }
@@ -352,19 +362,19 @@ int TileSearch::visited() {
 MAP* TileSearch::get_next() {
     while (items > 0) {
         bool first = oldtiles.size() == 1;
-        cur_x = newtiles[head].first;
-        cur_y = newtiles[head].second;
+        rx = newtiles[head].first;
+        ry = newtiles[head].second;
         head = (head + 1) % QSIZE;
         items--;
-        if (!(sq = mapsq(cur_x, cur_y)))
+        if (!(sq = mapsq(rx, ry)))
             continue;
         bool skip = (type == LAND_ONLY && is_ocean(sq)) ||
                     (type == WATER_ONLY && !is_ocean(sq));
         if (!first && skip)
             continue;
         for (const int* t : offset) {
-            int x2 = wrap(cur_x + t[0]);
-            int y2 = cur_y + t[1];
+            int x2 = wrap(rx + t[0]);
+            int y2 = ry + t[1];
             if (y2 >= y_skip && y2 < *tx_map_axis_y - y_skip
             && items < QSIZE && !oldtiles.count(mp(x2, y2))) {
                 newtiles[tail] = mp(x2, y2);

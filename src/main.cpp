@@ -93,26 +93,30 @@ DLL_EXPORT int ThinkerDecide() {
     return 0;
 }
 
+bool ai_enabled(int fac) {
+    return fac > 0 && fac <= conf.factions_enabled && !(1 << fac & *tx_human_players);
+}
+
 HOOK_API int base_production(int id, int v1, int v2, int v3) {
     assert(id >= 0 && id < BASES);
     BASE* base = &tx_bases[id];
     int prod = base->queue_production_id[0];
-    int owner = base->faction_id;
+    int fac = base->faction_id;
     int choice = 0;
 
     if (DEBUG) {
         debuglog("[ turn: %d faction: %d base: %2d x: %2d y: %2d "\
         "pop: %d tal: %d dro: %d mins: %2d acc: %2d prod: %3d | %s | %s ]\n",
-        *tx_current_turn, owner, id, base->x, base->y,
+        *tx_current_turn, fac, id, base->x, base->y,
         base->pop_size, base->talent_total, base->drone_total,
         base->mineral_intake, base->minerals_accumulated,
         prod, prod_name(prod), (char*)&(base->name));
     }
 
-    if (1 << owner & *tx_human_players) {
+    if (1 << fac & *tx_human_players) {
         debuglog("skipping human base\n");
         choice = base->queue_production_id[0];
-    } else if (!conf.production_ai || owner > conf.factions_enabled) {
+    } else if (!conf.production_ai || !ai_enabled(fac)) {
         debuglog("skipping computer base\n");
         choice = tx_base_prod_choices(id, v1, v2, v3);
     } else {
@@ -144,15 +148,15 @@ HOOK_API int enemy_move(int id) {
     assert(id >= 0 && id < UNITS);
     VEH* veh = &tx_vehicles[id];
     int fac = veh->faction_id;
-    if (conf.terraform_ai && fac <= conf.factions_enabled && (1 << fac) & ~*tx_human_players) {
-        int w = tx_units[veh->proto_id].weapon_mode;
-        if (w == WMODE_COLONIST) {
+    if (conf.terraform_ai && ai_enabled(fac)) {
+        int w = tx_units[veh->proto_id].weapon_type;
+        if (w == WPN_COLONY_MODULE) {
             return colony_move(id);
-        } else if (w == WMODE_CONVOY) {
+        } else if (w == WPN_SUPPLY_TRANSPORT) {
             return crawler_move(id);
-        } else if (w == WMODE_TERRAFORMER && unit_triad(veh->proto_id) != TRIAD_SEA) {
+        } else if (w == WPN_TERRAFORMING_UNIT && veh_triad(id) != TRIAD_SEA) {
             return former_move(id);
-        } else if (w == WMODE_TRANSPORT && unit_triad(veh->proto_id) == TRIAD_SEA) {
+        } else if (w == WPN_TROOP_TRANSPORT && veh_triad(id) == TRIAD_SEA) {
             return trans_move(id);
         }
     }
@@ -166,11 +170,13 @@ HOOK_API int turn_upkeep() {
         if (1 << i & *tx_human_players || !tx_factions[i].current_num_bases)
             continue;
         int rec = best_reactor(i);
-        int arm = best_armor(i);
+        int arm = best_armor(i, false);
+        int arm2 = best_armor(i, true);
         int abl = has_ability(i, ABL_ID_TRANCE) ? ABL_TRANCE : 0;
         int chs = has_chassis(i, CHS_HOVERTANK) ? CHS_HOVERTANK : CHS_SPEEDER;
         bool twoabl = knows_tech(i, tx_basic->tech_preq_allow_2_spec_abil);
         char* arm_n = tx_defense[arm].name_short;
+        char* arm2_n = tx_defense[arm2].name_short;
         char nm[100];
 
         if (has_weapon(i, WPN_PROBE_TEAM)) {
@@ -184,7 +190,7 @@ HOOK_API int turn_upkeep() {
             if (arm != ARM_NO_ARMOR && rec >= REC_FUSION) {
                 tx_propose_proto(i, chs, WPN_PROBE_TEAM, arm, abl | (twoabl ? algo : 0),
                 rec, PLAN_INFO_WARFARE,
-                (strlen(arm_n) < 50 ? strcat(strcpy(nm, arm_n), " Probe Team") : NULL));
+                (strlen(arm_n) < 20 ? strcat(strcpy(nm, arm_n), " Probe Team") : NULL));
             }
         }
         if (has_ability(i, ABL_ID_AAA) && arm != ARM_NO_ARMOR) {
@@ -196,7 +202,12 @@ HOOK_API int turn_upkeep() {
             int abls = has_ability(i, ABL_ID_SUPER_TERRAFORMER ? ABL_SUPER_TERRAFORMER : 0) |
                 (twoabl && has_ability(i, ABL_ID_FUNGICIDAL) ? ABL_FUNGICIDAL : 0);
             tx_propose_proto(i, chs, WPN_TERRAFORMING_UNIT, ARM_NO_ARMOR, abls,
-            rec, PLAN_TERRAFORMING, NULL);
+            REC_FUSION, PLAN_TERRAFORMING, NULL);
+        }
+        if (has_weapon(i, WPN_SUPPLY_TRANSPORT) && rec >= REC_FUSION && arm2 != ARM_NO_ARMOR) {
+            tx_propose_proto(i, CHS_INFANTRY, WPN_SUPPLY_TRANSPORT, arm2, 0,
+            REC_FUSION, PLAN_DEFENSIVE,
+            (strlen(arm2_n) < 20 ? strcat(strcpy(nm, arm2_n), " Supply") : NULL));
         }
     }
     if (*tx_current_turn == 1) {
@@ -266,21 +277,31 @@ HOOK_API int turn_upkeep() {
         int dn = manifold[p][0] + f->tech_fungus_nutrient - r->forest_sq_nutrient;
         int dm = manifold[p][1] + f->tech_fungus_mineral - r->forest_sq_mineral;
         int de = manifold[p][2] + f->tech_fungus_energy - r->forest_sq_energy;
+        bool terra_fungus = has_terra(i, FORMER_PLANT_FUNGUS)
+            && (knows_tech(i, tx_basic->tech_preq_ease_fungus_mov) || has_project(i, FAC_XENOEMPATHY_DOME));
 
         plans[i].keep_fungus = (dn+dm+de > 0);
-        plans[i].plant_fungus = (dn+dm+de > 1 && has_terra(i, FORMER_PLANT_FUNGUS)
-            && (has_project(i, FAC_XENOEMPATHY_DOME) || knows_tech(i, tx_basic->tech_preq_ease_fungus_mov)));
+        if (dn+dm+de > 0 && terra_fungus) {
+            plans[i].plant_fungus = dn+dm+de;
+        } else {
+            plans[i].plant_fungus = 0;
+        }
         debuglog("turn_upkeep %d %2d %2d %2d %2d %2d\n", i, plans[i].proj_limit, psi, dn, dm, de);
     }
-    move_upkeep();
-    fflush(debug_log);
+    return 0;
+}
 
+HOOK_API int faction_upkeep(int fac) {
+    tx_faction_upkeep(fac);
+    if (ai_enabled(fac))
+        move_upkeep(fac);
+    fflush(debug_log);
     return 0;
 }
 
 HOOK_API int tech_value(int tech, int fac, int flag) {
     int value = tx_tech_val(tech, fac, flag);
-    if (conf.tech_balance && fac <= conf.factions_enabled) {
+    if (conf.tech_balance && ai_enabled(fac)) {
         if (tech == tx_weapon[WPN_TERRAFORMING_UNIT].preq_tech
         || tech == tx_weapon[WPN_SUPPLY_TRANSPORT].preq_tech
         || tech == tx_basic->tech_preq_allow_3_energy_sq
@@ -413,6 +434,8 @@ int find_proto(int fac, int triad, int mode, bool defend) {
         basic = (triad == TRIAD_SEA ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
     else if (mode == WMODE_TERRAFORMER)
         basic = (triad == TRIAD_SEA ? BSC_SEA_FORMERS : BSC_FORMERS);
+    else if (mode == WMODE_CONVOY)
+        basic = BSC_SUPPLY_CRAWLER;
     else if (mode == WMODE_TRANSPORT)
         basic = BSC_TRANSPORT_FOIL;
     else if (mode == WMODE_INFOWAR)
@@ -685,10 +708,10 @@ int select_prod(int id) {
         else
             return find_proto(fac, TRIAD_LAND, WMODE_TERRAFORMER, DEF);
     } else {
-        int crawl_target = 1 + min(2, base->pop_size/3)
-            + min(2, max(0, (base->mineral_surplus - plans[fac].proj_limit)/5));
+        int crawl_target = 1 + min(base->pop_size/3,
+            (base->mineral_surplus >= plans[fac].proj_limit ? 3 : 1));
         if (has_supply && !sea_base && crawlers < crawl_target) {
-            return BSC_SUPPLY_CRAWLER;
+            return find_proto(fac, TRIAD_LAND, WMODE_CONVOY, DEF);
         } else if (build_ships && !transports && needferry.count(mp(base->x, base->y))) {
             return find_proto(fac, TRIAD_SEA, WMODE_TRANSPORT, DEF);
         } else if (build_pods && !can_build(id, FAC_RECYCLING_TANKS)) {
