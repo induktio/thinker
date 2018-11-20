@@ -158,6 +158,8 @@ HOOK_API int enemy_move(int id) {
             return former_move(id);
         } else if (w == WPN_TROOP_TRANSPORT && veh_triad(id) == TRIAD_SEA) {
             return trans_move(id);
+        } else if (w <= WPN_PSI_ATTACK && veh_triad(id) == TRIAD_LAND) {
+            return combat_move(id);
         }
     }
     return tx_enemy_move(id);

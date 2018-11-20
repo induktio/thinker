@@ -67,7 +67,13 @@ extern fp_7intstr* tx_propose_proto;
 extern fp_4int* tx_veh_init;
 
 extern fp_1int* tx_veh_skip;
+extern fp_2int* tx_veh_at;
+extern fp_2int* tx_veh_speed;
+extern fp_3int* tx_zoc_any;
+extern fp_3int* tx_best_defender;
+extern fp_5int* tx_battle_compute;
 extern fp_1int* tx_enemy_move;
+extern fp_1int* tx_monolith;
 extern fp_2int* tx_action_build;
 extern fp_3int* tx_action_terraform;
 extern fp_3int* tx_terraform_cost;

@@ -35,7 +35,7 @@ bool FileExists(const char* path) {
 HOOK_API int crop_yield(int fac, int base, int x, int y, int tf) {
     int value = tx_crop_yield(fac, base, x, y, tf);
     MAP* sq = mapsq(x, y);
-    if (sq && sq->built_items & TERRA_THERMAL_BORE) {
+    if (sq && sq->items & TERRA_THERMAL_BORE) {
         value++;
     }
     return value;
@@ -85,7 +85,7 @@ void process_map(int k) {
 bool valid_start (int x, int y, int iter, bool aquatic) {
     const int range = 4;
     MAP* sq = mapsq(x, y);
-    if (!sq || sq->built_items & BASE_DISALLOWED || sq->rocks & TILE_ROCKY || sq->landmarks)
+    if (!sq || sq->items & BASE_DISALLOWED || sq->rocks & TILE_ROCKY || sq->landmarks)
         return false;
     if (aquatic != is_ocean(sq) || tx_bonus_at(x, y) != RES_NONE)
         return false;
@@ -98,14 +98,14 @@ bool valid_start (int x, int y, int iter, bool aquatic) {
             if (sq) {
                 if (!is_ocean(sq)) {
                     sc += (sq->level & (TILE_RAINY | TILE_MOIST) ? 2 : 1);
-                    if (sq->built_items & TERRA_RIVER)
+                    if (sq->items & TERRA_RIVER)
                         sc += 1;
                     if (sq->rocks & TILE_ROLLING)
                         sc += 1;
                 }
                 if (tx_bonus_at(x2, y2))
                     sc += 5;
-                if (sq->built_items & TERRA_FUNGUS)
+                if (sq->items & TERRA_FUNGUS)
                     sc -= 1;
                 if (unit_in_tile(sq) == 0)
                     return false;

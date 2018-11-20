@@ -56,6 +56,7 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define NO_SYNC 1
 #define LAND_ONLY 0
 #define WATER_ONLY 1
+#define NEAR_ROADS 2
 #define RES_NONE 0
 #define RES_NUTRIENT 1
 #define RES_MINERAL 2

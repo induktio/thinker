@@ -37,6 +37,7 @@ bool can_build(int base_id, int id);
 bool at_war(int a, int b);
 int find_hq(int fac);
 int veh_triad(int id);
+int veh_speed(int id);
 int unit_triad(int id);
 int unit_speed(int id);
 int best_armor(int fac, bool cheap);
@@ -53,6 +54,7 @@ int set_move_to(int id, int x, int y);
 int set_road_to(int id, int x, int y);
 int set_action(int id, int act, char icon);
 int set_convoy(int id, int res);
+int veh_skip(int id);
 int at_target(VEH* veh);
 bool is_ocean(MAP* sq);
 bool is_ocean_shelf(MAP* sq);
@@ -65,20 +67,30 @@ int coast_tiles(int x, int y);
 void print_map(int x, int y);
 void print_veh(int id);
 
+struct PathNode {
+    int x;
+    int y;
+    int dist;
+    int prev;
+};
+
 class TileSearch {
     int type;
     int head;
     int tail;
+    int roads;
     int items;
     int y_skip;
     MAP* sq;
-    std::pair<int, int> newtiles[QSIZE];
+    PathNode newtiles[QSIZE];
     public:
-    int rx, ry;
+    int rx, ry, dist, prev;
     std::set<std::pair <int, int>> oldtiles;
     void init(int, int, int);
     void init(int, int, int, int);
     int visited();
+    bool has_zoc(int);
+    MAP* prev_tile();
     MAP* get_next();
 };
 

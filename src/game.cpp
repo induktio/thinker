@@ -91,7 +91,7 @@ bool can_build(int base_id, int id) {
 }
 
 bool at_war(int a, int b) {
-    if (a == b)
+    if (a == b || a < 0 || b < 0)
         return false;
     return !a || !b || tx_factions[a].diplo_status[b] & DIPLO_VENDETTA;
 }
@@ -108,6 +108,10 @@ int find_hq(int fac) {
 
 int veh_triad(int id) {
     return unit_triad(tx_vehicles[id].proto_id);
+}
+
+int veh_speed(int id) {
+    return tx_veh_speed(id, 0);
 }
 
 int unit_triad(int id) {
@@ -245,6 +249,19 @@ int set_convoy(int id, int res) {
     return tx_veh_skip(id);
 }
 
+int veh_skip(int id) {
+    VEH* veh = &tx_vehicles[id];
+    veh->waypoint_1_x = veh->x;
+    veh->waypoint_1_y = veh->y;
+    veh->status_icon = '-';
+    if (veh->damage_taken) {
+        MAP* sq = mapsq(veh->x, veh->y);
+        if (sq && sq->items & TERRA_MONOLITH)
+            tx_monolith(id);
+    }
+    return tx_veh_skip(id);
+}
+
 int at_target(VEH* veh) {
     return (veh->waypoint_1_x < 0 && veh->waypoint_1_y < 0)
         || (veh->x == veh->waypoint_1_x && veh->y == veh->waypoint_1_y);
@@ -267,7 +284,7 @@ bool workable_tile(int x, int y, int fac) {
     MAP* sq;
     for (int i=0; i<20; i++) {
         sq = mapsq(wrap(x + offset_tbl[i][0]), y + offset_tbl[i][1]);
-        if (sq && sq->owner == fac && sq->built_items & TERRA_BASE_IN_TILE) {
+        if (sq && sq->owner == fac && sq->items & TERRA_BASE_IN_TILE) {
             return true;
         }
     }
@@ -280,7 +297,7 @@ int nearby_items(int x, int y, int range, uint32_t item) {
     for (int i=-range*2; i<=range*2; i++) {
         for (int j=-range*2 + abs(i); j<=range*2 - abs(i); j+=2) {
             sq = mapsq(wrap(x + i), y + j);
-            if (sq && sq->built_items & item) {
+            if (sq && sq->items & item) {
                 n++;
             }
         }
@@ -322,22 +339,23 @@ void print_map(int x, int y) {
     debuglog("MAP %2d %2d | %2d %d | %02x %02x %02x | %04x %02x | %02x %02x %02x | %08x %08x\n",
         x, y, m.owner, tx_bonus_at(x, y), m.level, m.altitude, m.rocks,
         m.flags, m.visibility, m.unk_1, m.unk_2, m.art_ref_id,
-        m.built_items, m.landmarks);
+        m.items, m.landmarks);
 }
 
 void print_veh(int id) {
     VEH v = tx_vehicles[id];
-    debuglog("VEH %16s %2d | %08x %04x | %2d %3d | %2d %2d %2d %2d | %d %d %d %d %d\n",
-        (char*)&(tx_units[v.proto_id].name), id,
-        v.flags_1, v.flags_2, v.move_status, v.status_icon,
+    debuglog("VEH %20s %3d %d | %08x %04x %02x | %2d %3d | %2d %2d %2d %2d | %d %d %d %d %d %d\n",
+        tx_units[v.proto_id].name, id, v.faction_id,
+        v.flags_1, v.flags_2, v.visibility, v.move_status, v.status_icon,
         v.x, v.y, v.waypoint_1_x, v.waypoint_1_y,
-        v.visibility, v.unk5, v.unk6, v.unk8, v.unk9);
+        v.morale, v.damage_taken, v.iter_count, v.unk5, v.unk8, v.unk9);
 }
 
 void TileSearch::init(int x, int y, int tp) {
     head = 0;
     tail = 0;
     items = 0;
+    roads = 0;
     y_skip = 0;
     type = tp;
     oldtiles.clear();
@@ -345,8 +363,14 @@ void TileSearch::init(int x, int y, int tp) {
     if (sq) {
         items++;
         tail = 1;
-        newtiles[0] = mp(x, y);
-        oldtiles.insert(mp(x, y));
+        newtiles[0] = {x, y, 0, -1};
+        oldtiles.insert({x, y});
+        if (!is_ocean(sq)) {
+            if (sq->items & (TERRA_ROAD | TERRA_BASE_IN_TILE))
+                roads |= TERRA_ROAD;
+            if (sq->items & (TERRA_RIVER | TERRA_BASE_IN_TILE))
+                roads |= TERRA_RIVER;
+        }
     }
 }
 
@@ -355,32 +379,52 @@ void TileSearch::init(int x, int y, int tp, int skip) {
     y_skip = skip;
 }
 
-int TileSearch::visited() {
-    return oldtiles.size();
+bool TileSearch::has_zoc(int fac) {
+    int zoc = 0;
+    int i = 0;
+    int j = head;
+    while (j >= 0 && i++ < 20) {
+        auto p = newtiles[j];
+        if (tx_zoc_any(p.x, p.y, fac))
+            zoc++;
+        j = p.prev;
+    }
+    return zoc > 1;
+}
+
+MAP* TileSearch::prev_tile() {
+    int p = newtiles[head].prev;
+    return (p >= 0 ? mapsq(newtiles[p].x, newtiles[p].y) : NULL);
 }
 
 MAP* TileSearch::get_next() {
     while (items > 0) {
         bool first = oldtiles.size() == 1;
-        rx = newtiles[head].first;
-        ry = newtiles[head].second;
+        rx = newtiles[head].x;
+        ry = newtiles[head].y;
+        dist = newtiles[head].dist;
+        prev = head;
         head = (head + 1) % QSIZE;
         items--;
         if (!(sq = mapsq(rx, ry)))
             continue;
         bool skip = (type == LAND_ONLY && is_ocean(sq)) ||
-                    (type == WATER_ONLY && !is_ocean(sq));
-        if (!first && skip)
+                    (type == WATER_ONLY && !is_ocean(sq)) ||
+                    (type == NEAR_ROADS && (is_ocean(sq) || !(sq->items & roads)));
+        if (!first && skip) {
+            if (type == NEAR_ROADS && !is_ocean(sq))
+                return sq;
             continue;
+        }
         for (const int* t : offset) {
             int x2 = wrap(rx + t[0]);
             int y2 = ry + t[1];
             if (y2 >= y_skip && y2 < *tx_map_axis_y - y_skip
-            && items < QSIZE && !oldtiles.count(mp(x2, y2))) {
-                newtiles[tail] = mp(x2, y2);
+            && items < QSIZE && !oldtiles.count({x2, y2})) {
+                newtiles[tail] = {x2, y2, dist+1, prev};
                 tail = (tail + 1) % QSIZE;
                 items++;
-                oldtiles.insert(mp(x2, y2));
+                oldtiles.insert({x2, y2});
             }
         }
         if (!first) {
