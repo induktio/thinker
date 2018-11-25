@@ -422,14 +422,6 @@ int unit_score(int id, int fac, bool def) {
 }
 
 int find_proto(int fac, int triad, int mode, bool defend) {
-    const int natives = 5;
-    const int native_units[natives] = {
-        BSC_MIND_WORMS,
-        BSC_ISLE_OF_THE_DEEP,
-        BSC_LOCUSTS_OF_CHIRON,
-        BSC_SEALURK,
-        BSC_SPORE_LAUNCHER,
-    };
     int basic = BSC_SCOUT_PATROL;
     debuglog("find_proto fac: %d triad: %d mode: %d def: %d\n", fac, triad, mode, defend);
     if (mode == WMODE_COLONIST)
@@ -442,23 +434,23 @@ int find_proto(int fac, int triad, int mode, bool defend) {
         basic = BSC_TRANSPORT_FOIL;
     else if (mode == WMODE_INFOWAR)
         basic = BSC_PROBE_TEAM;
-    int extra = (plans[fac].psi_score > 0 ? natives : 0);
     int best = basic;
-    for(int i=0; i < 64+extra; i++) {
-        int id = (i < 64 ? fac*64 + i : native_units[i-64]);
+    for (int i=0; i < 128; i++) {
+        int id = (i < 64 ? i : (fac-1)*64 + i);
         UNIT* u = &tx_units[id];
-        if (id < 64 && !knows_tech(fac, u->tech_preq))
-            continue;
-        if (unit_triad(id) == triad && strlen(u->name) > 0) {
+        if (strlen(u->name) > 0 && unit_triad(id) == triad) {
+            if (id < 64 && !knows_tech(fac, u->tech_preq))
+                continue;
             if ((mode && u->weapon_mode != mode)
             || (!mode && tx_weapon[u->weapon_type].offense_value == 0)
             || (!mode && defend && u->chassis_type != CHS_INFANTRY)
+            || (u->weapon_type == WPN_PSI_ATTACK && plans[fac].psi_score < 1)
             || u->weapon_type == WPN_PLANET_BUSTER)
                 continue;
             bool valid = (mode || best == basic || (defend == (offense_value(u) < defense_value(u))));
             if (valid && (random(16) > 8 + unit_score(best, fac, defend) - unit_score(id, fac, defend))) {
                 best = id;
-                debuglog("===> %s\n", (char*)&(tx_units[best].name));
+                debuglog("===> %s\n", tx_units[best].name);
             }
         }
     }

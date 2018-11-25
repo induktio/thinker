@@ -1,10 +1,47 @@
+Recommended alphax.txt settings
+===============================
+Thinker level AIs regularly achieve much higher mineral production and eco damage than the AIs in the base game. As a result, excessive sea level rise may occur early on unless this is modified from alphax.txt. Changing this setting in `#RULES` will mitigate the problem.
+
+    1,4      ; Numerator/Denominator for frequency of global warming (1,2 would be "half" normal warming).
+
+The following settings will tweak the world builder to produce bigger continents, less tiny islands, more rivers and ocean shelf on random maps.
+
+    #WORLDBUILDER
+    384, ; Land base        (Seeded land size of a standard world)
+    120, ; Land modifier    (additional land from LAND selection: x0, x1, x2)
+    48,  ; Continent base   (Base size of a land mass seed)
+    24,  ; Continent modif. (Increased size from LAND selection: x0, x1, x2)
+    1,   ; Hills base       (Base # of extra hills)
+    2,   ; Hills modifier   (additional hills from TIDAL selection: x0, x1, x2)
+    8,   ; Plateau base     (Basic plateau size)
+    12,  ; Plateau modifier (Plateau modifier based on LAND selection: x0, x1, x2)
+    16,  ; Rivers base      (Basic # of rivers)
+    16,  ; Rivers rain mod. (Additional rivers based on RAIN selection)
+    14,  ; Solar Energy     (Latitude DIVISOR for temperature based on HEAT) Smaller # increases effect of HEAT selection
+    14,  ; Thermal band     (Latitude DIVISOR for thermal banding)  Smaller # widens hot bands
+    8,   ; Thermal deviance (Latitude DIVISOR for thermal deviance) Smaller # increases randomness
+    8,   ; Global Warming   (Latitude DIVISOR for global warming)   Smaller # increases effect of warming
+    5,   ; Sea Level Rises  (Magnitude of sea level changes from ice cap melting/freezing)
+    5,   ; Cloudmass peaks  (Size of cloud mass trapped by peaks)
+    3,   ; Cloudmass hills  (Size of cloud mass trapped by hills)
+    1,   ; Rainfall coeff.  (Multiplier for rainfall belts)
+    8,   ; Deep water       (Encourages fractal to grow deep water)
+    10,  ; Shelf            (Encourages fractal to grow shelf)
+    15,  ; Plains           (Encourages highland plains)
+    40,  ; Beach            (Encourages wider beaches)
+    10,  ; Hills            (Encourages hills x TIDAL selection)
+    10,  ; Peaks            (Encourages peaks)
+    1,   ; Fungus           (Fungus coefficient based on LIFE selection)
+    3,6,12,18,24 ; Ratio    (Continent size ratios)
+    4    ; Islands          (Higher # increases island count)
+
 
 Game engine patches included
 ============================
 Terranx patches that are applied at runtime:
 
 1. Base governors of all factions will now prefer to work borehole tiles instead of always emphasizing food production. The patch makes governors assume borehole tiles produce 1 food but this will not affect the actual nutrient intake or anything else beyond tile selection.
-2. All landmarks that are placed on random maps can now be configured from `thinker.ini`.
+2. All landmarks that are placed on random maps can now be configured from `thinker.ini`. Nessus Canyon is also available but disabled by default.
 3. New faction placement algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on huge map sizes. Can be selected with `faction_placement` option.
 
 

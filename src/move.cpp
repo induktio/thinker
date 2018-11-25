@@ -357,7 +357,7 @@ int base_tile_score(int x1, int y1, int range, int triad) {
             for (const int* p : priority) if (items & p[0]) score += p[1];
         }
     }
-    return score - range + random(6) + pm_safety[x1][y1];
+    return score - range + random(6) + min(0, pm_safety[x1][y1]);
 }
 
 int colony_move(int id) {
@@ -513,8 +513,6 @@ int select_item(int x, int y, int fac, MAP* sq) {
     if (has_terra(fac, FORMER_RAISE_LAND) && can_bridge(x, y)) {
         int cost = tx_terraform_cost(x, y, fac);
         if (cost < tx_factions[fac].energy_credits/10) {
-            debuglog("bridge_cost %d %d %d %d\n", x, y, fac, cost);
-            tx_factions[fac].energy_credits -= cost;
             return FORMER_RAISE_LAND;
         }
     }
@@ -584,7 +582,7 @@ int tile_score(int x1, int y1, int x2, int y2, int fac, MAP* sq) {
         score += (plans[fac].keep_fungus ? -10 : -2);
         score += (plans[fac].plant_fungus && (items & TERRA_ROAD) ? -8 : 0);
     }
-    return score - range/2 + min(8, pm_former[x2][y2]) + pm_safety[x2][y2];
+    return score - range/2 + min(8, pm_former[x2][y2]) + min(0, pm_safety[x2][y2]);
 }
 
 int former_move(int id) {
@@ -608,6 +606,11 @@ int former_move(int id) {
         if (item >= 0) {
             pm_former[x][y] -= 2;
             debuglog("former_action %d %d %d %d %d\n", x, y, fac, id, item);
+            if (item == FORMER_RAISE_LAND) {
+                int cost = tx_terraform_cost(x, y, fac);
+                tx_factions[fac].energy_credits -= cost;
+                debuglog("bridge_cost %d %d %d %d\n", x, y, fac, cost);
+            }
             return set_action(id, item+4, *tx_terraform[item].shortcuts);
         }
     } else if (!safe) {
@@ -633,7 +636,7 @@ int former_move(int id) {
         || other_in_tile(fac, sq))
             continue;
         int score = tile_score(bx, by, ts.rx, ts.ry, fac, sq);
-        if (score > tscore) {
+        if (score > tscore && select_item(ts.rx, ts.ry, fac, sq) != -1) {
             tx = ts.rx;
             ty = ts.ry;
             tscore = score;
@@ -643,6 +646,8 @@ int former_move(int id) {
         pm_former[tx][ty] -= 2;
         debuglog("former_move %d %d -> %d %d | %d %d | %d\n", x, y, tx, ty, fac, id, tscore);
         return set_road_to(id, tx, ty);
+    } else if (!random(4)) {
+        return set_move_to(id, bx, by);
     }
     return veh_skip(id);
 }

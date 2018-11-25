@@ -393,8 +393,7 @@ bool TileSearch::has_zoc(int fac) {
 }
 
 MAP* TileSearch::prev_tile() {
-    int p = newtiles[head].prev;
-    return (p >= 0 ? mapsq(newtiles[p].x, newtiles[p].y) : NULL);
+    return (prev >= 0 ? mapsq(newtiles[prev].x, newtiles[prev].y) : NULL);
 }
 
 MAP* TileSearch::get_next() {
