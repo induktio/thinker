@@ -28,8 +28,10 @@ static int handler(void* user, const char* section, const char* name, const char
         pconfig->design_units = atoi(value);
     } else if (MATCH("thinker", "factions_enabled")) {
         pconfig->factions_enabled = atoi(value);
-    } else if (MATCH("thinker", "terraform_ai")) {
-        pconfig->terraform_ai = atoi(value);
+    } else if (MATCH("thinker", "social_ai")) {
+        pconfig->social_ai = atoi(value);
+    } else if (MATCH("thinker", "movement_ai")) {
+        pconfig->movement_ai = atoi(value);
     } else if (MATCH("thinker", "production_ai")) {
         pconfig->production_ai = atoi(value);
     } else if (MATCH("thinker", "tech_balance")) {
@@ -59,7 +61,8 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             conf.satellites_energy = 0;
             conf.design_units = 1;
             conf.factions_enabled = 7;
-            conf.terraform_ai = 1;
+            conf.social_ai = 1;
+            conf.movement_ai = 1;
             conf.production_ai = 1;
             conf.tech_balance = 1;
             conf.load_expansion = 1;
@@ -136,7 +139,7 @@ HOOK_API int base_production(int id, int v1, int v2, int v3) {
                 choice = select_prod(id);
         } else if (base->status_flags & BASE_PRODUCTION_DONE) {
             choice = select_prod(id);
-            if (choice <= -70)
+            if (choice < 0)
                 base->status_flags &= ~BASE_PRODUCTION_DONE;
         } else {
             debuglog("BUILD OLD\n");
@@ -152,7 +155,7 @@ HOOK_API int enemy_move(int id) {
     assert(id >= 0 && id < UNITS);
     VEH* veh = &tx_vehicles[id];
     int fac = veh->faction_id;
-    if (conf.terraform_ai && ai_enabled(fac)) {
+    if (conf.movement_ai && ai_enabled(fac)) {
         int w = tx_units[veh->proto_id].weapon_type;
         if (w == WPN_COLONY_MODULE) {
             return colony_move(id);
@@ -468,7 +471,7 @@ int need_psych(int id) {
     int unit = unit_in_tile(mapsq(b->x, b->y));
     if (unit != fac || has_project(fac, FAC_TELEPATHIC_MATRIX))
         return 0;
-    if (b->drone_total > b->talent_total || b->specialist_total > b->talent_total+1) {
+    if (b->drone_total > b->talent_total) {
         if (can_build(id, FAC_RECREATION_COMMONS))
             return -FAC_RECREATION_COMMONS;
         if (has_project(fac, FAC_VIRTUAL_WORLD) && can_build(id, FAC_NETWORK_NODE))
@@ -598,7 +601,7 @@ int select_colony(int id, int pods, bool build_ships) {
 
 int faction_might(int fac) {
     Faction* f = &tx_factions[fac];
-    return max(1, f->mil_strength_1 + f->mil_strength_2 + f->pop_total * 2);
+    return max(1, f->mil_strength_1 + f->mil_strength_2 + f->pop_total);
 }
 
 int select_prod(int id) {
@@ -681,7 +684,7 @@ int select_prod(int id) {
     minerals, reserve, plans[fac].proj_limit, enemyrange, enemymil, w1, w2, threat);
 
     if (defenders < def_target && minerals > 2) {
-        if (def_target < 2)
+        if (def_target < 2 && (*tx_current_turn > 30 || enemyrange < 15))
             return find_proto(fac, TRIAD_LAND, COMBAT, DEF);
         else
             return BSC_SCOUT_PATROL;
@@ -783,7 +786,7 @@ HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5) {
     int impunity = 0;
     int penalty = 0;
 
-    if (!ai_enabled(fac)) {
+    if (!conf.social_ai || !ai_enabled(fac)) {
         return tx_social_ai(fac, v1, v2, v3, v4, v5);
     }
     if (f->SE_upheaval_cost_paid > 0) {

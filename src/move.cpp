@@ -679,7 +679,7 @@ int combat_move(int id) {
     int fac = veh->faction_id;
     if (is_ocean(sq) || u->ability_flags & ABL_ARTILLERY)
         return tx_enemy_move(id);
-    if (pm_enemy[veh->x][veh->y] < 1) {
+    if (pm_enemy[veh->x][veh->y] < 1 || veh->iter_count > 8) {
         if (need_heals(veh))
             return escape_move(id);
         return tx_enemy_move(id);

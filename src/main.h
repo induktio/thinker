@@ -2,7 +2,7 @@
 #define __MAIN_H__
 
 #ifdef BUILD_REL
-    #define VERSION "Thinker Mod v0.7"
+    #define VERSION "Thinker Mod v0.8"
 #else
     #define VERSION "Thinker Mod develop build"
 #endif
@@ -78,7 +78,8 @@ struct Config {
     int satellites_energy;
     int design_units;
     int factions_enabled;
-    int terraform_ai;
+    int social_ai;
+    int movement_ai;
     int production_ai;
     int tech_balance;
     int load_expansion;
