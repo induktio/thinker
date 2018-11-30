@@ -12,8 +12,9 @@ extern const char** tx_date;
 
 extern int*  tx_current_base_id;
 extern BASE* tx_current_base_ptr;
-extern int* tx_game_rules_basic;
-extern int* tx_game_rules_scenario;
+extern int* tx_game_rules;
+extern int* tx_scen_rules;
+extern int* tx_diff_level;
 extern int* tx_human_players;
 extern int* tx_current_turn;
 extern int* tx_active_faction;
@@ -40,6 +41,7 @@ extern MAP** tx_map_ptr;
 
 extern R_Basic* tx_basic;
 extern R_Tech* tx_techs;
+extern R_Social* tx_social;
 extern R_Facility* tx_facility;
 extern R_Ability* tx_ability;
 extern R_Chassis* tx_chassis;
@@ -50,15 +52,14 @@ extern R_Resource* tx_resource;
 extern R_Terraform* tx_terraform;
 extern R_Weapon* tx_weapon;
 
-
 typedef int __cdecl fp_void();
 typedef int __cdecl fp_1int(int);
 typedef int __cdecl fp_2int(int, int);
 typedef int __cdecl fp_3int(int, int, int);
 typedef int __cdecl fp_4int(int, int, int, int);
 typedef int __cdecl fp_5int(int, int, int, int, int);
+typedef int __cdecl fp_6int(int, int, int, int, int, int);
 typedef int __cdecl fp_7intstr(int, int, int, int, int, int, int, const char*);
-
 
 // params: faction, chassis, module, armor, specials, reactor, unit_plan, name
 extern fp_7intstr* tx_propose_proto;
@@ -88,6 +89,10 @@ extern fp_void* tx_turn_upkeep;
 extern fp_1int* tx_faction_upkeep;
 extern fp_3int* tx_tech_val;
 extern fp_5int* tx_crop_yield;
+extern fp_6int* tx_social_ai;
+extern fp_1int* tx_social_set;
+extern fp_1int* tx_pop_goal;
+extern fp_1int* tx_consider_designs;
 
 
 #endif // __TERRANX_H__

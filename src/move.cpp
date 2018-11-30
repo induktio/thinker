@@ -299,7 +299,7 @@ bool want_base(int x, int y, int fac, int triad) {
         return false;
     if (sq->owner > 0 && fac != sq->owner && !at_war(fac, sq->owner))
         return false;
-    if (sq->landmarks & LM_JUNGLE) {
+    if (sq->landmarks & LM_JUNGLE && !is_ocean(sq)) {
         if (bases_in_range(x, y, 1) > 0 || bases_in_range(x, y, 2) > 1)
             return false;
     } else {
@@ -567,8 +567,7 @@ int tile_score(int x1, int y1, int x2, int y2, int fac, MAP* sq) {
 
     if (bonus && !(items & IMP_ADVANCED)) {
         bool bh = (bonus == RES_MINERAL || bonus == RES_ENERGY)
-            && has_terra(*tx_active_faction, FORMER_THERMAL_BORE)
-            && can_borehole(x2, y2, bonus);
+            && has_terra(fac, FORMER_THERMAL_BORE) && can_borehole(x2, y2, bonus);
         int w = (bh || !(items & IMP_SIMPLE) ? 5 : 1);
         score += w * (bonus == RES_NUTRIENT ? 3 : 2);
     }
@@ -629,7 +628,7 @@ int former_move(int id) {
     TileSearch ts;
     ts.init(x, y, LAND_ONLY);
 
-    while (i++ < 40 && (sq = ts.get_next()) != NULL) {
+    while (i++ < (tscore < 10 ? 48 : 24) && (sq = ts.get_next()) != NULL) {
         if (sq->owner != fac || sq->items & TERRA_BASE_IN_TILE
         || pm_safety[ts.rx][ts.ry] < PM_SAFE
         || pm_former[ts.rx][ts.ry] < 1

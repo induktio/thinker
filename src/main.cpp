@@ -72,6 +72,10 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
                 return FALSE;
             if (!patch_setup(&conf))
                 return FALSE;
+            for (int i=1; i<8; i++) {
+                plans[i].proj_limit = 5;
+                plans[i].enemy_range = 20;
+            }
             *tx_version = VERSION;
             *tx_date = __DATE__;
             break;
@@ -237,7 +241,7 @@ HOOK_API int turn_upkeep() {
         }
     }
     if (DEBUG) {
-        *tx_game_rules_basic |= RULES_DEBUG_MODE;
+        *tx_game_rules |= RULES_DEBUG_MODE;
     }
     int minerals[BASES];
     for (int i=1; i<8; i++) {
@@ -290,6 +294,7 @@ HOOK_API int turn_upkeep() {
         }
         debuglog("turn_upkeep %d %2d %2d %2d %2d %2d\n", i, plans[i].proj_limit, psi, dn, dm, de);
     }
+
     return 0;
 }
 
@@ -364,7 +369,7 @@ int find_project(int base_id) {
     }
     if (projs+nukes < (build_nukes ? 4 : 3) && projs+nukes < bases/4) {
         bool alien = tx_factions_meta[fac].rule_flags & FACT_ALIEN;
-        if (alien && knows_tech(fac, tx_facility[FAC_SUBSPACE_GENERATOR].preq_tech)) {
+        if (alien && can_build(base_id, FAC_SUBSPACE_GENERATOR)) {
             return -FAC_SUBSPACE_GENERATOR;
         }
         int score = INT_MIN;
@@ -661,6 +666,7 @@ int select_prod(int id) {
     bool build_ships = can_build_ships(id);
     bool build_pods = (base->pop_size > 1 || base->nutrient_surplus > 1) && pods < 2 && base_ratio < 1.0;
     bool sea_base = water_base(id);
+    plans[fac].enemy_range = (enemyrange + 7 * plans[fac].enemy_range)/8;
 
     double w1 = min(1.0, 1.0 * minerals / plans[fac].proj_limit);
     double w2 = enemymil / (enemyrange * 0.1 + 0.1) - max(0, defenders-1) * 0.3
@@ -717,6 +723,135 @@ int select_prod(int id) {
     }
 }
 
+int soc_effect(int val, bool immune, bool penalty) {
+    if (immune)
+        return max(0, val);
+    if (penalty)
+        return (val < 0 ? val*2 : val);
+    return val;
+}
+
+int social_score(int fac, int sf, int sm2, int pop_boom, int range, int immunity, int impunity, int penalty) {
+    enum {ECO, EFF, SUP, TAL, MOR, POL, GRW, PLA, PRO, IND, RES};
+    Faction* f = &tx_factions[fac];
+    FactMeta* m = &tx_factions_meta[fac];
+    R_Social* s = &tx_social[sf];
+    int morale = has_project(fac, FAC_COMMAND_NEXUS ? 2 : 0) + (has_project(fac, FAC_CYBORG_FACTORY) ? 2 : 0);
+    int sm1 = (&f->SE_Politics)[sf];
+    int sc = 0;
+    int vals[11];
+    memcpy(vals, &f->SE_economy, sizeof(vals));
+
+    if (sm1 != sm2) {
+        for (int i=0; i<11; i++) {
+            bool im1 = (1 << i) & immunity || (1 << (sf*4 + sm1)) & impunity;
+            bool im2 = (1 << i) & immunity || (1 << (sf*4 + sm2)) & impunity;
+            bool pn1 = (1 << (sf*4 + sm1)) & penalty;
+            bool pn2 = (1 << (sf*4 + sm2)) & penalty;
+            vals[i] -= soc_effect(s->effects[sm1][i], im1, pn1);
+            vals[i] += soc_effect(s->effects[sm2][i], im2, pn2);
+        }
+    }
+    sc += (3 + f->AI_wealth + f->AI_tech) * (vals[ECO] + (vals[ECO] >= 2 ? 3 : 0));
+    sc += (1 + f->AI_wealth + f->AI_tech + min(4, *tx_current_turn/25))
+        * (min(6, vals[EFF]) + (vals[EFF] >= 4 ? 3 : 0) + (vals[EFF] < -2 ? -5 : 0));
+    sc += (f->AI_power + f->AI_fight + max(3, 7 - *tx_current_turn/25))
+        * (min(3, max(-4, vals[SUP])) + (vals[SUP] <= -4 ? -5 : 0));
+    sc += (((vals[MOR] >= 1 && vals[MOR] + morale >= 4) ? 5 : 0) + max(1, 4 - range/8)) * min(4, max(-4, vals[MOR]));
+    if (!has_project(fac, FAC_TELEPATHIC_MATRIX))
+        sc += (vals[POL] < -2 && range < 20 ? 8 : 1) * (vals[POL] < 1 ? 1 : 3) * min(3, max(-5, vals[POL]));
+    if (!has_project(fac, FAC_CLONING_VATS))
+        sc += (pop_boom ? 4 : 2) * (vals[GRW] + (pop_boom && vals[GRW] >= 4 ? 4 : 0) + (vals[GRW] < -2 ? -4 : 0));
+    sc += ((has_project(fac, FAC_MANIFOLD_HARMONICS) ? 6 : 1) + m->rule_psi/20) * min(3, max(-3, vals[PLA]));
+    sc += max(1, 4 - range/8 + f->AI_power + (vals[PRO] >= 3 ? 3 : 0)) * min(3, max(-2, vals[PRO]));
+    sc += 7 * min(8 - *tx_diff_level, vals[IND]);
+    sc += (3 + f->AI_wealth + f->AI_tech - f->AI_fight) * min(5, max(-5, vals[RES]));
+
+    debuglog("social_score %d %d %d %d %s\n", fac, sf, sm2, sc, s->soc_name[sm2]);
+    return sc;
+}
+
+HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5) {
+    Faction* f = &tx_factions[fac];
+    FactMeta* m = &tx_factions_meta[fac];
+    R_Social* s = tx_social;
+    int range = (int)plans[fac].enemy_range;
+    int pop_boom = 0;
+    int want_pop = 0;
+    int pop_total = 0;
+    int immunity = 0;
+    int impunity = 0;
+    int penalty = 0;
+
+    if (!ai_enabled(fac)) {
+        return tx_social_ai(fac, v1, v2, v3, v4, v5);
+    }
+    if (f->SE_upheaval_cost_paid > 0) {
+        tx_social_set(fac);
+        return 0;
+    }
+    assert(!memcmp(&f->SE_Politics, &f->SE_Politics_pending, 16));
+    for (int i=0; i<m->faction_bonus_count; i++) {
+        if (m->faction_bonus_id[i] == FCB_IMMUNITY)
+            immunity |= (1 << m->faction_bonus_val1[i]);
+        if (m->faction_bonus_id[i] == FCB_IMPUNITY)
+            impunity |= (1 << (m->faction_bonus_val1[i] * 4 + m->faction_bonus_val2[i]));
+        if (m->faction_bonus_id[i] == FCB_PENALTY)
+            penalty |= (1 << (m->faction_bonus_val1[i] * 4 + m->faction_bonus_val2[i]));
+    }
+    if (has_project(fac, FAC_NETWORK_BACKBONE)) {
+        impunity |= (1 << (4*3 + 1));
+    }
+    if (has_project(fac, FAC_CLONING_VATS)) {
+        impunity |= (1 << (4*3 + 3)) | (1 << (4*2 + 1));
+    } else if (knows_tech(fac, tx_facility[FAC_CHILDREN_CRECHE].preq_tech)) {
+        for (int i=0; i<*tx_total_num_bases; i++) {
+            BASE* b = &tx_bases[i];
+            if (b->faction_id == fac) {
+                want_pop += (tx_pop_goal(i) - b->pop_size)
+                    * (b->nutrient_surplus > 1 && has_facility(i, FAC_CHILDREN_CRECHE) ? 4 : 1);
+                pop_total += 4 * b->pop_size;
+            }
+        }
+        if (pop_total > 0) {
+            pop_boom = ((f->SE_growth < 4 ? 4 : 8) * want_pop) >= pop_total;
+        }
+    }
+    debuglog("social_params %d %d | %d %3d %3d | %2d %4x %4x %4x\n",
+        *tx_current_turn, fac, pop_boom, want_pop, pop_total, range, immunity, impunity, penalty);
+    int score_diff = 1;
+    int sf = -1;
+    int sm2 = -1;
+
+    for (int i=0; i<4; i++) {
+        int sm1 = (&f->SE_Politics)[i];
+        int sc1 = social_score(fac, i, sm1, pop_boom, range, immunity, impunity, penalty);
+
+        for (int j=0; j<4; j++) {
+            if (j == sm1 || !knows_tech(fac, s[i].soc_preq_tech[j]) ||
+            (i == m->soc_opposition_category && j == m->soc_opposition_model))
+                continue;
+            int sc2 = social_score(fac, i, j, pop_boom, range, immunity, impunity, penalty);
+            if (sc2 - sc1 > score_diff) {
+                sf = i;
+                sm2 = j;
+                score_diff = sc2 - sc1;
+            }
+        }
+    }
+    int cost = (m->rule_flags & FACT_ALIEN ? 36 : 24);
+    if (sf >= 0 && f->energy_credits > cost) {
+        int sm1 = (&f->SE_Politics)[sf];
+        debuglog("social_change %d %d | %d %d %2d %2d | %s -> %s\n", *tx_current_turn, fac,
+            sf, sm2, cost, score_diff, s[sf].soc_name[sm1], s[sf].soc_name[sm2]);
+        (&f->SE_Politics_pending)[sf] = sm2;
+        f->energy_credits -= cost;
+        f->SE_upheaval_cost_paid += cost;
+    }
+    tx_social_set(fac);
+    tx_consider_designs(fac);
+    return 0;
+}
 
 
 

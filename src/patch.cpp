@@ -195,6 +195,8 @@ bool patch_setup(Config* conf) {
     write_call_ptr(0x4E888C, (int)crop_yield);
     write_call_ptr(0x5BDC4C, (int)tech_value);
     write_call_ptr(0x579362, (int)enemy_move);
+    write_call_ptr(0x4AED04, (int)social_ai);
+    write_call_ptr(0x527304, (int)social_ai);
 
     if (FileExists(ac_movlist_txt) && !FileExists(ac_movlistx_txt)) {
         CopyFile(ac_movlist_txt, ac_movlistx_txt, TRUE);

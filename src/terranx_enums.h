@@ -509,6 +509,44 @@ enum faction_special_rules
     FACT_MORALE = 0x8000,
 };
 
+enum faction_bonus
+{
+    FCB_FREETECH = 0,
+    FCB_FREEUNIT = 1,
+    FCB_FREEFAC = 2,
+    FCB_SOCIAL = 3,
+    FCB_IMMUNITY = 4,
+    FCB_IMPUNITY = 5,
+    FCB_PENALTY = 6,
+    FCB_FUNGNUTRIENT = 7,
+    FCB_FUNGMINERALS = 8,
+    FCB_FUNGENERGY = 9,
+    FCB_ROBUST = 10,
+    FCB_VOTES = 11,
+    FCB_FREEFAC_PREQ = 12,
+    FCB_REVOLT = 13,
+    FCB_NODRONE = 14,
+    FCB_FREEABIL_PREQ = 15,
+    FCB_PROBECOST = 16,
+    FCB_DEFENSE = 17,
+    FCB_OFFENSE = 18,
+};
+
+enum social_effect
+{
+    SE_ECONOMY = 0,
+    SE_EFFIC = 1,
+    SE_SUPPORT = 2,
+    SE_TALENT = 3,
+    SE_MORALE = 4,
+    SE_POLICE = 5,
+    SE_GROWTH = 6,
+    SE_PLANET = 7,
+    SE_PROBE = 8,
+    SE_INDUSTRY = 9,
+    SE_RESEARCH = 10,
+};
+
 enum game_rules_1
 {
     RULES_SCENARIO_CHEATED_FLAG = 0x20,

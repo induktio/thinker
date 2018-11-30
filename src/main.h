@@ -39,6 +39,8 @@
 #include <set>
 #include "terranx.h"
 
+static_assert(sizeof(struct R_Basic) == 308, "");
+static_assert(sizeof(struct R_Social) == 212, "");
 static_assert(sizeof(struct FactMeta) == 1436, "");
 static_assert(sizeof(struct Faction) == 8396, "");
 static_assert(sizeof(struct BASE) == 308, "");
@@ -90,6 +92,7 @@ struct AIPlans {
     int psi_score;
     int keep_fungus;
     int plant_fungus;
+    float enemy_range;
 };
 
 extern FILE* debug_log;
@@ -104,6 +107,7 @@ HOOK_API int faction_upkeep(int fac);
 HOOK_API int enemy_move(int id);
 HOOK_API int base_production(int id, int v1, int v2, int v3);
 HOOK_API int tech_value(int tech, int fac, int flag);
+HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5);
 
 int need_psych(int id);
 int select_prod(int id);

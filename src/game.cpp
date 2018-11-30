@@ -82,6 +82,8 @@ bool can_build(int base_id, int id) {
     if (id == FAC_ASCENT_TO_TRANSCENDENCE)
         return has_facility(-1, FAC_VOICE_OF_PLANET)
             && !has_facility(-1, FAC_ASCENT_TO_TRANSCENDENCE);
+    if (id == FAC_SUBSPACE_GENERATOR && base->pop_size < tx_basic->base_size_subspace_gen)
+        return false;
     if ((id == FAC_SKY_HYDRO_LAB && fact->satellites_nutrient >= MAX_SAT)
     || (id == FAC_ORBITAL_POWER_TRANS && fact->satellites_energy >= MAX_SAT)
     || (id == FAC_NESSUS_MINING_STATION && fact->satellites_mineral >= MAX_SAT)

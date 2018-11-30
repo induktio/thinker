@@ -7,8 +7,9 @@ const char** tx_date = (const char**)0x691874;
 
 int*  tx_current_base_id = (int*)0x689370;
 BASE* tx_current_base_ptr = (BASE*)0x90EA30;
-int* tx_game_rules_basic = (int*)0x9A64C0;
-int* tx_game_rules_scenario = (int*)0x9A649C;
+int* tx_game_rules = (int*)0x9A64C0;
+int* tx_scen_rules = (int*)0x9A649C;
+int* tx_diff_level = (int*)0x9A64C4;
 int* tx_human_players = (int*)0x9A64E8;
 int* tx_current_turn = (int*)0x9A64D4;
 int* tx_active_faction = (int*)0x9A6820;
@@ -35,6 +36,7 @@ MAP** tx_map_ptr = (MAP**)0x94A30C;
 
 R_Basic* tx_basic = (R_Basic *)0x949738;
 R_Tech* tx_techs = (R_Tech *)0x94F358;
+R_Social* tx_social = (R_Social *)0x94B000;
 R_Facility* tx_facility = (R_Facility *)0x9A4B68;
 R_Ability* tx_ability = (R_Ability *)0x9AB538;
 R_Chassis* tx_chassis = (R_Chassis *)0x94A330;
@@ -70,4 +72,8 @@ fp_void* tx_turn_upkeep = (fp_void*)0x5258C0;
 fp_1int* tx_faction_upkeep = (fp_1int*)0x527290;
 fp_3int* tx_tech_val = (fp_3int*)0x5BCBE0;
 fp_5int* tx_crop_yield = (fp_5int*)0x4E6E50;
+fp_6int* tx_social_ai = (fp_6int*)0x5B4790;
+fp_1int* tx_social_set = (fp_1int*)0x5B4600;
+fp_1int* tx_pop_goal = (fp_1int*)0x4EF090;
+fp_1int* tx_consider_designs = (fp_1int*)0x581260;
 

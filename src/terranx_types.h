@@ -363,22 +363,9 @@ struct Faction
     int unk_67;
     int unk_68;
     char unk_69[4];
-    char unk_70;
-    char unk_71;
-    char unk_72;
-    char gap_85B[4];
-    char unk_73;
-    char gap_860[3];
-    char unk_74;
-    char unk_75;
-    char unk_76;
-    char unk_77;
-    char unk_78;
-    char gap_868[5];
-    char unk_79;
-    char gap_86E[490];
-    char unk_80[512];
-    short unk_81[512];
+    byte units_active[512];
+    byte units_queue[512];
+    short units_lost[512];
     int total_mil_units;
     int current_num_bases;
     int mil_strength_1;
@@ -559,6 +546,14 @@ struct R_Resource
     int borehole_sq_mineral;
     int borehole_sq_energy;
     int pad_8;
+};
+
+struct R_Social
+{
+    char* field_name;
+    int   soc_preq_tech[4];
+    char* soc_name[4];
+    int   effects[4][11];
 };
 
 struct R_Facility
