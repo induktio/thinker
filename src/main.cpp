@@ -55,6 +55,9 @@ static int handler(void* user, const char* section, const char* name, const char
 DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LPVOID UNUSED(lpvReserved)) {
     switch (fdwReason) {
         case DLL_PROCESS_ATTACH:
+            // Open a debug log if appropriate; read the config file; patch SMAC's memory to call our functions
+
+            // Default config
             conf.free_formers = 0;
             conf.satellites_nutrient = 0;
             conf.satellites_mineral = 0;
@@ -68,17 +71,25 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             conf.load_expansion = 1;
             conf.faction_placement = 1;
             conf.landmarks = 0xffff;
+
+            // Defensive programming:
+            //   This should already be zero filled: DLL_PROCESS_ATTACH is called exactly once and plans is a global var.
             memset(plans, 0, sizeof(AIPlans)*8);
+
             if (DEBUG && !(debug_log = fopen("debug.txt", "w")))
-                return FALSE;
+                return FALSE; // Fail if debug is set and debug.txt cannot be opened for writing
             if (ini_parse("thinker.ini", handler, &conf) < 0)
-                return FALSE;
+                return FALSE; // Fail if config file cannot be parsed
             if (!patch_setup(&conf))
                 return FALSE;
+
+            // Initialise global AI defaults
             for (int i=1; i<8; i++) {
                 plans[i].proj_limit = 5;
                 plans[i].enemy_range = 20;
             }
+
+            // Put thinker's name in SMAC's version field :)
             *tx_version = VERSION;
             *tx_date = __DATE__;
             break;
@@ -97,14 +108,17 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
 }
 
 DLL_EXPORT int ThinkerDecide() {
+    // Unused, I think
     return 0;
 }
 
 bool ai_enabled(int fac) {
+    // Faction is one of the seven, is in the first n enabled, and is not a human player
     return fac > 0 && fac <= conf.factions_enabled && !(1 << fac & *tx_human_players);
 }
 
 HOOK_API int base_production(int id, int v1, int v2, int v3) {
+    // Replace base_production decisions if thinker enabled for this faction.
     assert(id >= 0 && id < BASES);
     BASE* base = &tx_bases[id];
     int prod = base->queue_production_id[0];
@@ -471,6 +485,7 @@ int need_psych(int id) {
     int unit = unit_in_tile(mapsq(b->x, b->y));
     if (unit != fac || has_project(fac, FAC_TELEPATHIC_MATRIX))
         return 0;
+    // I think this says if (drone_riots), which would be a bit late for building facilities.
     if (b->drone_total > b->talent_total) {
         if (can_build(id, FAC_RECREATION_COMMONS))
             return -FAC_RECREATION_COMMONS;
