@@ -36,16 +36,36 @@ The following settings will tweak the world builder to produce bigger continents
     4    ; Islands          (Higher # increases island count)
 
 
-Game engine patches included
-============================
-Terranx patches that are applied at runtime:
+Main features
+=============
+Terranx patches that apply to all factions regardless of `factions_enabled` setting:
 
 1. Base governors of all factions will now prefer to work borehole tiles instead of always emphasizing food production. The patch makes governors assume borehole tiles produce 1 food but this will not affect the actual nutrient intake or anything else beyond tile selection.
 2. All landmarks that are placed on random maps can now be configured from `thinker.ini`. Nessus Canyon is also available but disabled by default.
-3. New faction placement algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on huge map sizes. Can be selected with `faction_placement` option.
+3. New `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on huge map sizes.
+4. New `design_units` feature will introduce custom probe team and armored crawler prototypes among other units for the computer factions. The AI may not necessarily build them unless Thinker is enabled.
+5. All expansion related content can be disabled by using the `load_expansion` setting. Requires another mod to be installed on `ac_mod` folder to load the proper txt files.
+
+When Thinker AI is enabled on a faction with the `factions_enabled` setting, the following behaviours change. This will not affect the automated behaviour of units or governors in player-controlled factions.
+
+1. Thinker controls the movement of colony pods (land/sea), terraformers and crawlers (land only) to manage the base placement and production much more effectively than usual.
+2. New combat routines for land-based units will attempt to counter-attack nearby enemy units more often. If the odds are good enough, hasty attacks are executed more often than usual. The AI will fight the native units more aggressively, and it will also try to heal its units at monoliths.
+3. Thinker base production AI will decide every item that is produced in a base. The build order can differ substantially from anything the normal AIs might decide to produce, and the difference can be easily noted in the vastly increased quantity of formers and crawlers the AIs might have.
+4. Thinker AIs will assign extra importance on any former/crawler requirements or any resource production cap-lifting techs when selecting what to research.
+5. Social engineering feature will decide the SE models the AI factions will have. It will attempt to take into account the various cumulative/non-linear effects of the society models and any bonuses provided by the secret projects. The AI is now capable of pop-booming if enough growth is attainable, and it will also try to avoid pacifist drones by switching out of SE models with too many police penalties. All the SE model effects are moddable because the AI is not hardcoded in any particular choices.
 
 
-The following fixes are applied from Scient's unofficial patch v2.0:
+Features not supported
+----------------------
+Currently the features listed here are not supported while Thinker is enabled. The list may be subject to change in future releases.
+
+1. Network multiplayer is not supported because of the extra code required to synchronize the game state across computers.
+2. Some custom scenario rules in "Edit Scenario Rules" menus are not supported fully. This will not affect randomly generated maps.
+
+
+Bugfix patches included
+-----------------------
+The following fixes from Scient's unofficial patch v2.0 are included in `terranx_mod.exe`.
 
 1.  [BUG] If a faction's cumulative PROBE value is greater than 3 (SE morale, covert ops center) it is possible to "mind control" their bases when they should be immune. If the University uses SE Knowledge putting PROBE value down to -4, it would act as if it were 0 erroneously increasing "mind control" costs. After patch, PROBE values greater than 3 will always be immune to regular probes and values less than -2 will be treated as if they were -2.
 2.  [CRASH] It is possible usually on larger maps that scrambling air interceptors would cause the game to crash. Even when the game didn't crash incorrect altitude values were being used in checks. Both of these have been fixed.

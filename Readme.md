@@ -14,8 +14,8 @@ Thinker is an AI improvement mod for Alpha Centauri: Alien Crossfire. By patchin
 * Does not affect player-run factions or game mechanics
 * Game binary includes [Scient's patches](Details.md)
 
-This mod requires the [GOG version](https://www.gog.com/game/sid_meiers_alpha_centauri) of Alpha Centauri to play.
-Some recommended settings for alphax.txt are also covered in [Details](Details.md).
+This mod is tested to work with the [GOG version](https://www.gog.com/game/sid_meiers_alpha_centauri) of Alpha Centauri.
+More information about the features and recommended settings can be found from [Details](Details.md).
 
 
 Download
@@ -35,9 +35,10 @@ Installation
 5. Mod version/build date should now be visible in the game version menu
 
 
-Pracx notes
------------
-This mod can also be used together with [Pracx](https://github.com/DrazharLn/pracx) graphics enhancement patch. It is easiest to download and install [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). If you already use older Pracx 1.10 you can just rename terranx_mod.exe to terranx.exe and run pracxpatch.exe so that the installer patches the right binary.
+Other mods
+----------
+* [Pracx](https://github.com/DrazharLn/pracx) graphics enhancement patch can be used together with Thinker. It is recommended to download and install [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). If you already use older Pracx 1.10 you can just rename terranx_mod.exe to terranx.exe and run pracxpatch.exe so that the installer patches the right binary.
+* [SMAC-in-SMAX mod](https://github.com/DrazharLn/smac-in-smax) can also be installed to play a game similar to original SMAC from within the SMACX game binary while Thinker is enabled.
 
 
 Compiling
