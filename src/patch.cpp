@@ -213,6 +213,11 @@ bool patch_setup(Config* conf) {
         write_offset(0x42C7C2, ac_concepts);
         write_offset(0x403BA8, ac_movlist);
         write_offset(0x4BEF8D, ac_movlist);
+
+        // Enable custom faction selection
+        memset((void*)0x58A5E1, 0x90, 6);
+        memset((void*)0x58B76F, 0x90, 2);
+        memset((void*)0x58B9F3, 0x90, 2);
     }
     if (conf->faction_placement) {
         remove_call(0x5B1DFF);

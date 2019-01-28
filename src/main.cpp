@@ -13,7 +13,7 @@ std::set<std::pair<int,int>> convoys;
 std::set<std::pair<int,int>> boreholes;
 std::set<std::pair<int,int>> needferry;
 
-static int handler(void* user, const char* section, const char* name, const char* value) {
+int handler(void* user, const char* section, const char* name, const char* value) {
     Config* pconfig = (Config*)user;
     #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
     if (MATCH("thinker", "free_formers")) {
@@ -52,6 +52,17 @@ static int handler(void* user, const char* section, const char* name, const char
     return 1;
 }
 
+int cmd_parse(Config* c) {
+    int argc;
+    LPWSTR* argv;
+    argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+    for (int i=1; i<argc; i++) {
+        if (wcscmp(argv[i], L"-smac") == 0)
+            c->load_expansion = 0;
+    }
+    return 1;
+}
+
 DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LPVOID UNUSED(lpvReserved)) {
     switch (fdwReason) {
         case DLL_PROCESS_ATTACH:
@@ -71,7 +82,7 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             memset(plans, 0, sizeof(AIPlans)*8);
             if (DEBUG && !(debug_log = fopen("debug.txt", "w")))
                 return FALSE;
-            if (ini_parse("thinker.ini", handler, &conf) < 0)
+            if (ini_parse("thinker.ini", handler, &conf) < 0 || !cmd_parse(&conf))
                 return FALSE;
             if (!patch_setup(&conf))
                 return FALSE;
@@ -739,7 +750,7 @@ int social_score(int fac, int sf, int sm2, int pop_boom, int range, int immunity
     Faction* f = &tx_factions[fac];
     FactMeta* m = &tx_factions_meta[fac];
     R_Social* s = &tx_social[sf];
-    int morale = has_project(fac, FAC_COMMAND_NEXUS ? 2 : 0) + (has_project(fac, FAC_CYBORG_FACTORY) ? 2 : 0);
+    int morale = (has_project(fac, FAC_COMMAND_NEXUS) ? 2 : 0) + (has_project(fac, FAC_CYBORG_FACTORY) ? 2 : 0);
     int sm1 = (&f->SE_Politics)[sf];
     int sc = 0;
     int vals[11];
@@ -755,20 +766,30 @@ int social_score(int fac, int sf, int sm2, int pop_boom, int range, int immunity
             vals[i] += soc_effect(s->effects[sm2][i], im2, pn2);
         }
     }
-    sc += (3 + f->AI_wealth + f->AI_tech) * (vals[ECO] + (vals[ECO] >= 2 ? 3 : 0));
-    sc += (1 + f->AI_wealth + f->AI_tech + min(4, *tx_current_turn/25))
-        * (min(6, vals[EFF]) + (vals[EFF] >= 4 ? 3 : 0) + (vals[EFF] < -2 ? -5 : 0));
+    sc += (2 + f->AI_wealth + f->AI_tech - f->AI_fight)
+        * (min(5, max(-3, vals[ECO])) + (vals[ECO] >= 2 ? 4 : 0) + (vals[ECO] >= 4 ? 2 : 0));
+    sc += (1 + f->AI_wealth + f->AI_tech - f->AI_fight + min(3, *tx_current_turn/25))
+        * (min(6, vals[EFF]) + (vals[EFF] >= 3 ? 2 : 0) + (vals[EFF] < -2 ? -5 : 0));
     sc += (f->AI_power + f->AI_fight + max(3, 7 - *tx_current_turn/25))
         * (min(3, max(-4, vals[SUP])) + (vals[SUP] <= -4 ? -5 : 0));
-    sc += (((vals[MOR] >= 1 && vals[MOR] + morale >= 4) ? 5 : 0) + max(1, 4 - range/8)) * min(4, max(-4, vals[MOR]));
-    if (!has_project(fac, FAC_TELEPATHIC_MATRIX))
-        sc += (vals[POL] < -2 && range < 20 ? 8 : 1) * (vals[POL] < 1 ? 1 : 3) * min(3, max(-5, vals[POL]));
-    if (!has_project(fac, FAC_CLONING_VATS))
+    sc += (((vals[MOR] >= 1 && vals[MOR] + morale >= 4) ? 5 : 0) + max(1, 4 - range/8 + f->AI_power + f->AI_fight))
+        * min(4, max(-4, vals[MOR]));
+    if (!has_project(fac, FAC_TELEPATHIC_MATRIX)) {
+        sc += (vals[POL] < 1 ? 1 : 3) * (vals[POL] < -2 ? max(1, 8 - range/2) : 1) * min(3, max(-5, vals[POL]));
+        if (has_project(fac, FAC_LONGEVITY_VACCINE)) {
+            sc += (sf == 1 && sm2 == 2 ? 8 : 0);
+            sc += (sf == 1 && (sm2 == 0 || sm2 == 3) ? 4 : 0);
+        }
+    }
+    if (!has_project(fac, FAC_CLONING_VATS)) {
         sc += (pop_boom ? 4 : 2) * (vals[GRW] + (pop_boom && vals[GRW] >= 4 ? 4 : 0) + (vals[GRW] < -2 ? -4 : 0));
+    }
     sc += ((has_project(fac, FAC_MANIFOLD_HARMONICS) ? 6 : 1) + m->rule_psi/20) * min(3, max(-3, vals[PLA]));
-    sc += max(1, 4 - range/8 + f->AI_power + (vals[PRO] >= 3 ? 3 : 0)) * min(3, max(-2, vals[PRO]));
+    sc += max(1, 4 - range/8 + max(0, f->AI_power*2 + f->AI_fight)) * min(3, max(-2, vals[PRO]))
+        * (vals[PRO] >= 3 && !has_project(fac, FAC_HUNTER_SEEKER_ALGO) ? 3 : 1);
     sc += 7 * min(8 - *tx_diff_level, vals[IND]);
-    sc += (3 + f->AI_wealth + f->AI_tech - f->AI_fight) * min(5, max(-5, vals[RES]));
+    sc += max(1, min(4, range/8) + f->AI_wealth + f->AI_tech - f->AI_power - f->AI_fight)
+        * min(5, max(-5, vals[RES]));
 
     debuglog("social_score %d %d %d %d %s\n", fac, sf, sm2, sc, s->soc_name[sm2]);
     return sc;
