@@ -79,10 +79,9 @@ struct Config {
     int design_units;
     int factions_enabled;
     int social_ai;
-    int movement_ai;
-    int production_ai;
     int tech_balance;
-    int load_expansion;
+    int max_sat;
+    int smac_only;
     int faction_placement;
     int landmarks;
 };
@@ -97,6 +96,7 @@ struct AIPlans {
 };
 
 extern FILE* debug_log;
+extern Config conf;
 extern AIPlans plans[8];
 extern std::set<std::pair<int,int>> convoys;
 extern std::set<std::pair<int,int>> boreholes;

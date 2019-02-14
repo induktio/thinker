@@ -35,6 +35,7 @@ bool has_project(int fac, int id);
 bool has_facility(int base_id, int id);
 bool can_build(int base_id, int id);
 bool at_war(int a, int b);
+int prod_count(int fac, int id, int skip);
 int find_hq(int fac);
 int veh_triad(int id);
 int veh_speed(int id);

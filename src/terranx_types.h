@@ -25,7 +25,7 @@ struct BASE
     int production_id_last;
     int eco_damage;
     int queue_size;
-    int queue_production_id[10];
+    int queue_items[10];
     int worked_tiles;
     int specialist_total;
     int pad3;
@@ -200,6 +200,15 @@ struct FactMeta
     int soc_opposition_model;
     int soc_priority_effect;
     int soc_opposition_effect;
+};
+
+struct Goal
+{
+    short type;
+    short unk_1;
+    int x;
+    int y;
+    int unk_2;
 };
 
 struct Faction
@@ -380,33 +389,24 @@ struct Faction
     int mil_strength_1;
     int mil_strength_2;
     int pop_total;
-    int total_sea_units;
+    int unk_70;
     int planet_busters;
-    int probe_teams;
-    int strategy_flags_1;
-    short unk_82[128];
+    int unk_71;
+    int unk_72;
+    short unk_73[128];
+    char unk_74[128];
+    char unk_75[128];
+    short unk_76[128];
+    short unk_77[128];
+    short unk_78[128];
+    short unk_79[128];
+    short unk_80[128];
+    short unk_81[128];
+    char unk_82[128];
     char unk_83[128];
     char unk_84[128];
-    short unk_85[128];
-    short unk_86[128];
-    short unk_87[128];
-    short unk_88[128];
-    short unk_89[128];
-    short unk_90[128];
-    char unk_91[128];
-    char unk_92[128];
-    char strategy_flags_2[128];
-    short goals_unk1;
-    short goals_unk2;
-    int goals_x;
-    int goals_y;
-    int goals_flag;
-    char gap_1A0C[1184];
-    short goal_unk1;
-    short goal_unk2;
-    int goal_unk3;
-    int goal_unk4;
-    char gap_1EB8[388];
+    Goal goals_1[75];
+    Goal goals_2[25];
     int unk_93;
     int unk_94;
     int unk_95;

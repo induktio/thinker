@@ -14,36 +14,34 @@ std::set<std::pair<int,int>> boreholes;
 std::set<std::pair<int,int>> needferry;
 
 int handler(void* user, const char* section, const char* name, const char* value) {
-    Config* pconfig = (Config*)user;
+    Config* cf = (Config*)user;
     #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
     if (MATCH("thinker", "free_formers")) {
-        pconfig->free_formers = atoi(value);
+        cf->free_formers = atoi(value);
     } else if (MATCH("thinker", "satellites_nutrient")) {
-        pconfig->satellites_nutrient = max(0, atoi(value));
+        cf->satellites_nutrient = max(0, atoi(value));
     } else if (MATCH("thinker", "satellites_mineral")) {
-        pconfig->satellites_mineral = max(0, atoi(value));
+        cf->satellites_mineral = max(0, atoi(value));
     } else if (MATCH("thinker", "satellites_energy")) {
-        pconfig->satellites_energy = max(0, atoi(value));
+        cf->satellites_energy = max(0, atoi(value));
     } else if (MATCH("thinker", "design_units")) {
-        pconfig->design_units = atoi(value);
+        cf->design_units = atoi(value);
     } else if (MATCH("thinker", "factions_enabled")) {
-        pconfig->factions_enabled = atoi(value);
+        cf->factions_enabled = atoi(value);
     } else if (MATCH("thinker", "social_ai")) {
-        pconfig->social_ai = atoi(value);
-    } else if (MATCH("thinker", "movement_ai")) {
-        pconfig->movement_ai = atoi(value);
-    } else if (MATCH("thinker", "production_ai")) {
-        pconfig->production_ai = atoi(value);
+        cf->social_ai = atoi(value);
     } else if (MATCH("thinker", "tech_balance")) {
-        pconfig->tech_balance = atoi(value);
-    } else if (MATCH("thinker", "load_expansion")) {
-        pconfig->load_expansion = atoi(value);
+        cf->tech_balance = atoi(value);
+    } else if (MATCH("thinker", "max_satellites")) {
+        cf->max_sat = atoi(value);
+    } else if (MATCH("thinker", "smac_only")) {
+        cf->smac_only = atoi(value);
     } else if (MATCH("thinker", "faction_placement")) {
-        pconfig->faction_placement = atoi(value);
+        cf->faction_placement = atoi(value);
     } else {
         for (int i=0; i<16; i++) {
             if (MATCH("thinker", lm_params[i])) {
-                pconfig->landmarks &= ~((atoi(value) ? 0 : 1) << i);
+                cf->landmarks &= ~((atoi(value) ? 0 : 1) << i);
                 return 1;
             }
         }
@@ -52,13 +50,13 @@ int handler(void* user, const char* section, const char* name, const char* value
     return 1;
 }
 
-int cmd_parse(Config* c) {
+int cmd_parse(Config* cf) {
     int argc;
     LPWSTR* argv;
     argv = CommandLineToArgvW(GetCommandLineW(), &argc);
     for (int i=1; i<argc; i++) {
         if (wcscmp(argv[i], L"-smac") == 0)
-            c->load_expansion = 0;
+            cf->smac_only = 1;
     }
     return 1;
 }
@@ -73,10 +71,9 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             conf.design_units = 1;
             conf.factions_enabled = 7;
             conf.social_ai = 1;
-            conf.movement_ai = 1;
-            conf.production_ai = 1;
             conf.tech_balance = 1;
-            conf.load_expansion = 1;
+            conf.max_sat = 10;
+            conf.smac_only = 0;
             conf.faction_placement = 1;
             conf.landmarks = 0xffff;
             memset(plans, 0, sizeof(AIPlans)*8);
@@ -118,7 +115,7 @@ bool ai_enabled(int fac) {
 HOOK_API int base_production(int id, int v1, int v2, int v3) {
     assert(id >= 0 && id < BASES);
     BASE* base = &tx_bases[id];
-    int prod = base->queue_production_id[0];
+    int prod = base->queue_items[0];
     int fac = base->faction_id;
     int choice = 0;
 
@@ -133,8 +130,8 @@ HOOK_API int base_production(int id, int v1, int v2, int v3) {
 
     if (1 << fac & *tx_human_players) {
         debuglog("skipping human base\n");
-        choice = base->queue_production_id[0];
-    } else if (!conf.production_ai || !ai_enabled(fac)) {
+        choice = base->queue_items[0];
+    } else if (!ai_enabled(fac)) {
         debuglog("skipping computer base\n");
         choice = tx_base_prod_choices(id, v1, v2, v3);
     } else {
@@ -166,7 +163,7 @@ HOOK_API int enemy_move(int id) {
     assert(id >= 0 && id < UNITS);
     VEH* veh = &tx_vehicles[id];
     int fac = veh->faction_id;
-    if (conf.movement_ai && ai_enabled(fac)) {
+    if (ai_enabled(fac)) {
         int w = tx_units[veh->proto_id].weapon_type;
         if (w == WPN_COLONY_MODULE) {
             return colony_move(id);
@@ -346,20 +343,21 @@ int project_score(int fac, int proj) {
 int find_project(int base_id) {
     BASE* base = &tx_bases[base_id];
     int fac = base->faction_id;
-    Faction* fact = &tx_factions[fac];
-    int bases = fact->current_num_bases;
-    int nuke_limit = (fact->planet_busters < fact->AI_fight + 2 ? 1 : 0);
+    Faction* f = &tx_factions[fac];
+    int bases = f->current_num_bases;
+    int nuke_limit = (f->planet_busters < f->AI_fight + 2 ? 1 : 0);
+    int similar_limit = (base->minerals_accumulated > 80 ? 2 : 1);
     int projs = 0;
     int nukes = 0;
 
     bool repeal = *tx_un_charter_repeals > *tx_un_charter_reinstates;
     bool build_nukes = has_weapon(fac, WPN_PLANET_BUSTER) &&
         (repeal || plans[fac].diplo_flags & DIPLO_ATROCITY_VICTIM ||
-        (fact->AI_fight > 0 && fact->AI_power > 0));
+        (f->AI_fight > 0 && f->AI_power > 0));
 
     for (int i=0; i<*tx_total_num_bases; i++) {
         if (tx_bases[i].faction_id == fac) {
-            int prod = tx_bases[i].queue_production_id[0];
+            int prod = tx_bases[i].queue_items[0];
             if (prod <= -70 || prod == FAC_SUBSPACE_GENERATOR) {
                 projs++;
             } else if (prod >= 0 && tx_units[prod].weapon_type == WPN_PLANET_BUSTER) {
@@ -391,7 +389,7 @@ int find_project(int base_id) {
         for (int i=70; i<107; i++) {
             if (alien && (i == FAC_ASCENT_TO_TRANSCENDENCE || i == FAC_VOICE_OF_PLANET))
                 continue;
-            if (can_build(base_id, i)) {
+            if (can_build(base_id, i) && prod_count(fac, -i, base_id) < similar_limit) {
                 int sc = project_score(fac, i);
                 choice = (sc > score ? i : choice);
                 score = max(score, sc);

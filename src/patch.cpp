@@ -181,9 +181,9 @@ void remove_call(int addr) {
     memset((void*)addr, 0x90, 5);
 }
 
-bool patch_setup(Config* conf) {
+bool patch_setup(Config* cf) {
     DWORD attrs;
-    int lm = ~conf->landmarks;
+    int lm = ~cf->landmarks;
     if (!VirtualProtect(AC_IMAGE_BASE, AC_IMAGE_LEN, PAGE_EXECUTE_READWRITE, &attrs))
         return false;
 
@@ -201,7 +201,7 @@ bool patch_setup(Config* conf) {
     if (FileExists(ac_movlist_txt) && !FileExists(ac_movlistx_txt)) {
         CopyFile(ac_movlist_txt, ac_movlistx_txt, TRUE);
     }
-    if (!conf->load_expansion) {
+    if (cf->smac_only) {
         *(int*)0x45F97A = 0;
         *(const char**)0x691AFC = ac_alpha;
         *(const char**)0x691B00 = ac_help;
@@ -219,7 +219,7 @@ bool patch_setup(Config* conf) {
         memset((void*)0x58B76F, 0x90, 2);
         memset((void*)0x58B9F3, 0x90, 2);
     }
-    if (conf->faction_placement) {
+    if (cf->faction_placement) {
         remove_call(0x5B1DFF);
         remove_call(0x5B2137);
         memset((void*)0x5B220F, 0x90, 63);

@@ -68,8 +68,9 @@ bool has_facility(int base_id, int id) {
 }
 
 bool can_build(int base_id, int id) {
+    assert(base_id >= 0 && id > 0);
     BASE* base = &tx_bases[base_id];
-    Faction* fact = &tx_factions[base->faction_id];
+    Faction* f = &tx_factions[base->faction_id];
     if (id == FAC_STOCKPILE_ENERGY)
         return false;
     if (id == FAC_HEADQUARTERS && find_hq(base->faction_id) >= 0)
@@ -84,11 +85,14 @@ bool can_build(int base_id, int id) {
             && !has_facility(-1, FAC_ASCENT_TO_TRANSCENDENCE);
     if (id == FAC_SUBSPACE_GENERATOR && base->pop_size < tx_basic->base_size_subspace_gen)
         return false;
-    if ((id == FAC_SKY_HYDRO_LAB && fact->satellites_nutrient >= MAX_SAT)
-    || (id == FAC_ORBITAL_POWER_TRANS && fact->satellites_energy >= MAX_SAT)
-    || (id == FAC_NESSUS_MINING_STATION && fact->satellites_mineral >= MAX_SAT)
-    || (id == FAC_ORBITAL_DEFENSE_POD && fact->satellites_ODP >= MAX_SAT))
-        return false;
+    if (id >= FAC_SKY_HYDRO_LAB && id <= FAC_ORBITAL_DEFENSE_POD) {
+        int n = prod_count(base->faction_id, -id, base_id);
+        if ((id == FAC_SKY_HYDRO_LAB && f->satellites_nutrient + n >= conf.max_sat)
+        || (id == FAC_ORBITAL_POWER_TRANS && f->satellites_energy + n >= conf.max_sat)
+        || (id == FAC_NESSUS_MINING_STATION && f->satellites_mineral + n >= conf.max_sat)
+        || (id == FAC_ORBITAL_DEFENSE_POD && f->satellites_ODP + n >= conf.max_sat))
+            return false;
+    }
     return knows_tech(base->faction_id, tx_facility[id].preq_tech) && !has_facility(base_id, id);
 }
 
@@ -96,6 +100,17 @@ bool at_war(int a, int b) {
     if (a == b || a < 0 || b < 0)
         return false;
     return !a || !b || tx_factions[a].diplo_status[b] & DIPLO_VENDETTA;
+}
+
+int prod_count(int fac, int id, int skip) {
+    int n = 0;
+    for (int i=0; i<*tx_total_num_bases; i++) {
+        BASE* base = &tx_bases[i];
+        if (base->faction_id == fac && base->queue_items[0] == id && i != skip) {
+            n++;
+        }
+    }
+    return n;
 }
 
 int find_hq(int fac) {

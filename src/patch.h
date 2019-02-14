@@ -8,6 +8,6 @@
 
 extern const char* lm_params[];
 
-bool patch_setup(Config* conf);
+bool patch_setup(Config* cf);
 
 #endif // __PATCH_H__
