@@ -29,6 +29,7 @@ extern int* tx_map_half_x;
 extern int* tx_climate_future_change;
 extern int* tx_un_charter_repeals;
 extern int* tx_un_charter_reinstates;
+extern int* tx_cost_ratios;
 
 extern byte* tx_tech_discovered;
 extern int* tx_secret_projects;
@@ -93,6 +94,7 @@ extern fp_6int* tx_social_ai;
 extern fp_1int* tx_social_set;
 extern fp_1int* tx_pop_goal;
 extern fp_1int* tx_consider_designs;
+extern fp_1int* tx_action_staple;
 
 
 #endif // __TERRANX_H__

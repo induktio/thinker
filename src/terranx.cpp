@@ -24,6 +24,7 @@ int* tx_map_half_x = (int*)0x68FAF0;
 int* tx_climate_future_change = (int*)0x9A67D8;
 int* tx_un_charter_repeals = (int*)0x9A6638;
 int* tx_un_charter_reinstates = (int*)0x9A663C;
+int* tx_cost_ratios = (int*)0x689378;
 
 byte* tx_tech_discovered = (byte*)0x9A6670;
 int* tx_secret_projects = (int*)0x9A6514;
@@ -76,4 +77,5 @@ fp_6int* tx_social_ai = (fp_6int*)0x5B4790;
 fp_1int* tx_social_set = (fp_1int*)0x5B4600;
 fp_1int* tx_pop_goal = (fp_1int*)0x4EF090;
 fp_1int* tx_consider_designs = (fp_1int*)0x581260;
+fp_1int* tx_action_staple = (fp_1int*)0x4CA7F0;
 

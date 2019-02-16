@@ -44,7 +44,8 @@ Terranx patches that apply to all factions regardless of `factions_enabled` sett
 2. All landmarks that are placed on random maps can now be configured from `thinker.ini`. Nessus Canyon is also available but disabled by default.
 3. New `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on huge map sizes.
 4. New `design_units` feature will introduce custom probe team and armored crawler prototypes among other units for the computer factions. The AI may not necessarily build them unless Thinker is enabled.
-5. All expansion related content can be disabled by using the `load_expansion` setting. Requires another mod to be installed on `ac_mod` folder to load the proper txt files.
+5. All expansion related content can be disabled by using the `smac_only` setting. Requires another mod to be installed on `ac_mod` folder to load the proper txt files.
+6. AI mineral/nutrient production cost factors for each difficulty level can be changed by using the `cost_factor` setting. Does not affect other difficulty-related modifiers.
 
 When Thinker AI is enabled on a faction with the `factions_enabled` setting, the following behaviours change. This will not affect the automated behaviour of units or governors in player-controlled factions.
 

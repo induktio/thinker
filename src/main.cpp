@@ -15,6 +15,8 @@ std::set<std::pair<int,int>> needferry;
 
 int handler(void* user, const char* section, const char* name, const char* value) {
     Config* cf = (Config*)user;
+    char buf[250];
+    strcpy_s(buf, sizeof(buf), value);
     #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
     if (MATCH("thinker", "free_formers")) {
         cf->free_formers = atoi(value);
@@ -38,6 +40,11 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->smac_only = atoi(value);
     } else if (MATCH("thinker", "faction_placement")) {
         cf->faction_placement = atoi(value);
+    } else if (MATCH("thinker", "cost_factor")) {
+        char* p = strtok(buf, ",");
+        for (int i=0; i<6 && p != NULL; i++, p = strtok(NULL, ",")) {
+            tx_cost_ratios[i] = max(1, atoi(p));
+        }
     } else {
         for (int i=0; i<16; i++) {
             if (MATCH("thinker", lm_params[i])) {
@@ -478,9 +485,15 @@ int need_psych(int id) {
     BASE* b = &tx_bases[id];
     int fac = b->faction_id;
     int unit = unit_in_tile(mapsq(b->x, b->y));
-    if (unit != fac || has_project(fac, FAC_TELEPATHIC_MATRIX))
+    Faction* f = &tx_factions[fac];
+    if (unit != fac || b->nerve_staple_turns_left > 0 || has_project(fac, FAC_TELEPATHIC_MATRIX))
         return 0;
     if (b->drone_total > b->talent_total) {
+        if (b->nerve_staple_count < 2 && f->SE_police >= 0 && b->pop_size >= 4
+        && b->faction_id_former == fac && *tx_un_charter_repeals > *tx_un_charter_reinstates) {
+            tx_action_staple(id);
+            return 0;
+        }
         if (can_build(id, FAC_RECREATION_COMMONS))
             return -FAC_RECREATION_COMMONS;
         if (has_project(fac, FAC_VIRTUAL_WORLD) && can_build(id, FAC_NETWORK_NODE))
@@ -617,7 +630,7 @@ int select_prod(int id) {
     BASE* base = &tx_bases[id];
     int fac = base->faction_id;
     int minerals = base->mineral_surplus;
-    Faction* fact = &tx_factions[fac];
+    Faction* f = &tx_factions[fac];
 
     int transports = 0;
     int defenders = 0;
@@ -630,13 +643,13 @@ int select_prod(int id) {
     double enemymil = 0;
 
     for (int i=1; i<8; i++) {
-        if (i==fac || ~fact->diplo_status[i] & DIPLO_COMMLINK)
+        if (i==fac || ~f->diplo_status[i] & DIPLO_COMMLINK)
             continue;
         double mil = (1.0 * faction_might(i)) / faction_might(fac);
-        if (fact->diplo_status[i] & DIPLO_VENDETTA) {
+        if (f->diplo_status[i] & DIPLO_VENDETTA) {
             enemymask |= (1 << i);
             enemymil = max(enemymil, 1.0 * mil);
-        } else if (~fact->diplo_status[i] & DIPLO_PACT) {
+        } else if (~f->diplo_status[i] & DIPLO_PACT) {
             enemymil = max(enemymil, 0.3 * mil);
         }
     }
@@ -672,7 +685,7 @@ int select_prod(int id) {
         }
     }
     int reserve = max(2, base->mineral_intake / 2);
-    double base_ratio = 2.0 * fact->current_num_bases / min(80, *tx_map_area_sq_root);
+    double base_ratio = f->current_num_bases / min(40.0, *tx_map_area_sq_root * 0.55);
     bool has_formers = has_weapon(fac, WPN_TERRAFORMING_UNIT);
     bool has_supply = has_weapon(fac, WPN_SUPPLY_TRANSPORT);
     bool build_ships = can_build_ships(id);
@@ -682,7 +695,7 @@ int select_prod(int id) {
 
     double w1 = min(1.0, 1.0 * minerals / plans[fac].proj_limit);
     double w2 = enemymil / (enemyrange * 0.1 + 0.1) - max(0, defenders-1) * 0.3
-        + min(1.0, (fact->AI_fight * 0.2 + 0.8) * base_ratio);
+        + min(1.0, (f->AI_fight * 0.2 + 0.8) * base_ratio);
     double threat = 1 - (1 / (1 + max(0.0, w1 * w2)));
     int def_target = (*tx_current_turn < 50 && !sea_base && !random(3) ? 2 : 1);
 
@@ -700,7 +713,7 @@ int select_prod(int id) {
     } else if (minerals > reserve && random(100) < (int)(100.0 * threat)) {
         if (defenders > 2 && enemyrange < 12 && can_build(id, FAC_PERIMETER_DEFENSE))
             return -FAC_PERIMETER_DEFENSE;
-        if (has_chassis(fac, CHS_NEEDLEJET) && fact->SE_police >= -3 && random(3) == 0)
+        if (has_chassis(fac, CHS_NEEDLEJET) && f->SE_police >= -3 && random(3) == 0)
             return find_proto(fac, TRIAD_AIR, COMBAT, ATT);
         else if (has_weapon(fac, WPN_PROBE_TEAM) && probes < 1 && random(3) == 0)
             if (build_ships)

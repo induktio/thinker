@@ -53,7 +53,6 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define BASES 512
 #define UNITS 2048
 #define COMBAT 0
-#define MAX_SAT 8
 #define SYNC 0
 #define NO_SYNC 1
 #define LAND_ONLY 0
@@ -67,7 +66,6 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define STATUS_CONVOY 3
 #define STATUS_GOTO 24
 #define STATUS_ROAD_TO 27
-#define ALTITUDE_MIN_LAND 60
 #define ATT false
 #define DEF true
 
