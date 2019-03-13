@@ -172,7 +172,7 @@ int escape_move(int id) {
     int tx = -1;
     int ty = -1;
     TileSearch ts;
-    ts.init(veh->x, veh->y, (veh_triad(id) == TRIAD_SEA ? WATER_ONLY : LAND_ONLY));
+    ts.init(veh->x, veh->y, veh_triad(id));
     while (i++ < (tscore < 500 ? 80 : 24) && (sq = ts.get_next()) != NULL) {
         int score = escape_score(ts.rx, ts.ry, ts.dist-1, veh, sq);
         if (score > tscore && !other_in_tile(fac, sq) && !ts.has_zoc(fac)) {
@@ -293,8 +293,6 @@ bool want_base(int x, int y, int fac, int triad) {
     MAP* sq = mapsq(x, y);
     if (!sq || y < 3 || y >= *tx_map_axis_y-3)
         return false;
-    if (pm_former[x][y] > 0 && ~sq->landmarks & LM_JUNGLE)
-        return false;
     if (sq->rocks & TILE_ROCKY || (sq->items & (BASE_DISALLOWED | TERRA_CONDENSER)))
         return false;
     if (sq->owner > 0 && fac != sq->owner && !at_war(fac, sq->owner))
@@ -308,7 +306,7 @@ bool want_base(int x, int y, int fac, int triad) {
     }
     if (triad != TRIAD_SEA && !is_ocean(sq)) {
         return true;
-    } else if (triad == TRIAD_SEA && is_ocean_shelf(sq)) {
+    } else if ((triad == TRIAD_SEA || triad == TRIAD_AIR) && is_ocean_shelf(sq)) {
         return true;
     }
     return false;
@@ -346,13 +344,13 @@ int base_tile_score(int x1, int y1, int range, int triad) {
                 && nearby_tiles(x2, y2, LAND_ONLY, 20) >= 20 && ++land < 4)
                     score += (sq->owner < 1 ? 20 : 5);
                 if (is_ocean_shelf(sq))
-                    score += 3;
+                    score += (triad == TRIAD_SEA ? 3 : 2);
             }
             if (!is_ocean(sq)) {
                 if (sq->level & TILE_RAINY)
-                    score++;
-                if (sq->rocks & TILE_ROLLING)
-                    score++;
+                    score += 2;
+                if (sq->level & TILE_MOIST && sq->rocks & TILE_ROLLING)
+                    score += 2;
             }
             for (const int* p : priority) if (items & p[0]) score += p[1];
         }
@@ -392,9 +390,9 @@ int colony_move(int id) {
         int tx = -1;
         int ty = -1;
         TileSearch ts;
-        ts.init(veh->x, veh->y, (triad == TRIAD_SEA ? WATER_ONLY : LAND_ONLY), 2);
+        ts.init(veh->x, veh->y, triad, 2);
         while (i++ < 200 && k < 20 && (sq = ts.get_next()) != NULL) {
-            if (!can_build_base(ts.rx, ts.ry, fac, triad))
+            if (!can_build_base(ts.rx, ts.ry, fac, triad) || pm_former[ts.rx][ts.ry] > 0)
                 continue;
             int score = base_tile_score(ts.rx, ts.ry, i/8, triad);
             k++;
@@ -417,11 +415,12 @@ int colony_move(int id) {
     return veh_skip(id);
 }
 
-bool can_bridge(int x, int y) {
+bool can_bridge(int x, int y, int fac, MAP* sq) {
+    if (is_ocean(sq) || !has_terra(fac, FORMER_RAISE_LAND, 0))
+        return false;
     if (coast_tiles(x, y) < 3)
         return false;
     const int range = 4;
-    MAP* sq;
     TileSearch ts;
     ts.init(x, y, LAND_ONLY);
     int k = 0;
@@ -443,8 +442,9 @@ bool can_bridge(int x, int y) {
     return n > 4;
 }
 
-bool can_borehole(int x, int y, int bonus) {
-    MAP* sq = mapsq(x, y);
+bool can_borehole(int x, int y, int fac, int bonus, MAP* sq) {
+    if (!has_terra(fac, FORMER_THERMAL_BORE, is_ocean(sq)))
+        return false;
     if (!sq || sq->items & (BASE_DISALLOWED | IMP_ADVANCED) || bonus == RES_NUTRIENT)
         return false;
     if (bonus == RES_NONE && sq->rocks & TILE_ROLLING)
@@ -465,95 +465,163 @@ bool can_borehole(int x, int y, int bonus) {
     return true;
 }
 
-bool can_farm(int x, int y, int bonus, bool has_eco, MAP* sq) {
+bool can_farm(int x, int y, int fac, int bonus, bool has_nut, MAP* sq) {
+    if (!has_terra(fac, FORMER_FARM, is_ocean(sq)))
+        return false;
     if (bonus == RES_NUTRIENT)
         return true;
     if (bonus == RES_ENERGY || bonus == RES_MINERAL)
         return false;
-    if (sq->landmarks & LM_JUNGLE && !has_eco)
+    if (sq->landmarks & LM_JUNGLE && !has_nut)
         return false;
     if (nearby_items(x, y, 1, TERRA_FOREST) < (sq->items & TERRA_FOREST ? 4 : 1))
         return false;
-    if (sq->level & TILE_RAINY && sq->rocks & TILE_ROLLING && ~sq->landmarks & LM_JUNGLE)
-        return true;
-    return (has_eco && !(x % 2) && !(y % 2) && !(abs(x-y) % 4));
+    if (!has_nut && nearby_items(x, y, 1, TERRA_FARM | TERRA_SOLAR) > 2)
+        return false;
+    if ((sq->level & TILE_RAINY || sq->level & TILE_MOIST) && sq->rocks & TILE_ROLLING)
+        return nearby_items(x, y, 1, TERRA_CONDENSER) < 3;
+    return (has_nut && !(x % 2) && !(y % 2) && !(abs(x-y) % 4));
 }
 
-bool can_fungus(int x, int y, int bonus, MAP* sq) {
+bool can_fungus(int x, int y, int fac, int bonus, MAP* sq) {
     if (sq->items & (TERRA_BASE_IN_TILE | TERRA_MONOLITH | IMP_ADVANCED))
         return false;
-    return !can_borehole(x, y, bonus) && nearby_items(x, y, 1, TERRA_FUNGUS) < 5;
+    return !can_borehole(x, y, fac, bonus, sq) && nearby_items(x, y, 1, TERRA_FUNGUS) < 5;
+}
+
+bool can_road(int x, int y, int fac, MAP* sq) {
+    if (is_ocean(sq) || !pm_former[x][y] || !has_terra(fac, FORMER_ROAD, 0)
+    || sq->items & (TERRA_ROAD | TERRA_BASE_IN_TILE))
+        return false;
+    if (sq->items & TERRA_FUNGUS && !knows_tech(fac, tx_basic->tech_preq_build_road_fungus))
+        return false;
+    if (!(sq->items & (TERRA_FOREST | TERRA_SENSOR)))
+        return true;
+    int i = 0;
+    int k = 0;
+    int r[] = {0,0,0,0,0,0,0,0};
+    for (const int* t : offset) {
+        sq = mapsq(wrap(x + t[0]), y + t[1]);
+        if (!is_ocean(sq) && sq->owner == fac) {
+            int pm = pm_former[x + t[0]][y + t[1]];
+            if (sq->items & (TERRA_ROAD | TERRA_BASE_IN_TILE)) {
+                r[i] = 1;
+            }
+            if (pm > 0 && pm_former[x][y] > pm) {
+                k++;
+            }
+        }
+        i++;
+    }
+    // Determine if we should connect roads on opposite sides of the tile
+    if ((r[0] && r[4] && !r[2] && !r[6])
+    || (r[2] && r[6] && !r[0] && !r[4])
+    || (r[1] && r[5] && !((r[2] && r[4]) || (r[0] && r[6])))
+    || (r[3] && r[7] && !((r[0] && r[2]) || (r[4] && r[6])))) {
+        return true;
+    }
+    return k > 3 && r[0]+r[2]+r[4]+r[6] < 3;
 }
 
 bool can_sensor(int x, int y, int fac, MAP* sq) {
-    return ~sq->items & TERRA_SENSOR && has_terra(fac, FORMER_SENSOR)
-        && !nearby_items(x, y, 2, TERRA_SENSOR);
+    return has_terra(fac, FORMER_SENSOR, is_ocean(sq))
+        && ~sq->items & TERRA_SENSOR
+        && !nearby_items(x, y, 2, TERRA_SENSOR)
+        && (~sq->items & TERRA_FUNGUS || knows_tech(fac, tx_basic->tech_preq_improv_fungus))
+        && *tx_current_turn + random(14) > 14;
 }
 
 int select_item(int x, int y, int fac, MAP* sq) {
     int items = sq->items;
     int bonus = tx_bonus_at(x, y);
+    bool sea = is_ocean(sq);
     bool rocky_sq = sq->rocks & TILE_ROCKY;
-    bool has_eco = has_terra(fac, FORMER_CONDENSER);
+    bool has_eco = has_terra(fac, FORMER_CONDENSER, 0);
+    bool has_min = knows_tech(fac, tx_basic->tech_preq_allow_3_minerals_sq);
+    bool has_nut = knows_tech(fac, tx_basic->tech_preq_allow_3_nutrients_sq);
+    bool road = can_road(x, y, fac, sq);
 
-    if (items & TERRA_BASE_IN_TILE)
+    if (items & TERRA_BASE_IN_TILE || (sea && !is_ocean_shelf(sq)))
         return -1;
     if (items & TERRA_FUNGUS) {
-        if (plans[fac].keep_fungus && can_fungus(x, y, bonus, sq)) {
-            if (~items & TERRA_ROAD && knows_tech(fac, tx_basic->tech_preq_build_road_fungus))
+        if (plans[fac].keep_fungus && can_fungus(x, y, fac, bonus, sq)) {
+            if (road)
                 return FORMER_ROAD;
-            else if (can_sensor(x, y, fac, sq) && knows_tech(fac, tx_basic->tech_preq_improv_fungus))
+            else if (can_sensor(x, y, fac, sq))
                 return FORMER_SENSOR;
             return -1;
         }
         return FORMER_REMOVE_FUNGUS;
-    }
-    if (~items & TERRA_ROAD)
+    } else if (items & TERRA_MONOLITH && road) {
         return FORMER_ROAD;
-    if (has_terra(fac, FORMER_RAISE_LAND) && can_bridge(x, y)) {
+    }
+    if (can_bridge(x, y, fac, sq)) {
         int cost = tx_terraform_cost(x, y, fac);
         if (cost < tx_factions[fac].energy_credits/10) {
             return FORMER_RAISE_LAND;
         }
     }
-    if (workable_tile(x, y, fac)) {
-        if (plans[fac].plant_fungus && can_fungus(x, y, bonus, sq))
-            return FORMER_PLANT_FUNGUS;
-        else if (items & BASE_DISALLOWED)
-            return -1;
-    } else {
+    if (!workable_tile(x, y, fac) || items & (TERRA_MONOLITH | TERRA_FUNGUS))
+        return -1;
+    if (plans[fac].plant_fungus && can_fungus(x, y, fac, bonus, sq))
+        return FORMER_PLANT_FUNGUS;
+    if (sea) {
+        bool improved = items & (TERRA_MINE | TERRA_SOLAR);
+        if (has_terra(fac, FORMER_FARM, sea) && ~items & TERRA_FARM)
+            return FORMER_FARM;
+        else if (!improved && has_terra(fac, FORMER_SOLAR, sea) && bonus != RES_MINERAL
+        && (bonus == RES_NUTRIENT || nearby_items(x, y, 1, TERRA_SOLAR)+1 < nearby_items(x, y, 1, TERRA_MINE)))
+            return FORMER_SOLAR;
+        else if (!improved && has_terra(fac, FORMER_MINE, sea))
+            return FORMER_MINE;
+        else if (can_sensor(x, y, fac, sq))
+            return FORMER_SENSOR;
         return -1;
     }
-    if (has_terra(fac, FORMER_THERMAL_BORE) && can_borehole(x, y, bonus))
-        return FORMER_THERMAL_BORE;
-    if (rocky_sq && (bonus == RES_NUTRIENT || sq->landmarks & LM_JUNGLE) && has_terra(fac, FORMER_LEVEL_TERRAIN))
+    if ((has_min || bonus != RES_NONE) && can_borehole(x, y, fac, bonus, sq))
+        return road ? FORMER_ROAD : FORMER_THERMAL_BORE;
+    if (rocky_sq && ~items & TERRA_MINE && (has_min || bonus == RES_MINERAL) && has_terra(fac, FORMER_MINE, sea))
+        return road ? FORMER_ROAD : FORMER_MINE;
+    if (rocky_sq && (bonus == RES_NUTRIENT || sq->landmarks & LM_JUNGLE) && has_terra(fac, FORMER_LEVEL_TERRAIN, sea))
         return FORMER_LEVEL_TERRAIN;
-    if (rocky_sq && ~items & TERRA_MINE && (has_eco || bonus == RES_MINERAL) && has_terra(fac, FORMER_MINE))
-        return FORMER_MINE;
-    if (!rocky_sq && can_farm(x, y, bonus, has_eco, sq)) {
-        if (~items & TERRA_FARM && (has_eco || bonus == RES_NUTRIENT) && has_terra(fac, FORMER_FARM))
-            return FORMER_FARM;
-        else if (has_eco && ~items & TERRA_CONDENSER)
-            return FORMER_CONDENSER;
-        else if (has_terra(fac, FORMER_SOIL_ENR) && ~items & TERRA_SOIL_ENR)
-            return FORMER_SOIL_ENR;
-        else if (!has_eco && !(items & (TERRA_CONDENSER | TERRA_SOLAR)) && has_terra(fac, FORMER_SOLAR))
-            return FORMER_SOLAR;
-    } else if (!rocky_sq && !(items & (TERRA_FARM | TERRA_CONDENSER))) {
+    if (!rocky_sq && can_farm(x, y, fac, bonus, has_nut, sq)) {
+        bool improved = items & (TERRA_CONDENSER | TERRA_SOLAR);
+        if (road)
+            return FORMER_ROAD;
+        if (!has_nut) {
+            if (!improved && sq->level & TILE_RAINY && has_terra(fac, FORMER_SOLAR, sea))
+                return FORMER_SOLAR;
+            else if (~items & TERRA_FARM && sq->level & TILE_MOIST && sq->rocks & TILE_ROLLING)
+                return FORMER_FARM;
+        }
+        if (has_nut || bonus == RES_NUTRIENT) {
+            if (~items & TERRA_FARM)
+                return FORMER_FARM;
+            else if (~items & TERRA_CONDENSER && has_eco)
+                return FORMER_CONDENSER;
+            else if (~items & TERRA_SOIL_ENR && has_terra(fac, FORMER_SOIL_ENR, sea))
+                return FORMER_SOIL_ENR;
+            else if (!has_eco && !improved && has_terra(fac, FORMER_SOLAR, sea))
+                return FORMER_SOLAR;
+        }
+    } else if (!rocky_sq && !(items & IMP_ADVANCED)) {
         if (can_sensor(x, y, fac, sq))
             return FORMER_SENSOR;
-        else if (~items & TERRA_FOREST && has_terra(fac, FORMER_FOREST))
+        else if (~items & TERRA_FOREST && has_terra(fac, FORMER_FOREST, sea))
             return FORMER_FOREST;
     }
+    if (road)
+        return FORMER_ROAD;
     return -1;
 }
 
-int tile_score(int x1, int y1, int x2, int y2, int fac, MAP* sq) {
+int former_tile_score(int x1, int y1, int x2, int y2, int fac, MAP* sq) {
     const int priority[][2] = {
         {TERRA_RIVER, 2},
         {TERRA_RIVER_SRC, 2},
         {TERRA_ROAD, -5},
-        {TERRA_FARM, -2},
+        {TERRA_FARM, -3},
+        {TERRA_SOLAR, -2},
         {TERRA_FOREST, -4},
         {TERRA_MINE, -4},
         {TERRA_CONDENSER, -4},
@@ -565,9 +633,8 @@ int tile_score(int x1, int y1, int x2, int y2, int fac, MAP* sq) {
     int items = sq->items;
     int score = (sq->landmarks ? 3 : 0);
 
-    if (bonus && !(items & IMP_ADVANCED)) {
-        bool bh = (bonus == RES_MINERAL || bonus == RES_ENERGY)
-            && has_terra(fac, FORMER_THERMAL_BORE) && can_borehole(x2, y2, bonus);
+    if (bonus && !(items & (is_ocean(sq) ? (IMP_SIMPLE | IMP_ADVANCED) : IMP_ADVANCED))) {
+        bool bh = (bonus == RES_MINERAL || bonus == RES_ENERGY) && can_borehole(x2, y2, fac, bonus, sq);
         int w = (bh || !(items & IMP_SIMPLE) ? 5 : 1);
         score += w * (bonus == RES_NUTRIENT ? 3 : 2);
     }
@@ -587,10 +654,12 @@ int tile_score(int x1, int y1, int x2, int y2, int fac, MAP* sq) {
 int former_move(int id) {
     VEH* veh = &tx_vehicles[id];
     int fac = veh->faction_id;
+    int triad = veh_triad(id);
     int x = veh->x;
     int y = veh->y;
     MAP* sq = mapsq(x, y);
     bool safe = pm_safety[x][y] >= PM_SAFE;
+    int item;
     if (!sq || sq->owner != fac) {
         return tx_enemy_move(id);
     }
@@ -598,24 +667,26 @@ int former_move(int id) {
         return veh_skip(id);
     }
     if (safe || (veh->move_status >= 16 && veh->move_status < 22)) {
-        if (veh->move_status >= 4 && veh->move_status < 24) {
+        if ((veh->move_status >= 4 && veh->move_status < 24)
+        || (triad != TRIAD_LAND && !at_target(veh))) {
             return SYNC;
         }
-        int item = select_item(x, y, fac, sq);
+        item = select_item(x, y, fac, sq);
         if (item >= 0) {
             pm_former[x][y] -= 2;
-            debuglog("former_action %d %d %d %d %d\n", x, y, fac, id, item);
             if (item == FORMER_RAISE_LAND) {
                 int cost = tx_terraform_cost(x, y, fac);
                 tx_factions[fac].energy_credits -= cost;
                 debuglog("bridge_cost %d %d %d %d\n", x, y, fac, cost);
             }
+            debuglog("former_action %d %d %d %d %d\n", x, y, fac, id, item);
             return set_action(id, item+4, *tx_terraform[item].shortcuts);
         }
     } else if (!safe) {
         return escape_move(id);
     }
     int i = 0;
+    int limit = (triad == TRIAD_LAND ? 50 : 100);
     int tscore = INT_MIN;
     int tx = -1;
     int ty = -1;
@@ -626,16 +697,16 @@ int former_move(int id) {
         by = tx_bases[veh->home_base_id].y;
     }
     TileSearch ts;
-    ts.init(x, y, LAND_ONLY);
+    ts.init(x, y, triad);
 
-    while (i++ < (tscore < 10 ? 48 : 24) && (sq = ts.get_next()) != NULL) {
+    while (i++ < limit/(tx >= 0 ? 2 : 1) && (sq = ts.get_next()) != NULL) {
         if (sq->owner != fac || sq->items & TERRA_BASE_IN_TILE
         || pm_safety[ts.rx][ts.ry] < PM_SAFE
         || pm_former[ts.rx][ts.ry] < 1
         || other_in_tile(fac, sq))
             continue;
-        int score = tile_score(bx, by, ts.rx, ts.ry, fac, sq);
-        if (score > tscore && select_item(ts.rx, ts.ry, fac, sq) != -1) {
+        int score = former_tile_score(bx, by, ts.rx, ts.ry, fac, sq);
+        if (score > tscore && (item = select_item(ts.rx, ts.ry, fac, sq)) != -1) {
             tx = ts.rx;
             ty = ts.ry;
             tscore = score;
@@ -643,11 +714,12 @@ int former_move(int id) {
     }
     if (tx >= 0) {
         pm_former[tx][ty] -= 2;
-        debuglog("former_move %d %d -> %d %d | %d %d | %d\n", x, y, tx, ty, fac, id, tscore);
-        return set_road_to(id, tx, ty);
+        debuglog("former_move %d %d -> %d %d | %d %d | %d %d\n", x, y, tx, ty, fac, id, item, tscore);
+        return set_move_to(id, tx, ty);
     } else if (!random(4)) {
         return set_move_to(id, bx, by);
     }
+    debuglog("former_skip %d %d | %d %d\n", x, y, fac, id);
     return veh_skip(id);
 }
 

@@ -176,7 +176,7 @@ HOOK_API int enemy_move(int id) {
             return colony_move(id);
         } else if (w == WPN_SUPPLY_TRANSPORT) {
             return crawler_move(id);
-        } else if (w == WPN_TERRAFORMING_UNIT && veh_triad(id) != TRIAD_SEA) {
+        } else if (w == WPN_TERRAFORMING_UNIT) {
             return former_move(id);
         } else if (w == WPN_TROOP_TRANSPORT && veh_triad(id) == TRIAD_SEA) {
             return trans_move(id);
@@ -223,9 +223,10 @@ HOOK_API int turn_upkeep() {
             tx_propose_proto(i, CHS_INFANTRY, WPN_LASER, arm, abls, rec, PLAN_DEFENSIVE, NULL);
         }
         if (has_weapon(i, WPN_TERRAFORMING_UNIT) && rec >= REC_FUSION) {
+            bool grav = has_chassis(i, CHS_GRAVSHIP);
             int abls = has_ability(i, ABL_ID_SUPER_TERRAFORMER ? ABL_SUPER_TERRAFORMER : 0) |
-                (twoabl && has_ability(i, ABL_ID_FUNGICIDAL) ? ABL_FUNGICIDAL : 0);
-            tx_propose_proto(i, chs, WPN_TERRAFORMING_UNIT, ARM_NO_ARMOR, abls,
+                (twoabl && !grav && has_ability(i, ABL_ID_FUNGICIDAL) ? ABL_FUNGICIDAL : 0);
+            tx_propose_proto(i, (grav ? CHS_GRAVSHIP : chs), WPN_TERRAFORMING_UNIT, ARM_NO_ARMOR, abls,
             REC_FUSION, PLAN_TERRAFORMING, NULL);
         }
         if (has_weapon(i, WPN_SUPPLY_TRANSPORT) && rec >= REC_FUSION && arm2 != ARM_NO_ARMOR) {
@@ -301,7 +302,7 @@ HOOK_API int turn_upkeep() {
         int dn = manifold[p][0] + f->tech_fungus_nutrient - r->forest_sq_nutrient;
         int dm = manifold[p][1] + f->tech_fungus_mineral - r->forest_sq_mineral;
         int de = manifold[p][2] + f->tech_fungus_energy - r->forest_sq_energy;
-        bool terra_fungus = has_terra(i, FORMER_PLANT_FUNGUS)
+        bool terra_fungus = has_terra(i, FORMER_PLANT_FUNGUS, 0)
             && (knows_tech(i, tx_basic->tech_preq_ease_fungus_mov) || has_project(i, FAC_XENOEMPATHY_DOME));
 
         plans[i].keep_fungus = (dn+dm+de > 0);
@@ -356,17 +357,19 @@ int find_project(int base_id) {
     int similar_limit = (base->minerals_accumulated > 80 ? 2 : 1);
     int projs = 0;
     int nukes = 0;
+    int works = 0;
 
-    bool repeal = *tx_un_charter_repeals > *tx_un_charter_reinstates;
     bool build_nukes = has_weapon(fac, WPN_PLANET_BUSTER) &&
-        (repeal || plans[fac].diplo_flags & DIPLO_ATROCITY_VICTIM ||
+        (!un_charter() || plans[fac].diplo_flags & DIPLO_ATROCITY_VICTIM ||
         (f->AI_fight > 0 && f->AI_power > 0));
 
     for (int i=0; i<*tx_total_num_bases; i++) {
         if (tx_bases[i].faction_id == fac) {
             int prod = tx_bases[i].queue_items[0];
-            if (prod <= -70 || prod == FAC_SUBSPACE_GENERATOR) {
+            if (prod <= -70 || prod == -FAC_SUBSPACE_GENERATOR) {
                 projs++;
+            } else if (prod == -FAC_SKUNKWORKS) {
+                works++;
             } else if (prod >= 0 && tx_units[prod].weapon_type == WPN_PLANET_BUSTER) {
                 nukes++;
             }
@@ -383,8 +386,14 @@ int find_project(int base_id) {
                 best = id;
             }
         }
-        if (best)
-            return best;
+        if (best) {
+            if (~tx_units[best].unit_flags & UNIT_PROTOTYPED && can_build(base_id, FAC_SKUNKWORKS)) {
+                if (works < 2)
+                    return -FAC_SKUNKWORKS;
+            } else {
+                return best;
+            }
+        }
     }
     if (projs+nukes < (build_nukes ? 4 : 3) && projs+nukes < bases/4) {
         bool alien = tx_factions_meta[fac].rule_flags & FACT_ALIEN;
@@ -489,8 +498,8 @@ int need_psych(int id) {
     if (unit != fac || b->nerve_staple_turns_left > 0 || has_project(fac, FAC_TELEPATHIC_MATRIX))
         return 0;
     if (b->drone_total > b->talent_total) {
-        if (b->nerve_staple_count < 2 && f->SE_police >= 0 && b->pop_size >= 4
-        && b->faction_id_former == fac && *tx_un_charter_repeals > *tx_un_charter_reinstates) {
+        if (b->nerve_staple_count < 3 && !un_charter() && f->SE_police >= 0 && b->pop_size >= 4
+        && b->faction_id_former == fac) {
             tx_action_staple(id);
             return 0;
         }
@@ -529,6 +538,7 @@ int find_facility(int base_id) {
     int pop_rule = tx_factions_meta[fac].rule_population;
     int hab_complex_limit = tx_basic->pop_limit_wo_hab_complex - pop_rule;
     int hab_dome_limit = tx_basic->pop_limit_wo_hab_dome - pop_rule;
+    bool sea_base = water_base(base_id);
     Faction* fact = &tx_factions[fac];
 
     if (*tx_climate_future_change > 0) {
@@ -564,7 +574,7 @@ int find_facility(int base_id) {
             continue;
         if (base->energy_surplus < 16 && (f == FAC_FUSION_LAB || f == FAC_RESEARCH_HOSPITAL))
             continue;
-        if (f == FAC_COMMAND_CENTER && (water_base(base_id) || fact->AI_fight + fact->AI_power < 1))
+        if (f == FAC_COMMAND_CENTER && (sea_base || fact->AI_fight + fact->AI_power < 1))
             continue;
         if (f == FAC_GENEJACK_FACTORY && base->mineral_intake < 16)
             continue;
@@ -577,17 +587,8 @@ int find_facility(int base_id) {
         }
     }
     debuglog("******\n");
-    bool build_ships = can_build_ships(base_id) && (water_base(base_id) || random(3) == 0);
-    if (has_weapon(fac, WPN_PROBE_TEAM) && random(minerals) < base->mineral_intake/2) {
-        return find_proto(fac, (build_ships ? TRIAD_SEA : TRIAD_LAND), WMODE_INFOWAR, DEF);
-    }
-    if (has_chassis(fac, CHS_NEEDLEJET) && fact->SE_police >= -3 && random(3) == 0) {
-        return find_proto(fac, TRIAD_AIR, COMBAT, ATT);
-    }
-    if (build_ships) {
-        return find_proto(fac, TRIAD_SEA, (random(3) == 0 ? WMODE_TRANSPORT : COMBAT), ATT);
-    }
-    return find_proto(fac, TRIAD_LAND, COMBAT, ATT);
+    bool build_ships = can_build_ships(base_id) && (sea_base || !random(3));
+    return select_combat(base_id, sea_base, build_ships, 0, 0);
 }
 
 int select_colony(int id, int pods, bool build_ships) {
@@ -621,6 +622,24 @@ int select_colony(int id, int pods, bool build_ships) {
     return -1;
 }
 
+int select_combat(int id, bool sea_base, bool build_ships, int probes, int def_land) {
+    BASE* base = &tx_bases[id];
+    int fac = base->faction_id;
+    Faction* f = &tx_factions[fac];
+    bool reserve = base->mineral_surplus >= base->mineral_intake/2;
+
+    if (has_weapon(fac, WPN_PROBE_TEAM) && (!random(probes ? 6 : 3) || !reserve)) {
+        return find_proto(fac, (build_ships ? TRIAD_SEA : TRIAD_LAND), WMODE_INFOWAR, DEF);
+
+    } else if (has_chassis(fac, CHS_NEEDLEJET) && f->SE_police >= -3 && !random(3)) {
+        return find_proto(fac, TRIAD_AIR, COMBAT, ATT);
+
+    } else if (build_ships && (sea_base || (!def_land && !random(3)))) {
+        return find_proto(fac, TRIAD_SEA, (!random(3) ? WMODE_TRANSPORT : COMBAT), ATT);
+    }
+    return find_proto(fac, TRIAD_LAND, COMBAT, ATT);
+}
+
 int faction_might(int fac) {
     Faction* f = &tx_factions[fac];
     return max(1, f->mil_strength_1 + f->mil_strength_2 + f->pop_total);
@@ -631,6 +650,7 @@ int select_prod(int id) {
     int fac = base->faction_id;
     int minerals = base->mineral_surplus;
     Faction* f = &tx_factions[fac];
+    AIPlans* p = &plans[fac];
 
     int transports = 0;
     int defenders = 0;
@@ -691,11 +711,11 @@ int select_prod(int id) {
     bool build_ships = can_build_ships(id);
     bool build_pods = (base->pop_size > 1 || base->nutrient_surplus > 1) && pods < 2 && base_ratio < 1.0;
     bool sea_base = water_base(id);
-    plans[fac].enemy_range = (enemyrange + 7 * plans[fac].enemy_range)/8;
+    p->enemy_range = (enemyrange + 7 * p->enemy_range)/8;
 
-    double w1 = min(1.0, 1.0 * minerals / plans[fac].proj_limit);
-    double w2 = enemymil / (enemyrange * 0.1 + 0.1) - max(0, defenders-1) * 0.3
-        + min(1.0, (f->AI_fight * 0.2 + 0.8) * base_ratio);
+    double w1 = min(1.0, 1.0 * minerals / p->proj_limit);
+    double w2 = enemymil / (p->enemy_range * 0.1 + 0.1) - max(0, defenders-1) * 0.3
+        + min(1.2, (f->AI_fight * 0.4 + 0.8) * base_ratio);
     double threat = 1 - (1 / (1 + max(0.0, w1 * w2)));
     int def_target = (*tx_current_turn < 50 && !sea_base && !random(3) ? 2 : 1);
 
@@ -703,7 +723,7 @@ int select_prod(int id) {
     "%d %d %2d %2d | %d %d %d %d %d %d | %2d %2d %2d | %2d %.4f %.4f %.4f %.4f\n",
     *tx_current_turn, fac, base->x, base->y,
     defenders, formers, pods, probes, crawlers, build_pods,
-    minerals, reserve, plans[fac].proj_limit, enemyrange, enemymil, w1, w2, threat);
+    minerals, reserve, p->proj_limit, enemyrange, enemymil, w1, w2, threat);
 
     if (defenders < def_target && minerals > 2) {
         if (def_target < 2 && (*tx_current_turn > 30 || enemyrange < 15))
@@ -711,30 +731,20 @@ int select_prod(int id) {
         else
             return BSC_SCOUT_PATROL;
     } else if (minerals > reserve && random(100) < (int)(100.0 * threat)) {
-        if (defenders > 2 && enemyrange < 12 && can_build(id, FAC_PERIMETER_DEFENSE))
-            return -FAC_PERIMETER_DEFENSE;
-        if (has_chassis(fac, CHS_NEEDLEJET) && f->SE_police >= -3 && random(3) == 0)
-            return find_proto(fac, TRIAD_AIR, COMBAT, ATT);
-        else if (has_weapon(fac, WPN_PROBE_TEAM) && probes < 1 && random(3) == 0)
-            if (build_ships)
-                return find_proto(fac, TRIAD_SEA, WMODE_INFOWAR, DEF);
-            else
-                return find_proto(fac, TRIAD_LAND, WMODE_INFOWAR, DEF);
-        else if (build_ships && (sea_base || ((defenders > 1 || enemyrange >= 12) && random(3) == 0)))
-            if (random(3) == 0)
-                return find_proto(fac, TRIAD_SEA, WMODE_TRANSPORT, DEF);
-            else
-                return find_proto(fac, TRIAD_SEA, COMBAT, ATT);
-        else
-            return find_proto(fac, TRIAD_LAND, COMBAT, ATT);
+        return select_combat(id, sea_base, build_ships, probes, (defenders < 2 && enemyrange < 12));
     } else if (has_formers && formers < (base->pop_size < (sea_base ? 4 : 3) ? 1 : 2)) {
+        if (base->mineral_surplus >= 10 && has_chassis(fac, CHS_GRAVSHIP)) {
+            int unit = find_proto(fac, TRIAD_AIR, WMODE_TERRAFORMER, DEF);
+            if (unit_triad(unit) == TRIAD_AIR)
+                return unit;
+        }
         if (sea_base || (build_ships && formers == 1 && id % 3 == 0))
             return find_proto(fac, TRIAD_SEA, WMODE_TERRAFORMER, DEF);
         else
             return find_proto(fac, TRIAD_LAND, WMODE_TERRAFORMER, DEF);
     } else {
         int crawl_target = 1 + min(base->pop_size/3,
-            (base->mineral_surplus >= plans[fac].proj_limit ? 3 : 1));
+            (base->mineral_surplus >= p->proj_limit ? 3 : 1));
         if (has_supply && !sea_base && crawlers < crawl_target) {
             return find_proto(fac, TRIAD_LAND, WMODE_CONVOY, DEF);
         } else if (build_ships && !transports && needferry.count(mp(base->x, base->y))) {

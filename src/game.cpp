@@ -34,11 +34,13 @@ bool has_weapon(int fac, int wpn) {
     return knows_tech(fac, tx_weapon[wpn].preq_tech);
 }
 
-bool has_terra(int fac, int act) {
+bool has_terra(int fac, int act, bool ocean) {
+    int preq_tech = (ocean ? tx_terraform[act].preq_tech_sea : tx_terraform[act].preq_tech);
     if (act >= FORMER_CONDENSER && act <= FORMER_LOWER_LAND
-    && act != FORMER_THERMAL_BORE && has_project(fac, FAC_WEATHER_PARADIGM))
-        return true;
-    return knows_tech(fac, tx_terraform[act].preq_tech);
+    && has_project(fac, FAC_WEATHER_PARADIGM)) {
+        return preq_tech != TECH_Disable;
+    }
+    return knows_tech(fac, preq_tech);
 }
 
 bool has_project(int fac, int id) {
@@ -52,15 +54,16 @@ bool has_facility(int base_id, int id) {
     if (id >= 70)
         return tx_secret_projects[id-70] != -1;
     int fac = tx_bases[base_id].faction_id;
-    const int freebies[] = {
-        FAC_COMMAND_CENTER, FAC_COMMAND_NEXUS,
-        FAC_NAVAL_YARD, FAC_MARITIME_CONTROL_CENTER,
-        FAC_ENERGY_BANK, FAC_PLANETARY_ENERGY_GRID,
-        FAC_PERIMETER_DEFENSE, FAC_CITIZENS_DEFENSE_FORCE,
-        FAC_AEROSPACE_COMPLEX, FAC_CLOUDBASE_ACADEMY,
-        FAC_BIOENHANCEMENT_CENTER, FAC_CYBORG_FACTORY};
-    for (int i=0; i<12; i+=2) {
-        if (freebies[i] == id && has_project(fac, freebies[i+1]))
+    const int freebies[][2] = {
+        {FAC_COMMAND_CENTER, FAC_COMMAND_NEXUS},
+        {FAC_NAVAL_YARD, FAC_MARITIME_CONTROL_CENTER},
+        {FAC_ENERGY_BANK, FAC_PLANETARY_ENERGY_GRID},
+        {FAC_PERIMETER_DEFENSE, FAC_CITIZENS_DEFENSE_FORCE},
+        {FAC_AEROSPACE_COMPLEX, FAC_CLOUDBASE_ACADEMY},
+        {FAC_BIOENHANCEMENT_CENTER, FAC_CYBORG_FACTORY},
+    };
+    for (const int* p : freebies) {
+        if (p[0] == id && has_project(fac, p[1]))
             return true;
     }
     int val = tx_bases[base_id].facilities_built[ id/8 ] & (1 << (id % 8));
@@ -70,14 +73,15 @@ bool has_facility(int base_id, int id) {
 bool can_build(int base_id, int id) {
     assert(base_id >= 0 && id > 0);
     BASE* base = &tx_bases[base_id];
-    Faction* f = &tx_factions[base->faction_id];
+    int fac = base->faction_id;
+    Faction* f = &tx_factions[fac];
     if (id == FAC_STOCKPILE_ENERGY)
         return false;
-    if (id == FAC_HEADQUARTERS && find_hq(base->faction_id) >= 0)
+    if (id == FAC_HEADQUARTERS && find_hq(fac) >= 0)
         return false;
     if (id == FAC_RECYCLING_TANKS && has_facility(base_id, FAC_PRESSURE_DOME))
         return false;
-    if (id == FAC_HOLOGRAM_THEATRE && (has_project(base->faction_id, FAC_VIRTUAL_WORLD)
+    if (id == FAC_HOLOGRAM_THEATRE && (has_project(fac, FAC_VIRTUAL_WORLD)
     || !has_facility(base_id, FAC_RECREATION_COMMONS)))
         return false;
     if (id == FAC_ASCENT_TO_TRANSCENDENCE)
@@ -86,20 +90,24 @@ bool can_build(int base_id, int id) {
     if (id == FAC_SUBSPACE_GENERATOR && base->pop_size < tx_basic->base_size_subspace_gen)
         return false;
     if (id >= FAC_SKY_HYDRO_LAB && id <= FAC_ORBITAL_DEFENSE_POD) {
-        int n = prod_count(base->faction_id, -id, base_id);
+        int n = prod_count(fac, -id, base_id);
         if ((id == FAC_SKY_HYDRO_LAB && f->satellites_nutrient + n >= conf.max_sat)
         || (id == FAC_ORBITAL_POWER_TRANS && f->satellites_energy + n >= conf.max_sat)
         || (id == FAC_NESSUS_MINING_STATION && f->satellites_mineral + n >= conf.max_sat)
         || (id == FAC_ORBITAL_DEFENSE_POD && f->satellites_ODP + n >= conf.max_sat))
             return false;
     }
-    return knows_tech(base->faction_id, tx_facility[id].preq_tech) && !has_facility(base_id, id);
+    return knows_tech(fac, tx_facility[id].preq_tech) && !has_facility(base_id, id);
 }
 
 bool at_war(int a, int b) {
     if (a == b || a < 0 || b < 0)
         return false;
     return !a || !b || tx_factions[a].diplo_status[b] & DIPLO_VENDETTA;
+}
+
+bool un_charter() {
+    return *tx_un_charter_repeals <= *tx_un_charter_reinstates;
 }
 
 int prod_count(int fac, int id, int skip) {

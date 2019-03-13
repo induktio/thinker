@@ -57,7 +57,7 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define NO_SYNC 1
 #define LAND_ONLY 0
 #define WATER_ONLY 1
-#define NEAR_ROADS 2
+#define NEAR_ROADS 3
 #define RES_NONE 0
 #define RES_NUTRIENT 1
 #define RES_MINERAL 2
@@ -66,6 +66,7 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define STATUS_CONVOY 3
 #define STATUS_GOTO 24
 #define STATUS_ROAD_TO 27
+#define UNIT_PROTOTYPED 4
 #define ATT false
 #define DEF true
 
@@ -112,6 +113,7 @@ int need_psych(int id);
 int select_prod(int id);
 int find_facility(int base_id);
 int find_project(int base_id);
+int select_combat(int, bool, bool, int, int);
 
 #endif // __MAIN_H__
 
