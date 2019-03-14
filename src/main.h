@@ -91,7 +91,8 @@ struct AIPlans {
     int psi_score;
     int keep_fungus;
     int plant_fungus;
-    float enemy_range;
+    int enemy_bases;
+    double enemy_range;
 };
 
 extern FILE* debug_log;

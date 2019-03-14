@@ -268,6 +268,7 @@ HOOK_API int turn_upkeep() {
         R_Resource* r = tx_resource;
         if (1 << i & *tx_human_players || !f->current_num_bases)
             continue;
+        plans[i].enemy_bases = 0;
         plans[i].diplo_flags = 0;
         for (int j=1; j<8; j++) {
             int st = f->diplo_status[j];
@@ -280,6 +281,8 @@ HOOK_API int turn_upkeep() {
             BASE* base = &tx_bases[j];
             if (base->faction_id == i) {
                 minerals[n++] = base->mineral_surplus;
+            } else if (base->faction_id_former == i && at_war(i, base->faction_id)) {
+                plans[i].enemy_bases += ((1 << base->faction_id) & *tx_human_players ? 4 : 1);
             }
         }
         std::sort(minerals, minerals+n);
@@ -311,7 +314,9 @@ HOOK_API int turn_upkeep() {
         } else {
             plans[i].plant_fungus = 0;
         }
-        debuglog("turn_upkeep %d %2d %2d %2d %2d %2d\n", i, plans[i].proj_limit, psi, dn, dm, de);
+        debuglog("turn_upkeep %d | %2d %2d %d %d | %2d %2.4f\n",
+        i, plans[i].proj_limit, psi, plans[i].keep_fungus, plans[i].plant_fungus,
+        plans[i].enemy_bases, plans[i].enemy_range);
     }
 
     return 0;
@@ -515,20 +520,20 @@ int need_psych(int id) {
 }
 
 int find_facility(int base_id) {
-    const int build_order[] = {
-        FAC_RECREATION_COMMONS,
-        FAC_CHILDREN_CRECHE,
-        FAC_PERIMETER_DEFENSE,
-        FAC_GENEJACK_FACTORY,
-        FAC_NETWORK_NODE,
-        FAC_AEROSPACE_COMPLEX,
-        FAC_TREE_FARM,
-        FAC_HAB_COMPLEX,
-        FAC_COMMAND_CENTER,
-        FAC_FUSION_LAB,
-        FAC_ENERGY_BANK,
-        FAC_RESEARCH_HOSPITAL,
-        FAC_HABITATION_DOME,
+    const int build_order[][2] = {
+        {FAC_RECREATION_COMMONS, 0},
+        {FAC_CHILDREN_CRECHE, 0},
+        {FAC_PERIMETER_DEFENSE, 0},
+        {FAC_GENEJACK_FACTORY, 0},
+        {FAC_NETWORK_NODE, 1},
+        {FAC_AEROSPACE_COMPLEX, 0},
+        {FAC_TREE_FARM, 0},
+        {FAC_HAB_COMPLEX, 0},
+        {FAC_COMMAND_CENTER, 0},
+        {FAC_FUSION_LAB, 1},
+        {FAC_ENERGY_BANK, 1},
+        {FAC_RESEARCH_HOSPITAL, 1},
+        {FAC_HABITATION_DOME, 0},
     };
     BASE* base = &tx_bases[base_id];
     int fac = base->faction_id;
@@ -539,7 +544,7 @@ int find_facility(int base_id) {
     int hab_complex_limit = tx_basic->pop_limit_wo_hab_complex - pop_rule;
     int hab_dome_limit = tx_basic->pop_limit_wo_hab_dome - pop_rule;
     bool sea_base = water_base(base_id);
-    Faction* fact = &tx_factions[fac];
+    Faction* f = &tx_factions[fac];
 
     if (*tx_climate_future_change > 0) {
         MAP* sq = mapsq(base->x, base->y);
@@ -555,6 +560,10 @@ int find_facility(int base_id) {
     if (minerals+extra >= plans[fac].proj_limit && (proj = find_project(base_id)) != 0) {
         return proj;
     }
+    if (minerals >= plans[fac].proj_limit && find_hq(fac) < 0
+    && bases_in_range(base->x, base->y, 4) >= 1 + min(4, f->current_num_bases/4)) {
+        return -FAC_HEADQUARTERS;
+    }
     if (minerals+extra >= plans[fac].proj_limit && has_facility(base_id, FAC_AEROSPACE_COMPLEX)) {
         if (can_build(base_id, FAC_ORBITAL_DEFENSE_POD))
             return -FAC_ORBITAL_DEFENSE_POD;
@@ -565,25 +574,21 @@ int find_facility(int base_id) {
         if (can_build(base_id, FAC_SKY_HYDRO_LAB))
             return -FAC_SKY_HYDRO_LAB;
     }
-    if (minerals >= plans[fac].proj_limit && find_hq(fac) < 0
-    && bases_in_range(base->x, base->y, 4) >= 5) {
-        return -FAC_HEADQUARTERS;
-    }
-    for (int f : build_order) {
-        if (base->energy_surplus < 6 && (f == FAC_NETWORK_NODE || f == FAC_ENERGY_BANK))
+    for (const int* t : build_order) {
+        int c = t[0];
+        R_Facility* fc = &tx_facility[c];
+        if (t[1] & 1 && base->energy_surplus < max(0, fc->cost - 4) + 2*fc->maint)
             continue;
-        if (base->energy_surplus < 16 && (f == FAC_FUSION_LAB || f == FAC_RESEARCH_HOSPITAL))
+        if (c == FAC_COMMAND_CENTER && (sea_base || f->SE_morale < 0 || f->AI_fight + f->AI_power < 1))
             continue;
-        if (f == FAC_COMMAND_CENTER && (sea_base || fact->AI_fight + fact->AI_power < 1))
+        if (c == FAC_GENEJACK_FACTORY && base->mineral_intake < 16)
             continue;
-        if (f == FAC_GENEJACK_FACTORY && base->mineral_intake < 16)
+        if (c == FAC_HAB_COMPLEX && base->pop_size+1 < hab_complex_limit)
             continue;
-        if (f == FAC_HAB_COMPLEX && base->pop_size+1 < hab_complex_limit)
+        if (c == FAC_HABITATION_DOME && base->pop_size < hab_dome_limit)
             continue;
-        if (f == FAC_HABITATION_DOME && base->pop_size < hab_dome_limit)
-            continue;
-        if (can_build(base_id, f)) {
-            return -1*f;
+        if (can_build(base_id, c)) {
+            return -1*c;
         }
     }
     debuglog("******\n");
@@ -637,12 +642,13 @@ int select_combat(int id, bool sea_base, bool build_ships, int probes, int def_l
     } else if (build_ships && (sea_base || (!def_land && !random(3)))) {
         return find_proto(fac, TRIAD_SEA, (!random(3) ? WMODE_TRANSPORT : COMBAT), ATT);
     }
-    return find_proto(fac, TRIAD_LAND, COMBAT, ATT);
+    return find_proto(fac, TRIAD_LAND, COMBAT, (!random(4) ? DEF : ATT));
 }
 
 int faction_might(int fac) {
     Faction* f = &tx_factions[fac];
-    return max(1, f->mil_strength_1 + f->mil_strength_2 + f->pop_total);
+    return max(1, f->mil_strength_1 + f->mil_strength_2 + f->pop_total)
+        * ((1 << fac) & *tx_human_players ? 2 : 1);
 }
 
 int select_prod(int id) {
@@ -679,27 +685,26 @@ int select_prod(int id) {
             enemyrange = min(enemyrange, map_range(base->x, base->y, b->x, b->y));
         }
     }
-
     for (int i=0; i<*tx_total_num_vehicles; i++) {
         VEH* veh = &tx_vehicles[i];
-        UNIT* unit = &tx_units[veh->proto_id];
+        UNIT* u = &tx_units[veh->proto_id];
         if (veh->faction_id != fac)
             continue;
         if (veh->home_base_id == id) {
-            if (unit->weapon_type == WPN_TERRAFORMING_UNIT)
+            if (u->weapon_type == WPN_TERRAFORMING_UNIT)
                 formers++;
-            else if (unit->weapon_type == WPN_COLONY_MODULE)
+            else if (u->weapon_type == WPN_COLONY_MODULE)
                 pods++;
-            else if (unit->weapon_type == WPN_PROBE_TEAM)
+            else if (u->weapon_type == WPN_PROBE_TEAM)
                 probes++;
-            else if (unit->weapon_type == WPN_SUPPLY_TRANSPORT)
+            else if (u->weapon_type == WPN_SUPPLY_TRANSPORT)
                 crawlers += (veh->move_status == STATUS_CONVOY ? 1 : 5);
-            else if (unit->weapon_type == WPN_TROOP_TRANSPORT)
+            else if (u->weapon_type == WPN_TROOP_TRANSPORT)
                 transports++;
         }
         int range = map_range(base->x, base->y, veh->x, veh->y);
         if (range <= 1) {
-            if (unit_triad(veh->proto_id) == TRIAD_LAND && unit->weapon_type <= WPN_PSI_ATTACK) {
+            if (u->weapon_type <= WPN_PSI_ATTACK && unit_triad(veh->proto_id) == TRIAD_LAND) {
                 defenders++;
             }
         }
@@ -713,9 +718,9 @@ int select_prod(int id) {
     bool sea_base = water_base(id);
     p->enemy_range = (enemyrange + 7 * p->enemy_range)/8;
 
-    double w1 = min(1.0, 1.0 * minerals / p->proj_limit);
-    double w2 = enemymil / (p->enemy_range * 0.1 + 0.1) - max(0, defenders-1) * 0.3
-        + min(1.2, (f->AI_fight * 0.4 + 0.8) * base_ratio);
+    double w1 = min(1.0, max(0.5, 1.0 * minerals / p->proj_limit));
+    double w2 = 2.0 * enemymil / (p->enemy_range * 0.1 + 0.1) + 0.6 * p->enemy_bases
+        + min(1.0, base_ratio) * (f->AI_fight * 0.3 + 1.2);
     double threat = 1 - (1 / (1 + max(0.0, w1 * w2)));
     int def_target = (*tx_current_turn < 50 && !sea_base && !random(3) ? 2 : 1);
 
@@ -787,29 +792,34 @@ int social_score(int fac, int sf, int sm2, int pop_boom, int range, int immunity
             vals[i] += soc_effect(s->effects[sm2][i], im2, pn2);
         }
     }
-    sc += (2 + f->AI_wealth + f->AI_tech - f->AI_fight)
+    if (sf == m->soc_priority_category && sm2 == m->soc_priority_model) {
+        sc += 8;
+    }
+    sc += (2 + 2*f->AI_wealth + f->AI_tech - f->AI_fight)
         * (min(5, max(-3, vals[ECO])) + (vals[ECO] >= 2 ? 4 : 0) + (vals[ECO] >= 4 ? 2 : 0));
-    sc += (1 + f->AI_wealth + f->AI_tech - f->AI_fight + min(3, *tx_current_turn/25))
+    sc += (1 + 2*f->AI_growth + f->AI_wealth + f->AI_tech - f->AI_fight + min(3, *tx_current_turn/25))
         * (min(6, vals[EFF]) + (vals[EFF] >= 3 ? 2 : 0) + (vals[EFF] < -2 ? -5 : 0));
     sc += (f->AI_power + f->AI_fight + max(3, 7 - *tx_current_turn/25))
         * (min(3, max(-4, vals[SUP])) + (vals[SUP] <= -4 ? -5 : 0));
-    sc += (((vals[MOR] >= 1 && vals[MOR] + morale >= 4) ? 5 : 0) + max(1, 4 - range/8 + f->AI_power + f->AI_fight))
-        * min(4, max(-4, vals[MOR]));
+    sc += min(5, max(1, 4 - range/8 + f->AI_power + f->AI_fight))
+        * (min(4, max(-4, vals[MOR])) + (vals[MOR] >= 1 && vals[MOR] + morale >= 4) ? 3 : 0);
     if (!has_project(fac, FAC_TELEPATHIC_MATRIX)) {
-        sc += (vals[POL] < 1 ? 1 : 3) * (vals[POL] < -2 ? max(1, 8 - range/2) : 1) * min(3, max(-5, vals[POL]));
+        sc += (vals[POL] < 1 ? 3 : 4) * (vals[POL] < -2 ? max(1, 8 - range/2) : 1) * min(3, max(-5, vals[POL]));
         if (has_project(fac, FAC_LONGEVITY_VACCINE)) {
             sc += (sf == 1 && sm2 == 2 ? 8 : 0);
             sc += (sf == 1 && (sm2 == 0 || sm2 == 3) ? 4 : 0);
         }
     }
     if (!has_project(fac, FAC_CLONING_VATS)) {
-        sc += (pop_boom ? 4 : 2) * (vals[GRW] + (pop_boom && vals[GRW] >= 4 ? 4 : 0) + (vals[GRW] < -2 ? -4 : 0));
+        sc += ((pop_boom ? 5 : 2) + (pop_boom && vals[GRW] >= 4 ? 8 : 0) + (vals[GRW] < -2 ? 5 : 0))
+            * min(6, max(-3, vals[GRW]));
     }
-    sc += ((has_project(fac, FAC_MANIFOLD_HARMONICS) ? 6 : 1) + m->rule_psi/20) * min(3, max(-3, vals[PLA]));
-    sc += max(1, 4 - range/8 + max(0, f->AI_power*2 + f->AI_fight)) * min(3, max(-2, vals[PRO]))
-        * (vals[PRO] >= 3 && !has_project(fac, FAC_HUNTER_SEEKER_ALGO) ? 3 : 1);
+    sc += ((has_project(fac, FAC_MANIFOLD_HARMONICS) ? 6 : 1) + 2*f->AI_growth + 2*f->AI_tech + m->rule_psi/10)
+        * min(3, max(-3, vals[PLA]));
+    sc += max(1, 4 - range/8 + max(0, 2*f->AI_power + f->AI_fight)) * min(3, max(-2, vals[PRO]))
+        * (vals[PRO] >= 3 && !has_project(fac, FAC_HUNTER_SEEKER_ALGO) ? 2 : 1);
     sc += 7 * min(8 - *tx_diff_level, vals[IND]);
-    sc += max(1, min(4, range/8) + f->AI_wealth + f->AI_tech - f->AI_power - f->AI_fight)
+    sc += min(6, max(2, 1 + 4*f->AI_tech + 2*(f->AI_growth + f->AI_wealth - f->AI_fight)))
         * min(5, max(-5, vals[RES]));
 
     debuglog("social_score %d %d %d %d %s\n", fac, sf, sm2, sc, s->soc_name[sm2]);

@@ -493,7 +493,8 @@ bool can_road(int x, int y, int fac, MAP* sq) {
     if (is_ocean(sq) || !pm_former[x][y] || !has_terra(fac, FORMER_ROAD, 0)
     || sq->items & (TERRA_ROAD | TERRA_BASE_IN_TILE))
         return false;
-    if (sq->items & TERRA_FUNGUS && !knows_tech(fac, tx_basic->tech_preq_build_road_fungus))
+    if (sq->items & TERRA_FUNGUS && (!knows_tech(fac, tx_basic->tech_preq_build_road_fungus)
+    || has_project(fac, FAC_XENOEMPATHY_DOME)))
         return false;
     if (!(sq->items & (TERRA_FOREST | TERRA_SENSOR)))
         return true;
@@ -566,16 +567,16 @@ int select_item(int x, int y, int fac, MAP* sq) {
     if (plans[fac].plant_fungus && can_fungus(x, y, fac, bonus, sq))
         return FORMER_PLANT_FUNGUS;
     if (sea) {
-        bool improved = items & (TERRA_MINE | TERRA_SOLAR);
-        if (has_terra(fac, FORMER_FARM, sea) && ~items & TERRA_FARM)
+        bool improved = items & (TERRA_MINE | TERRA_SOLAR | TERRA_SENSOR);
+        if (~items & TERRA_FARM && has_terra(fac, FORMER_FARM, sea))
             return FORMER_FARM;
+        else if (!improved && bonus == RES_NONE && can_sensor(x, y, fac, sq))
+            return FORMER_SENSOR;
         else if (!improved && has_terra(fac, FORMER_SOLAR, sea) && bonus != RES_MINERAL
         && (bonus == RES_NUTRIENT || nearby_items(x, y, 1, TERRA_SOLAR)+1 < nearby_items(x, y, 1, TERRA_MINE)))
             return FORMER_SOLAR;
         else if (!improved && has_terra(fac, FORMER_MINE, sea))
             return FORMER_MINE;
-        else if (can_sensor(x, y, fac, sq))
-            return FORMER_SENSOR;
         return -1;
     }
     if ((has_min || bonus != RES_NONE) && can_borehole(x, y, fac, bonus, sq))
@@ -633,7 +634,7 @@ int former_tile_score(int x1, int y1, int x2, int y2, int fac, MAP* sq) {
     int items = sq->items;
     int score = (sq->landmarks ? 3 : 0);
 
-    if (bonus && !(items & (is_ocean(sq) ? (IMP_SIMPLE | IMP_ADVANCED) : IMP_ADVANCED))) {
+    if (bonus && !(items & IMP_ADVANCED)) {
         bool bh = (bonus == RES_MINERAL || bonus == RES_ENERGY) && can_borehole(x2, y2, fac, bonus, sq);
         int w = (bh || !(items & IMP_SIMPLE) ? 5 : 1);
         score += w * (bonus == RES_NUTRIENT ? 3 : 2);

@@ -84,6 +84,9 @@ bool can_build(int base_id, int id) {
     if (id == FAC_HOLOGRAM_THEATRE && (has_project(fac, FAC_VIRTUAL_WORLD)
     || !has_facility(base_id, FAC_RECREATION_COMMONS)))
         return false;
+    if ((id == FAC_RECREATION_COMMONS || id == FAC_HOLOGRAM_THEATRE)
+    && has_project(fac, FAC_TELEPATHIC_MATRIX))
+        return false;
     if (id == FAC_ASCENT_TO_TRANSCENDENCE)
         return has_facility(-1, FAC_VOICE_OF_PLANET)
             && !has_facility(-1, FAC_ASCENT_TO_TRANSCENDENCE);
