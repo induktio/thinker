@@ -34,10 +34,16 @@
 #include <stdio.h>
 #include <windows.h>
 #include <limits.h>
+#include <time.h>
 #include <math.h>
 #include <algorithm>
 #include <set>
 #include "terranx.h"
+
+typedef std::set<std::pair<int,int>> Points;
+#define mp(x, y) std::make_pair(x, y)
+#define min(x, y) std::min(x, y)
+#define max(x, y) std::max(x, y)
 
 static_assert(sizeof(struct R_Basic) == 308, "");
 static_assert(sizeof(struct R_Social) == 212, "");
@@ -77,6 +83,7 @@ struct Config {
     int satellites_energy;
     int design_units;
     int factions_enabled;
+    int hurry_items;
     int social_ai;
     int tech_balance;
     int max_sat;
@@ -98,9 +105,9 @@ struct AIPlans {
 extern FILE* debug_log;
 extern Config conf;
 extern AIPlans plans[8];
-extern std::set<std::pair<int,int>> convoys;
-extern std::set<std::pair<int,int>> boreholes;
-extern std::set<std::pair<int,int>> needferry;
+extern Points convoys;
+extern Points boreholes;
+extern Points needferry;
 
 DLL_EXPORT int ThinkerDecide();
 HOOK_API int turn_upkeep();
@@ -111,6 +118,7 @@ HOOK_API int tech_value(int tech, int fac, int flag);
 HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5);
 
 int need_psych(int id);
+int consider_hurry(int id);
 int select_prod(int id);
 int find_facility(int base_id);
 int find_project(int base_id);

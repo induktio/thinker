@@ -9,9 +9,9 @@ FILE* debug_log = NULL;
 Config conf;
 AIPlans plans[8];
 
-std::set<std::pair<int,int>> convoys;
-std::set<std::pair<int,int>> boreholes;
-std::set<std::pair<int,int>> needferry;
+Points convoys;
+Points boreholes;
+Points needferry;
 
 int handler(void* user, const char* section, const char* name, const char* value) {
     Config* cf = (Config*)user;
@@ -36,6 +36,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->tech_balance = atoi(value);
     } else if (MATCH("thinker", "max_satellites")) {
         cf->max_sat = atoi(value);
+    } else if (MATCH("thinker", "hurry_items")) {
+        cf->hurry_items = atoi(value);
     } else if (MATCH("thinker", "smac_only")) {
         cf->smac_only = atoi(value);
     } else if (MATCH("thinker", "faction_placement")) {
@@ -77,6 +79,7 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             conf.satellites_energy = 0;
             conf.design_units = 1;
             conf.factions_enabled = 7;
+            conf.hurry_items = 1;
             conf.social_ai = 1;
             conf.tech_balance = 1;
             conf.max_sat = 10;
@@ -94,6 +97,7 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
                 plans[i].proj_limit = 5;
                 plans[i].enemy_range = 20;
             }
+            srand(time(0));
             *tx_version = VERSION;
             *tx_date = __DATE__;
             break;
@@ -128,11 +132,11 @@ HOOK_API int base_production(int id, int v1, int v2, int v3) {
 
     if (DEBUG) {
         debuglog("[ turn: %d faction: %d base: %2d x: %2d y: %2d "\
-        "pop: %d tal: %d dro: %d mins: %2d acc: %2d prod: %3d | %s | %s ]\n",
+        "pop: %d tal: %d dro: %d mins: %2d acc: %2d | %08x | %3d %s | %s ]\n",
         *tx_current_turn, fac, id, base->x, base->y,
         base->pop_size, base->talent_total, base->drone_total,
-        base->mineral_intake, base->minerals_accumulated,
-        prod, prod_name(prod), (char*)&(base->name));
+        base->mineral_surplus, base->minerals_accumulated,
+        base->status_flags, prod, prod_name(prod), (char*)&(base->name));
     }
 
     if (1 << fac & *tx_human_players) {
@@ -144,19 +148,19 @@ HOOK_API int base_production(int id, int v1, int v2, int v3) {
     } else {
         tx_set_base(id);
         tx_base_compute(1);
-        if ((choice = need_psych(id)) != 0) {
+        if ((choice = need_psych(id)) != 0 && choice != prod) {
             debuglog("BUILD PSYCH\n");
+        } else if (base->status_flags & BASE_PRODUCTION_DONE) {
+            choice = select_prod(id);
+            base->status_flags &= ~BASE_PRODUCTION_DONE;
         } else if (prod < 0 && !can_build(id, abs(prod))) {
             debuglog("BUILD CHANGE\n");
             if (base->minerals_accumulated > tx_basic->retool_exemption)
                 choice = find_facility(id);
             else
                 choice = select_prod(id);
-        } else if (base->status_flags & BASE_PRODUCTION_DONE) {
-            choice = select_prod(id);
-            if (choice < 0)
-                base->status_flags &= ~BASE_PRODUCTION_DONE;
         } else {
+            consider_hurry(id);
             debuglog("BUILD OLD\n");
             choice = prod;
         }
@@ -519,6 +523,65 @@ int need_psych(int id) {
     return 0;
 }
 
+int hurry_item(BASE* b, int mins, int cost) {
+    Faction* f = &tx_factions[b->faction_id];
+    f->energy_credits -= cost;
+    b->minerals_accumulated += mins;
+    b->status_flags |= BASE_HURRY_PRODUCTION;
+    debuglog("hurry_item %d %d %d %d %d %s %s\n", *tx_current_turn, b->faction_id,
+        mins, cost, f->energy_credits, b->name, prod_name(b->queue_items[0]));
+    return 1;
+}
+
+int consider_hurry(int id) {
+    BASE* b = &tx_bases[id];
+    int fac = b->faction_id;
+    int t = b->queue_items[0];
+    Faction* f = &tx_factions[fac];
+    FactMeta* m = &tx_factions_meta[fac];
+    AIPlans* p = &plans[fac];
+
+    if (!(conf.hurry_items && t >= -68 && ~b->status_flags & BASE_HURRY_PRODUCTION))
+        return 0;
+    bool cheap = b->minerals_accumulated >= tx_basic->retool_exemption;
+    int reserve = 20 + min(900, max(0, f->current_num_bases * min(30, (*tx_current_turn - 20)/5)));
+    int mins = mineral_cost(fac, t) - b->minerals_accumulated;
+    int cost = (t < 0 ? 2*mins : mins*mins/20 + 2*mins) * (cheap ? 1 : 2) * m->rule_hurry / 100;
+    int turns = (int)ceil(mins / max(0.01, 1.0 * b->mineral_surplus));
+
+    if (!(cheap && mins > 0 && cost > 0 && f->energy_credits - cost > reserve))
+        return 0;
+    if (b->drone_total > b->talent_total && t < 0 && t == need_psych(id))
+        return hurry_item(b, mins, cost);
+    if (t < 0 && turns > 1) {
+        if (t == -FAC_RECYCLING_TANKS || t == -FAC_PRESSURE_DOME || t == -FAC_RECREATION_COMMONS)
+            return hurry_item(b, mins, cost);
+        if (t == -FAC_CHILDREN_CRECHE && f->SE_growth >= 2)
+            return hurry_item(b, mins, cost);
+        if (t == -FAC_PERIMETER_DEFENSE && p->enemy_range < 15)
+            return hurry_item(b, mins, cost);
+        if (t == -FAC_AEROSPACE_COMPLEX && knows_tech(fac, TECH_Orbital))
+            return hurry_item(b, mins, cost);
+    }
+    if (t >= 0 && turns > 1) {
+        if (p->enemy_range < 15 && tx_units[t].weapon_type <= WPN_PSI_ATTACK) {
+            for (int i=0; i<*tx_total_num_vehicles; i++) {
+                VEH* veh = &tx_vehicles[i];
+                UNIT* u = &tx_units[veh->proto_id];
+                if (veh->faction_id == fac && veh->x == b->x && veh->y == b->y
+                && u->weapon_type <= WPN_PSI_ATTACK) {
+                    return 0;
+                }
+            }
+            return hurry_item(b, mins, cost);
+        }
+        if (tx_units[t].weapon_type == WPN_TERRAFORMING_UNIT && b->pop_size < 3) {
+            return hurry_item(b, mins, cost);
+        }
+    }
+    return 0;
+}
+
 int find_facility(int base_id) {
     const int build_order[][2] = {
         {FAC_RECREATION_COMMONS, 0},
@@ -577,7 +640,7 @@ int find_facility(int base_id) {
     for (const int* t : build_order) {
         int c = t[0];
         R_Facility* fc = &tx_facility[c];
-        if (t[1] & 1 && base->energy_surplus < max(0, fc->cost - 4) + 2*fc->maint)
+        if (t[1] & 1 && base->energy_surplus < 2*fc->maint + fc->cost/(f->AI_tech ? 2 : 1))
             continue;
         if (c == FAC_COMMAND_CENTER && (sea_base || f->SE_morale < 0 || f->AI_fight + f->AI_power < 1))
             continue;
@@ -872,8 +935,8 @@ HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5) {
             pop_boom = ((f->SE_growth < 4 ? 4 : 8) * want_pop) >= pop_total;
         }
     }
-    debuglog("social_params %d %d | %d %3d %3d | %2d %4x %4x %4x\n",
-        *tx_current_turn, fac, pop_boom, want_pop, pop_total, range, immunity, impunity, penalty);
+    debuglog("social_params %d %d %s | %d %3d %3d | %2d %4x %4x %4x\n",
+        *tx_current_turn, fac, m->filename, pop_boom, want_pop, pop_total, range, immunity, impunity, penalty);
     int score_diff = 1;
     int sf = -1;
     int sm2 = -1;

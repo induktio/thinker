@@ -63,6 +63,7 @@ fp_2int* tx_action_build = (fp_2int*)0x4C96E0;
 fp_3int* tx_action_terraform = (fp_3int*)0x4C9B00;
 fp_3int* tx_terraform_cost = (fp_3int*)0x4C9420;
 fp_2int* tx_bonus_at = (fp_2int*)0x592030;
+fp_2int* tx_goody_at = (fp_2int*)0x592140;
 fp_3int* tx_cost_factor = (fp_3int*)0x4E4430;
 fp_3int* tx_site_set = (fp_3int*)0x591B50;
 fp_3int* tx_world_site = (fp_3int*)0x5C4FD0;

@@ -225,7 +225,7 @@ int want_convoy(int fac, int x, int y, MAP* sq) {
         int bonus = tx_bonus_at(x, y);
         if (bonus == RES_ENERGY)
             return RES_NONE;
-        else if (sq->items & TERRA_CONDENSER)
+        else if (sq->items & (TERRA_CONDENSER | TERRA_SOIL_ENR))
             return RES_NUTRIENT;
         else if (bonus == RES_NUTRIENT)
             return RES_NONE;
@@ -293,7 +293,7 @@ bool want_base(int x, int y, int fac, int triad) {
     MAP* sq = mapsq(x, y);
     if (!sq || y < 3 || y >= *tx_map_axis_y-3)
         return false;
-    if (sq->rocks & TILE_ROCKY || (sq->items & (BASE_DISALLOWED | TERRA_CONDENSER)))
+    if ((sq->rocks & TILE_ROCKY && !is_ocean(sq)) || (sq->items & (BASE_DISALLOWED | IMP_ADVANCED)))
         return false;
     if (sq->owner > 0 && fac != sq->owner && !at_war(fac, sq->owner))
         return false;
@@ -466,9 +466,10 @@ bool can_borehole(int x, int y, int fac, int bonus, MAP* sq) {
 }
 
 bool can_farm(int x, int y, int fac, int bonus, bool has_nut, MAP* sq) {
+    bool rain = sq->level & (TILE_RAINY | TILE_MOIST);
     if (!has_terra(fac, FORMER_FARM, is_ocean(sq)))
         return false;
-    if (bonus == RES_NUTRIENT)
+    if (bonus == RES_NUTRIENT && (has_nut || rain))
         return true;
     if (bonus == RES_ENERGY || bonus == RES_MINERAL)
         return false;
@@ -478,8 +479,8 @@ bool can_farm(int x, int y, int fac, int bonus, bool has_nut, MAP* sq) {
         return false;
     if (!has_nut && nearby_items(x, y, 1, TERRA_FARM | TERRA_SOLAR) > 2)
         return false;
-    if ((sq->level & TILE_RAINY || sq->level & TILE_MOIST) && sq->rocks & TILE_ROLLING)
-        return nearby_items(x, y, 1, TERRA_CONDENSER) < 3;
+    if (rain && sq->rocks & TILE_ROLLING)
+        return nearby_items(x, y, 1, TERRA_FARM | TERRA_CONDENSER) < 3;
     return (has_nut && !(x % 2) && !(y % 2) && !(abs(x-y) % 4));
 }
 
@@ -602,7 +603,8 @@ int select_item(int x, int y, int fac, MAP* sq) {
                 return FORMER_CONDENSER;
             else if (~items & TERRA_SOIL_ENR && has_terra(fac, FORMER_SOIL_ENR, sea))
                 return FORMER_SOIL_ENR;
-            else if (!has_eco && !improved && has_terra(fac, FORMER_SOLAR, sea))
+            else if (!has_eco && !improved && has_terra(fac, FORMER_SOLAR, sea)
+            && (bonus != RES_NONE || sq->items & TERRA_RIVER))
                 return FORMER_SOLAR;
         }
     } else if (!rocky_sq && !(items & IMP_ADVANCED)) {

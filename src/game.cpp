@@ -225,6 +225,14 @@ int map_range(int x1, int y1, int x2, int y2) {
     return (xd + yd)/2;
 }
 
+int point_range(const Points& S, int x, int y) {
+    int z = MAPSZ;
+    for (auto& p : S) {
+        z = min(z, map_range(x, y, p.first, p.second));
+    }
+    return z;
+}
+
 MAP* mapsq(int x, int y) {
     if (x >= 0 && y >= 0 && x < *tx_map_axis_x && y < *tx_map_axis_y) {
         int i = x/2 + (*tx_map_half_x) * y;

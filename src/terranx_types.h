@@ -120,7 +120,7 @@ struct VEH
     char morale;
     char terraforming_turns;
     char type_crawling;
-    char visibility;
+    byte visibility;
     char road_moves_spent;
     char unk5;
     char iter_count;
@@ -143,8 +143,8 @@ struct MAP
     char owner;
     int items;
     short landmarks;
-    char unk_2;
-    char art_ref_id;
+    byte unk_2;
+    byte art_ref_id;
     char pad[28];
 };
 

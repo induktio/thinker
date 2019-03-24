@@ -25,8 +25,9 @@ const byte asm_find_start[] = {
 };
 
 int prev_rnd = -1;
-std::set<std::pair<int,int>> spawns;
-std::set<std::pair<int,int>> goodtiles;
+Points spawns;
+Points natives;
+Points goodtiles;
 
 bool FileExists(const char* path) {
     return GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES;
@@ -41,34 +42,35 @@ HOOK_API int crop_yield(int fac, int base, int x, int y, int tf) {
     return value;
 }
 
-int spawn_range(int x, int y) {
-    int z = MAPSZ;
-    for (auto p : spawns) {
-        z = min(z, map_range(x, y, p.first, p.second));
-    }
-    return z;
-}
-
 void process_map(int k) {
     TileSearch ts;
-    std::set<std::pair<int,int>> visited;
-    std::set<std::pair<int,int>> current;
+    Points visited;
+    Points current;
+    natives.clear();
     goodtiles.clear();
     int limit = *tx_map_area_sq_root * 2;
 
-    for (int y = 4; y < *tx_map_axis_y - 4; y++) {
+    for (int y = 0; y < *tx_map_axis_y; y++) {
         for (int x = y&1; x < *tx_map_axis_x; x+=2) {
             MAP* sq = mapsq(x, y);
-            if (sq && !is_ocean(sq) && !visited.count(mp(x, y))) {
+            if (unit_in_tile(sq) == 0)
+                natives.insert({x, y});
+            if (y < 4 || y >= *tx_map_axis_x - 4)
+                continue;
+            if (sq && !is_ocean(sq) && !visited.count({x, y})) {
+                int n = 0;
                 ts.init(x, y, LAND_ONLY, k);
                 while ((sq = ts.get_next()) != NULL) {
-                    auto xy = mp(ts.rx, ts.ry);
-                    visited.insert(xy);
-                    current.insert(xy);
+                    auto p = mp(ts.rx, ts.ry);
+                    visited.insert(p);
+                    if (~sq->items & TERRA_FUNGUS) {
+                        current.insert(p);
+                    }
+                    n++;
                 }
-                if ((int)current.size() >= limit) {
-                    for (auto t : current) {
-                        goodtiles.insert(t);
+                if (n >= limit) {
+                    for (auto& p : current) {
+                        goodtiles.insert(p);
                     }
                 }
                 current.clear();
@@ -83,44 +85,72 @@ void process_map(int k) {
 }
 
 bool valid_start (int x, int y, int iter, bool aquatic) {
-    const int range = 4;
+    Points pods;
     MAP* sq = mapsq(x, y);
-    if (!sq || sq->items & BASE_DISALLOWED || sq->rocks & TILE_ROCKY || sq->landmarks)
+    if (!sq || sq->items & BASE_DISALLOWED || (sq->rocks & TILE_ROCKY && !is_ocean(sq)))
+        return false;
+    if (sq->landmarks & ~LM_FRESHWATER)
         return false;
     if (aquatic != is_ocean(sq) || tx_bonus_at(x, y) != RES_NONE)
         return false;
+    if (point_range(natives, x, y) < 4)
+        return false;
     int sc = 0;
-    for (int i=-range*2; i<=range*2; i++) {
-        for (int j=-range*2 + abs(i); j<=range*2 - abs(i); j+=2) {
-            int x2 = wrap(x + i);
-            int y2 = y + j;
-            sq = mapsq(x2, y2);
-            if (sq) {
-                if (!is_ocean(sq)) {
-                    sc += (sq->level & (TILE_RAINY | TILE_MOIST) ? 2 : 1);
-                    if (sq->items & TERRA_RIVER)
-                        sc += 1;
-                    if (sq->rocks & TILE_ROLLING)
-                        sc += 1;
-                }
-                if (tx_bonus_at(x2, y2))
-                    sc += 5;
-                if (sq->items & TERRA_FUNGUS)
-                    sc -= 1;
-                if (unit_in_tile(sq) == 0)
-                    return false;
+    int nut = 0;
+    for (int i=0; i<44; i++) {
+        int x2 = wrap(x + offset_tbl[i][0]);
+        int y2 = y + offset_tbl[i][1];
+        sq = mapsq(x2, y2);
+        if (sq) {
+            int bonus = tx_bonus_at(x2, y2);
+            if (is_ocean(sq)) {
+                if (!is_ocean_shelf(sq))
+                    sc--;
+                else if (aquatic)
+                    sc += 4;
+            } else {
+                sc += (sq->level & (TILE_RAINY | TILE_MOIST) ? 3 : 1);
+                if (sq->items & TERRA_RIVER)
+                    sc += (i < 20 ? 4 : 2);
+                if (sq->rocks & TILE_ROLLING)
+                    sc += 1;
+            }
+            if (bonus > 0) {
+                if (i < 20 && bonus == RES_NUTRIENT && !is_ocean(sq))
+                    nut++;
+                sc += (i < 20 ? 10 : 5);
+            }
+            if (tx_goody_at(x2, y2) > 0) {
+                sc += (i < 20 ? 25 : 8);
+                if (!is_ocean(sq) && (i < 20 || pods.size() < 2))
+                    pods.insert({x2, y2});
+            }
+            if (sq->items & TERRA_FUNGUS) {
+                sc -= (i < 20 ? 4 : 1);
             }
         }
     }
-    int min_sc = (aquatic ? 15 : 120 - iter/3);
-    debuglog("score %3d %3d %d %d %d\n", x, y, iter, min_sc, sc);
-    return sc >= min_sc;
+    int min_sc = 150 - iter/2;
+    debuglog("find_score %2d | %3d %3d | %d %d %d %d\n", iter, x, y, pods.size(), nut, min_sc, sc);
+    if (sc >= min_sc && (int)pods.size() > 1 - iter/50) {
+        int n = 0;
+        while (!aquatic && pods.size() > 0 && nut + n < 2) {
+            Points::const_iterator it(pods.begin());
+            std::advance(it, random(pods.size()));
+            sq = mapsq(it->first, it->second);
+            pods.erase(it);
+            sq->items &= ~(TERRA_MINERAL_RES | TERRA_ENERGY_RES);
+            sq->items |= (TERRA_SUPPLY_REMOVE | TERRA_BONUS_RES | TERRA_NUTRIENT_RES);
+            n++;
+        }
+        return true;
+    }
+    return sc >= min_sc && (aquatic || nut > 1);
 }
 
 HOOK_API void find_start(int fac, int* tx, int* ty) {
-    int k = (*tx_map_axis_y < 80 ? 8 : 16);
     bool aquatic = tx_factions_meta[fac].rule_flags & FACT_AQUATIC;
-    bool use_set = !aquatic && goodtiles.size();
+    int k = (*tx_map_axis_y < 80 ? 8 : 16);
     if (*tx_random_seed != prev_rnd) {
         process_map(k/2);
         prev_rnd = *tx_random_seed;
@@ -129,7 +159,7 @@ HOOK_API void find_start(int fac, int* tx, int* ty) {
     for (int i=0; i<*tx_total_num_vehicles; i++) {
         VEH* v = &tx_vehicles[i];
         if (v->faction_id != 0 && v->faction_id != fac) {
-            spawns.insert(mp(v->x, v->y));
+            spawns.insert({v->x, v->y});
         }
     }
     int z = 0;
@@ -137,8 +167,8 @@ HOOK_API void find_start(int fac, int* tx, int* ty) {
     int y = 0;
     int i = 0;
     while (++i < 120) {
-        if (use_set) {
-            std::set<std::pair<int,int>>::const_iterator it(goodtiles.begin());
+        if (!aquatic && goodtiles.size() > 0) {
+            Points::const_iterator it(goodtiles.begin());
             std::advance(it, random(goodtiles.size()));
             x = it->first;
             y = it->second;
@@ -146,17 +176,17 @@ HOOK_API void find_start(int fac, int* tx, int* ty) {
             y = (random(*tx_map_axis_y - k) + k/2);
             x = (random(*tx_map_axis_x) &~1) + (y&1);
         }
-        z = spawn_range(x, y);
-        if (z >= 8 && valid_start(x, y, i, aquatic)) {
+        int min_range = max(8, *tx_map_area_sq_root/3 - i/6 - min(6, (int)spawns.size()));
+        z = point_range(spawns, x, y);
+        debuglog("find_iter %d %d | %3d %3d | %2d %2d\n", fac, i, x, y, min_range, z);
+        if (z >= min_range && valid_start(x, y, i, aquatic)) {
             *tx = x;
             *ty = y;
-            if (z >= max(10, *tx_map_area_sq_root/3 - i/4)) {
-                break;
-            }
+            break;
         }
     }
     tx_site_set(*tx, *ty, tx_world_site(*tx, *ty, 0));
-    debuglog("find_start %d %d %d %d %d\n", fac, i, spawn_range(*tx, *ty), *tx, *ty);
+    debuglog("find_start %d %d %d %d %d\n", fac, i, *tx, *ty, point_range(spawns, *tx, *ty));
     fflush(debug_log);
 }
 

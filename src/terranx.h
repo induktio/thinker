@@ -80,6 +80,7 @@ extern fp_2int* tx_action_build;
 extern fp_3int* tx_action_terraform;
 extern fp_3int* tx_terraform_cost;
 extern fp_2int* tx_bonus_at;
+extern fp_2int* tx_goody_at;
 extern fp_3int* tx_cost_factor;
 extern fp_3int* tx_site_set;
 extern fp_3int* tx_world_site;

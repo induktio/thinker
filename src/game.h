@@ -3,10 +3,6 @@
 
 #include "main.h"
 
-#define mp(x, y) std::make_pair(x, y)
-#define min(x, y) std::min(x, y)
-#define max(x, y) std::max(x, y)
-
 const int offset[][2] = {
     {1,-1},{2,0},{1,1},{0,2},{-1,1},{-2,0},{-1,-1},{0,-2}
 };
@@ -50,6 +46,7 @@ int defense_value(UNIT* u);
 int random(int n);
 int wrap(int a);
 int map_range(int x1, int y1, int x2, int y2);
+int point_range(const Points& S, int x, int y);
 MAP* mapsq(int x, int y);
 int unit_in_tile(MAP* sq);
 int set_move_to(int id, int x, int y);
@@ -87,7 +84,7 @@ class TileSearch {
     PathNode newtiles[QSIZE];
     public:
     int rx, ry, dist, prev;
-    std::set<std::pair <int, int>> oldtiles;
+    Points oldtiles;
     void init(int, int, int);
     void init(int, int, int, int);
     int visited();
