@@ -220,7 +220,7 @@ int trans_move(int id) {
 }
 
 int want_convoy(int fac, int x, int y, MAP* sq) {
-    if (sq && sq->owner == fac && !convoys.count(mp(x, y))
+    if (sq && sq->owner == fac && !convoys.count({x, y})
     && !(sq->items & BASE_DISALLOWED)) {
         int bonus = tx_bonus_at(x, y);
         if (bonus == RES_ENERGY)
@@ -433,7 +433,7 @@ bool can_bridge(int x, int y, int fac, MAP* sq) {
             int y2 = y + j;
             sq = mapsq(x2, y2);
             if (sq && y2 > 0 && y2 < *tx_map_axis_y-1 && !is_ocean(sq)
-            && !ts.oldtiles.count(mp(x2, y2))) {
+            && !ts.oldtiles.count({x2, y2})) {
                 n++;
             }
         }
@@ -449,14 +449,14 @@ bool can_borehole(int x, int y, int fac, int bonus, MAP* sq) {
         return false;
     if (bonus == RES_NONE && sq->rocks & TILE_ROLLING)
         return false;
-    if (pm_former[x][y] < 4 || !workable_tile(x, y, sq->owner))
+    if ((pm_former[x][y] < 4 && !boreholes.count({x, y})) || !workable_tile(x, y, sq->owner))
         return false;
     int level = sq->level >> 5;
     for (const int* t : offset) {
         int x2 = wrap(x + t[0]);
         int y2 = y + t[1];
         sq = mapsq(x2, y2);
-        if (!sq || sq->items & TERRA_THERMAL_BORE || boreholes.count(mp(x2, y2)))
+        if (!sq || sq->items & TERRA_THERMAL_BORE || boreholes.count({x2, y2}))
             return false;
         int level2 = sq->level >> 5;
         if (level2 < level && level2 > LEVEL_OCEAN_SHELF)
@@ -582,6 +582,8 @@ int select_item(int x, int y, int fac, MAP* sq) {
     }
     if ((has_min || bonus != RES_NONE) && can_borehole(x, y, fac, bonus, sq))
         return road ? FORMER_ROAD : FORMER_THERMAL_BORE;
+    if (items & TERRA_THERMAL_BORE)
+        return road ? FORMER_ROAD : -1;
     if (rocky_sq && ~items & TERRA_MINE && (has_min || bonus == RES_MINERAL) && has_terra(fac, FORMER_MINE, sea))
         return road ? FORMER_ROAD : FORMER_MINE;
     if (rocky_sq && (bonus == RES_NUTRIENT || sq->landmarks & LM_JUNGLE) && has_terra(fac, FORMER_LEVEL_TERRAIN, sea))
@@ -604,7 +606,7 @@ int select_item(int x, int y, int fac, MAP* sq) {
             else if (~items & TERRA_SOIL_ENR && has_terra(fac, FORMER_SOIL_ENR, sea))
                 return FORMER_SOIL_ENR;
             else if (!has_eco && !improved && has_terra(fac, FORMER_SOLAR, sea)
-            && (bonus != RES_NONE || sq->items & TERRA_RIVER))
+            && (bonus != RES_NONE || items & TERRA_RIVER))
                 return FORMER_SOLAR;
         }
     } else if (!rocky_sq && !(items & IMP_ADVANCED)) {
@@ -650,6 +652,9 @@ int former_tile_score(int x1, int y1, int x2, int y2, int fac, MAP* sq) {
         score += (items & IMP_ADVANCED ? 20 : 0);
         score += (plans[fac].keep_fungus ? -10 : -2);
         score += (plans[fac].plant_fungus && (items & TERRA_ROAD) ? -8 : 0);
+    }
+    if (items & (TERRA_FOREST | TERRA_SENSOR) && can_road(x2, y2, fac, sq)) {
+        score += 8;
     }
     return score - range/2 + min(8, pm_former[x2][y2]) + min(0, pm_safety[x2][y2]);
 }

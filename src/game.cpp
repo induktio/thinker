@@ -87,6 +87,8 @@ bool can_build(int base_id, int id) {
     if ((id == FAC_RECREATION_COMMONS || id == FAC_HOLOGRAM_THEATRE)
     && has_project(fac, FAC_TELEPATHIC_MATRIX))
         return false;
+    if ((id == FAC_HAB_COMPLEX || id == FAC_HABITATION_DOME) && base->nutrient_surplus < 2)
+        return false;
     if (id == FAC_ASCENT_TO_TRANSCENDENCE)
         return has_facility(-1, FAC_VOICE_OF_PLANET)
             && !has_facility(-1, FAC_ASCENT_TO_TRANSCENDENCE);
@@ -269,7 +271,7 @@ int set_road_to(int id, int x, int y) {
 int set_action(int id, int act, char icon) {
     VEH* veh = &tx_vehicles[id];
     if (act == FORMER_THERMAL_BORE+4)
-        boreholes.insert(mp(veh->x, veh->y));
+        boreholes.insert({veh->x, veh->y});
     veh->move_status = act;
     veh->status_icon = icon;
     veh->flags_1 &= 0xFFFEFFFF;
@@ -278,7 +280,7 @@ int set_action(int id, int act, char icon) {
 
 int set_convoy(int id, int res) {
     VEH* veh = &tx_vehicles[id];
-    convoys.insert(mp(veh->x, veh->y));
+    convoys.insert({veh->x, veh->y});
     veh->type_crawling = res-1;
     veh->move_status = STATUS_CONVOY;
     veh->status_icon = 'C';
@@ -298,8 +300,8 @@ int veh_skip(int id) {
     return tx_veh_skip(id);
 }
 
-int at_target(VEH* veh) {
-    return (veh->waypoint_1_x < 0 && veh->waypoint_1_y < 0)
+bool at_target(VEH* veh) {
+    return veh->move_status == STATUS_IDLE || (veh->waypoint_1_x < 0 && veh->waypoint_1_y < 0)
         || (veh->x == veh->waypoint_1_x && veh->y == veh->waypoint_1_y);
 }
 

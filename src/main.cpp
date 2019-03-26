@@ -327,9 +327,21 @@ HOOK_API int turn_upkeep() {
 }
 
 HOOK_API int faction_upkeep(int fac) {
-    tx_faction_upkeep(fac);
+    debuglog("faction_upkeep %d %d\n", *tx_current_turn, fac);
     if (ai_enabled(fac))
         move_upkeep(fac);
+    /*
+    Turn processing order for the current faction in the game engine
+    1. Social upheaval effects
+    2. Repair phase
+    3. Production phase
+    4. Energy allocation
+    5. Diplomacy
+    6. AI strategy bookkeeping
+    7. Social AI
+    8. Unit movement
+    */
+    tx_faction_upkeep(fac);
     fflush(debug_log);
     return 0;
 }
@@ -734,7 +746,7 @@ int select_prod(int id) {
     for (int i=1; i<8; i++) {
         if (i==fac || ~f->diplo_status[i] & DIPLO_COMMLINK)
             continue;
-        double mil = (1.0 * faction_might(i)) / faction_might(fac);
+        double mil = min(5.0, 1.0 * faction_might(i) / faction_might(fac));
         if (f->diplo_status[i] & DIPLO_VENDETTA) {
             enemymask |= (1 << i);
             enemymil = max(enemymil, 1.0 * mil);
@@ -773,7 +785,7 @@ int select_prod(int id) {
         }
     }
     int reserve = max(2, base->mineral_intake / 2);
-    double base_ratio = f->current_num_bases / min(40.0, *tx_map_area_sq_root * 0.55);
+    double base_ratio = f->current_num_bases / min(40.0, *tx_map_area_sq_root * 0.5);
     bool has_formers = has_weapon(fac, WPN_TERRAFORMING_UNIT);
     bool has_supply = has_weapon(fac, WPN_SUPPLY_TRANSPORT);
     bool build_ships = can_build_ships(id);
@@ -782,8 +794,8 @@ int select_prod(int id) {
     p->enemy_range = (enemyrange + 7 * p->enemy_range)/8;
 
     double w1 = min(1.0, max(0.5, 1.0 * minerals / p->proj_limit));
-    double w2 = 2.0 * enemymil / (p->enemy_range * 0.1 + 0.1) + 0.6 * p->enemy_bases
-        + min(1.0, base_ratio) * (f->AI_fight * 0.3 + 1.2);
+    double w2 = 2.0 * enemymil / (p->enemy_range * 0.1 + 0.1) + 0.5 * p->enemy_bases
+        + min(1.0, base_ratio) * (f->AI_fight * 0.2 + 0.8);
     double threat = 1 - (1 / (1 + max(0.0, w1 * w2)));
     int def_target = (*tx_current_turn < 50 && !sea_base && !random(3) ? 2 : 1);
 
@@ -801,21 +813,21 @@ int select_prod(int id) {
     } else if (minerals > reserve && random(100) < (int)(100.0 * threat)) {
         return select_combat(id, sea_base, build_ships, probes, (defenders < 2 && enemyrange < 12));
     } else if (has_formers && formers < (base->pop_size < (sea_base ? 4 : 3) ? 1 : 2)) {
-        if (base->mineral_surplus >= 10 && has_chassis(fac, CHS_GRAVSHIP)) {
+        if (base->mineral_surplus >= 8 && has_chassis(fac, CHS_GRAVSHIP)) {
             int unit = find_proto(fac, TRIAD_AIR, WMODE_TERRAFORMER, DEF);
             if (unit_triad(unit) == TRIAD_AIR)
                 return unit;
         }
-        if (sea_base || (build_ships && formers == 1 && id % 3 == 0))
+        if (sea_base || (build_ships && formers == 1 && !random(3)))
             return find_proto(fac, TRIAD_SEA, WMODE_TERRAFORMER, DEF);
         else
             return find_proto(fac, TRIAD_LAND, WMODE_TERRAFORMER, DEF);
     } else {
         int crawl_target = 1 + min(base->pop_size/3,
-            (base->mineral_surplus >= p->proj_limit ? 3 : 1));
+            (base->mineral_surplus >= p->proj_limit ? 2 : 1));
         if (has_supply && !sea_base && crawlers < crawl_target) {
             return find_proto(fac, TRIAD_LAND, WMODE_CONVOY, DEF);
-        } else if (build_ships && !transports && needferry.count(mp(base->x, base->y))) {
+        } else if (build_ships && !transports && needferry.count({base->x, base->y})) {
             return find_proto(fac, TRIAD_SEA, WMODE_TRANSPORT, DEF);
         } else if (build_pods && !can_build(id, FAC_RECYCLING_TANKS)) {
             int tr = select_colony(id, pods, build_ships);
@@ -855,34 +867,50 @@ int social_score(int fac, int sf, int sm2, int pop_boom, int range, int immunity
             vals[i] += soc_effect(s->effects[sm2][i], im2, pn2);
         }
     }
-    if (sf == m->soc_priority_category && sm2 == m->soc_priority_model) {
-        sc += 8;
-    }
-    sc += (2 + 2*f->AI_wealth + f->AI_tech - f->AI_fight)
-        * (min(5, max(-3, vals[ECO])) + (vals[ECO] >= 2 ? 4 : 0) + (vals[ECO] >= 4 ? 2 : 0));
-    sc += (1 + 2*f->AI_growth + f->AI_wealth + f->AI_tech - f->AI_fight + min(3, *tx_current_turn/25))
-        * (min(6, vals[EFF]) + (vals[EFF] >= 3 ? 2 : 0) + (vals[EFF] < -2 ? -5 : 0));
-    sc += (f->AI_power + f->AI_fight + max(3, 7 - *tx_current_turn/25))
-        * (min(3, max(-4, vals[SUP])) + (vals[SUP] <= -4 ? -5 : 0));
-    sc += min(5, max(1, 4 - range/8 + f->AI_power + f->AI_fight))
-        * (min(4, max(-4, vals[MOR])) + (vals[MOR] >= 1 && vals[MOR] + morale >= 4) ? 3 : 0);
+    if (sf == m->soc_priority_category && sm2 == m->soc_priority_model)
+        sc += 14;
+    if (vals[ECO] >= 2)
+        sc += (vals[ECO] >= 4 ? 16 : 12);
+    if (vals[EFF] < -2)
+        sc -= 10;
+    if (vals[SUP] < -3)
+        sc -= 10;
+    if (vals[MOR] >= 1 && vals[MOR] + morale >= 4)
+        sc += 10;
+    if (vals[PRO] >= 3 && !has_project(fac, FAC_HUNTER_SEEKER_ALGO))
+        sc += 4 * max(0, 4 - range/8);
+
+    sc += max(2, 2 + 4*f->AI_wealth + 3*f->AI_tech - f->AI_fight)
+        * min(5, max(-3, vals[ECO]));
+    sc += max(1, 2*(f->AI_wealth + f->AI_tech - f->AI_fight) + min(4, *tx_current_turn/25))
+        * (min(6, vals[EFF]) + (vals[EFF] >= 3 ? 2 : 0));
+    sc += max(3, 2*f->AI_power + 2*f->AI_fight + 8 - min(4, *tx_current_turn/25))
+        * min(3, max(-4, vals[SUP]));
+    sc += max(2, 5 - range/8 + 3*f->AI_power + 2*f->AI_fight)
+        * min(4, max(-4, vals[MOR]));
     if (!has_project(fac, FAC_TELEPATHIC_MATRIX)) {
-        sc += (vals[POL] < 1 ? 3 : 4) * (vals[POL] < -2 ? max(1, 8 - range/2) : 1) * min(3, max(-5, vals[POL]));
+        sc += (vals[POL] < 0 ? 2 : 4) * min(3, max(-5, vals[POL]));
+        if (vals[POL] < -2) {
+            sc -= (vals[POL] < -3 ? 4 : 2) * max(0, 4 - range/8)
+                * (has_chassis(fac, CHS_NEEDLEJET) ? 2 : 1);
+        }
         if (has_project(fac, FAC_LONGEVITY_VACCINE)) {
-            sc += (sf == 1 && sm2 == 2 ? 8 : 0);
-            sc += (sf == 1 && (sm2 == 0 || sm2 == 3) ? 4 : 0);
+            sc += (sf == 1 && sm2 == 2 ? 10 : 0);
+            sc += (sf == 1 && (sm2 == 0 || sm2 == 3) ? 5 : 0);
         }
     }
     if (!has_project(fac, FAC_CLONING_VATS)) {
-        sc += ((pop_boom ? 5 : 2) + (pop_boom && vals[GRW] >= 4 ? 8 : 0) + (vals[GRW] < -2 ? 5 : 0))
-            * min(6, max(-3, vals[GRW]));
+        if (pop_boom && vals[GRW] >= 4)
+            sc += 20;
+        if (vals[GRW] < -2)
+            sc -= 10;
+        sc += (pop_boom ? 6 : 3) * min(6, max(-3, vals[GRW]));
     }
-    sc += ((has_project(fac, FAC_MANIFOLD_HARMONICS) ? 6 : 1) + 2*f->AI_growth + 2*f->AI_tech + m->rule_psi/10)
-        * min(3, max(-3, vals[PLA]));
-    sc += max(1, 4 - range/8 + max(0, 2*f->AI_power + f->AI_fight)) * min(3, max(-2, vals[PRO]))
-        * (vals[PRO] >= 3 && !has_project(fac, FAC_HUNTER_SEEKER_ALGO) ? 2 : 1);
-    sc += 7 * min(8 - *tx_diff_level, vals[IND]);
-    sc += min(6, max(2, 1 + 4*f->AI_tech + 2*(f->AI_growth + f->AI_wealth - f->AI_fight)))
+    sc += max(2, (f->SE_planet_base > 0 ? 5 : 2) + m->rule_psi/10
+        + (has_project(fac, FAC_MANIFOLD_HARMONICS) ? 6 : 0)) * min(3, max(-3, vals[PLA]));
+    sc += max(2, 5 - range/8 + 2*f->AI_power + 2*f->AI_fight) * min(3, max(-2, vals[PRO]));
+    sc += 8 * min(8 - *tx_diff_level, max(-3, vals[IND]));
+    sc += max(2, 3 + 4*f->AI_tech + 2*(f->AI_growth + f->AI_wealth - f->AI_fight))
         * min(5, max(-5, vals[RES]));
 
     debuglog("social_score %d %d %d %d %s\n", fac, sf, sm2, sc, s->soc_name[sm2]);
@@ -960,7 +988,7 @@ HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5) {
     int cost = (m->rule_flags & FACT_ALIEN ? 36 : 24);
     if (sf >= 0 && f->energy_credits > cost) {
         int sm1 = (&f->SE_Politics)[sf];
-        debuglog("social_change %d %d | %d %d %2d %2d | %s -> %s\n", *tx_current_turn, fac,
+        debuglog("social_change %d %d %s | %d %d %2d %2d | %s -> %s\n", *tx_current_turn, fac, m->filename,
             sf, sm2, cost, score_diff, s[sf].soc_name[sm1], s[sf].soc_name[sm2]);
         (&f->SE_Politics_pending)[sf] = sm2;
         f->energy_credits -= cost;

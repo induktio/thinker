@@ -54,7 +54,7 @@ int set_road_to(int id, int x, int y);
 int set_action(int id, int act, char icon);
 int set_convoy(int id, int res);
 int veh_skip(int id);
-int at_target(VEH* veh);
+bool at_target(VEH* veh);
 bool is_ocean(MAP* sq);
 bool is_ocean_shelf(MAP* sq);
 bool water_base(int id);
