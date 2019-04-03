@@ -42,6 +42,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->smac_only = atoi(value);
     } else if (MATCH("thinker", "faction_placement")) {
         cf->faction_placement = atoi(value);
+    } else if (MATCH("thinker", "nutrient_bonus")) {
+        cf->nutrient_bonus = atoi(value);
     } else if (MATCH("thinker", "cost_factor")) {
         char* p = strtok(buf, ",");
         for (int i=0; i<6 && p != NULL; i++, p = strtok(NULL, ",")) {
@@ -85,8 +87,9 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             conf.max_sat = 10;
             conf.smac_only = 0;
             conf.faction_placement = 1;
+            conf.nutrient_bonus = 1;
             conf.landmarks = 0xffff;
-            memset(plans, 0, sizeof(AIPlans)*8);
+            memset(plans, 0, sizeof(plans));
             if (DEBUG && !(debug_log = fopen("debug.txt", "w")))
                 return FALSE;
             if (ini_parse("thinker.ini", handler, &conf) < 0 || !cmd_parse(&conf))
@@ -98,8 +101,8 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
                 plans[i].enemy_range = 20;
             }
             srand(time(0));
-            *tx_version = VERSION;
-            *tx_date = __DATE__;
+            *tx_version = MOD_VERSION;
+            *tx_date = MOD_DATE;
             break;
 
         case DLL_PROCESS_DETACH:
@@ -200,25 +203,21 @@ HOOK_API int turn_upkeep() {
         int rec = best_reactor(i);
         int arm = best_armor(i, false);
         int arm2 = best_armor(i, true);
-        int abl = has_ability(i, ABL_ID_TRANCE) ? ABL_TRANCE : 0;
         int chs = has_chassis(i, CHS_HOVERTANK) ? CHS_HOVERTANK : CHS_SPEEDER;
         bool twoabl = knows_tech(i, tx_basic->tech_preq_allow_2_spec_abil);
-        char* arm_n = tx_defense[arm].name_short;
-        char* arm2_n = tx_defense[arm2].name_short;
-        char nm[100];
+        char buf[200];
 
         if (has_weapon(i, WPN_PROBE_TEAM)) {
             int algo = has_ability(i, ABL_ID_ALGO_ENHANCEMENT) ? ABL_ALGO_ENHANCEMENT : 0;
             if (has_chassis(i, CHS_FOIL)) {
                 int ship = (rec >= REC_FUSION && has_chassis(i, CHS_CRUISER) ? CHS_CRUISER : CHS_FOIL);
-                tx_propose_proto(i, ship, WPN_PROBE_TEAM, (rec >= REC_FUSION ? arm : 0),
-                (rec >= REC_FUSION ? abl | (twoabl ? algo : 0) : 0),
+                tx_propose_proto(i, ship, WPN_PROBE_TEAM, (rec >= REC_FUSION ? arm : 0), algo,
                 rec, PLAN_INFO_WARFARE, (ship == CHS_FOIL ? "Foil Probe Team" : "Cruiser Probe Team"));
             }
             if (arm != ARM_NO_ARMOR && rec >= REC_FUSION) {
-                tx_propose_proto(i, chs, WPN_PROBE_TEAM, arm, abl | (twoabl ? algo : 0),
-                rec, PLAN_INFO_WARFARE,
-                (strlen(arm_n) < 20 ? strcat(strcpy(nm, arm_n), " Probe Team") : NULL));
+                char* name = parse_str(buf, 32, tx_reactor[rec-1].name_short, " ",
+                    tx_defense[arm].name_short, " Probe Team");
+                tx_propose_proto(i, chs, WPN_PROBE_TEAM, arm, algo, rec, PLAN_INFO_WARFARE, name);
             }
         }
         if (has_ability(i, ABL_ID_AAA) && arm != ARM_NO_ARMOR) {
@@ -234,9 +233,9 @@ HOOK_API int turn_upkeep() {
             REC_FUSION, PLAN_TERRAFORMING, NULL);
         }
         if (has_weapon(i, WPN_SUPPLY_TRANSPORT) && rec >= REC_FUSION && arm2 != ARM_NO_ARMOR) {
-            tx_propose_proto(i, CHS_INFANTRY, WPN_SUPPLY_TRANSPORT, arm2, 0,
-            REC_FUSION, PLAN_DEFENSIVE,
-            (strlen(arm2_n) < 20 ? strcat(strcpy(nm, arm2_n), " Supply") : NULL));
+            char* name = parse_str(buf, 32, tx_reactor[REC_FUSION-1].name_short, " ",
+                tx_defense[arm2].name_short, " Supply");
+            tx_propose_proto(i, CHS_INFANTRY, WPN_SUPPLY_TRANSPORT, arm2, 0, REC_FUSION, PLAN_DEFENSIVE, name);
         }
     }
     if (*tx_current_turn == 1) {
@@ -351,10 +350,12 @@ HOOK_API int tech_value(int tech, int fac, int flag) {
     if (conf.tech_balance && ai_enabled(fac)) {
         if (tech == tx_weapon[WPN_TERRAFORMING_UNIT].preq_tech
         || tech == tx_weapon[WPN_SUPPLY_TRANSPORT].preq_tech
+        || tech == tx_facility[FAC_RECYCLING_TANKS].preq_tech
+        || tech == tx_facility[FAC_CHILDREN_CRECHE].preq_tech
         || tech == tx_basic->tech_preq_allow_3_energy_sq
         || tech == tx_basic->tech_preq_allow_3_minerals_sq
         || tech == tx_basic->tech_preq_allow_3_nutrients_sq) {
-            value *= 2;
+            value *= 4;
         }
     }
     debuglog("tech_value %d %d %d %s\n", tech, fac, value, tx_techs[tech].name);
@@ -493,9 +494,9 @@ int find_proto(int fac, int triad, int mode, bool defend) {
         int id = (i < 64 ? i : (fac-1)*64 + i);
         UNIT* u = &tx_units[id];
         if (strlen(u->name) > 0 && unit_triad(id) == triad) {
-            if (id < 64 && !knows_tech(fac, u->tech_preq))
+            if (id < 64 && !knows_tech(fac, u->preq_tech))
                 continue;
-            if ((mode && u->weapon_mode != mode)
+            if ((mode && tx_weapon[u->weapon_type].mode != mode)
             || (!mode && tx_weapon[u->weapon_type].offense_value == 0)
             || (!mode && defend && u->chassis_type != CHS_INFANTRY)
             || (u->weapon_type == WPN_PSI_ATTACK && plans[fac].psi_score < 1)
@@ -852,6 +853,8 @@ int social_score(int fac, int sf, int sm2, int pop_boom, int range, int immunity
     FactMeta* m = &tx_factions_meta[fac];
     R_Social* s = &tx_social[sf];
     int morale = (has_project(fac, FAC_COMMAND_NEXUS) ? 2 : 0) + (has_project(fac, FAC_CYBORG_FACTORY) ? 2 : 0);
+    int pr_sf = m->soc_priority_category;
+    int pr_sm = m->soc_priority_model;
     int sm1 = (&f->SE_Politics)[sf];
     int sc = 0;
     int vals[11];
@@ -867,8 +870,11 @@ int social_score(int fac, int sf, int sm2, int pop_boom, int range, int immunity
             vals[i] += soc_effect(s->effects[sm2][i], im2, pn2);
         }
     }
-    if (sf == m->soc_priority_category && sm2 == m->soc_priority_model)
-        sc += 14;
+    if (pr_sf >= 0 && pr_sm >= 0) {
+        if ((sf != pr_sf && (&f->SE_Politics)[pr_sf] == pr_sm) || (sf == pr_sf && sm2 == pr_sm)) {
+            sc += 14;
+        }
+    }
     if (vals[ECO] >= 2)
         sc += (vals[ECO] >= 4 ? 16 : 12);
     if (vals[EFF] < -2)
@@ -946,10 +952,12 @@ HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5) {
             penalty |= (1 << (m->faction_bonus_val1[i] * 4 + m->faction_bonus_val2[i]));
     }
     if (has_project(fac, FAC_NETWORK_BACKBONE)) {
+        /* Cybernetic */
         impunity |= (1 << (4*3 + 1));
     }
     if (has_project(fac, FAC_CLONING_VATS)) {
-        impunity |= (1 << (4*3 + 3)) | (1 << (4*2 + 1));
+        /* Power & Thought Control */
+        impunity |= (1 << (4*2 + 1)) | (1 << (4*3 + 3));
     } else if (knows_tech(fac, tx_facility[FAC_CHILDREN_CRECHE].preq_tech)) {
         for (int i=0; i<*tx_total_num_bases; i++) {
             BASE* b = &tx_bases[i];

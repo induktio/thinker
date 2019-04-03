@@ -85,14 +85,14 @@ struct UNIT
     char reactor_type;
     char carry_capacity;
     char cost;
-    char weapon_mode;
     char unit_plan;
+    char unk0;
     char factions_retired;
     char factions;
     char icon_offset;
     char unk1;
     short unit_flags;
-    short tech_preq;
+    short preq_tech;
 };
 
 struct VEH
@@ -145,7 +145,7 @@ struct MAP
     short landmarks;
     byte unk_2;
     byte art_ref_id;
-    char pad[28];
+    int visible_items[7];
 };
 
 struct FactMeta
@@ -466,9 +466,11 @@ struct R_Basic
     int extra_cost_prototype_sea;
     int extra_cost_prototype_air;
     int psi_combat_land_numerator;
-    char gap_68[8];
+    int psi_combat_sea_numerator;
+    int psi_combat_air_numerator;
     int psi_combat_land_denominator;
-    char gap_74[8];
+    int psi_combat_sea_denominator;
+    int psi_combat_air_denominator;
     int starting_energy_reserve;
     int combat_bonus_intrinsic_base_def;
     int combat_bonus_atk_road;

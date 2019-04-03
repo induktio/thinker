@@ -15,7 +15,7 @@
 bool has_transport(int x, int y, int fac);
 bool non_combat_move(int x, int y, int fac, int triad);
 bool can_build_base(int x, int y, int fac, int triad);
-bool has_base_sites(int x, int y, int fac, int type);
+bool has_base_sites(int x, int y, int fac, int triad);
 void move_upkeep(int fac);
 int crawler_move(int id);
 int colony_move(int id);

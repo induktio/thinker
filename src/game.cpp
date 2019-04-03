@@ -51,8 +51,9 @@ bool has_project(int fac, int id) {
 }
 
 bool has_facility(int base_id, int id) {
+    assert((base_id >= 0 && id > 0) || id >= 70);
     if (id >= 70)
-        return tx_secret_projects[id-70] != -1;
+        return tx_secret_projects[id-70] != PROJECT_UNBUILT;
     int fac = tx_bases[base_id].faction_id;
     const int freebies[][2] = {
         {FAC_COMMAND_CENTER, FAC_COMMAND_NEXUS},
@@ -61,13 +62,13 @@ bool has_facility(int base_id, int id) {
         {FAC_PERIMETER_DEFENSE, FAC_CITIZENS_DEFENSE_FORCE},
         {FAC_AEROSPACE_COMPLEX, FAC_CLOUDBASE_ACADEMY},
         {FAC_BIOENHANCEMENT_CENTER, FAC_CYBORG_FACTORY},
+        {FAC_QUANTUM_CONVERTER, FAC_SINGULARITY_INDUCTOR},
     };
     for (const int* p : freebies) {
         if (p[0] == id && has_project(fac, p[1]))
             return true;
     }
-    int val = tx_bases[base_id].facilities_built[ id/8 ] & (1 << (id % 8));
-    return val != 0;
+    return tx_bases[base_id].facilities_built[id/8] & (1 << (id % 8));
 }
 
 bool can_build(int base_id, int id) {
@@ -92,8 +93,18 @@ bool can_build(int base_id, int id) {
     if (id == FAC_ASCENT_TO_TRANSCENDENCE)
         return has_facility(-1, FAC_VOICE_OF_PLANET)
             && !has_facility(-1, FAC_ASCENT_TO_TRANSCENDENCE);
-    if (id == FAC_SUBSPACE_GENERATOR && base->pop_size < tx_basic->base_size_subspace_gen)
-        return false;
+    if (id == FAC_SUBSPACE_GENERATOR) {
+        if (base->pop_size < tx_basic->base_size_subspace_gen)
+            return false;
+        int n = 0;
+        for (int i=0; i<*tx_total_num_bases; i++) {
+            BASE* b = &tx_bases[i];
+            if (b->faction_id == fac && has_facility(i, FAC_SUBSPACE_GENERATOR)
+            && b->pop_size >= tx_basic->base_size_subspace_gen
+            && ++n >= tx_basic->subspace_gen_req)
+                return false;
+        }
+    }
     if (id >= FAC_SKY_HYDRO_LAB && id <= FAC_ORBITAL_DEFENSE_POD) {
         int n = prod_count(fac, -id, base_id);
         if ((id == FAC_SKY_HYDRO_LAB && f->satellites_nutrient + n >= conf.max_sat)
@@ -103,6 +114,10 @@ bool can_build(int base_id, int id) {
             return false;
     }
     return knows_tech(fac, tx_facility[id].preq_tech) && !has_facility(base_id, id);
+}
+
+bool is_human(int fac) {
+    return *tx_human_players & (1 << fac);
 }
 
 bool at_war(int a, int b) {
@@ -365,11 +380,20 @@ int coast_tiles(int x, int y) {
     int n = 0;
     for (const int* t : offset) {
         sq = mapsq(wrap(x + t[0]), y + t[1]);
-        if (is_ocean(sq)) {
+        if (sq && is_ocean(sq)) {
             n++;
         }
     }
     return n;
+}
+
+char* parse_str(char* buf, int len, const char* s1, const char* s2, const char* s3, const char* s4) {
+    buf[0] = '\0';
+    strcat_s(buf, len, s1);
+    strcat_s(buf, len, s2);
+    strcat_s(buf, len, s3);
+    strcat_s(buf, len, s4);
+    return (strlen(buf) > 0 ? buf : NULL);
 }
 
 void print_map(int x, int y) {
@@ -418,6 +442,7 @@ void TileSearch::init(int x, int y, int tp, int skip) {
 }
 
 bool TileSearch::has_zoc(int fac) {
+    /* Traverse current search path and check for zones of control. */
     int zoc = 0;
     int i = 0;
     int j = head;
@@ -445,6 +470,7 @@ MAP* TileSearch::get_next() {
         items--;
         if (!(sq = mapsq(rx, ry)))
             continue;
+        /* Search type values 0,1,2 are equivalent to unit_triad values. */
         bool skip = (type == LAND_ONLY && is_ocean(sq)) ||
                     (type == WATER_ONLY && !is_ocean(sq)) ||
                     (type == NEAR_ROADS && (is_ocean(sq) || !(sq->items & roads)));

@@ -8,6 +8,7 @@ const char* ac_help = "ac_mod\\helpx";
 const char* ac_tutor = "ac_mod\\tutor";
 const char* ac_labels = "ac_mod\\labels";
 const char* ac_concepts = "ac_mod\\conceptsx";
+const char* ac_opening = "opening";
 const char* ac_movlist = "movlist";
 const char* ac_movlist_txt = "movlist.txt";
 const char* ac_movlistx_txt = "movlistx.txt";
@@ -48,7 +49,8 @@ void process_map(int k) {
     Points current;
     natives.clear();
     goodtiles.clear();
-    int limit = *tx_map_area_sq_root * 2;
+    /* Map area square root values: Standard = 56, Huge = 90 */
+    int limit = *tx_map_area_sq_root * (*tx_map_area_sq_root < 70 ? 1 : 2);
 
     for (int y = 0; y < *tx_map_axis_y; y++) {
         for (int x = y&1; x < *tx_map_axis_x; x+=2) {
@@ -63,7 +65,7 @@ void process_map(int k) {
                 while ((sq = ts.get_next()) != NULL) {
                     auto p = mp(ts.rx, ts.ry);
                     visited.insert(p);
-                    if (~sq->items & TERRA_FUNGUS) {
+                    if (~sq->items & TERRA_FUNGUS && !(sq->landmarks & ~LM_FRESH)) {
                         current.insert(p);
                     }
                     n++;
@@ -84,12 +86,12 @@ void process_map(int k) {
         *tx_map_area_sq_root, visited.size(), goodtiles.size());
 }
 
-bool valid_start (int x, int y, int iter, bool aquatic) {
+bool valid_start (int fac, int iter, int x, int y, bool aquatic) {
     Points pods;
     MAP* sq = mapsq(x, y);
     if (!sq || sq->items & BASE_DISALLOWED || (sq->rocks & TILE_ROCKY && !is_ocean(sq)))
         return false;
-    if (sq->landmarks & ~LM_FRESHWATER)
+    if (sq->landmarks & ~LM_FRESH)
         return false;
     if (aquatic != is_ocean(sq) || tx_bonus_at(x, y) != RES_NONE)
         return false;
@@ -130,22 +132,23 @@ bool valid_start (int x, int y, int iter, bool aquatic) {
             }
         }
     }
-    int min_sc = 150 - iter/2;
+    int min_sc = 160 - iter/2;
+    bool need_bonus = (!aquatic && conf.nutrient_bonus > is_human(fac));
     debuglog("find_score %2d | %3d %3d | %d %d %d %d\n", iter, x, y, pods.size(), nut, min_sc, sc);
-    if (sc >= min_sc && (int)pods.size() > 1 - iter/50) {
+    if (sc >= min_sc && need_bonus && (int)pods.size() > 1 - iter/50) {
         int n = 0;
         while (!aquatic && pods.size() > 0 && nut + n < 2) {
             Points::const_iterator it(pods.begin());
             std::advance(it, random(pods.size()));
             sq = mapsq(it->first, it->second);
             pods.erase(it);
-            sq->items &= ~(TERRA_MINERAL_RES | TERRA_ENERGY_RES);
+            sq->items &= ~(TERRA_FUNGUS | TERRA_MINERAL_RES | TERRA_ENERGY_RES);
             sq->items |= (TERRA_SUPPLY_REMOVE | TERRA_BONUS_RES | TERRA_NUTRIENT_RES);
             n++;
         }
         return true;
     }
-    return sc >= min_sc && (aquatic || nut > 1);
+    return sc >= min_sc && (!need_bonus || nut > 1);
 }
 
 HOOK_API void find_start(int fac, int* tx, int* ty) {
@@ -176,10 +179,10 @@ HOOK_API void find_start(int fac, int* tx, int* ty) {
             y = (random(*tx_map_axis_y - k) + k/2);
             x = (random(*tx_map_axis_x) &~1) + (y&1);
         }
-        int min_range = max(8, *tx_map_area_sq_root/3 - i/6 - min(6, (int)spawns.size()));
+        int min_range = max(8, *tx_map_area_sq_root/3 - i/5);
         z = point_range(spawns, x, y);
         debuglog("find_iter %d %d | %3d %3d | %2d %2d\n", fac, i, x, y, min_range, z);
-        if (z >= min_range && valid_start(x, y, i, aquatic)) {
+        if (z >= min_range && valid_start(fac, i, x, y, aquatic)) {
             *tx = x;
             *ty = y;
             break;
@@ -243,8 +246,9 @@ bool patch_setup(Config* cf) {
         write_offset(0x42C7C2, ac_concepts);
         write_offset(0x403BA8, ac_movlist);
         write_offset(0x4BEF8D, ac_movlist);
+        write_offset(0x52AB68, ac_opening);
 
-        // Enable custom faction selection
+        /* Enable custom faction selection during the game setup. */
         memset((void*)0x58A5E1, 0x90, 6);
         memset((void*)0x58B76F, 0x90, 2);
         memset((void*)0x58B9F3, 0x90, 2);
@@ -271,7 +275,7 @@ bool patch_setup(Config* cf) {
     if (lm & LM_BOREHOLE) remove_call(0x5C8918);
     if (lm & LM_SARGASSO) remove_call(0x5C8921);
     if (lm & LM_DUNES) remove_call(0x5C892A);
-    if (lm & LM_FRESHWATER) remove_call(0x5C8933);
+    if (lm & LM_FRESH) remove_call(0x5C8933);
     if (lm & LM_GEOTHERMAL) remove_call(0x5C893C);
 
     if (!VirtualProtect(AC_IMAGE_BASE, AC_IMAGE_LEN, PAGE_EXECUTE_READ, &attrs))

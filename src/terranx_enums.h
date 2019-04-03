@@ -136,6 +136,8 @@ enum facility_id
     FAC_EMPTY_SP_62 = 131,
     FAC_EMPTY_SP_63 = 132,
     FAC_EMPTY_SP_64 = 133,
+    PROJECT_UNBUILT = -1,
+    PROJECT_DESTROYED = -2,
 };
 
 enum techology_id
@@ -658,7 +660,7 @@ enum terrain_landmarks
     LM_SARGASSO = 0x10,
     LM_RUINS = 0x20,
     LM_DUNES = 0x40,
-    LM_FRESHWATER = 0x80,
+    LM_FRESH = 0x80,
     LM_MESA = 0x100,
     LM_CANYON = 0x200,
     LM_GEOTHERMAL = 0x400,

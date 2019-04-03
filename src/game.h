@@ -30,6 +30,7 @@ bool has_terra(int fac, int act, bool ocean);
 bool has_project(int fac, int id);
 bool has_facility(int base_id, int id);
 bool can_build(int base_id, int id);
+bool is_human(int fac);
 bool at_war(int a, int b);
 bool un_charter();
 int prod_count(int fac, int id, int skip);
@@ -63,6 +64,7 @@ int nearby_items(int x, int y, int range, uint32_t item);
 int bases_in_range(int x, int y, int range);
 int nearby_tiles(int x, int y, int type, int limit);
 int coast_tiles(int x, int y);
+char* parse_str(char* buf, int len, const char* s1, const char* s2, const char* s3, const char* s4);
 void print_map(int x, int y);
 void print_veh(int id);
 
@@ -81,9 +83,9 @@ class TileSearch {
     int items;
     int y_skip;
     MAP* sq;
-    PathNode newtiles[QSIZE];
     public:
     int rx, ry, dist, prev;
+    PathNode newtiles[QSIZE];
     Points oldtiles;
     void init(int, int, int);
     void init(int, int, int, int);

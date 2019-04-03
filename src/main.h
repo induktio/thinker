@@ -2,15 +2,17 @@
 #define __MAIN_H__
 
 #ifdef BUILD_REL
-    #define VERSION "Thinker Mod v0.8"
+    #define MOD_VERSION "Thinker Mod v0.8"
 #else
-    #define VERSION "Thinker Mod develop build"
+    #define MOD_VERSION "Thinker Mod develop build"
 #endif
 
 #ifdef BUILD_DEBUG
+    #define MOD_DATE __DATE__ " " __TIME__
     #define DEBUG 1
     #define debuglog(...) fprintf(debug_log, __VA_ARGS__);
 #else
+    #define MOD_DATE __DATE__
     #define DEBUG 0
     #define NDEBUG /* Disable assertions */
     #define debuglog(...) /* Nothing */
@@ -47,6 +49,8 @@ typedef std::set<std::pair<int,int>> Points;
 
 static_assert(sizeof(struct R_Basic) == 308, "");
 static_assert(sizeof(struct R_Social) == 212, "");
+static_assert(sizeof(struct R_Facility) == 48, "");
+static_assert(sizeof(struct R_Tech) == 44, "");
 static_assert(sizeof(struct FactMeta) == 1436, "");
 static_assert(sizeof(struct Faction) == 8396, "");
 static_assert(sizeof(struct BASE) == 308, "");
@@ -89,6 +93,7 @@ struct Config {
     int max_sat;
     int smac_only;
     int faction_placement;
+    int nutrient_bonus;
     int landmarks;
 };
 
