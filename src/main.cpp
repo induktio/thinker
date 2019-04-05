@@ -122,10 +122,6 @@ DLL_EXPORT int ThinkerDecide() {
     return 0;
 }
 
-bool ai_enabled(int fac) {
-    return fac > 0 && fac <= conf.factions_enabled && !(1 << fac & *tx_human_players);
-}
-
 HOOK_API int base_production(int id, int v1, int v2, int v3) {
     assert(id >= 0 && id < BASES);
     BASE* base = &tx_bases[id];
@@ -133,72 +129,49 @@ HOOK_API int base_production(int id, int v1, int v2, int v3) {
     int fac = base->faction_id;
     int choice = 0;
 
-    if (DEBUG) {
-        debuglog("[ turn: %d faction: %d base: %2d x: %2d y: %2d "\
-        "pop: %d tal: %d dro: %d mins: %2d acc: %2d | %08x | %3d %s | %s ]\n",
-        *tx_current_turn, fac, id, base->x, base->y,
-        base->pop_size, base->talent_total, base->drone_total,
-        base->mineral_surplus, base->minerals_accumulated,
-        base->status_flags, prod, prod_name(prod), (char*)&(base->name));
-    }
+    debug("[ turn: %d faction: %d base: %2d x: %2d y: %2d "\
+    "pop: %d tal: %d dro: %d mins: %2d acc: %2d | %08x | %3d %s | %s ]\n",
+    *tx_current_turn, fac, id, base->x, base->y,
+    base->pop_size, base->talent_total, base->drone_total,
+    base->mineral_surplus, base->minerals_accumulated,
+    base->status_flags, prod, prod_name(prod), (char*)&(base->name));
 
-    if (1 << fac & *tx_human_players) {
-        debuglog("skipping human base\n");
+    if (is_human(fac)) {
+        debug("skipping human base\n");
         choice = base->queue_items[0];
     } else if (!ai_enabled(fac)) {
-        debuglog("skipping computer base\n");
+        debug("skipping computer base\n");
         choice = tx_base_prod_choices(id, v1, v2, v3);
     } else {
         tx_set_base(id);
         tx_base_compute(1);
         if ((choice = need_psych(id)) != 0 && choice != prod) {
-            debuglog("BUILD PSYCH\n");
+            debug("BUILD PSYCH\n");
         } else if (base->status_flags & BASE_PRODUCTION_DONE) {
             choice = select_prod(id);
             base->status_flags &= ~BASE_PRODUCTION_DONE;
         } else if (prod < 0 && !can_build(id, abs(prod))) {
-            debuglog("BUILD CHANGE\n");
+            debug("BUILD CHANGE\n");
             if (base->minerals_accumulated > tx_basic->retool_exemption)
                 choice = find_facility(id);
             else
                 choice = select_prod(id);
         } else {
             consider_hurry(id);
-            debuglog("BUILD OLD\n");
+            debug("BUILD OLD\n");
             choice = prod;
         }
-        debuglog("choice: %d %s\n", choice, prod_name(choice));
+        debug("choice: %d %s\n", choice, prod_name(choice));
     }
     fflush(debug_log);
     return choice;
-}
-
-HOOK_API int enemy_move(int id) {
-    assert(id >= 0 && id < UNITS);
-    VEH* veh = &tx_vehicles[id];
-    int fac = veh->faction_id;
-    if (ai_enabled(fac)) {
-        int w = tx_units[veh->proto_id].weapon_type;
-        if (w == WPN_COLONY_MODULE) {
-            return colony_move(id);
-        } else if (w == WPN_SUPPLY_TRANSPORT) {
-            return crawler_move(id);
-        } else if (w == WPN_TERRAFORMING_UNIT) {
-            return former_move(id);
-        } else if (w == WPN_TROOP_TRANSPORT && veh_triad(id) == TRIAD_SEA) {
-            return trans_move(id);
-        } else if (w <= WPN_PSI_ATTACK && veh_triad(id) == TRIAD_LAND) {
-            return combat_move(id);
-        }
-    }
-    return tx_enemy_move(id);
 }
 
 HOOK_API int turn_upkeep() {
     tx_turn_upkeep();
 
     for (int i=1; i<8 && conf.design_units; i++) {
-        if (1 << i & *tx_human_players || !tx_factions[i].current_num_bases)
+        if (is_human(i) || !tx_factions[i].current_num_bases)
             continue;
         int rec = best_reactor(i);
         int arm = best_armor(i, false);
@@ -255,7 +228,7 @@ HOOK_API int turn_upkeep() {
             }
         }
         for (int i=1; i<8; i++) {
-            if (1 << i & ~*tx_human_players) {
+            if (!is_human(i)) {
                 tx_factions[i].satellites_nutrient = conf.satellites_nutrient;
                 tx_factions[i].satellites_mineral = conf.satellites_mineral;
                 tx_factions[i].satellites_energy = conf.satellites_energy;
@@ -269,7 +242,7 @@ HOOK_API int turn_upkeep() {
     for (int i=1; i<8; i++) {
         Faction* f = &tx_factions[i];
         R_Resource* r = tx_resource;
-        if (1 << i & *tx_human_players || !f->current_num_bases)
+        if (is_human(i) || !f->current_num_bases)
             continue;
         plans[i].enemy_bases = 0;
         plans[i].diplo_flags = 0;
@@ -285,7 +258,7 @@ HOOK_API int turn_upkeep() {
             if (base->faction_id == i) {
                 minerals[n++] = base->mineral_surplus;
             } else if (base->faction_id_former == i && at_war(i, base->faction_id)) {
-                plans[i].enemy_bases += ((1 << base->faction_id) & *tx_human_players ? 4 : 1);
+                plans[i].enemy_bases += (is_human(base->faction_id) ? 4 : 1);
             }
         }
         std::sort(minerals, minerals+n);
@@ -317,7 +290,7 @@ HOOK_API int turn_upkeep() {
         } else {
             plans[i].plant_fungus = 0;
         }
-        debuglog("turn_upkeep %d | %2d %2d %d %d | %2d %2.4f\n",
+        debug("turn_upkeep %d | %2d %2d %d %d | %2d %2.4f\n",
         i, plans[i].proj_limit, psi, plans[i].keep_fungus, plans[i].plant_fungus,
         plans[i].enemy_bases, plans[i].enemy_range);
     }
@@ -326,7 +299,7 @@ HOOK_API int turn_upkeep() {
 }
 
 HOOK_API int faction_upkeep(int fac) {
-    debuglog("faction_upkeep %d %d\n", *tx_current_turn, fac);
+    debug("faction_upkeep %d %d\n", *tx_current_turn, fac);
     if (ai_enabled(fac))
         move_upkeep(fac);
     /*
@@ -358,7 +331,7 @@ HOOK_API int tech_value(int tech, int fac, int flag) {
             value *= 4;
         }
     }
-    debuglog("tech_value %d %d %d %s\n", tech, fac, value, tx_techs[tech].name);
+    debug("tech_value %d %d %d %s\n", tech, fac, value, tx_techs[tech].name);
     return value;
 }
 
@@ -404,7 +377,7 @@ int find_project(int base_id) {
             UNIT* u = &tx_units[id];
             if (u->weapon_type == WPN_PLANET_BUSTER && strlen(u->name) > 0
             && offense_value(u) > offense_value(&tx_units[best])) {
-                debuglog("find_project %d %d %s\n", fac, id, (char*)tx_units[id].name);
+                debug("find_project %d %d %s\n", fac, id, (char*)tx_units[id].name);
                 best = id;
             }
         }
@@ -431,7 +404,7 @@ int find_project(int base_id) {
                 int sc = project_score(fac, i);
                 choice = (sc > score ? i : choice);
                 score = max(score, sc);
-                debuglog("find_project %d %d %d %s\n", fac, i, sc, (char*)tx_facility[i].name);
+                debug("find_project %d %d %d %s\n", fac, i, sc, (char*)tx_facility[i].name);
             }
         }
         return (projs > 0 || score > 2 ? -choice : 0);
@@ -442,7 +415,7 @@ int find_project(int base_id) {
 bool can_build_ships(int id) {
     BASE* b = &tx_bases[id];
     int k = *tx_map_area_sq_root + 20;
-    return has_chassis(b->faction_id, CHS_FOIL) && nearby_tiles(b->x, b->y, WATER_ONLY, k) >= k;
+    return has_chassis(b->faction_id, CHS_FOIL) && nearby_tiles(b->x, b->y, TRIAD_SEA, k) >= k;
 }
 
 int unit_score(int id, int fac, bool def) {
@@ -478,7 +451,7 @@ int unit_score(int id, int fac, bool def) {
 
 int find_proto(int fac, int triad, int mode, bool defend) {
     int basic = BSC_SCOUT_PATROL;
-    debuglog("find_proto fac: %d triad: %d mode: %d def: %d\n", fac, triad, mode, defend);
+    debug("find_proto fac: %d triad: %d mode: %d def: %d\n", fac, triad, mode, defend);
     if (mode == WMODE_COLONIST)
         basic = (triad == TRIAD_SEA ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
     else if (mode == WMODE_TERRAFORMER)
@@ -505,7 +478,7 @@ int find_proto(int fac, int triad, int mode, bool defend) {
             bool valid = (mode || best == basic || (defend == (offense_value(u) < defense_value(u))));
             if (valid && (random(16) > 8 + unit_score(best, fac, defend) - unit_score(id, fac, defend))) {
                 best = id;
-                debuglog("===> %s\n", tx_units[best].name);
+                debug("===> %s\n", tx_units[best].name);
             }
         }
     }
@@ -541,7 +514,7 @@ int hurry_item(BASE* b, int mins, int cost) {
     f->energy_credits -= cost;
     b->minerals_accumulated += mins;
     b->status_flags |= BASE_HURRY_PRODUCTION;
-    debuglog("hurry_item %d %d %d %d %d %s %s\n", *tx_current_turn, b->faction_id,
+    debug("hurry_item %d %d %d %d %d %s %s\n", *tx_current_turn, b->faction_id,
         mins, cost, f->energy_credits, b->name, prod_name(b->queue_items[0]));
     return 1;
 }
@@ -667,7 +640,7 @@ int find_facility(int base_id) {
             return -1*c;
         }
     }
-    debuglog("******\n");
+    debug("BUILD MIL\n");
     bool build_ships = can_build_ships(base_id) && (sea_base || !random(3));
     return select_combat(base_id, sea_base, build_ships, 0, 0);
 }
@@ -675,8 +648,8 @@ int find_facility(int base_id) {
 int select_colony(int id, int pods, bool build_ships) {
     BASE* base = &tx_bases[id];
     int fac = base->faction_id;
-    bool ls = has_base_sites(base->x, base->y, fac, LAND_ONLY);
-    bool ws = has_base_sites(base->x, base->y, fac, WATER_ONLY);
+    bool ls = has_base_sites(base->x, base->y, fac, TRIAD_LAND);
+    bool ws = has_base_sites(base->x, base->y, fac, TRIAD_SEA);
     int limit = (*tx_current_turn < 60 || (!random(3) && (ls || (build_ships && ws))) ? 2 : 1);
 
     if (pods >= limit) {
@@ -723,8 +696,7 @@ int select_combat(int id, bool sea_base, bool build_ships, int probes, int def_l
 
 int faction_might(int fac) {
     Faction* f = &tx_factions[fac];
-    return max(1, f->mil_strength_1 + f->mil_strength_2 + f->pop_total)
-        * ((1 << fac) & *tx_human_players ? 2 : 1);
+    return max(1, f->mil_strength_1 + f->mil_strength_2 + f->pop_total) * (is_human(fac) ? 2 : 1);
 }
 
 int select_prod(int id) {
@@ -800,8 +772,7 @@ int select_prod(int id) {
     double threat = 1 - (1 / (1 + max(0.0, w1 * w2)));
     int def_target = (*tx_current_turn < 50 && !sea_base && !random(3) ? 2 : 1);
 
-    debuglog("select_prod "\
-    "%d %d %2d %2d | %d %d %d %d %d %d | %2d %2d %2d | %2d %.4f %.4f %.4f %.4f\n",
+    debug("select_prod %d %d %2d %2d | %d %d %d %d %d %d | %2d %2d %2d | %2d %.4f %.4f %.4f %.4f\n",
     *tx_current_turn, fac, base->x, base->y,
     defenders, formers, pods, probes, crawlers, build_pods,
     minerals, reserve, p->proj_limit, enemyrange, enemymil, w1, w2, threat);
@@ -852,6 +823,7 @@ int social_score(int fac, int sf, int sm2, int pop_boom, int range, int immunity
     Faction* f = &tx_factions[fac];
     FactMeta* m = &tx_factions_meta[fac];
     R_Social* s = &tx_social[sf];
+    double bw = min(1.0, f->current_num_bases / min(40.0, *tx_map_area_sq_root * 0.5));
     int morale = (has_project(fac, FAC_COMMAND_NEXUS) ? 2 : 0) + (has_project(fac, FAC_CYBORG_FACTORY) ? 2 : 0);
     int pr_sf = m->soc_priority_category;
     int pr_sm = m->soc_priority_model;
@@ -878,9 +850,11 @@ int social_score(int fac, int sf, int sm2, int pop_boom, int range, int immunity
     if (vals[ECO] >= 2)
         sc += (vals[ECO] >= 4 ? 16 : 12);
     if (vals[EFF] < -2)
-        sc -= 10;
+        sc -= (vals[EFF] < -3 ? 20 : 14);
     if (vals[SUP] < -3)
         sc -= 10;
+    if (vals[SUP] < 0)
+        sc -= (int)((1 - bw) * 10);
     if (vals[MOR] >= 1 && vals[MOR] + morale >= 4)
         sc += 10;
     if (vals[PRO] >= 3 && !has_project(fac, FAC_HUNTER_SEEKER_ALGO))
@@ -888,9 +862,9 @@ int social_score(int fac, int sf, int sm2, int pop_boom, int range, int immunity
 
     sc += max(2, 2 + 4*f->AI_wealth + 3*f->AI_tech - f->AI_fight)
         * min(5, max(-3, vals[ECO]));
-    sc += max(1, 2*(f->AI_wealth + f->AI_tech - f->AI_fight) + min(4, *tx_current_turn/25))
+    sc += max(2, 2*(f->AI_wealth + f->AI_tech - f->AI_fight) + (int)(4*bw))
         * (min(6, vals[EFF]) + (vals[EFF] >= 3 ? 2 : 0));
-    sc += max(3, 2*f->AI_power + 2*f->AI_fight + 8 - min(4, *tx_current_turn/25))
+    sc += max(3, 3 + 2*f->AI_power + 2*f->AI_fight)
         * min(3, max(-4, vals[SUP]));
     sc += max(2, 5 - range/8 + 3*f->AI_power + 2*f->AI_fight)
         * min(4, max(-4, vals[MOR]));
@@ -916,10 +890,10 @@ int social_score(int fac, int sf, int sm2, int pop_boom, int range, int immunity
         + (has_project(fac, FAC_MANIFOLD_HARMONICS) ? 6 : 0)) * min(3, max(-3, vals[PLA]));
     sc += max(2, 5 - range/8 + 2*f->AI_power + 2*f->AI_fight) * min(3, max(-2, vals[PRO]));
     sc += 8 * min(8 - *tx_diff_level, max(-3, vals[IND]));
-    sc += max(2, 3 + 4*f->AI_tech + 2*(f->AI_growth + f->AI_wealth - f->AI_fight))
+    sc += max(2, 3 + 4*f->AI_tech + 2*(f->AI_wealth - f->AI_fight))
         * min(5, max(-5, vals[RES]));
 
-    debuglog("social_score %d %d %d %d %s\n", fac, sf, sm2, sc, s->soc_name[sm2]);
+    debug("social_score %d %d %d %d %s\n", fac, sf, sm2, sc, s->soc_name[sm2]);
     return sc;
 }
 
@@ -927,7 +901,7 @@ HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5) {
     Faction* f = &tx_factions[fac];
     FactMeta* m = &tx_factions_meta[fac];
     R_Social* s = tx_social;
-    int range = (int)plans[fac].enemy_range;
+    int range = (int)(plans[fac].enemy_range / (1.0 + 0.1*plans[fac].enemy_bases));
     int pop_boom = 0;
     int want_pop = 0;
     int pop_total = 0;
@@ -971,7 +945,7 @@ HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5) {
             pop_boom = ((f->SE_growth < 4 ? 4 : 8) * want_pop) >= pop_total;
         }
     }
-    debuglog("social_params %d %d %s | %d %3d %3d | %2d %4x %4x %4x\n",
+    debug("social_params %d %d %s | %d %3d %3d | %2d %4x %4x %4x\n",
         *tx_current_turn, fac, m->filename, pop_boom, want_pop, pop_total, range, immunity, impunity, penalty);
     int score_diff = 1;
     int sf = -1;
@@ -996,7 +970,7 @@ HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5) {
     int cost = (m->rule_flags & FACT_ALIEN ? 36 : 24);
     if (sf >= 0 && f->energy_credits > cost) {
         int sm1 = (&f->SE_Politics)[sf];
-        debuglog("social_change %d %d %s | %d %d %2d %2d | %s -> %s\n", *tx_current_turn, fac, m->filename,
+        debug("social_change %d %d %s | %d %d %2d %2d | %s -> %s\n", *tx_current_turn, fac, m->filename,
             sf, sm2, cost, score_diff, s[sf].soc_name[sm1], s[sf].soc_name[sm2]);
         (&f->SE_Politics_pending)[sf] = sm2;
         f->energy_credits -= cost;

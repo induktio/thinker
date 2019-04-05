@@ -464,6 +464,12 @@ enum unit_ability_flags
     ABL_ALGO_ENHANCEMENT = 0x10000000,
 };
 
+enum unit_prototype_flags
+{
+    UNIT_ACTIVE = 0x1,
+    UNIT_PROTOTYPED = 0x4,
+};
+
 enum unit_state
 {
     UNIT_STATE_RECEIVES_SUPPORT = 0x10,

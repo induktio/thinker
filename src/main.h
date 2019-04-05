@@ -10,12 +10,12 @@
 #ifdef BUILD_DEBUG
     #define MOD_DATE __DATE__ " " __TIME__
     #define DEBUG 1
-    #define debuglog(...) fprintf(debug_log, __VA_ARGS__);
+    #define debug(...) fprintf(debug_log, __VA_ARGS__);
 #else
     #define MOD_DATE __DATE__
     #define DEBUG 0
     #define NDEBUG /* Disable assertions */
-    #define debuglog(...) /* Nothing */
+    #define debug(...) /* Nothing */
     #ifdef __GNUC__
     #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
     #endif
@@ -65,8 +65,6 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define COMBAT 0
 #define SYNC 0
 #define NO_SYNC 1
-#define LAND_ONLY 0
-#define WATER_ONLY 1
 #define NEAR_ROADS 3
 #define RES_NONE 0
 #define RES_NUTRIENT 1
@@ -76,7 +74,6 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define STATUS_CONVOY 3
 #define STATUS_GOTO 24
 #define STATUS_ROAD_TO 27
-#define UNIT_PROTOTYPED 4
 #define ATT false
 #define DEF true
 
@@ -117,7 +114,6 @@ extern Points needferry;
 DLL_EXPORT int ThinkerDecide();
 HOOK_API int turn_upkeep();
 HOOK_API int faction_upkeep(int fac);
-HOOK_API int enemy_move(int id);
 HOOK_API int base_production(int id, int v1, int v2, int v3);
 HOOK_API int tech_value(int tech, int fac, int flag);
 HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5);

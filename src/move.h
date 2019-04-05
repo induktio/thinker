@@ -12,11 +12,12 @@
 #define PM_SAFE -20
 #define PM_NEAR_SAFE -40
 
+HOOK_API int enemy_move(int id);
+void move_upkeep(int fac);
 bool has_transport(int x, int y, int fac);
 bool non_combat_move(int x, int y, int fac, int triad);
 bool can_build_base(int x, int y, int fac, int triad);
 bool has_base_sites(int x, int y, int fac, int triad);
-void move_upkeep(int fac);
 int crawler_move(int id);
 int colony_move(int id);
 int former_move(int id);

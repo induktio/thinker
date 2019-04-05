@@ -61,7 +61,7 @@ void process_map(int k) {
                 continue;
             if (sq && !is_ocean(sq) && !visited.count({x, y})) {
                 int n = 0;
-                ts.init(x, y, LAND_ONLY, k);
+                ts.init(x, y, TRIAD_LAND, k);
                 while ((sq = ts.get_next()) != NULL) {
                     auto p = mp(ts.rx, ts.ry);
                     visited.insert(p);
@@ -82,7 +82,7 @@ void process_map(int k) {
     if ((int)goodtiles.size() < *tx_map_area_sq_root * 8) {
         goodtiles.clear();
     }
-    debuglog("process_map %d %d %d %d %d\n", *tx_map_axis_x, *tx_map_axis_y,
+    debug("process_map %d %d %d %d %d\n", *tx_map_axis_x, *tx_map_axis_y,
         *tx_map_area_sq_root, visited.size(), goodtiles.size());
 }
 
@@ -134,7 +134,7 @@ bool valid_start (int fac, int iter, int x, int y, bool aquatic) {
     }
     int min_sc = 160 - iter/2;
     bool need_bonus = (!aquatic && conf.nutrient_bonus > is_human(fac));
-    debuglog("find_score %2d | %3d %3d | %d %d %d %d\n", iter, x, y, pods.size(), nut, min_sc, sc);
+    debug("find_score %2d | %3d %3d | %d %d %d %d\n", iter, x, y, pods.size(), nut, min_sc, sc);
     if (sc >= min_sc && need_bonus && (int)pods.size() > 1 - iter/50) {
         int n = 0;
         while (!aquatic && pods.size() > 0 && nut + n < 2) {
@@ -181,7 +181,7 @@ HOOK_API void find_start(int fac, int* tx, int* ty) {
         }
         int min_range = max(8, *tx_map_area_sq_root/3 - i/5);
         z = point_range(spawns, x, y);
-        debuglog("find_iter %d %d | %3d %3d | %2d %2d\n", fac, i, x, y, min_range, z);
+        debug("find_iter %d %d | %3d %3d | %2d %2d\n", fac, i, x, y, min_range, z);
         if (z >= min_range && valid_start(fac, i, x, y, aquatic)) {
             *tx = x;
             *ty = y;
@@ -189,7 +189,7 @@ HOOK_API void find_start(int fac, int* tx, int* ty) {
         }
     }
     tx_site_set(*tx, *ty, tx_world_site(*tx, *ty, 0));
-    debuglog("find_start %d %d %d %d %d\n", fac, i, *tx, *ty, point_range(spawns, *tx, *ty));
+    debug("find_start %d %d %d %d %d\n", fac, i, *tx, *ty, point_range(spawns, *tx, *ty));
     fflush(debug_log);
 }
 

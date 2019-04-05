@@ -30,6 +30,7 @@ bool has_terra(int fac, int act, bool ocean);
 bool has_project(int fac, int id);
 bool has_facility(int base_id, int id);
 bool can_build(int base_id, int id);
+bool ai_enabled(int fac);
 bool is_human(int fac);
 bool at_war(int a, int b);
 bool un_charter();
@@ -84,14 +85,12 @@ class TileSearch {
     int y_skip;
     MAP* sq;
     public:
-    int rx, ry, dist, prev;
+    int rx, ry, dist, cur;
     PathNode newtiles[QSIZE];
     Points oldtiles;
     void init(int, int, int);
     void init(int, int, int, int);
-    int visited();
     bool has_zoc(int);
-    MAP* prev_tile();
     MAP* get_next();
 };
 
