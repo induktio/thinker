@@ -404,7 +404,7 @@ int find_project(int base_id) {
                 int sc = project_score(fac, i);
                 choice = (sc > score ? i : choice);
                 score = max(score, sc);
-                debug("find_project %d %d %d %s\n", fac, i, sc, (char*)tx_facility[i].name);
+                debug("find_project %d %d %d %s\n", fac, i, sc, tx_facility[i].name);
             }
         }
         return (projs > 0 || score > 2 ? -choice : 0);
@@ -420,12 +420,12 @@ bool can_build_ships(int id) {
 
 int unit_score(int id, int fac, bool def) {
     const int abls[][2] = {
-        {ABL_AAA, 5},
+        {ABL_AAA, 4},
         {ABL_AIR_SUPERIORITY, 3},
         {ABL_ALGO_ENHANCEMENT, 5},
         {ABL_AMPHIBIOUS, -4},
         {ABL_ARTILLERY, -2},
-        {ABL_DROP_POD, 5},
+        {ABL_DROP_POD, 4},
         {ABL_EMPATH, 2},
         {ABL_TRANCE, 2},
         {ABL_TRAINED, 1},
@@ -527,7 +527,7 @@ int consider_hurry(int id) {
     FactMeta* m = &tx_factions_meta[fac];
     AIPlans* p = &plans[fac];
 
-    if (!(conf.hurry_items && t >= -68 && ~b->status_flags & BASE_HURRY_PRODUCTION))
+    if (!(conf.hurry_items && t >= -FAC_ORBITAL_DEFENSE_POD && ~b->status_flags & BASE_HURRY_PRODUCTION))
         return 0;
     bool cheap = b->minerals_accumulated >= tx_basic->retool_exemption;
     int reserve = 20 + min(900, max(0, f->current_num_bases * min(30, (*tx_current_turn - 20)/5)));
@@ -862,11 +862,11 @@ int social_score(int fac, int sf, int sm2, int pop_boom, int range, int immunity
 
     sc += max(2, 2 + 4*f->AI_wealth + 3*f->AI_tech - f->AI_fight)
         * min(5, max(-3, vals[ECO]));
-    sc += max(2, 2*(f->AI_wealth + f->AI_tech - f->AI_fight) + (int)(4*bw))
+    sc += max(2, 2*(f->AI_wealth + f->AI_tech) - f->AI_fight + (int)(4*bw))
         * (min(6, vals[EFF]) + (vals[EFF] >= 3 ? 2 : 0));
     sc += max(3, 3 + 2*f->AI_power + 2*f->AI_fight)
         * min(3, max(-4, vals[SUP]));
-    sc += max(2, 5 - range/8 + 3*f->AI_power + 2*f->AI_fight)
+    sc += max(2, 4 - range/8 + 2*f->AI_power + 2*f->AI_fight)
         * min(4, max(-4, vals[MOR]));
     if (!has_project(fac, FAC_TELEPATHIC_MATRIX)) {
         sc += (vals[POL] < 0 ? 2 : 4) * min(3, max(-5, vals[POL]));
@@ -888,7 +888,7 @@ int social_score(int fac, int sf, int sm2, int pop_boom, int range, int immunity
     }
     sc += max(2, (f->SE_planet_base > 0 ? 5 : 2) + m->rule_psi/10
         + (has_project(fac, FAC_MANIFOLD_HARMONICS) ? 6 : 0)) * min(3, max(-3, vals[PLA]));
-    sc += max(2, 5 - range/8 + 2*f->AI_power + 2*f->AI_fight) * min(3, max(-2, vals[PRO]));
+    sc += max(2, 4 - range/8 + 2*f->AI_power + 2*f->AI_fight) * min(3, max(-2, vals[PRO]));
     sc += 8 * min(8 - *tx_diff_level, max(-3, vals[IND]));
     sc += max(2, 3 + 4*f->AI_tech + 2*(f->AI_wealth - f->AI_fight))
         * min(5, max(-5, vals[RES]));
@@ -901,7 +901,7 @@ HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5) {
     Faction* f = &tx_factions[fac];
     FactMeta* m = &tx_factions_meta[fac];
     R_Social* s = tx_social;
-    int range = (int)(plans[fac].enemy_range / (1.0 + 0.1*plans[fac].enemy_bases));
+    int range = (int)(plans[fac].enemy_range / (1.0 + 0.1 * min(4, plans[fac].enemy_bases)));
     int pop_boom = 0;
     int want_pop = 0;
     int pop_total = 0;
@@ -945,9 +945,9 @@ HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5) {
             pop_boom = ((f->SE_growth < 4 ? 4 : 8) * want_pop) >= pop_total;
         }
     }
-    debug("social_params %d %d %s | %d %3d %3d | %2d %4x %4x %4x\n",
-        *tx_current_turn, fac, m->filename, pop_boom, want_pop, pop_total, range, immunity, impunity, penalty);
-    int score_diff = 1;
+    debug("social_params %d %d %8s | %d %3d %3d | %2d %4x %4x %4x\n", *tx_current_turn, fac, m->filename,
+        pop_boom, want_pop, pop_total, range, immunity, impunity, penalty);
+    int score_diff = 1 + random(6);
     int sf = -1;
     int sm2 = -1;
 
@@ -970,7 +970,7 @@ HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5) {
     int cost = (m->rule_flags & FACT_ALIEN ? 36 : 24);
     if (sf >= 0 && f->energy_credits > cost) {
         int sm1 = (&f->SE_Politics)[sf];
-        debug("social_change %d %d %s | %d %d %2d %2d | %s -> %s\n", *tx_current_turn, fac, m->filename,
+        debug("social_change %d %d %8s | %d %d %2d %2d | %s -> %s\n", *tx_current_turn, fac, m->filename,
             sf, sm2, cost, score_diff, s[sf].soc_name[sm1], s[sf].soc_name[sm2]);
         (&f->SE_Politics_pending)[sf] = sm2;
         f->energy_credits -= cost;

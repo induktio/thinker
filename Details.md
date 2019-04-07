@@ -6,26 +6,33 @@ Proposed alphax.txt settings for Thinker can be found from [this file](docs/alph
 2. Large map size is increased to 50x100. Previous value was nearly the same as a standard map.
 3. WorldBuilder is modified to produce bigger continents, less tiny islands, more rivers and ocean shelf on random maps.
 4. Descriptions of various configuration values have been updated to reflect their actual meaning.
+5. [BUG] Enabled the "Antigrav Struts" special ability for air units as stated in the manual.
+6. [BUG] Disabled the "Clean Reactor" special ability for Probe Teams because they already don't require any support.
 
 
 Main features
 =============
-Terranx patches that apply to all factions regardless of `factions_enabled` setting:
+Thinker has several advanced planning routines that enhance the base game AI to manage the complexities of colony building in Alpha Centauri. In the original game, many of the AI aspects were left underdeveloped while the computer factions struggled to deal with various punitive penalties. This left the single player experience severely lacking, since the AI would have no counter to many simple strategies.
+
+When Thinker AI is enabled with the `factions_enabled` setting, the affected game features are listed below. This will not affect the automated behaviour of units or governors in player-controlled factions. For testing purposes it is also possible to run old/new AIs side-by-side by setting `factions_enabled=3` or similar. In that case, only the factions in the first 3 slots will use Thinker AI if they are not player-controlled.
+
+Thinker does not have any special save game format, so it's possible to open an old save and have the factions switch to the new AI and vice-versa. None of the config options are preserved in the save game either, but the units or resources spawned at the game start will remain.
+
+1. Thinker fully controls the movement of colony pods, terraformers and crawlers to manage the base placement and production much more effectively than usual.
+2. New combat routines for land-based units will attempt to counter-attack nearby enemy units more often. If the odds are good enough, hasty attacks are executed more often than usual. The AI will fight the native units more aggressively, and it will also try to heal its units at monoliths.
+3. Thinker base production AI will decide every item that is produced in a base. The build order can differ substantially from anything the normal AIs might decide to produce, and the difference can be easily noted in the vastly increased quantity of formers and crawlers the AIs might have.
+4. Social AI feature will decide the social engineering models the AI factions will choose. It will attempt to take into account the various cumulative/non-linear effects of the society models and any bonuses provided by the secret projects. The AI is now capable of pop-booming if enough growth is attainable, and it will also try to avoid pacifist drones by switching out of SE models with too many police penalties. All the SE model effects are moddable because the AI is not hardcoded in any particular choices. This feature is also capable of managing all the custom factions.
+5. Tech balance will assign extra importance on some specific techs when selecting what to research: requirements for formers, crawlers, recycling tanks, children's creches, and the 3 technologies to allow the production of more than 2 resources per square. If these items don't have any requirements, or the techs are not available to research, the tech progression is unaffacted by this feature. It will also not affect player faction research in any way.
+6. Hurry items feature is able to use AI energy reserves to occasionally hurry base production. Items that can be hurried include most basic facilities, formers, and (only rarely) combat units. The AI will never rush secret projects in this way, but sometimes they can be completed quickly with overflow minerals.
+
+In addition to the bugfix patches listed separately, the following patches apply to all factions regardless of `factions_enabled` setting:
 
 1. Base governors of all factions will now prefer to work borehole tiles instead of always emphasizing food production. The patch makes governors assume borehole tiles produce 1 food but this will not affect the actual nutrient intake or anything else beyond tile selection.
 2. All landmarks that are placed on random maps can now be configured from `thinker.ini`. Nessus Canyon is also available but disabled by default.
-3. New `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on huge map sizes.
-4. New `design_units` feature will introduce custom probe team and armored crawler prototypes among other units for the computer factions. The AI may not necessarily build them unless Thinker is enabled.
-5. All expansion related content can be disabled by using the `smac_only` setting. Requires another mod to be installed on `ac_mod` folder to load the proper txt files.
-6. AI mineral/nutrient production cost factors for each difficulty level can be changed by using the `cost_factor` setting. Does not affect other difficulty-related modifiers.
-
-When Thinker AI is enabled on a faction with the `factions_enabled` setting, the following behaviours change. This will not affect the automated behaviour of units or governors in player-controlled factions.
-
-1. Thinker controls the movement of colony pods (land/sea), terraformers and crawlers (land only) to manage the base placement and production much more effectively than usual.
-2. New combat routines for land-based units will attempt to counter-attack nearby enemy units more often. If the odds are good enough, hasty attacks are executed more often than usual. The AI will fight the native units more aggressively, and it will also try to heal its units at monoliths.
-3. Thinker base production AI will decide every item that is produced in a base. The build order can differ substantially from anything the normal AIs might decide to produce, and the difference can be easily noted in the vastly increased quantity of formers and crawlers the AIs might have.
-4. Thinker AIs will assign extra importance on any former/crawler requirements or any resource production cap-lifting techs when selecting what to research.
-5. Social engineering feature will decide the SE models the AI factions will have. It will attempt to take into account the various cumulative/non-linear effects of the society models and any bonuses provided by the secret projects. The AI is now capable of pop-booming if enough growth is attainable, and it will also try to avoid pacifist drones by switching out of SE models with too many police penalties. All the SE model effects are moddable because the AI is not hardcoded in any particular choices.
+3. New `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on huge map sizes. It is also possible to add extra nutrient bonuses for each land-based faction by using the `nutrient_bonus` setting.
+4. New `design_units` feature will introduce custom probe teams, armored crawlers, gravship formers, and AAA garrison prototypes for the computer factions. The AI may not necessarily build them unless Thinker is enabled.
+5. All expansion related content can be disabled by using the `smac_only` setting. Requires another mod to be installed on `ac_mod` folder to load the proper txt files. Custom factions that are not aliens are also supported by this feature.
+6. AI mineral/nutrient production cost factors for each difficulty level can be changed by using the `cost_factor` setting. Does not affect other difficulty related modifiers.
 
 
 Features not supported

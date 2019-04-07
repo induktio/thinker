@@ -2,7 +2,7 @@
 #define __MAIN_H__
 
 #ifdef BUILD_REL
-    #define MOD_VERSION "Thinker Mod v0.8"
+    #define MOD_VERSION "Thinker Mod v0.9"
 #else
     #define MOD_VERSION "Thinker Mod develop build"
 #endif
@@ -17,6 +17,7 @@
     #define NDEBUG /* Disable assertions */
     #define debug(...) /* Nothing */
     #ifdef __GNUC__
+    #pragma GCC diagnostic ignored "-Wunused-variable"
     #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
     #endif
 #endif

@@ -2,7 +2,7 @@
 SMACX Thinker Mod
 =================
 
-Thinker is an AI improvement mod for Alpha Centauri: Alien Crossfire. By patching the game to use an additional dll, new functionality can be coded in C++, unlike previous patches. Some of the features include:
+Thinker is an AI improvement mod for Alpha Centauri: Alien Crossfire. By patching the game to use an additional dll, new functionality can be developed in C++. This mod features substantially increased level of challenge in single player while providing many gameplay enhancements. Some of the features include:
 
 * New production AI for bases
 * Improved terraforming AI (lots of condenser-farms, boreholes and forests)
@@ -10,8 +10,8 @@ Thinker is an AI improvement mod for Alpha Centauri: Alien Crossfire. By patchin
 * AI builds more crawlers and deploys them better
 * AI will deploy colony pods much sooner instead of wandering on the map
 * Unit auto design feature creates improved probe teams and AAA garrisons
-* Customizable options for free formers and satellites for AI factions
-* Does not affect player-run factions or game mechanics
+* Does not affect player-run factions
+* Minimal changes to vanilla game mechanics
 * Game binary includes [Scient's patches](Details.md)
 
 This mod is tested to work with the [GOG version](https://www.gog.com/game/sid_meiers_alpha_centauri) of Alpha Centauri.
@@ -20,7 +20,7 @@ More information about the features and recommended settings can be found from [
 
 Download
 --------
-Currently the latest release is v0.8.
+Currently the latest release is v0.9. See also the [Changelog](Changelog.md).
 
 * [Release versions](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAp6ioWxdo7vnG6Ity5W3o1a?dl=0&lst=)
 * [Develop builds](https://www.dropbox.com/sh/qsps5bhz8v020o9/AADv-0D0-bPq22pgoAIcDRC3a/develop?dl=0&lst=)
@@ -28,22 +28,22 @@ Currently the latest release is v0.8.
 
 Installation
 ------------
-1. Extract the files to game folder
-2. Check the readme for release notes
-3. Change configuration from thinker.ini or use the defaults
+1. Extract the files to game folder.
+2. Check the changelog for release notes.
+3. Change configuration from thinker.ini or just use the defaults.
 4. Start the game from terranx_mod.exe
-5. Mod version/build date should now be visible in the game version menu
+5. Mod version/build date should now be visible in the game version menu (Ctrl+F4). If it is not displayed, Thinker is not correctly loaded.
 
 
 Other mods
 ----------
 * [Pracx](https://github.com/DrazharLn/pracx) graphics enhancement patch can be used together with Thinker. It is recommended to download and install [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). If you already use older Pracx 1.10 you can just rename terranx_mod.exe to terranx.exe and run pracxpatch.exe so that the installer patches the right binary.
-* [SMAC-in-SMAX mod](https://github.com/DrazharLn/smac-in-smax) can also be installed to play a game similar to original SMAC from within the SMACX game binary while Thinker is enabled.
+* [SMAC-in-SMAX mod](https://github.com/DrazharLn/smac-in-smax) can also be installed to play a game similar to original SMAC from the SMACX game binary while Thinker is enabled.
 
 
 Compiling
 ---------
-Thinker can be compiled using the included CodeBlocks project and mingw32-g++.
+Thinker can be compiled with GCC and the included CodeBlocks project. GCC version 8.1.0 or later is recommended and can be found from [mingw-w64 project](https://sourceforge.net/projects/mingw-w64/files/).
 
 
 License
