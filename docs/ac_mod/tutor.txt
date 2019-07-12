@@ -1,0 +1,1446 @@
+;
+;   Sid Meier's ALPHA CENTAURI
+;
+;   Tutorial dialog boxes
+;
+;   Copyright (c) 1997, 1998 by Firaxis Games, Inc.
+;
+
+;   Spore Launcher entry replaced by Mind Worms. Constructions like
+;   "human factions" replaced by "factions". References to alien factions
+;   and progenitors removed.
+;   -cmc 2014
+
+#LANDFALL
+#xs 300
+#button TOUR
+Your colony pod has crash landed on Alpha Centauri; its stores have
+been used to found your first base, $BASENAME0. You can use the $UNITNAME1
+unit which is now active to explore the surrounding area. It can
+also be used for defense if necessary.
+^
+If this is your first time playing Alpha Centauri and you would like
+a tour of the interface, click the {TOUR} button.
+
+#DIRECTIONS
+Northeast
+East (i.e. Right)
+Southeast
+South (i.e. Down)
+Southwest
+West (i.e. Left)
+Northwest
+North (i.e. Up)
+
+#TOUR1
+#xs 300
+A unit's status box blinks when it is ready to move. Use this {$UNITNAME0} to
+explore.
+
+#TOUR1A
+#xs 300
+A unit's status box blinks when it is ready to move. Use this {$UNITNAME0} to
+explore.
+
+#TOUR1B
+#xs 400
+When it is your turn, your game pieces, called 'units', will blink their status box
+to let you know that you can move them. When no status boxes are blinking,
+a cursor will flash instead; in this case, you can switch back to
+moving pieces by pressing the 'V' key (don't do it now, wait until
+the tour is complete).
+
+#TOUR2
+#xs 300
+You can use the "arrow keys" or the mouse to move units.
+The SPACE bar tells a unit to stay where it is for now.
+
+#TOUROCEAN
+#xs 300
+Only naval and air units can enter ocean squares.
+
+#TOUROCEAN2
+#xs 300
+Your $UNITTYPE0 unit can explore the ocean and transport
+your ground units to other continents.
+
+#TOURFUNGUS
+#xs 300
+{Xenofungus} is a form of plant life native to Alpha Centauri. For
+now, think of it as a dangerous obstacle.
+
+#TOURMAP
+#xs 300
+Planet's three primary resources are {NUTRIENTS}, {MINERALS}, and {ENERGY}.
+To produce these resources, you will wish to find squares with,
+respectively, {RAINFALL}, {ROCKINESS}, and high {ALTITUDE}.
+
+#TOURRAIN
+#xs 300
+The more "green" in a square, the higher the {rainfall}. Rainy squares
+produce the most {NUTRIENTS}. {Nutrients} feed your colonists and help
+your settlement to grow.
+
+#TOURRAINWET
+#xs 300
+This green and {RAINY} square is excellent for growing NUTRIENT crops.
+
+#TOURRAINMOD
+#xs 300
+This square receives {MODERATE RAINFALL}, as indicated by the modest
+amounts of green, and will support crops. Planting a farm here
+will improve {NUTRIENT} production considerably.
+
+#TOURRAINDRY
+#xs 300
+This dry, {ARID} terrain (no green) will not produce nutrients
+without considerable terraforming or forestation. Remember, when
+you want to grow crops, look for {green} squares.
+
+#TOURRAINDRY2
+#xs 300
+All of the squares nearby are {ARID}, as indicated by the absence
+of green patches. Nutrient production in arid squares is poor, so
+you will need to plant {FARMS} or {FORESTS} quickly.
+
+#TOURALT
+#xs 300
+These two squares lie at different {ALTITUDES}. The higher a square,
+the more {ENERGY} it will produce if you build a solar collector.
+As a rule of thumb, each 1000 meters of altitude increases your
+ENERGY yield by one.
+
+#TOURTWOFOOD
+#xs 300
+This would be a good place to plant a farm. FARMS increase the
+{NUTRIENTS} which can be produced in a square.
+
+#TOURTWOROCK
+#xs 300
+This square is quite {ROCKY}, and is excellent for producing {MINERALS}.
+Your bases need minerals to build new units and facilities. Crops do not
+grow well in rocky squares.
+
+#TOURONEROCK
+#xs 300
+This square is {ROLLING} terrain (some rocks), and will produce
+some {MINERALS}.
+
+#TOURFLAT
+#xs 300
+This square is {FLAT} (no rocks), and will not produce any
+{MINERALS} unless you build a {MINE} or plant a {FOREST}.
+
+#TOURFOREST
+#xs 400
+In each square, your Formers can build {FARMS}, which improve
+{nutrient} production, {MINES}, which improve {mineral} production,
+and {SOLAR COLLECTORS}, which improve {energy} production. They
+can also plant {FORESTS} for balanced resource production and build
+{ROADS} to speed movement.
+
+#TOURREVIEW
+#xs 440
+A quick review of basic resource production:
+^{NUTRIENTS} are best produced in {WET} areas (Plant {FARMS}).
+^{MINERALS} are best produced in {ROCKY} areas (Build {MINES}).
+^{ENERGY} is best produced in {HIGH} areas (Build {SOLAR COLLECTORS}).
+^{FORESTS} produce a fixed amount of all resource types.
+Finally, if an area is very rocky, nutrient production is penalized.
+
+#TOURADVANCED
+#xs 440
+Advanced players may be interested in these later options:
+^{CONDENSERS} increase rainfall in every surrounding square.
+^{BOREHOLES} provide massive quantities of MINERALS and ENERGY.
+^{AQUIFERS} release underground rivers.
+^{MAG TUBES} vastly increase movement rates.
+^{SOIL ENRICHERS} further improve farm output.
+^{LEVEL TERRAIN} decreases rockiness.
+^{RAISE/LOWER TERRAIN} can change continents and affect weather patterns.
+
+#TOURFORMDONE
+#xs 440
+So, to wrap up our tour of terraforming functions, we'll suggest
+that you begin planting farms and forests in squares near your
+base (move your Formers to those squares, then press the 'F' or
+'Shift+F' key). We'll give you more hints as you go along.
+^
+If you wish to take this tour again, select "Terraforming Tour" from
+the "Help" menu.
+
+#TOURSCAN
+#xs 300
+The {Planetary Scan} shows a zoomed out view of the planet which you
+can use to find your way around.
+
+#TOURMENU
+#xs 300
+The {Main Menu} is summoned by clicking this button; it works much
+like your Windows START button.
+^
+Advanced players may wish to switch to "Detailed Menus" from the
+game menu.
+
+#TOURCOMMLINK
+#xs 300
+The {Commlink} button allows you to contact other factions; you can
+click on the name of any faction you've met to open negotiations.
+In a multiplayer game this window also shows the chat status and
+current turn clock.
+
+#TOURUNITSINFO
+#xs 300
+The {Unit Window} shows you which unit you are moving right now, or
+which unit you currently have selected.
+
+#TOURTERRAININFO
+#xs 300
+The {Terrain Window} details the terrain at your current location.
+The rainier (greener) an area is, the more NUTRIENTS it produces. The
+rockier an area, the more MINERALS it makes; and the higher an area, the
+more ENERGY can be produced.
+
+#TOURSTACKINFO
+#xs 300
+The {Stack Window} allows you to see all of the units in the current
+square. Click on any unit here to select it. Note that a unit's
+"stats" e.g. 1-1-1 indicate its {weapon,} {armor,} and {moves.}
+Better units have higher values.
+
+#TOURMESSAGEINFO
+#xs 300
+The {Message Window} provides useful data of many types throughout
+the game. You can click here to cycle through the different displays,
+or to hold on a display which you wish to study in detail.
+
+#TOURBUTTONINFO
+#xs 300
+The {Info Button} causes the Message Window to cycle through
+general information.
+
+#TOURBUTTONMESSAGE
+#xs 300
+The {Message Button} causes the Message Window to list events
+which have occurred at your bases recently (such as new items
+built, drone riots, etc). You can click on listed items to zoom
+to the affected base.
+
+#TOURWORLDINFO
+#xs 300
+The {World Window} shows an overhead map of the whole planet. You
+may click anywhere on the map to cause the view to zoom to that
+location.
+
+#TOURDATEINFO
+#xs 300
+The current date and your energy reserves are shown here.
+
+#TOURBUTTONTURN
+#xs 300
+You can click the {Turn Button} to proceed to the next turn. Normally
+the game will proceed to the next turn automatically once you've moved
+all of your units. This button is more important in multiplayer games.
+
+#TOURINFO
+#xs 300
+The {Data Readout} displays valuable information about your current
+situation. You can click in the data readout to cycle through the
+displays manually.
+
+#TOURSTAT
+#xs 300
+The {Mission Status} display lists the contents of the active square
+on the main map; here is where you'll find details on units, bases,
+and terrain in the current square.
+
+#TOUROVER
+#xs 440
+So, your first job is to use your Scout Patrol to explore the
+area around your base.
+^
+If you wish to take this tour again, select "Interface Tour" from
+the "Help" menu.
+
+#BASECONTROL
+#xs 400
+#button TOUR
+The {Base Control Screen} allows you to control the production
+and economic growth of your base, $BASENAME0. Click the {TOUR}
+button for more details.
+
+#TOUR1GOVERNOR
+#xs 400
+We'll begin the Base tour by introducing you to the {Governor}.
+The Governor is a valuable assistant who can help you control
+the activities of your base. Whether beginner or expert, you will
+find the Governor can help you get your bases up and running quickly.
+To use the Governor, simply tell him whether this base should
+{Explore, Discover, Build,} or {Conquer.}
+
+#TOUR1EXPLORE
+#xs 400
+The {EXPLORE} button tells the Governor to concentrate on
+finding and occupying new territory. Bases set to explore
+will typically concentrate on building {Scouts,} {Colony Pods,}
+{Transports,} and occasional {Naval Units} for scouting oceans.
+This button is especially useful early in the game, when
+you need to expand quickly.
+
+#TOUR1DISCOVER
+#xs 400
+The {DISCOVER} button emphasizes scientific discovery and
+technological breakthroughs. The Governor will concentrate on
+building {Science Facilities} (such as Network Nodes), {Secret
+Projects,} {Probe Teams,} and {Prototype Units.} This button
+is especially effective with large, well-protected bases deep
+in your interior.
+
+#TOUR1BUILD
+#xs 400
+The {BUILD} button mandates infrastructure and growth. The Governor
+will tend to build {Facilities} and {Formers}. Use this button at
+any time to have your base concentrate on peaceful growth.
+
+#TOUR1CONQUER
+#xs 440
+Use the {CONQUER} button to build up your military. In this mode
+your base will produce {military units} of all varieties,
+and their associated facilities, such as {Command Centers.}
+Use this button whenever you need to attack or defend.
+
+#TOUR1GOVERNOR2
+#xs 440
+You now have enough information to get started; if you wish, click
+the {End Tour} button and begin playing. Or, keep reading to learn
+how you can manage a base yourself.
+^
+We'll begin with the {GOVERNOR} button proper, which can be used to
+turn the Governor off and on. Note that clicking on the Explore,
+Discover, Build, or Conquer button automatically turns the Governor
+on.
+
+#TOUR1ADVANCED
+The {ADVANCED GOVERNOR} button brings up a dialog box which allows
+you to customize your Governor. For instance, you could tell your Governor
+to build {only} facilities.
+
+#TOUR1CAPTION
+#xs 300
+The {Information Box} shows the name of the base.
+
+#TOUR1ECO
+#xs 300
+For convenience, the date and your current {Energy Reserves} shown
+here. If your base has grown large enough to pose a danger to the
+local environment, the {Ecological Damage} indicator shows the
+percentage chance of intervention by Planet.
+
+#TOUR1POP
+#xs 300
+The {Population Bar} shows you the citizens of $BASENAME0--each
+"person" represents about 1,000 colonists. Most of your citizens
+will be grey {Workers}, capable of producing standard resources.
+Later, you may elevate some citizens to become {Specialists} (Doctors,
+Technicians, Librarians, etc).
+
+#TOUR1POP2
+#xs 300
+Good social conditions in your colony may cause some Workers to become
+green {Talents}. Poor social conditions and overcrowding will
+turn them into red {Drones}. Whenever your base has more
+drones than talents, there will be a {Drone Riot}. To correct
+this problem, build a psych-related base facility such as a
+{Recreation Dome}, convert some citizens into {Doctors}, or increase
+your energy allocation to {Psych}.
+
+#TOUR1STAPLE
+#xs 300
+The {Nerve Staple} button is a particularly draconian means of
+controlling drone riots. If you Nerve Staple your citizens, they will
+cease rioting for at least {ten turns}. Do this only in an emergency,
+however, because Nerve Stapling is considered an {atrocity}.
+
+#TOUR1PRODUCTION
+#xs 300
+The {Production Box} shows what the base is currently making. Bases
+can produce new units or build facilities to improve the base
+itself. Your base uses {minerals} to produce things. When all of the
+mineral icons in the box light up, your new unit or facility will be
+ready.
+
+#TOUR1QUEUE
+#xs 300
+The {Build Queue} shows what this base will build next, after it
+finished its current production.
+
+#TOUR1CHANGE
+#xs 300
+Click on the {Change Button} to set new production orders for your
+base.
+
+#TOUR1HURRY
+#xs 300
+Use the {Hurry Button} if you need to finish something fast. You can
+spend your {Energy Reserves} to complete production quickly, but it
+can get expensive.
+
+#TOUR1GARRISON
+#xs 400
+The {Garrison Box} shows you what units are currently present at this
+base--try to keep at least one military unit in each base to guard
+it from unexpected attack. You may click on any unit to activate it,
+or right-click for additional options.
+
+#TOUR1SUPPORTED
+#xs 400
+The {Forces Supported Box} shows the units which this base has
+produced (and which it therefore must {support}). These units are
+not necessarily present at the base right now--you can use the
+{SUPPORT} button to find out where they are.
+
+#TOUR1FACILITIES
+#xs 400
+The {Facilities Box} shows any {facilities} you have built at this
+base. Facilities increase the potential of your base (for instance,
+a Network Node increases your labs output), but most facilities
+require a small amount of energy each turn for {maintenance}. If you
+no longer want one of your facilities, you can click on it to
+{scrap and recycle} it.
+
+#TOUR1COMMERCE
+#xs 400
+The {Commerce Box} shows your trade with other factions. If you sign
+a {Treaty} or {Pact} with another faction, your base will automatically
+begin commerce with your new friends, resulting in {extra energy} for
+your base. Commerce rates are affected
+by (1) the size of the bases involved, (2) the number of economic
+techs you have discovered, and (3) whether you have a Treaty or
+Pact (with a Pact you gain double commerce).
+
+#TOUR1NUTRIENTS
+#xs 400
+The {Nutrients Box} shows your base's potential for {growth}. As your
+base produces {nutrients,} they are collected here; when all of the
+nutrient boxes light up, your base will increase in population.
+
+#TOUR1AREA
+#xs 400
+The {Base Map} shows the region around your base. Any square in this
+region can be farmed, mined, or otherwise improved by your citizens
+in order to produce {nutrients}, {minerals}, and {energy}, which are
+the basic economic units of the game. Squares in use are marked with
+icons showing the quantity of each resource they are producing.
+^
+You can utilize one square on this map for each {Worker} you have
+at this base (you can also always utilize the base square itself).
+You can drag Workers from square to square, or drag them into the
+{Population Bar} to elevate them to {specialists.}
+^
+You cannot utilize unexplored squares, squares utilized by other
+nearby bases, or squares occupied by enemy units.
+
+#TOUR1NUT
+#xs 400
+The {Nutrient Bar} shows your current nutrient production. Nutrients
+feed your citizens and help your colony to grow. Each citizen needs
+$NUM0 nutrients each turn to live; this {consumption} is shown on the left side
+of the bar. Any {surplus} nutrient production is shown on the right
+side of the bar. The surplus, if any, is stored each turn for possible
+future use and {population growth}. Any items appearing in red
+represent a {shortfall} and can lead to {starvation.}
+^
+If you need to improve nutrient production, move citizens on the area
+map to squares which produce more nutrients. Send your {Former}
+units (on the main map) to build {Farms} in these squares.
+
+#TOUR1MIN
+#xs 400
+The {Minerals Bar} shows your current mineral production. Depending
+on the number of military units you have built (and your social
+engineering settings), you may have to expend some minerals each turn
+to {support} existing units. This is shown at the left of the bar.
+Any {surplus} minerals are shown at the right of the bar; they are
+applied to your current {production}. Any items appearing in red
+constitute a support {shortfall} and can lead to the elimination of
+unsupported military units.
+^
+If your base needs more minerals, send your {Former} units to build
+more {Mines.}
+
+#TOUR1ENERGY
+#xs 400
+The {Energy Bar} diagrams the current energy output of $BASENAME0.
+Any red tiles represent energy lost to {Inefficiency}.
+Inefficiency increases when your social engineering choices are
+inadequate to the needs of a large colony and population. If you are
+losing a lot of energy to inefficiency, consider building a
+{Children's Creche} to increase efficiency or switching to a more
+economically efficient social model (Democratic or Green, for
+instance).
+^
+If your base needs more energy, send your {Former} units to build
+more {Solar Collectors.}
+
+#TOUR1ALLOC
+#xs 400
+The {Energy Allocation Chart} shows how your energy output is being
+allocated amongst your three priorities: {Economy,} {Labs,}
+and {Psych.}
+^
+You can reallocate your energy at any time by selecting
+{Social Engineering} from the HQ Menu.
+
+#TOUR1ALLOC2
+#xs 400
+The {Energy Allocation Button} allows you to see how your energy
+output is being allocated among your three priorities: {Economy,}
+{Labs,} and {Psych.}
+^
+You can reallocated your energy at any time by selecting
+{Social Engineering} from the HQ Menu.
+
+#TOUR1ECON
+#xs 400
+Energy allocated to {economy} is used to
+increase your {energy reserves}, which you can later spend to
+hurry production, bribe neighbors, and maintain base facilities.
+
+#TOUR1PSYCH
+#xs 400
+Energy allocated to {psych} is used to improve the quality of life
+for your citizens. Every two units of energy spent here stimulates
+one worker to become a {Talent}. Spending here will help to prevent
+{drone riots}.
+
+#TOUR1LABS
+#xs 400
+Energy allocated to {labs} is used for scientific research; the
+more you spend here the faster you will discover new technologies.
+
+#TOUR1SUPPORTBUTTON
+#xs 300
+The {Support Button} switches the Base Map to a broad view which
+shows where the units produced by (and therefore supported by) this
+base have moved. The large colored icon represents your base; smaller
+icons represent this base's units.
+
+#TOUR1PSYCHBUTTON
+#xs 300
+The {Psych Button} switches the Base Map to a psych profile. The
+information here may help you to alleviate poor living conditions
+and prevent {drone riots}.
+
+#TOUR1RESOURCEBUTTON
+#xs 300
+The {Resource Button} returns the Base Map to the standard
+resource view; this is the view you will generally find most
+helpful in managing your base.
+
+#TOUR1PREV
+#xs 300
+When you have more than one base, the {Previous Base Button} zooms
+to the base just before this one in alphabetical order.
+
+#TOUR1NEXT
+#xs 300
+Similarly, the {Next Base Button} zooms to the base just after this
+one in alphabetical order.
+
+#TOUR1RENAME
+#xs 300
+The {Rename Button} allows you to rename your base. Renaming a base
+you've captured from another player may goad him to anger.
+
+#TOUR1OK
+#xs 300
+Finally, the {OK Button} allows you to close the Base Control Screen
+when you are done with it. You can also press the ENTER key
+to close the window.
+^
+This tour contains many details that you may wish to review later.
+You can take this tour again at any time by selecting {Base Tour}
+from the Help Menu.
+
+#DESWIN
+#xs 400
+#button TOUR
+On the {Design Workshop Screen}, you create new units with which
+to explore and conquer Planet. You assign each unit type a weapon,
+armor, chassis, reactor, and perhaps a special ability or two. You
+are then free to begin building those units at any of your bases.
+^
+If you would like a more detailed tour of this screen, click the
+{TOUR} button
+
+#DESTOURCHAS
+#xs 400
+The {Chassis} determines the number of {moves} a unit gets each
+turn. You can also choose a {land,} {sea,} or {air} chassis. Certain
+chassis gain special combat bonuses; for instance the Infantry chassis
+type is especially good for attacking enemy bases.
+
+#DESTOURWEAP
+#xs 400
+Assigning your unit a {Weapon} allows it to attack enemy units. The
+higher the attack value the more likely your chances for success (but
+the more costly the unit will be to build). You can also choose
+{Equipment} modules to create units for noncombat roles.
+
+#DESTOURARM
+#xs 400
+{Armor} protects your unit from attack. The thicker the better.
+
+#DESTOURREACTOR
+#xs 400
+A {Reactor} provides power to your unit. You should usually select
+the biggest reactor allowed by your technology level, since this
+not only makes your unit harder to kill, it often lowers the cost.
+
+#DESTOURABILITY
+#xs 400
+When your technology allows, you may add {special abilities}
+such as Drop Pods or Antigravity Struts to create units for
+specialty missions.
+
+#DESTOURCOST
+#xs 400
+The {cost} shows the number of minerals which will be required to
+build your new unit. Unless you are playing the Spartans, the first
+unit of a new type will incur the {prototype cost,} representing the
+difficulty of developing new designs.
+
+#DESTOURSTATS
+#xs 400
+Your unit's {"stats"} are summarized here. The first number represents
+weapon strength, or offensive capability. The middle number indicates
+armor thickness, or defensive capability. The final number shows the
+number of moves. If you have selected a reactor with a value greater
+than 1, it will be shown at the end after a star (*).
+
+#DESTOURBAR
+#xs 400
+Basic unit types and unit types which you have designed will appear
+here. You may click on any unit type to examine or edit it.
+
+#DESTOURARROWS
+#xs 400
+These arrow buttons allow you to scroll through your unit types.
+
+#DESTOURPRESETS
+#xs 400
+The {Preset} buttons allow you to design certain styles of unit
+quickly. Click on any button and the Workshop will propose a design
+of that type.
+
+#DESTOURDONE
+#xs 400
+When you have designed a new unit, or made changes to an old design,
+use the {Done} button to confirm your changes and close the design
+workshop.
+
+#DESTOURAPPLY
+#xs 400
+The {Apply} button can be used to confirm your changes without closing
+the design workshop; you are then free to create or examine other
+unit types.
+
+#DESTOURRENAME
+#xs 400
+The {Rename} button allows you to name your unit types.
+
+#DESTOUROBS
+#xs 400
+The {Obsolete} button can be used to mark a unit type as obsolete and
+no longer necessary. Obsolete unit types will not show up as production
+choices, so they won't clutter up your production menus, but any existing
+units of an obsolete type will continue to function until you upgrade
+them or they are destroyed or disbanded. You can also use this button
+to return a previously obsolete type to service.
+
+#DESTOURUPGRADE
+#xs 400
+The {Upgrade} button upgrades all units of your currently selected
+type to a better type. The Design Workshop will check to see if you
+have a better type available and if so will offer you an upgrade.
+You must prototype a new unit type before you can upgrade to it.
+
+#DESTOURRETIRE
+#xs 400
+The {Retire} button retires a unit type from service entirely. Any
+remaining units of that type are disbanded, and the design is deleted
+from your units list (its "slot" becomes empty).
+
+#DESTOURCANCEL
+#xs 400
+Finally, the {Cancel} button allows you to leave the Design Workshop
+without making any further changes. If you wish to take this tour
+again, you may do so at any time by selecting "Design Workshop Tour"
+from the Help Menu.
+
+#SOCWIN
+#xs 400
+#button TOUR
+On the {Social Engineering Screen} you expound your vision of
+future utopia. The choices you make here have wide-ranging effects
+during the game. You can design your society to have great strength
+in a particular area--but beware of the weaknesses you may create.
+^
+If you would like a more detailed tour of this screen, click
+the {TOUR} button.
+
+#SOCTOURMAIN
+#xs 400
+In the {Engineering Box} you make the value choices that will shape
+your society. Your choices fall into four categories: {Politics,}
+{Economics,} {Values,} and {Future Society.} At the beginning of
+the game you have few options; as your researchers make new
+breakthroughs in society-related technologies, your options will
+grow. You can click on any button in the box to make that society
+choice for your colony.
+
+#SOCTOURFACTION
+#xs 300
+Your {Faction Bonuses} and {Penalties} are shown here. These represent
+the inherent strengths and weaknesses of your faction, and will stay
+with you throughout the game.
+
+#SOCTOUROVERVIEW
+#xs 300
+The {Social Effects Box} shows the effects resulting from choices
+you have made.
+
+#SOCTOUREFFECTS
+#xs 300
+The {Society Box} tallies the net social effect in each broad category.
+You can click on any of the buttons here to see the society choices
+which maximize the selected setting.
+
+#SOCTOUR0
+#xs 300
+{ECONOMY} shows the raw strength of your society's economy.
+Increasing this value will increase your energy flow.
+
+#SOCTOUR1
+#xs 300
+{EFFICIENCY} represents your society's ability to function without
+waste and mismanagement. If this value falls too low, your bases
+will begin to lose energy to inefficiency.
+
+#SOCTOUR2
+#xs 300
+{SUPPORT} affects the support costs of military units. The lower
+your score here, the more of your units you'll have to expend minerals to
+support.
+
+#SOCTOUR3
+#xs 300
+{MORALE} affects the training and determination of your military.
+A higher score here translates directly into morale upgrades for your
+units.
+
+#SOCTOUR4
+#xs 300
+{POLICE} shows your society's tolerance for police control and
+restrictions on personal freedom. A high score allows you to use
+military units as police to suppress drone riots. A low score will
+cause increasing tension when your military units are away from home.
+
+#SOCTOUR5
+#xs 300
+{GROWTH} affects your population growth rate. The higher your score,
+the fewer nutrients your bases will need to grow.
+
+#SOCTOUR6
+#xs 300
+{PLANET} shows your society's sensitivity to the ecology of Planet.
+A low score indicates that ecological damage will occur more quickly.
+
+#SOCTOUR7
+#xs 300
+{PROBE} affects your vulnerability (or strength) on security issues.
+A high score will help prevent enemy probe team attacks.
+
+#SOCTOUR8
+#xs 300
+{INDUSTRY} shows your manufacturing strength. A high score reduces the
+number of minerals required to build units and facilities.
+
+#SOCTOUR9
+#xs 300
+{RESEARCH} affects your technological progress. A higher score will
+increase the rate at which you make breakthroughs.
+
+#SOCTOURECON
+#xs 400
+The {Economy Bar} allows you to determine the percentage of your
+energy flow which will be devoted to your economy, increasing your
+{energy reserves}. Click the left or right arrows to adjust this
+value.
+
+#SOCTOURPSYCH
+#xs 400
+The {Psych Bar} allows you to divert a percentage of your energy
+flow to increasing the quality of life for your citizens. Energy
+spent here will help to increase the number of {Talents} in your
+society, thereby preventing {Drone Riots.}
+
+#SOCTOURLABS
+#xs 400
+The {Labs Bar} controls the percentage of your energy flow directed
+toward research. Although you can increase your breakthrough rate
+by raising this value, it is important to note that your efficiency is
+highest when your {Labs} and {Economy} percentages are equal. When
+these two settings differ, your inefficiency will increase; the rate
+will depend on your {EFFICIENCY} score.
+
+#SOCTOURINFO
+#xs 400
+The {Info Box} shows additional results of your social choices.
+Your technological {Breakthrough Rate} and your per-turn {Energy
+Income} are shown here. If your {Labs} and {Economy} settings are
+unequal, any resulting inefficiency will show up here. Also, if you
+attempt to change your society's values too rapidly, there may be
+an {Upheaval Cost}, which will likewise be displayed here.
+
+#SOCTOURCANCEL
+#xs 400
+The {Cancel Button} restores the society settings you had before you
+came to the screen, and exits.
+
+#SOCTOURRESET
+#xs 400
+The {Reset Button} restores the society settings you had before you
+came to the screen, but does not exit the screen.
+
+#SOCTOUROK
+#xs 400
+Finally, the {OK Button} exits the screen, making the changes to your
+society which you specified.
+^
+You may take this tour again at any time by selecting
+{Social Engineering Tour} from the Help menu.
+
+#DRONERIOTS
+#xs 400
+#button DETAILS
+$BASENAME0 is experiencing {drone riots}, which hurt productivity.
+The simplest way to end drone riots is to turn on your {Governor},
+which will take the proper steps to suppress them.
+Click the DETAILS button for more information.
+
+#DRONETOUR1
+#xs 400
+{Drone Riots} occur when the number of red {Drones} at a base exceeds the
+number of green {Talents}. Other citizens, such as {Workers} and
+{Specialists} do not directly affect riots. Drones appear as the
+result of population pressure and cramped living conditions.
+We will show you several means of controlling drone riots.
+
+#DRONETOUR2
+#xs 400
+One direct method of controlling drone riots is to use military units
+as {police}. Military units will automatically function as police if
+you move them into your base. The number of police units you will be
+able to use depends on your society's tolerance for police, as
+represented by your {POLICE} rating on the Social Engineering screen.
+By changing your society to a {Police State}, for instance, you will
+enable more military units to work as police and suppress riots.
+
+#DRONETOUR3
+#xs 400
+One particularly draconian means of controlling drone riots is to
+{nerve staple} your citizens. Nerve stapling will prevent drone riots
+for at least ten turns, but it is considered an atrocity.
+
+#DRONETOUR4
+#xs 400
+A more humanitarian way to prevent drone riots is to build {facilities}
+which alleviate cramped and depressing living conditions. For instance,
+a {Recreation Commons} will satisfy the complaints of up to two
+Drones, turning them into regular Workers. Building facilities is
+an excellent long-term solution to drone problems.
+
+#DRONETOUR5
+#xs 400
+Creating {Doctors} (or later, {Telepaths} and {Transcendi}) is
+another, albeit short-term solution to the problem. Doctors, by
+increasing your {Psych} output, will create more Talents to balance
+the Drones. To change a citizen into a Doctor, click on him here
+in the population bar.
+
+#DRONETOUR6
+#xs 400
+If you have many large bases producing a great deal of energy, you
+can divert some of your energy to {Psych}, which will improve your
+citizens' quality of life. Every two units of energy diverted to
+Psych turns one of your Workers into a Talent. To divert a percentage
+of your energy production to Psych, go to the Social Engineering
+screen by selecting it from the HQ menu on the main display.
+
+#DRONETOUR7
+#xs 400
+You can use the {Psych} button to see the effects of Police,
+facilities, psych, and Secret Projects.
+
+#LOWNUTRIENT
+#xs 400
+$BASENAME0 is not producing enough {nutrients} to feed its citizens!
+Click on the center (base) square of the Base Map to reallocate some
+of your specialists as Workers.
+
+#NEWTERRAFORMER
+#xs 400
+#button TOUR
+$BASENAME0 has just built a $UNITNAME1 unit, which represents
+the Terraforming Engineers crucial to your expedition's survival.
+Formers can plant forests and farms; build roads, mines, and
+solar collectors; and later even raise up or tear down mountains.
+^
+Press SHIFT+A to automate these Formers and have them begin improving
+your colony automatically. Or, if you would like to learn how to
+begin terraforming yourself, click the {TOUR} button.
+
+#TERRAFORMER
+#xs 320
+Your Terraforming Engineers ("FORMERS") are crucial to your
+expedition's survival. Formers can plant forests and farms;
+build roads, mines, and solar collectors; and even raise up
+or tear down mountains.
+
+#TERRAFARM
+#xs 400
+#button Don't Show Again
+This square could produce additional nutrients if it had a Farm.
+Nutrients will help $BASENAME0 to grow and thrive. To build a
+Farm here, press the 'F' key.
+
+#TERRASURVEY2
+#xs 300
+This survey shows the best squares for planting crops. Squares with
+many icons are the most suitable. Use this screen as a guide for
+sending your Formers on planting expeditions.
+To turn this view off, simply click anywhere on the map.
+
+#TERRAROAD
+#xs 400
+#button Don't Show Again
+Formers can also build roads, which speed movement. To
+build a road here, press the 'R' key or select "Construct Road"
+from the Orders Menu.
+
+#TERRARAISE
+#xs 400
+#button Don't Show Again
+The solar collector in this square would collect more
+energy if the square were higher. Your Formers will
+raise the altitude of this square if you press the "]]"
+key or select "Terraform Up" from the Orders Menu.
+
+##TERRARAISE2
+##xs 300
+##button Don't Show Again
+#$BASENAME0 isn't producing very much energy. To increase its
+#energy output, you must build solar collectors on nearby high altitude
+#squares. Since $BASENAME0 doesn't have many high altitude squares,
+#you may wish to raise the level of this square by pressing
+#the "]]" key or selecting "Terraform Up" from the Orders Menu.
+
+#TERRAMINE
+#xs 400
+#button Don't Show Again
+To produce new Formers and Military Units, your colony
+needs to accumulate minerals. Press the 'M' key to build
+a mine, which will improve mineral production here.
+
+#TERRASOLAR
+#xs 400
+#button Don't Show Again
+Solar Collectors trap {energy} for your colony, which helps
+your economy and speeds scientific research. Press 'S' to build
+a solar collector here.
+
+#TERRAFOREST
+#xs 300
+#button Don't Show Again
+Planting {forests} is an excellent way of increasing resources.
+Forests squares provide a limited supply of nutrients, minerals,
+and energy in any square; this well-rounded resource output can
+be quite useful, especially in squares which are less suitable
+for traditional production.
+
+#TERRASENSOR
+#xs 300
+#button Don't Show Again
+{Sensors} detect mind worms and enemy units within two spaces.
+Even better, they provide a +25% defensive bonus to any of your
+land units within two spaces. Press 'O' to build a Sensor
+here.
+
+#NEWUNIT
+#xs 400
+$BASENAME0 has just produced a new $UNITNAME1 unit.
+Units can be used to explore the planet, attack enemies, and defend
+your colony.
+
+#FASTUNIT
+#xs 400
+This fast $UNITTYPE0 ($UNITSTATS1) unit gets to move twice each turn
+unless it enters a rocky or fungus square (note that its move value,
+the third number, is two).
+Mobile units receive combat bonuses when
+attacking in open terrain, and can often disengage from a stronger but
+slower enemy.
+
+#BIGUNIT
+#xs 400
+This more heavily-armed $UNITTYPE0 unit ($UNITSTATS1) will prove useful
+for attacking enemies and defending your territory. Note its high
+{weapon} value (the first number).
+Infantry units are particularly good at attacking enemy bases,
+gaining a +25% attack modifier when they do so.
+
+#ARTYUNIT
+#xs 400
+This $UNITTYPE0 unit can fire at enemies up to two spaces away. Select
+"Long Range Fire" from the Action Menu when you wish to shoot.
+
+#NEWSHIP
+#xs 400
+Use foils and other {ships} to explore Planet's seas, guard your
+bases from naval attack, and transport ground units from continent
+to continent.
+
+#NEWAIR
+#xs 400
+{Air} units can move quickly over both land and sea,
+but they must occasionally return to base for {fuel.}
+
+#DEFENDIT
+#xs 400
+#button Don't Show Again
+Perhaps this $UNITTYPE1 unit should "stay home" to {defend} $BASENAME0
+from potential danger. Press the 'H' key to tell it to "HOLD" here.
+
+#DEFENDIT2
+#xs 400
+#button Don't Show Again
+This $UNITTYPE1 ($UNITSTATS2) unit would make an excellent garrison
+unit. Note that its {armor} (middle #) is strong, and its weapon
+(first #) is weak. Perhaps it should "stay home" to {defend}
+$BASENAME0 from potential danger. Press the 'H' key to tell it
+to "HOLD" here.
+
+#ENEMYBASE
+#xs 400
+This base, $BASENAME0, belongs to another player, $TITLE1 $NAME2 of
+the $FACTION3. You can attack an enemy base by attempting to move
+into it.
+
+#ENEMYVEH
+#xs 400
+This unit belongs to another player, $TITLE1 $NAME2 of the $FACTION3.
+Other factions can be useful allies or dangerous enemies. You can
+attack an enemy unit by attempting to move into its square.
+
+#ENEMYTERR
+#xs 400
+This colored line marks the boundary of another faction leader's
+{territory}--$TITLE1 $NAME2 of the $FACTION3. Faction leaders may
+become angry if you enter their territory.
+
+
+#NEWUNITS
+#xs 400
+#caption Some General Hints
+Units with thick {armor} and high defensive ratings are useful for
+defending important areas; use the 'H' or "Hold" command to entrench
+them in your your bases.
+^
+Fast-moving {Speeder} units are excellent for exploration and mobile
+attack. Use them to explore the planet and search for enemies.
+^
+Should you decide to attack an enemy, design a unit with a powerful
+{weapon} and perhaps good armor or a high movement rate.
+^
+{Colony Pods} allow your colony to spread by building
+new bases. The more bases you build, the faster your colony will grow.
+^
+{Former} units will speed the process of building farms
+and roads as well as other infrastructure. Don't neglect to build
+Formers once your colony begins to expand.
+
+#NEWCOLONIST
+#xs 400
+#button Don't Show Again
+$BASENAME0 has produced a new {Colony Pod}, which represents the equipment
+and manpower to found a new base! Move it to an appropriate spot, such as
+the one indicated by the second line, then press the 'B' key to construct
+a base.
+
+#BUILDHERE
+#xs 400
+#button Don't Show Again
+Because of its proximity to fertile land and other resources, this
+would be an excellent location to build a {base.} To build
+a base here, press the 'B' key or select "Construct Base" from the
+Orders Menu.
+
+#FUNGUSAMUNGUS
+#xs 300
+{Xenofungus} is a plant form native to Planet, and you
+will find it growing wild in many areas of the planet. Earth plants
+cannot grow in squares containing fungus unless you clear the fungus
+first.
+
+#FUNGUSSEA
+#xs 300
+Sea fungus slows the movement of surface ships.
+
+#TECHNOLOGY
+#xs 400
+#caption About Research
+{Energy} powers your research {labs} and helps your researchers discover
+and exploit new {technologies}. You guide their research by controlling
+the fields in which they study.
+
+#TERRAFORM
+#xs 400
+Events which cause {mountains} to be raised or torn down (earthquakes,
+the actions of Former units, etc.) can also cause {climactic
+changes}. Mountains 2000m above sea level and higher significantly
+affect cloud formation and rainfall by trapping the moisture being
+carried by the prevailing wind. Basically this means that areas
+"downwind" (in this game, "east", or "right") of a mountain will be
+dryer, and areas "upwind" of a mountain ("west", or "left") will be
+wetter as moisture is trapped to their benefit. You can take advantage
+of this phenomenon by having your Formers raise mountains to "dry out"
+your downwind opponents or to increase rainfall for your upwind bases.
+
+#SLOWFUNGUS
+#xs 300
+The thick {Xenofungus} obstructs your unit. It sometimes takes
+several turns to enter a Xenofungus square.
+
+#FRACTIONALMOVE
+#xs 300
+A unit with insufficient moves left to enter a square may be forced
+to remain in its original square for an additional turn.
+
+#MADEFARM
+#xs 400
+Your Formers have planted a {farm} here. This square will now produce
+additional {nutrients.} Nutrients help to increase your population.
+
+#MADESOIL
+#xs 400
+Your Formers have built a {soil enricher} here, further improving
+the nutrient output of the square.
+
+#MADEMINE
+#xs 400
+Your Formers have built a {mine} here, improving the {minerals} output
+of this square. Minerals allow your bases to build units and facilities.
+
+#MADESOLAR
+#xs 400
+Your Formers have built a {solar collector} here, improving the {energy}
+output of this square. Energy speeds research and increases your wealth.
+
+#MADEFOREST
+#xs 400
+Your Formers have planted a {forest} here. Forests provide a {balanced} supply
+of nutrients, minerals, and energy. They improve the local environment,
+and grow and expand into neighboring squares.
+
+#MADEROAD
+#xs 400
+Your Formers are building a {road} here. Units move three times as fast when they
+move along a road. Roads also increase the output of mines.
+
+#MADETUBE
+#xs 400
+Your Formers are building a {Mag Tube} here. Units can move quickly
+along Mag Tubes at no cost.
+
+#MADESENSOR
+#xs 400
+Your Formers have built a {sensor} here. A sensor will detect any enemy
+unit which moves within two spaces. Sensors also provide a {+25%
+defensive benefit} to any of your units within two spaces.
+
+#MADEAQUIFER
+#xs 400
+Your formers have tapped an underground {aquifer!} The resulting new
+river will increase your energy production and speed ground movement.
+
+#MADECONDENSER
+#xs 400
+Your Formers have built a {condenser} here! A condenser increases rainfall
+(and therefore nutrient production) in all adjacent land squares.
+
+#MADEBOREHOLE
+#xs 400
+Your Formers have built a {borehole} here! A borehole improves both
+mineral and energy production, but prevents nutrient production.
+
+#MADESEAMINE
+#xs 400
+Your Sea Formers have built a {mining platform} here, which allows this
+square to produce minerals.
+
+#MADESEASOLAR
+#xs 400
+Your Sea Formers have built a {tidal harness} here, which increases the
+energy production of this square.
+
+#MADESEAFARM
+#xs 400
+Your Sea Formers have planted a {kelp farm} here, which increases the
+nutrient production of this square.
+
+
+#SOCIETY
+#xs 440
+#caption Psych Chaplain
+Discovery of $TECH0 allows your colony to make
+a new social engineering choice, "{$SOC1}". Would
+you like to make social engineering choices now?
+
+No. Continue with current social model.
+Yes. Commence social engineering.
+
+#EXPLORATION
+#xs 400
+Supply pods seeded by your starship, the Unity, are
+items of particular interest as you explore the Planet.
+You must enter the square containing the pod in order
+to find out what it contains.
+
+#BONUSNUTRIENT
+#xs 400
+This symbol indicates abundant {nutrient} resources.
+If you have a base within two squares, it will be able
+to produce additional nutrients here. Nutrients allow
+you to increase your population.
+
+#BONUSMINERALS
+#xs 400
+This symbol represents abundant {mineral}
+resources. If you have a base within two squares, it will
+be able to produce additional minerals, especially if you
+build a {mine} here. Minerals help you build new vehicles
+and facilities.
+
+#BONUSENERGY
+#xs 300
+This symbol represents abundant {energy} resources.
+If you have a base within two squares, it will be able
+to produce additional energy. Energy speeds scientific
+research and increases your wealth.
+
+#SECONDBASE
+#xs 300
+Your base at $BASE0 is now prospering nicely. Now might be
+a good time to expand to a second base. To do this, click on
+$BASE0 and use the "Change" button to instruct it to build a
+Colony Pod.
+
+#BUILDMORE
+#xs 300
+Your colony grows by expanding to new bases; you can gain new
+bases either by building them yourself or by conquering enemy
+bases. Perhaps you should instruct one of your bases to build
+a new Colony Pod.
+
+#BUILDBASE
+#xs 300
+It's time to expand your colony by building a new base--send
+this Colony Pod to a suitable location and then issue
+the 'B' command.
+
+#ARTIFACT
+#xs 300
+Move this {Alien Artifact} back to one of your bases as quickly
+as you can. Later, when you've built a {Network Node}, your
+researchers can link it to the artifact and try to learn its
+secrets.
+
+#DAMAGED
+#xs 400
+This unit has become damaged in combat. Damage is indicated by
+the colored bar along the left side of the status icon: Green represents
+light (or no) damage; Yellow and Red show increasing damage.
+^
+To repair a damaged unit, move it to one of your bases, then have it
+skip its entire turn (press the SPACE bar). You may have to repeat
+this for several turns.
+^
+You can also conduct "field repair" (i.e. not at a base), but this
+is much slower and only effective if your unit has sustained more
+than 20% damage.
+^
+A base with a Command Center can
+repair ground units in a single turn; similarly Naval Yards and Aerospace
+Complexes can quickly repair sea and air units.
+
+#TREETIME
+#xs 300
+#caption Operations Director
+Now that our researchers have discovered $TECH0, our Formers
+can plant forests ('Shift+F' action key) in any square that is not arid
+or rocky. Forest squares produce two nutrients, one mineral, and one
+energy, so they are ideal for areas which are too hot or too cold
+for other uses.
+
+#ZOCMSG
+#xs 400
+Ground units cannot move between squares adjacent to other players'
+units; they must first back up into a non-adjacent square. This
+is called the "zone of control" rule and represents the difficulty
+of maneuvering in the face of an enemy force.
+^
+^There are limited exceptions to this rule:
+^* Units may always enter squares containing friendly units.
+^* Units may always move into and out of bases freely.
+^* Units with the "$ABIL0" ability may ignore zones of control.
+
+#VENDETTA
+#xs 440
+$TITLE0 $NAME1 of the $FACTION2 has pronounced Vendetta upon you and
+your faction! You should attend to your defenses; you may wish to switch
+at least some of your bases to "CONQUER" mode--click on the base, then
+click the CONQUER button. To attack an enemy unit or base, move one of
+your units into its square.
+
+#PSICOMBAT
+#xs 440
+Some units (usually alien creatures such as Mind Worms) can engage in
+{PSI COMBAT}. In Psi Combat, weapon and armor strengths are ignored, and
+the attacker is given a 3 to 2 advantage on land (1 to 1 for sea combat).
+{MORALE} level becomes quite important in Psi Combat.
+
+#MINDWORMS
+#xs 440
+Mind Worms, one of Planet's most feared life forms, can appear
+suddenly, especially near fungus squares. Mind worms viciously
+attack settlements.
+
+#EMPTYBASE
+#xs 440
+#button Don't Show Again
+This base, $BASENAME0, is completely undefended, and may fall prey
+to mind worms or enemy attack. Perhaps you should move one of your
+units here to defend it, or click on the base and tell it to build
+a new garrison unit.
+
+#INEFFICIENCY
+#xs 440
+Notice the red tiles on the {energy} bar. That means this base is
+losing a lot of energy to {inefficiency}.
+Inefficiency increases when your social engineering choices are
+inadequate to the needs of a large colony and population.
+Consider building a {Children's Creche} to increase efficiency
+or switching to a more economically efficient social model
+(Democratic or Green, for instance), on the Social Engineering screen.
+
+#INEFFICIENCYHQ
+#xs 440
+Since you lost possession of your original {Headquarters} base (the
+first base you built), your colony has no central HQ. Lacking
+a central, unifying force, your colony is suffering greatly from
+{inefficiency,} as represented by the red tiles on the {energy} bar.
+You should pick a relatively safe base and instruct it to build
+a new {Headquarters} facility.
+
+#SUPPORT
+#xs 400
+$BASENAME0 is expending a great many {minerals} on {unit support.}
+Since it is supporting so many units, this base cannot build new
+facilities and units very quickly. You may wish to consider {disbanding}
+some units if you don't need so many, or switching to a more
+militaristic social model (Power or Police State, for instance), on the
+Social Engineering screen.
+
+#LOWMINERALS
+#xs 400
+$BASENAME0 is not producing many {minerals}. That means it cannot
+build units and facilities very quickly. Perhaps we need some
+{Formers} to build some {Mines} or plant some {Forests} nearby.
+
+#LOWMINERALS2
+#xs 400
+$BASENAME0 is not producing many {minerals}. That means it cannot
+build units and facilities very quickly. Perhaps we need some
+{Sea Formers} build some {Mining Platforms} nearby.
+
+#COMMERCE
+#xs 400
+Our new {Treaty} with the $FACTION0 opens the door for trade and
+{Commerce}. Each of our bases, 
+if it is large enough, may now begin receiving bonus {energy} generated 
+by trade. We can increase our commerce bonuses by signing more treaties 
+with other factions, by making Pacts with other factions, and 
+by researching more Economic and Industrial technologies.
+
+#PACT
+#xs 400
+Our new {Pact} with the $FACTION0 allows us to work together with
+$TITLE1 $NAME2 towards shared goals. We can now move through
+$<M1:$FACTIONADJ3> territory, stack with their units, and enter their
+bases. Likewise, the $FACTION0 can send units through our territory
+without military conflict. Perhaps even more importantly, {Commerce}
+between our factions is now doubled!
+
+#ALMEETSGUY
+#xs 400
+You have encountered units of a human faction, who have left 
+signs of their habitation strewn all over Planet. Since you have 
+discovered {Social Psych}, you can communicate with these strange 
+and backward creatures.
+
+#GUYMEETSAL
+#xs 400
+You have encountered units of the $FACTION0 faction. These aliens belong to the
+Progenitor race, whose ancestors built many mysterious structures 
+you've encountered. Since you have discovered {Progenitor Psych}, you can communicate
+with either Progenitor faction.
+
+#ALMEETSAL
+#xs 400
+You have encountered units of the $FACTION0 faction. Your faction is locked in
+perpetual war with this group; as such, no communication is possible.
+
+#ALMEETSGUYNOPSYCH
+#xs 400
+You have encountered units of a human faction. You must first discover {Social Psych} 
+before you can communicate with these primitives.
+
+#GUYMEETSALNOPSYCH
+#xs 400
+You have encountered units of the $FACTION0 faction. You must first 
+discover {Progenitor Psych} before you can communicate with these aliens.
+
+#GETOGRE
+#xs 400
+You have discovered an alien unit known as a Battle Ogre.
+Battle Ogres are large war machines left behind by the same race of beings who created
+the monoliths and artifacts. An Ogre is a very powerful weapon, but its arcane
+technology makes it unrepairable, even at a monolith.
+
+#SEALURK
+#xs 400
+This Planet life form is known as a Sealurk. It is similar to the Isle of the Deep
+in that it inhabits the oceans of Planet, but it cannot transport other units. It
+will attack sea and coastal bases.
+
+#SPORELAUNCHER
+#xs 40
+Mind Worms, one of Planet's most feared life forms, can appear
+suddenly, especially near fungus squares. Mind worms viciously
+attack your settlements and units.
+
+
+# ; This line must remain at end of file
+
+

@@ -1,0 +1,2584 @@
+;
+;  Help
+;  
+;  Based on Yitzi's 3.4 patch. Modded to remove or hide SMACX references
+;  -cmc 2014 and 2016
+
+#HELPCATS
+Concepts
+Reactors
+Weapons
+Armor
+Chassis
+Facilities
+Social
+Abilities
+Tech
+Vehicles
+Projects
+Factions
+Citizens
+Terraform
+ 
+#HELPTECHS
+#xs 600
+#caption Select Technology
+ 
+#HELPTECH
+#xs 440
+#caption Technology: $STR0
+^$STR0
+^
+ 
+#TECHHECK
+^Formers can improve fungus squares.
+^Fungus movement restrictions eased.
+^Roads can be built in fungus squares.
+^Units can be designed with two special abilities.
+^Nutrient restrictions lifted; can produce 3+ nutrients/square.
+^Mineral restrictions lifted; can produce 3+ minerals/square.
+^Energy restrictions lifted; can produce 3+ energy/square.
+^Secrets: First faction to discover gains free tech.
+^Increases Probe Team base morale.
+^Increases COMMERCE income from Treaties and Pacts.
+^Entire planetary map is revealed.
+^Genetic Warfare atrocity can be committed by probe teams.
+^Increases ENERGY production in fungus squares.
+^Increases MINERALS production in fungus squares.
+^Increases NUTRIENT production in fungus squares.
+^Units with drop pods may make orbital insertions.
+^+1 Mineral bonus for all Mining Platforms.
+^Economic Victory allowed.
+^Multiresource convoys allowed inside base radius
+^Multiresource convoys not restricted to base radius.
+^Effectiveness of ECM and AAA abilities doubled.
+^Diplomatic Victory allowed.
+^Formers can execute the "$TERRAFORM0" order.
+ 
+#CITIZENHECK
+^Commerce bonus for base.
+^Production bonus for base.
+^Psi Defense bonus for base.
+^Morale bonus for base.
+^Unit support bonus for base.
+^Efficiency bonus for base.
+^Aliens bonus for base.
+ 
+#HELPWEAPONS
+#xs 440
+#caption Select Weapon Type
+ 
+#HELPWEAPON
+#xs 440
+#caption Weapon: $STR0
+^
+^FIREPOWER: $NUM0
+^COST: $NUM1
+^
+^PREREQUISITE: $LINK<$STR2=$NUM2>
+ 
+#HELPWEAPON2
+#xs 440
+#caption Weapon: $STR0
+^
+^FIREPOWER: $NUM0
+^
+^PREREQUISITE: $LINK<$STR2=$NUM2>
+ 
+#HELPDEFENSES
+#xs 440
+#caption Select Defense Type
+ 
+#HELPDEFENSE
+#xs 440
+#caption Defense: $STR0
+^
+^STRENGTH: $NUM0
+^
+^PREREQUISITE: $LINK<$STR2=$NUM2>
+ 
+#HELPDEFENSE2
+#xs 440
+#caption Defense: $STR0
+^
+^STRENGTH: $STR1
+^
+^PREREQUISITE: $LINK<$STR2=$NUM2>
+ 
+#HELPREACTOR
+#xs 440
+#caption Defense: $STR0
+^
+^POWER: $NUM0
+^PREREQUISITE: $LINK<$STR1=$NUM1>
+ 
+#HELPCHASSIS2
+#xs 440
+#caption Select Chassis Type
+ 
+#HELPCHASSIS
+#xs 440
+#caption Chassis: $STR0
+^
+^MOVEMENT RATE: $STR1 $NUM0
+^
+^PREREQUISITE: $LINK<$STR2=$NUM3>
+ 
+#HELPCROPS
+#xs 440
+#caption List of Crop Types
+ 
+#HELPFACS
+#xs 440
+#caption Select Facility Type
+ 
+#HELPFAC
+#xs 440
+#caption Base Facility: $STR0
+^
+^COST: $NUM0
+^MAINTENANCE: $NUM1
+^
+^PREREQUISITE: $LINK<$STR1=$NUM2>
+ 
+#HELPFACFREE
+#xs 440
+#caption Base Facility: $STR0
+^
+^COST: $NUM0
+^MAINTENANCE: $NUM1
+^
+^PREQ: $LINK<$STR1=$NUM2>
+^FREE TO NEW BASES: $LINK<$STR2=$NUM3>
+^
+ 
+#HELPPROJS
+#xs 440
+#caption Select Secret Project
+ 
+#HELPPROJ
+#xs 440
+#caption Secret Project: $STR0
+^
+^COST: $NUM0
+^
+^PREQ: $LINK<$STR1=$NUM2>
+^
+ 
+#HELPUNIT
+#xs 440
+#caption Unit Type: $STR0
+^ATTACK: {$STR2}
+^DEFENSE: {$STR3}
+^MOVES: {$NUM1}
+^COST: {$NUM0}
+^
+^PREREQUISITE: $LINK<$STR1=$NUM2>
+ 
+#HELPUNITS
+#xs 400
+#caption Select Unit Type
+ 
+#HELPABILS
+#xs 400
+#caption Select Special Ability
+ 
+#HELPABIL
+#xs 440
+#caption Special Unit Ability: $STR0
+^
+^ABILITY: $STR2
+^COST: $STR3
+^
+^PREQ:    $LINK<$STR1=$NUM0>
+ 
+#HELPTERRAFORM
+#xs 440
+#caption Terraforming: $STR0
+^
+^TURNS TO COMPLETE: $NUM1 $STR2
+^
+^PREREQUISITE: $LINK<$STR1=$NUM0>
+ 
+#; Headquarters
+#HELPFAC1
+Administrative center of your colony. $LINK<+1 ENERGY=43>. No
+$LINK<inefficiency=25>.
+Enemy $LINK<probe teams=30006> may not attempt mind control here.
+ 
+#; Children's Creche
+#HELPFAC2
+Base receives +2 on $LINK<GROWTH=130006> scale and +1 on
+$LINK<EFFICIENCY=130001> scale.
+^
+Reduces base's vulnerability to enemy mind control.
+^
+Prevents the riot $LINK<Random Event=55>, and instead increases base population.
+^
+The effects on the base square with regards to combat and morale are {Bugged}. 
+See $LINK<Advanced Morale=10017> for more information.
+ 
+#; Recycling Tanks
+#HELPFAC3
+Increases $LINK<NUTRIENT=41>, $LINK<MINERALS=42>, and $LINK<ENERGY=43>
+output of base square.
+ 
+#; Perimeter defense
+#HELPFAC4
+Increases defense multiplier of base to one against ground attacks. 
+^This effectively increases defensive bonus by +100% 
+^(or +200% when combined with a $LINK<Tachyon Field=100005>).
+Defense bonus does not apply against $LINK<Psi Attacks=15>.
+^
+Also protects against population loss from the last defender destroyed.
+ 
+#; Tachyon field
+#HELPFAC5
+Increases defense multiplier of base to one against all attacks. 
+^This effectively increases defensive bonus by +100% or +200% when combined with 
+$LINK<Perimeter Defense=100004>, $LINK<Naval Yard=100028> or $LINK<Aerospace Complex=100029>.
+^
+Does not apply against $LINK<Psi Attacks=15>.
+ 
+#; Recreation Dome
+#HELPFAC6
+Reduces number of $LINK<Drones=36> in base by two.
+ 
+#; Energy bank
+#HELPFAC7
+Increases $LINK<ECONOMY=44> at base by 50%.
+^
+Prevents all mines in base radius being destroyed by a $LINK<Random Event=55>, and instead grants 50 $LINK<Credits=46>.
+ 
+#; Network Node
+#HELPFAC8
+Increases $LINK<LABS=45> at base by 50%. 
+^
+Base can study one $LINK<alien artifacts=30007>.
+^
+Prevents research overload $LINK<Random Event=55>, and instead grants a free technology.
+ 
+#; Biology Lab
+#HELPFAC9
+$LINK<+2 labs=45> per turn.
+Any alien lifeforms you breed at this base gain a $LINK<+1 lifecycle=11> bonus.
+^
+Prevents the Planet Blight $LINK<random event=55> from causing all forests and farms within base squares to be destroyed. 
+^Instead, provides +1 nutrient per square for 10 years due to the discovery of a beneficial bacterium.
+^
+Native units repair quickly.
+ 
+#; Skunkworks
+#HELPFAC10
+Eliminates additional cost to $LINK<prototype=23> new units at this base. {Skunkworks}
+Lifts the retooling penalty for mid-course production switching within category.
+ 
+#; Hologram Theatre
+#HELPFAC11
+Reduces number of $LINK<Drones=36> by two, and increases
+$LINK<PSYCH=38> output of base by 50%.
+^
+Requires $LINK<Recreation Commons=100006>.
+ 
+#; Paradise Dome
+#HELPFAC12
+Two extra $LINK<Talents=37> at this base.
+ 
+#; Tree Farm 
+#HELPFAC13
+Increases $LINK<PSYCH=38> output at base by 50% and
+$LINK<ECONOMY=44> at base by 50%.
+Increases $LINK<nutrient=41> output in $LINK<forest=90004> squares by 1.
+Eliminates at least half the $LINK<ecological damage=26> caused by terraforming
+($LINK<farms=90000>, $LINK<mines=90002>, $LINK<roads=90005>, etc.)
+^Increases clean minerals limit by 1.
+ 
+#; Hybrid Forest
+#HELPFAC14
+Increases $LINK<NUTRIENT=41> and $LINK<ENERGY=43> output of
+$LINK<FOREST=90004> squares by 1.  Increases $LINK<PSYCH=38>
+at base by 50% and $LINK<ECONOMY=44> at base by 50%,
+and, combined with $LINK<Tree Farm=100013>, eliminates the ecological damage
+caused by terraforming. 
+^Increases clean minerals limit by 1.
+^Requires Tree Farm. Cumulative with Tree Farm.
+ 
+#; Fusion Lab
+#HELPFAC15
+Increases $LINK<ECONOMY=44> at base by 50% and
+$LINK<LABS=45> at base by 50%.
+ 
+#; Quantum Lab
+#HELPFAC16
+Increases $LINK<ECONOMY=44> at base by 50% and
+$LINK<LABS=45> at base by 50%. Cumulative
+with $LINK<Fusion Lab=100015>.
+^Requires Fusion Lab.
+ 
+#; Research Hospital
+#HELPFAC17
+Increases $LINK<PSYCH=38> at base by 25% and $LINK<LABS=45> at
+base by 50% and reduces number of $LINK<drones=36> by one. Reduces
+population loss caused by genetic warfare and other $LINK<disease outbreaks=55>.
+ 
+#; Nanohospital
+#HELPFAC18
+Increases $LINK<PSYCH=38> at base by 25% and $LINK<LABS=45> at
+base by 50% and reduces number of $LINK<drones=36> by one. Reduces
+population loss caused by genetic warfare and other $LINK<disease outbreaks=55>.
+^Cumulative with $LINK<Research Hospital=100017> requires Research Hospital.
+ 
+#; Robotic Assembly Plant
+#HELPFAC19
+Increases $LINK<MINERALS=42> output at base by 50%. Cumulative with all other
+facilities of this type.
+ 
+#; Nanoreplicator
+#HELPFAC20
+Increases $LINK<MINERALS=42> output at base by 50%. Cumulative with all other
+facilities of this type.
+^Requires  $LINK<Robotic Assembly Plant=100019>.
+^Reduces effect of industry on Planet's $LINK<ecology=26>.
+ 
+#; Quantum Converter
+#HELPFAC21
+Increases $LINK<MINERALS=42> output at base by 50%. Cumulative with all other
+facilities of this type.
+ 
+#; Genejack Factory
+#HELPFAC22
+Increases $LINK<MINERALS=42> output at base by 50%, but also increases
+the number of $LINK<Drones=36> at base by one and increases vulnerability
+to enemy mind control. Cumulative with all other
+facilities of this type.
+ 
+#; Punishment Sphere
+#HELPFAC23
+Eliminates both $LINK<DRONES=36> and $LINK<TALENTS=37> at this base,
+and decreases vulnerability to enemy mind control, but reduces
+$LINK<LABS=45> output by 1/2.
+ 
+#; Hab Complex
+#HELPFAC24
+Allows population of base to grow beyond size 7.
+
+#; Habitation Dome
+#HELPFAC25
+Allows population of base to grow beyond size 14. Base must already
+have $LINK<Hab Complex=100024>.
+
+#; Pressure Dome
+#HELPFAC26
+Allows base to survive submersion. 
+Also counts as $LINK<Recycling Tanks=100003> for this base.
+^
+Bonus not cumulative with $LINK<Recycling Tanks=100003>.
+ 
+#; Command Center
+#HELPFAC27
+Repairs damaged ground units quickly. Ground units built here
+receive two $LINK<morale=11> upgrades.
+^
+The maintenance is determined by the current level of $LINK<reactor
+technology=50001> researched.
+ 
+#; Naval Yard
+#HELPFAC28
+Repairs damaged naval units quickly. Naval units built here
+receive two $LINK<morale=11> upgrades.
+^
+Increases defense multiplier of base to one against naval attacks. 
+^This effectively increases defensive bonus by +100% 
+^(or +200% when combined with a $LINK<Tachyon Field=100005>).
+^
+Defensive bonus does not apply against $LINK<Psi Attacks=15>.
+ 
+#; Aerospace Complex
+#HELPFAC29
+Repairs damaged air units quickly. Air units built here receive
+two $LINK<morale=11> upgrades. Base must have an Aerospace complex before
+it can produce space-based improvements.
+^
+Increases defense multiplier of base to one against air attacks. 
+^This effectively increases defensive bonus by +100% 
+^(or +200% when combined with a $LINK<Tachyon Field=100005>).
+^
+Defensive bonus does not apply against $LINK<Psi Attacks=15>.
+^
+^Prevents hostile $LINK<drop pods=8004> within a 2 square radius (5x5) of base
+ 
+#; Bioenhancement center
+#HELPFAC30
+All military units built here receive two $LINK<morale=11> upgrades.
+Any alien lifeforms you breed at this base gain a $LINK<+1 lifecycle=11> bonus.
+ 
+#; Centauri Preserve
+#HELPFAC31
+Reduces effect of industry on Planet's $LINK<ecology=26>.
+Any alien lifeforms you breed at this base gain a $LINK<+1 lifecycle=11> bonus.
+^Increases clean minerals limit by 1.
+ 
+#; Temple of Planet
+#HELPFAC32
+Reduces effect of industry on Planet's $LINK<ecology=26>.
+Any alien lifeforms you breed at this base gain a $LINK<+1 lifecycle=11> bonus.
+Cumulative with $LINK<Centauri Preserve=100031> requires Centauri Preserve.
+^Increases clean minerals limit by 1.
+ 
+#; Psi Gate
+#HELPFAC33
+Units can {teleport} between bases containing Psi Gates.
+ 
+#; Sky Hydroponics
+#HELPFAC65
+Each Sky Hydroponics Lab increases the $LINK<NUTRIENT output=41> of
+every base by +1. Can only be produced by bases with $LINK<Aerospace
+Complexes=100029>.
+Nutrient increase is halved for bases without Aerospace Complexes, and
+cannot in any event exceed the size of the base.
+ 
+#; Nessus Mining Station
+#HELPFAC66
+Each Nessus Mining Station increases the $LINK<MINERALS output=42>
+of every base by +1. Can only be produced by bases with $LINK<Aerospace
+Complexes=100029>.
+Minerals bonus is halved for bases without Aerospace Complexes, and
+cannot in any event exceed the size of the base.
+^
+Vulnerable to Asteroid Strike $LINK<random event=55>.
+ 
+#; Orbital Power Transmitter
+#HELPFAC67
+Each Orbital Power Transmitter increases the $LINK<ENERGY
+output=43> of every base by +1. Can only be produced by
+bases with $LINK<Aerospace Complexes=100029>.
+Energy bonus is halved for bases without Aerospace Complexes, and
+cannot in any event exceed the size of the base.
+^
+Vulnerable to Solar Flare/Storm $LINK<random event=55>.
+ 
+#; Orbital Defense Pod
+#HELPFAC68
+Each undeployed Orbital Defense Pod has a 50% chance to prevent a
+$LINK<Planet Buster=60013> attack against any of your bases. Defense Pods may
+only deploy once per turn; when no undeployed Pods remain, a Planet
+Buster can only be stopped by sacrificing one of the already-deployed
+Pods.
+^
+Can be sacrificed with 50% chance to destroy a satellite of another faction
+^ (Under Satellite Survey {F6} -> Orbital Attack View)
+^
+Vulnerable to Solar Flare/Storm $LINK<random event=55>.
+ 
+#; Stockpile Energy
+#HELPFAC69
+All $LINK<MINERALS=42> produced at base are immediately converted to
+$LINK<ECONOMY=44> energy reserves (each 2 minerals makes 1 energy rounded up).
+^
+{BUG REPORT}: If a base completes construction of a facility or secret project 
+and its build queue is empty, then for that turn the base will accumulate energy as if production had been set to 
+{Stockpile Energy} in addition to accumulating the usual amount of minerals. 
+$LINK<ECONOMY=44> energy reserves (each 2 minerals makes 1 energy).
+
+
+#; Human Genome Project
+#HELPPROJ0
+One extra $LINK<Talent=37> at every base.
+^
+Protects all of your bases against the $LINK<Prometheus Virus=55>
+ 
+#; The Command Nexus
+#HELPPROJ1
+Counts as a $LINK<Command Center=100027> at every one of your bases.
+ 
+#; The Weather Paradigm
+#HELPPROJ2
+Increases terraforming speed by 50% for all tasks except
+for $LINK<Remove Fungus=90010>. Your $LINK<formers=30001> may build $LINK<Condensers=90012> and $LINK<Echelon Mirrors=90013>
+sink $LINK<Boreholes=90014>, $LINK<Drill to aquifer=90015> 
+and may $LINK<raise=90016>/$LINK<lower terrain=90017>, even if you have
+not yet discovered the appropriate technologies.
+ 
+#; The Merchant Exchange
+#HELPPROJ3
+$LINK<+1 energy=43> in every square at this base 
+except $LINK<Xenofungus=14> squares.
+ 
+#; The Empath Guild
+#HELPPROJ4
+Allows you to contact any leader, and gives you
+an infiltrator in every faction. You get +50% votes
+in elections for $LINK<Planetary Governor=28> and $LINK<Supreme Leader=10005>.
+ 
+#; The Citizens' Defense Force
+#HELPPROJ5
+Counts as a $LINK<Perimeter Defense=100004> at every base.
+ 
+#; The Virtual World
+#HELPPROJ6
+In addition to their normal effect, $LINK<Network Nodes=100008> count as
+$LINK<Hologram Theatres=100011> at each of your bases: reduce number of
+$LINK<Drones=36> by
+two and increase $LINK<PSYCH=38> output of base by 50%.
+ 
+#; The Planetary Transit System
+#HELPPROJ7
+Any new bases you found begin at population size 3. One less $LINK<drone=36>
+at all bases of population 3 and under.
+^
+Upon completion, all of your bases that are less than size 3 and have 
+sufficient nutrient income available will immediately grow to size 3.
+Size one bases will grow to size two whether or not nutrients are available.
+ 
+#; The Xenoempathy Dome
+#HELPPROJ8
+All $LINK<Xenofungus=14> confers on all of your units the same movement
+benefits normally reserved for alien lifeforms.
+^The rate at which your $LINK<Formers=30001> $LINK<remove=90010> 
+and/or $LINK<plant fungus=90011> is doubled.
+^Any alien lifeforms you breed gain a $LINK<+1 lifecycle=11> bonus.
+^
+In addition your non-native units may heal completely in fungus.
+ 
+#; The Neural Amplifier
+#HELPPROJ9
++50% to $LINK<Psi Defense=15>.
+ 
+#; The Maritime Control Center
+#HELPPROJ10
+Increases the movement rate of all naval units by two 
+(including $LINK<Isles of the Deep=30009>.
+^Counts as a $LINK<Naval Yard=100028> at every one of your bases.
+ 
+#; The Planetary Datalinks
+#HELPPROJ11
+You automatically discover any $LINK<technology=140062> discovered by any three
+other $LINK<factions=150001>.
+ 
+#; The Supercollider
+#HELPPROJ12
+$LINK<Research output=45> at this base is doubled.
+ 
+#; The Ascetic Virtues
+#HELPPROJ13
+Increases the population limit of your bases by two, and increases
+your society's tolerance for use of police and military units
+($LINK<+1 POLICE=130005>).
+ 
+#; The Longevity Vaccine
+#HELPPROJ14
+Two less $LINK<Drones=36> at every base if your $LINK<society's
+economics=120005> are $LINK<planned=120008>.
+One less Drone at every base if economics are $LINK<simple=120006>
+or $LINK<green=120009>.
+$LINK<ECONOMY=44> increased by 50% at this base for
+$LINK<free market=120007> economies.
+^
+Protects all of your bases against the $LINK<Prometheus Virus=55>
+ 
+#; The Hunter-Seeker Algorithm
+#HELPPROJ15
+Renders your units and bases completely immune to $LINK<probe team=30006>
+infiltration of any kind.
+
+#; The Pholus Mutagen
+#HELPPROJ16
+Reduces effect of industry on Planet's ecology at all of your bases.
+Additionally, the $LINK<Fungus=14> confers on all of your units the same combat
+benefits normally reserved for alien lifeforms.
+^Any alien lifeforms you breed gain a $LINK<+1 lifecycle=11> bonus.
+ 
+#; The Cyborg Factory
+#HELPPROJ17
+Counts as a $LINK<Bioenhancement Center=100030> at every base.
+ 
+#; The Theory of Everything
+#HELPPROJ18
+$LINK<LABS=45> output doubled at this base.
+ 
+#; The Dream Twister
+#HELPPROJ19
++50% to $LINK<Psi Attacks=15>.
+ 
+#; Universal Translator
+#HELPPROJ20
+Two free $LINK<tech advances=140062> on completion. Any number of
+$LINK<Alien Artifacts=30007> can be cashed at this base.
+ 
+#; The Network Backbone
+#HELPPROJ21
+$LINK<+1 research=45> at this base for every point of $LINK<Commerce=29>
+this base receives, and +1 research for every $LINK<Network Node=100008>
+in existence on Alpha Centauri, regardless of the player owning the
+Network Node.  Eliminates the negative effects of $LINK<Cybernetic
+Society=120017>.
+ 
+#; The Nano Factory
+#HELPPROJ22
+Units can be repaired quickly and completely even when not in base 
+squares. The cost to $LINK<Upgrade units=10019> is reduced by 50%.
+ 
+#; The Living Refinery
+#HELPPROJ23
+Decreases minerals required to support military units: $LINK<+2 SUPPORT=130002>
+on Social Engineering table.
+ 
+#; The Cloning Vats
+#HELPPROJ24
+All of your bases enter a permanent state of Population Boom and
+will grow every turn provided $LINK<NUTRIENT=41> output
+is sufficient and $LINK<Hab facilities=100024> are adequate.
+^The negative effects of the $LINK<Power=120012> and $LINK<Thought
+Control=120019> social engineering choices are eliminated.
+ 
+#; The Self-Aware Colony
+#HELPPROJ25
+Energy maintenance cost for facilities is halved at all of your
+bases. If use of $LINK<police=130005> is allowed under the current social model,
+all of your bases are considered to have an extra police unit.
+ 
+#; Clinical Immortality
+#HELPPROJ26
+One extra $LINK<Talent=37> at every base. Doubles your votes in elections
+for $LINK<Planetary Governor=28> and $LINK<Supreme Leader=10005>.
+^
+Protects all of your bases against the $LINK<Prometheus Virus=55>
+ 
+#; The Space Elevator
+#HELPPROJ27
+Doubles $LINK<ECONOMY=44> energy reserve production at this base, and
+doubles $LINK<MINERAL=42> production rate at all of your bases when
+producing Orbital improvements. Your units equipped with
+$LINK<drop pods=80004> may now make Orbital Insertions anywhere on the Planet.
+All $LINK<Aerospace Complex=100029> restrictions on Orbital improvements are
+waived.
+ 
+#; The Singularity Inductor
+#HELPPROJ28
+Counts as a $LINK<Quantum Converter=100021> at every base, and reduces the
+$LINK<ecological effects=26> of mineral production.
+ 
+#; The Bulk Matter Transmitter
+#HELPPROJ29
+$LINK<+50% MINERALS=42> at every base 
+(before facility multipliers are applied, and the multipliers are do not boost 
+these extra minerals). 
+ 
+#; The Telepathic Matrix
+#HELPPROJ30
+$LINK<Drones=36> never $LINK<riot=9> at your bases.
+All of your $LINK<probe teams=30006> receive a $LINK<+2 morale=11> modifier.
+ 
+#; The Voice of Planet
+#HELPPROJ31
+Begins the $LINK<Ascent to Transcendence=110102> sequence. Any faction can now
+begin the Ascent to Transcendence.
+Any alien lifeforms you breed gain a $LINK<+1 lifecycle=11> bonus.
+ 
+#; The Ascent to Transcendence
+#HELPPROJ32
+Completes the Transcendence sequence and ends the Human Era.
+The Ascent cannot be started until the $LINK<Voice of Planet=110101> is
+operational.
+ 
+#;POLITICS
+#HELPSOC0
+The "Politics" social category allows you to choose your basic
+political system.
+^
+^$LINK<Frontier=120001>
+^$LINK<Police State=120002>
+^$LINK<Democratic=120003>
+^$LINK<Fundamentalist=120004>
+ 
+#;Frontier
+#HELPSOC00
+Frontier politics represent the informal governing arrangements made
+in early colonies, before populations reach levels requiring more
+advanced forms of government. Frontier politics provides no bonuses
+or penalties.
+^
+^Prerequisite: NONE
+ 
+#;Police State
+#HELPSOC01
+Police States use oppression to keep their citizens in line, and allow
+their leaders great power over military decisions. But oppression of
+this type also decreases economic efficiency.
+^
++2 POLICE
++2 SUPPORT
+-2 EFFICIENCY
+^
+^Prerequisite: $LINK<$STR0=$NUM0>
+ 
+#;Democratic
+#HELPSOC02
+Democracies allow citizens to participate in government, and forego
+oppression and the stability it confers in favor of growth and efficiency.
+But citizens remain suspicious of large military deployments, and civilian
+oversight creates large military bureaucracies, so military support
+costs increase.
+^
++2 EFFICIENCY
++2 GROWTH
+-2 SUPPORT
+^
+^Prerequisite: $LINK<$STR0=$NUM0>
+ 
+#;Fundamentalist
+#HELPSOC03
+Fundamentalist politics unite a society behind a strong, dogmatic
+religion. Evangelizing the populace can create loyal, even fanatical
+military forces, and tends to immunize citizens against (other forms
+of) brainwashing, but technological research tends to suffer under the
+continual assaults on intellectual integrity associated with such
+regimes.
+^
++1 MORALE
++2 PROBE
+-2 RESEARCH
+^
+^Prerequisite: $LINK<$STR0=$NUM0>
+ 
+#;ECONOMICS
+#HELPSOC1
+The "Economics" social category allows you to control the way your
+economy is managed.
+^
+^$LINK<Simple=120006>
+^$LINK<Free Market=120007>
+^$LINK<Planned=120008>
+^$LINK<Green=120009>
+ 
+#;Simple
+#HELPSOC10
+Simple Economics describes the informal, ad hoc economy which develops
+in the early years of planetfall, before more organized economic
+systems can be put in place. Simple Economics provides no special
+benefits or penalties.
+^
+^Prerequisite: NONE
+ 
+#;Free Market
+#HELPSOC11
+Free Market Economics turns market forces loose in your society.
+Unfettered market economics can produce great wealth quickly, but
+in the context of Planet's fragile emerging economies can also lead
+to extremes of pollution and ecological damage. Also, citizens rendered
+suddenly poor by the actions unscrupulous moguls may revolt against
+their energy-fattened masters.
+^
++2 ECONOMY
+-3 PLANET
+-5 POLICE
+^
+^Prerequisite: $LINK<$STR0=$NUM0>
+ 
+#;Planned
+#HELPSOC12
+A semi-market economy kept in check by fierce governmental regulation,
+Planned Economics promotes stable industrial and population growth, but
+sacrifices efficiency.
+^
++2 GROWTH
++1 INDUSTRY
+-2 EFFICIENCY
+^
+^Prerequisite: $LINK<$STR0=$NUM0>
+ 
+#;Green
+#HELPSOC13
+Green Economics strive to integrate human progress with the needs
+of the biosphere. Green economies use resources efficiently and
+tend to avoid the excesses of industrial development which could
+provoke Planet's native life, but population growth necessarily
+suffers for lack of space.
+^
++2 PLANET
++2 EFFICIENCY
+-2 GROWTH
+^
+^Prerequisite: $LINK<$STR0=$NUM0>
+ 
+#;VALUES
+#HELPSOC2
+The "Values" social category allows you to set major priorities for
+your society.
+^
+^$LINK<Survival=120011>
+^$LINK<Power=120012>
+^$LINK<Knowledge=120013>
+^$LINK<Wealth=120014>
+ 
+#;Survival
+#HELPSOC20
+Survival is of course the all-encompassing first priority of early
+human space colonies. "Survival" as a priority provides no
+special bonuses or penalties.
+^
+^Prerequisite: NONE
+ 
+#;Power
+#HELPSOC21
+Leaders seeking Power build strong, well-paid military forces to
+enforce their will. But Economic and industrial infrastructure may
+suffer from bloated "defense" budgets.
+^
++2 MORALE
++2 SUPPORT
+-2 INDUSTRY
+^
+^Prerequisite: $LINK<$STR0=$NUM0>
+ 
+#;Knowledge
+#HELPSOC22
+Leaders seeking Knowledge and intellectual enlightenment will pour
+resources into research and education. They will also tend to promote
+the free exchange of information, which increases efficiency but also
+carries greater security risks.
+^
++2 RESEARCH
++1 EFFICIENCY
+-2 PROBE
+^
+^Prerequisite: $LINK<$STR0=$NUM0>
+ 
+#;Wealth
+#HELPSOC23
+Leaders seeking Wealth will concentrate on building economic and
+industrial infrastructure rapidly. They achieve rapid growth and
+development, with possible side effects being decadence and moral
+decay.
+^
++1 INDUSTRY
++1 ECONOMY
+-2 MORALE
+^
+^Prerequisite: $LINK<$STR0=$NUM0>
+ 
+#;FUTURE SOCIETY
+#HELPSOC3
+Future Societies show speculatively how society may evolve
+in the far future.
+^
+^$LINK<None=120016>
+^$LINK<Cybernetic=120017>
+^$LINK<Eudaimonic=120018>
+^$LINK<Thought Control=120019>
+ 
+#;None
+#HELPSOC30
+"None", or no Future Society, simply means that your society has not
+yet evolved to a far future society. No bonuses or penalties apply.
+^
+^Prerequisite: NONE
+ 
+#;Cybernetic
+#HELPSOC31
+In the far future, citizens may turn many of the tasks of governing
+society over to artificially intelligent computers, increasing
+efficiency and freeing individuals for more creative tasks. But will
+workers displaced by computers sink into despair, poverty, and
+possible unrest?
+^
++2 EFFICIENCY
++2 PLANET
++2 RESEARCH
+-3 POLICE
+^
+^Prerequisite: $LINK<$STR0=$NUM0>
+ 
+#;Eudiamonic
+#HELPSOC32
+Perhaps the most pleasant to contemplate living in, this far future
+society takes its name from an ancient Greek word for fulfillment
+and happiness. Eudaimonic society encourages each citizen to achieve
+happiness through striving to fulfill completely his or her potential.
+Population, Economy, and Industry all experience healthy growth.
+Violence fades as society grows more tolerant and just, and even when
+this society's hand is forced it often shoots to subdue rather than
+to destroy.
+^
++2 GROWTH
++2 ECONOMY
++2 INDUSTRY
+-2 MORALE
+^
+^Prerequisite: $LINK<$STR0=$NUM0>
+ 
+#;Thought Control
+#HELPSOC33
+The ultimate in "Big Brother" methods, Thought Control effuses
+subtle neurochemical triggers into the atmosphere to render its
+population obedient, loyal, and resistant to outside ideas.
+But significant resources are required to maintain this level
+of control.
+^
++2 POLICE
++2 MORALE
++2 PROBE
+-3 SUPPORT
+^
+^Prerequisite: $LINK<$STR0=$NUM0>
+ 
+ECONOMY, EFFIC, SUPPORT, TALENT, MORALE, POLICE, GROWTH, PLANET, PROBE, INDUSTRY, RESEARCH
+ 
+#;ECONOMY
+#HELPEFFECT0
+{ECONOMY} represents the raw strength of your society's economy.
+Increasing this value will increase your $LINK<energy=43> flow.
+^
+^-3, -2 energy each base
+^-2, -1 energy each base
+^-1, -1 energy at HQ base
+^ 0, Standard energy rates
+^ 1, +1 energy each base
+^ 2, +1 energy each square!
+^ 3, +1 energy/sq; +2 energy/base +1 commerce rating!!
+^ 4, +1 energy/sq; +4 energy/base; +2 commerce!!!
+^ 5, +1 energy/sq; +4 energy/base; +3 commerce
+^ 6, +1 energy/sq; +4 energy/base; +3 commerce
+ 
+#;EFFIC
+#HELPEFFECT1
+{EFFICIENCY} represents your society's ability to function without
+waste and mismanagement. If this value falls too low, your bases
+will begin to lose $LINK<energy=43> to inefficiency.
+^
+^-4, ECONOMIC PARALYSIS
+^-3, Murderous inefficiency
+^-2, Appalling inefficiency
+^-1, Gross inefficiency
+^ 0, High inefficiency
+^ 1, Reasonable efficiency
+^ 2, Commendable efficiency
+^ 3, Exemplary efficiency!
+^ 4, 4+, PARADIGM ECONOMY!!
+ 
+#;SUPPORT
+#HELPEFFECT2
+{SUPPORT} affects the support costs of military units. The lower
+your score here, the more of your units you'll have to expend
+$LINK<minerals=42> to support.
+^
+^-4, Each unit costs 2 to support; no free minerals for new base.
+^-3, Each unit costs 1 to support; no free minerals for new base.
+^-2, Support 1 unit free per base; no free minerals for new base.
+^-1, Support 1 unit free per base
+^ 0, Support 2 units free per base
+^ 1, Support 3 units free per base
+^ 2, Support 4 units free per base!
+^ 3, Support 4 units OR up to base size for free!!
+ 
+#;TALENT -- NOTUSED!!!
+#HELPEFFECT3
+ 
+#;MORALE
+#HELPEFFECT4
+{MORALE} affects the training and determination of your military.
+A higher score here translates directly into $LINK<morale=11> upgrades for your
+units.
+^
+^-4, -3 Morale; + modifiers halved
+^-3, -2 Morale; + modifiers halved
+^-2, -1 Morale; + modifiers halved
+^-1, -1 Morale
+^ 0, Normal Morale
+^ 1, +1 Morale
+^ 2, +1 Morale (+2 on defense in base)
+^ 3, +2 Morale! (+3 on defense in base)
+^ 4, +3 Morale!!
+ 
+#;POLICE
+#HELPEFFECT5
+{POLICE} represents your society's tolerance for police control and
+restrictions on personal freedom. A high score allows you to use
+military units as police to suppress $LINK<drone riots=9>. A low score will
+cause increasing tension when your military units are away from home. Air
+Combat units (except those with the Air Superiority ability) count as away
+from territory even when within your territory.
+^
+^-5, Two extra drones for each military unit away from territory
+^-4, Extra drone for each military unit away from territory
+^-3, Extra drone for each military unit away from territory after first
+^-2, Cannot use military units as police. No nerve stapling.
+^-1, One police unit allowed. No nerve stapling.
+^ 0, Can use one military unit as police
+^ 1, Can use up to 2 military units as police
+^ 2, Can use up to 3 military units as police!
+^ 3, 3 units as police. Police effect doubled!!
+ 
+#;GROWTH
+#HELPEFFECT6
+{GROWTH} affects your population growth rate. The higher your score,
+the fewer $LINK<nutrients=41> your bases will need to grow.
+^
+^-3, NEAR-ZERO POPULATION GROWTH
+^-2, -20% growth rate
+^-1, -10% growth rate
+^ 0, Normal growth rate
+^ 1, +10% growth rate
+^ 2, +20% growth rate
+^ 3, +30% growth rate
+^ 4, +40% growth rate
+^ 5, +50% growth rate!
+^ 6, POPULATION BOOM!!
+ 
+#;PLANET
+#HELPEFFECT7
+{PLANET} represents your society's sensitivity to the $LINK<ecology of
+Planet=26>.
+A low score indicates that ecological damage will occur more quickly.
+^
+^-3, Wanton ecological disruption; -3 Fungus production
+^-2, Rampant ecological disruption; -2 Fungus production
+^-1, Increased ecological disruption; -1 Fungus production
+^ 0, Normal ecological tension
+^ 1, Ecological safeguards!; Can capture native life forms
+^ 2, Ecological harmony!; Increased chance of native life form capture!
+^ 3, Ecological wisdom!!; Maximum chance of native life form capture!!
+ 
+#;PROBE
+#HELPEFFECT8
+{PROBE} affects your vulnerability (or strength) on security issues.
+A high score will help prevent enemy $LINK<probe team=30006> subversion attacks.
+^
+^-2, -50% cost of enemy probe team actions; enemy success rate increased
+^-1, -25% cost of enemy probe team actions; enemy success rate increased
+^ 0, Normal security measures
+^ 1, +1 probe team morale; +50% cost of enemy probe team actions
+^ 2, +2 probe team morale; Doubles cost of enemy probe team actions!
+^ 3, +3 probe team morale; Bases and units cannot be subverted by standard Probe Teams!!
+
+
+#;INDUSTRY
+#HELPEFFECT9
+{INDUSTRY} represents your manufacturing strength. A high score reduces the
+number of $LINK<minerals=42> required to build units and facilities.
+^
+^-3, Mineral costs increased by 30%
+^-2, Mineral costs increased by 20%
+^-1, Mineral costs increased by 10%
+^ 0, Normal production rate
+^ 1, Mineral costs decreased by 10%
+^ 2, Mineral costs decreased by 20%
+^ 3, Mineral costs decreased by 30%!
+^ 4, Mineral costs decreased by 40%!!
+^ 5, Mineral costs decreased by 50%!!!
+^ 5+, Mineral costs decreased by 50%!!! 
+ 
+#;RESEARCH
+#HELPEFFECT10
+{RESEARCH} affects your $LINK<technological progress=45>. A higher score will
+increase the rate at which you make breakthroughs.
+^
+^-5, Labs research slowed by 50%
+^-4, Labs research slowed by 40%
+^-3, Labs research slowed by 30%
+^-2, Labs research slowed by 20%
+^-1, Labs research slowed by 10%
+^ 0, Normal research rate
+^ 1, Labs research speeded by 10%
+^ 2, Labs research speeded by 20%
+^ 3, Labs research speeded by 30%
+^ 4, Labs research speeded by 40%
+^ 5, Labs research speeded by 50%
+
+
+
+
+
+#;FARM
+#HELPTERRALAND0
+A {farm} increases the $LINK<nutrient production=41> of a square by +1.
+Farms cannot be built in $LINK<rocky squares=1>.
+
+#HELPTERRASEA0
+A {kelp farm} increases the $LINK<nutrient production=41> of an ocean square
+by +2. Kelp farms can only be planted on shelf squares (Depth
+less than 1000m).
+
+#;SOIL
+#HELPTERRALAND1
+A {soil enricher} increases the $LINK<nutrient production=41> of a square by +1.
+Soil Enrichers can be built only in squares which already contain a
+$LINK<farm=90000>.
+
+#HELPTERRASEA1
+no
+
+#;MINE
+#HELPTERRALAND2
+A {mine} increases the $LINK<mineral output=42> of a square:
+^$LINK<Flat squares=1>: +1 minerals
+^$LINK<Rolling squares=1>: +1 minerals
+^$LINK<Rocky squares=1>: +2 minerals (+3 if road)
+^
+^A mine provides an additional +1 minerals in Minerals Resource squares.
+
+#HELPTERRASEA2
+A {mining platform} increases the $LINK<minerals output=42> of an ocean square
+by +1, or +2 if $LINK<Advanced Ecological Engineering=140062> has been discovered.
+^A mining platforms can only be built in shelf squares (depth less than 1000m).
+^A mine reduces the nutrient output of a square by 1, but never below 1.
+ 
+#;SOLAR
+#HELPTERRALAND3
+A {solar collector} allows $LINK<energy=43> collection in a square. Sea level
+solar collectors will collect 1 energy per turn. Solar collectors
+at $LINK<higher altitudes=2> will collect an additional energy for each 1000m
+above sea level.
+ 
+#HELPTERRASEA3
+A {tidal harness} allows $LINK<energy=43> collection in an ocean square. Squares
+with tidal harnesses produce 3 energy per turn.
+^
+Tidal harnesses can only be built in shelf squares (depth less than 1000m)
+ 
+#;FOREST
+#HELPTERRALAND4
+{Forest} squares provide balanced but limited $LINK<nutrient=41>,
+$LINK<minerals=42>, and $LINK<energy=43> production. Forest square
+production is dramatically increased for bases containing a
+$LINK<Tree Farm=100013> and/or a $LINK<Hybrid Forest=100014>.
+^
+A Forest also provides a strong defensive bonus (+50%).
+^
+A Forest will sometimes expand into adjacent non-rocky squares, even driving out
+native $LINK<fungus=14> in the process.
+ 
+#HELPTERRASEA4
+no
+ 
+#;ROAD
+#HELPTERRALAND5
+{Roads} speed land unit movement. Land units moving along a road can
+move three times faster than normal.
+^
+Roads also increase $LINK<mine=90002> production in $LINK<rocky squares=1>.
+^
+Requires $LINK<Centauri Empathy=140058> to be constructed on $LINK<fungus=14>.
+^
+{Terraform Variation:}         (Modifiers are Additive)
+^+1 Rolling, +2 Rocky, +1 $LINK<River=90015>, +2 $LINK<Fungus=90011>, +2 $LINK<Forest=90004>.
+ 
+#HELPTERRASEA5
+no
+ 
+#;TUBE
+#HELPTERRALAND6
+{Mag Tubes} greatly speed land unit movement. Land units moving between
+Mag Tube squares do not expend {any} movement points.
+^
+Requires $LINK<Centauri Psi=140063> to be constructed on $LINK<fungus=14>.
+^
+{Terraform Variation:}         (Modifiers are Additive)
+^+1 $LINK<Rolling=1>, +2 Rocky,+1 $LINK<River=90015>, +2 $LINK<Fungus=90011>, +2 $LINK<Forest=90004>.
+ 
+#HELPTERRASEA6
+no
+ 
+#;BUNKER
+#HELPTERRALAND7
+A {bunker} improves the defense value of its square. Units being attacked
+in bunkers have a 50% bonus in combat.
+^
+Protects against collateral damage.
+^
+However, A bunker does not protect against $LINK<self-destruction=10016>.
+^
+Requires $LINK<Centauri Psi=140063> to be constructed on $LINK<fungus=14>.
+ 
+#HELPTERRASEA7
+no
+ 
+#;AIRBASE
+#HELPTERRALAND8
+An {airbase} allows friendly air units to land and refuel.
+^
+Requires $LINK<Centauri Psi=140063> to be constructed on $LINK<fungus=14>.
+ 
+#HELPTERRASEA8
+no
+ 
+#;SENSOR
+#HELPTERRALAND9
+^A {Sensor Array} watches surrounding territory for intruders. Sensor
+Arrays can see any enemy unit within two squares.
+^
+Data from Sensor Arrays also increases defense readiness: any unit
+in a land square within two squares of a friendly sensor array
+gains +25% to its defense.
+^If a sensor array is not within any faction's territory, then:
+^The sensor has no effect on the map (i.e., does not reveal 
+fog of war, does not reveal AI units). However, the sensor confers 
+a defensive bonus to any faction's unit within two squares.
+^Requires $LINK<Centauri Psi=140063> to be constructed on $LINK<fungus=14>.
+ 
+#HELPTERRASEA9
+no
+ 
+#;FUNGUS
+#HELPTERRALAND10
+Allows $LINK<fungus=14> to be removed from a square.
+ 
+#HELPTERRASEA10
+Allows $LINK<sea fungus=14> to be removed from a square.
+ 
+#;MAKEFUNGUS
+#HELPTERRALAND11
+Using xenoagricultural techniques, $LINK<fungus=14> can be cultivated.
+^
+Production in fungus squares increase with each $LINK<"Centauri"=140006>
+technology you discover. 
+^
+Excluding $LINK<Thermal Boreholes=90014>, any bonus resources or improvements 
+on {fungus} will not increase production.
+ 
+#HELPTERRASEA11
+Using xenoagricultural techniques, $LINK<fungus=14> can be cultivated.
+^
+Production in fungus squares increases with each $LINK<"Centauri"=140006>
+technology you discover.
+^
+{Any} bonus resources or improvements 
+on {fungus} will not increase production.
+ 
+#;CONDENSER   12
+#HELPTERRALAND12
+A {Condenser} increases the $LINK<rainfall=0> in its own and ALL
+SURROUNDING SQUARES.  It also provides an additional {+50%} increase
+(rounded down) in $LINK<nutrient=41> output in its own square, cumulative
+with $LINK<farm=90000> bonuses. Use condensers to increase nutrient production
+drastically in dry areas.
+^
+A Condenser will also lift nutrient restriction even before the discovery of $LINK<Gene Splicing=140049> in its own square.
+^
+Condensers have a significant negative $LINK<ecological impact=26>.
+ 
+#HELPTERRASEA12
+no
+ 
+#;MIRROR      13
+#HELPTERRALAND13
+An {Echelon Mirror} increases the solar $LINK<energy=43> collected by solar
+collectors in ALL SURROUNDING SQUARES by +1. It also counts as
+a $LINK<solar collector=90003> for the purposes of collecting in its own square,
+though it does not receive any additional bonus from other Echelon
+Mirrors.
+^
+Echelon Mirrors have a significant negative $LINK<ecological impact=26>.
+ 
+#HELPTERRASEA13
+no
+ 
+#;BOREHOLE    14
+#HELPTERRALAND14
+A {Thermal Borehole} penetrates to Planet's mantle and provides
+significant mineral and energy bonuses. Borehole squares provide
+$LINK<+6 minerals=42> and $LINK<+6 energy=43>, but no
+$LINK<nutrients=41> in any situation. They are unaffected by $LINK<fungus=90014>.
+^
+Boreholes cannot be built adjacent to other boreholes, nor
+on slopes (adjacent to other squares of lower
+$LINK<altitude=2>).
+^
+Any rivers flowing into a borehole will go down the hole.
+^
+Boreholes have a significant negative $LINK<ecological impact=26>.
+ 
+#HELPTERRASEA14
+no
+ 
+#;AQUIFER     15
+#HELPTERRALAND15
+{Drilling to an aquifer} creates a new river beginning in its square.
+^
+This operation is not allowed in squares adjacent to an existing river. 
+^
+{Bug Report:}
+^It is possible to create rivers in adjacent squares by performing the drill to aquifer operation in multiple squares at the same time.
+ 
+#HELPTERRASEA15
+no
+ 
+#;RAISE       16
+#HELPTERRALAND16
+{Terraform Raise} increases the $LINK<altitude=2> of the current square by
+approximately 1000 meters. All nearby tiles will be adjusted to follow the
+$LINK<Altitude rule=10021>.
+ 
+#HELPTERRASEA16
+{Terraform Raise} increases the $LINK<altitude=2> of the current square by
+approximately 1000 meters. All nearby tiles will be adjusted to follow the
+$LINK<Altitude rule=10021>.
+ 
+#;LOWER       17
+#HELPTERRALAND17
+{Terraform Lower} decreases the $LINK<altitude=2> of the current square by
+approximately 1000 meters. All nearby tiles will be adjusted to follow the
+$LINK<Altitude rule=10021>.
+ 
+#HELPTERRASEA17
+{Terraform Lower} decreases the $LINK<altitude=2> of the current square by
+approximately 1000 meters. All nearby tiles will be adjusted to follow the
+$LINK<Altitude rule=10021>.
+ 
+#;LEVEL       18
+#HELPTERRALAND18
+{Terraform Level} decreases the $LINK<rockiness=1> level of a square. It can
+be used to turn rocky squares into rolling squares suitable for
+$LINK<farming=90000> or a base.
+ 
+#HELPTERRASEA18
+no
+ 
+#;MAKEMONO    19
+#HELPTERRALAND19
+no
+ 
+#HELPTERRASEA19
+no
+ 
+#UNITDESC0
+A {Colony Pod} represents the manpower and resources necessary to
+build a new {base}.
+ 
+#UNITDESC1
+Your Terraforming Engineers ("FORMERS") are crucial to your
+expedition's survival. Formers can plant $LINK<forests=90004> and$LINK<farms=90000>; 
+^build $LINK<roads=90005>, $LINK<mines=90002>, and $LINK<solar collectors=90003>; reduce $LINK<rockiness=90018>,  
+^and even $LINK<raise up=90016> or $LINK<tear down=90017> mountains.
+^
+Formers may also be added to a naval chassis to become $LINK<Sea Formers=30004> 
+^
+Unlike some other units, if a former has at least one movement, it will always enter a  $LINK<fungus=14> square.
+ 
+#UNITDESC2
+A {Scout Patrol} can be used to explore the unknown regions of Planet.
+It can also be used to guard bases from attack by enemies and
+$LINK<mind worms=30008>, though it is not as powerful as later military
+units which can be developed.
+ 
+#UNITDESC3
+{Transport Foils} are a useful early means of transportation between
+continents and oceans. Land units can be loaded onto Transport Foils
+and moved by sea.
+ 
+#UNITDESC4
+{Sea Formers}, like their $LINK<land-bound cousins=30001>, are used to improve
+and reshape Planet. Sea Formers can plant $LINK<Kelp Farms=90020>, build
+$LINK<Mining Platforms=90022>, and construct $LINK<Tidal Harnesses=90023>.
+They can also $LINK<raise=90016> / $LINK<lower=90017> terrain.
+ 
+#UNITDESC5
+{Crawlers} are useful for transporting resources.
+Supply Crawlers may:
+^
+* Produce $LINK<nutrients=41>, $LINK<minerals=42>, or $LINK<energy=43> from any
+square on the map and send the resources to its home base.
+Select the "Convoy" ('O') option on the Action Menu.
+^ Convoy resources receive the benefits of facilities 
+and secret projects in their home base that increase the resources collected.
+^
+* Disband themselves in a friendly base to yield their {full} current mineral
+value towards the construction of a $LINK<secret project=110071> or
+$LINK<unit prototype=23>.
+ 
+#UNITDESC6
+{Probe Teams} can infiltrate and subvert enemy bases and units. They can
+also steal enemy research information or energy credits, sabotage base facilities,
+assassinate key enemy personnel to slow research, free captured faction leaders
+from headquarters, and conduct genetic warfare.
+^
+Move a probe team up to an enemy base or single unit to engage its powers.
+^
+Probe teams can also defend your bases against their enemy counterparts.
+If a probe team is present in a square when an enemy probe team tries
+to enter, a combat is resolved between them. The probe team with the
+highest $LINK<morale=11> level usually wins.
+^
+Probe teams often receive morale increases when they complete missions
+successfully. The higher a probe team's morale level, the more likely
+it is to survive more risky missions.
+^
+Probe teams can ignore any $LINK<zone of control=34>.
+^
+{BUG Report} The rover chassis may be reverse-engineered from the 
+default probe team design through the workshop before the discovery 
+of $LINK<Doctrine: Mobility=140005>.
+ 
+#UNITDESC7
+{Artifacts} are mysterious and unexplained alien devices sometimes discovered
+on Planet. If you can find an artifact and return it to one of your bases, you
+will have several options: (a) you can link it to a $LINK<Network Node=100008>
+if you have one, and receive a free technology breakthrough;
+(b) you can use it to speed the production of a $LINK<Secret Project=110071>
+or $LINK<Unit Prototype=23>; (c) you can save it to use later.
+^
+Artifacts can be captured from other players. A lone artifact can be captured by
+any player without diplomatic penalty.
+^
+Artifacts which are used to explore pods have a 50% chance of vanishing without a trace.
+ 
+#UNITDESC8
+{Mind Worms} can appear suddenly, and are closely associated with
+$LINK<fungus=14>.
+^
+Mind Worms and other alien creatures can engage in $LINK<Psi Combat=15>,
+in which weapon and armor strengths are ignored, and the attacker
+is given a 3 to 2 advantage on land. $LINK<Morale=11> level is quite important
+in defending against Mind Worms and other alien units.
+^
+With proper breeding and bonding techniques, Mind Worms can also be bred
+in captivity and controlled by skilled brood trainers. These Mind Worm
+boils can be used to attack enemy units using Psi Combat, thus bypassing
+enemy advantages in weapon and armor technology.  $LINK<Biology Labs=100009>
+and other facilities can increase the strength of captivity-bred Mind Worm
+boils. Like any native unit, players can also release Mind Worms into the 
+wild, to harass and disrupt an enemy.
+^
+Native lifeforms stationed in xenofungus do not require $LINK<support=130002>.
+^
+Wild native lifeforms outside bases fight at reduced strength before 2115.
+^Wild native lifeforms, when attacking bases, fight at reduced strength until 2150.
+ 
+#UNITDESC9
+An aquatic vector of the $LINK<Mind Worms=30008>, the {Isle of the Deep}
+is closely associated with Mind Worms and $LINK<Sea Fungus=14>.
+The floating shell of an Isle of the Deep, formed by the secretions
+of the colony's individual
+members, is often used as a nesting place by Mind Worms, and can even
+float large land units.
+^
+Isles of the Deep and other alien creatures can engage in $LINK<Psi Combat=15>,
+in which weapon and armor strengths are ignored.
+$LINK<Morale=11> level is quite important in defending against
+Isles of the Deep and other alien units.
+^
+With proper breeding and bonding techniques, Isles of the Deep can
+also be bred in captivity and controlled by skilled brood trainers.
+These captive boils can be used to attack enemy naval units using Psi
+Combat. Depending on their size, they can also be used to transport
+land units. Like any native unit, players can also release Isles into 
+the wild, to harass and disrupt an enemy.
+^
+Native lifeforms stationed in xenofungus do not require $LINK<support=130002>.
+^
+Wild native lifeforms outside bases fight at reduced strength before 2115.
+^Wild native lifeforms, when attacking bases, fight at reduced strength until 2150.
+ 
+#UNITDESC10
+Planet's fiercest avatars, the {Locusts of Chiron} are a ravenous winged
+variation the land-bound $LINK<Mind Worms=30008>. The appearance of Locusts
+signifies considerable distress on the part of the originating
+neural net $LINK<fungus=14>.
+^
+Like any native unit, players can also release Locusts into the wild, to harass and
+disrupt an enemy.
+^
+Native lifeforms stationed in xenofungus do not require $LINK<support=130002>.
+^
+Wild native lifeforms outside bases fight at reduced strength before 2115.
+^Wild native lifeforms, when attacking bases, fight at reduced strength until 2150.
+ 
+#UNITDESC11
+The U.N.S. Unity was stocked with many of these lightly armed {rovers},
+intended for use in exploring Planet's landmasses.
+ 
+#UNITDESC12
+A few of these extremely handy Choppers were stored aboard the
+U.N.S. Unity, and one or two may have survived the ship's crash on the surface. 
+Although lightly armed and with limited fuel range,
+{Unity Choppers} are invaluable scouts and explorers.
+ 
+#UNITDESC13
+These small, prefab {foils} were stored aboard the U.N.S. Unity, ready
+for use exploring Planet's seas.
+ 
+#CHASSISDESC0
+{Infantry} units move slowly but are inexpensive and have important
+advantages in battle. Infantry units gain a +25% combat advantage
+when attacking enemy bases directly.
+^
+^Domain: Land
+^Speed: 8km\hr
+^Modality: Manual\Tracked
+^Dimensions: N\A
+^Modifiers: +25% vs. base
+ 
+#CHASSISDESC1
+Mobile {Speeder} units can move quickly across Planet's surface.
+Speeder units gain a +25% combat advantage when attacking in
+open terrain. They can also $LINK<disengage=33> from combat when surprised
+by slower enemy $LINK<infantry=40000>.
+^
+^Domain:  Land
+^Speed: 102km\hr
+^Modality: Wheeled
+^Dimensions: 7.7x3.6x2.9m
+^Modifiers: +25% in open
+ 
+#CHASSISDESC2
+The ultimate in ground effect transportation, the {Hovertank}
+is never penalized for moving through difficult terrain--it
+never costs more than one move for a Hovertank to enter a square.
+Like $LINK<Speeder=40001> units, Hovertanks gain a +25% combat advantage when
+attacking in open terrain.
+^
+^Domain: Land
+^Speed: 227 km\hr
+^Modality: Aircushion
+^Dimensions: 6.9x3x3m
+^Modifiers: +25% in open
+ 
+#CHASSISDESC3
+{Foils} can be used to create effective sea transports and
+sea patrols. Foil transports are slower than other types of foils, so they
+have one less movement point per turn.
+^
+^Domain: Sea
+^Speed: 62 km\hr
+^Modality: Airfoil
+^Dimensions: 162x24.25x17.5m
+^Modifiers: None
+ 
+#CHASSISDESC4
+With sufficient industrial infrastructure, large {Cruiser} units
+can be produced. These larger vessels make formidable naval units
+as well as the most efficient transports.
+^
+^Domain: Sea
+^Speed: 115 km\hr
+^Modality: Naval Keel
+^Dimensions: 200x50.5x20m
+^Modifiers: None
+ 
+#CHASSISDESC5
+{Needlejets}, the signature aircraft of the 23rd century, appear in
+Planet's skies once Planet's growing industries begin producing
+high grade jet fuel in sufficient quantities. Powerful, but limited
+in range, Needlejets can be used to defend the skies, project air power,
+and explore Planet.
+^Needlejets must return to a friendly base or airbase every other turn
+for refueling.
+^Needlejets may only attack once per turn.
+^
+^Domain: Air
+^Speed: 766 km\hr
+^Modality: Fixed-wing aircraft
+^Dimensions: 18.6x12.5x4.4m
+^Modifiers: Require refuel every 2 turns
+ 
+#CHASSISDESC6
+{Copters}, with their maneuverability and ability to land temporarily
+in rough terrain, make formidable combat units.
+^
+Copters should return to a friendly base or airbase at the end of
+every turn for refueling. If it is unable to do so and must land
+temporarily in the field, it incurs 30% damage.
+^
+^Domain: Air
+^Speed: 523 km\hr
+^Modality: Rotary
+^Dimensions: 15.5x6x4m
+^Modifiers: Range unaffected by fuel
+ 
+#CHASSISDESC7
+{Gravships}, the juggernauts of the distant future, provide all the
+advantages of aircraft with none of the range limitations. Gravships
+can move swiftly over land and sea, and need never return to friendly
+bases for refueling.
+^
+^Domain: Air
+^Speed: 1021 km\hr
+^Modality: Gravitron booster
+^Dimensions: 22x8x6m
+^Modifiers: Range unaffected by fuel
+ 
+#CHASSISDESC8
+{Missiles} can be used to mount powerful $LINK<conventional payloads=60020> or
+spectacular quasi-nuclear $LINK<Planet Busters=60013>. Missiles pack a powerful
+punch, but are of course eliminated when they attack.
+
+^
+^Domain: Air
+^Speed: 232.5 km\hr
+^Modality: Assisted airflow
+^Dimensions: 15.5x.5x.5m
+^Modifiers: Destroyed on impact
+ 
+#WEAPONDESC0
+{Hand Weapons}
+^Weapon Mode: {Projectile}
+^Ammo: 7.62mm U.N. standard
+^Muzzle velocity: 1100 mps
+^Rate of fire: Varies; max 120\min
+^Max range: 550 m
+^Target acquisition: Visual
+^
+A unit's {weapon} strength determines its combat strength it attacks.
+The more powerful the weapon the stronger the attack.
+
+#WEAPONDESC1
+{Laser}
+^Weapon Mode: {Projectile}
+^Active medium: Diode
+^Type: Fiber-coupled
+^Pulse duration: 5 nsec
+^Wavelength: 193 nm
+^Peak power: .84 gw
+^Burn rate (1m steel): .76 sec
+^
+^A unit's {weapon} strength determines its combat strength it attacks.
+^The more powerful the weapon the stronger the attack.
+ 
+#WEAPONDESC2
+{Particle Impactor}
+^Weapon Mode: {Projectile}
+^Ammo: 10mm caseless Kinetic Energy
+^Muzzle velocity: 2500 mps
+^Rate of fire: 1100\min
+^Max range: 2700 m
+^Target acquisition: Optical
+^
+^A unit's {weapon} strength determines its combat strength it attacks.
+^The more powerful the weapon the stronger the attack.
+ 
+#WEAPONDESC3
+{Gatling Laser}
+^Weapon Mode: {Energy}
+^Active medium: Neodymium-glass
+^Type: Conductively cooled stacked array
+^Pulse duration: 2 nsec
+^Wavelength: 107 nm
+^Peak power: .96 gw
+^Burn rate (1m steel): .52 sec
+^
+^A unit's {weapon} strength determines its combat strength it attacks.
+^The more powerful the weapon the stronger the attack.
+ 
+#WEAPONDESC4
+{Missile Launcher}
+^Weapon Mode: {Missile}
+^Ammo: Mk. 12(t) 'Sabre' missile
+^Velocity: Mach 2.2
+^Rate of fire: 6\min
+^Max range: 90 km
+^Target acquisition: IR signature
+^
+^A unit's {weapon} strength determines its combat strength it attacks.
+^The more powerful the weapon the stronger the attack.
+ 
+#WEAPONDESC5
+{Chaos Gun}
+^Weapon Mode: {Projectile}
+^Ammo: 9mm caseless Field Disruptor
+^Muzzle velocity: 3000 mps
+^Rate of fire: 10\min
+^Max range: 11 km
+^Target acquisition: Field Differential
+^
+^A unit's {weapon} strength determines its combat strength it attacks.
+^The more powerful the weapon the stronger the attack.
+ 
+#WEAPONDESC6
+{Fusion Laser}
+^Weapon Mode: {Energy}
+^Active medium: Neodymium-YAG
+^Type: Actively cooled stacked array
+^Pulse duration: 15 nsec
+^Wavelength: 573 nm
+^Peak power: 2.4 gw
+^Burn rate (1m steel): .14 sec
+^
+^A unit's {weapon} strength determines its combat strength it attacks.
+^The more powerful the weapon the stronger the attack.
+ 
+#WEAPONDESC7
+{Tachyon Bolt}
+^Weapon Mode: {Energy}
+^Active medium: Molecular hydrogen
+^Type: Active liquid coolant
+^Pulse duration: 1 usec
+^Wavelength: 680 nm
+^Peak power: 5 gw
+^Burn rate (1m steel): .07 sec
+^
+^A unit's {weapon} strength determines its combat strength it attacks.
+^The more powerful the weapon the stronger the attack.
+ 
+#WEAPONDESC8
+{Plasma Shard}
+^Weapon Mode: {Missile}
+^Ammo: 15 mm Mass-energy shell
+^Muzzle velocity: Varies; max 4000 mps
+^Rate of fire: 160\min
+^Max range: 16 km
+^Target acquisition: Charged particle
+^
+^A unit's {weapon} strength determines its combat strength it attacks.
+^The more powerful the weapon the stronger the attack.
+ 
+#WEAPONDESC9
+{Quantum Laser}
+^Weapon Mode: {Energy}
+^Active medium: Temporal field distortion
+^Type: Crystal diffusion
+^Pulse duration: N\A
+^Wavelength: .005 nm
+^Peak power: Varies
+^Burn rate (1m steel): N\A
+^
+^A unit's {weapon} strength determines its combat strength it attacks.
+^The more powerful the weapon the stronger the attack.
+ 
+#WEAPONDESC10
+{Graviton Gun}
+^Weapon Mode: {Projectile}
+^Ammo: 2mm 3-stage particle-accelerated
+^Muzzle velocity: 9800 mps
+^Rate of fire: 2000\min
+^Max range: 1.4 km
+^Target acquisition: Nanoremote
+^
+^A unit's {weapon} strength determines its combat strength it attacks.
+^The more powerful the weapon the stronger the attack.
+ 
+#WEAPONDESC11
+{Singularity Laser}
+^Weapon Mode: {Energy}
+^Active medium: Temporal boundary
+^Type: Singularity induction
+^Pulse duration: Relative
+^Wavelength: .001 nm
+^Peak power: N\A (approach inf.)
+^Burn rate (1m steel): Relative
+^
+^A unit's {weapon} strength determines its combat strength it attacks.
+^The more powerful the weapon the stronger the attack.
+ 
+#WEAPONDESC15
+{Psi Attack}
+^Active medium: Patterned energy
+^Type: Compelled dissociative
+^Range: Line of sight
+^Peak power: Inverse to distance
+^Target acquisition: Psi lock
+^
+^The {Psi Attack} weapon allows a conventional unit to make Psi
+attacks. Weapons and armor are ignored in $LINK<Psi Combat=15>, and the
+attacker receives a 3 to 2 advantage on land (1 to 1 at sea or air).
+ 
+#WEAPONDESC16
+The quasi-nuclear {Planet Buster} is future humanity's ultimate
+atrocity. Planet Busters destroy everything within a radius equal
+to their $LINK<reactor=50001> size, often leaving immense craters.
+^
+Under the U.N. Charter, use of Planet Busters is punishable by
+immediate expulsion from the $LINK<Planetary Council=27> and total military
+destruction. 
+^
+^Designation: Mk. 714 Plasma bomb
+^Active kill radius: 2000 km
+^Explosive force: 296 gt TNT
+^Target acquisition: Charged particle
+ 
+#WEAPONDESC17
+The {Colony Module} can be used to create custom $LINK<Colony Pods=30000>.
+Units with Colony Modules can build new bases. If a Colony Module
+is installed on a sea-going unit, bases can be constructed at sea.
+^
+A Colony Module also costs one population of the base it is built from 
+in addition to the minerals listed. If this would cause a base to have 0 population, 
+you are given the choice to disband the base or wait until it has reached 2 population.
+^
+Colony Modules can be added to an existing base to increase the base
+population by 1 using the Join Base command {B}. This operation can be
+used to increase the size of the base beyond the limits imposed by lack
+of $LINK<Hab Complexes=100024> and $LINK<Habitation Domes=100025>.
+^
+^Complement: 1000+
+^Composition: Prefab plastic
+^Hydroponics rating: indef.
+^Armament: Sidearms only
+^Armor: Passive (Applique)
+ 
+#WEAPONDESC18
+The {Terraforming Unit} can be used to create custom $LINK<terraformers=30001>.
+^
+^Crew: 367
+^Composition: Bonded steel\ceramic
+^Armament: Sidearms only
+^Armor: Passive (Applique)
+ 
+#WEAPONDESC19
+The {Troop Transport} module allows a unit to transport other units
+by land, sea, or air, depending on the unit's chassis.
+^
+Only sea-going units can transport more than one unit at a time.
+A {Foil} can transport a number of units equal to twice its reactor
+value. A {Cruiser} can transport a number of units equal to four
+times its reactor value.
+^
+Transports can normally transport only ground units, but seagoing
+transports can be given the $LINK<Carrier Deck=80007> special ability to
+allow them to transport and refuel air units.
+^
+Additionally, air transports can only load and unload passengers in a base or
+airbase. However, choosing the unload transport {Shift+U} command will allow
+the passengers to unload while the air transport is in flight. 
+^
+^Capacity: 500 troops + support
+^Composition: Hardened plasteel
+^Hydroponics rating: ST
+^Armor: Passive (Applique)
+ 
+#WEAPONDESC20
+The {Supply Transport} module can be used to create custom supply
+units. Such units function much as $LINK<Supply Crawlers=30005>, and can:
+^
+* Produce nutrients, minerals, or energy from any square on the map
+and send the resources to its home base.
+Select the "Convoy" ('O') option on the Action Menu.
+^ Convoy resources receive the benefits of facilities 
+and secret projects in their home base that increase the resources collected.
+^
+* Disband themselves in a friendly base to yield their {full} mineral
+value towards the construction of a secret project or unit prototype.
+^
+Any unit with the Supply Transport module has no supply cost. 
+The addition of the $LINK<Clean=80016> ability would be redundant.
+^
+^Capacity: 2575 mt
+^Composition: reinforced plasteel
+^Armament: Sidearms only
+^Armor: Passive (Applique)
+ 
+#WEAPONDESC21
+The {Probe Team} module can be used to create custom probe teams.
+Such units function much as regular $LINK<Probe Teams=30006>.
+^
+Any unit with the Probe Team module has no supply cost. 
+The addition of the $LINK<Clean=80016> ability would be redundant.
+^
+ 
+{Probe Teams} can infiltrate and subvert enemy bases and units. They can
+also steal enemy research information energy credits, sabotage base facilities,
+assassinate key enemy personnel to slow research, free captured faction leaders
+from headquarters, and conduct genetic warfare.
+^
+Move a probe team up to an enemy base or single unit to engage its powers.
+^
+Probe teams can ignore any $LINK<zone of control=34>.
+^
+Probe teams can also defend your bases against their enemy counterparts.
+If a probe team is present in a square when an enemy probe team tries
+to enter, a combat is resolved between them. The probe team with the
+highest $LINK<morale=11> level usually wins.
+^
+Probe teams often receive morale increases when they complete missions
+successfully. The higher a probe team's morale level, the more likely
+it is to survive more risky missions.
+^
+^Complement: 16
+^Counterintel suite: ShieldSafe V 6.0
+^Armament: Cyberlinks\mind control
+^Armor: Passive (Applique)
+ 
+#WEAPONDESC23
+The {Conventional Payload} weapons package can be used to create
+conventional missiles. It can be used only with the $LINK<Missile=40008>
+chassis.
+^
+Conventional missiles attack at the following strengths:
+^
+^Fission: {9}
+^Fusion: {18}
+^Quantum: {27}
+^Singularity: {36}
+ 
+#ABILDESC0
+The {Super Former} ability doubles the speed at which a unit performs
+normal terraforming functions. It can be used only with $LINK<terraforming
+units=30001>.
+^
+^Desc: SmartSettler V2.0 s\w upgrade
+^Effect: Terraform rate doubled
+^Limits: Terraformer unit only
+^Domain: All
+ 
+#ABILDESC1
+{Deep Radar} allows a unit to spot enemies and terrain up to two squares
+away.
+^
+^Desc: Mk. 45 Sensor array upgrade
+^Effect: Sees 2 spaces
+^Limits: None
+^Domain: All
+ 
+#ABILDESC2
+A {Cloaking Device} allows a unit to avoid detection by enemy units
+unless they actually attempt to enter the same square. Cloaked units
+may also ignore enemy $LINK<Zones of Control=34>--they may move freely between
+squares adjacent to enemy units.
+^
+^Desc: Type IV Refraction\diffusion shield
+^Effect: Invisible; Ignores ZOCs
+^Limits: Not for use in Probe Teams
+^Domain: Land
+ 
+#ABILDESC3
+{Amphibious Pods} allow a ground unit to attack directly from a sea
+square when disembarking from a transport. Units with Amphibious Pods
+may also move and attack across the channels between Sea Bases and
+continents.
+^
+^Desc: Hoverpod LCs
+^Effect: Attacks from ships
+^Limits: Combat units only
+^Domain: Land
+ 
+#ABILDESC4
+{Drop Pods} allow ground units to make air drops. A unit must begin
+its turn in a friendly base or airbase in order to make an airdrop.
+Airdrops may be made into any empty square within 8 squares (unless
+your faction has the technology necessary to make Orbital Insertions,
+in which case units may be dropped anywhere on the planet).
+^
+Drop Pod units may move after an airdrop, but if they attack a
+50% combat penalty applies.
+^
+Airdropped units may take up to 30% damage (except when dropped into
+a friendly base), but will always survive the airdrop.
+^
+^Desc: Aircushion LCs
+^Effect: Can make airdrops
+^Limits: None
+^Domain: Land
+ 
+#ABILDESC5
+The {Air Superiority} ability equips a unit with the missiles necessary
+to attack Needlejets in flight. Air units with Air Superiority gain a +100%
+combat advantage when attacking other air units in flight, but incur
+a -50% penalty if they attack ground or naval units.
+^
+Ground or Naval units with air superiority do not gain the 100% bonus vs air, 
+but they do not get the 50% penalty vs other ground or naval units either.
+^
+Air-to-air combat is resolved by comparing attack factors--the armor
+value is ignored.
+^
+Note that even ground and naval units can be equipped with the SAM
+missiles necessary to confer this ability.
+^
+A ground unit equipped with Air Superiority can attack an adjacent Needlejet chassis at sea. 
+A Naval unit equipped with Air Superiority can attack an adjacent Needlejet chassis on land. 
+^
+A $LINK<needlejet=40005> unit with air superiority is able to {scramble} against an air attack
+or hostile $LINK<air drop=80004> within 2 a square radius. 
+^The interceptor needs to be stationed at a base or airbase. Use the 
+skip turn ({space bar}) or hold command ({H}) to allow the interceptor to scramble.
+^
+^Desc: Mk. 66 fire control sensor
+^Effect: Attacks air units
+^Limits: Combat units only
+^Domain: All
+ 
+#ABILDESC6
+A {Deep Pressure Hull} allows a sea unit to function as a submarine.
+Submarine units are difficult for enemies to detect.
+^
+^Desc: Reinforced Silksteel chassis
+^Effect: Operates underwater
+^Limits: Combat units only
+^Domain: Sea
+ 
+#ABILDESC7
+A {Carrier Deck} allows a sea-going transport to carry and refuel
+air units.
+^
+^Desc: Bonded alloy flight deck
+^Effect: Mobile Airbase
+^Limits: Not for use in Probe Teams
+^Domain: Sea
+ 
+#ABILDESC8
+The {AAA Tracking} ability increases a unit's defense against air
+and missile attacks by 100%.
+^
+^Desc: Mk. 190 FUBR fire control system
+^Effect: x2 vs. air attacks
+^Limits: Not for use with Psi or air units
+^Domain: Land, Sea
+ 
+#ABILDESC9
+The {Comm Jammer} ability interferes with enemy tactical command and
+control, thus throwing enemy mobile offensives into confusion. A Comm
+Jammer confers a +50% defense bonus against ground units with more
+than one move ($LINK<Speeders=40001> and $LINK<Hovertanks=40002>).
+^
+When attacking, it also prevents the defender from $LINK<disengaging=33>.
+^
+^Desc: Type IX ECTS EMP pulse generator
+^Effect: +50% vs. fast units
+^Limits: Combat, non-Psi units only
+^Domain: Land
+ 
+#ABILDESC10
+{Antigrav Struts} give a unit an extra move each turn, and allow all
+ground units, like $LINK<Hovertanks=40002>, to avoid movement penalties
+for difficult terrain.
+^
+Air units with Antigrav Struts gain moves equal to twice their reactor
+value (so an Antigrav air unit with a $LINK<Fusion reactor=50002>
+would gain 4 moves).
+^
+^Desc: Gravitron repulsor pylons
+^Effect: +1 movement rate
+^Limits: None
+^Domain: Land
+ 
+#ABILDESC11
+The {Empath Song} ability confers a +50% attack bonus against units
+which employ a $LINK<Psi Defense=15>, such as $LINK<Mind Worms=30008>
+and other alien creatures.
+^
+^Desc: Psi lock s\w upgrade
+^Effect: +50% attack vs. Psi
+^Limits: Non-psi combat units only
+^Domain: All
+ 
+#ABILDESC13
+{Fungicide Tanks} allows a terraformer unit to clear $LINK<Xenofungus=14>
+at twice the normal rate. Only $LINK<terraforming=30001> units can use this
+ability.
+^
+^Desc: Boron defoliant system
+^Effect: Clear fungus at double speed
+^Limits: Terraformer units only
+^Domain: All
+ 
+#ABILDESC14
+The {High Morale} ability gives a unit a $LINK<+1 morale=11> upgrade when it
+is first created.
+^
+when you upgrade a trained design in the workshop to a design that is not trained, you lose the effect of the training in the units you are upgrading. 
+If you do the same operation unit by unit on the board, the morale level is retained. 
+On the other hand, if you workshop upgrade TO a trained design, the units so upgraded gain the benefit of the trained attribute. 
+Doing this same operation unit by unit on the board DOES NOT gain a morale benefit.
+^
+^Desc: Advanced Warfare Training
+^Effect: Gains morale upgrade
+^Limits: Combat units only
+^Domain: All
+ 
+#ABILDESC15
+{Heavy Artillery} units bombard their targets from a distance rather
+than attacking them directly. This unique ability allows them to fire
+at units up to two squares away, and to attack every unit in a square
+with one attack.
+^
+An artillery unit's only weakness is its inability to attack by
+any other means than $LINK<bombardment=35>.
+^
+Note that combat naval units have the intrinsic ability to conduct
+bombardment, but they may also attack directly against units in
+sea squares.
+^
+^Desc: Reactor chamber upgrade
+^Effect: Bombards; -50% armor & move
+^Limits: Non-psi units only
+^Domain: Land
+ 
+#ABILDESC16
+Units with the {Clean Reactor} ability require no support from their
+home bases.
+^
+^Desc: Reactor emission containment system
+^Effect: Requires no support
+^Limits: None
+^Domain: All
+ 
+#ABILDESC17
+The {Blink Displacer} ability allows a unit to ignore all base
+defenses ($LINK<Perimeter Defense=100004>, $LINK<Tachyon Field=100005>)
+when attacking.
+^
+^Desc: Temporal distortion field
+^Effect: Bypass base defenses
+^Limits: Combat units only
+^Domain: All
+ 
+#ABILDESC18
+Units with the {Hypnotic Trance} ability are insulated from Psi
+attack, and thus receive a +50% defense bonus when attacked by
+units which employ $LINK<Psi Combat=15>, such as $LINK<Mind Worms=30008>
+and other alien creatures.
+^
+^Desc: Psychic amplification module
+^Effect: +50% defense vs. PSI
+^Limits: Non-psi combat units only
+^Domain: All
+ 
+#ABILDESC20
+Faction leaders willing to commit atrocities can equip their combat
+units with {Nerve Gas Pods}. Units so equipped can employ these pods
+to gain a +50% attack bonus. If employed against a populated area,
+Nerve Gas Pods will cause significant civilian casualties.
+^Using Nerve Gas causes $LINK<ecological damage=26>.
+^
+^Desc: Mk. 1 VX delivery system
+^Effect: Can +50% offense (Atrocity)
+^Limits: Non-psi combat units only
+^Domain: Land, air
+ 
+#ABILDESC21
+A {Repair Bay} allows transport units to repair the units they carry
+while in transit.
+^
+^Desc: Modified Supply Transport module
+^Effect: Repairs ground units on board
+^Limits: Transport units only
+^Domain: Air, sea
+ 
+#ABILDESC22
+{Non-Lethal Methods} allow a unit to count double when used as Police
+units (each unit eliminates two $LINK<drones=36> rather than one).
+^Ability does nothing if $LINK<POLICE=130005> rating does not allow police units
+^
+^Desc: Stunjack cannon & training for police
+^Effect: x2 Police powers
+^Limits: Combat units only
+^Domain: Land
+ 
+#ABILDESC12
+{Polymorphic Encryption} doubles a unit's resistance to probe team
+subversion.
+ 
+#ARMORDESC0
+A unit's {armor} strength determines its combat strength when attacked.
+The stronger the armor the better the defense.
+^
+^NO ARMOR
+^Type: N\A
+^Tensile strength: N\A
+^Density: N\A
+^Thickness: N\A
+ 
+#ARMORDESC1
+A unit's {armor} strength determines its combat strength when attacked.
+The stronger the armor the better the defense.
+^
+^SYNTHMETAL ARMOR
+^Type: Chobham (modified)
+^Tensile strength: Base
+^Density: 2.3 kg\l
+^Thickness: 250mm
+ 
+#ARMORDESC2
+A unit's {armor} strength determines its combat strength when attacked.
+The stronger the armor the better the defense.
+^
+^PLASMA STEEL ARMOR
+^Type: Mass-energy composite
+^Tensile strength: 5X base
+^Density: 2.5 kg\l
+^Thickness: 520mm
+ 
+#ARMORDESC3
+A unit's {armor} strength determines its combat strength when attacked.
+The stronger the armor the better the defense.
+^
+^SILKSTEEL ARMOR
+^Type: Bonded
+^Tensile strength: 23X base
+^Density: 2.5 kg\l
+^Thickness: 520mm
+ 
+#ARMORDESC4
+A unit's {armor} strength determines its combat strength when attacked.
+The stronger the armor the better the defense.
+^
+^PHOTON WALL
+^Type: Refractive field
+^Tensile strength: 46X base
+^Density: N\A
+^Thickness: 2m
+ 
+#ARMORDESC5
+A unit's {armor} strength determines its combat strength when attacked.
+The stronger the armor the better the defense.
+^
+^PROBABILITY SHEATH
+^Type: Phase adjustment
+^Tensile strength: 97X base
+^Density: N\A
+^Thickness: N\A
+ 
+#ARMORDESC6
+A unit's {armor} strength determines its combat strength when attacked.
+The stronger the armor the better the defense.
+^
+^NEUTRONIUM ARMOR
+^Type: Kinetic diffusion
+^Tensile strength: 198X base
+^Density: 4kg\l
+^Thickness: 755mm
+ 
+#ARMORDESC7
+A unit's {armor} strength determines its combat strength when attacked.
+The stronger the armor the better the defense.
+^
+^ANTIMATTER PLATE
+^Type: Reactive
+^Tensile strength: 560X base
+^Density  -4 kg\l
+^Thickness: Var.
+ 
+#ARMORDESC8
+A unit's {armor} strength determines its combat strength when attacked.
+The stronger the armor the better the defense.
+^
+^STASIS GENERATOR
+^Type: Temporal field distortion
+^Tensile strength: N\A
+^Density: N\A
+^Thickness: N\A
+ 
+#REACTORDESC1
+A unit's {reactor} determines its {power}, the amount of damage the
+unit can absorb in combat before it is eliminated. A unit can absorb
+10 points of damage for each power level of reactor.
+^
+More advanced reactor technology also tends to make complex units
+cheaper to build.
+^
+^Rating: 32655 kw
+^Throughput: 29377 kw
+^Efficiency: 89.99%
+^Discharge: 52 r
+^Fuel source: U-235
+ 
+#REACTORDESC2
+A unit's {reactor} determines its {power}, the amount of damage the
+unit can absorb in combat before it is eliminated. A unit can absorb
+10 points of damage for each power level of reactor.
+^
+More advanced reactor technology also tends to make complex units
+cheaper to build.
+^
+^Rating: 68003 kw
+^Throughput: 62821 kw
+^Efficiency: 92.38%
+^Discharge: 67 r
+^Fuel source: Ionized deuterium
+ 
+#REACTORDESC3
+A unit's {reactor} determines its {power}, the amount of damage the
+unit can absorb in combat before it is eliminated. A unit can absorb
+10 points of damage for each power level of reactor.
+^
+More advanced reactor technology also tends to make complex units
+cheaper to build.
+^
+^Rating: 147893 kw
+^Throughput: 141977 kw
+^Efficiency: 96.01%
+^Discharge: 21 r
+^Fuel source: Deuterium-tritium mix
+ 
+#REACTORDESC4
+A unit's {reactor} determines its {power}, the amount of damage the
+unit can absorb in combat before it is eliminated. A unit can absorb
+10 points of damage for each power level of reactor.
+^
+More advanced reactor technology also tends to make complex units
+cheaper to build.
+^
+^Rating: >4000000 kw
+^Throughput: Var
+^Efficiency: Var
+^Discharge: N\A
+^Fuel source: Vizorium-5
+ 
+ 
+;Beginning of SMACX stuff
+ 
+#; Covert Ops Center
+#HELPFAC34
+$LINK<Probe Team=30006> units built here receive two $LINK<morale=11> upgrades. Base 
+also receives a +2 $LINK<PROBE=130008> rating.
+ 
+#; Brood Pit
+#HELPFAC35
+Acts as a $LINK<Children's Creche=100002> for alien units, if there is not already
+one at the base. Decreases the cost of alien units built at the base by 25%.
+Negative $LINK<LIFECYCLE=130004> effects canceled in base square. Base also receives
+a $LINK<+2 POLICE=130005> rating.
+ 
+#; Aquafarm
+#HELPFAC36
+All $LINK<Kelp Farms=90020> worked by base generate one extra $LINK<nutrient=41>.
+ 
+#; Subsea Trunkline
+#HELPFAC37
+All $LINK<Mining Platforms=90022> worked by base generate one extra $LINK<mineral=42>.
+ 
+#; Thermocline Transducer
+#HELPFAC38
+All $LINK<Tidal Harnesses=90023> worked by base generate one extra $LINK<energy=43>.
+ 
+#; Flechette Defense System
+#HELPFAC39
++50% defense against $LINK<conventional missiles=60023> for any units up
+to two squares away.  Also, if you have no $LINK<Orbital Defense Pods=100068>, the system can shoot down
+a non-conventional missile ($LINK<Planet Busters=60016>, $LINK<Tectonic Missiles=60024>, 
+and $LINK<Fungal Missiles=60025>) 50% of the time when used inside a two-square radius of 
+the base. Both effects are cumulative; i.e., if there are two Flechette Systems within a two-square 
+radius of a missile's target, then a missile has only a 25% chance of success. 
+ 
+#; Subspace Generator
+#HELPFAC40
+This is the main component of the Resonance Communicator used by $LINK<Progenitor=47> 
+factions to broadcast Planet's location to their respective forces. Once a Progenitor 
+faction constructs six Generators in bases of size 10 or higher, the Communicator calls a fleet 
+of reinforcements, thereby ending human habitation on Planet with 
+a $LINK<Progenitor Victory=10014>.
+ 
+#; Geosynchronous Survey Pod
+#HELPFAC41
+This base's sighting radius increases to three squares. The pod also acts as 
+a $LINK<sensor array=90009>, conferring a +25% defensive bonus. Geosynchronous Pods may 
+be destroyed by $LINK<Orbital Defense Pods=100068> or $LINK<Probe Teams=30006>.
+ 
+#; The Manifold Harmonics
+#HELPPROJ33
+Increases resources harvested from $LINK<monolith=12> and $LINK<fungus=14> squares 
+depending on your overall $LINK<PLANET=130007> rating, as follows:
+^
+^0 Planet:   +1 $LINK<Energy=43>
+^+1 Planet:  +1 $LINK<Nutrient=41>, +1 Energy
+^+2 Planet:  +1 Nutrient, +1 $LINK<Mineral=42>, +1 Energy
+^+3 Planet:  +1 Nutrient, +1 Mineral, +2 Energy
+ 
+#; The Nethack Terminus
+#HELPPROJ34
++1 $LINK<morale=11> to all $LINK<Probe Teams=30006> built. -25% cost of probe team 
+actions. All Probe teams with a $LINK<Fusion Reactor=50002> or higher have equivalent 
+of $LINK<Algorithmic Enhancement=80028>.
+ 
+#; The Cloudbase Academy
+#HELPPROJ35
+Free $LINK<Aerospace Complex=100029> in every base. Increases the movement rate of
+all air units by two.
+ 
+#; The Planetary Energy Grid
+#HELPPROJ36
+Free $LINK<Energy Bank=100007> in every base. $LINK<Stockpile Energy=100069> produces 25% higher returns.
+ 
+#ABILDESC24
+Units equipped with {Soporific Gas Pods} reduce enemy $LINK<morale=11> by 2 when attacking.
+^This does not work against native lifeforms
+ 
+#ABILDESC25
+Units equipped with a {Dissociative Wave} can counter special abilities that modify
+combat percentages. This nullifies specials such as the $LINK<Comm Jammer=80009> 
+and $LINK<Hypnotic Trance=80018>.
+ 
+#ABILDESC26
+Sea units equipped with a {Marine Detachment} can board and capture enemy ships that 
+have been severely damaged.
+^Any units being transported on a ship are captured too.
+ 
+#ABILDESC27
+{Fuel Nanocells} add +2 to an air unit's fuel capacity.
+ 
+#ABILDESC28
+$LINK<Probe Teams=30006> equipped with {Algorithmic Enhancement} perform covert operations 
+with greater chances of success. Enhanced Probe Teams can also infiltrate bases and units 
+regardless of social engineering choices or $LINK<The Hunter-Seeker Algorithm=110085> Secret 
+Project, although they still have a high rate of failure.
+ 
+#UNITDESC14
+{Sealurks} haunt the fungal patches and ocean depths of Planet's seas. As opposed to the
+less aggressive $LINK<Isles of the Deep=30009>, the Sealurks seek out and attack
+ocean and coastal bases. They may also lie in wait for 
+easy prey, catching unwary ships that travel too close to $LINK<fungus=14>. When immobile,
+these creatures are extremely hard to detect until they begin their attack.
+^
+Sealurks can engage in $LINK<Psi Combat=15> when attacked,
+in which weapon and armor strengths are ignored.
+$LINK<Morale=11> level is quite important when attacking Sealurks.
+^
+With proper breeding and bonding techniques, Sealurks can
+also be bred in captivity and controlled by skilled brood trainers.
+Like any native unit, players can also release Sealurks into the wild, to harass and
+disrupt an enemy.
+^
+Native lifeforms stationed in xenofungus do not require $LINK<support=130002>.
+^
+Wild native lifeforms outside bases fight at reduced strength before 2115.
+^Wild native lifeforms, when attacking bases, fight at reduced strength until 2150.
+ 
+#UNITDESC15
+{Spore Launchers} can appear singly or in the company of $LINK<Mind Worms=30008>, 
+and are closely associated with $LINK<fungus=14>. Spore Launchers tend to lurk
+on the outskirts of a settlement, expelling bursts of corrosive spores that can 
+destroy man-made or Progenitor improvements from a range of two squares away. These 
+spores are also effective against units.
+^
+Spore Launchers can engage in $LINK<Psi Combat=15> when attacked,
+in which weapon and armor strengths are ignored.
+$LINK<Morale=11> level is quite important when attacking Spore Launchers.
+^
+With proper breeding and bonding techniques, Spore Launchers can
+also be bred in captivity and controlled by skilled brood trainers.
+These captive boils can be used as artillery to attack enemy units or terrain improvements.
+Like any native unit, players can also release Spore Launchers into the wild, to harass and
+disrupt an enemy.
+^
+Native lifeforms stationed in xenofungus do not require $LINK<support=130002>.
+^
+Wild native lifeforms outside bases fight at reduced strength before 2115.
+^Wild native lifeforms, when attacking bases, fight at reduced strength until 2150.
+ 
+#UNITDESC16
+{Battle Ogres} are rare, mechanical remnants of the first $LINK<Progenitor=47> era on Planet. 
+Several different types of Ogres may be found, each with advanced equipment and 
+powers. Unfortunately, the convoluted engineering of these units makes it impossible 
+for them to be repaired even by Progenitor technicians; any damage taken is permanent.
+^
+The Battle Ogre Mk1 possesses a $LINK<Resonance Laser=60012>, $LINK<Resonance 3 Armor=70011>, and 
+a $LINK<Fission Reactor=50001>. Its awesome size and fearsome appearance also help quell 
+drone activity, effectively doubling the $LINK<police=130005> powers of the Ogre.
+ 
+#UNITDESC17
+{Battle Ogres} are rare, mechanical remnants of the first $LINK<Progenitor=47> era on Planet. 
+Several different types of Ogres may be found, each with advanced equipment and 
+powers. Unfortunately, the convoluted engineering of these units makes it impossible 
+for them to be repaired even by Progenitor technicians; any damage taken is permanent.
+^
+The Battle Ogre Mk2 possesses a $LINK<Resonance Bolt=60013>,  
+$LINK<Resonance 8 Armor=70013>, and a $LINK<Fusion Reactor=50002>. Its awesome size and fearsome appearance also 
+help quell drone activity, effectively doubling the $LINK<police=130005> powers of the Ogre. The 
+Progenitors also built the Mk2 Ogre with the $LINK<Dissociative Wave=80025> special ability.
+ 
+#UNITDESC18
+{Battle Ogres} are rare, mechanical remnants of the first $LINK<Progenitor=47> era on Planet. 
+Several different types of Ogres may be found, each with advanced equipment and 
+powers. Unfortunately, the convoluted engineering of these units makes it impossible 
+for them to be repaired even by Progenitor technicians; any damage taken is permanent.
+^
+The Battle Ogre Mk3 possesses a $LINK<String Disruptor=60014>, $LINK<Stasis Generator Armor=70008>,
+and a $LINK<Quantum Chamber=50003>. Its awesome size and fearsome appearance also 
+help quell drone activity, effectively doubling the $LINK<police=130005> powers of the Ogre. The 
+Progenitors also built the Ogre with the $LINK<Dissociative Wave=80025> special ability.
+ 
+#UNITDESC19
+{Fungal Towers} act as a localized nervous system for $LINK<fungus=14> patches.
+These Towers are massive, jumbled tangles of Mind Worms, fungus, and other strange native
+life forms. Although the Towers cannot move or attack, they block movement through their
+terrain and exert a $LINK<zone of control=34> that can impede units in the area. 
+^
+When attacked, the Fungal Towers engage in $LINK<Psi Combat=15>,
+in which weapon and armor strengths are ignored.
+$LINK<Morale=11> level is quite important when attacking Fungal Towers. When attacked, Fungal
+Towers receive a 50% bonus due to their ability to co-ordinate and direct native life forms in the area.
+^
+The size and power of Fungal Towers depends on the amount of fungus adjacent to the Tower.
+Towers can also generate fungus in nearby empty squares.
+^
+Wild native lifeforms outside bases fight at reduced strength before 2115.
+ 
+#UNITDESC20
+The U.N.S. Unity contained a few of these lasers, intended for rudimentary mining 
+operations. One or two might have survived the Unity's descent onto the surface of Planet. 
+In the first few years following Planetfall, these can be used as weapons in a pinch.
+ 
+#WEAPONDESC12
+The {Resonance Laser} functions both as a laser and a powerful disruptive force on 
+local resonance fields. Its base attack factor is 6, and it receives a +25% bonus 
+when engaging in a $LINK<Psi Attack=15>.
+^
+A unit's {weapon} strength determines its combat strength it attacks.
+The more powerful the weapon the stronger the attack.
+ 
+#WEAPONDESC13
+The {Resonance Bolt} functions both as a $LINK<Tachyon Bolt=60007> and a powerful 
+disruptive force on local resonance fields. Its base attack factor is 12, and it 
+receives a +25% bonus when engaging in a $LINK<Psi Attack=15>.
+^
+A unit's {weapon} strength determines its combat strength it attacks.
+The more powerful the weapon the stronger the attack.
+ 
+#WEAPONDESC14
+{String Disruptor}
+^Built of a combination of temporal disruption and Progenitor resonance
+technology taken to its highest degree. Its base attack factor of 30 makes
+it the strongest weapon in the game.
+^
+A unit's {weapon} strength determines its combat strength it attacks.
+The more powerful the weapon the stronger the attack.
+ 
+#WEAPONDESC24
+The {Tectonic Payload} weapons package can be used to create
+Tectonic Missiles. It can be used only with the $LINK<Missile=40008>
+chassis.
+^
+A Tectonic Missile detonation causes an earthquake that raises the target terrain by 1-4
+level of altitude, depending on the $LINK<reactor=50001> type. A Fission reactor raises the terrain one level, 
+a Singularity reactor up to four levels. Tectonic missiles are considered 
+delivery platforms instead of combat units, and so may not target bases or units.
+ 
+#WEAPONDESC25
+The {Fungal Payload} weapons package can be used to create
+Fungal Missiles. It can be used only with the $LINK<Missile=40008>
+chassis.
+^
+A Fungal Missile detonation destroys any improvements in the square. Additionally, the
+detonation covers 1-4 squares of terrain with fungus, depending on the $LINK<reactor=50001> type. A Fission
+reactor covers one square, a Singularity reactor four squares. The detonation may also trigger
+native life forms from dormant spores. Fungal Missiles are considered 
+delivery platforms instead of combat units, and so may not target bases or units.
+ 
+#ARMORDESC9
+{Psi Defense} armor confers the same defensive ability possessed by native units 
+such as $LINK<Mind Worms=30008>. A unit equipped with Psi Defense engages in $LINK<Psi Combat=15>
+when attacked, in which weapon and armor strengths are ignored, and the attacker
+is given a 3 to 2 advantage on land. $LINK<Morale=11> level is quite important when
+attacking a unit equipped with Psi Defense.
+^
+^Psi Defense
+^Type: Pattern refraction
+^Resistance: Proportional to distance
+^Density: N\A
+^Thickness: N\A
+ 
+#ARMORDESC10
+{Pulse 3 armor} is a combined-defense system that gives the benefit of $LINK<Plasma Steel 
+armor=70002> (D3) and confers a 25% defense bonus against ground units with more
+than one move ($LINK<Speeders=40001> and $LINK<Hovertanks=40002>).
+ 
+#ARMORDESC11
+{Resonance 3 armor} combines the physical protection of $LINK<Plasma Steel 
+armor=70002> (D3) with a psi shield that confers a +25% defense bonus when 
+attacked by units which employ $LINK<Psi Combat=15>, such 
+as $LINK<Mind Worms=30008> and other alien creatures.
+ 
+#ARMORDESC12
+{Pulse 8 armor} is a combined-defense system that gives the benefit 
+of $LINK<Neutronium Armor=70006> (D8) and confers a 25% defense bonus 
+against ground units with more than one move ($LINK<Speeders=40001> 
+and $LINK<Hovertanks=40002>).
+ 
+#ARMORDESC13
+{Resonance 8 armor} combines the physical protection 
+of $LINK<Neutronium Armor=70006> (D8) with a psi shield that confers 
+a +25% defense bonus when attacked by units which employ $LINK<Psi Combat=15>, 
+such as $LINK<Mind Worms=30008> and other alien creatures.
+ 
+# ; This line must remain at end of file
+
+

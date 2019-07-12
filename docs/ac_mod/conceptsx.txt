@@ -1,0 +1,958 @@
+;
+; Sid Meier's ALPHA CENTAURI
+;
+; BASIC CONCEPTS HELP
+;
+; Copyright (c) 1997, 1998 by Firaxis Games, Inc.
+;
+; ALPHA CENTAURI explains various game concepts with this file
+; Feel free, at your own risk, to experiment with editing
+; this file. We recommend you make a backup copy of the original.
+;
+
+; Based on SMACX GOG-version. SMACX concepts hidden or removed.
+; -cmc 2014
+
+#TITLES
+Rainfall
+Rockiness
+Altitude
+Pact of Brotherhood
+Treaty of Friendship
+Blood Truce
+Vendetta
+Integrity
+Atrocities
+Drone Riots
+Golden Age
+Morale
+Monoliths
+Artifacts
+Fungus/Xenofungus
+Psi Combat
+Waypoints
+Patrol
+Explore (Governor)
+Discover (Governor)
+Build (Governor)
+Conquer (Governor)
+Damage and Repair
+Prototypes
+Unit Cost (Basic)
+Inefficiency (Basic)
+Ecology (Basic)
+Planetary Council
+Planetary Governor
+Commerce (Basic)
+Victory and Defeat
+Territory/Borders
+Might
+Disengage
+Zone of Control
+Bombardment
+Drones
+Talents
+Psych
+Landmarks, Volcanos, etc.
+Council Proposals
+Nutrients
+Minerals
+Energy
+Economy
+Labs
+Energy Reserves
+
+#ADVTITLES
+Unit Cost (Advanced)
+Inefficiency (Advanced)
+Ecology (Advanced)
+Commerce (Advanced)
+Scoring
+Victory (Diplomatic)
+Victory (Conquest)
+Victory (Transcendence)
+Victory (Economic)
+Victory (Scenario)
+Retirement
+Might Formula
+Drones (Advanced)
+Bureaucracy
+
+#CONCEPT0
+The {Rainfall} level of a region determines the amount of $LINK<Nutrients=41> which
+can be produced. A region can be arid, moderate or rainy, producing 0, 1, or 2
+nutrients respectively. A $LINK<farm=90000> increases the nutrient production by 1.
+^
+In addition to coastal and tropical regions, the western (upwind) slopes of mountain ranges
+tend to be quite rainy, since warm moisture-laden air cools as it rises, and sheds
+its moisture as rainfall. You can take advantage of this phenomenon by raising
+hills to the east of your important bases. Conversely, areas east, or downwind of
+mountain ranges tend to be quite arid.
+^
+Ocean squares produce 1 nutrient unless you cultivate a $LINK<kelp farm=90020>,
+in which case they produce 3.
+^
+Special {Nutrient Resource} squares produce two extra nutrients, and
+$LINK<Monsoon Jungle=39> squares produce a single extra nutrient.
+
+#CONCEPT1
+The {Rockiness} of an area determines that region's $LINK<Mineral=42> production potential.
+Regions can be flat, rolling, or rocky. {Flat} regions produce no minerals unless
+a $LINK<mine=90002> is build there, in which case they can produce one. {Rolling} regions
+produce a single mineral, which can be increased to two with a mine. Unimproved {Rocky}
+regions also produce 1, but can produce 4 with a mine and road.
+^
+Rocky areas inhibit movement, costing twice the normal number of moves to enter. They
+also provide a modest defensive benefit in combat.
+^
+Ocean squares produce minerals only if you build a $LINK<mining platform=90022>, in which
+case they produce 2.
+^
+Special {Mineral Resource} squares produce two additional minerals per turn, and
+can be increased to three extra with a mine. $LINK<Crater=39> squares also produce one extra
+mineral.
+
+#CONCEPT2
+The {Altitude} of a region affects the amount of $LINK<Energy=43> which can be collected
+there. To collect this energy, you must build a $LINK<Solar Collector=90003>. Areas below
+1000m above sea level produce 1 unit of energy. From 1000m to 2000m, areas
+produce 2 energy; 2000m-3000m areas produce 3 energy, and areas more than 3000m
+above sea level produce 4 energy.
+^
+Ocean squares do not produce energy unless you build a $LINK<tidal harness=90023>, in which
+case they produce 3.
+^
+Special {Energy Resource} squares produce two additional units of energy per turn. Squares
+in the $LINK<Uranium Flats=39> and $LINK<Geothermal Shallows=39> produce one additional unit.
+
+
+#CONCEPT3
+A {Pact of Brotherhood} (or {Pact of Sisterhood}) is the closest form of diplomatic
+relationship you can form with another faction. Pact Brothers may enter each other's
+territory freely, may stack with each other's units, and may enter each other's
+bases (and receive repairs there).
+^
+Pact Brothers are expected to defend one another from enemy attack. They receive
+{double} $LINK<commerce=29> between their bases, and are often willing to share technological
+research.
+^
+A Pact can be terminated at any time (the right-click menu on the {Commlink} menu
+is one way to do it), but at the moment of termination all of your units will
+automatically be shipped home from your former Pact Brother's territory, and vice
+versa.
+
+#CONCEPT4
+A {Treaty of Friendship} is intended to secure a permanent and lasting friendship
+between two factions. Once you have signed a Treaty, you will receive $LINK<commerce=29>
+benefits with your new friends. You may not, without diplomatic repercussions,
+enter the territory of a faction you have a Treaty with.
+^
+A Treaty of Friendship terminates only if one faction attacks another or
+refuses a valid demand for withdrawal.
+
+#CONCEPT5
+{Blood Truce} marks an end to Vendetta between two factions. It a promise not to
+attack one another for a limited period of time. After about 15-20 years, a Blood
+Truce will expire and the two factions will continue as Neutrals unless they again
+attack one another.
+^
+Technically, Blood Truce does not restrict you from entering another faction's
+territory, but other faction leaders may not see things that way.
+
+#CONCEPT6
+{Vendetta} is a state of war between two factions. If you have pronounced Vendetta
+on a faction (or another faction has pronounced it against you), expect to be
+attacked.
+
+#CONCEPT7
+{Integrity} measures the current value of your word-of-honor as a faction leader.
+If you keep your promises and do not betray your friends, your integrity will remain
+high. Attacking factions you have pledged $LINK<Blood Truce=5> or signed
+$LINK<Treaties=4> with will
+rapidly lower your integrity rating, and other faction leaders will no longer be
+eager to make such agreements with you.
+^
+Note that there is no dishonor in attacking a sworn enemy with whom you have not
+pledged Blood Truce; only breaking an agreement can lower your Integrity.
+
+#CONCEPT8
+{Atrocities} comprise a set of particularly heinous acts forbidden under the
+Unity mission's U.N. Charter. Simple Atrocities include use of nerve gas or
+genetic warfare, nerve stapling of civilians, and attacks against civilian
+populations (e.g. intentional obliteration of a base). Use of quasi-nuclear
+devices such as Planet Busters is considered a Major Atrocity.
+^
+If you commit a Simple Atrocity, the other factions will likely impose
+commerce sanctions for ten or more years, depriving you of all trade with your
+Treaty and Pact partners. The faction against whom you committed the atrocity
+will probably remain your sworn enemy forever.
+^
+If you commit a Major Atrocity, you will be expelled from the
+$LINK<Planetary Council=27> and
+all factions will pronounce $LINK<Vendetta=6> against you.
+
+#CONCEPT9
+{Drone Riots} occur when the number of $LINK<Drones=36> at a base exceeds the number of
+$LINK<Talents=37>. During Riots, citizens will continue to feed themselves, but no production
+will take place and no surplus energy will be produced. To end the Drone Riots, you
+will have to restore the balance of Drones and Talents.
+^
+Drone Riots can be prevented (or ended) by one of several methods: (a) building
+{psych-related facilities} such as $LINK<Recreation Commons=100006> will reduce the number of
+Drones at a base (b) if your social engineering $LINK<POLICE=130005> rating is high enough, you
+can place military units in your base to serve as "police" and impose order
+(c) Converting some workers to {Doctors} will increase the number of Talents, balancing
+out the drones.
+(d) if your base produces enough energy, increasing your energy allocation to {Psych} will
+increase the number of
+Talents at your base (one talent for every two points of Psych produced), thereby
+restoring balance.
+
+#CONCEPT10
+A {Golden Age} occurs when a base has no $LINK<Drones=36>, and
+the number of $LINK<Talents=37> at least
+equals the number of regular Workers and Specialists.
+^
+A Golden Age significantly increases a base's {growth} rate and {energy} production--
+equivalent of +1 $LINK<ECONOMY=130000> and +2 $LINK<GROWTH=130006> on the social
+engineering table.
+
+#CONCEPT11
+{Morale} reflects the training and experience of your military units. Morale levels
+range from Very Green to Green to Disciplined to Hardened, Veteran, Commando, and
+Elite. A unit receives a {+12.5% combat bonus} for each morale level. Morale plays
+a particularly important role in psi combat, and in combat between probe teams,
+since no weapon and armor values are considered in those cases.
+^
+New units typically begin with {Green} morale, though this may be higher or lower
+depending on your social engineering $LINK<MORALE=130004> setting. A new unit's morale can also
+be increased if a base has a $LINK<Command Center=100027> or other related {facility}.
+^
+Alien units such as Mind Worms have {life cycles} which correspond to morale
+levels. Alien units are not affected by Command Centers and military facilities,
+but their life cycle levels can be improved by building $LINK<Biology Labs=100009> and other
+similar facilities. The {transport} capacity of an $LINK<Isle of the Deep=30009> is determined
+by its life cycle level: one unit for each level.
+^
+A unit victorious in combat will often receive a morale upgrade (the lower its
+morale level, the more likely an upgrade).
+^
+{Elite} units receive a special bonus--an additional move each turn.
+^
+A unit with a "+" sign after its morale possesses a combat bonus from its location in a base with a 
+$LINK<Children's Creche=100002>. 
+
+#CONCEPT12
+{Monoliths} are mysterious and unexplained alien devices discovered on Planet.
+A monolith will increase a unit's $LINK<morale=11> (or life cycle) one level, but an individual
+unit can receive only one monolith upgrade (hint: consider saving your upgrade for
+those hard-to-get promotions from Commando to Elite).
+^
+A monolith will also completely repair any damaged unit; this can be done any
+number of times, even if a unit has already received a morale upgrade from a
+monolith.
+^
+Monolith squares can also be tapped for resources, and will produce
+$LINK<2 Nutrients=41>, $LINK<2 Minerals=42>, and $LINK<2 Energy=43> each turn.
+
+#CONCEPT13
+{Artifacts} are mysterious and unexplained alien devices sometimes discovered
+on Planet. If you can find an artifact and return it to one of your bases, you
+will have several options: (a) you can link it to a $LINK<Network Node=100008> if you have
+one, and receive a free technology breakthrough; (b) you can use it to speed the
+production of a $LINK<Secret Project=110102> or Unit Prototype; (c) you can save it to use
+later.
+^
+Artifacts can be captured from other players. A lone artifact can be captured by
+any player without diplomatic penalty.
+
+#CONCEPT14
+{Xenofungus} or {Fungus} is a form of plant life native to Alpha Centauri. It
+has a number of unusual properties which you may discover in the course of play.
+Some of the more obvious properties include:
+^
+(1) Fungus impedes {movement}. Units may have difficulty entering Fungus squares.
+Increasing your $LINK<PLANET=130007> social engineering rating will alleviate this problem. Building
+the Xenoempathy Dome improves Fungus movement considerably.
+^
+(2) Fungus has some {defensive} value when defending against other human factions.
+Against alien $LINK<Mind Worms=30008>, however, Fungus has negative value.
+^
+(3) Fungus squares can be tapped for {resources}; the resource level provided by a
+fungus square is determined by the number of $LINK<Centauri technologies=140006> you have
+discovered.
+
+#CONCEPT15
+Some units (usually alien creatures such as $LINK<Mind Worms=30008>) can engage in
+{PSI COMBAT}. In Psi Combat, weapon and armor strengths are ignored, and
+the attacker is given a 3 to 2 advantage on land (1 to 1 for sea combat).
+$LINK<MORALE=130004> level becomes quite important in Psi Combat.
+
+#CONCEPT16
+{Waypoints} can be set when giving a unit "go to" orders. One way to give a unit
+"go to" orders is to click on it to activate it, then
+hold down the {left mouse button and drag} a "movement arrow"
+to where you want the unit to go. You can set waypoints by pressing the {SPACE BAR}
+while the arrow is over a particular square. The unit will move to each of its
+waypoints on its way to its final destination. You can also set waypoints while
+giving a unit Patrol orders, in similar fashion.
+
+#CONCEPT17
+A unit can be told to {Patrol} by clicking on the unit to activate it, then selecting
+the Patrol option from the Action menu. When the Patrol cursor appears, hold down the
+left mouse button and drag a "patrol arrow" to the area you wish the unit to patrol.
+The unit will commence patrolling back and forth between its current location and the
+location you have specified. It will "wake up" and request orders if it encounters
+an enemy unit. You may set {waypoints} in a patrol by pressing the {SPACE BAR} while
+you drag the patrol arrow.
+
+#CONCEPT18
+The Explore, Discover, Build, and Conquer buttons on the Base
+Control Screen activate the {Governor} for that base. When the
+Governor is activated, he will make decisions automatically
+based on his general instructions. This function is useful
+for beginners and for players who do not wish to micromanage
+their bases.
+^
+The {EXPLORE} button tells the Governor of a base to concentrate on
+finding and occupying new territory. Bases set to explore
+will typically concentrate on building $LINK<Scouts=30002>, $LINK<Colony Pods=30000>,
+$LINK<Transports=30003>, and occasional $LINK<Naval Units=40003> for scouting oceans.
+This button is especially useful early in the game, when
+you need to expand quickly.
+
+#CONCEPT19
+The Explore, Discover, Build, and Conquer buttons on the Base
+Control Screen activate the {Governor} for that base. When the
+Governor is activated, he will make decisions automatically
+based on his general instructions. This function is useful
+for beginners and for players who do not wish to micromanage
+their bases.
+^
+The {DISCOVER} button on the Base Control Screen emphasizes scientific discovery and
+technological breakthroughs. The Base Governor will concentrate on
+building {Science Facilities} (such as $LINK<Network Nodes=100008>), $LINK<Secret
+Projects=110102>, $LINK<Probe Teams=30006>, and $LINK<Prototype Units=23>. This button
+is especially effective with large, well-protected bases deep
+in your interior.
+
+#CONCEPT20
+The Explore, Discover, Build, and Conquer buttons on the Base
+Control Screen activate the {Governor} for that base. When the
+Governor is activated, he will make decisions automatically
+based on his general instructions. This function is useful
+for beginners and for players who do not wish to micromanage
+their bases.
+^
+The {BUILD} button on the Base Control Screen mandates infrastructure and growth.
+The Base Governor will tend to build {Facilities} and $LINK<Formers=30001>.
+Use this button at
+any time to have your base concentrate on peaceful growth.
+
+#CONCEPT21
+The Explore, Discover, Build, and Conquer buttons on the Base
+Control Screen activate the {Governor} for that base. When the
+Governor is activated, he will make decisions automatically
+based on his general instructions. This function is useful
+for beginners and for players who do not wish to micromanage
+their bases.
+^
+Use the {CONQUER} button on the Base Control Screen to build up your military.
+In this mode
+your base will produce {military units} of all varieties,
+and their associated facilities, such as $LINK<Command Centers=100027>.
+Use this button whenever you need to attack or defend.
+
+#CONCEPT22
+Units which engage in combat may become damaged. Damage is indicated by
+a colored bar along the left side of a unit's status icon: Green represents
+light (or no) damage; Yellow and Red show increasing damage.
+^
+Damage can be repaired if a unit skips its entire turn (SPACE BAR) at
+a friendly base. A severely damaged unit may have to repeat this
+operation for several turns. NOTE: Damage will not be repaired on any
+turn in which the unit is attacked or bombarded.
+^
+Units can also conduct "field repair" (i.e. not at a base), but this
+process is much slower and is only effective if the unit has sustained
+more than 10% damage.
+
+#CONCEPT23
+You may use the Design Workshop screen to create new unit types.
+Whenever you create a unit using a $LINK<weapon=60005>, $LINK<armor=70007>,
+or $LINK<chassis=40006>
+type which you have never used before, you must {prototype} the
+unit.
+^
+A prototype unit requires an extra {+50% Minerals} to build, though
+it receives a bonus $LINK<+1 Morale=11> upgrade in compensation since
+experimental weapons are often given to crack, well-trained troops.
+^
+Once you have prototyped a new unit, you may build that unit in the
+future at no additional cost.
+
+#CONCEPT24
+When designing new units, bear in mind that units strong in
+three areas ($LINK<weapon=60005>, $LINK<armor=70007>, $LINK<chassis=40006>)
+will be vastly more
+expensive than units strong in only two areas (or one).
+^
+For example, a 4-3-2 unit normally costs 70 minerals to build,
+whereas a 4-1-2 unit costs only 30 and a 4-3-1 unit costs 40.
+So you can have two units for the price of one, not to mention
+the +25% base-attack bonus which the 4-3-1 $LINK<infantry=40000> unit will
+receive.
+
+#CONCEPT25
+As your colony grows and you claim more territory and build more
+bases, this growth will put a strain on your economy. This strain
+shows up as {inefficiency}, which can cause you to lose some of your
+$LINK<energy=43> production each turn.
+^
+The farther a base is away from your $LINK<Headquarters=100001> base, the more
+inefficiency it will experience.
+^
+Inefficiency can be mitigated at all of your bases by making
+social engineering choices which increase your $LINK<EFFICIENCY=130001> value.
+$LINK<Democratic=120003> politics and $LINK<Green=120009> economics each increase efficiency.
+^
+Inefficiency can be mitigated at a particular base by building a
+$LINK<Children's Creche=100002> there.
+
+#CONCEPT26
+As humans expand and build colonies on Planet, they inevitably begin
+to cause ecological damage. Ecological damage can provoke the native
+life forms and cause other unexpected effects.
+^
+The more $LINK<mines=90002>, $LINK<solar collectors=90003>, $LINK<roads=90005>,
+and $LINK<farms=90000> (but not $LINK<forests=90004>,
+which actually help the ecology) you build, the more the potential
+damage. $LINK<Boreholes,=90014> $LINK<Mirrors,=90013> and $LINK<Condensers=90012> cause even greater damage. You can
+reduce or eliminate this type of damage by building $LINK<Tree Farm=100013>
+and $LINK<Hybrid Forest=100014> facilities.
+^
+As your industrial output (minerals) increases, ecological damage
+will also take place. This effect can be reduced by building the
+$LINK<Centauri Preserve=100031>, $LINK<Temple of Planet=100032>,
+and $LINK<Nanoreplicator=100020>
+facilities.
+
+#CONCEPT27
+Once you have obtained commlink frequencies for all factions, you can
+convene the {Planetary Council} to vote on planetary policies, including
+election of a $LINK<Planetary Governor=28>.
+^
+In elections for Planetary Governor (and $LINK<Supreme Leader=10005>), each faction
+casts votes equal to the total size of all its bases. This total may
+be modified by faction powers and $LINK<Secret Projects=110102>. Only the leader of
+one of the two factions with the highest vote totals may stand for
+election as Governor or Supreme Leader.
+^
+On votes to set planetary policies, each faction receives one vote.
+In these votes, the current Planetary Governor has veto power, which
+can be overridden only by unanimous vote of all remaining factions.
+
+#CONCEPT28
+The {Planetary Governor} holds an Executive Veto in all votes on Planetary
+Policy. The Governor also receives {+1 Energy} in $LINK<commerce=29> transactions
+with other friendly factions at each base, from the
+increased commerce created by global agencies. The planetary bureaucracy
+provides the Governor with an infiltrator in every other faction.
+
+#CONCEPT29
+{Commerce} is bonus energy generated from trade between two friendly
+factions. Whenever you sign a $LINK<Treaty=4> or $LINK<Pact=3> with another faction,
+your bases will automatically begin to accrue commerce (and this
+benefit extends to your partner faction as well).
+^
+Commerce is interrupted whenever a $LINK<Vendetta=6> occurs between two
+factions, or when sanctions are applied against a faction which has
+committed an $LINK<atrocity=8>. Think of Commerce as a reward for peaceful
+behavior.
+^
+Between two factions, commerce is more beneficial to the faction
+which has discovered the most $LINK<Economic technologies=140045>. CEO Morgan
+gains additional bonuses here as part of his faction power. Commerce
+also tends to benefit the current $LINK<Planetary Governor=28>.
+^
+^You can increase your commerce rates by doing the following:
+^* Sign more Treaties.
+^* Sign more Pacts (Pacts receive double commerce).
+^* Increase the size and economy of your bases ("it takes energy to make energy").
+^* Discover more economic-related technologies
+^
+Economic related technologies include $LINK<Industrial Economics=140045>, $LINK<Industrial
+Automation=140046>, $LINK<Planetary Economics=140061>, $LINK<Industrial Nanorobotics=140073>,
+$LINK<Sentient Econometrics=140075>, and $LINK<Environmental Economics=140059>.
+
+#CONCEPT30
+There are five principal ways to win the game:
+^
+^$LINK<Transcendence Victory=10007>
+^$LINK<Conquest Victory=10006>
+^$LINK<Diplomatic Victory=10005>
+^$LINK<Economic Victory=10008>
+^$LINK<Scenario Victory=10009>
+^
+For detailed scoring information, see $LINK<Scoring=10004>.
+^
+For information on retirement and mandatory retirement, see
+$LINK<Retirement=10010>.
+
+#CONCEPT31
+Your {territory} consists of all land nearer to one of your land bases
+on the same continent than to anyone else's. Your territorial waters
+consist of all sea areas nearer to one of your sea bases (in the same
+ocean) than to anyone else's. Territory may move and shift during
+the course of the game as bases are built, conquered, and destroyed.
+^
+Other faction leaders may take offense if you move units into their
+territory, particularly if you have signed a $LINK<Treaty of Friendship=4>.
+^
+Territory never extends more than 7 squares from a land base, or
+3 from a sea base.
+
+#CONCEPT32
+Your {might} is a measure of your overall standing in comparison to
+other factions. It ranges from "Unsurpassed" (first place), to
+"Feeble" (seventh place).
+^
+Might is based on a holistic evaluation of your faction, and includes
+population, $LINK<technology=140080>, $LINK<secret projects=110102>, and military strength.
+^
+The {Faction Dominance} graphs on the information display track
+might.
+
+#CONCEPT33
+Fast units, such as Speeders and Hovertanks, can sometimes
+{disengage} when surprised by slower enemy units. A unit disengages
+when the following conditions are met:
+^
+^* Unit incurs 50% damage, relative to what it started the combat with.
+^* Unit is faster than its attacker, taking damage into account.
+^* Unit is alone in its square.
+^* Unit did not attack on its last turn.
+^* Unit is a combat unit (non-combat units may never disengage).
+^* Neither attacker nor defender is an air unit.
+^* Attacker does not have the $LINK<Comm Jammer=80009> ability.
+^* Unit does not have the HOLD order, and is not in a $LINK<bunker=90007>
+or $LINK<airbase=90008>.
+^* A valid retreat square is avaiable, which is not a $LINK<fungus=14> square (unless
+$LINK<Pholus Mutagen=110086>) and is not adjacent to an enemy unit.
+
+#CONCEPT34
+Every unit exerts a {Zone of Control} into every adjacent
+square (but units in sea squares do not exert zones of control into land
+squares, nor vice versa).
+^
+Land units may not normally move between two squares in an enemy
+zone of control, with the following exceptions:
+^* Units may freely move into and out of bases.
+^* Units may freely attack any adjacent unit.
+^* Units may freely enter squares already containing friendly units.
+^* $LINK<Probe teams=30006> and units with the $LINK<Cloaking ability=80002>
+may ignore this rule.
+^
+Air and Sea units exert zones of control, but are not affected by
+them.
+
+#CONCEPT35
+Naval units, and land units with the $LINK<Heavy Artillery=80015> ability may
+conduct {Bombardment} by selecting the Long Range Fire option from
+the Action menu.
+^
+Bombardment has the advantage of potentially damaging every enemy unit
+in a particular square and the disadvantage that land units can never
+be reduced below 50% damage by bombardment.
+^
+If bombardment is attempted against a square containing an enemy
+naval or artillery unit, the bombardment is cancelled and an
+{Artillery Duel} is initiated, with the attacking and defending
+artillery (or naval) units fighting attack-vs-attack strength. Armor
+values are ignored for Artillery Duels.
+
+#CONCEPT36
+{Drones} are discontented, undereducated citizens which
+appear as a result of population pressure and other social forces.
+Drones work like other citizens, but if a base has more Drones than
+$LINK<Talents=37>, a $LINK<Drone Riot=9> may result.
+
+#CONCEPT37
+{Talents} are prosperous, highly educated citizens, your intellectual
+elite. Talents are created as the result of favorable social conditions
+and the diversion of energy to $LINK<Psych=38>. As long as a base has at least
+as many Talents as $LINK<Drones=36>, no $LINK<Drone Riot=9> will occur.
+
+#CONCEPT38
+Energy diverted to {Psych} is used to improve the quality of life
+your citizens experience. Every two units of energy diverted to Psych
+will create an additional {Talent} in that base.
+
+#CONCEPT39
+Certain major {Landmarks} on Planet's surface convey special bonuses:
+^
+^{Garland Crater} confers $LINK<+1 Mineral=42> in interior squares.
+^{Mount Planet} confers $LINK<+1 Mineral=42> and $LINK<+1 Energy=43> in each square around the mouth.
+^{Uranium Flats} confer $LINK<+1 Energy=43> in each square.
+^{Geothermal Shallows} confer $LINK<+1 Energy=43> in each square.
+^{Pholus Ridge} confers $LINK<+1 Energy=43> in each square.
+^{Monsoon Jungle} confers $LINK<+1 Nutrient=41> in each square.
+^{Freshwater Sea} confers $LINK<+1 Nutrient=41> in each square.
+^{Fossil Field Ridge} confers $LINK<+1 Mineral=42> in each square.
+^{Manifold Nexus} confers a $LINK<+1 PLANET=130007> rating when inside a faction's borders.
+^
+Other landmarks have no effect beyond the standard effects of
+the terrain which they represent.
+
+#CONCEPT40
+The following proposals can be brought before the Planetary Council, once
+appropriate technology is obtained:
+^
+^{Salvage Unity Fusion Core}: +500 energy for each faction
+^{Global Trade Pact}: Commerce rates doubled planetwide.
+^{Repeal Trade Pact}: Commerce rates return to normal.
+^{Launch Solar Shade}: Global cooling; sea levels fall.
+^{Melt Polar Caps}: Global warming; sea levels rise.
+^{Repeal U.N. Charter}: Atrocity prohibitions lifted.
+^
+The Council also elects the $LINK<Planetary Governor=28> by a majority
+vote of population, and by a 3/4
+vote by population can annoint a Supreme Leader, conferring a
+$LINK<Diplomatic Victory=10005>.
+
+#CONCEPT41
+{Nutrients} are produced in squares with sufficient $LINK<Rainfall=0>, sometimes
+supplemented by the addition of $LINK<Farms=90000> and similar enhancements.
+^
+Every citizen at a base must "eat" two Nutrients per turn to survive.
+^
+Surplus nutrients are stored. When sufficient surplus nutrients have
+been accumulated, a base will grow, producing a new citizen.
+
+#CONCEPT42
+{Minerals} are produced in squares with sufficient $LINK<Rockiness=1>, sometimes
+supplemented by the addition of $LINK<Mines=90002> and similar enhancements.
+^
+Once a base has exceeded its free $LINK<SUPPORT=130002> level, any additional
+units (military or non-combat) consume one Mineral per turn of support.
+^
+Surplus minerals are applied to production of $LINK<facilities=100029>,
+units, and $LINK<secret projects=110102> which a base
+is creating. When sufficient minerals are
+accumulated, the facility or unit is built.
+
+#CONCEPT43
+{Energy} is produced in squares with $LINK<Solar Collectors=90003>, particularly
+those at high $LINK<Altitudes=2>.
+^
+Depending on the Energy Allocation which you have made on the Social
+Engineering screen, all the energy you produce is divided among three
+priorities: $LINK<Economy=44>, $LINK<Labs=45>, and $LINK<Psych=38>.
+Some of the energy a base
+produces may also be lost to $LINK<Inefficiency=25>.
+
+#CONCEPT44
+$LINK<Energy=43> allocated to your {Economy} is added, as energy credits,
+to your $LINK<Energy Reserves=46>, which function as your treasury for monetary
+transactions.
+
+#CONCEPT45
+$LINK<Energy=43> allocated to {Labs} is used to conduct scientific research.
+The more energy you allocate to Labs, the quicker you will make technological
+breakthroughs.
+
+#CONCEPT46
+Your {Energy Reserves} represent stored energy. Your reserves function
+as your treasury for monetary transactions.
+^
+Your energy reserves increase depending on the amount of $LINK<Energy=43>
+you allocate to $LINK<Economy=44> on the Social Engineering screen.
+
+
+#ADVCONCEPT0
+When designing new units, bear in mind that units strong in
+three areas ($LINK<weapon=60005>, $LINK<armor=70007>, $LINK<chassis=40006>)
+will be vastly more
+expensive than units strong in only two areas (or one).
+The basic cost formula, to which there are several modifiers, is:
+^
+^Cost = Weapon * (Armor + Speed) * 10 / (2 ^ (Reactor + 1))
+^
+^* Weapon value never less than 1/2 Armor value.
+^* Non-combat units substitute "Equipment Cost" for Weapon value.
+^* Cost is halved for units with Speed 1.
+^* Cost is halved for sea units, and Armor is discounted 50%.
+^* Cost quartered for combat air units.
+^* Armor cost doubled for air units.
+^* Cost +25% for each unit of $LINK<Special Ability=80008> cost.
+^* Cost +10 minerals if both Weapon and Armor greater than 1.
+^* Cost +10 minerals if Land unit's Weapon, Armor, Speed all greater than 1.
+^* Minimum cost (Reactor*2 - Reactor/2)*10 unless all values are 1.
+
+
+#ADVCONCEPT1
+The formula used to compute the energy lost to {Inefficiency} by
+a base is:
+^
+^Inefficiency = (Energy * Distance / (64 - ((4 - Efficiency) * 8))
+^
+^Energy | Amount of energy produced by base this turn.
+^Distance | Distance from $LINK<Headquarters=100001> base (16 if no HQ).
+^Efficiency | Social Engineering $LINK<EFFICIENCY=130001> (+2 if
+$LINK<Children's Creche=100002>)
+^
+^* If denominator reaches zero, ALL energy is lost to inefficiency.
+
+#ADVCONCEPT2
+The ecological damage formula is complex:
+^(1) For each base total the number of $LINK<Mines=90002>, $LINK<Solar
+Collectors=90003>, $LINK<Farms=90000>,
+$LINK<Soil Enrichers=90001>, $LINK<Roads=90005>, $LINK<Mag Tubes=90006>,
+$LINK<Condensers,=90012> $LINK<Mirrors,=90013>
+and $LINK<Boreholes=90014>. Items
+in squares which are actually being worked count double.
+^(2) Add an extra +8 for each Borehole, +6 for each Mirror, and +4 for each Condenser.
+^(3) Subract 1 for each $LINK<Forest=90004>.
+^(4) Halve if base has $LINK<Tree Farm=100013>, and Eliminate if also has
+$LINK<Hybrid Forest=100014>.
+^(5) Divide this value by 8, and reduce by up to 16 plus # of previous
+damages. Set this number aside.
+^(6) Take the number of minerals produced this turn (but not from Orbit)
+^(7) If result from 5 was reduced by less than 16+#, reduce result 6
+by remaining amount.
+^(8) Divide minerals by 1 plus # of $LINK<Centauri Preserve=100031>,
+$LINK<Temple of Planet=100032>,
+$LINK<Nanoreplicator=100020>.
+^(9) Sum the values of (5) and (8), and add +5 for each major $LINK<atrocity=8>.
+^(10) If Alpha Prime is at perihelion (20 years out of every 80), double
+your value.
+^
+^Ecology% = (ValueFromStep10) * Difficulty * Technologies * (3-PLANET) * LIFE / 300
+^
+^Difficulty = Normally 3, but 5 on two highest two difficulty levels.
+^Technologies = Number of $LINK<technologies=140080> discovered
+^PLANET = Social Engineering $LINK<PLANET=130007> value
+^LIFE = Native life level (1-3) from Custom Start
+
+#ADVCONCEPT3
+Commerce is computed base by base between factions with $LINK<Treaties=4> and
+$LINK<Pacts=3>, as follows:
+^
+^(1) First, all bases for each faction are ranked from top to bottom by Energy output.
+^(2) Bases are paired off from top to bottom. If one faction has extra bases, these are ignored.
+^(3) For each pair of bases, sum the combined economic output and divide by 8, rounding up.
+^(4) Double this value if a Global Trade Pact is in effect.
+^(5) Now, for each individual base, the commerce formula is as follows:
+^       (ValueFromStep4) * (CommerceTech+1) / (TotalCommerceTech+1)
+^(6) CommerceTech is the total # of economic technologies discovered, plus
+faction & social bonuses.
+^(7) TotalCommerceTech is the total # of economic technologies in the game.
+^(8) Now, using the value from step 5, divide by 2 if no Pact (e.g. only a Treaty)
+^(9) Add +1 if you are $LINK<Planetary Governor=28>.
+^(10) Reduce to zero if sanctions are in effect against either faction.
+
+#ADVCONCEPT4
+Your Alpha Centauri Score is computed as follows:
+^
+^(1) 1 point for each citizen of each base.
+^(2) If you have won a $LINK<Diplomatic=10005> or $LINK<Economic=10008> victory, score:
+^        (a) 1 point for each citizen of a $LINK<Pact Brother's=3> base.
+^        (b) 1/2 point for each citizen of any other faction's base.
+^(3) 1 point for each citizen of a surrendered base.
+^(4) 1 point for each unit of $LINK<commerce=29> your bases are receiving.
+^(5) 1 point for each $LINK<technology=140062> discovered.
+^(6) 10 points for each $LINK<Transcendent Thought=140088> advance.
+^(7) 25 points for each $LINK<Secret Project=110102>.
+^(8) A $LINK<Victory=30> bonus if you have won the game.
+
+#ADVCONCEPT5
+You may win the game diplomatically by convincing enough faction
+leaders to unite behind you as Supreme Leader of Planet. A 3/4 vote
+of the $LINK<Planetary Council=27> is required to secure such election.
+Only the leader of one of the two factions with the highest vote totals
+may stand for election as $LINK<Governor=28> or Supreme Leader.
+^
+When a Supreme Leader is elected, a faction leader may choose to defy the will
+of the Council and refuse to submit. In this case, the Supreme Leader
+must, with the help of loyal factions, conquer all defiant factions
+to achieve a Conquest victory. Because of the military power usually
+required to secure election as Supreme Leader, defying the will of the
+Council is generally fairly suicidal. Other factions will therefore
+usually only take this course if you have committed atrocities against
+them or grossly and repeatedly betrayed them.
+^
+If you win a Diplomatic Victory, you are awarded 1200 points minus
+2 for every game turn elapsed. If Cooperative Victory is enabled and
+your $LINK<Pact Brother or Sister=3> is elected Supreme Leader, you are awarded
+half this total.
+
+#ADVCONCEPT6
+You may win the game by conquest if you eliminate all remaining
+factions. Factions which surrender and "swear a pact to serve you"
+count as eliminated for this purpose. If Cooperative Victory is
+enabled, you need not eliminate any faction with whom you have signed a
+$LINK<Pact of Brotherhood=3>, though aside from surrendered AI factions
+no more than three factions may "win together" in this fashion.
+^
+For winning by Conquest, you are awarded 1000 points minus 2 for
+every game turn elapsed. If Cooperative Victory is enabled and more
+than one faction survives the game, the points are split between them
+based on relative population.
+
+#ADVCONCEPT7
+The highest form of victory is the Ascent to Transcendence, the next
+step in the evolution of sentient life. In order to ascend, you must complete
+the secret project $LINK<Ascent to Transcendence=110102>, which can be started only
+after one faction has completed the $LINK<Voice of Planet=110101> project.
+^
+Players who ascend to transcendence are awarded 2000 points minus
+2 for every game turn elapsed. If cooperative victory is enabled,
+all $LINK<Pact Brothers and Sisters=3> participate in the win, and points
+are split between all winning factions based on relative population.
+
+#ADVCONCEPT8
+You may win an Economic Victory by cornering the Global Energy Market.
+You must have discovered $LINK<Planetary Economics=140061> in order to pursue such
+a plan.
+^
+Cornering the Global Energy Market will require a sum of energy credits
+roughly equal to the cost to "mind control" every remaining base on
+Planet. When you are ready to make such an attempt, select "Corner
+Global Energy Market" from the HQ Menu.
+^
+When a faction attempts to corner the Global Energy Market, all other
+factions will be given an allotted period of time in which they can
+capture or destroy the cornering faction's $LINK<Headquarters=100001> and thereby
+foil the plan.
+^
+For Economic Victory, you are awarded 1200 points minus 2 for
+every game turn elapsed. If Cooperative Victory is enabled, $LINK<Pact Brothers
+and Sisters=3> of the winning faction receive half the bonus points.
+
+#ADVCONCEPT9
+You win a Scenario Victory if you successfully complete the goals
+of a Scenario. Your score will depend on the specific scenario rules.
+^
+You cannot win a Scenario Victory if you are playing a standard game.
+
+#ADVCONCEPT10
+You may retire as faction leader at any time by selecting "Retire"
+from the Game Menu. This ends the game and computes your $LINK<Alpha Centauri
+Score=10004>.
+^
+You must also retire if you reach the mandatory retirement year for
+your game or scenario. In standard games, the mandatory retirement
+year is M.Y. 2600 for Citizen, Specialist, and Talent levels, and
+M.Y. 2500 for Librarian, Thinker, and Transcend levels.
+^
+You will be warned 20 years before you reach mandatory retirement.
+
+#ADVCONCEPT11
+The formula used to compute a faction's might is as follows:
+^
+^4  points for each point of population
+^4  points for each $LINK<Transcendent Thought=140088>
+^?? points for each $LINK<Tech=140062> (sum of Explore, Discover, Build, Conquer values)
+^10 points for each $LINK<Secret Project=110102>
+^
+^For each non-combat unit, add Cost/40 (technically MineralRows/4)
+^For each psi unit, add Cost/20 (MineralRows/2)
+^For each planet buster, add Cost/10 (MineralRows)
+^For combat units, add Cost/10 in ratio of weapon strength to best
+^  weapon of any unit currently in the game.
+^
+^So a 2-1-2 unit is only worth half value if "4" weapons are the best available.
+
+#ADVCONCEPT12
+Several factors contribute to the number of $LINK<drones=36> found at a base
+before $LINK<police=130005>, $LINK<facilities=100029>, $LINK<psych=38>, 
+and $LINK<secret projects=110102> are taken into account:
+^
+(1) Difficulty Level: at the lowest difficulty level, every citizen
+after the first six is a drone. For each increase in difficulty level,
+an additional drone is added, so at the highest level every citizen
+after the first one is a drone.
+^
+(2) Bureaucracy: depending on your $LINK<EFFICIENCY=130001> and your difficulty
+level, you will receive additional drones when your {number of bases}
+exceeds a certain number. See $LINK<BUREAUCRACY=10013>.
+^
+(3) Disloyal Citizenry: for approximately 50 turns after you capture
+an enemy base, you will receive extra drones while you assimilate the
+enemy citizens. The basic rate is 5 drones minus one for each 10
+turns elapsed, but the number may never exceed:
+^^(BaseSize + Difficulty - 2)/4
+^
+(4) Faction Power: Some factions receive additional drones or talents.
+For instance, the University receives an extra drone for every 4 citizens
+(rounded down), while the Peacekeepers receive an extra $LINK<Talent=37> for every
+4 citizens, rounded up.
+
+#ADVCONCEPT13
+{Bureaucracy} is the addition of extra Drones because a faction has
+exceeded a certain number of bases. The bureaucracy formula works
+as follows:
+^
+^^BaseLimit = (8 - Difficulty) * (4 + Efficiency) * MapRoot / 2
+^
+^Where:
+^Difficulty = Player's difficulty level (0 - 5)
+^Efficiency = Social Engineering $LINK<Efficiency=130001> rating.
+^MapRoot    = Sq. Root of # Map Squares / Sq. Root of 3200.
+^
+For each base a faction builds in excess of this number, one additional
+drone will appear at some base somewhere in the colony.
+
+#CONCEPT47
+The {Progenitors} are a highly advanced race of starfaring creatures, whose technological
+sophistication is evident in the $LINK<artifacts=13> and $LINK<monoliths=12> they left behind on Planet. 
+Research into these structures, or direct contact with the Progenitors should they return, can
+yield new technologies, weapons, and base facilities. 
+^
+In recent millenia, the Progenitors have split into two warring camps: the $LINK<Manifold 
+Caretakers=150006> and the $LINK<Manifold Usurpers=150007>. These factions conflict over 
+the uses of the $LINK<Manifolds=49>, which include Planet. The Caretakers wish to leave
+the Manifolds in their original, pristine state, while the Usurpers wish to initiate and
+control an $LINK<Ascent to Transcendence=10007>. If either faction is successful in their
+quest, it most likely means an end to humanity's presence on Planet.
+
+#CONCEPT48
+The $LINK<Progenitors=47> have evolved complex biological systems that can sense fields
+imperceptible to humans, including at least electrical and magnetic fields. The collective
+term for this sensitivity is {resonance}, and permeates all Progenitor communication, art, 
+and culture. The sensitivity also confers valuable combat bonuses to Progenitor forces. 
+With a great deal of training and mechanical aid, humans can learn to sense and
+utilize this resonance as well.
+
+#CONCEPT49
+Eons ago, the ancient $LINK<Progenitors=47> constructed six Planetary {Manifolds}, which they
+intended as massive experiments into sentience on a gigantic scale. One of the Manifolds,
+in the Tau Ceti system, achieved an early sentience, gaining the ability to project 
+undreamt-of power across the galaxy. The "Flowering", as this event was called, engulfed 
+numerous star systems and plunged Progenitor culture into a dark age from which it has not
+fully recovered. In the ensuing millenia of chaos and fragmentation, the locations of the 
+Six Manifolds were lost.
+
+#CONCEPT50
+$LINK<Progenitor=47> factions do not engage in $LINK<commerce=29> with humans. However, 
+their experience with recycling does provide them with an {Energy Grid} at each base. Each
+Progenitor base facility is connected to this grid; every two base facilities generate
+one energy added to the base total, rounded up. Every two <Secret Projects=110102> generate 
+five energy added to the base total.
+^
+$LINK<Nerve Stapling=8> causes widespread disaffection among Progenitor citizens, 
+resulting in the shutdown of the Grid for a limited time.
+
+#ADVCONCEPT14
+The two $LINK<Progenitor=47> factions can achieve victory by calling in reinforcements from 
+their respective homeworlds. To broadcast the hidden location of the $LINK<Manifold=49> to
+their leaders offworld, either Progenitor faction can construct a {Resonance Communicator}.
+The Communicator consists of six $LINK<Subspace Generators=100040>, which must be built in bases of size
+ten or greater. 
+^
+Players who build the Resonance Communicator are awarded 2000 points minus
+2 for every game turn elapsed. No cooperative victory is possible for this victory condition;
+if either Progenitor faction succeeds in the completion of such a Communicator, it
+heralds the end of human habitation on Planet.
+
+# ; This line must remain at end of file
