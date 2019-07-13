@@ -38,6 +38,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->max_sat = atoi(value);
     } else if (MATCH("thinker", "hurry_items")) {
         cf->hurry_items = atoi(value);
+    } else if (MATCH("thinker", "fast_project_start")) {
+        cf->fast_project_start = atoi(value);
     } else if (MATCH("thinker", "smac_only")) {
         cf->smac_only = atoi(value);
     } else if (MATCH("thinker", "faction_placement")) {
@@ -84,6 +86,7 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             conf.hurry_items = 1;
             conf.social_ai = 1;
             conf.tech_balance = 1;
+            conf.fast_project_start = 1;
             conf.max_sat = 10;
             conf.smac_only = 0;
             conf.faction_placement = 1;
@@ -361,7 +364,7 @@ int find_project(int base_id) {
     for (int i=0; i<*tx_total_num_bases; i++) {
         if (tx_bases[i].faction_id == fac) {
             int prod = tx_bases[i].queue_items[0];
-            if (prod <= -70 || prod == -FAC_SUBSPACE_GENERATOR) {
+            if (prod <= -PROJECT_ID_FIRST || prod == -FAC_SUBSPACE_GENERATOR) {
                 projs++;
             } else if (prod == -FAC_SKUNKWORKS) {
                 works++;
@@ -397,9 +400,15 @@ int find_project(int base_id) {
         }
         int score = INT_MIN;
         int choice = 0;
-        for (int i=70; i<107; i++) {
-            if (alien && (i == FAC_ASCENT_TO_TRANSCENDENCE || i == FAC_VOICE_OF_PLANET))
+        for (int i=PROJECT_ID_FIRST; i<=PROJECT_ID_LAST; i++) {
+            int tech = tx_facility[i].preq_tech;
+            if (alien && (i == FAC_ASCENT_TO_TRANSCENDENCE || i == FAC_VOICE_OF_PLANET)) {
                 continue;
+            }
+            if (!conf.fast_project_start && i != FAC_ASCENT_TO_TRANSCENDENCE
+            && tech >= 0 && !(tx_tech_discovered[tech] & *tx_human_players)) {
+                continue;
+            }
             if (can_build(base_id, i) && prod_count(fac, -i, base_id) < similar_limit) {
                 int sc = project_score(fac, i);
                 choice = (sc > score ? i : choice);

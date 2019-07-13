@@ -1,0 +1,6 @@
+# normalize source files to use lf
+text eol=lf
+
+# text files should have windows encoding
+*.txt eol=crlf
+*.md eol=crlf

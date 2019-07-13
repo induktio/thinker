@@ -88,6 +88,7 @@ struct Config {
     int hurry_items;
     int social_ai;
     int tech_balance;
+    int fast_project_start;
     int max_sat;
     int smac_only;
     int faction_placement;

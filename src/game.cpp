@@ -44,15 +44,15 @@ bool has_terra(int fac, int act, bool ocean) {
 }
 
 bool has_project(int fac, int id) {
-    assert(fac != 0 && id >= 70);
-    int i = tx_secret_projects[id-70];
+    assert(fac != 0 && id >= PROJECT_ID_FIRST);
+    int i = tx_secret_projects[id-PROJECT_ID_FIRST];
     return i >= 0 && (fac < 0 || tx_bases[i].faction_id == fac);
 }
 
 bool has_facility(int base_id, int id) {
-    assert((base_id >= 0 && id > 0) || id >= 70);
-    if (id >= 70)
-        return tx_secret_projects[id-70] != PROJECT_UNBUILT;
+    assert((base_id >= 0 && id > 0) || id >= PROJECT_ID_FIRST);
+    if (id >= PROJECT_ID_FIRST)
+        return tx_secret_projects[id-PROJECT_ID_FIRST] != PROJECT_UNBUILT;
     int fac = tx_bases[base_id].faction_id;
     const int freebies[][2] = {
         {FAC_COMMAND_CENTER, FAC_COMMAND_NEXUS},

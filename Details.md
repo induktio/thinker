@@ -14,9 +14,9 @@ Main features
 =============
 Thinker has several advanced planning routines that enhance the base game AI to manage the complexities of colony building in Alpha Centauri. In the original game, many of the AI aspects were left underdeveloped while the computer factions struggled to deal with various punitive penalties. This left the single player experience severely lacking, since the AI would have no counter to many simple strategies.
 
-When Thinker AI is enabled with the `factions_enabled` setting, the affected game features are listed below. This will not affect the automated behaviour of units or governors in player-controlled factions. For testing purposes it is also possible to run old/new AIs side-by-side by setting `factions_enabled=3` or similar. In that case, only the factions in the first 3 slots will use Thinker AI if they are not player-controlled.
-
 Thinker does not have any special save game format, so it's possible to open an old save and have the factions switch to the new AI and vice-versa. None of the config options are preserved in the save game either, but the units or resources spawned at the game start will remain.
+
+Enabling Thinker AI with the `factions_enabled` setting will affect the game features that are listed below. This will not change the automated behaviour of units or governors in player-controlled factions. For testing purposes it is also possible to run old/new AIs side-by-side by setting `factions_enabled=3` or similar. In that case, only the factions in the first 3 slots will use Thinker AI if they are not player-controlled.
 
 1. Thinker fully controls the movement of colony pods, terraformers and crawlers to manage the base placement and production much more effectively than usual.
 2. New combat routines for land-based units will attempt to counter-attack nearby enemy units more often. If the odds are good enough, hasty attacks are executed more often than usual. The AI will fight the native units more aggressively, and it will also try to heal its units at monoliths.
@@ -31,20 +31,41 @@ In addition to the bugfix patches listed separately, the following patches apply
 2. All landmarks that are placed on random maps can now be configured from `thinker.ini`. Nessus Canyon is also available but disabled by default.
 3. New `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on huge map sizes. It is also possible to add extra nutrient bonuses for each land-based faction by using the `nutrient_bonus` setting.
 4. New `design_units` feature will introduce custom probe teams, armored crawlers, gravship formers, and AAA garrison prototypes for the computer factions. The AI may not necessarily build them unless Thinker is enabled.
-5. All expansion related content can be disabled by using the `smac_only` setting. Requires another mod to be installed on `ac_mod` folder to load the proper txt files. Custom factions that are not aliens are also supported by this feature.
-6. AI mineral/nutrient production cost factors for each difficulty level can be changed by using the `cost_factor` setting. Does not affect other difficulty related modifiers.
+5. AI mineral/nutrient production cost factors for each difficulty level can be changed by using the `cost_factor` setting. Does not affect other difficulty related modifiers.
+6. All expansion related content can be disabled by using the `smac_only` setting, see below.
+
+
+SMAC in SMACX mod
+=================
+Thinker includes the files necessary to play a game similar to the original SMAC while disabling all the expansion-related content. See the original release posts of SMAC in SMACX [here](https://github.com/DrazharLn/smac-in-smax/) and [here](http://alphacentauri2.info/index.php?topic=17869.0).
+
+Thinker also adds support for custom factions that are not aliens while using this feature. To install this mod, it is easiest to use the latest develop build. If you're using an older version of Thinker, you need to download and extract SMAC in SMACX separately.
+
+1. Download the latest develop build that includes `ac_mod` folder in the zip.
+2. Extract all the files to Alpha Centauri game folder.
+3. Open `thinker.ini` and change the configuration to `smac_only=1` ***OR*** start the game with command line parameter `terranx_mod.exe -smac`
+4. When smac_only is started properly, the main menu will change color to blue as it was in the original SMAC, instead of the SMACX green color scheme.
+5. The game reads these files from `ac_mod` folder while smac_only is enabled: alphax.txt, helpx.txt, conceptsx.txt, tutor.txt. Therefore it is possible to keep the mod installed without overwriting any of the files from the base game.
+6. To install custom factions while using this mod, just edit `ac_mod/alphax.txt` instead of the normal `alphax.txt` file and add the faction names to `#CUSTOMFACTIONS` section. Note that you only have to extract the faction definitions to the main game folder because the same files are used in smac_only mode.
+
+See also [Sigma Faction Set](http://alphacentauri2.info/index.php?action=downloads;sa=view;down=264). The factions can be played in both game modes and they are also fairly balanced overall.
 
 
 Features not supported
-----------------------
+======================
 Currently the features listed here are not supported while Thinker is enabled. The list may be subject to change in future releases.
 
 1. Network multiplayer is not supported because of the extra code required to synchronize the game state across computers.
 2. Some custom scenario rules in "Edit Scenario Rules" menus are not supported fully. This will not affect randomly generated maps.
 
+In addition, there are several often requested features that unfortunately are not feasible to implement due to the limitations of patching a game binary. These include at least:
+
+1. More factions/units/bases. These limits were hardcoded in the game binary at compilation time and are not feasible to change without a full open source port.
+2. Moddable hit points for each reactor level. Currently these values are fixed at 10x reactor level.
+
 
 Bugfix patches included
------------------------
+=======================
 The following fixes from Scient's unofficial patch v2.0 are included in `terranx_mod.exe`.
 
 1.  [BUG] If a faction's cumulative PROBE value is greater than 3 (SE morale, covert ops center) it is possible to "mind control" their bases when they should be immune. If the University uses SE Knowledge putting PROBE value down to -4, it would act as if it were 0 erroneously increasing "mind control" costs. After patch, PROBE values greater than 3 will always be immune to regular probes and values less than -2 will be treated as if they were -2.

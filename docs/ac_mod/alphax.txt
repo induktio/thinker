@@ -5,6 +5,11 @@
 ;
 ; Copyright (c) 1997, 1998 by Firaxis Games, Inc.
 ;
+; *************************************************************
+; *  SMAC-in-SMACX Mod / includes changes for Thinker Mod     *
+; *  https://github.com/induktio/thinker                      *
+; *************************************************************
+;
 ; ALPHA CENTAURI reads the rules of the game from this file at
 ; startup. Feel free, at your own risk, to experiment with editing
 ; this file. We recommend you make a backup copy of the original.
@@ -87,7 +92,7 @@ PlaEcon, ; Technology for economic victory
 50,      ; Maximum % damage inflicted by arty versus units in base/bunker
 99,      ; Maximum % damage inflicted by arty versus units in open
 100,     ; Maximum % damage inflicted by arty versus units at sea
-1, 1     ; Numerator/Denominator for frequency of global warming (1,2 would be "half" normal warming).
+1, 2     ; Numerator/Denominator for frequency of global warming (1,2 would be "half" normal warming).
 2100     ; Normal starting year
 2600     ; Normal ending year for lowest 3 difficulty levels
 2500     ; Normal ending year for highest 3 difficulty levels
@@ -162,15 +167,15 @@ Borehole Square,  0, 6, 6, 0,
 ;
 #WORLDBUILDER
 384, ; Land base        (Seeded land size of a standard world)
-256, ; Land modifier    (additional land from LAND selection: x0, x1, x2)
-12,  ; Continent base   (Base size of a land mass seed)
+120, ; Land modifier    (additional land from LAND selection: x0, x1, x2)
+48,  ; Continent base   (Base size of a land mass seed)
 24,  ; Continent modif. (Increased size from LAND selection: x0, x1, x2)
 1,   ; Hills base       (Base # of extra hills)
 2,   ; Hills modifier   (additional hills from TIDAL selection: x0, x1, x2)
-4,   ; Plateau base     (Basic plateau size)
-8,   ; Plateau modifier (Plateau modifier based on LAND selection: x0, x1, x2)
-8,   ; Rivers base      (Basic # of rivers)
-12,  ; Rivers rain mod. (Additional rivers based on RAIN selection)
+8,   ; Plateau base     (Basic plateau size)
+12,  ; Plateau modifier (Plateau modifier based on LAND selection: x0, x1, x2)
+16,  ; Rivers base      (Basic # of rivers)
+16,  ; Rivers rain mod. (Additional rivers based on RAIN selection)
 14,  ; Solar Energy     (Latitude DIVISOR for temperature based on HEAT) Smaller # increases effect of HEAT selection
 14,  ; Thermal band     (Latitude DIVISOR for thermal banding)  Smaller # widens hot bands
 8,   ; Thermal deviance (Latitude DIVISOR for thermal deviance) Smaller # increases randomness
@@ -179,22 +184,22 @@ Borehole Square,  0, 6, 6, 0,
 5,   ; Cloudmass peaks  (Size of cloud mass trapped by peaks)
 3,   ; Cloudmass hills  (Size of cloud mass trapped by hills)
 1,   ; Rainfall coeff.  (Multiplier for rainfall belts)
-15,  ; Deep water       (Encourages fractal to grow deep water)
+8,   ; Deep water       (Encourages fractal to grow deep water)
 10,  ; Shelf            (Encourages fractal to grow shelf)
 15,  ; Plains           (Encourages highland plains)
-10,  ; Beach            (Encourages wider beaches)
+40,  ; Beach            (Encourages wider beaches)
 10,  ; Hills            (Encourages hills x TIDAL selection)
-25,  ; Peaks            (Encourages peaks)
+10,  ; Peaks            (Encourages peaks)
 1,   ; Fungus           (Fungus coefficient based on LIFE selection)
 3,6,12,18,24 ; Ratio    (Continent size ratios)
-36   ; Islands          (Higher # increases island count)
+4    ; Islands          (Higher # increases island count)
 
 #WORLDSIZE
 5
 Tiny planet|(early conflict), 24, 48
 Small planet,                 32, 64
 Standard planet,              40, 80
-Large planet,                 44, 90
+Large planet,                 50, 100
 Huge planet|(late conflict),  64, 128
 
 ;
@@ -221,22 +226,22 @@ Custom,   20, 3, 3, 8,  20, 10,  2,
 ;
 ; TECHNOLOGY TREE
 ;
-; Name, id, ai-mil, ai-tech, ai-infra, ai-colonize, preq(1), preq(2), flags
+; Name, id, ai-power, ai-tech, ai-wealth, ai-growth, preq(1), preq(2), flags
 ;
 ; Name     = Name of technology
 ;
-; id       = 3 letter id code; this code is used when assigning
+; id       = shortcode; this code is used when assigning
 ;            the tech as a prerequisite.
 ;
-; power    = military value
-; tech     = advance-of-knowledge value
-; wealth   = infrastructure value
-; growth   = colonization value
+; ai-power    = 1 or 0 (interest in power)
+; ai-tech     = 1 or 0 (interest in knowledge)
+; ai-wealth   = 1 or 0 (interest in wealth)
+; ai-growth   = 1 or 0 (interest in population growth)
 ;
 ; preq(n)  = Prerequisite technology
-;            a) 3 character id code of tech
-;            b) "nil" to allow w/o prerequisite
-;            c) "no" to disallow entirely from game
+;            a) shortcode of tech
+;            b) "None" to allow without prerequisite
+;            c) "Disable" to disallow entirely from game
 ;
 ; flags    = Special tech flags
 ;            000000001 = "Secrets": first discoverer gains free tech
@@ -509,13 +514,13 @@ Deep Pressure Hull,     1, Metal,    Sub,       000000111010, Operates underwate
 Carrier Deck,           1, Metal,    Carrier,   000101101010, Mobile Airbase
 AAA Tracking,           1, MilAlg,   AAA,       000010001011, x2 vs. air attacks
 Comm Jammer,           -1, Subat,    ECM,       000010111001, +50% vs. fast units
-Antigrav Struts,        1, Gravity,  Grav,      000000111001, +1 movement rate (or +Reactor*2 for Air)
+Antigrav Struts,        1, Gravity,  Grav,      000000111101, +1 movement rate (or +Reactor*2 for Air)
 Empath Song,            2, CentEmp,  Empath,    000010001111, +50% attack vs. Psi
 Polymorphic Encryption, 1, Algor,    Secure,    000000111111, x2 cost to subvert
 Fungicide Tanks,        1, Fossil,   Fungicidal,000000010111, Clear fungus at double speed
 High Morale,            1, Integ,    Trained,   000000001111, Gains morale upgrade
 Heavy Artillery,       -7, Poly,     Artillery, 000010001001, Bombards
-Clean Reactor,          2, BioEng,   Clean,     000000111111, Requires no support
+Clean Reactor,          2, BioEng,   Clean,     000001111111, Requires no support
 Blink Displacer,        1, Matter,   Blink,     000000001111, Bypass base defenses
 Hypnotic Trance,       -1, Brain,    Trance,    000010111111, +50% defense vs. Psi
 Heavy Transport,        1, Disable,  Heavy,     000100100111, +50% transport capacity
@@ -585,7 +590,7 @@ Missile,    Missile-, Miss., M
 ;           0  = Offensive
 ;           1  = Combat
 ;           2  = Defensive
-;           3  = Reconnaisance
+;           3  = Reconnaissance
 ;           4  = Air Superiority
 ;           5  = Planet Buster
 ;           6  = Naval Superiority
@@ -600,6 +605,7 @@ Missile,    Missile-, Miss., M
 ; Preq    = Technology prerequisite (see TECHNOLOGY, above)
 ; Icon    = Special icon, if any
 ; Abil    = Special ability flags
+; Reac    = Reactor level 1-4
 ;
 #UNITS
 23
@@ -607,7 +613,7 @@ Colony Pod,             Infantry, Colony Pod,   Scout,      8, 0, 0, None,    -1
 Formers,                Infantry, Formers,      Scout,      9, 0, 0, Ecology, -1, 00000000000000000000000000
 Scout Patrol,           Infantry, Gun,          Scout,      3, 0, 0, None,    -1, 00000000000000000000000000
 Transport Foil,         Foil,     Transport,    Scout,      7, 0, 0, DocFlex, -1, 00000000000000000000000000
-*Sea Formers,           Foil,     Formers,      Scout,      9, 0, 0, Disable, -1, 00000000000000000000000000
+Sea Formers,            Foil,     Formers,      Scout,      9, 0, 0, Disable, -1, 00000000000000000000000000
 Supply Crawler,         Infantry, Supply,       Scout,     10, 0, 0, IndAuto, -1, 00000000000000000000000000
 Probe Team,             Speeder,  Probe Team,   Scout,     11, 0, 0, PlaNets, -1, 00000000000000000000000000
 Alien Artifact,         Infantry, Artifact,     Scout,     12,10, 0, Disable,  2, 00000000000000000000000000
@@ -630,7 +636,7 @@ Unity Gunship,          Foil,     Gun,          Scout,     -1, 0, 0, Disable, -1
 ;
 ; Base Facilities
 ;
-; Name, Cost, Maint, Preq, Free, Effect, (for SPs only) ai-fight, ai-mil, ai-tech, ai-infra, ai-colonize
+; Name, Cost, Maint, Preq, Free, Effect, (for SPs only) ai-fight, ai-power, ai-tech, ai-wealth, ai-growth
 ;
 ; Name  = Name of facility type
 ; Cost  = Construction cost in minerals (x Minerals multiplier in RULES)
@@ -638,11 +644,11 @@ Unity Gunship,          Foil,     Gun,          Scout,     -1, 0, 0, Disable, -1
 ; Preq  = Technology prerequisite (see TECHNOLOGY)
 ; Free  = No longer supported.
 ; Effect= Brief description of effect
-; ai-fight=Corresponds with AI 'aggressiveness' setting of -1, 0, or 1
-; ai-mil= military value
-; ai-tech= advance-of-knowledge value
-; ai-infra= infrastructure value
-; ai-colonize= colonization value
+; ai-fight    = Corresponds with AI 'aggressiveness' setting of -1, 0, or 1
+; ai-power    = 1 or 0 (interest in power)
+; ai-tech     = 1 or 0 (interest in knowledge)
+; ai-wealth   = 1 or 0 (interest in wealth)
+; ai-growth   = 1 or 0 (interest in population growth)
 ;
 ;
 #FACILITIES

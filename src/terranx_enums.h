@@ -138,6 +138,8 @@ enum facility_id
     FAC_EMPTY_SP_64 = 133,
     PROJECT_UNBUILT = -1,
     PROJECT_DESTROYED = -2,
+    PROJECT_ID_FIRST = 70,
+    PROJECT_ID_LAST = 106,
 };
 
 enum techology_id

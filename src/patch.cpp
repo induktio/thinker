@@ -6,7 +6,6 @@
 const char* ac_alpha = "ac_mod\\alphax";
 const char* ac_help = "ac_mod\\helpx";
 const char* ac_tutor = "ac_mod\\tutor";
-const char* ac_labels = "ac_mod\\labels";
 const char* ac_concepts = "ac_mod\\conceptsx";
 const char* ac_opening = "opening";
 const char* ac_movlist = "movlist";
@@ -239,7 +238,6 @@ bool patch_setup(Config* cf) {
         *(const char**)0x691AFC = ac_alpha;
         *(const char**)0x691B00 = ac_help;
         *(const char**)0x691B14 = ac_tutor;
-        write_offset(0x616A20, ac_labels);
         write_offset(0x42B30E, ac_concepts);
         write_offset(0x42B49E, ac_concepts);
         write_offset(0x42C450, ac_concepts);
