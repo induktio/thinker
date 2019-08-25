@@ -88,7 +88,8 @@ struct Config {
     int hurry_items;
     int social_ai;
     int tech_balance;
-    int fast_project_start;
+    int limit_project_start;
+    double expansion_factor;
     int max_sat;
     int smac_only;
     int faction_placement;
@@ -102,7 +103,16 @@ struct AIPlans {
     int psi_score;
     int keep_fungus;
     int plant_fungus;
+    /*
+    Number of our bases captured by another faction we're currently at war with.
+    Important heuristic in threat calculation.
+    */
     int enemy_bases;
+    /*
+    Exponentially weighted moving average of distances to nearest enemy bases.
+    This is updated while choosing base production, and it is used as a
+    general heuristic to determine the level of threat from other factions.
+    */
     double enemy_range;
 };
 

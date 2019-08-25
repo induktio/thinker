@@ -34,12 +34,14 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->social_ai = atoi(value);
     } else if (MATCH("thinker", "tech_balance")) {
         cf->tech_balance = atoi(value);
-    } else if (MATCH("thinker", "max_satellites")) {
-        cf->max_sat = atoi(value);
     } else if (MATCH("thinker", "hurry_items")) {
         cf->hurry_items = atoi(value);
-    } else if (MATCH("thinker", "fast_project_start")) {
-        cf->fast_project_start = atoi(value);
+    } else if (MATCH("thinker", "expansion_factor")) {
+        cf->expansion_factor = max(0, atoi(value)) / 100.0;
+    } else if (MATCH("thinker", "limit_project_start")) {
+        cf->limit_project_start = atoi(value);
+    } else if (MATCH("thinker", "max_satellites")) {
+        cf->max_sat = atoi(value);
     } else if (MATCH("thinker", "smac_only")) {
         cf->smac_only = atoi(value);
     } else if (MATCH("thinker", "faction_placement")) {
@@ -83,10 +85,11 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             conf.satellites_energy = 0;
             conf.design_units = 1;
             conf.factions_enabled = 7;
-            conf.hurry_items = 1;
             conf.social_ai = 1;
             conf.tech_balance = 1;
-            conf.fast_project_start = 1;
+            conf.hurry_items = 1;
+            conf.expansion_factor = 1.0;
+            conf.limit_project_start = 3;
             conf.max_sat = 10;
             conf.smac_only = 0;
             conf.faction_placement = 1;
@@ -297,7 +300,6 @@ HOOK_API int turn_upkeep() {
         i, plans[i].proj_limit, psi, plans[i].keep_fungus, plans[i].plant_fungus,
         plans[i].enemy_bases, plans[i].enemy_range);
     }
-
     return 0;
 }
 
@@ -405,7 +407,7 @@ int find_project(int base_id) {
             if (alien && (i == FAC_ASCENT_TO_TRANSCENDENCE || i == FAC_VOICE_OF_PLANET)) {
                 continue;
             }
-            if (!conf.fast_project_start && i != FAC_ASCENT_TO_TRANSCENDENCE
+            if (conf.limit_project_start > *tx_diff_level && i != FAC_ASCENT_TO_TRANSCENDENCE
             && tech >= 0 && !(tx_tech_discovered[tech] & *tx_human_players)) {
                 continue;
             }
@@ -708,6 +710,11 @@ int faction_might(int fac) {
     return max(1, f->mil_strength_1 + f->mil_strength_2 + f->pop_total) * (is_human(fac) ? 2 : 1);
 }
 
+double expansion_ratio(Faction* f) {
+    return f->current_num_bases / (pow(*tx_map_half_x * *tx_map_axis_y, 0.4) *
+        min(1.0, max(0.4, *tx_map_area_sq_root / 56.0)) * conf.expansion_factor);
+}
+
 int select_prod(int id) {
     BASE* base = &tx_bases[id];
     int fac = base->faction_id;
@@ -767,11 +774,12 @@ int select_prod(int id) {
         }
     }
     int reserve = max(2, base->mineral_intake / 2);
-    double base_ratio = f->current_num_bases / min(40.0, *tx_map_area_sq_root * 0.5);
+    double base_ratio = expansion_ratio(f);
     bool has_formers = has_weapon(fac, WPN_TERRAFORMING_UNIT);
     bool has_supply = has_weapon(fac, WPN_SUPPLY_TRANSPORT);
     bool build_ships = can_build_ships(id);
-    bool build_pods = (base->pop_size > 1 || base->nutrient_surplus > 1) && pods < 2 && base_ratio < 1.0;
+    bool build_pods = (base->pop_size > 1 || base->nutrient_surplus > 1)
+        && pods < 2 && *tx_total_num_bases < 500 && base_ratio < 1.0;
     bool sea_base = water_base(id);
     p->enemy_range = (enemyrange + 7 * p->enemy_range)/8;
 
