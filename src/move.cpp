@@ -2,6 +2,23 @@
 #include "move.h"
 
 typedef int PMTable[MAPSZ*2][MAPSZ];
+/*
+    Priority Management Tables contain values calculated for each map square
+    to guide the AI in its move planning.
+
+    The tables contain only ephemeral values: they are recalculated each turn
+    for every active faction, and the values are never saved with the save games.
+
+    For example, pm_former counter is decremented whenever a former starts
+    work on a given square to prevent too many of them converging on the same spot.
+    It is also used as a shortcut to determine if a square has a friendly base
+    in a 2-tile radius, because formers are only allowed to work on squares which
+    are reachable by a friendly base worker.
+
+    Non-combat units controlled by Thinker use pm_safety table to decide if
+    there are enemy units too close to them. PM_SAFE defines the threshold below
+    which the units will attempt to flee to the square chosen by escape_move.
+*/
 
 PMTable pm_former;
 PMTable pm_safety;
@@ -514,6 +531,10 @@ bool can_borehole(int x, int y, int fac, int bonus, MAP* sq) {
     if (!has_terra(fac, FORMER_THERMAL_BORE, is_ocean(sq)))
         return false;
     if (!sq || sq->items & (BASE_DISALLOWED | IMP_ADVANCED) || bonus == RES_NUTRIENT)
+        return false;
+    // Planet factions should build boreholes only in reduced numbers.
+    if (tx_factions[fac].SE_planet_base > 0
+    && (((*tx_random_seed ^ x) * 127) ^ (y * 179)) % 101 > 14)
         return false;
     if (bonus == RES_NONE && sq->rocks & TILE_ROLLING)
         return false;
