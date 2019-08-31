@@ -2,6 +2,7 @@
 #include "patch.h"
 #include "game.h"
 #include "move.h"
+#include "tech.h"
 
 const char* ac_alpha = "ac_mod\\alphax";
 const char* ac_help = "ac_mod\\helpx";
@@ -258,6 +259,21 @@ bool patch_setup(Config* cf) {
         memset((void*)0x5B2257, 0x90, 11);
         memcpy((void*)0x5B220F, asm_find_start, sizeof(asm_find_start));
         write_call_ptr(0x5B221B, (int)find_start);
+    }
+    if (cf->revised_tech_cost) {
+        write_call_ptr(0x4452D5, (int)tech_rate);
+        write_call_ptr(0x498D26, (int)tech_rate);
+        write_call_ptr(0x4A77DA, (int)tech_rate);
+        write_call_ptr(0x521872, (int)tech_rate);
+        write_call_ptr(0x5218BE, (int)tech_rate);
+        write_call_ptr(0x5581E9, (int)tech_rate);
+        write_call_ptr(0x5BEA4D, (int)tech_rate);
+        write_call_ptr(0x5BEAC7, (int)tech_rate);
+
+        write_call_ptr(0x52935F, (int)tech_selection);
+        write_call_ptr(0x5BE5E1, (int)tech_selection);
+        write_call_ptr(0x5BE690, (int)tech_selection);
+        write_call_ptr(0x5BEB5D, (int)tech_selection);
     }
     if (lm & LM_JUNGLE) remove_call(0x5C88A0);
     if (lm & LM_CRATER) remove_call(0x5C88A9);

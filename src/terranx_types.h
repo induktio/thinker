@@ -318,7 +318,7 @@ struct Faction
     int theory_of_everything;
     char tech_trade_source[92];
     int tech_accumulated;
-    int tech_researching_id;
+    int tech_research_id;
     int tech_cost;
     int earned_techs_saved;
     int net_random_event;
@@ -426,9 +426,15 @@ struct Faction
     int unk_106;
     int unk_107;
     int unk_108;
-    int unk_109;
-    int unk_110;
-    char unk_111[4];
+    /*
+    Thinker-specific save game variables.
+    The game engine overwrites these locations during the endgame score calculation.
+    */
+    short thinker_header;
+    char thinker_flags;
+    char thinker_tech_id;
+    int thinker_tech_cost;
+    int unk_111;
     int unk_112;
     int unk_113;
     int unk_114;

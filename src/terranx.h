@@ -96,6 +96,8 @@ extern fp_1int* tx_social_set;
 extern fp_1int* tx_pop_goal;
 extern fp_1int* tx_consider_designs;
 extern fp_1int* tx_action_staple;
+extern fp_1int* tx_tech_rate;
+extern fp_1int* tx_tech_selection;
 
 
 #endif // __TERRANX_H__

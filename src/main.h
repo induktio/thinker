@@ -92,6 +92,7 @@ struct Config {
     double expansion_factor;
     int max_sat;
     int smac_only;
+    int revised_tech_cost;
     int faction_placement;
     int nutrient_bonus;
     int landmarks;

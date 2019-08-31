@@ -44,6 +44,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->max_sat = atoi(value);
     } else if (MATCH("thinker", "smac_only")) {
         cf->smac_only = atoi(value);
+    } else if (MATCH("thinker", "revised_tech_cost")) {
+        cf->revised_tech_cost = atoi(value);
     } else if (MATCH("thinker", "faction_placement")) {
         cf->faction_placement = atoi(value);
     } else if (MATCH("thinker", "nutrient_bonus")) {
@@ -86,12 +88,13 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             conf.design_units = 1;
             conf.factions_enabled = 7;
             conf.social_ai = 1;
-            conf.tech_balance = 1;
+            conf.tech_balance = 0;
             conf.hurry_items = 1;
             conf.expansion_factor = 1.0;
             conf.limit_project_start = 3;
             conf.max_sat = 10;
             conf.smac_only = 0;
+            conf.revised_tech_cost = 0;
             conf.faction_placement = 1;
             conf.nutrient_bonus = 1;
             conf.landmarks = 0xffff;
@@ -328,12 +331,13 @@ HOOK_API int tech_value(int tech, int fac, int flag) {
     if (conf.tech_balance && ai_enabled(fac)) {
         if (tech == tx_weapon[WPN_TERRAFORMING_UNIT].preq_tech
         || tech == tx_weapon[WPN_SUPPLY_TRANSPORT].preq_tech
+        || tech == tx_weapon[WPN_PROBE_TEAM].preq_tech
         || tech == tx_facility[FAC_RECYCLING_TANKS].preq_tech
         || tech == tx_facility[FAC_CHILDREN_CRECHE].preq_tech
         || tech == tx_basic->tech_preq_allow_3_energy_sq
         || tech == tx_basic->tech_preq_allow_3_minerals_sq
         || tech == tx_basic->tech_preq_allow_3_nutrients_sq) {
-            value *= 4;
+            value += 40;
         }
     }
     debug("tech_value %d %d %d %s\n", tech, fac, value, tx_techs[tech].name);
@@ -551,7 +555,8 @@ int consider_hurry(int id) {
     if (b->drone_total > b->talent_total && t < 0 && t == need_psych(id))
         return hurry_item(b, mins, cost);
     if (t < 0 && turns > 1) {
-        if (t == -FAC_RECYCLING_TANKS || t == -FAC_PRESSURE_DOME || t == -FAC_RECREATION_COMMONS)
+        if (t == -FAC_RECYCLING_TANKS || t == -FAC_PRESSURE_DOME
+        || t == -FAC_RECREATION_COMMONS || t == -FAC_HEADQUARTERS)
             return hurry_item(b, mins, cost);
         if (t == -FAC_CHILDREN_CRECHE && f->SE_growth >= 2)
             return hurry_item(b, mins, cost);

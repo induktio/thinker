@@ -76,6 +76,8 @@
 		<Unit filename="src/move.h" />
 		<Unit filename="src/patch.cpp" />
 		<Unit filename="src/patch.h" />
+		<Unit filename="src/tech.cpp" />
+		<Unit filename="src/tech.h" />
 		<Unit filename="src/terranx.cpp" />
 		<Unit filename="src/terranx.h" />
 		<Unit filename="src/terranx_enums.h" />

@@ -79,4 +79,6 @@ fp_1int* tx_social_set = (fp_1int*)0x5B4600;
 fp_1int* tx_pop_goal = (fp_1int*)0x4EF090;
 fp_1int* tx_consider_designs = (fp_1int*)0x581260;
 fp_1int* tx_action_staple = (fp_1int*)0x4CA7F0;
+fp_1int* tx_tech_rate = (fp_1int*)0x5BE6B0;
+fp_1int* tx_tech_selection = (fp_1int*)0x5BE380;
 
