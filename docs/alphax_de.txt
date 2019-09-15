@@ -1,0 +1,1278 @@
+;
+; Sid Meier's ALPHA CENTAURI
+;
+; Alpha Centauri - Benutzerkonfigurierbare Regeln
+;
+; Copyright (c) 1997, 1998 by Firaxis Games, Inc.
+;
+; ALPHA CENTAURI leitet bei Spielbeginn die Regeln aus dieser Datei ab.
+; Sie können auf eigenes Risiko mit dieser Datei experimentieren.
+; Wir empfehlen Ihnen, eine Sicherungskopie der Originaldatei anzulegen.
+;
+; Kopieren Sie diese Datei in das Unterverzeichnis, in der sich bereits
+; Ihre Szenario-Datei befindet, bevor Sie ein Szenario erstellen
+; und die Datei bearbeiten, um benutzerdefinierte Regeln einzufügen.
+; Dateien, die sich im gleichen Unterverzeichnis wie die Szenario-Datei
+; befinden, haben Vorrang gegenüber Dateien, die sich im Hauptverzeichnis
+; befinden.
+
+;
+;   GRUNDREGELN
+;   Sie werden feststellen, daß viele Elemente in dieser
+;   Liste genau ausgewogen sind. Kleine Änderungen können
+;   im Spiel dramatische Wirkungen erzielen.
+;
+#RULES
+3,       ; Fortbewegungstempo auf Straßen
+2,       ; Nahrungsbedürfnisse der Bürger
+3,2      ; Zähler und Nenner für durch Artillerie erzeugte Schäden
+2,       ; Max. Artilleriereichweite (höher, und Multiplayer funktioniert nicht)
+8,       ; Max. Luftlandereichweite ohne Orbitallandung
+10,      ; Multiplikationsfaktor für Nahrungskosten
+10,      ; Multiplikationsfaktor für Mineralienkosten
+100,     ; Technologische Innovationsrate als Prozentzahl des Standardwerts
+1,       ; Begrenzt Mineralien-Zuwachswert für Minen ohne Straße im selben Feld
+-1,      ; Nahrungseffekt in Feld mit Mine (0 oder -1)
+5,       ; Minimale Basisgröße, die Spezialisten unterstützt
+1,       ; Drohnen, die durch Genarbeiter-Fabrik erzeugt werden
+7,       ; Bevölkerungsgrenze ohne Wohnkomplex
+14,      ; Bevölkerungsgrenze ohne Wohnkuppel
+50,      ; Zusatzkosten (in %) für Prototyp-Land-Einheit
+50,      ; Zusatzkosten (in %) für Prototyp-See-Einheit
+50,      ; Zusatzkosten (in %) für Prototyp-Luft-Einheit
+3,2,     ; PSI-Kampfverhältnis Offensive-Defensive (Land-Einheit verteidigt)
+1,1,     ; PSI-Kampfverhältnis Offensive-Defensive (See-Einheit verteidigt)
+1,1,     ; PSI-Kampfverhältnis Offensive-Defensive (Luft-Einheit verteidigt)
+10,      ; Energiereserven der Spieler bei Spielbeginn
+25,      ; Kampf % -> grundlegende Basisverteidigung
+0,       ; Kampf % -> Angriff entlang der Straße
+0,       ; Kampf % -> Angriff aus größerer Höhe
+0,       ; Kampf-Malus % -> Angriff aus niedriger Höhe
+25,      ; Kampf % -> Mobile Einheit in offenem Gelände
+0,       ; Kampf % -> Verteidung gegen mobile Einheit in rauhem Gelände
+25,      ; Kampf % -> Infanterie gegen Basis
+50,      ; Kampf-Malus % -> Angriff nach Luftlandeaktion
+25,      ; Kampf % -> Bonus f. fanatischen Angriff
+50,      ; Kampf % -> Bonus Landartillerie gegen Schiffsartillerie
+25,      ; Kampf % -> Artilleriebonus pro Höheneinheit
+50,      ; Kampf % -> Trancebonus Defensive gegen PSI
+50,      ; Kampf % -> Empathliedbonus Offensive gegen PSI
+50,      ; Kampf-Malus % -> Luftüberlegenheits-Einheit gegen Boden-Einheit
+100,     ; Kampf % -> Luftüberlegenheits-Einheit gegen Luft-Einheit
+50,      ; Kampf-Malus % -> Verteidigende Zivil-Einheit gegen Kampf-Einheit
+50,      ; Kampf % -> Verteidigende Störsender-Einheit gegen mobile Einheit
+100,     ; Kampf % -> Bonus gegen im Hafen überraschte Schiffe
+100,     ; Kampf % -> Flakbonus gegen Luft-Einheiten
+25,      ; Kampf % -> Defensive in Reichweite des eigenen Sensors
+10,      ; Kampf % -> PSI-Angriffsbonus/-malus pro +PLANET
+50,      ; Umrüstungsmalus (%) für Produktionsänderungen
+2,       ; Umrüstungsregel (0 = Immer umsonst, 1 = Umsonst in Kategorie, 2 = Gratis, falls in Projekt, 3 = Nie umsonst)
+10,      ; Umrüstungsausnahme (erste X Mineralien nicht von Malus betroffen)
+20,      ; Mindestzahl der Runden zwischen Ratsversammlungen
+5,       ; Mineralien für Waldbewirtschaftung
+8,       ; Territorium: max. Distanz zur Basis
+20,      ; Runden zur Beherrschung des globalen Energiemarktes
+CentPsi, ; Technologie um Fungus-Felder zu verbessern
+CentPsi, ; Technologie um Fungus-Bewegung zu erleichtern
+CentEmp, ; Technologie um Straßen durch Fungus zu bauen
+Neural,  ; Technologie erlaubt 2 Spezialfähigkeiten pro Einheit
+Gene,    ; Technologie erlaubt 3 Nahrungseinheiten pro Feld
+EcoEng,  ; Technologie erlaubt 3 Mineralien pro Feld
+EnvEcon, ; Technologie erlaubt 3 Energieeinheiten pro Feld
+Gravity, ; Technologie erlaubt Orbitallandung ohne Raumlift
+EcoEng2, ; Technologie für +1 Abbauplattform-Bonus
+PlaEcon, ; Technologie für wirtschaftlichen Sieg
+1,       ; Wenn ungleich null, können Sondierteams Technologien stehlen
+1,       ; Wenn ungleich null, können sich menschliche Spieler in Netzspielen immer gegenseitig kontaktieren
+1,       ; Wenn ungleich null, können sich menschliche Spieler in Hotseat-/Email-Spielen immer gegenseitig kontaktieren
+50,      ; Max. von Artillerie verursachter Schaden in % geg. Einheiten in Basis/Bunker
+99,      ; Max. von Artillerie verursachter Schaden in % geg. Einheiten in offenem Gelände
+100,     ; Max. von Artillerie verursachter Schaden in % geg. Einheiten auf See
+1, 1     ; Zähler/Nenner für die Häufigkeit von globaler Erwärmung (1,2 wäre die "Hälfte" der sonst normalen Erwärmung).
+2100     ; Normal beginnendes Jahr
+2600     ; Normal abschließendes Jahr für die 3 niedrigsten Schwierigkeitsstufen
+2500     ; Normal abschließendes Jahr für die 3 höchsten Schwierigkeitsstufen
+1        ; Wenn ungleich null, zählt das Zerstören einer Basis als Greueltat
+10       ; Größe einer Basis für Unterraum-Generator
+6        ; Anzahl der benötigten Unterraum-Generatoren
+
+;
+; TERRAFORMING-VERBESSERUNGEN
+;
+; Name, Voraus., See-Name, See-Vor., Tempo, Befehl, Buchstabe, Taste
+;
+; Tempo      = Anzahl der Runden, die zum Bau benötigt werden
+; Befehl     = Beschreibung des Einheitsbefehls
+; Buchstabe  = Befehlsbuchstabe
+; Taste      = Beschreibung des Tastaturbefehls (Textänderungen
+;              verändern die Tastaturbelegung im Spiel nicht)
+;
+#TERRAIN
+Farm,               None,    Tangfarm,            None,     4,  Bauen: $STR0,      f, F
+Bodenanreich.,      EcoEng2, Bodenanr.,           Disable,  8,  Bauen: $STR0,      f, F
+Mine,               None,    Abbauplattform,      None,     8,  Bauen: $STR0,      M, M
+Solarkollektor,     None,    Gezeitenkraftw.,     None,     4,  Bauen: $STR0,      S, S
+Wald,               None,    ...,                 Disable,  4,  Pflanzen: $STR0,   F, Umschalt+F
+STRASSE,            None,    STRASSE,             Disable,  1,  Bauen: $STR0,      R, R
+Magnet-Röhre,       Magnets, Magnet-Röhre,        Disable,  3,  Bauen: $STR0,      R, R
+Bunker,             MilAlg,  Bunker,              Disable,  5,  Bauen: $STR0,      K, K
+Luftstützp.,        DocAir,  Luftstützp.,         Disable, 10,  Bauen: $STR0,      ., .
+Sensorenfeld,       None,    Sensorenfeld,        Disable,  4,  Bauen: $STR0,      O, O
+Fungus,             None,    See-Fungus,          None,     6,  Entf.: $STR0,      F, F
+Fungus,             EcoEng,  See-Fungus,          EcoEng,   6,  Pflanzen: $STR0,   F, Strg+F
+Kondensator,        EcoEng,  Kondensator,         Disable, 12,  Bauen: $STR0,      N, N
+Stufenspiegel,      EcoEng,  Stufenspiegel,       Disable, 12,  Bauen: $STR0,      E, Umschalt+E
+Thermal-Bohrloch,   EcoEng,  Thermal-Bohrloch,    Disable, 24,  Bauen: $STR0,      B, Umschalt+B
+Wasserquelle,       EcoEng,  Wasserquelle,        Disable, 18,  Bohren: $STR0,     Q, Q
+Land anheben,       EnvEcon, Meeresboden anheben, EnvEcon, 12,  Terraforming AUF,  ], ]]
+Land senken,        EnvEcon, Meeresboden senken,  EnvEcon, 12,  Terraforming AB,   [, [[
+Terrain einebnen,   None,    Terrain einebnen,    Disable,  8,  Terraforming EBEN, _, _
+Monolith,           Disable, Monolith,            Disable,  8,  Monolith plaz.,    ?, ?, (dies ist für den Karten-Editor)
+
+
+;
+; RESSOURCENINFORMATION
+;
+; Ressourcenproduktion (Nahrung, Mineralien, Energie, <ungebraucht>) für
+; spezielle Felder. In normalen Feldern werden diese Werte
+; durch Temperatur, Niederschlag, Felsen, etc. des Felds bestimmt.
+;
+; "Bonus-Feld": Der Wert für eine bestimmte Kategorie wird zur Produktion eines 
+; Felds addiert.
+;
+; "Verbessertes Land" bezieht sich auf Farmen, Minen, Solarkollektoren
+; "Verbessertes Meer" bezieht sich auf Entsalzung, Plattformen, Kraftwerke
+;
+#RESOURCEINFO
+Ozean-Feld,          1, 0, 0, 0,
+Basis-Feld,          2, 1, 1, 0,
+Bonus-Feld,          2, 2, 2, 0, * Mineralien +1 falls Mine vorhanden
+Wald-Feld,           1, 2, 1, 0,
+Recyclingtanks,      1, 1, 1, 0,
+Verbessertes Land,   1, *, *, 0, "*" Spalten werden ignoriert
+Verbessertes Meer,   2, 1, 3, 0, * Mineralien +1 mit Fortgeschr. Ökotechnik
+Monolith,            2, 2, 2, 0,
+Bohrloch-Feld,       0, 6, 6, 0,
+
+;
+; WELTGESTALTER
+;   Diese Parameter steuern Details des Weltgestalters,
+;   sowie die Auswahl des Menüs "Planetenkarte". Die Werte werden
+;   automatisch an die Größe der Welt angepaßt.
+;
+#WORLDBUILDER
+384, ; Land-Basis          (Landgröße einer Standardwelt)
+256, ; Land-Faktor         (zusätzliches Land in Option LAND: x0, x1, x2)
+12,  ; Kontinent-Basis     (Basisgröße eines Subkontinents)
+24,  ; Kontinent-Faktor    (Vergrößert in Option LAND: x0, x1, x2)
+1,   ; Hügel-Basis         (Basiswert zusätzl. Hügel)
+2,   ; Hügel-Faktor        (zusätzl. Hügel aus Optionen TIDAL: x0, x1, x2)
+4,   ; Plateau-Basis       (Basis-Plateaugröße)
+8,   ; Plateau-Faktor      (Plateaufaktor aus Option LAND: x0, x1, x2)
+8,   ; Fluß-Basis          (Basisnr. Flüsse)
+12,  ; Fluß-Regenfaktor    (Weitere Flüsse basierend auf Option für REGEN)
+14,  ; Solarenergie        (Breitengrad-DIVISOR für Temperatur, basiert auf HITZE) Kleinere Zahl vergrößert Effekt der HITZE-Option
+14,  ; Thermalbänder       (Breitengrad-DIVISOR für Thermalbänder) Kleinere Zahl verbreitert heiße Zonen
+8,   ; Thermalabweichung   (Breitengrad-DIVISOR für Thermalabweichung) Kleinere Zahl vergrößert Zufallsfaktor
+8,   ; Globale Erwärmung   (Breitengrad-DIVISOR für Treibhauseffekt)   Kleinere Zahl vergrößert Erwärmungseffekt
+5,   ; Ansteigen d. Meeresspiegels (Größe der Veränderung des Meeresspiegels durch Schmelzen/Einfrieren der Eiskappen)
+5,   ; Wolken/Berge        (Größe der durch Gipfel eingefangenen Wolkenmasse)
+3,   ; Wolken/Hügel        (Größe der durch Hügel eingefangenen Wolkenmasse)
+1,   ; Niederschlagsfaktor (Multiplikationsfaktor für Niederschlagszonen)
+15,  ; Tiefes Wasser       (Läßt Fraktal tiefes Wasser erzeugen)
+10,  ; Schelf              (Läßt Fraktal Kontinentalschelf erzeugen)
+15,  ; Ebenen              (Läßt Hochebenen entstehen)
+10,  ; Strand              (Läßt breitere Strände entstehen)
+10,  ; Hügel               (Fördert Hügel x Option TIDAL)
+25,  ; Gipfel              (Läßt Gipfel entstehen)
+1,   ; Fungus              (Fungus-Koeffizient, basiert auf Option LEBEN)
+3,6,12,18,24 ; Verhält.    (Verhältnis der Kontinentalgrößen)
+36   ; Inseln              (Höhere Zahl steigert Anzahl der Inseln)
+
+#WORLDSIZE
+5
+Winziger Planet|(früher Konflikt),   24, 48
+Kleiner Planet,                      32, 64
+Standard-Planet,                     40, 80
+GROSSER PLANET,                      44, 90
+Riesiger Planet|(später Konflikt),   64, 128
+
+;
+; ZEITREGELUNG (Multiplayer)
+;
+; Name, Runde, Basis, Einheit, Ereignis, Extra, Neu, Akkum.
+;
+; Runde    = Mindestzeit pro Runde          (Sek.)
+; Basis    = Mindestzeit pro Basis          (Sek.)
+; Einheit  = Mindestzeit pro aktive Einheit (Sek.)
+; Ereignis = Mindestzeit pro Ereignis       (Sek.)
+; Extra    = Extra Zeit-Bonus               (Sek.)
+; Neu      = Spielerbonus wird erneuert     (Rundenzahl)
+; Akkum.   = Max. akkumulierte Bonuszahl    (Bonus-Anzahl)
+;
+#TIMECONTROLS
+Aus,          0, 0, 0, 0,   0,  0,  0,
+Kurz,        15, 2, 2, 4,  15, 10,  1,
+Standard,    20, 3, 3, 8,  20, 10,  2,
+Mittel,      30, 4, 4, 12, 30, 10,  3,
+Lang,        45, 5, 5, 16, 45, 10,  3,
+Individuell, 20, 3, 3, 8,  20, 10,  2,
+
+;
+; TECHNOLOGIEENTWICKLUNG
+;
+; Name, ID, KI-Mil, KI-Tech, KI-Infra, KI-Kolonisieren, Voraus.(1), Voraus.(2), ; Flaggen
+;
+; Name      = Name der Technologie
+;
+; ID        = 3-Buchstaben-Code; dieser Code wird verwendet,
+;            wenn die Technologie als Vorbedingung bestimmt wird.
+;
+; Stärke    = militärischer Wert
+; Tech      = technischer Fortschrittswert
+; Wohlstand = Infrastruktur-Wert
+; Wachstum  = Kolonisationswert
+;
+; Voraus.(n)= Technologie-Voraussetzung
+;            a) 3-Buchstaben-Code der Technologie
+;            b) "nil" stellt keine Voraussetzungen
+;            c) "no" sperrt dies im Spiel
+;
+; Flaggen   = Spezielle Technologie-Flaggen
+;            000000001 = "Geheimnisse": Erstentdecker erthält Techn. gratis
+;            000000010 = Verbessert Erfolg der Sondierteams
+;            000000100 = Steigert Handelseinkommen
+;            000001000 = Zeigt Karte an
+;            000010000 = Erlaubt Genkriegs-Greueltat
+;            000100000 = Steigert Standardabwehr gegen Genkrieg
+;            001000000 = Steigert ENERGIE-Produktion in Fungus
+;            010000000 = Steigert MINERALIEN-Produktion in Fungus
+;            100000000 = Steigert NAHRUNGS-Produktion in Fungus
+;
+#TECHNOLOGY
+Biogenetik,                 Biogen,  0, 3, 2, 2, None,    None,    000100000
+Industrielle Basis,         Indust,  2, 1, 3, 0, None,    None,    000000000
+Informations- Netzwerke,     InfNet,  0, 3, 2, 1, None,    None,    000000000
+Angewandte Physik,          Physic,  4, 2, 1, 0, None,    None,    000000000
+Sozial- Psychologie,          Psych,   0, 1, 3, 2, None,    None,    000000000
+Doktrin: Mobilität,         Mobile,  2, 0, 0, 3, None,    None,    000000000
+Centauri- Ökologie,          Ecology, 0, 1, 2, 3, None,    None,    100000000
+Supraleitung,               Super,   4, 2, 0, 0, OptComp, Indust,  000000000
+Nichtlineare Mathematik,    Chaos,   4, 3, 0, 0, Physic,  InfNet,  000000000
+Angewandte Relativität,     E=Mc2,   1, 3, 2, 0, Super,   Subat,   000000000
+Fusionsenergie,             Fusion,  3, 4, 3, 1, Algor,   Super,   000000000
+Seidenstahl- Legierung,      Alloys,  3, 0, 4, 2, Subat,   IndAuto, 000000000
+Erw. Subatomare Theorie,    Subat,   2, 3, 2, 0, Chemist, Poly,    000000000
+Hochenergie- Chemie,         Chemist, 3, 1, 2, 0, Indust,  Physic,  000000000
+Reibungsfreie Oberfl.,      Surface, 1, 3, 2, 0, Unified, IndRob,  000000000
+Nano- Metallurgie,           Metal,   1, 1, 0, 3, ProbMec, DocInit, 000000000
+Superstring- Theorie,        String,  3, 2, 0, 1, Chaos,   Cyber,   000000000
+Erw. Militär. Algorithmen, MilAlg,   3, 0, 1, 2, AdapDoc, OptComp,   000000000
+Monopolmagn.,               Magnets, 1, 1, 5, 0, String,  Alloys,  000000000
+Materiekompr.,              MatComp, 3, 1, 2, 0, Metal,   NanoMin, 000000000
+Einheitliche Feldtheorie,   Unified, 4, 3, 0, 1, Magnets, E=Mc2,   000000000
+Gravitontheorie,            Gravity, 3, 1, 0, 3, QuanMac, MindMac, 000000000
+Polymorphe Software,        Poly,    2, 3, 1, 0, Indust,  InfNet,  000000010
+Angewandte Gravitonik,      AGrav,   3, 1, 0, 4, Gravity, DigSent, 000000000
+Gelöscht,                   delete,  3, 2, 0, 2, Disable, Disable, 000000000
+Quantenenergie,             Quantum, 3, 4, 3, 0, Surface, PlaEcon, 000000000
+Singularitäts- Mechanik,     SingMec, 1, 4, 3, 0, Create,  HAL9000, 000000000
+Kontrollierte Singularität, ConSing, 4, 1, 2, 0, SingMec, AGrav,   000000000
+Zeitmechanik,               TempMec, 0, 1, 3, 2, Eudaim,  Matter,  001000000
+Wahrscheinl.- Mechanik,      ProbMec, 1, 1, 3, 2, DocSec,  Algor,   000000000
+Prä-Intellig. Algorithmen,  Algor,   2, 4, 3, 2, MilAlg,  Cyber,   000000010
+Superfeste Stoffe,          Solids,  1, 0, 5, 2, MatComp, Space,   000000000
+Planetare Netzwerke,        PlaNets, 0, 4, 3, 1, InfNet,  None,    000000000
+Digitale Intelligenz,       DigSent, 0, 4, 3, 2, IndRob,  MindMac, 000000010
+Intelligente Maschinen,     HAL9000, 0, 4, 3, 3, NewMiss, DigSent, 000000010
+Doktrin: Initiative,        DocInit, 2, 0, 0, 4, DocFlex, IndAuto, 000000000
+Doktrin: Flexibilität,      DocFlex, 2, 0, 1, 4, Mobile,  None,    000000000
+Intellektuelle Integrität,  Integ,   0, 1, 3, 4, EthCalc, DocLoy,  000000000
+Synth. fossile Treibstoffe, Fossil,  1, 0, 2, 4, Chemist, Gene,    000000000
+Doktrin: Luftmacht,         DocAir,  3, 0, 3, 4, Fossil,  DocFlex, 000000000
+Photonen/ Wellen-Mechanik,   DocSec,  3, 2, 2, 0, E=Mc2,   Alloys,  000000000
+Mensch-Maschine- Interface,  MindMac, 4, 0, 2, 2, DocAir,  Neural,  000000010
+Nano- Miniaturisierung,      NanoMin, 1, 0, 4, 3, Magnets, SupLube, 000000000
+Doktrin: Loyalität,         DocLoy,  3, 0, 2, 2, Mobile,  Psych,   000000000
+Ethisches Kalkül,           EthCalc, 0, 1, 3, 3, Psych,   None,    000000000
+Industrielle Ökonomie,      IndEcon, 0, 0, 5, 2, Indust,  None,    000000100
+Industrielle Automation,    IndAuto, 0, 1, 4, 3, IndEcon, PlaNets, 000000100
+Centauri- Meditation,        CentMed, 0, 0, 2, 4, EcoEng,  CentEmp, 001000000
+Geheimn. d. men. Gehirns,   Brain,   1, 5, 0, 3, Psych,   Biogen,  000000001
+Gentrennung,                Gene,    0, 2, 4, 3, Biogen,  EthCalc, 000100000
+Biotechnik,                 BioEng,  0, 2, 3, 2, Gene,    Neural,  000100000
+Biomaschinen,               BioMac,  3, 1, 4, 1, MindMac, Viral,   000100000
+Neurale Transplantate,      Neural,  3, 1, 1, 1, Brain,   IndAuto, 000000000
+Cyber-Ethik,                Cyber,   1, 3, 4, 0, PlaNets, Integ,   000000000
+Eudämonie,                  Eudaim,  0, 0, 3, 4, SentEco, WillPow, 000000000
+Der Wille zur Macht,        WillPow, 0, 3, 1, 4, HomoSup, CentPsi, 000000000
+Schwelle zur Transzendenz,  Thresh,  0, 1, 3, 4, SecMani,  TempMec, 010000000
+Materietransfer,            Matter,  1, 0, 3, 2, NanEdit, AlphCen, 010000000
+Centauri- Empathie,          CentEmp, 0, 1, 0, 6, Brain,   Ecology, 000000000
+Umweltökonomie,             EnvEcon, 0, 0, 4, 3, IndEcon, EcoEng,  000000100
+Ökotechnik,                 EcoEng,  0, 0, 3, 4, Ecology, Gene,    000000000
+Planetare Ökonomie,         PlaEcon, 0, 0, 4, 3, AdapEco, Integ,   000000100
+Fortg. Ökotechnik,          EcoEng2, 0, 0, 4, 2, Fusion,  EnvEcon, 000000000
+Centauri-PSI,               CentPsi, 0, 1, 1, 6, CentGen, EcoEng2, 100000000
+Geheimn. v. Alpha Centauri, AlphCen, 0, 4, 0, 2, CentPsi, SentEco, 001001001
+Schöpfungsgeh.,             Create,  1, 4, 1, 0, Unified, WillPow, 000000001
+Fortg. Raumflug,            Space,   2, 4, 2, 3, Orbital, SupLube, 000000000
+Homo Superior,              HomoSup, 3, 2, 1, 4, BioMac,  DocInit, 000000000
+Organ. Super- Gleitmittel,  SupLube, 3, 1, 2, 0, Fusion,  Fossil,  000000000
+Quantenmasch.,              QuanMac, 3, 1, 4, 0, Quantum, Metal,   000000000
+gelöscht,                   deleted, 0, 0, 5, 0, Disable, Disable, 000000000
+Materieumwan.,              NanEdit, 1, 2, 3, 1, HAL9000, Solids,  000100000
+Optische Computer,          OptComp, 2, 4, 1, 0, Physic,  Poly,    000000000
+Industrielle Nanorobotik,   IndRob,  3, 1, 8, 1, NanoMin, IndAuto, 000000100
+Centauri-Genetik,           CentGen, 0, 2, 0, 5, CentMed, Viral,   010000000
+Intelligente Ökonometrie,   SentEco, 1, 1, 3, 4, PlaEcon, DigSent, 000000100
+Retroviren- Technik,        Viral,   4, 2, 0, 2, BioEng,  MilAlg,  000110000
+Orbital- Raumflug,          Orbital, 0, 4, 3, 3, DocAir,  Algor,   000000000
+Vorfahren- Psycholgie,     PrPsych, 0, 2, 3, 4, None,    None,    000000000
+Feld- Modulation,           FldMod,  4, 2, 0, 2, PrPsych, Ecology, 000000000
+Adaptive Doktrin,           AdapDoc, 5, 2, 0, 0, Poly,    DocFlex, 000000000
+Adaptive Ökonomie,          AdapEco, 0, 1, 5, 2, PrPsych, IndEcon, 000000000
+Bioadaptive Resonanz,       Bioadap, 5, 2, 0, 0, FldMod,  CentEmp, 000000000
+Intelligente Resonanz,        SentRes, 5, 2, 0, 0, Bioadap, CentPsi, 000000000
+Geheimnisse der Manifolds,  SecMani, 0, 5, 4, 2, SentRes, AlphCen, 000000001
+N-Raum-Kompression,         NewMiss, 4, 0, 2, 0, Orbital, BioMac,  000000000
+Reihen- Resonanz,           BFG9000, 8, 0, 0, 0, SecMani, ConSing, 000000000
+Anwender- Technologie,      User,    0, 2, 0, 0, Disable, Disable, 000000000
+Transzendentes Denken,      TranT,   0, 2, 0, 0, Thresh,  ConSing, 000000000
+
+;
+; Fahrzeuge
+;
+; Namen..., Tempo, Bewegung, Reichw., Fracht, Preis, Voraus., ...Lange Namen
+;
+; Namen...= Erste zwei Namen für Offensiv-Einheiten.
+;           Zweite zwei Namen für Defensiv-Einheiten.
+;           M1 = Maskulin Singular (für Übersetzung)
+;           M2 = Maskulin Plural
+;           (usw. F für Feminin, N für Neutrum)
+;
+; Tempo      = Anzahl der Bewegungen
+; Bewegung   = Bewegungsmöglichkeiten (0=Land 1=See 2=Luft)
+; Reichweite = Reichweite in Runden von der Basis (nur Luft-Einheiten)
+; Rakete     = Fahrzeug ist eine "Rakete" (nach Angriff zerstört)
+; Fracht     = Anzahl d. Einheiten transportiert (mal Reaktorzahl)
+; Preis      = Kostenfaktor des Fahrzeugtyps (normalerweise gleich Tempo)
+; Voraus.    = Erforderliche Technologie (siehe TECHNOLOGIE)
+;
+#CHASSIS
+Infanterie,F1,     Truppe,F1,       Wachen,F2,         Garnison,F1,    1, 0, 0, 0, 1, 1, None,     STOSSTRUPPEN,F2,      Elite-Garde,F1,
+Speeder,M1,        Rover,M1,        Defensive,F1,      Skirmisher,M1,  2, 0, 0, 0, 1, 2, Mobile,   Dragon,M1,            Enforcer,M1,
+Schwebepanzer,M1,  Panzer,M1,       Skimmer,M1,        Ausweichen,N1,  3, 0, 0, 0, 1, 3, NanoMin,  Behemoth,M1,          Guardian,M1,
+Tragflügelboot,N1, Schwebeboot,N1,  Luftkissenboot,N1, Küste,F1,       4, 1, 0, 0, 2, 4, DocFlex,  Mega-TFB,M1,          Super-TFB,M1,
+Kreuzer,M1,        Zerstörer,M1,    Kutter,M1,         Kanonenboot,N1, 6, 1, 0, 0, 4, 6, DocInit,  Schlachtschiff,N1,    Panzerschiff,N1,
+Nadeljet,M1,       Penetrator,M1,   Interceptor,M1,    Taktik,F1,      8, 2, 2, 0, 1, 8, DocAir,   Thunderbolt,F1,       Sovereign,M1,
+Kopter,M1,         Hubschrauber,M1, Rotor,M1,          Transporter,M1, 8, 2, 1, 0, 1, 8, MindMac,  Kampfhubschrauber,M1, Jäger,M1,
+Grav-Schiff,N1,    Luftbasis,F1,    Antigrav,M1,       Luftfestung,F1, 8, 2, 0, 0, 1, 8, Gravity,  Todes-Station,F1,     Doomwall,M1,
+Raketen,F2,        Raketen,F2,      Raketen,F2,        Raketen,F2,     12, 2, 1, 1, 0,12, Orbital,  Raketen,F2,            Raketen,F2,
+
+;
+; Reaktoren
+;
+; Name, Energie, Voraussetzung
+;
+#REACTORS
+Atomreaktor,            Atom-,         1, None,
+Fusionsreaktor,         Fusions-,      2, Fusion,
+Quantenkammer,          Quanten-,      3, Quantum,
+Singul.-Maschine,       Singularitäts-, 4, SingMec,
+
+;
+; Waffen und Zivil-Einheiten
+;
+; Name, Name2, Offensive, Modus, Preis, Voraus.
+;
+; Name      = Voller Name
+; Name2     = Kurzbezeichnung
+; Offensive = Angriffswert (-1 = PSI-Offensive)
+; Modus     = Offensivmodus (oder Nicht-Kampf-Typ)
+;             Kampfmodi:   0=Projektil, 1=Energie, 2=Rakete
+;             Zivil: 7=Transport 8=Kolonist
+;             9=Terraformer 10=Konvoi 11=InfoKrieg
+;             12=Artefakt
+; Preis     = Kostenfaktor der Waffe oder des Geräts
+; Symbol    = Spezielles Einheitssymbol (nur wenn Fahrzeug Infanterie ist)
+; Voraus.   = Technologie-Voraussetzung (siehe TECHNOLOGIE)
+;
+#WEAPONS
+Handfeuerw.,             Geschütz,         1, 0, 1, -1, None,
+Laser,                   Laser,          2, 0, 2, -1, Physic,
+Partikelstrahl,          Partikel,       4, 0, 4, -1, Chaos,
+Gatling-Laser,           Gatling,        5, 1, 5, -1, Super,
+Raketenwerfer,           Raketen,        6, 2, 6, -1, Fossil,
+Chaoskanone,             Chaos,          8, 0, 8, -1, String,
+Fusionslaser,            Fusions,       10, 1,10, -1, SupLube,
+Tachyonenstrahl,         Tachyonen,     12, 1,12, -1, Unified,
+Plasmalanze,             Kampf,         13, 2,13, -1, Space,
+Quantenlaser,            Quanten,       16, 1,16, -1, QuanMac,
+Gravitongewehr,          Graviton,      20, 0,20, -1, AGrav,
+Singular.-Laser,         Singularitäts,  24, 1,24, -1, ConSing,
+Resonanzlaser,           R-Laser,         6, 1, 8, -1, Bioadap,
+Resonanzbolzen,          R-Bolzen,       12, 1,16, -1, SentRes,
+Reihendisruptor,         Reihen,         30, 1,40, -1, BFG9000,
+PSI-Angriff,             PSI,           -1, 2,10, -1, CentPsi,
+Planetenbombe,           Planetenbombe, 99, 0,32, -1, Orbital,
+Koloniekapsel,           Koloniekapsel,  0, 8,10, -1, None,   ;ziviler Einsatz
+Terraform-Einh.,         Former,         0, 9, 6, -1, Ecology,
+Truppentransp.,          Transport,      0, 7, 4, -1, DocFlex,
+Nachschub- Transporter,  Nachschub,      0,10, 8, -1, IndAuto,
+Sondierteam,             Sondierteam,    0,11, 4, -1, PlaNets,
+Außer. Artefakt,         Artefakt,       0,12,36, -1, Disable,
+Konv. Nutzlast,          Konvention.,   12, 0,12, -1, Orbital,
+Tektonische Nutzlast,    Tektonisch.,     0,13,24, -1, NewMiss
+Fungus-Nutzlast,         Fungus-,        0,14,24, -1, NewMiss
+
+;
+; Panzerung
+;
+; Name, Name2, Panzerung, Modus, Preis, Voraus.
+;
+; Name       = Voller Name
+; Name2      = Kurzbezeichnung
+; Panzerung  = Panzerstärke (-1 = PSI)
+; Modus      = Panzermodus  (0=Projektil, 1=Energie, 2=Binär)
+; Preis      = Kostenfaktor der Panzerung   (meist gleich Panzerstärke)
+; Voraus.    = Technologie-Voraussetzung (siehe TECHNOLOGY)
+;
+#DEFENSES
+Keine Panzerung,           Scout,              1, 0, 1, None,
+Synthmetall- Panzer,       Synthmetall,        2, 0, 2, Indust,
+Plasmastahl,               Plasma,             3, 2, 3, Chemist,
+Seidenstahl- Panzer,       Seidenstahl,        4, 1, 4, Alloys,
+Photonen- Panzer,          Photonen,           5, 1, 5, DocSec,
+Wahrscheinl.- Hülle,       Wahrscheinl.,       6, 2, 6, ProbMec,
+Neutronium- Panzer,        Neutronium,         8, 1, 8, MatComp,
+Antimaterie- Platte,       Antimaterie,       10, 2,10, NanEdit,
+Stasis- Generator,         Stasis,            12, 2,12, TempMec,
+PSI-Abwehr,                PSI,               -1, 2, 6, Eudaim,
+Impuls 3- Panzer,          3-Impuls,           3, 1, 5, AdapDoc,
+Resonanz 3- Panzer,        3-Res,              3, 1, 5, FldMod,
+Impuls 8- Panzer,          8-Impuls,           8, 1, 11, Solids,
+Resonanz 8- Panzer,        8-Res,              8, 1, 11, SentRes,
+
+;
+; Fähigkeiten von Sondereinheiten
+;
+; Name, Preis, Voraus., Abk., Beschreibung
+;
+; Name   = Name der Fähigkeit
+; Preis  = Kostenfaktor der Fähigkeit
+;          1+ = Direkte Kosten; 25% Anstieg pro Kosteneinheit
+;           0 = Keine
+;          -1 = Steigt im Verhältnis von Waffen zu Panzerung: 0, 1, oder 2.
+;               ABGERUNDET; nie größer als 2.
+;               Beispiele: Für eine W1,A2 Einheit beträgt der Preis 0
+;                          Für eine W3,A2 Einheit beträgt der Preis 1 (3/2 abgerundet)
+;                          Für eine W6,A3 Einheit beträgt der Preis 2
+;          -2 = Steigt mit Waffenwert
+;          -3 = Steigt mit Panzerungswert
+;          -4 = Steigt mit Geschwindigkeitswert
+;          -5 = Steigt mit Waffen+Panzerungswert
+;          -6 = Steigt mit Waffen+Geschwindigkeitswert
+;          -7 = Steigt mit Panzerung+Geschwindigkeitswert
+; Voraus. = Technologie-Voraussetzung (siehe TECHNOLOGIE)
+; Abk.    = Abkürzung, die bei Einheitennamen gebraucht wird
+; Beschr. = Beschreibung der Fähigkeit (kurz halten!)
+;
+; Flaggen =
+;          000000000001 = Erlaubt für Land-Einheiten
+;          000000000010 = Erlaubt für See-Einheiten
+;          000000000100 = Erlaubt für Luft-Einheiten
+;          000000001000 = Erlaubt für Kampf-Einheiten
+;          000000010000 = Erlaubt für Terraformer-Einheiten
+;          000000100000 = Erlaubt für Zivil-Einheiten (keine Terraformer)
+;          000001000000 = Nicht erlaubt für Sondierteams
+;          000010000000 = Nicht erlaubt für PSI-Einheiten
+;          000100000000 = Nur Transport-Einheiten
+;          001000000000 = Nicht erlaubt für schnelle Einheiten
+;          010000000000 = Preis steigt für Land-Einheiten
+;          100000000000 = Nur erlaubt für Sondierteams
+;
+#ABILITIES
+Super-Former,        1, EcoEng2,  Super-,          000000010111, Terraformrate verdoppelt
+Tiefenradar,         0, MilAlg,   ,                010000111111, Sieht 2 Felder weit
+Tarngerät,           1, Surface,  Tarn-,           000001111001, Unsichtbar; Ignoriert Kontrollzonen
+Amphibienmodul,      1, DocInit,  Amphib.,         000000001001, Greift v. Schiffen an
+Abwurfmodule,        2, MindMac,  Abwurf-,         000000111001, Luftlandungen
+Luftüberlegenheit,   1, DocAir,   SAM-,            000000001111, Greift Luft-Einheiten an
+Starker Druckrumpf,  1, Metal,    Sub-,            000000111010, Operiert unter Wasser
+Trägerdeck,          1, Metal,    Träger-,         000101101010, Mobiler Luftstützpunkt
+Flak-Peilung,        1, MilAlg,   Flak-,           000010001011, x2 gegen Luftangriffe
+Funkstörgerät,      -1, Subat,    GEGENMASSN.-,    000010111001, +50% gegen schnelle Einheiten
+Antigrav-Stützen,    1, Gravity,  Grav.-,          000000111001, +1 Bewegungsrate (oder +Reaktor*2 für Luft-Einheiten)
+Empath-Lied,         2, CentEmp,  Empath-,         000010001111, +50% Angriff gegen PSI
+Polymorphe Codierung, 1, Algor, Codiert.,          000000111111, x2 Kosten für Unterwanderung
+Fungizid-Tanks,      1, Fossil,   Fungizid-,       000000010111, Beseitigt Fungus doppelt so schnell
+Hohe Gruppenmoral,   1, Integ,    Ausgebil.,       000000001111, Steigert Moral
+Schwere Artillerie, -7, Poly,     Artillerie-,     000010001001, Bombardiert
+Autonomer Reaktor,   2, BioEng,   Autonom.,        000000111111, Braucht keine Unterstützung
+Mini-Teleporter,     1, Matter,   Mini-Tele.-,     000000001111, Umgeht Basisabwehr
+Hypnotische Trance, -1, Brain,    Trance-,         000010111111, +50% Abwehr gegen PSI
+Schwerer Transporter,    1,    Disable,  Schwer,   000100100111, +50% Transportkapazität
+Nervengasbehälter,   1, Chemist,  X,               000011001101, Erhöht Offensive +50% (Greueltat)
+Reparaturbereich,    1, Metal,    Reparatur-,      000100100111, Repariert Boden-Einheiten an Bord
+Gewaltarme Methoden, 1, Integ,    Polizei-,        000000001001, x2 Polizeimacht
+Langsame Einheit,    0, Disable,  Langsam.,        000000111111, -1 Bewegungen
+Soporifische Gaskapsel,  1, Bioadap,  Gas-,        000001001101, -2 Feindmoral geg. Nicht-Einheimische
+Dissoziative Welle,  2, CentPsi,  Wellen-,         000000111111, Macht Spezialfähigkeiten unwirksam
+Marineinf.- Abt.,    1, AdapDoc,  Marineinf.-,     000001001010, Kann Feindschiffe erobern
+Treibstoff- Nanozellen, 1, MatComp,  Nanozellen-,  000000111100, Erhöht die Luftreichweite
+Algorithm. Verbesserung,1, NanoMin,  Aufrüstung-,  100000111111, Halbiert die Mißerfolge der Sondierteams
+
+;
+; Gruppenmoralniveaus
+;
+; Namen der Niveaustufen. Standardniveau ist "Grün".
+; "Sehr grün" nur bei einem Gesamtmoralfaktor von -1.
+;
+#MORALE
+Sehr Grün,     Frischlingsschwarm
+Grün,          Larvenschwarm
+Diszipliniert, Prä-Schwarm
+Gehärtet,      Schwarm
+Veteran,       Reifer Schwarm
+Kommando,      Großer Schwarm
+Elite,         Teufelschwarm
+
+;
+;   Kampfmodi
+;   Projektilwaffen erhalten einen Bonus gegen Energiepanzerung.
+;   Energiewaffen erhalten einen Bonus gegen Projektilpanzerung.
+;   Keine Waffe erhält einen Bonus gegen Binärpanzerung.
+;   Raketenwaffen erhalten nie einen Bonus.
+;
+#DEFENSEMODES
+Projektil,   Proj-,    Proj., P
+Energie,     Energie-, Ener., E
+Binär,       Binär-,   Bin.,  B
+
+#OFFENSEMODES
+Projektil,   Proj-,    Proj., P
+Energie,     Energie-, Ener., E
+Rakete,      Rakete-,  Rak.,  R
+
+;
+; Grundeinheiten - Für alle Spieler vorgefertigte Einheiten
+;
+; Name, Fahrzeug, Waffe, Panzer, Plan, Preis, Kapazität, Voraussetzung, Symbol, ; Fähigk.
+;
+; Name      = Name der Einheit
+; Fahrzeug  = Fahrzeugtyp   (verbunden mit Liste CHASSIS, siehe oben)
+; Waffe     = Waffe/Gerät (verbunden mit Liste WEAPONs, siehe oben)
+; Panzerung = Panzerung   (verbunden mit Liste ARMOR, siehe oben)
+;
+; Plan      = Einheits-"Plan" für die KI:
+;             -1  = Autom. Berechnung
+;              0  = Offensive
+;              1  = Kampf
+;              2  = Verteidigung
+;              3  = Aufklärung
+;              4  = Luftüberlegenheit
+;              5  = Planetenbombe
+;              6  = Seeüberlegenheit
+;              7  = Seetransport
+;              8  = Kolonisierung
+;              9  = Terraforming
+;             10 = Nachschubkonvoi
+;             11 = Info-Krieg
+;             12 = Außerird. Artefakt
+; Preis     = Preis in Mineralien (0=Autom. Berechnung)
+; Kapaz.    = Transportkapazität (0=Autom. Berechnung)
+; Voraus.   = Technologische Voraussetzungen (siehe oben, TECHNOLOGY)
+; Symbol    = Spezialsymbol, falls vorhanden
+; Fähig.    = Markierung für Sonderfähigkeiten
+;
+#UNITS
+23
+Koloniekapsel,        Infanterie, Koloniekapsel, Scout,        8, 0, 0, None,    -1, 00000000000000000000000000
+Former,               Infanterie, Former,        Scout,        9, 0, 0, Ecology, -1, 00000000000000000000000000
+Scout-Patrouille,     Infanterie, Geschütz,      Scout,        3, 0, 0, None,    -1, 00000000000000000000000000
+Transp.-Tragflügelb.,    Tragflügelboot,         Transport,  Scout,   7, 0, 0, DocFlex, -1, 00000000000000000000000000
+*See-Former,           Tragflügelboot,        Former,        Scout,        9, 0, 0, Disable, -1, 00000000000000000000000000
+Transportraupe,        Infanterie, Nachschub,     Scout,       10, 0, 0, IndAuto, -1, 00000000000000000000000000
+Sondierteam,           Speeder,    Sondierteam,   Scout,       11, 0, 0, PlaNets, -1, 00000000000000000000000000
+AUSSERIRD. ARTEFAKT,   Infanterie, Artefakt,      Scout,       12,10, 0, Disable,  2, 00000000000000000000000000
+Psycho-Viren,         Infanterie, PSI,           PSI,          1, 5, 0, CentEmp,  3, 00000000000000000000000000
+Insel der Tiefe,      Tragflügelboot,        PSI,           PSI,          7, 8, 4, CentMed, -1, 00000000000000000000000000
+Heuschr. v. Chiron,   Grav-Schiff, PSI,        PSI,     4,10, 0, CentGen, -1, 00000000000000000000000000
+Unity-Rover,          Speeder,    Geschütz,      Scout,        3, 0, 0, Disable, -1, 00000000000000000000000000
+Unity-Aufkl.hubschr., Kopter,     Geschütz,      Scout,        4, 0, 0, Disable, -1, 00000000000000000000000000
+Unity-Tragflügelb.,   Tragflügelboot,        Transport,     Scout,        7, 0, 0, Disable, -1, 10000000000000000000000000
+Seeschleichen,        Tragflügelboot,     PSI,          PSI,        6, 6, 0, CentPsi,  4, 00000000000000000001000000
+Sporenwerfer,         Infanterie, PSI,        PSI,        0, 5, 0, Bioadap,  5, 00000000001000000000000000
+Schlachtoger MK1,     Infanterie, R-Laser,      3-Res,      0, 10, 0, Disable,  6, 00010000000000000000000000
+Schlachtoger MK2,     Infanterie, R-Bolzen,     8-Res,      0, 15, 0, Disable,  6, 10010000000000000000000000
+Schlachtoger MK3,     Speeder,  Reihen,         Stasis,     0, 20, 0, Disable,  6, 10010000000000000000000000
+Fungus-Turm,          Infanterie, PSI,          PSI,        3, 0, 0, Disable,  1, 00000000000000000000000000
+Unity-Abbaulaser,     Infanterie, Laser,        Scout,      0, 0, 0, Disable, -1, 00000000000000000000000000
+See-Fluchtkapsel,     Tragflügelboot,     Koloniekapsel,   Scout,      8, 0, 0, Disable, -1, 00000000000000000000000000
+Unity-Kampfhubschrauber,          Tragflügelboot,     Geschütz,          Scout,     -1, 0, 0, Disable, -1, 00000000000000000000000000
+
+;
+; Basis-Einrichtungen
+;
+; Name, Preis, Wartung, Voraus., Gratis, Effekt, (nur für SPs) KI-Kampf, KI-Mil, KI-Tech, KI-Infra, KI-Kolonisierung
+;
+; Name     = Name der Einrichtung
+; Preis    = Baukosten in Mineralien (x Mineralienfaktor in RULES)
+; Wartung  = Wartungskosten in Energie pro Runde
+; Voraus.  = Technologische Voraussetzungen (siehe TECHNOLOGY)
+; Gratis   = Disable
+; Effekt   = Kurzbeschreibung des Effekts
+; KI-Kampf = Entspricht den Einstellungen -1, 0 oder 1 für 'Agressivität' der KI
+; KI-Mil   = Militärwert
+; KI-Tech  = Wert für Wissensvorsprung
+; KI-Infra = Infrastrukturwert
+; KI-Kolonisierung = Kolonisierungswert
+;
+;
+#FACILITIES
+Hauptquartier,        5, 0, None,    Disable,  Effizienz
+Kinderkrippe,         5, 1, EthCalc, Disable,  Wachstum/Effiz/Moral
+Recyclingtanks,       4, 0, Biogen,  EcoEng2,  Bonus-Ressourcen
+Abwehrzone,           5, 0, DocLoy,  Disable,  Abwehr +100%
+Tachyonenfeld,       12, 2, ProbMec, Disable,  Gesamte Abwehr +100%
+Erholungsgebiet,      4, 1, Psych,   SentEco,  Weniger Drohnen
+Energielager,         8, 1, IndEcon, QuanMac,  Wirtschafts-Bonus
+Netzwerkknoten,       8, 1, InfNet,  HAL9000,  Labor-Bonus
+Biolabor,             6, 1, CentEmp, Disable,  Forschung und PSI
+Skunkworks,           6, 1, Subat,   Disable,  Prototypen gratis
+Holo-Theater,         6, 3, PlaNets, Disable,  Psycho und weniger Drohnen
+Paradiesgarten,      12, 4, SentEco, Disable,  +2 Talente
+Baumfarm,            12, 3, EnvEcon, Disable,  Ökon./Psycho/Wald
+Hybrider Wald,       24, 4, PlaEcon, Disable,  Ökon./Psycho/Wald
+Fusionslabor,        12, 3, Fusion,  Disable,  Ökon. und Labor-Bonus
+Quantenlabor,        24, 4, QuanMac, Disable,  Ökon. und Labor-Bonus
+Forsch.hospital,     12, 3, Gene,    Disable,  Labor und Psycho-Bonus
+Nanohospital,        24, 4, HomoSup, Disable,  Labor und Psycho-Bonus
+Roboterfabrik,       20, 4, IndRob,  Disable,  Mineralien-Bonus
+Nanoreplikator,      32, 6, NanEdit, Disable,  Mineralien-Bonus
+Quanten- Konverter,  20, 5, Quantum, Disable,  Mineralien-Bonus
+Genarbeiter- Fabrik, 10, 2, Viral,   Disable,  Mineralien; mehr Drohnen
+Strafsphäre,         10, 2, MilAlg,  Disable,  keine Drohnen/-50% Tech
+Wohnkomplex,          8, 2, IndAuto, Disable,  Bevölkerungsgrenze steigt
+Wohnkuppel,          16, 4, Solids,  Disable,  Bevölkerungsgrenze steigt
+Druckkuppel,          8, 0, DocFlex, Disable,  Unterwasser/Ressourcen
+Kommando- zentrale,    4, 1, Mobile,  Disable,  +2 Moral:Land
+Schiffswerft,         8, 2, DocInit, Disable,  +2 Moral:See, See- Def +100%
+Aerosp.- Komplex,     8, 2, DocAir,  Disable,  +2 Moral:Luft, Luftabwehr +100%
+Bio-Optim. zentrum,  10, 2, Neural,  Disable,  +2 Moral:ALLE
+Centauri- Reservat,             10, 2, CentMed, Disable,  Ökologie-Bonus
+Tempel des Planeten,            20, 3, AlphCen, Disable,  Ökologie-Bonus
+PSI-Tor,                        10, 2, Matter,  Disable,  Teleporter
+Geheimdienst- Zentrum,             10, 2, Algor,   Disable,  Stärkere Sondierteams
+Bruthöhle,                        8, 2, CentGen, Disable,  Polizei/Moral
+Wasserfarm,                       8, 1, PrPsych, Disable,  See-Nahrung
+Unterw.- Hauptleitung,        12, 4, PlaEcon, Disable,  See-Mineralien
+THERMOKL. MESSWANDLER,          8, 0, AdapEco, Disable,  See-Energie
+Flechette- Abwehrsys.,          12, 2, NewMiss, Disable,  Raketenabwehr
+Unterraum- Generator,              60, 5, SingMec, Disable,  Außerirdischer Sieg
+Geosynchr. Überw.kapsel,    16, 4, NewMiss, Disable,  Erhöhter Sicht-/Sensorbonus
+Leere Einrichtung 42,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 43,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 44,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 45,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 46,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 47,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 48,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 49,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 50,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 51,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 52,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 53,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 54,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 55,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 56,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 57,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 58,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 59,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 60,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 61,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 62,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 63,            10, 2, Disable, Disable,  Nicht bauen
+Leere Einrichtung 64,            10, 2, Disable, Disable,  Nicht bauen
+Schwebendes Hydrokultur- Labor,  12, 0, Orbital, Disable,  +1 Nahrung ALLE BASEN
+Nessus- Bergwerk,                12, 0, HAL9000, Disable,  +1 Mineralien ALLE BASEN
+Orbitaler Energietransmitter,   12, 0, Space,   Disable,  +1 Energie ALLE BASEN
+Orbitale Abwehrstation,         12, 0, HAL9000, Disable,  Raketenabwehr
+Energie speichern,               0, 0, None,    Disable,  Mineralien in Energie
+Das Human- Genom-Projekt,       20, 0, Biogen,  Disable,  +1 Talent jede Basis,                         -1, 0, 0, 1, 1,
+Das Kommando- Netzwerk,           20, 0, DocLoy,  Disable,  Kommandonetzwerk auf jeder Basis,               1, 2, 0,-1, 0,
+Das Wetterparadigma,            20, 0, Ecology, Disable,  Terraformrate +50%,                            0, 0, 0, 2, 1,
+Die Handelsbörse,               20, 0, Indust,  Disable,  +1 Energie je Feld,                            0, 0, 1, 2, 0,
+Die Gilde der Empathen,         20, 0, CentEmp, Disable,  Kommlink für jede Gruppierung,                -2, 0, 0, 0, 0,
+Die Bürgerwehr,                 30, 0, Integ,   Disable,  Abwehrzone f. jede Basis,                      0, 1, 0, 0, 0,
+Die virtuelle Welt,             30, 0, PlaNets, Disable,  Netzwerkknoten helfen gegen Drohnen,           0, 0, 2, 0, 0,
+Das Planeten- Verkehrssyst.,     30, 0, IndAuto, Disable,  Neue Basen ab Größe 3,                         0, 0, 0, 1, 2,
+Die Xenoempathie- Kuppel,        30, 0, CentMed, Disable,  Fungus-Bewegungsbonus,                         0,-1, 0, 0, 2,
+Der Neural- Verstärker,          30, 0, Neural,  Disable,  PSI-Abwehr +50%,                               0, 0, 0, 0, 0,
+Das Meeres- Kontr.zentrum,       30, 0, DocInit, Disable,  Seebewegung +2; Marinestützpunkte,             1, 1, 0, 0, 0,
+Die Planeten- Datalinks,         30, 0, Cyber,   Disable,  Jede Technologie, die 3 anderen bekannt ist,   0, 0, 1, 0, 0,
+Das Synchrotron,                30, 0, E=Mc2,   Disable,  Labors +100% auf dieser Basis,                 0, 0, 2, 0, 0,
+Die asketischen Tugenden,       30, 0, PlaEcon, Disable,  Bevölkerungsgrenze gelockert; +1 POLICE,       0, 0, 0, 1, 2,
+Das Langlebigkeits- Serum,       30, 0, BioEng,  Disable,  Weniger Drohnen oder mehr Profit,              0, 0, 0, 2, 1,
+Der Jagdalgorithmus,           30, 0, Algor,   Disable,  Immun gegen Sondierteams,                      0, 0, 2, 0, 0,
+Das Pholus-Mutagen,             40, 0, CentGen, Disable,  Ökologie-Bonus; Lebenskreis- Bonus,             0, 0, 0, 1, 1,
+Die Cyborg-Fabrik,              40, 0, MindMac, Disable,  Bioopt-Zentrum auf jeder Basis,                1, 1, 0, 0, 0,
+Die Universaltheorie,           40, 0, Unified, Disable,  Labors +100% auf dieser Basis,                 0, 0, 2, 0, 0,
+Der Traum- Manipulator,          40, 0, WillPow, Disable,  PSI-Angriff +50%,                              0, 1, 0, 0, 1,
+Der Übersetzungs- Computer,      40, 0, HomoSup, Disable,  Zwei Gratis-Tech.,                             0, 1, 2, 0, 0,
+Das Rückgrat des Netzwerks,     40, 0, DigSent, Disable,  +1 Labor pro Handel/Netzknoten,                0, 0, 1, 0, 0,
+Die Nanofabrik,                 40, 0, IndRob,  Disable,  Reparatureinheiten, geringe Aufrüstungskosten, 2, 1, 0, 0, 0,
+Die lebende Raffinerie,         40, 0, Space,   Disable,  +2 UNTERSTÜTZUNG (sozial),                     0, 1, 0, 1, 0,
+Die Klon-Behälter,              50, 0, BioMac,  Disable,  Bevölkerungswachstum auf allen Basen,          0, 0, 0, 1, 2,
+Die integrierte Kolonie,        50, 0, HAL9000, Disable,  Wartung halbiert; Extra Polizei,               0, 1, 0, 2, 0,
+Klinische Unsterblichkeit,      50, 0, NanEdit, Disable,  Extra Talent auf jeder Basis,                  0, 0, 1, 1, 0,
+Der Raumlift,                   50, 0, Solids,  Disable,  Energie +100%/Orbitalkosten halbiert,          0, 0, 2, 2, 0,
+Das Singularitätsgerät,        60, 0, ConSing, Disable,  Quantenkonverter auf jeder Basis,              0, 1, 1, 1, 0,
+Der Materie- Transmitter,       60, 0, Matter,  Disable,  +2 Mineralien auf jeder Basis,                 0, 1, 1, 1, 0,
+Die Telepathie-Matrix,           60, 0, Eudaim,  Disable,  Keine Drohnen-Aufstände mehr; +2 PROBE,        0, 1, 0, 0, 1,
+Die Stimme des Planeten,        60, 0, Thresh,  Disable,  Beginnt Aufstieg zur Transzendenz,             0,-2, 2, 2, 1,
+Der Aufstieg zur Transzendenz, 200, 0, Thresh,  Disable,  Ende der eindimensional intelligenten Ära,                     0, 0, 2, 2, 2,
+Die Manifold- Harmonie,          50, 0, SecMani, Disable,  Bonus-Ressourcen im Fungus,    -1, 0, 1, 2, 2,
+Der Netzhacker- Terminus,       40, 0, HAL9000, Disable,  Stärkere Sondierteams,                 0, 1, 2, 1, 1,
+Die Wolken-Akademie,            30, 0, MindMac, Disable,  Schnellere/stärkere Luft-Einheiten,       1, 1, 0, 0, 0,
+Das Planeten- Energieraster,      30, 0, AdapEco, Disable,  Energielager in jeder Basis,         -1, 0, 1, 2, 1,
+Leeres Geheimprojekt 38,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 39,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 40,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 41,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 42,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 43,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 44,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 45,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 46,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 47,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 48,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 49,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 50,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 51,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 52,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 53,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 54,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 55,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 56,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 57,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 58,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 59,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 60,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 61,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 62,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 63,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+Leeres Geheimprojekt 64,        20, 0, Disable, Disable,  Ende der echten Geheimprojekte,     0, 0, 2, 2, 2,
+
+;
+; Aktionen - Namen für Aktionen von Einheiten
+;
+#ORDERS
+keine Befehle,                          -
+Wachposten/in Transporter einsteigen,   L
+Position halten,                      H
+Konvoi,                                   O
+Nach,                                       G
+Bewegen,                                >
+Erkunden,                               /
+Straße nach,                           r
+Röhre nach,                            t
+
+#COMPASS
+Nordost
+Ost
+Südost
+Süd
+Südwest
+West
+Nordwest
+Nord
+
+#PLANS
+Angriff,       Angriff,
+Kampf,         Kampf,
+Abwehr,        Abwehr,
+Erkunden,      Erkunden/Abwehr,
+Luftmacht,     Luftüberlegenheit,
+Planetenbombe, Planetenbombe,
+See,           Seemacht,
+Transport,     Seetransport,
+Kolonisieren,  Expansion/Neue Basen,
+Terraforming,  Anbauen/Terraforming,
+Konvoi,        Ressourcenkonvoi,
+Geheim,        Geheimoperationen,
+Artefakt,      Außerirdisches Artefakt,
+Tektonik,      Tektonische Nutzlast
+Fungus,        Fungus-Nutzlast
+
+#TRIAD
+Land
+See
+Luft
+
+;
+; Ressourcen & Energienamen
+;
+#RESOURCES
+Nahrung,     Nahrung,
+Mineralien,  Mineralien,
+Energie,     Energie,
+PSI,         PSI,
+
+#ENERGY
+Ökon.,   Ökonomie,
+Psycho,  Psycho/Sozial,
+Labor,   Labor,
+
+;
+; Bürger - Ethik und Spezialisierung
+;
+; Singular, Plural, Voraus., veraltet, Oper., Psycho, Forschung
+;
+; Voraus.   = Technologische Voraussetzung
+; Veraltet  = Technologie, welche die Spezialisierung überflüssig macht
+; Oper.     = Bonus für Betrieb/Reserven
+; Psycho    = Bonus für Psycho/Soz.
+; Forschung = Bonus für Forschung
+;
+
+#CITIZENS
+Techniker,     Techniker,        None,    Fusion,  3, 0, 0, 0000000
+Arzt,          Ärzte,            None,    CentMed, 0, 2, 0, 0000000
+Bibliothekar,  Bibliothekare,    PlaNets, MindMac, 0, 0, 3, 0000000
+Ingenieur,     Ingenieure,       Fusion,  Disable, 3, 0, 2, 0000000
+Empath,        Empathen,         CentMed, AlphCen, 2, 2, 0, 0000000
+Denker,        Denker,           MindMac, AlphCen, 0, 1, 3, 0000000
+Transzendent,  Transzendenten,   AlphCen, Disable, 2, 2, 4, 0000000
+Drohne,        Drohnen,
+Arbeiter,      Arbeiter,
+Talent,        Talente,
+
+#SOCIO
+ECONOMY, EFFIC, SUPPORT, TALENT, MORALE, POLICE, GROWTH, PLANET, PROBE, INDUSTRY, RESEARCH
+WIRTSCHAFT, EFFIZIENZ, UNTERST., TALENT, MORAL, POLIZEI, WACHSTUM, PLANET, SONDE, INDUSTRIE, FORSCH.
+Politik, Ökonomie, Werte, Gesellschaftsprinzipien
+Grenzstaat,        None,
+Polizeistaat,      DocLoy,  ++POLICE,   ++SUPPORT, --EFFIC
+Demokratie,        EthCalc, ++EFFIC,    ++GROWTH,  --SUPPORT
+Fundamental.,      Brain,   +MORALE,    ++PROBE,   --RESEARCH
+Einfach,           None,
+Freie Marktw.,     IndEcon, ++ECONOMY,  ---PLANET,  -----POLICE
+Planwirtschaft,    PlaNets, ++GROWTH,   +INDUSTRY, --EFFIC
+Grün,              CentEmp, ++PLANET,   ++EFFIC,   --GROWTH
+Überleben,         None,
+Macht,             MilAlg,  ++MORALE,   ++SUPPORT, --INDUSTRY
+Wissen,            Cyber,   ++RESEARCH, +EFFIC,    --PROBE
+Wohlstand,         IndAuto, +INDUSTRY,  +ECONOMY,  --MORALE
+Keine,             None,
+Kybernetik,        DigSent, ++EFFIC,    ++PLANET,  ++RESEARCH, ---POLICE
+Eudämonie,         Eudaim,  ++GROWTH,   ++ECONOMY, ++INDUSTRY, --MORALE
+Gedankenkon.,      WillPow, ++POLICE,   ++MORALE,  ++PROBE,   ---SUPPORT
+
+
+#SOCECONOMY
+-3, -2 Energie je Basis
+-2, -1 Energie je Basis
+-1, -1 Energie bei HQ-Basis
+ 0,  Standard-Energiewerte
+ 1, +1 Energie je Basis
+ 2, +1 Energie je Feld!
+ 3, +1 Energie je Feld; +1 Handelswert!!
+ 4, +1 Energie/Feld; +2 Energie/Basis; +2 Handelsertrag!!!
+ 5, +1 Energie/Feld; +4 Energie/Basis; +3 Handelsertrag!!!
+
+
+#SOCEFFIC
+-4, ÖKONOMISCHE LÄHMUNG
+-3, Extreme Ineffizienz
+-2, Schreckliche Ineffizienz
+-1, Schlimme Ineffizienz
+ 0, Hohe Ineffizienz
+ 1, Normale Effizienz
+ 2, Lobenswerte Effizienz
+ 3, Hervorragende Effizienz!
+ 4, MUSTERWIRTSCHAFT!!
+
+#SOCSUPPORT
+-4, Jede Einheit kostet 2 zur Unterstützung; keine kostenlosen Mineralien für neue Basen.
+-3, Jede Einheit kostet 1 zur Unterstützung; keine kostenlosen Mineralien für neue Basen.
+-2, Unterstützt 1 Einheit pro Basis kostenlos; keine kostenlosen Mineralien für neue Basen.
+-1, Unterstützt 1 Einheit pro Basis kostenlos
+ 0, Unterstützt 2 Einheiten pro Basis kostenlos
+ 1, Unterstützt 3 Einheiten pro Basis kostenlos
+ 2, Unterstützt 4 Einheiten pro Basis kostenlos!
+ 3, Unterstützt 4 Einheiten oder bis zu einer Basis kostenlos!!
+
+#SOCTALENT
+-1, Zusätzliche Drohnen auf jeder Basis
+ 0,
+ 1, Zusätzliche Talente auf jeder Basis!
+
+#SOCMORALE
+-4, -3 Moral; + Faktoren halbiert
+-3, -2 Moral; + Faktoren halbiert
+-2, -1 Moral; + Faktoren halbiert
+-1, -1 Moral
+ 0,  Normale Moral
+ 1, +1 Moral
+ 2, +1 Moral  (+2 für Abwehr)
+ 3, +2 Moral! (+3 für Abwehr)
+ 4, +3 Moral!!
+
+#SOCPOLICE
+-5, Zwei zusätzliche Drohnen für jeder Militär-Einheit außerhalb ihres Territoriums
+-4, Zusätzliche Drohne für jeder Militär-Einheit außerhalb ihres Territoriums
+-3, Zusätzliche Drohne, falls sich mehr als eine Miltär-Einheit außerhalb ihres Territoriums befindet
+-2, Militär-Einheiten können nicht als Polizei eingesetzt werden. Kein Nervschneiden.
+-1, Eine Polizei-Einheit erlaubt. Kein Nervschneiden.
+ 0, Eine Militär-Einheit kann als Polizei eingesetzt werden
+ 1, Bis zu 2 Militär-Einheiten können als Polizei eingesetzt werden
+ 2, Bis zu 3 Militär-Einheiten können als Polizei eingesetzt werden!
+ 3, 3 Einheiten als Polizei. Polizeieffekt verdoppelt!!
+
+#SOCGROWTH
+-3, FAST KEIN BEVÖLKERUNGSWACHSTUM
+-2, -20% Wachstumsrate
+-1, -10% Wachstumsrate
+ 0, Normale Wachstumsrate
+ 1, +10% Wachstumsrate
+ 2, +20% Wachstumsrate
+ 3, +30% Wachstumsrate
+ 4, +40% Wachstumsrate
+ 5, +50% Wachstumsrate!
+ 6, BEVÖLKERUNSGEXPLOSION!!
+
+#SOCPLANET
+-3, Massive Umweltzerstörung; -3 Fungusproduktion
+-2, Starke Umweltzerstörung;  -2 Fungusproduktion
+-1, Erhöhte Umweltzerstörung; -1 Fungusproduktion
+ 0, Normale ökologische Spannungen
+ 1, Ökologische Schutzregeln!; können einheimische Lebensformen einfangen
+ 2, Ökologische Harmonie!; erhöhte Wahrscheinlichkeit einheimische Lebensformen einzufangen
+ 3, Ökologische Weisheit!!; maximale Wahrscheinlichkeit einheimische Lebensformen einzufangen
+
+#SOCPROBE
+-2, -50% Kosten feindlicher Sondierungsaktionen; Erfolgsquote des Feindes steigt
+-1, -25% Kosten feindlicher Sondierungsaktionen; Erfolgsquote des Feindes steigt
+ 0, Normale Sicherheitsmaßnahmen
+ 1, +1 Gruppenmoral f. Sondierteams; +50% Kosten feindlicher Sondierungsaktionen
+ 2, +2 Gruppenmoral f. Sondierteams; Verdoppelt Kosten feindlicher Sondierungsaktionen!
+ 3, +3 Gruppenmoral f. Sondierteams; Basen und Einheiten sind vor subversiven Aktionen von Standard-Sondierteams sicher!!
+
+#SOCINDUSTRY
+-3, Mineralienkosten steigen um 30%
+-2, Mineralienkosten steigen um 20%
+-1, Mineralienkosten steigen um 10%
+ 0, Normale Produktionsrate
+ 1, Mineralienkosten sinken um 10%
+ 2, Mineralienkosten sinken um 20%
+ 3, Mineralienkosten sinken um 30%!
+ 4, Mineralienkosten sinken um 40%!!
+ 5, Mineralienkosten sinken um 50%!!!
+
+#SOCRESEARCH
+-5, Labor-Forschung verlangsamt um 50%
+-4, Labor-Forschung verlangsamt um 40%
+-3, Labor-Forschung verlangsamt um 30%
+-2, Labor-Forschung verlangsamt um 20%
+-1, Labor-Forschung verlangsamt um 10%
+ 0, Normale Forschungsrate
+ 1, Labor-Forschung beschleunigt um 10%
+ 2, Labor-Forschung beschleunigt um 20%
+ 3, Labor-Forschung beschleunigt um 30%
+ 4, Labor-Forschung beschleunigt um 40%
+ 5, Labor-Forschung beschleunigt um 50%
+
+;
+; Schwierigkeit - Namen für Schwierigkeitsgrade
+;
+#DIFF
+Bürger,
+Spezialist,
+Talent,
+Bibliothekar,
+Denker,
+Transzendent,
+
+##### IMPORTANT NOTE TO TRANSLATORS
+# For this list of adjectives, please translate to all genders & plurality:
+"Außerirdische"
+"Gaianer"
+"Kollektiv"
+"Universität"
+"Morganer"
+"Spartaner"
+"Gläubige"
+"Pazifisten"
+
+;
+; Gruppierungen - Namen u. Charaktereigenschaften
+;
+; Formale Anrede, Beschreibung, Hauptwort, Maskulin/Feminin, Singular/Plural,
+; Name, Geschlecht, KI-Kampf, KI-Macht, KI-Tech, KI-Wohlstand, KI-Wachstum
+;    Title, Charaktereigenschaft, Adjektive
+;    SONDERREGELN, Parameter, ...
+;    GESELLSCHAFTSPRIORITÄTEN, Einstellungen, Ergebnis
+;
+; Formale Anrede      = Formeller Name der Kolonie/Gruppierung
+; Beschreibung        = Beschreibung der grundlegenden Ideologie
+; Hauptwort           = Hauptwort im Plural
+; Maskulin/Feminin    = Geschlechtsbestimmung der Gruppierung
+; Singular/Plural     = Bestimmt, ob das Hauptwort im Singular (Labyrinth) oder
+;                       im Plural (Gaianer) auftritt
+; Name                = Name des Vorgabe-Anführers
+; Geschlecht          = M (Männlich) oder F (Weiblich) - Geschlecht des
+:                       Anführers/der Anführerin
+; KI-Kampf     = -1,0,1 (Bereitschaft zur Erreichung der Ziele Gewalt
+;                        einzusetzen)
+; KI-Macht     = 1 oder 0 (Interesse an Macht)
+; KI-Tech      = 1 oder 0 (Interesse an Wissen/Forschung)
+; KI-Wohlstand = 1 oder 0 (Interesse an Wohlstand); KI-Wachstum  = 1 oder 0
+;                Interesse an Bevölkerungswachstum)
+;
+; Titel            = Titel des Anführers/der Anführerin
+; Charak.eigensch. = Adjektive, die den Anführer/die Anführerin beschreiben
+;
+; Adjektive      = Name der Gruppierung als Adjektiv (z.B. gaianisch)
+;                  
+;
+; SONDERREGELN   = Regeln, Parameter
+;
+;   TECH        = Technologie, die die Gruppierung bei Spielbeginn erhält.
+;                 Parameter ist entweder eine Abkürzung (z.B. "Cen"), um
+;                 eine bestimmte Technologie anzudeuten, oder eine
+;                 Zahl (z.B. 2), um die Anzahl der vom Spieler
+;                 gewählten Technologien anzuzeigen.
+;   MORALE      = Moral-Faktor (0 bedeutet die Befreiung
+;                 von negativen Faktoren, die aus anderen
+;                 Quellen stammen).
+;   PSI         = Prozentualer Kampfbonus für den PSI-Kampf.
+;   FACILITY    = Jede neue Basis erhält diese Einrichtung umsonst.
+;                 Der Parameter zeigt an, um welche Einrichtung
+;                 der vorgegebenen List es sich handelt
+;                 "4" ist z.B. eine Abwehrzone). Versuchen Sie
+;                 NICHT auf diesem Weg Satelliten oder
+;                 Geheimprojekte zu vergeben.
+;   RESEARCH    = Kostenlose Forschunspunkte pro Basis pro Runde.
+;   DRONE       = Zusatz-Drohne auf der Basis (pro "Param"-
+;                 Bürger, abgerundet)
+;   TALENT      = Zusatz-Talent auf der Basis (pro "Param"-
+;                 Bürger, aufgerundet)
+;   ENERGY      = Kostenlose Energiereservem bei Spielbeginn
+;   INTEREST    = Zins für Energiereserven.
+;                 Nicht-Null = konstanter prozentualer Wert pro Runde
+;                 (einschließlich negativem Wert)
+;                 Null     = +1/Base je Runde
+;   COMMERCE    = Erhöhter Handelsertrag
+;   POPULATION  = Der Wert, der zur Bevölkerungsgrenze
+;                 jeder Basis hinzugerechnet wird, z.B. für
+;                 die Einrichtung einer Wohnkuppel.
+;   HURRY       = Prozentuale Kostenänderung der Taste
+;                 "Beschleun." beim Bau (125 bedeutet z.B. 125% der
+;                 normalen Kosten; 100 kosten also 125).
+;   UNIT        = Zusätzliche kostenlose Einheit bei Spielbeginn;
+;                 Die Paramenter entsprechen der Einheitenliste
+;                 (z.B. 0 = Kolonisten, 1 = Terraformer,
+;                 2 = Scout-Raupe)
+;   TECHCOST    = Faktor in % für Technologien-Forschungsrate
+;                 (125 bedeutet z.B. daß jede Entdeckung 125%
+;                 der normalen Anzahl an Forschungspunkten
+;                 kostet).
+;   SHARETECH   = Sie erwerben jede Technologie, die der Anzahl
+;                 der anderen Spielern bekannt sind
+;   TERRAFORM   = Halbiert die Kosten für Terraform Auf/Ab
+;   SOCIAL      = Benennt einen Faktor in der entsprechenden
+;                 Gesellschaftseffekt-Kategorie
+;                 ("SOCIAL, +EFFIC" erhöht den Wert EFFIC um 1;
+;                  "SOCIAL, --POLICE" senkt den Wert POLICE um 2);
+;   ROBUST      = Halbiert die Intensität von Minuswerten in den entspr.
+;                 Gesellschaftsgebieten ("ROBUST, EFFIC" halbiert den
+;                 Minuswert für die Effizienz in Gesellschaftsmodellen).
+;   IMMUNITY    = Immunität von Minuswerten im entsprechenden Gesellschafts-
+;                 gebiet. ("IMMUNITY, ENERGY" hebt Minuswerte für
+;                 Energie in Gesellschaftsmodellen auf).
+;   IMPUNITY    = Straffreiheit :-) von Minuswerten von bestimmten
+;                 gesellsch. Einstellungen. "IMPUNITY, Polizeistaat"
+;                 unterbindet alle Minuswerte von "Polizeistaat"-Einstellungen.
+;   PENALTY     = Gegenteil von Straffreiheit: verdoppelt den negativen
+;                 Wert einer bestimmten Einstellung.
+;   FUNGNUTRIENT= Faktor für NAHRUNG, die in Fungus-Feldern produziert wird
+;   FUNGMINERALS= Faktor für MINERALIEN, die in Fungus-Feldern produziert werden
+;   FUNGENERGY  = Faktor für ENERGIE, die in Fungus-Feldern produziert wird
+;   COMMFREQ    = Erhält eine weitere Kommunikationsfrequenz (Verbindung zu
+;                 einer anderen Gruppierung) bei Spielbeginn.
+;                 (Parameter ist nicht von Bedeutung)
+;   MINDCONTROL = Fahrzeuge und Basen, die gegen Gedankenkontrolle immun sind
+;   FANATIC     = Bonus in Höhe von +25% beim Angriff
+;   VOTES       = Multiplikationsfaktor für Gouverneur-Wahlstimmen
+;   FREEPROTO   = Diese Gruppierung hat keine Kosten für den Bau von Prototypen
+;   AQUATIC     = Es handelt sich um eine See-basierte Gruppierung
+;   ALIEN       = Es handelt sich um eine Gruppierung, die nicht menschlichen Ursprungs ist
+;   FREEFAC     = Kostenlose Einrichtung, wenn entsprechende Technologie entdeckt wird
+;   REVOLT      = Zusatz-Eventualität in Prozent, daß andere rebellierende Basen zu dieser Gruppierung überlaufen
+;   NODRONE     = Anzahl der Drohnen pro Basis, die zufriedengestellt werden
+;   WORMPOLICE  = Psycho-Viren leisten doppelten Polizeidienst
+;   FREEABIL    = Alle angemessenen Einheiten haben diese Fähigkeit, wenn die erforderliche Technologie entdeckt wurde
+;   PROBECOST   = Prozentwert der Standardkosten für Aktionen von Sondierteams (Vorgabewert ist 100)
+;   DEFENSE     = Prozent-Faktor für Verteidigungskämpfe (Vorgabewert ist 100)
+;   OFFENSE     = Prozent-Faktor für Angriffskämpfe (Vorgabewert ist 100)
+;   TECHSHARE   = In Zusammenhang mit SHARETECH erfordert es, daß man die anderen Gruppierungen
+;                                  ausspioniert (über Sondierteams, die Gilde der Empathen, den Gouverneur oder einen
+;                                  Pakt). Parameter wird ignoriert.
+;   TECHSTEAL = Gruppierung stiehlt eine Technologie, wenn sie eine Basis einnimmt. Parameter wird ignoriert.
+;
+; GESELLSCHAFTS-PRIORITÄTEN:
+;   Diese Eingaben, die von der obenstehenden politischen Tabelle aufgerufen
+;   werden, (siehe #SOCIO), müssen von der Schreibweise her mit den Angaben für
+;   SOCIO exakt übereinstimmen. Sie bestimmen die gesellschaftlichen Prioriäten
+;   der Anführer.
+;
+
+##
+##SAMPLE SENTENCES FOR TRANSLATORS
+##
+##Gaias Stieftöchter, Die Grünen, Gaianer, F, 2, Deirdre, F, -1, 0, 0, 0, 1,
+##  TECH, Ecology, SOCIAL, -MORALE, SOCIAL, -POLICE, SOCIAL, ++EFFIC, SOCIAL, +PLANET, FUNGNUTRIENT, 1
+##  Ökonomie, Grün, PLANET
+##  Ökonomie, Freie Marktwirtschaft, Null
+##  Gaianisch, Gaianisch,
+##  Lindly, Scott, Lindlys Ruhe
+##  Dame, schön, naturverbunden, umweltbewußt, umweltverrückt,
+##  naturbesessen
+##  [Zusammen wollen wir] das ursprüngliche Leben des Planeten bewahren
+##  [Meine Absicht ist] das ursprüngliche Leben des Planeten zu schützen, verstehen und bewahren
+##  [Sie ist versessen darauf] die gesamte rechtmäßige menschliche Entwicklung dieses Planeten auszuradieren
+##  [Sie scheinen darauf versessen zu sein] die gesamte rechtmäßige menschliche Entwicklung dieses Planeten auszuradieren
+##  [Ich werde nicht untätig herumstehen, während Sie] alle Bestrebungen des menschlichen Fortschritts in dieser Welt sabotieren
+##  [Sie verbringt ihre Zeit damit] nackt durch den Wald zu tanzen
+##  [Sie verbringen Ihre Zeit damit] nackt durch den Wald zu tanzen
+##  [Ich wurde beschuldigt] umweltvernarrte Slogans zu zitieren
+##  [Ihr:Ihre:Ihr:Ihre:Ihre:Ihre] umweltvernarrten Slogans [beeindrucken mich nicht]
+##  [Denken Sie nur daran, wie Ihr:Ihre:Ihr:Ihre:Ihre:Ihre] Umweltinitiativen [davon profitieren würde:würden]
+##  [Ich habe den Eindruck, daß sich Ihr:Ihre:Ihr:Ihre:Ihre:Ihre] heidnischen Rituale [zu Ihrer Zufriedenheit entwickeln]
+##  [Es ist üblich, mir einen kleinen Betrag in Form einer:eine:eines] Ökosteuer []
+##  [...für die Dienste meiner Truppen] das natürliche Leben des Planeten zu bewahren und katalogisieren [ zu vergüten.]
+##  [Ich sorge dafür, daß] meine Umweltpolizei [so etwas nicht...]
+##  [Sie verstoßen gegen] Ökologiegesetze des Planeten
+##
+##  END OF SAMPLE SENTENCES FOR TRANSLATORS
+##
+
+; Bonus-Namen: Diese Begriffe müssen mit denen in den Gruppen-Definitionen
+; übereinstimmen
+#BONUSNAMES
+TECH, MORALE, PSI, FACILITY, RESEARCH, DRONE, TALENT, ENERGY,
+INTEREST, COMMERCE, POPULATION, HURRY, UNIT, TECHCOST, SHARETECH, TERRAFORM,
+SOCIAL, ROBUST, IMMUNITY, IMPUNITY, PENALTY, FUNGNUTRIENT, FUNGMINERALS, FUNGENERGY,
+COMMFREQ, MINDCONTROL, FANATIC, VOTES, FREEPROTO, AQUATIC, ALIEN, FREEFAC,
+REVOLT, NODRONE, WORMPOLICE, FREEABIL, PROBECOST, DEFENSE, OFFENSE, TECHSHARE,
+TECHSTEAL
+
+;
+; 1. Teil ist der Dateiname, 2. Teil ist der Suchbegriff.
+; Außer für das Debugging, sollten diese Teile immer identisch sein.
+;
+#FACTIONS
+GAIANS, GAIANS
+HIVE, HIVE
+UNIV, UNIV
+MORGAN, MORGAN
+SPARTANS, SPARTANS
+BELIEVE, BELIEVE
+PEACE, PEACE
+
+;
+; 1. Teil ist der Dateiname, 2. Teil ist der Suchbegriff.
+; Außer für das Debugging, sollten diese Teile immer identisch sein.
+;
+#NEWFACTIONS
+CYBORG,   CYBORG
+PIRATES,  PIRATES
+DRONE,    DRONE
+ANGELS,   ANGELS
+FUNGBOY,  FUNGBOY
+CARETAKE, CARETAKE
+USURPER,  USURPER
+
+;
+; Diese Gruppierungen sollten in der Startup-Liste enthalten sein.
+; Sie können auch ausgewählt werden, wenn die Gruppierung per
+; Zufallsgenerator ermittelt wird. Der 1. Teil ist der Dateiname,
+; der 2. Teil ist der Suchbegriff. Außer für das Debugging, sollten
+; diese Teile immer identisch sein.
+;
+#CUSTOMFACTIONS
+
+#MANDATE
+Entdecken, ENTDECKEN
+Forschen,  FORSCHEN
+Bauen,     BAUEN
+Kämpfen,   KÄMPFEN
+
+#MOOD
+GROSSZÜGIG
+BESORGT
+KOOPERATIV
+ZURÜCKHALTEND
+AMBIVALENT
+HARTNÄCKIG
+STREITSÜCHTIG
+AGGRESSIV
+WÜTEND
+
+#REPUTE
+EDEL
+TREU
+GEWISSENHAFT
+VERLÄSSLICH
+RÜCKSICHTSLOS
+VERRÄTERISCH
+BÖSE
+BERÜCHTIGT
+
+#MIGHT
+unübertroffen, GROSSARTIG
+stark,         gewaltig
+furchtbar,     furchtbar
+ausreichend,   ansehlich
+schwächlich,   klein
+schwach,       schwach
+erbärmlich,      erbärmlich
+
+#PROPOSALS
+Planeten-Gouverneur wählen,           None,    Neuer Gouverneur ernannt
+Vereint Euch unter mir als Oberbefehlshaber,  MindMac,  Diplomatischer Sieg; Spielende
+Fusionskern der Unity retten,         Orbital, +500 Energieeinheiten pro Gruppierung
+Globales Handelsabkommen,             PlaEcon, Handelsertrag verdoppelt
+Globales Handelsabkommen kündigen,    PlaEcon, Handelsertrag halbiert
+Solarschirm starten,                  Space,   Globale Abkühlung, Meeresspiegel sinkt
+Solarschirm vergrößern,               Space,   Globale Abkühlung, Meeresspiegel sinkt
+Eiskappen schmelzen,                  EcoEng2, Globale Erwärmung, Meeresspiegel steigt
+UN-Charta kündigen,                   MilAlg,  Verbot von Greueltaten aufgehoben
+UN-Charta wieder in Kraft setzen,     MilAlg,  Verbot von Greueltaten in Kraft
+...,                                  Disable, ...
+
+
+
+#NATURAL
+Garland Crater, Crater
+Mount Planet, Volcano
+Monsoon Jungle, Jungle
+Uranium Flats, Uranium
+New Sargasso, Sargasso
+The Ruins, Ruins
+Great Dunes, Dunes
+Freshwater Sea, Fresh
+Sunny Mesa, Mesa
+Nessus Canyon, Canyon
+Geothermal Shallows, Geothermal
+Pholus Ridge, Ridge
+Borehole Cluster, Borehole
+Manifold Nexus, Nexus
+U.N.S. Unity Wreckage, Unity
+Fossil Field Ridge, Fossil
+
+
+# ; Diese Zeile muß am Dateiende stehen.
+
