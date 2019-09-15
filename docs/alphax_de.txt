@@ -5,6 +5,11 @@
 ;
 ; Copyright (c) 1997, 1998 by Firaxis Games, Inc.
 ;
+; *************************************************************
+; *  Contains changes made for SMACX Thinker Mod by Induktio  *
+; *  https://github.com/induktio/thinker                      *
+; *************************************************************
+;
 ; ALPHA CENTAURI leitet bei Spielbeginn die Regeln aus dieser Datei ab.
 ; Sie können auf eigenes Risiko mit dieser Datei experimentieren.
 ; Wir empfehlen Ihnen, eine Sicherungskopie der Originaldatei anzulegen.
@@ -88,7 +93,7 @@ PlaEcon, ; Technologie für wirtschaftlichen Sieg
 50,      ; Max. von Artillerie verursachter Schaden in % geg. Einheiten in Basis/Bunker
 99,      ; Max. von Artillerie verursachter Schaden in % geg. Einheiten in offenem Gelände
 100,     ; Max. von Artillerie verursachter Schaden in % geg. Einheiten auf See
-1, 1     ; Zähler/Nenner für die Häufigkeit von globaler Erwärmung (1,2 wäre die "Hälfte" der sonst normalen Erwärmung).
+1, 2     ; Zähler/Nenner für die Häufigkeit von globaler Erwärmung (1,2 wäre die "Hälfte" der sonst normalen Erwärmung).
 2100     ; Normal beginnendes Jahr
 2600     ; Normal abschließendes Jahr für die 3 niedrigsten Schwierigkeitsstufen
 2500     ; Normal abschließendes Jahr für die 3 höchsten Schwierigkeitsstufen
@@ -162,15 +167,15 @@ Bohrloch-Feld,       0, 6, 6, 0,
 ;
 #WORLDBUILDER
 384, ; Land-Basis          (Landgröße einer Standardwelt)
-256, ; Land-Faktor         (zusätzliches Land in Option LAND: x0, x1, x2)
-12,  ; Kontinent-Basis     (Basisgröße eines Subkontinents)
+120, ; Land-Faktor         (zusätzliches Land in Option LAND: x0, x1, x2)
+48,  ; Kontinent-Basis     (Basisgröße eines Subkontinents)
 24,  ; Kontinent-Faktor    (Vergrößert in Option LAND: x0, x1, x2)
 1,   ; Hügel-Basis         (Basiswert zusätzl. Hügel)
 2,   ; Hügel-Faktor        (zusätzl. Hügel aus Optionen TIDAL: x0, x1, x2)
-4,   ; Plateau-Basis       (Basis-Plateaugröße)
-8,   ; Plateau-Faktor      (Plateaufaktor aus Option LAND: x0, x1, x2)
-8,   ; Fluß-Basis          (Basisnr. Flüsse)
-12,  ; Fluß-Regenfaktor    (Weitere Flüsse basierend auf Option für REGEN)
+8,   ; Plateau-Basis       (Basis-Plateaugröße)
+16,  ; Plateau-Faktor      (Plateaufaktor aus Option LAND: x0, x1, x2)
+16   ; Fluß-Basis          (Basisnr. Flüsse)
+16,  ; Fluß-Regenfaktor    (Weitere Flüsse basierend auf Option für REGEN)
 14,  ; Solarenergie        (Breitengrad-DIVISOR für Temperatur, basiert auf HITZE) Kleinere Zahl vergrößert Effekt der HITZE-Option
 14,  ; Thermalbänder       (Breitengrad-DIVISOR für Thermalbänder) Kleinere Zahl verbreitert heiße Zonen
 8,   ; Thermalabweichung   (Breitengrad-DIVISOR für Thermalabweichung) Kleinere Zahl vergrößert Zufallsfaktor
@@ -179,22 +184,22 @@ Bohrloch-Feld,       0, 6, 6, 0,
 5,   ; Wolken/Berge        (Größe der durch Gipfel eingefangenen Wolkenmasse)
 3,   ; Wolken/Hügel        (Größe der durch Hügel eingefangenen Wolkenmasse)
 1,   ; Niederschlagsfaktor (Multiplikationsfaktor für Niederschlagszonen)
-15,  ; Tiefes Wasser       (Läßt Fraktal tiefes Wasser erzeugen)
+8,   ; Tiefes Wasser       (Läßt Fraktal tiefes Wasser erzeugen)
 10,  ; Schelf              (Läßt Fraktal Kontinentalschelf erzeugen)
 15,  ; Ebenen              (Läßt Hochebenen entstehen)
-10,  ; Strand              (Läßt breitere Strände entstehen)
+40,  ; Strand              (Läßt breitere Strände entstehen)
 10,  ; Hügel               (Fördert Hügel x Option TIDAL)
-25,  ; Gipfel              (Läßt Gipfel entstehen)
+10,  ; Gipfel              (Läßt Gipfel entstehen)
 1,   ; Fungus              (Fungus-Koeffizient, basiert auf Option LEBEN)
 3,6,12,18,24 ; Verhält.    (Verhältnis der Kontinentalgrößen)
-36   ; Inseln              (Höhere Zahl steigert Anzahl der Inseln)
+4    ; Inseln              (Höhere Zahl steigert Anzahl der Inseln)
 
 #WORLDSIZE
 5
 Winziger Planet|(früher Konflikt),   24, 48
 Kleiner Planet,                      32, 64
 Standard-Planet,                     40, 80
-GROSSER PLANET,                      44, 90
+GROSSER PLANET,                      50, 100
 Riesiger Planet|(später Konflikt),   64, 128
 
 ;
@@ -503,13 +508,13 @@ Starker Druckrumpf,  1, Metal,    Sub-,            000000111010, Operiert unter 
 Trägerdeck,          1, Metal,    Träger-,         000101101010, Mobiler Luftstützpunkt
 Flak-Peilung,        1, MilAlg,   Flak-,           000010001011, x2 gegen Luftangriffe
 Funkstörgerät,      -1, Subat,    GEGENMASSN.-,    000010111001, +50% gegen schnelle Einheiten
-Antigrav-Stützen,    1, Gravity,  Grav.-,          000000111001, +1 Bewegungsrate (oder +Reaktor*2 für Luft-Einheiten)
+Antigrav-Stützen,    1, Gravity,  Grav.-,          000000111101, +1 Bewegungsrate (oder +Reaktor*2 für Luft-Einheiten)
 Empath-Lied,         2, CentEmp,  Empath-,         000010001111, +50% Angriff gegen PSI
 Polymorphe Codierung, 1, Algor, Codiert.,          000000111111, x2 Kosten für Unterwanderung
 Fungizid-Tanks,      1, Fossil,   Fungizid-,       000000010111, Beseitigt Fungus doppelt so schnell
 Hohe Gruppenmoral,   1, Integ,    Ausgebil.,       000000001111, Steigert Moral
 Schwere Artillerie, -7, Poly,     Artillerie-,     000010001001, Bombardiert
-Autonomer Reaktor,   2, BioEng,   Autonom.,        000000111111, Braucht keine Unterstützung
+Autonomer Reaktor,   2, BioEng,   Autonom.,        000001111111, Braucht keine Unterstützung
 Mini-Teleporter,     1, Matter,   Mini-Tele.-,     000000001111, Umgeht Basisabwehr
 Hypnotische Trance, -1, Brain,    Trance-,         000010111111, +50% Abwehr gegen PSI
 Schwerer Transporter,    1,    Disable,  Schwer,   000100100111, +50% Transportkapazität
@@ -580,11 +585,14 @@ Rakete,      Rakete-,  Rak.,  R
 ;             10 = Nachschubkonvoi
 ;             11 = Info-Krieg
 ;             12 = Außerird. Artefakt
+;             13 = Tektonische Nutzlast
+;             14 = Fungus Nutzlast
 ; Preis     = Preis in Mineralien (0=Autom. Berechnung)
 ; Kapaz.    = Transportkapazität (0=Autom. Berechnung)
 ; Voraus.   = Technologische Voraussetzungen (siehe oben, TECHNOLOGY)
 ; Symbol    = Spezialsymbol, falls vorhanden
 ; Fähig.    = Markierung für Sonderfähigkeiten
+; Reak.     = Reaktor-Level 1-4
 ;
 #UNITS
 23
@@ -592,7 +600,7 @@ Koloniekapsel,        Infanterie, Koloniekapsel, Scout,        8, 0, 0, None,   
 Former,               Infanterie, Former,        Scout,        9, 0, 0, Ecology, -1, 00000000000000000000000000
 Scout-Patrouille,     Infanterie, Geschütz,      Scout,        3, 0, 0, None,    -1, 00000000000000000000000000
 Transp.-Tragflügelb.,    Tragflügelboot,         Transport,  Scout,   7, 0, 0, DocFlex, -1, 00000000000000000000000000
-*See-Former,           Tragflügelboot,        Former,        Scout,        9, 0, 0, Disable, -1, 00000000000000000000000000
+See-Former,           Tragflügelboot,        Former,        Scout,        9, 0, 0, Disable, -1, 00000000000000000000000000
 Transportraupe,        Infanterie, Nachschub,     Scout,       10, 0, 0, IndAuto, -1, 00000000000000000000000000
 Sondierteam,           Speeder,    Sondierteam,   Scout,       11, 0, 0, PlaNets, -1, 00000000000000000000000000
 AUSSERIRD. ARTEFAKT,   Infanterie, Artefakt,      Scout,       12,10, 0, Disable,  2, 00000000000000000000000000
@@ -624,10 +632,10 @@ Unity-Kampfhubschrauber,          Tragflügelboot,     Geschütz,          Scout, 
 ; Gratis   = Disable
 ; Effekt   = Kurzbeschreibung des Effekts
 ; KI-Kampf = Entspricht den Einstellungen -1, 0 oder 1 für 'Agressivität' der KI
-; KI-Mil   = Militärwert
-; KI-Tech  = Wert für Wissensvorsprung
-; KI-Infra = Infrastrukturwert
-; KI-Kolonisierung = Kolonisierungswert
+; KI-Mil   = Militärwert 1 oder 0 (Interesse an Macht)
+; KI-Tech  = Wert für Wissensvorsprung 1 oder 0 (Interesse an Wissen)
+; KI-Infra = Infrastrukturwert 1 oder 0 (Interesse an Bauen)
+; KI-Kolonisierung = Kolonisierungswert 1 oder 0 (Interesse an Entdecken)
 ;
 ;
 #FACILITIES
