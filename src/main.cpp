@@ -186,7 +186,7 @@ HOOK_API int turn_upkeep() {
         int arm = best_armor(i, false);
         int arm2 = best_armor(i, true);
         int chs = has_chassis(i, CHS_HOVERTANK) ? CHS_HOVERTANK : CHS_SPEEDER;
-        bool twoabl = knows_tech(i, tx_basic->tech_preq_allow_2_spec_abil);
+        bool twoabl = has_tech(i, tx_basic->tech_preq_allow_2_spec_abil);
         char buf[200];
 
         if (has_weapon(i, WPN_PROBE_TEAM)) {
@@ -291,7 +291,7 @@ HOOK_API int turn_upkeep() {
         int dm = manifold[p][1] + f->tech_fungus_mineral - r->forest_sq_mineral;
         int de = manifold[p][2] + f->tech_fungus_energy - r->forest_sq_energy;
         bool terra_fungus = has_terra(i, FORMER_PLANT_FUNGUS, 0)
-            && (knows_tech(i, tx_basic->tech_preq_ease_fungus_mov) || has_project(i, FAC_XENOEMPATHY_DOME));
+            && (has_tech(i, tx_basic->tech_preq_ease_fungus_mov) || has_project(i, FAC_XENOEMPATHY_DOME));
 
         plans[i].keep_fungus = (dn+dm+de > 0);
         if (dn+dm+de > 0 && terra_fungus) {
@@ -482,7 +482,7 @@ int find_proto(int fac, int triad, int mode, bool defend) {
         int id = (i < 64 ? i : (fac-1)*64 + i);
         UNIT* u = &tx_units[id];
         if (strlen(u->name) > 0 && unit_triad(id) == triad) {
-            if (id < 64 && !knows_tech(fac, u->preq_tech))
+            if (id < 64 && !has_tech(fac, u->preq_tech))
                 continue;
             if ((mode && tx_weapon[u->weapon_type].mode != mode)
             || (!mode && tx_weapon[u->weapon_type].offense_value == 0)
@@ -562,7 +562,7 @@ int consider_hurry(int id) {
             return hurry_item(b, mins, cost);
         if (t == -FAC_PERIMETER_DEFENSE && p->enemy_range < 15)
             return hurry_item(b, mins, cost);
-        if (t == -FAC_AEROSPACE_COMPLEX && knows_tech(fac, TECH_Orbital))
+        if (t == -FAC_AEROSPACE_COMPLEX && has_tech(fac, TECH_Orbital))
             return hurry_item(b, mins, cost);
     }
     if (t >= 0 && turns > 1) {
@@ -954,7 +954,7 @@ HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5) {
     if (has_project(fac, FAC_CLONING_VATS)) {
         /* Power & Thought Control */
         impunity |= (1 << (4*2 + 1)) | (1 << (4*3 + 3));
-    } else if (knows_tech(fac, tx_facility[FAC_CHILDREN_CRECHE].preq_tech)) {
+    } else if (has_tech(fac, tx_facility[FAC_CHILDREN_CRECHE].preq_tech)) {
         for (int i=0; i<*tx_total_num_bases; i++) {
             BASE* b = &tx_bases[i];
             if (b->faction_id == fac) {
@@ -978,7 +978,7 @@ HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5) {
         int sc1 = social_score(fac, i, sm1, pop_boom, range, immunity, impunity, penalty);
 
         for (int j=0; j<4; j++) {
-            if (j == sm1 || !knows_tech(fac, s[i].soc_preq_tech[j]) ||
+            if (j == sm1 || !has_tech(fac, s[i].soc_preq_tech[j]) ||
             (i == m->soc_opposition_category && j == m->soc_opposition_model))
                 continue;
             int sc2 = social_score(fac, i, j, pop_boom, range, immunity, impunity, penalty);

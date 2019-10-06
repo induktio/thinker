@@ -22,7 +22,7 @@ const int offset_tbl[][2] = {
 
 char* prod_name(int prod);
 int mineral_cost(int fac, int prod);
-bool knows_tech(int fac, int tech);
+bool has_tech(int fac, int tech);
 bool has_ability(int fac, int abl);
 bool has_chassis(int fac, int chs);
 bool has_weapon(int fac, int wpn);

@@ -4,13 +4,14 @@ SMACX Thinker Mod
 
 Thinker is an AI improvement mod for Alpha Centauri: Alien Crossfire. By patching the game to use an additional dll, new functionality can be developed in C++. This mod increases the level of challenge in single player while providing many gameplay enhancements. Some of the features include:
 
-* New production AI for bases
-* Improved terraforming AI (lots of condenser-farms, boreholes and forests)
+* Vastly improved production/terraforming AI
 * Rewritten code for AI social engineering choices
+* AI terraformers prioritize condenser-farms, boreholes and forests
 * AI builds more crawlers and deploys them better
 * AI deploys colony pods much sooner instead of wandering on the map
 * Unit auto design feature creates improved probe teams and AAA garrisons
-* Does not affect player-run factions
+* Many enhancements to random map generation/spawn locations
+* Does not affect player-run factions (with some exceptions)
 * Minimal changes to vanilla game mechanics
 * Game binary includes [Scient's patches](Details.md)
 
@@ -38,7 +39,7 @@ Installation
 Other mods
 ----------
 * [SMAC-in-SMACX mod](Details.md#smac-in-smacx-mod) can be installed to play a game similar to original SMAC from the SMACX game binary while Thinker is enabled.
-* [Pracx](https://github.com/DrazharLn/pracx) graphics enhancement patch can be used together with Thinker. It is recommended to download and install [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). If you already use older Pracx 1.10 you can just rename terranx_mod.exe to terranx.exe and run pracxpatch.exe so that the installer patches the right binary.
+* [Pracx](https://github.com/DrazharLn/pracx) graphics enhancement patch can be used together with Thinker, but it is not required in any way. For easiest installation, download [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). If you already use older Pracx 1.10 you can just rename terranx_mod.exe to terranx.exe and run pracxpatch.exe so that the installer patches the right binary.
 
 
 Compiling

@@ -13,6 +13,7 @@
 #define PM_NEAR_SAFE -40
 
 HOOK_API int enemy_move(int id);
+HOOK_API int log_veh_kill(int a, int b, int c, int d);
 void move_upkeep(int fac);
 bool has_transport(int x, int y, int fac);
 bool non_combat_move(int x, int y, int fac, int triad);

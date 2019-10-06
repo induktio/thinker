@@ -16,22 +16,22 @@ int mineral_cost(int fac, int prod) {
         return tx_facility[-prod].cost * tx_cost_factor(fac, 1, -1);
 }
 
-bool knows_tech(int fac, int tech) {
+bool has_tech(int fac, int tech) {
     if (tech == TECH_None)
         return true;
     return tech >= 0 && tx_tech_discovered[tech] & (1 << fac);
 }
 
 bool has_ability(int fac, int abl) {
-    return knows_tech(fac, tx_ability[abl].preq_tech);
+    return has_tech(fac, tx_ability[abl].preq_tech);
 }
 
 bool has_chassis(int fac, int chs) {
-    return knows_tech(fac, tx_chassis[chs].preq_tech);
+    return has_tech(fac, tx_chassis[chs].preq_tech);
 }
 
 bool has_weapon(int fac, int wpn) {
-    return knows_tech(fac, tx_weapon[wpn].preq_tech);
+    return has_tech(fac, tx_weapon[wpn].preq_tech);
 }
 
 bool has_terra(int fac, int act, bool ocean) {
@@ -40,7 +40,7 @@ bool has_terra(int fac, int act, bool ocean) {
     && has_project(fac, FAC_WEATHER_PARADIGM)) {
         return preq_tech != TECH_Disable;
     }
-    return knows_tech(fac, preq_tech);
+    return has_tech(fac, preq_tech);
 }
 
 bool has_project(int fac, int id) {
@@ -112,7 +112,7 @@ bool can_build(int base_id, int id) {
         || (id == FAC_ORBITAL_DEFENSE_POD && f->satellites_ODP + n >= conf.max_sat))
             return false;
     }
-    return knows_tech(fac, tx_facility[id].preq_tech) && !has_facility(base_id, id);
+    return has_tech(fac, tx_facility[id].preq_tech) && !has_facility(base_id, id);
 }
 
 bool is_human(int fac) {
@@ -176,7 +176,7 @@ int best_armor(int fac, bool cheap) {
     int ci = ARM_NO_ARMOR;
     int cv = 4;
     for (int i=ARM_SYNTHMETAL_ARMOR; i<=ARM_RESONANCE_8_ARMOR; i++) {
-        if (knows_tech(fac, tx_defense[i].preq_tech)) {
+        if (has_tech(fac, tx_defense[i].preq_tech)) {
             int val = tx_defense[i].defense_value;
             int cost = tx_defense[i].cost;
             if (cheap && (cost > 6 || cost > val))
@@ -195,7 +195,7 @@ int best_weapon(int fac) {
     int ci = WPN_HAND_WEAPONS;
     int cv = 4;
     for (int i=WPN_LASER; i<=WPN_STRING_DISRUPTOR; i++) {
-        if (knows_tech(fac, tx_weapon[i].preq_tech)) {
+        if (has_tech(fac, tx_weapon[i].preq_tech)) {
             int iv = tx_weapon[i].offense_value *
                 (i == WPN_RESONANCE_LASER || i == WPN_RESONANCE_BOLT ? 5 : 4);
             if (iv > cv) {
@@ -209,7 +209,7 @@ int best_weapon(int fac) {
 
 int best_reactor(int fac) {
     for (const int r : {REC_SINGULARITY, REC_QUANTUM, REC_FUSION}) {
-        if (knows_tech(fac, tx_reactor[r - 1].preq_tech)) {
+        if (has_tech(fac, tx_reactor[r - 1].preq_tech)) {
             return r;
         }
     }

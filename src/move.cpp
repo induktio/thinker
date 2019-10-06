@@ -23,6 +23,7 @@ typedef int PMTable[MAPSZ*2][MAPSZ];
 PMTable pm_former;
 PMTable pm_safety;
 PMTable pm_enemy;
+PMTable pm_enemy_near;
 
 void adjust_value(int x, int y, int range, int value, PMTable tbl) {
     for (int i=-range*2; i<=range*2; i++) {
@@ -67,6 +68,17 @@ HOOK_API int enemy_move(int id) {
     return tx_enemy_move(id);
 }
 
+HOOK_API int log_veh_kill(int UNUSED(ptr), int id, int UNUSED(owner), int UNUSED(unit_id)) {
+    /* This logging function is called whenever a vehicle is removed/killed for any reason. */
+    VEH* veh = &tx_vehicles[id];
+    if (ai_enabled(*tx_active_faction) && at_war(*tx_active_faction, veh->faction_id)) {
+        assert(veh->x >= 0 && veh->y >= 0);
+        adjust_value(veh->x, veh->y, 3, -1, pm_enemy_near);
+        pm_enemy[veh->x][veh->y]--;
+    }
+    return 0;
+}
+
 void move_upkeep(int fac) {
     int enemymask = 1;
     convoys.clear();
@@ -75,6 +87,7 @@ void move_upkeep(int fac) {
     memset(pm_former, 0, sizeof(pm_former));
     memset(pm_safety, 0, sizeof(pm_safety));
     memset(pm_enemy, 0, sizeof(pm_enemy));
+    memset(pm_enemy_near, 0, sizeof(pm_enemy_near));
 
     for (int i=1; i<8; i++) {
         enemymask |= (at_war(fac, i) ? 1 : 0) << i;
@@ -93,8 +106,8 @@ void move_upkeep(int fac) {
                 int w = (u->chassis_type == CHS_INFANTRY ? 2 : 1);
                 adjust_value(veh->x, veh->y, 4-w, val/(w*4), pm_safety);
             }
-            adjust_value(veh->x, veh->y, 3, 1, pm_enemy);
-            pm_enemy[veh->x][veh->y] += 256;
+            adjust_value(veh->x, veh->y, 3, 1, pm_enemy_near);
+            pm_enemy[veh->x][veh->y]++;
         } else if (veh->faction_id == fac) {
             if (u->weapon_type <= WPN_PSI_ATTACK) {
                 adjust_value(veh->x, veh->y, 1, 40, pm_safety);
@@ -583,7 +596,7 @@ bool can_road(int x, int y, int fac, MAP* sq) {
     if (is_ocean(sq) || !pm_former[x][y] || !has_terra(fac, FORMER_ROAD, 0)
     || sq->items & (TERRA_ROAD | TERRA_BASE_IN_TILE))
         return false;
-    if (sq->items & TERRA_FUNGUS && (!knows_tech(fac, tx_basic->tech_preq_build_road_fungus)
+    if (sq->items & TERRA_FUNGUS && (!has_tech(fac, tx_basic->tech_preq_build_road_fungus)
     || has_project(fac, FAC_XENOEMPATHY_DOME)))
         return false;
     if (!(sq->items & (TERRA_FOREST | TERRA_SENSOR)))
@@ -618,7 +631,7 @@ bool can_sensor(int x, int y, int fac, MAP* sq) {
     return has_terra(fac, FORMER_SENSOR, is_ocean(sq))
         && ~sq->items & TERRA_SENSOR
         && !nearby_items(x, y, 2, TERRA_SENSOR)
-        && (~sq->items & TERRA_FUNGUS || knows_tech(fac, tx_basic->tech_preq_improv_fungus))
+        && (~sq->items & TERRA_FUNGUS || has_tech(fac, tx_basic->tech_preq_improv_fungus))
         && *tx_current_turn > random(20);
 }
 
@@ -628,8 +641,8 @@ int select_item(int x, int y, int fac, MAP* sq) {
     bool sea = is_ocean(sq);
     bool rocky_sq = sq->rocks & TILE_ROCKY;
     bool has_eco = has_terra(fac, FORMER_CONDENSER, 0);
-    bool has_min = knows_tech(fac, tx_basic->tech_preq_allow_3_minerals_sq);
-    bool has_nut = knows_tech(fac, tx_basic->tech_preq_allow_3_nutrients_sq);
+    bool has_min = has_tech(fac, tx_basic->tech_preq_allow_3_minerals_sq);
+    bool has_nut = has_tech(fac, tx_basic->tech_preq_allow_3_nutrients_sq);
     bool road = can_road(x, y, fac, sq);
 
     if (items & TERRA_BASE_IN_TILE || (sea && !is_ocean_shelf(sq))
@@ -849,7 +862,7 @@ int combat_move(int id) {
     int fac = veh->faction_id;
     if (is_ocean(sq) || u->ability_flags & ABL_ARTILLERY)
         return tx_enemy_move(id);
-    if (pm_enemy[veh->x][veh->y] < 1 || veh->iter_count > 7) {
+    if (pm_enemy_near[veh->x][veh->y] < 1 || veh->iter_count > 7) {
         if (need_heals(veh))
             return escape_move(id);
         return tx_enemy_move(id);
@@ -895,7 +908,7 @@ int combat_move(int id) {
                 continue;
             double v1 = battle_eval(id, id2, moves - ts.dist + 1, mov_rate);
             double v2 = (sq->owner == fac ? 0.1 : 0.0)
-                + (to_base ? 0.0 : 0.05 * (pm_enemy[ts.rx][ts.ry]/256))
+                + (to_base ? 0.0 : 0.05 * (pm_enemy[ts.rx][ts.ry]))
                 + min(12, abs(offense_value(u2)))*(u2->chassis_type == CHS_INFANTRY ? 0.008 : 0.02);
             double v3 = min(1.6, v1) + min(0.5, max(-0.5, v2));
 
@@ -908,7 +921,7 @@ int combat_move(int id) {
                 ty = ts.ry;
                 odds = v3;
             }
-        } else if (to_base && at_war(fac, sq->owner) && fac2 < 0) {
+        } else if (to_base && at_war(fac, sq->owner) && pm_enemy[ts.rx][ts.ry] < 1) {
             tx = ts.rx;
             ty = ts.ry;
             break;
