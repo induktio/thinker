@@ -105,7 +105,7 @@ struct Config {
 struct AIPlans {
     int diplo_flags;
     /*
-    Numner of minerals a base needs produce before it is allowed to build secret projects.
+    Amount of minerals a base needs to produce before it is allowed to build secret projects.
     All faction-owned bases are ranked each turn based on the surplus mineral production,
     and only the top third are selected for project building.
     */

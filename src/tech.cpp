@@ -39,8 +39,8 @@ int tech_cost(int fac, int tech) {
         }
         owned = __builtin_popcount(tx_tech_discovered[tech] & links);
     }
-    double base = 2 * pow(level, 3) + 98 * level;
-
+    double base = 3 * pow(level, 3) + 117 * level;
+    double dw;
     double cost = base * *tx_map_area_sq_root / 56
         * m->rule_techcost / 100
         * (10 - min(5, max(-5, f->SE_research))) / 10
@@ -50,12 +50,14 @@ int tech_cost(int fac, int tech) {
         * (owned > 0 ? (owned > 1 ? 0.75 : 0.85) : 1.0);
 
     if (is_human(fac)) {
-        cost *= (1.0 - 0.07 * (DIFF_TRANSCEND - *tx_diff_level));
+        dw = (1.0 + 0.1 * (*tx_diff_level +
+            (*tx_diff_level < DIFF_LIBRARIAN ? 1 : 0) - DIFF_LIBRARIAN));
     } else {
-        cost *= (1.0 + 0.05 * (tx_cost_ratios[*tx_diff_level] - 10));
+        dw = (1.0 + 0.1 * (tx_cost_ratios[*tx_diff_level] - 10));
     }
-    debug("tech_cost %d %d | %8.4f %8.4f %d %d %d %s\n", *tx_current_turn, fac,
-        base, cost, level, owned, tech, (tech >= 0 ? tx_techs[tech].name : NULL));
+    cost *= dw;
+    debug("tech_cost %d %d | %8.4f %8.4f %8.4f %d %d %d %s\n", *tx_current_turn, fac,
+        base, dw, cost, level, owned, tech, (tech >= 0 ? tx_techs[tech].name : NULL));
 
     return max(2, (int)cost);
 }
