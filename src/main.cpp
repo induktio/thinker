@@ -307,11 +307,10 @@ HOOK_API int turn_upkeep() {
 }
 
 HOOK_API int faction_upkeep(int fac) {
-    debug("faction_upkeep %d %d\n", *tx_current_turn, fac);
-    if (ai_enabled(fac))
-        move_upkeep(fac);
     /*
-    Turn processing order for the current faction in the game engine
+    Turn processing order for each faction in the game engine
+    as it happens in tx_faction_upkeep function:
+
     1. Social upheaval effects
     2. Repair phase
     3. Production phase
@@ -321,6 +320,10 @@ HOOK_API int faction_upkeep(int fac) {
     7. Social AI
     8. Unit movement
     */
+    debug("faction_upkeep %d %d\n", *tx_current_turn, fac);
+    if (ai_enabled(fac)) {
+        move_upkeep(fac);
+    }
     tx_faction_upkeep(fac);
     fflush(debug_log);
     return 0;
@@ -369,12 +372,12 @@ int find_project(int base_id) {
 
     for (int i=0; i<*tx_total_num_bases; i++) {
         if (tx_bases[i].faction_id == fac) {
-            int prod = tx_bases[i].queue_items[0];
-            if (prod <= -PROJECT_ID_FIRST || prod == -FAC_SUBSPACE_GENERATOR) {
+            int t = tx_bases[i].queue_items[0];
+            if (t <= -PROJECT_ID_FIRST || t == -FAC_SUBSPACE_GENERATOR) {
                 projs++;
-            } else if (prod == -FAC_SKUNKWORKS) {
+            } else if (t == -FAC_SKUNKWORKS) {
                 works++;
-            } else if (prod >= 0 && tx_units[prod].weapon_type == WPN_PLANET_BUSTER) {
+            } else if (t >= 0 && tx_units[t].weapon_type == WPN_PLANET_BUSTER) {
                 nukes++;
             }
         }
@@ -425,6 +428,40 @@ int find_project(int base_id) {
         return (projs > 0 || score > 2 ? -choice : 0);
     }
     return 0;
+}
+
+bool relocate_hq(int base_id) {
+    BASE* base = &tx_bases[base_id];
+    int fac = base->faction_id;
+    Faction* f = &tx_factions[fac];
+    int bases = f->current_num_bases;
+    int n = 0;
+    int k = 0;
+
+    if (!has_tech(fac, tx_facility[FAC_HEADQUARTERS].preq_tech)
+    || base->mineral_surplus < (bases < 6 ? 4 : plans[fac].proj_limit)) {
+        return false;
+    }
+    for (int i=0; i<*tx_total_num_bases; i++) {
+        BASE* b = &tx_bases[i];
+        int t = b->queue_items[0];
+        if (b->faction_id == fac) {
+            if (i != base_id) {
+                if (i < base_id)
+                    k++;
+                if (map_range(base->x, base->y, b->x, b->y) < 7)
+                    n++;
+            }
+            if (t == -FAC_HEADQUARTERS || has_facility(i, FAC_HEADQUARTERS)) {
+                return false;
+            }
+        }
+    }
+    /*
+    Base IDs are assigned in the foundation order, so this pseudorandom selection tends
+    towards bases that were founded at an earlier date and have many neighboring friendly bases.
+    */
+    return random(100) < 30.0 * (1.0 - 1.0 * k / bases) + 30.0 * min(15, n) / min(15, bases);
 }
 
 bool can_build_ships(int id) {
@@ -625,10 +662,6 @@ int find_facility(int base_id) {
     if (minerals+extra >= plans[fac].proj_limit && (proj = find_project(base_id)) != 0) {
         return proj;
     }
-    if (minerals >= plans[fac].proj_limit && find_hq(fac) < 0
-    && bases_in_range(base->x, base->y, 4) >= 1 + min(4, f->current_num_bases/4)) {
-        return -FAC_HEADQUARTERS;
-    }
     if (minerals+extra >= plans[fac].proj_limit && has_facility(base_id, FAC_AEROSPACE_COMPLEX)) {
         if (can_build(base_id, FAC_ORBITAL_DEFENSE_POD))
             return -FAC_ORBITAL_DEFENSE_POD;
@@ -804,6 +837,8 @@ int select_prod(int id) {
             return find_proto(fac, TRIAD_LAND, COMBAT, DEF);
         else
             return BSC_SCOUT_PATROL;
+    } else if (relocate_hq(id)) {
+        return -FAC_HEADQUARTERS;
     } else if (minerals > reserve && random(100) < (int)(100.0 * threat)) {
         return select_combat(id, sea_base, build_ships, probes, (defenders < 2 && enemyrange < 12));
     } else if (has_formers && formers < (base->pop_size < (sea_base ? 4 : 3) ? 1 : 2)) {

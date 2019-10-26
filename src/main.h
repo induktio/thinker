@@ -98,8 +98,17 @@ struct Config {
     int landmarks;
 };
 
+/*
+    AIPlans contains several general purpose variables for AI decision-making
+    that are recalculated each turn. These values are not stored in the save game.
+*/
 struct AIPlans {
     int diplo_flags;
+    /*
+    Numner of minerals a base needs produce before it is allowed to build secret projects.
+    All faction-owned bases are ranked each turn based on the surplus mineral production,
+    and only the top third are selected for project building.
+    */
     int proj_limit;
     int psi_score;
     int keep_fungus;
