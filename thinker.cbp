@@ -8,9 +8,12 @@
 		<Build>
 			<Target title="Debug">
 				<Option output="build/bin/debug/thinker" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="patch" />
 				<Option object_output="build/obj/debug/" />
 				<Option type="3" />
 				<Option compiler="gcc" />
+				<Option host_application="terranx_mod.exe" />
+				<Option run_host_application_in_terminal="0" />
 				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
 				<Compiler>
@@ -24,9 +27,12 @@
 			</Target>
 			<Target title="Develop">
 				<Option output="build/bin/develop/thinker" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="patch" />
 				<Option object_output="build/obj/develop/" />
 				<Option type="3" />
 				<Option compiler="gcc" />
+				<Option host_application="terranx_mod.exe" />
+				<Option run_host_application_in_terminal="0" />
 				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
 				<Compiler>
@@ -41,9 +47,12 @@
 			</Target>
 			<Target title="Release">
 				<Option output="build/bin/release/thinker" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="patch" />
 				<Option object_output="build/obj/release/" />
 				<Option type="3" />
 				<Option compiler="gcc" />
+				<Option host_application="terranx_mod.exe" />
+				<Option run_host_application_in_terminal="0" />
 				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
 				<Compiler>

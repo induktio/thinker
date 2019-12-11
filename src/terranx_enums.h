@@ -142,7 +142,7 @@ enum facility_id
     PROJECT_ID_LAST = 106,
 };
 
-enum techology_id
+enum technology_id
 {
     TECH_Biogen = 0,
     TECH_Indust = 1,
