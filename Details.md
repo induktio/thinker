@@ -36,6 +36,31 @@ In addition to the bugfix patches listed separately, the following patches apply
 6. All expansion related content can be disabled by using the `smac_only` setting, see below.
 
 
+Revised tech costs
+==================
+In the original game, research costs were mainly decided by how many techs a faction had already researched. That meant the current research target was irrelevant as far as the costs were concerned. For speed runs, it made sense to avoid researching any techs that were not strictly necessary to keep the cost of discovering new techs as low as possible.
+
+The config option `revised_tech_cost` attempts to remake this mechanic so that the research cost for any particular tech is fixed and depends mainly on the level of the tech. This follows the game design choices that were also made in later Civilization games. For example, in the default tech tree, Social Psych is level 1 and Transcendent Thought is level 16. The base cost for any particular tech is determined by this formula:
+
+    3 * Level^3 + 117 * Level
+
+For example, level 1 techs cost 120 labs before the other factors are considered. The idea here is that level 1-3 costs stay relatively modest and the big cost increases should begin from level 4 onwards. After calculcating the base cost, it is multiplied by all of the following factors.
+
+* For AI factions, each unit of cost_factor applies a 10% bonus/penalty, for example cost_factor=10 equals 100% of human cost on Talent/Librarian level.
+* For human factions, difficulty level applies a multiplicative modifier based on this list:
+    * Citizen, 80%
+    * Specialist, 90%
+    * Talent, 100%
+    * Librarian, 100%
+    * Thinker, 110%
+    * Transcend, 120%
+* Multiply by the square root of the map size divided by the square root of a standard map size
+* All other faction/alphax.txt/tech stagnation factors should work as before
+* If 2 or more factions with commlink to current faction has the tech, discount 25%
+* If only 1 commlink faction has it, discount 15%
+* For the first 10 techs a faction discovers they get decreasing cost discounts. This approximates the tech costs in vanilla game mechanics for a couple of first techs.
+
+
 SMAC in SMACX mod
 =================
 Thinker includes the files necessary to play a game similar to the original SMAC while disabling all the expansion-related content. See the original release posts of SMAC in SMACX [here](https://github.com/DrazharLn/smac-in-smax/) and [here](http://alphacentauri2.info/index.php?topic=17869.0).
@@ -63,6 +88,11 @@ In addition, there are several often requested features that unfortunately are n
 
 1. More factions/units/bases. These limits were hardcoded in the game binary at compilation time and are not feasible to change without a full open source port.
 2. Moddable hit points for each reactor level. Currently these values are fixed at 10x reactor level.
+
+
+Known bugs
+==========
+1. While smac_only mode is activated, in the Satellite Survey -> Orbital Attack View, "Attack" button is not functional after one selects satellites of other factions to attack. An (inconvenient) workaround is to reload the save game with smac_only disabled, commit the attack, and then reload the game in smac_only mode.
 
 
 Bugfix patches included

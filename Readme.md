@@ -21,7 +21,7 @@ More information about the features and recommended settings can be found from [
 
 Download
 --------
-Currently the latest release is v0.9. See also the [Changelog](Changelog.md).
+Currently the latest release is v1.0. See also the [Changelog](Changelog.md).
 
 * [Release versions](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAp6ioWxdo7vnG6Ity5W3o1a?dl=0&lst=)
 * [Develop builds](https://www.dropbox.com/sh/qsps5bhz8v020o9/AADv-0D0-bPq22pgoAIcDRC3a/develop?dl=0&lst=)

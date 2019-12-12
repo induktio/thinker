@@ -2,6 +2,17 @@
 # Thinker mod release changelog
 <!-- Full documentation available at: https://github.com/induktio/thinker -->
 
+## Version 1.0 (2019-12-12)
+* SMAC in SMACX mod files are now included with Thinker by default (can be enabled with smac_only=1)
+* Removed smac_only dependency for ac_mod/labels.txt (redundant file for the mod)
+* Factions with positive Planet rating will build less boreholes than the average
+* Adjust tech_balance feature to also prioritize probe team prerequisite tech
+* AI should relocate lost HQs faster than previously
+* New option: revised_tech_cost provides an extensive overhaul for the research cost mechanics. More info in Details.md.
+* New option: expansion_factor limits how many bases the AI will attempt to build before stopping expansion entirely
+* New option: limit_project_start determines how soon the AIs are allowed to start secret projects
+* Fix issue where AI sometimes ignored undefended enemy bases when it had the chance to capture them
+
 
 ## Version 0.9 (2019-04-07)
 * Thinker now supports formers based on all triads: design_units will also create gravship formers when the techs are available
