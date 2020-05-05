@@ -28,7 +28,8 @@ int* tx_cost_ratios = (int*)0x689378;
 
 byte* tx_tech_discovered = (byte*)0x9A6670;
 int* tx_secret_projects = (int*)0x9A6514;
-FactMeta* tx_factions_meta = (FactMeta *)0x946A50;
+short* tx_faction_rankings = (short*)0x9A68AC;
+MetaFaction* tx_metafactions = (MetaFaction *)0x946A50;
 Faction* tx_factions = (Faction *)0x96C9E0;
 BASE* tx_bases = (BASE *)0x97D040;
 UNIT* tx_units = (UNIT *)0x9AB868;
@@ -57,6 +58,7 @@ fp_2int* tx_veh_speed = (fp_2int*)0x5C1540;
 fp_3int* tx_zoc_any = (fp_3int*)0x5C89F0;
 fp_3int* tx_best_defender = (fp_3int*)0x5044D0;
 fp_5int* tx_battle_compute = (fp_5int*)0x501DA0;
+fp_6int* tx_battle_kill = (fp_6int*)0x505D80;
 fp_1int* tx_enemy_move = (fp_1int*)0x56B5B0;
 fp_1int* tx_monolith = (fp_1int*)0x57A050;
 fp_2int* tx_action_build = (fp_2int*)0x4C96E0;

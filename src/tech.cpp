@@ -2,8 +2,13 @@
 #include "tech.h"
 
 
-void init_values(int fac) {
+void init_save_game(int fac) {
     Faction* f = &tx_factions[fac];
+    if (DEBUG) {
+        byte zeros[100] = {};
+        assert(!memcmp(&f->unk_29, zeros, 100));
+        assert(!memcmp(&f->unk_67, zeros, 12));
+    }
     if (f->thinker_header != THINKER_HEADER) {
         f->thinker_header = THINKER_HEADER;
         f->thinker_flags = 0;
@@ -25,7 +30,7 @@ int tech_level(int id, int lvl) {
 int tech_cost(int fac, int tech) {
     assert(fac >= 0 && fac < 8);
     Faction* f = &tx_factions[fac];
-    FactMeta* m = &tx_factions_meta[fac];
+    MetaFaction* m = &tx_metafactions[fac];
     int level = 1;
     int owned = 0;
     int links = 0;
@@ -69,7 +74,6 @@ HOOK_API int tech_rate(int fac) {
     before recalculating the cost.
     */
     Faction* f = &tx_factions[fac];
-    init_values(fac);
 
     if (f->tech_research_id != f->thinker_tech_id) {
         f->thinker_tech_cost = tech_cost(fac, f->tech_research_id);
@@ -81,7 +85,6 @@ HOOK_API int tech_rate(int fac) {
 HOOK_API int tech_selection(int fac) {
     Faction* f = &tx_factions[fac];
     int tech = tx_tech_selection(fac);
-    init_values(fac);
     f->thinker_tech_cost = tech_cost(fac, tech);
     f->thinker_tech_id = tech;
     return tech;

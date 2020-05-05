@@ -33,7 +33,8 @@ extern int* tx_cost_ratios;
 
 extern byte* tx_tech_discovered;
 extern int* tx_secret_projects;
-extern FactMeta* tx_factions_meta;
+extern short* tx_faction_rankings;
+extern MetaFaction* tx_metafactions;
 extern Faction* tx_factions;
 extern BASE* tx_bases;
 extern UNIT* tx_units;
@@ -74,6 +75,7 @@ extern fp_2int* tx_veh_speed;
 extern fp_3int* tx_zoc_any;
 extern fp_3int* tx_best_defender;
 extern fp_5int* tx_battle_compute;
+extern fp_6int* tx_battle_kill;
 extern fp_1int* tx_enemy_move;
 extern fp_1int* tx_monolith;
 extern fp_2int* tx_action_build;

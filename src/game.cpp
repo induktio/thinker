@@ -119,8 +119,13 @@ bool is_human(int fac) {
     return *tx_human_players & (1 << fac);
 }
 
+bool ai_faction(int fac) {
+    /* Exclude native life since Thinker AI routines don't apply to them. */
+    return fac > 0 && !(*tx_human_players & (1 << fac));
+}
+
 bool ai_enabled(int fac) {
-    return fac > 0 && fac <= conf.factions_enabled && !(*tx_human_players & (1 << fac));
+    return ai_faction(fac) && fac <= conf.factions_enabled;
 }
 
 bool at_war(int a, int b) {
@@ -399,16 +404,16 @@ char* parse_str(char* buf, int len, const char* s1, const char* s2, const char* 
 
 void print_map(int x, int y) {
     MAP* m = mapsq(x, y);
-    debug("MAP %2d %2d | %2d %d | %02x %02x %02x | %04x %02x | %02x %02x %02x | %08x %08x\n",
+    debug("MAP %2d %2d | %2d %d | %02x %02x %02x | %02x %02x %02x | %02x %02x %02x | %08x %08x\n",
         x, y, m->owner, tx_bonus_at(x, y), m->level, m->altitude, m->rocks,
-        m->flags, m->visibility, m->unk_1, m->unk_2, m->art_ref_id,
+        m->flags, m->area_id, m->visibility, m->unk_1, m->unk_2, m->art_ref_id,
         m->items, m->landmarks);
 }
 
 void print_veh(int id) {
     VEH* v = &tx_vehicles[id];
-    debug("VEH %20s %3d %d | %08x %04x %02x | %2d %3d | %2d %2d %2d %2d | %d %d %d %d %d %d\n",
-        tx_units[v->proto_id].name, id, v->faction_id,
+    debug("VEH %22s %3d %3d %d | %08x %04x %02x | %2d %3d | %2d %2d %2d %2d | %2d %2d %d %d %d %d\n",
+        tx_units[v->proto_id].name, v->proto_id, id, v->faction_id,
         v->flags_1, v->flags_2, v->visibility, v->move_status, v->status_icon,
         v->x, v->y, v->waypoint_1_x, v->waypoint_1_y,
         v->morale, v->damage_taken, v->iter_count, v->unk5, v->unk8, v->unk9);

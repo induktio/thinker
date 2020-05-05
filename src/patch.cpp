@@ -152,7 +152,7 @@ bool valid_start (int fac, int iter, int x, int y, bool aquatic) {
 }
 
 HOOK_API void find_start(int fac, int* tx, int* ty) {
-    bool aquatic = tx_factions_meta[fac].rule_flags & FACT_AQUATIC;
+    bool aquatic = tx_metafactions[fac].rule_flags & FACT_AQUATIC;
     int k = (*tx_map_axis_y < 80 ? 8 : 16);
     if (*tx_random_seed != prev_rnd) {
         process_map(k/2);

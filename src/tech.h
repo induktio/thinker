@@ -6,8 +6,8 @@
 
 #define THINKER_HEADER (short)0xACAC
 
+void init_save_game(int fac);
 HOOK_API int tech_rate(int fac);
 HOOK_API int tech_selection(int fac);
-
 
 #endif // __TECH_H__

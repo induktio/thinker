@@ -483,9 +483,10 @@ int colony_move(int id) {
         int tscore = INT_MIN;
         int tx = -1;
         int ty = -1;
+        int limit = (!((*tx_current_turn + id) % 8) ? 500 : 200);
         TileSearch ts;
         ts.init(veh->x, veh->y, triad, 2);
-        while (i++ < 200 && k < 20 && (sq = ts.get_next()) != NULL) {
+        while (i++ < limit && k < 20 && (sq = ts.get_next()) != NULL) {
             if (!can_build_base(ts.rx, ts.ry, fac, triad) || !safe_path(ts, fac))
                 continue;
             int score = base_tile_score(ts.rx, ts.ry, ts.dist, triad);

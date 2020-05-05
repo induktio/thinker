@@ -52,7 +52,7 @@ static_assert(sizeof(struct R_Basic) == 308, "");
 static_assert(sizeof(struct R_Social) == 212, "");
 static_assert(sizeof(struct R_Facility) == 48, "");
 static_assert(sizeof(struct R_Tech) == 44, "");
-static_assert(sizeof(struct FactMeta) == 1436, "");
+static_assert(sizeof(struct MetaFaction) == 1436, "");
 static_assert(sizeof(struct Faction) == 8396, "");
 static_assert(sizeof(struct BASE) == 308, "");
 static_assert(sizeof(struct UNIT) == 52, "");
@@ -79,23 +79,23 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define DEF true
 
 struct Config {
-    int free_formers;
-    int satellites_nutrient;
-    int satellites_mineral;
-    int satellites_energy;
-    int design_units;
-    int factions_enabled;
-    int hurry_items;
-    int social_ai;
-    int tech_balance;
-    int limit_project_start;
-    double expansion_factor;
-    int max_sat;
-    int smac_only;
-    int revised_tech_cost;
-    int faction_placement;
-    int nutrient_bonus;
-    int landmarks;
+    int free_formers = 0;
+    int satellites_nutrient = 0;
+    int satellites_mineral = 0;
+    int satellites_energy = 0;
+    int design_units = 1;
+    int factions_enabled = 7;
+    int social_ai = 1;
+    int tech_balance = 0;
+    int hurry_items = 1;
+    double expansion_factor = 1;
+    int limit_project_start = 3;
+    int max_sat = 10;
+    int smac_only = 0;
+    int revised_tech_cost = 1;
+    int faction_placement = 1;
+    int nutrient_bonus = 1;
+    int landmarks = 0xffff;
 };
 
 /*
@@ -103,27 +103,27 @@ struct Config {
     that are recalculated each turn. These values are not stored in the save game.
 */
 struct AIPlans {
-    int diplo_flags;
+    int diplo_flags = 0;
     /*
     Amount of minerals a base needs to produce before it is allowed to build secret projects.
     All faction-owned bases are ranked each turn based on the surplus mineral production,
     and only the top third are selected for project building.
     */
-    int proj_limit;
-    int psi_score;
-    int keep_fungus;
-    int plant_fungus;
+    int proj_limit = 5;
+    int psi_score = 0;
+    int keep_fungus = 0;
+    int plant_fungus = 0;
     /*
     Number of our bases captured by another faction we're currently at war with.
     Important heuristic in threat calculation.
     */
-    int enemy_bases;
+    int enemy_bases = 0;
     /*
     Exponentially weighted moving average of distances to nearest enemy bases.
     This is updated while choosing base production, and it is used as a
     general heuristic to determine the level of threat from other factions.
     */
-    double enemy_range;
+    double enemy_range = 20;
 };
 
 extern FILE* debug_log;

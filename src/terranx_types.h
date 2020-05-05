@@ -136,7 +136,16 @@ struct MAP
 {
     byte level;
     byte altitude;
-    short flags;
+    /*
+    Flags & 0xf = faction ID of the unit occupying this tile. 0xf = unoccupied.
+    Sometimes faction ID of a deleted unit persists on the tile.
+    */
+    byte flags;
+    /*
+    The game keeps track of disjoint land/water areas and assigns each of them an ID number
+    which is used to index the [128] planning variable arrays in Faction struct.
+    */
+    byte area_id;
     byte visibility;
     byte rocks;
     byte unk_1;
@@ -148,7 +157,7 @@ struct MAP
     int visible_items[7];
 };
 
-struct FactMeta
+struct MetaFaction
 {
     int is_leader_female;
     char filename[24];
@@ -311,9 +320,9 @@ struct Faction
     int SE_alloc_psych;
     int SE_alloc_labs;
     int unk_25;
-    char gap_330[44];
+    int unk_26[11];
     int tech_ranking;
-    int unk_26;
+    int unk_27;
     int ODP_deployed;
     int theory_of_everything;
     char tech_trade_source[92];
@@ -331,60 +340,51 @@ struct Faction
     int target_y;
     int unk_28;
     int council_call_turn;
-    int unk_29[11];
-    int unk_30[11];
-    int unk_31;
-    int unk_32;
-    char unk_33;
-    char unk_34;
-    char gap_462[2];
+    int unk_29[11]; // unused
+    int unk_30[11]; // unused
+    int unk_31; // unused
+    int unk_32; // unused
+    int unk_33; // unused
     int unk_35;
     int unk_36;
     int unk_37;
-    char gap_470[192];
+    char saved_queue_name[8][24];
     int saved_queue_size[8];
-    int saved_queue_items[78];
-    int unk_38;
-    char unk_39[4];
-    int unk_40;
-    char unk_41[12];
-    int unk_42;
-    char unk_43[12];
+    int saved_queue_items[8][10];
+    int unk_40[8];
+    int unk_41[40];
+    int unk_42[32];
+    int unk_43[8];
     int unk_44;
-    char gap_6B4[80];
     int unk_45;
-    char gap_708[200];
     int unk_46;
-    char gap_7D4[32];
     int unk_47;
     int unk_48;
-    int unk_49;
-    int unk_50;
     int labs_total;
     int satellites_nutrient;
     int satellites_mineral;
     int satellites_energy;
     int satellites_ODP;
     int best_weapon_value;
-    int unk_55;
-    int unk_56;
+    int best_psi_land_offense;
+    int best_psi_land_defense;
     int best_armor_value;
-    int unk_58;
-    int unk_59;
-    int unk_60;
-    int unk_61;
-    int unk_62;
-    int unk_63;
+    int best_land_speed;
+    int enemy_best_weapon_value; // Enemy refers here to any non-pact faction
+    int enemy_best_armor_value;
+    int enemy_best_land_speed;
+    int enemy_best_psi_land_offense;
+    int enemy_best_psi_land_defense;
     int unk_64;
     int unk_65;
     int unk_66;
-    int unk_67;
-    int unk_68;
-    char unk_69[4];
+    int unk_67; // unused
+    int unk_68; // unused
+    int unk_69; // unused
     byte units_active[512];
     byte units_queue[512];
     short units_lost[512];
-    int total_mil_units;
+    int total_combat_units;
     int current_num_bases;
     int mil_strength_1;
     int mil_strength_2;
@@ -393,20 +393,26 @@ struct Faction
     int planet_busters;
     int unk_71;
     int unk_72;
-    short unk_73[128];
-    char unk_74[128];
-    char unk_75[128];
-    short unk_76[128];
-    short unk_77[128];
-    short unk_78[128];
-    short unk_79[128];
-    short unk_80[128];
-    short unk_81[128];
-    char unk_82[128];
-    char unk_83[128];
-    char unk_84[128];
+    /*
+    AI planning variables that relate to specific disjoint land/water areas.
+    All of these are indexed by the area_id value in MAP struct.
+    */
+    short area_total_combat_units[128];
+    byte area_total_bases[128];
+    byte area_total_offensive_units[128];
+    short area_force_rating[128]; // Combined offensive/morale rating of all units in landmass
+    short area_unk_1[128]; // Movement planning flags
+    short area_unk_2[128]; // Unknown reset_territory counter
+    short area_unk_3[128]; // Unknown counter
+    short area_unk_4[128]; // Unknown reset_territory/enemy_move counter
+    short area_unk_5[128]; // Unknown reset_territory/enemy_move counter
+    byte area_unk_6[128]; // Unknown enemy_strategy state
+    byte area_unk_7[128]; // Unknown base_prod_choices state
+    byte area_unk_8[128]; // Unknown enemy_move state
+    /* End of block */
     Goal goals_1[75];
     Goal goals_2[25];
+    int unk_92;
     int unk_93;
     int unk_94;
     int unk_95;
@@ -414,7 +420,6 @@ struct Faction
     int unk_97;
     int unk_98;
     int unk_99;
-    char gap_2058[4];
     int unk_100[8];
     int corner_market_turn;
     int corner_market_active;
@@ -428,20 +433,13 @@ struct Faction
     int unk_108;
     /*
     Thinker-specific save game variables.
-    The game engine overwrites these locations during the endgame score calculation.
+    The game engine only writes to these locations during the endgame score calculation.
     */
     short thinker_header;
     char thinker_flags;
     char thinker_tech_id;
     int thinker_tech_cost;
-    int unk_111;
-    int unk_112;
-    int unk_113;
-    int unk_114;
-    int unk_115;
-    int unk_116;
-    int unk_117;
-    int unk_118;
+    int thinker_unused[8];
 };
 
 struct R_Basic
