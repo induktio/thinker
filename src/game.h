@@ -63,6 +63,7 @@ bool is_ocean(MAP* sq);
 bool is_ocean_shelf(MAP* sq);
 bool is_sea_base(int id);
 bool workable_tile(int x, int y, int fac);
+bool has_defenders(int x, int y, int fac);
 int nearby_items(int x, int y, int range, uint32_t item);
 int bases_in_range(int x, int y, int range);
 int nearby_tiles(int x, int y, int type, int limit);

@@ -148,6 +148,9 @@ HOOK_API int base_production(int id, int v1, int v2, int v3) {
                 choice = find_facility(id);
             else
                 choice = select_prod(id);
+        } else if (need_defense(id)) {
+            debug("BUILD DEF\n");
+            choice = find_proto(fac, TRIAD_LAND, COMBAT, DEF);
         } else {
             consider_hurry(id);
             debug("BUILD OLD\n");
@@ -192,10 +195,10 @@ HOOK_API int turn_upkeep() {
                 abls |= (has_ability(i, ABL_ID_COMM_JAMMER) ? ABL_COMM_JAMMER :
                     (has_ability(i, ABL_ID_TRANCE) ? ABL_TRANCE : 0));
             }
-            tx_propose_proto(i, CHS_INFANTRY, WPN_LASER, arm, abls, rec, PLAN_DEFENSIVE, NULL);
+            tx_propose_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, abls, rec, PLAN_DEFENSIVE, NULL);
         }
         if (has_ability(i, ABL_ID_TRANCE) && !has_ability(i, ABL_ID_AAA)) {
-            tx_propose_proto(i, CHS_INFANTRY, WPN_LASER, arm, ABL_TRANCE, rec, PLAN_DEFENSIVE, NULL);
+            tx_propose_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, ABL_TRANCE, rec, PLAN_DEFENSIVE, NULL);
         }
         if (has_chassis(i, CHS_NEEDLEJET) && has_ability(i, ABL_ID_AIR_SUPERIORITY)) {
             tx_propose_proto(i, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, ABL_AIR_SUPERIORITY | ABL_DEEP_RADAR,
@@ -276,7 +279,8 @@ HOOK_API int turn_upkeep() {
             psi++;
         if (has_project(i, FAC_XENOEMPATHY_DOME))
             psi++;
-        psi += tx_metafactions[i].rule_psi/10 + f->SE_planet;
+        psi += min(2, max(-2, (f->enemy_best_weapon_value - f->best_weapon_value)/2));
+        psi += tx_metafactions[i].rule_psi/10 + 2*f->SE_planet;
         plans[i].psi_score = psi;
 
         const int manifold[][3] = {{0,0,0}, {0,1,0}, {1,1,0}, {1,1,1}, {1,2,1}};
@@ -295,7 +299,7 @@ HOOK_API int turn_upkeep() {
         }
         debug("turn_upkeep %d | %2d %2d %d %d | %2d %2.4f\n",
         i, plans[i].proj_limit, psi, plans[i].keep_fungus, plans[i].plant_fungus,
-        plans[i].enemy_bases, plans[i].enemy_range);
+        plans[i].enemy_bases, f->thinker_enemy_range);
     }
 
     return 0;
@@ -469,11 +473,11 @@ bool can_build_ships(int id) {
 int unit_score(int id, int fac, bool def) {
     const int abls[][2] = {
         {ABL_AAA, 4},
-        {ABL_AIR_SUPERIORITY, 3},
+        {ABL_AIR_SUPERIORITY, 2},
         {ABL_ALGO_ENHANCEMENT, 5},
         {ABL_AMPHIBIOUS, -4},
         {ABL_ARTILLERY, -2},
-        {ABL_DROP_POD, 4},
+        {ABL_DROP_POD, 2},
         {ABL_EMPATH, 2},
         {ABL_TRANCE, 2},
         {ABL_TRAINED, 1},
@@ -537,6 +541,14 @@ int find_proto(int fac, int triad, int mode, bool defend) {
     return best;
 }
 
+int need_defense(int id) {
+    BASE* b = &tx_bases[id];
+    int prod = b->queue_items[0];
+    /* Do not interrupt secret project building. */
+    return !has_defenders(b->x, b->y, b->faction_id)
+        && prod < 0 && prod > -FAC_HUMAN_GENOME_PROJ;
+}
+
 int need_psych(int id) {
     BASE* b = &tx_bases[id];
     int fac = b->faction_id;
@@ -577,7 +589,6 @@ int consider_hurry(int id) {
     int t = b->queue_items[0];
     Faction* f = &tx_factions[fac];
     MetaFaction* m = &tx_metafactions[fac];
-    AIPlans* p = &plans[fac];
 
     if (!(conf.hurry_items && t >= -FAC_ORBITAL_DEFENSE_POD && ~b->status_flags & BASE_HURRY_PRODUCTION))
         return 0;
@@ -597,21 +608,14 @@ int consider_hurry(int id) {
             return hurry_item(b, mins, cost);
         if (t == -FAC_CHILDREN_CRECHE && f->SE_growth >= 2)
             return hurry_item(b, mins, cost);
-        if (t == -FAC_PERIMETER_DEFENSE && p->enemy_range < 15)
+        if (t == -FAC_PERIMETER_DEFENSE && f->thinker_enemy_range < 15)
             return hurry_item(b, mins, cost);
         if (t == -FAC_AEROSPACE_COMPLEX && has_tech(fac, TECH_Orbital))
             return hurry_item(b, mins, cost);
     }
     if (t >= 0 && turns > 1) {
-        if (p->enemy_range < 15 && tx_units[t].weapon_type <= WPN_PSI_ATTACK) {
-            for (int i=0; i<*tx_total_num_vehicles; i++) {
-                VEH* veh = &tx_vehicles[i];
-                UNIT* u = &tx_units[veh->proto_id];
-                if (veh->faction_id == fac && veh->x == b->x && veh->y == b->y
-                && u->weapon_type <= WPN_PSI_ATTACK) {
-                    return 0;
-                }
-            }
+        if (f->thinker_enemy_range < 15 && tx_units[t].weapon_type <= WPN_PSI_ATTACK
+        && !has_defenders(b->x, b->y, fac)) {
             return hurry_item(b, mins, cost);
         }
         if (tx_units[t].weapon_type == WPN_TERRAFORMING_UNIT && b->pop_size < 3) {
@@ -625,15 +629,15 @@ int find_facility(int base_id) {
     const int build_order[][2] = {
         {FAC_RECREATION_COMMONS, 0},
         {FAC_CHILDREN_CRECHE, 0},
-        {FAC_PERIMETER_DEFENSE, 0},
+        {FAC_PERIMETER_DEFENSE, 2},
         {FAC_GENEJACK_FACTORY, 0},
         {FAC_NETWORK_NODE, 1},
         {FAC_AEROSPACE_COMPLEX, 0},
         {FAC_TREE_FARM, 0},
         {FAC_HAB_COMPLEX, 0},
-        {FAC_COMMAND_CENTER, 0},
-        {FAC_GEOSYNC_SURVEY_POD, 0},
-        {FAC_FLECHETTE_DEFENSE_SYS, 0},
+        {FAC_COMMAND_CENTER, 2},
+        {FAC_GEOSYNC_SURVEY_POD, 2},
+        {FAC_FLECHETTE_DEFENSE_SYS, 2},
         {FAC_FUSION_LAB, 1},
         {FAC_ENERGY_BANK, 1},
         {FAC_RESEARCH_HOSPITAL, 1},
@@ -678,11 +682,15 @@ int find_facility(int base_id) {
     for (const int* t : build_order) {
         int c = t[0];
         R_Facility* fc = &tx_facility[c];
+        /* Check if we have sufficient base energy for multiplier facilities. */
         if (t[1] & 1 && base->energy_surplus < 2*fc->maint + fc->cost/(f->AI_tech ? 2 : 1))
+            continue;
+        /* Avoid building combat-related facilities in peacetime. */
+        if (t[1] & 2 && f->thinker_enemy_range > 40 - min(12, 3*fc->maint))
             continue;
         if (c == FAC_TREE_FARM && sea_base && base->energy_surplus < 2*fc->maint + fc->cost)
             continue;
-        if (c == FAC_COMMAND_CENTER && (sea_base || !core_base || f->SE_morale < 0 || f->AI_fight < 0))
+        if (c == FAC_COMMAND_CENTER && (sea_base || !core_base || f->SE_morale < 0))
             continue;
         if (c == FAC_GENEJACK_FACTORY && base->mineral_intake < 16)
             continue;
@@ -828,10 +836,10 @@ int select_prod(int id) {
     bool build_pods = (base->pop_size > 1 || base->nutrient_surplus > 1)
         && pods < 2 && *tx_total_num_bases < 500 && base_ratio < 1.0;
     bool sea_base = is_sea_base(id);
-    p->enemy_range = (enemyrange + 7 * p->enemy_range)/8;
+    f->thinker_enemy_range = (enemyrange + 7 * f->thinker_enemy_range)/8;
 
     double w1 = min(1.0, max(0.5, 1.0 * minerals / p->proj_limit));
-    double w2 = 2.0 * enemymil / (p->enemy_range * 0.1 + 0.1) + 0.5 * p->enemy_bases
+    double w2 = 2.0 * enemymil / (f->thinker_enemy_range * 0.1 + 0.1) + 0.5 * p->enemy_bases
         + min(1.0, base_ratio) * (f->AI_fight * 0.2 + 0.8);
     double threat = 1 - (1 / (1 + max(0.0, w1 * w2)));
     int def_target = (*tx_current_turn < 50 && !sea_base && !random(3) ? 2 : 1);
@@ -967,7 +975,7 @@ HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5) {
     Faction* f = &tx_factions[fac];
     MetaFaction* m = &tx_metafactions[fac];
     R_Social* s = tx_social;
-    int range = (int)(plans[fac].enemy_range / (1.0 + 0.1 * min(4, plans[fac].enemy_bases)));
+    int range = (int)(f->thinker_enemy_range / (1.0 + 0.1 * min(4, plans[fac].enemy_bases)));
     int pop_boom = 0;
     int want_pop = 0;
     int pop_total = 0;

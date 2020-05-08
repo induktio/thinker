@@ -119,13 +119,6 @@ struct AIPlans {
     Important heuristic in threat calculation.
     */
     int enemy_bases = 0;
-    /*
-    Exponentially weighted moving average of distances to nearest enemy bases.
-    This is updated while choosing base production, and it is used as a
-    general heuristic to determine the level of threat from other factions.
-    When no enemies are present, the range is capped at 40.
-    */
-    double enemy_range = 20;
 };
 
 extern FILE* debug_log;
@@ -142,11 +135,13 @@ HOOK_API int base_production(int id, int v1, int v2, int v3);
 HOOK_API int tech_value(int tech, int fac, int flag);
 HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5);
 
-int need_psych(int id);
-int consider_hurry(int id);
-int select_prod(int id);
-int find_facility(int base_id);
-int find_project(int base_id);
+int need_psych(int);
+int need_defense(int);
+int consider_hurry(int);
+int select_prod(int);
+int find_facility(int);
+int find_project(int);
+int find_proto(int, int, int, bool);
 int select_combat(int, bool, bool, int, int);
 
 #endif // __MAIN_H__

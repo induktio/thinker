@@ -374,9 +374,9 @@ struct Faction {
     int unk_64;
     int unk_65;
     int unk_66;
-    int unk_67; // unused
-    int unk_68; // unused
-    int unk_69; // unused
+    int unk_67;
+    int unk_68;
+    int unk_69;
     byte units_active[512];
     byte units_queue[512];
     short units_lost[512];
@@ -435,7 +435,14 @@ struct Faction {
     char thinker_flags;
     char thinker_tech_id;
     int thinker_tech_cost;
-    int thinker_unused[8];
+    /*
+    Exponentially weighted moving average of distances to nearest enemy bases.
+    This is updated while choosing base production, and it is used as a
+    general heuristic to determine the level of threat from other factions.
+    When no enemies are present, the range is capped at 40.
+    */
+    float thinker_enemy_range;
+    int thinker_unused[7];
 };
 
 struct R_Basic {

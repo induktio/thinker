@@ -321,8 +321,9 @@ int veh_skip(int id) {
     veh->status_icon = '-';
     if (veh->damage_taken) {
         MAP* sq = mapsq(veh->x, veh->y);
-        if (sq && sq->items & TERRA_MONOLITH)
+        if (sq && sq->items & TERRA_MONOLITH) {
             tx_monolith(id);
+        }
     }
     return tx_veh_skip(id);
 }
@@ -346,10 +347,24 @@ bool is_sea_base(int id) {
 }
 
 bool workable_tile(int x, int y, int fac) {
+    assert(fac > 0 && fac < 8);
     MAP* sq;
     for (int i=0; i<20; i++) {
         sq = mapsq(wrap(x + offset_tbl[i][0]), y + offset_tbl[i][1]);
         if (sq && sq->owner == fac && sq->items & TERRA_BASE_IN_TILE) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool has_defenders(int x, int y, int fac) {
+    assert(fac > 0 && fac < 8);
+    for (int i=0; i<*tx_total_num_vehicles; i++) {
+        VEH* veh = &tx_vehicles[i];
+        UNIT* u = &tx_units[veh->proto_id];
+        if (veh->faction_id == fac && veh->x == x && veh->y == y
+        && u->weapon_type <= WPN_PSI_ATTACK && unit_triad(veh->proto_id) == TRIAD_LAND) {
             return true;
         }
     }

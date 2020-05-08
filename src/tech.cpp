@@ -4,13 +4,16 @@
 void init_save_game(int fac) {
     Faction* f = &tx_factions[fac];
     check_zeros((int*)&f->unk_29, 100);
-    check_zeros((int*)&f->unk_67, 12);
+    check_zeros((int*)&f->thinker_unused, sizeof(f->thinker_unused));
 
     if (f->thinker_header != THINKER_HEADER) {
         f->thinker_header = THINKER_HEADER;
         f->thinker_flags = 0;
         f->thinker_tech_id = f->tech_research_id;
         f->thinker_tech_cost = f->tech_cost;
+    }
+    if (f->thinker_enemy_range < 2 || f->thinker_enemy_range > 40) {
+        f->thinker_enemy_range = 20;
     }
 }
 
