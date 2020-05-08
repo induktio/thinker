@@ -235,6 +235,10 @@ int random(int n) {
     return (n != 0 ? rand() % n : 0);
 }
 
+int map_hash(int x, int y) {
+    return ((*tx_random_seed ^ x) * 127) ^ (y * 179);
+}
+
 int wrap(int a) {
     if (!*tx_map_toggle_flat)
         return (a < 0 ? a + *tx_map_axis_x : a % *tx_map_axis_x);
@@ -336,7 +340,7 @@ bool is_ocean_shelf(MAP* sq) {
     return (sq && (sq->level >> 5) == LEVEL_OCEAN_SHELF);
 }
 
-bool water_base(int id) {
+bool is_sea_base(int id) {
     MAP* sq = mapsq(tx_bases[id].x, tx_bases[id].y);
     return is_ocean(sq);
 }
@@ -402,11 +406,26 @@ char* parse_str(char* buf, int len, const char* s1, const char* s2, const char* 
     return (strlen(buf) > 0 ? buf : NULL);
 }
 
+/*
+For debugging purposes only, check if the address range is unused.
+*/
+void check_zeros(int* ptr, int len) {
+    char buf[100];
+    if (DEBUG && !(*(byte*)ptr == 0 && memcmp((byte*)ptr, (byte*)ptr + 1, len - 1) == 0)) {
+        snprintf(buf, sizeof(buf), "Non-zero values detected at: 0x%06x", (int)ptr);
+        MessageBoxA(0, buf, "Debug notice", MB_OK | MB_ICONINFORMATION);
+        int* p = ptr;
+        for (int i=0; i*sizeof(int) < (unsigned)len; i++, p++) {
+            debug("LOC %08x %d: %08x\n", (int)p, i, *p);
+        }
+    }
+}
+
 void print_map(int x, int y) {
     MAP* m = mapsq(x, y);
     debug("MAP %2d %2d | %2d %d | %02x %02x %02x | %02x %02x %02x | %02x %02x %02x | %08x %08x\n",
         x, y, m->owner, tx_bonus_at(x, y), m->level, m->altitude, m->rocks,
-        m->flags, m->area_id, m->visibility, m->unk_1, m->unk_2, m->art_ref_id,
+        m->flags, m->region, m->visibility, m->unk_1, m->unk_2, m->art_ref_id,
         m->items, m->landmarks);
 }
 
@@ -416,7 +435,7 @@ void print_veh(int id) {
         tx_units[v->proto_id].name, v->proto_id, id, v->faction_id,
         v->flags_1, v->flags_2, v->visibility, v->move_status, v->status_icon,
         v->x, v->y, v->waypoint_1_x, v->waypoint_1_y,
-        v->morale, v->damage_taken, v->iter_count, v->unk5, v->unk8, v->unk9);
+        v->morale, v->damage_taken, v->iter_count, v->unk_1, v->unk_2, v->unk_3);
 }
 
 void TileSearch::init(int x, int y, int tp) {
@@ -447,22 +466,27 @@ void TileSearch::init(int x, int y, int tp, int skip) {
     y_skip = skip;
 }
 
+/*
+Traverse current search path and check for zones of control.
+*/
 bool TileSearch::has_zoc(int fac) {
-    /* Traverse current search path and check for zones of control. */
     int zoc = 0;
     int i = 0;
     int j = cur;
     while (j >= 0 && i++ < 20) {
         auto p = newtiles[j];
-        if (tx_zoc_any(p.x, p.y, fac))
-            zoc++;
+        if (tx_zoc_any(p.x, p.y, fac) && ++zoc > 1)
+            return true;
         j = p.prev;
     }
-    return zoc > 1;
+    return false;
 }
 
+/*
+Implement a breadth-first search of adjacent map tiles to iterate possible movement paths.
+Pathnodes are also used to keep track of the route to reach the current destination.
+*/
 MAP* TileSearch::get_next() {
-    /* Implement a breadth-first search of adjacent map tiles. */
     while (items > 0) {
         bool first = oldtiles.size() == 1;
         cur = head;

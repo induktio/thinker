@@ -1,14 +1,11 @@
 
 #include "tech.h"
 
-
 void init_save_game(int fac) {
     Faction* f = &tx_factions[fac];
-    if (DEBUG) {
-        byte zeros[100] = {};
-        assert(!memcmp(&f->unk_29, zeros, 100));
-        assert(!memcmp(&f->unk_67, zeros, 12));
-    }
+    check_zeros((int*)&f->unk_29, 100);
+    check_zeros((int*)&f->unk_67, 12);
+
     if (f->thinker_header != THINKER_HEADER) {
         f->thinker_header = THINKER_HEADER;
         f->thinker_flags = 0;

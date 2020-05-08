@@ -1,8 +1,7 @@
 #ifndef __TERRANX_ENUMS_H__
 #define __TERRANX_ENUMS_H__
 
-enum facility_id
-{
+enum facility_id {
     FAC_HEADQUARTERS = 1,
     FAC_CHILDREN_CRECHE = 2,
     FAC_RECYCLING_TANKS = 3,
@@ -142,8 +141,7 @@ enum facility_id
     PROJECT_ID_LAST = 106,
 };
 
-enum technology_id
-{
+enum technology_id {
     TECH_Biogen = 0,
     TECH_Indust = 1,
     TECH_InfNet = 2,
@@ -237,8 +235,7 @@ enum technology_id
     TECH_Disable = -2,
 };
 
-enum tech_flags
-{
+enum tech_flags {
     TECH_FLAGS_SECRETS = 0x1,
     TECH_FLAGS_IMPROVE_PROBE = 0x2,
     TECH_FLAGS_INC_COMMERCE = 0x4,
@@ -250,8 +247,7 @@ enum tech_flags
     TECH_FLAGS_INC_NUTRIENT_FUNGUS = 0x100,
 };
 
-enum probe_action_id
-{
+enum probe_action_id {
     PRB_INFILTRATE_DATALINKS = 0x0,
     PRB_PROCURE_RESEARCH_DATA = 0x1,
     PRB_ACTIVATE_SABOTAGE_VIRUS = 0x2,
@@ -264,8 +260,7 @@ enum probe_action_id
     PRB_MIND_CONTROL_UNIT = -1,
 };
 
-enum unit_basic_id
-{
+enum unit_basic_id {
     BSC_COLONY_POD = 0x0,
     BSC_FORMERS = 0x1,
     BSC_SCOUT_PATROL = 0x2,
@@ -291,8 +286,7 @@ enum unit_basic_id
     BSC_UNITY_GUNSHIP = 0x16,
 };
 
-enum unit_chassis_type
-{
+enum unit_chassis_type {
     CHS_INFANTRY = 0x0,
     CHS_SPEEDER = 0x1,
     CHS_HOVERTANK = 0x2,
@@ -304,23 +298,20 @@ enum unit_chassis_type
     CHS_MISSILE = 0x8,
 };
 
-enum unit_reactor
-{
+enum unit_reactor {
     REC_FISSION = 0x1,
     REC_FUSION = 0x2,
     REC_QUANTUM = 0x3,
     REC_SINGULARITY = 0x4,
 };
 
-enum unit_triad
-{
+enum unit_triad {
     TRIAD_LAND = 0x0,
     TRIAD_SEA = 0x1,
     TRIAD_AIR = 0x2,
 };
 
-enum unit_armor_id
-{
+enum unit_armor_id {
     ARM_NO_ARMOR = 0x0,
     ARM_SYNTHMETAL_ARMOR = 0x1,
     ARM_PLASMA_STEEL_ARMOR = 0x2,
@@ -337,8 +328,7 @@ enum unit_armor_id
     ARM_RESONANCE_8_ARMOR = 0xD,
 };
 
-enum unit_weapon_id
-{
+enum unit_weapon_id {
     WPN_HAND_WEAPONS = 0x0,
     WPN_LASER = 0x1,
     WPN_PARTICLE_IMPACTOR = 0x2,
@@ -367,8 +357,7 @@ enum unit_weapon_id
     WPN_FUNGAL_PAYLOAD = 0x19,
 };
 
-enum unit_weapon_mode
-{
+enum unit_weapon_mode {
     WMODE_PROJECTILE = 0x0,
     WMODE_ENERGY = 0x1,
     WMODE_MISSILE = 0x2,
@@ -380,8 +369,7 @@ enum unit_weapon_mode
     WMODE_ARTIFACT = 0xC,
 };
 
-enum unit_plan
-{
+enum unit_plan {
     PLAN_OFFENSIVE = 0x0,
     PLAN_COMBAT = 0x1,
     PLAN_DEFENSIVE = 0x2,
@@ -400,8 +388,7 @@ enum unit_plan
     PLAN_AUTO_CALCULATE = -1,
 };
 
-enum unit_ability_id
-{
+enum unit_ability_id {
     ABL_ID_SUPER_TERRAFORMER = 0x0,
     ABL_ID_DEEP_RADAR = 0x1,
     ABL_ID_CLOAKED = 0x2,
@@ -433,8 +420,7 @@ enum unit_ability_id
     ABL_ID_ALGO_ENHANCEMENT = 0x1C,
 };
 
-enum unit_ability_flags
-{
+enum unit_ability_flags {
     ABL_SUPER_TERRAFORMER = 0x1,
     ABL_DEEP_RADAR = 0x2,
     ABL_CLOAKED = 0x4,
@@ -466,14 +452,12 @@ enum unit_ability_flags
     ABL_ALGO_ENHANCEMENT = 0x10000000,
 };
 
-enum unit_prototype_flags
-{
+enum unit_prototype_flags {
     UNIT_ACTIVE = 0x1,
     UNIT_PROTOTYPED = 0x4,
 };
 
-enum unit_state
-{
+enum unit_state {
     UNIT_STATE_RECEIVES_SUPPORT = 0x10,
     UNIT_STATE_MADE_AIRDROP = 0x20,
     UNIT_STATE_HAS_MONOLITH_UPGRADE = 0x100,
@@ -482,8 +466,7 @@ enum unit_state
     UNIT_STATE_IS_CRAWLING = 0x4000000,
 };
 
-enum unit_status
-{
+enum unit_status {
     UNIT_STATUS_OBJECTIVE = 0x20,
     UNIT_STATUS_LURKER = 0x40,
     UNIT_STATUS_RANDOM_START = 0x80,
@@ -492,8 +475,7 @@ enum unit_status
     UNIT_STATUS_INVISIBLE = 0x400,
 };
 
-enum unit_morale
-{
+enum unit_morale {
     MORALE_VERY_GREEN = 0x0,
     MORALE_GREEN = 0x1,
     MORALE_DISCIPLINED = 0x2,
@@ -503,8 +485,7 @@ enum unit_morale
     MORALE_ELITE = 0x6,
 };
 
-enum faction_special_rules
-{
+enum faction_special_rules {
     FACT_TECHSTEAL = 0x10,
     FACT_TECHSHARE = 0x20,
     FACT_WORMPOLICE = 0x40,
@@ -519,8 +500,7 @@ enum faction_special_rules
     FACT_MORALE = 0x8000,
 };
 
-enum faction_bonus
-{
+enum faction_bonus {
     FCB_FREETECH = 0,
     FCB_FREEUNIT = 1,
     FCB_FREEFAC = 2,
@@ -542,8 +522,7 @@ enum faction_bonus
     FCB_OFFENSE = 18,
 };
 
-enum social_effect
-{
+enum social_effect {
     SE_ECONOMY = 0,
     SE_EFFIC = 1,
     SE_SUPPORT = 2,
@@ -557,8 +536,7 @@ enum social_effect
     SE_RESEARCH = 10,
 };
 
-enum game_rules_1
-{
+enum game_rules_1 {
     RULES_SCENARIO_CHEATED_FLAG = 0x20,
     RULES_SCENARIO_EDITOR = 0x40,
     RULES_OMNISCIENT_VIEW = 0x80,
@@ -568,8 +546,7 @@ enum game_rules_1
     RULES_RAND_LEADER_SOCIAL_AGENDA = 0x1000000,
 };
 
-enum game_rules_2
-{
+enum game_rules_2 {
     RULES_DO_OR_DIE = 0x1,
     RULES_VICTORY_TOTAL_WAR = 0x2,
     RULES_VICTORY_MINE_ALL_MINE = 0x4,
@@ -588,8 +565,7 @@ enum game_rules_2
     RULES_BELL_CURVE = 0x8000,
 };
 
-enum game_diff_level
-{
+enum game_diff_level {
     DIFF_CITIZEN = 0x0,
     DIFF_SPECIALIST = 0x1,
     DIFF_TALENT = 0x2,
@@ -598,8 +574,7 @@ enum game_diff_level
     DIFF_TRANSCEND = 0x5,
 };
 
-enum diplo_status
-{
+enum diplo_status {
     DIPLO_PACT = 0x1,
     DIPLO_TREATY = 0x2,
     DIPLO_TRUCE = 0x4,
@@ -613,14 +588,12 @@ enum diplo_status
     DIPLO_HAVE_SURRENDERED = 0x2000000,
 };
 
-enum diplo_agenda
-{
+enum diplo_agenda {
     DIPLO_FIGHT_TO_DEATH = 0x8,
     DIPLO_PERMANENT = 0x2000,
 };
 
-enum base_status
-{
+enum base_status {
     BASE_DRONE_RIOTS_ACTIVE = 0x2,
     BASE_GOLDEN_AGE_ACTIVE = 0x4,
     BASE_RESEARCH_DATA_STOLEN = 0x40,
@@ -630,8 +603,7 @@ enum base_status
     BASE_HURRY_PRODUCTION = 0x40000000,
 };
 
-enum terrain_flags
-{
+enum terrain_flags {
     TERRA_BASE_IN_TILE = 0x1,
     TERRA_UNIT_IN_TILE = 0x2,
     TERRA_ROAD = 0x4,
@@ -640,16 +612,18 @@ enum terrain_flags
     TERRA_FUNGUS = 0x20,
     TERRA_SOLAR = 0x40,
     TERRA_RIVER = 0x80,
-    TERRA_RIVER_SRC = 0x100,
+    TERRA_RIVER_SRC = 0x100, // River begins here for visual effect
+    TERRA_RIVER_LAKE = 0x200, // Shows more water for visual effect
     TERRA_BONUS_RES = 0x400,
     TERRA_BUNKER = 0x800,
+    TERRA_BASE_RADIUS = 0x1000, // Production radius; 21 tiles per base
     TERRA_MONOLITH = 0x2000,
     TERRA_FARM = 0x8000,
     TERRA_ENERGY_RES = 0x10000,
     TERRA_MINERAL_RES = 0x20000,
     TERRA_AIRBASE = 0x40000,
     TERRA_SOIL_ENR = 0x80000,
-    TERRA_SUPPLY_REMOVE = 0x100000,
+    TERRA_SUPPLY_REMOVE = 0x100000, // Prevent ramdomly generated pods from appearing here
     TERRA_FOREST = 0x200000,
     TERRA_CONDENSER = 0x400000,
     TERRA_ECH_MIRROR = 0x800000,
@@ -659,8 +633,7 @@ enum terrain_flags
     TERRA_SENSOR = 0x80000000,
 };
 
-enum terrain_landmarks
-{
+enum terrain_landmarks {
     LM_CRATER = 0x1,
     LM_VOLCANO = 0x2,
     LM_JUNGLE = 0x4,
@@ -679,8 +652,7 @@ enum terrain_landmarks
     LM_FOSSIL = 0x8000,
 };
 
-enum former_action
-{
+enum former_action {
     FORMER_FARM = 0,
     FORMER_SOIL_ENR = 1,
     FORMER_MINE = 2,
@@ -703,8 +675,7 @@ enum former_action
     FORMER_MONOLITH = 19,
 };
 
-enum terrain_level
-{
+enum terrain_level {
     LEVEL_OCEAN = 1,
     LEVEL_OCEAN_SHELF = 2,
     LEVEL_SHORE_LINE = 3,
@@ -714,8 +685,7 @@ enum terrain_level
     LEVEL_FOUR_ABOVE_SEA = 7,
 };
 
-enum terrain_basic_flags
-{
+enum terrain_basic_flags {
     TILE_MOIST = 0x8,
     TILE_RAINY = 0x10,
     TILE_ROLLING = 0x40,

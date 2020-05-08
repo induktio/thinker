@@ -547,8 +547,7 @@ bool can_borehole(int x, int y, int fac, int bonus, MAP* sq) {
     if (!sq || sq->items & (BASE_DISALLOWED | IMP_ADVANCED) || bonus == RES_NUTRIENT)
         return false;
     // Planet factions should build boreholes only in reduced numbers.
-    if (tx_factions[fac].SE_planet_base > 0
-    && (((*tx_random_seed ^ x) * 127) ^ (y * 179)) % 101 > 14)
+    if (tx_factions[fac].SE_planet_base > 0 && (map_hash(x, y) % 101 > 14))
         return false;
     if (bonus == RES_NONE && sq->rocks & TILE_ROLLING)
         return false;

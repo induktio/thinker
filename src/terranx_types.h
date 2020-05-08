@@ -2,8 +2,7 @@
 #define __TERRANX_TYPES_H__
 
 #pragma pack(push, 1)
-struct BASE
-{
+struct BASE {
     short x;
     short y;
     char faction_id;
@@ -28,16 +27,19 @@ struct BASE
     int queue_items[10];
     int worked_tiles;
     int specialist_total;
-    int pad3;
-    int pad4;
-    int pad5;
+    int specialist_unk_1;
+    /*
+    Specialist types (R_Citizen, 4 bits per id) for the first 16 specialists in the base.
+    These are assigned in base_yield and base_energy and chosen by best_specialist.
+    */
+    int specialist_types[2];
     char facilities_built[12];
     int mineral_surplus_final;
     int minerals_accumulated_2;
-    int pad6;
-    int pad7;
-    int pad8;
-    int pad9;
+    int pad_1;
+    int pad_2;
+    int pad_3;
+    int pad_4;
     int nutrient_intake;
     int mineral_intake;
     int energy_intake;
@@ -61,22 +63,21 @@ struct BASE
     int economy_total;
     int psych_total;
     int labs_total;
-    int unk10;
+    int unk_2;
     short autoforward_land_base_id;
     short autoforward_sea_base_id;
     short autoforward_air_base_id;
-    short pad10;
+    short pad_5;
     int talent_total;
     int drone_total;
     int superdrone_total;
     int random_event_turns;
     int nerve_staple_count;
-    int pad11;
-    int pad12;
+    int pad_6;
+    int pad_7;
 };
 
-struct UNIT
-{
+struct UNIT {
     char name[32];
     int ability_flags;
     char chassis_type;
@@ -86,17 +87,16 @@ struct UNIT
     char carry_capacity;
     char cost;
     char unit_plan;
-    char unk0;
+    char unk_1;
     char factions_retired;
     char factions;
     char icon_offset;
-    char unk1;
+    char pad_1; // unused
     short unit_flags;
     short preq_tech;
 };
 
-struct VEH
-{
+struct VEH {
     short x;
     short y;
     int flags_1;
@@ -122,18 +122,17 @@ struct VEH
     char type_crawling;
     byte visibility;
     char road_moves_spent;
-    char unk5;
+    char unk_1;
     char iter_count;
     char status_icon;
-    char unk8;
-    char unk9;
+    char unk_2;
+    char unk_3;
     short home_base_id;
     short next_unit_id_stack;
     short prev_unit_id_stack;
 };
 
-struct MAP
-{
+struct MAP {
     byte level;
     byte altitude;
     /*
@@ -145,7 +144,7 @@ struct MAP
     The game keeps track of disjoint land/water areas and assigns each of them an ID number
     which is used to index the [128] planning variable arrays in Faction struct.
     */
-    byte area_id;
+    byte region;
     byte visibility;
     byte rocks;
     byte unk_1;
@@ -157,8 +156,7 @@ struct MAP
     int visible_items[7];
 };
 
-struct MetaFaction
-{
+struct MetaFaction {
     int is_leader_female;
     char filename[24];
     char search_key[24];
@@ -211,8 +209,7 @@ struct MetaFaction
     int soc_opposition_effect;
 };
 
-struct Goal
-{
+struct Goal {
     short type;
     short unk_1;
     int x;
@@ -220,8 +217,7 @@ struct Goal
     int unk_2;
 };
 
-struct Faction
-{
+struct Faction {
     int diplo_flags;
     int ranking;
     int diff_level;
@@ -394,21 +390,21 @@ struct Faction
     int unk_71;
     int unk_72;
     /*
-    AI planning variables that relate to specific disjoint land/water areas.
-    All of these are indexed by the area_id value in MAP struct.
+    AI planning variables that relate to faction units in specific disjoint land/water areas.
+    All of these are indexed by the region value in MAP struct.
     */
-    short area_total_combat_units[128];
-    byte area_total_bases[128];
-    byte area_total_offensive_units[128];
-    short area_force_rating[128]; // Combined offensive/morale rating of all units in landmass
-    short area_unk_1[128]; // Movement planning flags
-    short area_unk_2[128]; // Unknown reset_territory counter
-    short area_unk_3[128]; // Unknown counter
-    short area_unk_4[128]; // Unknown reset_territory/enemy_move counter
-    short area_unk_5[128]; // Unknown reset_territory/enemy_move counter
-    byte area_unk_6[128]; // Unknown enemy_strategy state
-    byte area_unk_7[128]; // Unknown base_prod_choices state
-    byte area_unk_8[128]; // Unknown enemy_move state
+    short region_total_combat_units[128];
+    byte region_total_bases[128];
+    byte region_total_offensive_units[128];
+    short region_force_rating[128]; // Combined offensive/morale rating of all units in the area
+    short region_unk_1[128]; // Movement planning flags
+    short region_unk_2[128]; // Unknown reset_territory counter
+    short region_unk_3[128]; // Unknown counter
+    short region_unk_4[128]; // Unknown reset_territory/enemy_move counter
+    short region_unk_5[128]; // Unknown reset_territory/enemy_move counter
+    byte region_unk_6[128]; // Unknown enemy_strategy state
+    byte region_unk_7[128]; // Unknown base_prod_choices state
+    byte region_unk_8[128]; // Unknown enemy_move state
     /* End of block */
     Goal goals_1[75];
     Goal goals_2[25];
@@ -442,8 +438,7 @@ struct Faction
     int thinker_unused[8];
 };
 
-struct R_Basic
-{
+struct R_Basic {
     int mov_rate_along_roads;
     int nutrient_intake_req_citizen;
     int max_airdrop_rng_wo_orbital_insert;
@@ -523,8 +518,7 @@ struct R_Basic
     int subspace_gen_req;
 };
 
-struct R_Resource
-{
+struct R_Resource {
     int ocean_sq_nutrient;
     int ocean_sq_mineral;
     int ocean_sq_energy;
@@ -563,16 +557,14 @@ struct R_Resource
     int pad_8;
 };
 
-struct R_Social
-{
+struct R_Social {
     char* field_name;
     int   soc_preq_tech[4];
     char* soc_name[4];
     int   effects[4][11];
 };
 
-struct R_Facility
-{
+struct R_Facility {
     char* name;
     char* effect;
     int pad;
@@ -587,8 +579,7 @@ struct R_Facility
     int AI_power;
 };
 
-struct R_Tech
-{
+struct R_Tech {
     int flags;
     char* name;
     char short_name[12];
@@ -600,8 +591,7 @@ struct R_Tech
     int preq_tech2;
 };
 
-struct R_Ability
-{
+struct R_Ability {
     char* name;
     char* description;
     char* abbreviation;
@@ -611,8 +601,7 @@ struct R_Ability
     int preq_tech;
 };
 
-struct R_Chassis
-{
+struct R_Chassis {
     char* offsv1_name;
     char* offsv2_name;
     char* offsv_name_lrg;
@@ -648,8 +637,7 @@ struct R_Chassis
     short preq_tech;
 };
 
-struct R_Citizen
-{
+struct R_Citizen {
     char* singular_name;
     char* plural_name;
     int preq_tech;
@@ -659,8 +647,7 @@ struct R_Citizen
     int research_bonus;
 };
 
-struct R_Defense
-{
+struct R_Defense {
     char* name;
     char* name_short;
     char defense_value;
@@ -671,16 +658,14 @@ struct R_Defense
     short padding2;
 };
 
-struct R_Reactor
-{
+struct R_Reactor {
     char* name;
     char* name_short;
     short preq_tech;
     short padding;
 };
 
-struct R_Terraform
-{
+struct R_Terraform {
     char* name;
     char* name_sea;
     int preq_tech;
@@ -691,8 +676,7 @@ struct R_Terraform
     char* shortcuts;
 };
 
-struct R_Weapon
-{
+struct R_Weapon {
     char* name;
     char* name_short;
     char offense_value;

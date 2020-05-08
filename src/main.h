@@ -92,10 +92,11 @@ struct Config {
     int limit_project_start = 3;
     int max_sat = 10;
     int smac_only = 0;
-    int revised_tech_cost = 1;
     int faction_placement = 1;
     int nutrient_bonus = 1;
     int landmarks = 0xffff;
+    int revised_tech_cost = 1;
+    int eco_damage_fix = 1;
 };
 
 /*
@@ -122,6 +123,7 @@ struct AIPlans {
     Exponentially weighted moving average of distances to nearest enemy bases.
     This is updated while choosing base production, and it is used as a
     general heuristic to determine the level of threat from other factions.
+    When no enemies are present, the range is capped at 40.
     */
     double enemy_range = 20;
 };

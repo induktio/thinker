@@ -45,15 +45,19 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->max_sat = atoi(value);
     } else if (MATCH("thinker", "smac_only")) {
         cf->smac_only = atoi(value);
-    } else if (MATCH("thinker", "revised_tech_cost")) {
-        cf->revised_tech_cost = atoi(value);
     } else if (MATCH("thinker", "faction_placement")) {
         cf->faction_placement = atoi(value);
     } else if (MATCH("thinker", "nutrient_bonus")) {
         cf->nutrient_bonus = atoi(value);
+    } else if (MATCH("thinker", "revised_tech_cost")) {
+        cf->revised_tech_cost = atoi(value);
+    } else if (MATCH("thinker", "eco_damage_fix")) {
+        cf->eco_damage_fix = atoi(value);
     } else if (MATCH("thinker", "cost_factor")) {
-        char* p = strtok(buf, ",");
-        for (int i=0; i<6 && p != NULL; i++, p = strtok(NULL, ",")) {
+        const char *d=",";
+        char *s, *p;
+        p = strtok_r(buf, d, &s);
+        for (int i=0; i<6 && p != NULL; i++, p = strtok_r(NULL, d, &s)) {
             tx_cost_ratios[i] = max(1, atoi(p));
         }
     } else {
@@ -628,6 +632,8 @@ int find_facility(int base_id) {
         {FAC_TREE_FARM, 0},
         {FAC_HAB_COMPLEX, 0},
         {FAC_COMMAND_CENTER, 0},
+        {FAC_GEOSYNC_SURVEY_POD, 0},
+        {FAC_FLECHETTE_DEFENSE_SYS, 0},
         {FAC_FUSION_LAB, 1},
         {FAC_ENERGY_BANK, 1},
         {FAC_RESEARCH_HOSPITAL, 1},
@@ -641,8 +647,9 @@ int find_facility(int base_id) {
     int pop_rule = tx_metafactions[fac].rule_population;
     int hab_complex_limit = tx_basic->pop_limit_wo_hab_complex - pop_rule;
     int hab_dome_limit = tx_basic->pop_limit_wo_hab_dome - pop_rule;
-    bool sea_base = water_base(base_id);
     Faction* f = &tx_factions[fac];
+    bool sea_base = is_sea_base(base_id);
+    bool core_base = minerals+extra >= plans[fac].proj_limit;
 
     if (*tx_climate_future_change > 0) {
         MAP* sq = mapsq(base->x, base->y);
@@ -655,10 +662,10 @@ int find_facility(int base_id) {
         return -FAC_RECYCLING_TANKS;
     if (base->pop_size >= hab_complex_limit && can_build(base_id, FAC_HAB_COMPLEX))
         return -FAC_HAB_COMPLEX;
-    if (minerals+extra >= plans[fac].proj_limit && (proj = find_project(base_id)) != 0) {
+    if (core_base && (proj = find_project(base_id)) != 0) {
         return proj;
     }
-    if (minerals+extra >= plans[fac].proj_limit && has_facility(base_id, FAC_AEROSPACE_COMPLEX)) {
+    if (core_base && has_facility(base_id, FAC_AEROSPACE_COMPLEX)) {
         if (can_build(base_id, FAC_ORBITAL_DEFENSE_POD))
             return -FAC_ORBITAL_DEFENSE_POD;
         if (can_build(base_id, FAC_NESSUS_MINING_STATION))
@@ -673,13 +680,19 @@ int find_facility(int base_id) {
         R_Facility* fc = &tx_facility[c];
         if (t[1] & 1 && base->energy_surplus < 2*fc->maint + fc->cost/(f->AI_tech ? 2 : 1))
             continue;
-        if (c == FAC_COMMAND_CENTER && (sea_base || f->SE_morale < 0 || f->AI_fight + f->AI_power < 1))
+        if (c == FAC_TREE_FARM && sea_base && base->energy_surplus < 2*fc->maint + fc->cost)
+            continue;
+        if (c == FAC_COMMAND_CENTER && (sea_base || !core_base || f->SE_morale < 0 || f->AI_fight < 0))
             continue;
         if (c == FAC_GENEJACK_FACTORY && base->mineral_intake < 16)
             continue;
         if (c == FAC_HAB_COMPLEX && base->pop_size+1 < hab_complex_limit)
             continue;
         if (c == FAC_HABITATION_DOME && base->pop_size < hab_dome_limit)
+            continue;
+        /* Place survey pods only randomly on some bases to reduce maintenance. */
+        if ((c == FAC_GEOSYNC_SURVEY_POD || c == FAC_FLECHETTE_DEFENSE_SYS)
+        && (minerals*2 < fc->cost*3 || (map_hash(base->x, base->y) % 101 > 25)))
             continue;
         if (can_build(base_id, c)) {
             return -1*c;
@@ -700,7 +713,7 @@ int select_colony(int id, int pods, bool build_ships) {
     if (pods >= limit) {
         return -1;
     }
-    if (water_base(id)) {
+    if (is_sea_base(id)) {
         for (const int* t : offset) {
             int x2 = wrap(base->x + t[0]);
             int y2 = base->y + t[1];
@@ -814,7 +827,7 @@ int select_prod(int id) {
     bool build_ships = can_build_ships(id);
     bool build_pods = (base->pop_size > 1 || base->nutrient_surplus > 1)
         && pods < 2 && *tx_total_num_bases < 500 && base_ratio < 1.0;
-    bool sea_base = water_base(id);
+    bool sea_base = is_sea_base(id);
     p->enemy_range = (enemyrange + 7 * p->enemy_range)/8;
 
     double w1 = min(1.0, max(0.5, 1.0 * minerals / p->proj_limit));

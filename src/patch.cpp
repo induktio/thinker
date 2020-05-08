@@ -20,11 +20,6 @@ const char* lm_params[] = {
     "borehole", "nexus", "unity", "fossil"
 };
 
-const byte asm_find_start[] = {
-    0x8D,0x45,0xF8,0x50,0x8D,0x45,0xFC,0x50,0x8B,0x45,0x08,0x50,
-    0xE8,0x00,0x00,0x00,0x00,0x83,0xC4,0x0C
-};
-
 int prev_rnd = -1;
 Points spawns;
 Points natives;
@@ -193,7 +188,25 @@ HOOK_API void find_start(int fac, int* tx, int* ty) {
     fflush(debug_log);
 }
 
-void write_call_ptr(int addr, int func) {
+/*
+Replaces old byte sequence with a new byte sequence at address.
+Verifies that address contains old values before replacing.
+*/
+void write_bytes(int addr, const byte* old_bytes, const byte* new_bytes, int len) {
+    if ((int*)addr < (int*)AC_IMAGE_BASE || (int*)addr + len > (int*)AC_IMAGE_BASE + AC_IMAGE_LEN) {
+        throw std::exception();
+    }
+    for (int i=0; i<len; i++) {
+        if (*((byte*)addr + i) != old_bytes[i]) {
+            debug("write_bytes: old byte doesn't match at address: %p, byte at addr: %x, byte expected: %x.",
+                  (byte*)addr + i, *((byte*)addr + i), old_bytes[i]);
+            throw std::exception();
+        }
+        *((byte*)addr + i) = new_bytes[i];
+    }
+}
+
+void write_call(int addr, int func) {
     if (*(byte*)addr != 0xE8 || abs(*(int*)(addr+1)) > (int)AC_IMAGE_LEN) {
         throw std::exception();
     }
@@ -220,17 +233,17 @@ bool patch_setup(Config* cf) {
     if (!VirtualProtect(AC_IMAGE_BASE, AC_IMAGE_LEN, PAGE_EXECUTE_READWRITE, &attrs))
         return false;
 
-    write_call_ptr(0x52768A, (int)turn_upkeep);
-    write_call_ptr(0x52A4AD, (int)turn_upkeep);
-    write_call_ptr(0x528214, (int)faction_upkeep);
-    write_call_ptr(0x52918F, (int)faction_upkeep);
-    write_call_ptr(0x4E61D0, (int)base_production);
-    write_call_ptr(0x4E888C, (int)crop_yield);
-    write_call_ptr(0x5BDC4C, (int)tech_value);
-    write_call_ptr(0x579362, (int)enemy_move);
-    write_call_ptr(0x4AED04, (int)social_ai);
-    write_call_ptr(0x527304, (int)social_ai);
-    write_call_ptr(0x5C0908, (int)log_veh_kill);
+    write_call(0x52768A, (int)turn_upkeep);
+    write_call(0x52A4AD, (int)turn_upkeep);
+    write_call(0x528214, (int)faction_upkeep);
+    write_call(0x52918F, (int)faction_upkeep);
+    write_call(0x4E61D0, (int)base_production);
+    write_call(0x4E888C, (int)crop_yield);
+    write_call(0x5BDC4C, (int)tech_value);
+    write_call(0x579362, (int)enemy_move);
+    write_call(0x4AED04, (int)social_ai);
+    write_call(0x527304, (int)social_ai);
+    write_call(0x5C0908, (int)log_veh_kill);
 
     if (FileExists(ac_movlist_txt) && !FileExists(ac_movlistx_txt)) {
         CopyFile(ac_movlist_txt, ac_movlistx_txt, TRUE);
@@ -254,28 +267,38 @@ bool patch_setup(Config* cf) {
         memset((void*)0x58B9F3, 0x90, 2);
     }
     if (cf->faction_placement) {
+        const byte asm_find_start[] = {
+            0x8D,0x45,0xF8,0x50,0x8D,0x45,0xFC,0x50,0x8B,0x45,
+            0x08,0x50,0xE8,0x00,0x00,0x00,0x00,0x83,0xC4,0x0C
+        };
         remove_call(0x5B1DFF);
         remove_call(0x5B2137);
         memset((void*)0x5B220F, 0x90, 63);
         memset((void*)0x5B2257, 0x90, 11);
         memcpy((void*)0x5B220F, asm_find_start, sizeof(asm_find_start));
-        write_call_ptr(0x5B221B, (int)find_start);
+        write_call(0x5B221B, (int)find_start);
     }
     if (cf->revised_tech_cost) {
-        write_call_ptr(0x4452D5, (int)tech_rate);
-        write_call_ptr(0x498D26, (int)tech_rate);
-        write_call_ptr(0x4A77DA, (int)tech_rate);
-        write_call_ptr(0x521872, (int)tech_rate);
-        write_call_ptr(0x5218BE, (int)tech_rate);
-        write_call_ptr(0x5581E9, (int)tech_rate);
-        write_call_ptr(0x5BEA4D, (int)tech_rate);
-        write_call_ptr(0x5BEAC7, (int)tech_rate);
+        write_call(0x4452D5, (int)tech_rate);
+        write_call(0x498D26, (int)tech_rate);
+        write_call(0x4A77DA, (int)tech_rate);
+        write_call(0x521872, (int)tech_rate);
+        write_call(0x5218BE, (int)tech_rate);
+        write_call(0x5581E9, (int)tech_rate);
+        write_call(0x5BEA4D, (int)tech_rate);
+        write_call(0x5BEAC7, (int)tech_rate);
 
-        write_call_ptr(0x52935F, (int)tech_selection);
-        write_call_ptr(0x5BE5E1, (int)tech_selection);
-        write_call_ptr(0x5BE690, (int)tech_selection);
-        write_call_ptr(0x5BEB5D, (int)tech_selection);
+        write_call(0x52935F, (int)tech_selection);
+        write_call(0x5BE5E1, (int)tech_selection);
+        write_call(0x5BE690, (int)tech_selection);
+        write_call(0x5BEB5D, (int)tech_selection);
     }
+    if (cf->eco_damage_fix) {
+        const byte old_bytes[] = {0x84,0x05,0xE8,0x64,0x9A,0x00,0x74,0x24};
+        const byte new_bytes[] = {0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90};
+        write_bytes(0x4EA0B9, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+
     if (lm & LM_JUNGLE) remove_call(0x5C88A0);
     if (lm & LM_CRATER) remove_call(0x5C88A9);
     if (lm & LM_VOLCANO) remove_call(0x5C88B5);
