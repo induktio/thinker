@@ -221,7 +221,7 @@ void write_offset(int addr, const void* ofs) {
 }
 
 void remove_call(int addr) {
-    if (*(byte*)addr != 0xE8) {
+    if (*(byte*)addr != 0xE8 || *(int*)(addr+1) + addr < (int)AC_IMAGE_BASE) {
         throw std::exception();
     }
     memset((void*)addr, 0x90, 5);
@@ -245,9 +245,20 @@ bool patch_setup(Config* cf) {
     write_call(0x527304, (int)social_ai);
     write_call(0x5C0908, (int)log_veh_kill);
 
+    /*
+    Fixes issue where attacking other satellites doesn't work in
+    Orbital Attack View when smac_only is activated.
+    */
+    if (*(int*)0x4AB327 == 0x1D2) {
+        *(byte*)0x4AB327 = 0x75;
+    }
+    /*
+    Make sure the game engine can read movie settings from "movlistx.txt".
+    */
     if (FileExists(ac_movlist_txt) && !FileExists(ac_movlistx_txt)) {
         CopyFile(ac_movlist_txt, ac_movlistx_txt, TRUE);
     }
+
     if (cf->smac_only) {
         *(int*)0x45F97A = 0;
         *(const char**)0x691AFC = ac_alpha;
