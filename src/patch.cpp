@@ -3,6 +3,7 @@
 #include "game.h"
 #include "move.h"
 #include "tech.h"
+#include "engine.h"
 
 const char* ac_alpha = "ac_mod\\alphax";
 const char* ac_help = "ac_mod\\helpx";
@@ -188,41 +189,61 @@ HOOK_API void find_start(int fac, int* tx, int* ty) {
     fflush(debug_log);
 }
 
+void exit_fail() {
+    MessageBoxA(0, "Error while patching game binary. Game will now exit.",
+        MOD_VERSION, MB_OK | MB_ICONSTOP);
+    exit(EXIT_FAILURE);
+}
+
 /*
 Replaces old byte sequence with a new byte sequence at address.
 Verifies that address contains old values before replacing.
 */
 void write_bytes(int addr, const byte* old_bytes, const byte* new_bytes, int len) {
     if ((int*)addr < (int*)AC_IMAGE_BASE || (int*)addr + len > (int*)AC_IMAGE_BASE + AC_IMAGE_LEN) {
-        throw std::exception();
+        exit_fail();
     }
     for (int i=0; i<len; i++) {
         if (*((byte*)addr + i) != old_bytes[i]) {
             debug("write_bytes: old byte doesn't match at address: %p, byte at addr: %x, byte expected: %x.",
                   (byte*)addr + i, *((byte*)addr + i), old_bytes[i]);
-            throw std::exception();
+            exit_fail();
         }
         *((byte*)addr + i) = new_bytes[i];
     }
 }
 
+/*
+Verify that the location contains standard function prologue before patching.
+
+55          push    ebp
+8B EC       mov     ebp, esp
+*/
+void write_jump(int addr, int func) {
+    if ((*(int*)addr & 0xFFFFFF) != 0xEC8B55) {
+        exit_fail();
+    }
+    *(byte*)addr = 0xE9;
+    *(int*)(addr + 1) = func - addr - 5;
+}
+
 void write_call(int addr, int func) {
     if (*(byte*)addr != 0xE8 || abs(*(int*)(addr+1)) > (int)AC_IMAGE_LEN) {
-        throw std::exception();
+        exit_fail();
     }
     *(int*)(addr+1) = func - addr - 5;
 }
 
 void write_offset(int addr, const void* ofs) {
     if (*(byte*)addr != 0x68 || *(int*)(addr+1) < (int)AC_IMAGE_BASE) {
-        throw std::exception();
+        exit_fail();
     }
     *(int*)(addr+1) = (int)ofs;
 }
 
 void remove_call(int addr) {
     if (*(byte*)addr != 0xE8 || *(int*)(addr+1) + addr < (int)AC_IMAGE_BASE) {
-        throw std::exception();
+        exit_fail();
     }
     memset((void*)addr, 0x90, 5);
 }
@@ -233,16 +254,13 @@ bool patch_setup(Config* cf) {
     if (!VirtualProtect(AC_IMAGE_BASE, AC_IMAGE_LEN, PAGE_EXECUTE_READWRITE, &attrs))
         return false;
 
+    write_jump(0x527290, (int)faction_upkeep);
     write_call(0x52768A, (int)turn_upkeep);
     write_call(0x52A4AD, (int)turn_upkeep);
-    write_call(0x528214, (int)faction_upkeep);
-    write_call(0x52918F, (int)faction_upkeep);
     write_call(0x4E61D0, (int)base_production);
     write_call(0x4E888C, (int)crop_yield);
     write_call(0x5BDC4C, (int)tech_value);
     write_call(0x579362, (int)enemy_move);
-    write_call(0x4AED04, (int)social_ai);
-    write_call(0x527304, (int)social_ai);
     write_call(0x5C0908, (int)log_veh_kill);
 
     /*
@@ -308,6 +326,11 @@ bool patch_setup(Config* cf) {
         const byte old_bytes[] = {0x84,0x05,0xE8,0x64,0x9A,0x00,0x74,0x24};
         const byte new_bytes[] = {0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90};
         write_bytes(0x4EA0B9, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+    if (cf->collateral_damage_value != 3) {
+        const byte old_bytes[] = {0xB2, 0x03};
+        const byte new_bytes[] = {0xB2, (byte)cf->collateral_damage_value};
+        write_bytes(0x50AAA5, old_bytes, new_bytes, sizeof(new_bytes));
     }
 
     if (lm & LM_JUNGLE) remove_call(0x5C88A0);

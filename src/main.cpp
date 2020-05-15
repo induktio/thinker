@@ -53,6 +53,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->revised_tech_cost = atoi(value);
     } else if (MATCH("thinker", "eco_damage_fix")) {
         cf->eco_damage_fix = atoi(value);
+    } else if (MATCH("thinker", "collateral_damage_value")) {
+        cf->collateral_damage_value = max(0, atoi(value));
     } else if (MATCH("thinker", "cost_factor")) {
         const char *d=",";
         char *s, *p;
@@ -77,8 +79,9 @@ int cmd_parse(Config* cf) {
     LPWSTR* argv;
     argv = CommandLineToArgvW(GetCommandLineW(), &argc);
     for (int i=1; i<argc; i++) {
-        if (wcscmp(argv[i], L"-smac") == 0)
+        if (wcscmp(argv[i], L"-smac") == 0) {
             cf->smac_only = 1;
+        }
     }
     return 1;
 }
@@ -86,12 +89,17 @@ int cmd_parse(Config* cf) {
 DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LPVOID UNUSED(lpvReserved)) {
     switch (fdwReason) {
         case DLL_PROCESS_ATTACH:
-            if (DEBUG && !(debug_log = fopen("debug.txt", "w")))
+            if (DEBUG && !(debug_log = fopen("debug.txt", "w"))) {
                 return FALSE;
-            if (ini_parse("thinker.ini", handler, &conf) < 0 || !cmd_parse(&conf))
+            }
+            if (ini_parse("thinker.ini", handler, &conf) < 0) {
+                MessageBoxA(0, "Error while opening thinker.ini file.",
+                    MOD_VERSION, MB_OK | MB_ICONSTOP);
+                exit(EXIT_FAILURE);
+            }
+            if (!cmd_parse(&conf) || !patch_setup(&conf)) {
                 return FALSE;
-            if (!patch_setup(&conf))
-                return FALSE;
+            }
             srand(time(0));
             *tx_version = MOD_VERSION;
             *tx_date = MOD_DATE;
@@ -241,7 +249,7 @@ HOOK_API int turn_upkeep() {
         }
     }
     if (DEBUG) {
-        *tx_game_state |= RULES_DEBUG_MODE;
+        *tx_game_state |= STATE_DEBUG_MODE;
     }
     int minerals[BASES];
     for (int i=1; i<8; i++) {
@@ -299,35 +307,12 @@ HOOK_API int turn_upkeep() {
         } else {
             plans[i].plant_fungus = 0;
         }
-        debug("turn_upkeep_values %d | %2d %2d %d %d | %2d %2.4f\n",
-        i, plans[i].proj_limit, psi, plans[i].keep_fungus, plans[i].plant_fungus,
-        plans[i].enemy_bases, f->thinker_enemy_range);
+        debug("turn_values %d proj_limit=%d psi=%d keep_fungus=%d "\
+            "plant_fungus=%d enemy_bases=%d enemy_range=%.4f\n",
+            i, plans[i].proj_limit, psi, plans[i].keep_fungus, plans[i].plant_fungus,
+            plans[i].enemy_bases, f->thinker_enemy_range);
     }
 
-    return 0;
-}
-
-HOOK_API int faction_upkeep(int fac) {
-    /*
-    Turn processing order for each faction in the game engine
-    as it happens in tx_faction_upkeep function:
-
-    1. Social upheaval effects
-    2. Repair phase
-    3. Production phase
-    4. Energy allocation
-    5. Diplomacy
-    6. AI strategy bookkeeping
-    7. Social AI
-    8. Unit movement
-    */
-    debug("faction_upkeep %d %d\n", *tx_current_turn, fac);
-    init_save_game(fac);
-    if (ai_enabled(fac)) {
-        move_upkeep(fac);
-    }
-    tx_faction_upkeep(fac);
-    fflush(debug_log);
     return 0;
 }
 

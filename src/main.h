@@ -93,6 +93,7 @@ struct Config {
     int landmarks = 0xffff;
     int revised_tech_cost = 1;
     int eco_damage_fix = 1;
+    int collateral_damage_value = 3;
 };
 
 /*
@@ -126,7 +127,6 @@ extern Points needferry;
 
 DLL_EXPORT int ThinkerDecide();
 HOOK_API int turn_upkeep();
-HOOK_API int faction_upkeep(int fac);
 HOOK_API int base_production(int id, int v1, int v2, int v3);
 HOOK_API int tech_value(int tech, int fac, int flag);
 HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5);
