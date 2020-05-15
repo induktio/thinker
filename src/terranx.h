@@ -12,8 +12,8 @@ extern const char** tx_date;
 
 extern int*  tx_current_base_id;
 extern BASE* tx_current_base_ptr;
+extern int* tx_game_state;
 extern int* tx_game_rules;
-extern int* tx_scen_rules;
 extern int* tx_diff_level;
 extern int* tx_human_players;
 extern int* tx_current_turn;
@@ -33,7 +33,7 @@ extern int* tx_cost_ratios;
 
 extern byte* tx_tech_discovered;
 extern int* tx_secret_projects;
-extern short* tx_faction_rankings;
+extern short (*tx_faction_rankings)[8];
 extern MetaFaction* tx_metafactions;
 extern Faction* tx_factions;
 extern BASE* tx_bases;

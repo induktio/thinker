@@ -11,6 +11,7 @@ void init_save_game(int fac) {
         f->thinker_flags = 0;
         f->thinker_tech_id = f->tech_research_id;
         f->thinker_tech_cost = f->tech_cost;
+        memset(&f->thinker_unused, 0, sizeof(f->thinker_unused));
     }
     if (f->thinker_enemy_range < 2 || f->thinker_enemy_range > 40) {
         f->thinker_enemy_range = 20;
@@ -50,7 +51,7 @@ int tech_cost(int fac, int tech) {
         * m->rule_techcost / 100
         * (10 - min(5, max(-5, f->SE_research))) / 10
         * (2 * min(10, max(1, f->tech_ranking/2)) + 1) / 21
-        * (*tx_scen_rules & RULES_TECH_STAGNATION ? 1.5 : 1.0)
+        * (*tx_game_rules & RULES_TECH_STAGNATION ? 1.5 : 1.0)
         * tx_basic->rules_tech_discovery_rate / 100
         * (owned > 0 ? (owned > 1 ? 0.75 : 0.85) : 1.0);
 

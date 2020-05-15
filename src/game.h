@@ -30,6 +30,7 @@ bool has_terra(int fac, int act, bool ocean);
 bool has_project(int fac, int id);
 bool has_facility(int base_id, int id);
 bool can_build(int base_id, int id);
+bool can_build_unit(int fac, int id);
 bool is_human(int fac);
 bool ai_faction(int fac);
 bool ai_enabled(int fac);
@@ -72,6 +73,7 @@ char* parse_str(char* buf, int len, const char* s1, const char* s2, const char* 
 void check_zeros(int* ptr, int len);
 void print_map(int x, int y);
 void print_veh(int id);
+void print_base(int id);
 
 struct PathNode {
     int x;

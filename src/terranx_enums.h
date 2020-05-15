@@ -452,30 +452,48 @@ enum unit_ability_flags {
     ABL_ALGO_ENHANCEMENT = 0x10000000,
 };
 
+enum unit_ability_rules_flags {
+    ALLOWED_LAND_UNIT = 0x1,
+    ALLOWED_SEA_UNIT = 0x2,
+    ALLOWED_AIR_UNIT = 0x4,
+    ALLOWED_COMBAT_UNIT = 0x8,
+    ALLOWED_TERRAFORM_UNIT = 0x10,
+    ALLOWED_NONCOMBAT_UNIT = 0x20,
+    NOT_ALLOWED_PROBE_TEAM = 0x40,
+    NOT_ALLOWED_PSI_UNIT = 0x80,
+    TRANSPORT_ONLY_UNIT = 0x100,
+    NOT_ALLOWED_FAST_UNIT = 0x200,
+    COST_INC_LAND_UNIT = 0x400,
+    ONLY_PROBE_TEAM = 0x800,
+};
+
 enum unit_prototype_flags {
     UNIT_ACTIVE = 0x1,
     UNIT_PROTOTYPED = 0x4,
 };
 
-enum unit_state {
-    UNIT_STATE_RECEIVES_SUPPORT = 0x10,
-    UNIT_STATE_MADE_AIRDROP = 0x20,
-    UNIT_STATE_HAS_MONOLITH_UPGRADE = 0x100,
-    UNIT_STATE_USES_FREE_NON_PACIFISM_SLOT = 0x200000,
-    UNIT_STATE_CAUSES_PACIFISM = 0x400000,
-    UNIT_STATE_IS_CRAWLING = 0x4000000,
+enum veh_flags {
+    VFLAG_PROBE_PACT_OPERATIONS = 0x4,
+    VFLAG_IS_OBJECTIVE = 0x20,
+    VFLAG_LURKER = 0x40,
+    VFLAG_START_RAND_LOCATION = 0x80,
+    VFLAG_START_RAND_MONOLITH = 0x100,
+    VFLAG_START_RAND_FUNGUS = 0x200,
+    VFLAG_INVISIBLE = 0x400,
 };
 
-enum unit_status {
-    UNIT_STATUS_OBJECTIVE = 0x20,
-    UNIT_STATUS_LURKER = 0x40,
-    UNIT_STATUS_RANDOM_START = 0x80,
-    UNIT_STATUS_MONOLITH_START = 0x100,
-    UNIT_STATUS_FUNGUS_START = 0x200,
-    UNIT_STATUS_INVISIBLE = 0x400,
+enum veh_state {
+    VSTATE_REQUIRES_SUPPORT = 0x10,
+    VSTATE_MADE_AIRDROP = 0x20,
+    VSTATE_DESIGNATE_DEFENDER = 0x80,
+    VSTATE_MONOLITH_UPGRADED = 0x100,
+    VSTATE_EXPLORE = 0x4000,
+    VSTATE_PACIFISM_DRONE = 0x200000,
+    VSTATE_PACIFISM_FREE_SKIP = 0x400000,
+    VSTATE_CRAWLING = 0x4000000, // more than just crawling, terraforming also?
 };
 
-enum unit_morale {
+enum veh_morale {
     MORALE_VERY_GREEN = 0x0,
     MORALE_GREEN = 0x1,
     MORALE_DISCIPLINED = 0x2,
@@ -500,7 +518,7 @@ enum faction_special_rules {
     FACT_MORALE = 0x8000,
 };
 
-enum faction_bonus {
+enum faction_bonus_type {
     FCB_FREETECH = 0,
     FCB_FREEUNIT = 1,
     FCB_FREEFAC = 2,
@@ -536,17 +554,25 @@ enum social_effect {
     SE_RESEARCH = 10,
 };
 
-enum game_rules_1 {
+enum game_state {
     RULES_SCENARIO_CHEATED_FLAG = 0x20,
     RULES_SCENARIO_EDITOR = 0x40,
     RULES_OMNISCIENT_VIEW = 0x80,
     RULES_DEBUG_MODE = 0x1000,
+    RULES_SCN_VICT_TERRITORY_COUNT_OBJ = 0x8000,
+    RULES_SCN_VICT_ALL_ARTIFACTS_OBJ_UNIT = 0x40000,
+    RULES_SCN_VICT_HIGHEST_AC_SCORE_WINS = 0x80000,
     RULES_PERIHELION_ACTIVE = 0x100000,
     RULES_RAND_LEADER_PERSONALITIES = 0x800000,
     RULES_RAND_LEADER_SOCIAL_AGENDA = 0x1000000,
+    RULES_SCN_VICT_TERRAIN_ENH_COUNT_OBJ = 0x2000000,
+    RULES_SCN_VICT_BASE_FACIL_COUNT_OBJ = 0x4000000,
+    RULES_SCN_VICT_POPULATION_COUNT_OBJ = 0x20000000,
+    RULES_SCN_VICT_TECH_COUNT_OBJ = 0x40000000,
+    RULES_SCN_VICT_CREDITS_COUNT_OBJ = 0x80000000,
 };
 
-enum game_rules_2 {
+enum game_rules {
     RULES_DO_OR_DIE = 0x1,
     RULES_VICTORY_TOTAL_WAR = 0x2,
     RULES_VICTORY_MINE_ALL_MINE = 0x4,
@@ -563,6 +589,22 @@ enum game_rules_2 {
     RULES_NO_UNITY_SCATTERING = 0x2000,
     RULES_SPOILS_OF_WAR = 0x4000,
     RULES_BELL_CURVE = 0x8000,
+    RULES_SCN_UNITY_PODS_NO_RESOURCES = 0x10000,
+    RULES_SCN_UNITY_PODS_NO_MONOLITHS = 0x20000,
+    RULES_SCN_UNITY_PODS_NO_ARTIFACTS = 0x40000,
+    RULES_SCN_VICT_SOLO_MISSION = 0x80000,
+    RULES_SCN_FORCE_PLAYER_PLAY_CURRENT_FACT = 0x100000,
+    RULES_SCN_NO_NATIVE_LIFE = 0x200000,
+    RULES_SCN_NO_COLONY_PODS = 0x400000,
+    RULES_SCN_NO_TERRAFORMING = 0x800000,
+    RULES_SCN_FORCE_CURRENT_DIFF_LEVEL = 0x1000000,
+    RULES_SCN_NO_TECH_TRADING = 0x2000000,
+    RULES_SCN_NO_TECH_ADVANCES = 0x4000000,
+    RULES_SCN_VICT_OBJ_UNITS_REACH_FRIEND_OBJ_BASE = 0x8000000,
+    RULES_SCN_VICT_OBJ_UNITS_REACH_FRIEND_HQ_BASE = 0x10000000,
+    RULES_SCN_VICT_ALL_BASE_COUNT_OBJ = 0x20000000,
+    RULES_SCN_VICT_SP_COUNT_OBJ = 0x40000000,
+    RULES_SCN_NO_BUILDING_SP = 0x80000000,
 };
 
 enum game_diff_level {
@@ -652,6 +694,39 @@ enum terrain_landmarks {
     LM_FOSSIL = 0x8000,
 };
 
+enum veh_orders {
+    ORDER_NONE = 0,              //  -
+    ORDER_SENTRY_BOARD = 1,      // (L)
+    ORDER_HOLD = 2,              // (H); Hold (set 1st waypoint (-1, 0)), Hold 10 (-1, 10), On Alert
+    ORDER_CONVOY = 3,            // (O)
+    ORDER_FARM = 4,              // (f)
+    ORDER_SOIL_ENRICHER = 5,     // (f)
+    ORDER_MINE = 6,              // (M)
+    ORDER_SOLAR_COLLECTOR = 7,   // (S)
+    ORDER_PLANT_FOREST = 8,      // (F)
+    ORDER_ROAD = 9,              // (R)
+    ORDER_MAGTUBE = 10,          // (R)
+    ORDER_BUNKER = 11,           // (K)
+    ORDER_AIRBASE = 12,          // (.)
+    ORDER_SENSOR_ARRAY = 13,     // (O)
+    ORDER_REMOVE_FUNGUS = 14,    // (F)
+    ORDER_PLANT_FUNGUS = 15,     // (F)
+    ORDER_CONDENSER = 16,        // (N)
+    ORDER_ECHELON_MIRROR = 17,   // (E)
+    ORDER_THERMAL_BOREHOLE = 18, // (B)
+    ORDER_DRILL_AQUIFIER = 19,   // (Q)
+    ORDER_TERRAFORM_UP = 20,     // (])
+    ORDER_TERRAFORM_DOWN = 21,   // ([)
+    ORDER_TERRAFORM_LEVEL = 22,  // (_)
+    ORDER_PLACE_MONOLITH = 23,   // (?)
+    ORDER_MOVE_TO = 24,          // (G); Move unit to here, Go to Base, Group go to, Patrol
+    ORDER_MOVE = 25,             // (>); Only used in a few places, seems to be buggy mechanic
+    ORDER_EXPLORE = 26,          // (/); not set via shortcut, AI related?
+    ORDER_ROAD_TO = 27,          // (r)
+    ORDER_MAGTUBE_TO = 28,       // (t)
+    ORDER_AI_GO_TO = 88,         //  - ; ORDER_GO_TO (0x18) | 0x40 > 0x58 ? only used by AI funcs
+};
+
 enum former_action {
     FORMER_FARM = 0,
     FORMER_SOIL_ENR = 1,
@@ -690,6 +765,20 @@ enum terrain_basic_flags {
     TILE_RAINY = 0x10,
     TILE_ROLLING = 0x40,
     TILE_ROCKY = 0x80,
+};
+
+enum ai_goal_types {
+    AI_GOAL_UNUSED = -1,
+    AI_GOAL_ATTACK = 0,
+    AI_GOAL_DEFEND = 2,
+    AI_GOAL_SCOUT = 3,
+    AI_GOAL_UNK_1 = 6,
+    AI_GOAL_COLONIZE = 8,
+    AI_GOAL_TERRAFORM_LAND = 9,
+    AI_GOAL_PRIORITY_COMBAT = 16,
+    AI_GOAL_TERRAFORM_WATER = 25,
+    AI_GOAL_LANDING_SITE = 41,
+    AI_GOAL_UNK_2 = 121,
 };
 
 #endif // __TERRANX_ENUMS_H__

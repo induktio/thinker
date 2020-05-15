@@ -120,13 +120,7 @@ HOOK_API int base_production(int id, int v1, int v2, int v3) {
     int prod = base->queue_items[0];
     int fac = base->faction_id;
     int choice = 0;
-
-    debug("[ turn: %d faction: %d base: %2d x: %2d y: %2d "\
-    "pop: %d tal: %d dro: %d mins: %2d acc: %2d | %08x | %3d %s | %s ]\n",
-    *tx_current_turn, fac, id, base->x, base->y,
-    base->pop_size, base->talent_total, base->drone_total,
-    base->mineral_surplus, base->minerals_accumulated,
-    base->status_flags, prod, prod_name(prod), (char*)&(base->name));
+    print_base(id);
 
     if (is_human(fac)) {
         debug("skipping human base\n");
@@ -142,6 +136,9 @@ HOOK_API int base_production(int id, int v1, int v2, int v3) {
         } else if (base->status_flags & BASE_PRODUCTION_DONE) {
             choice = select_prod(id);
             base->status_flags &= ~BASE_PRODUCTION_DONE;
+        } else if (prod >= 0 && !can_build_unit(fac, prod)) {
+            debug("BUILD FACILITY\n");
+            choice = find_facility(id);
         } else if (prod < 0 && !can_build(id, abs(prod))) {
             debug("BUILD CHANGE\n");
             if (base->minerals_accumulated > tx_basic->retool_exemption)
@@ -149,7 +146,7 @@ HOOK_API int base_production(int id, int v1, int v2, int v3) {
             else
                 choice = select_prod(id);
         } else if (need_defense(id)) {
-            debug("BUILD DEF\n");
+            debug("BUILD DEFENSE\n");
             choice = find_proto(fac, TRIAD_LAND, COMBAT, DEF);
         } else {
             consider_hurry(id);
@@ -164,6 +161,8 @@ HOOK_API int base_production(int id, int v1, int v2, int v3) {
 
 HOOK_API int turn_upkeep() {
     tx_turn_upkeep();
+    debug("turn_upkeep %d bases=%d units=%d\n",
+    *tx_current_turn, *tx_total_num_bases, *tx_total_num_vehicles);
 
     for (int i=1; i<8 && conf.design_units; i++) {
         if (is_human(i) || !tx_factions[i].current_num_bases)
@@ -242,7 +241,7 @@ HOOK_API int turn_upkeep() {
         }
     }
     if (DEBUG) {
-        *tx_game_rules |= RULES_DEBUG_MODE;
+        *tx_game_state |= RULES_DEBUG_MODE;
     }
     int minerals[BASES];
     for (int i=1; i<8; i++) {
@@ -279,6 +278,9 @@ HOOK_API int turn_upkeep() {
             psi++;
         if (has_project(i, FAC_XENOEMPATHY_DOME))
             psi++;
+        if (tx_metafactions[i].rule_flags & FACT_WORMPOLICE
+        && f->SE_police > -2 && f->SE_police < 3 && !has_project(i, FAC_TELEPATHIC_MATRIX))
+            psi += 2;
         psi += min(2, max(-2, (f->enemy_best_weapon_value - f->best_weapon_value)/2));
         psi += tx_metafactions[i].rule_psi/10 + 2*f->SE_planet;
         plans[i].psi_score = psi;
@@ -297,7 +299,7 @@ HOOK_API int turn_upkeep() {
         } else {
             plans[i].plant_fungus = 0;
         }
-        debug("turn_upkeep %d | %2d %2d %d %d | %2d %2.4f\n",
+        debug("turn_upkeep_values %d | %2d %2d %d %d | %2d %2.4f\n",
         i, plans[i].proj_limit, psi, plans[i].keep_fungus, plans[i].plant_fungus,
         plans[i].enemy_bases, f->thinker_enemy_range);
     }
@@ -503,6 +505,10 @@ int unit_score(int id, int fac, bool def) {
 }
 
 int find_proto(int fac, int triad, int mode, bool defend) {
+    /* For any combat-capable unit, use mode == COMBAT. */
+    assert(fac >= 0 && fac < 8);
+    assert(mode >= COMBAT && mode <= WMODE_INFOWAR);
+    assert(triad == TRIAD_LAND || triad == TRIAD_SEA || triad == TRIAD_AIR);
     int basic = BSC_SCOUT_PATROL;
     debug("find_proto fac: %d triad: %d mode: %d def: %d\n", fac, triad, mode, defend);
     if (mode == WMODE_COLONIST)
@@ -638,10 +644,13 @@ int find_facility(int base_id) {
         {FAC_COMMAND_CENTER, 2},
         {FAC_GEOSYNC_SURVEY_POD, 2},
         {FAC_FLECHETTE_DEFENSE_SYS, 2},
+        {FAC_HABITATION_DOME, 0},
         {FAC_FUSION_LAB, 1},
         {FAC_ENERGY_BANK, 1},
         {FAC_RESEARCH_HOSPITAL, 1},
-        {FAC_HABITATION_DOME, 0},
+        {FAC_TACHYON_FIELD, 4},
+        {FAC_QUANTUM_LAB, 5},
+        {FAC_NANOHOSPITAL, 5},
     };
     BASE* base = &tx_bases[base_id];
     int fac = base->faction_id;
@@ -654,6 +663,7 @@ int find_facility(int base_id) {
     Faction* f = &tx_factions[fac];
     bool sea_base = is_sea_base(base_id);
     bool core_base = minerals+extra >= plans[fac].proj_limit;
+    bool can_build_units = can_build_unit(fac, -1);
 
     if (*tx_climate_future_change > 0) {
         MAP* sq = mapsq(base->x, base->y);
@@ -688,6 +698,9 @@ int find_facility(int base_id) {
         /* Avoid building combat-related facilities in peacetime. */
         if (t[1] & 2 && f->thinker_enemy_range > 40 - min(12, 3*fc->maint))
             continue;
+        /* Build these facilities only if the global unit limit is reached. */
+        if (t[1] & 4 && can_build_units)
+            continue;
         if (c == FAC_TREE_FARM && sea_base && base->energy_surplus < 2*fc->maint + fc->cost)
             continue;
         if (c == FAC_COMMAND_CENTER && (sea_base || !core_base || f->SE_morale < 0))
@@ -706,7 +719,10 @@ int find_facility(int base_id) {
             return -1*c;
         }
     }
-    debug("BUILD MIL\n");
+    if (!can_build_units) {
+        return -FAC_STOCKPILE_ENERGY;
+    }
+    debug("BUILD OFFENSE\n");
     bool build_ships = can_build_ships(base_id) && (sea_base || !random(3));
     return select_combat(base_id, sea_base, build_ships, 0, 0);
 }
@@ -817,7 +833,7 @@ int select_prod(int id) {
             else if (u->weapon_type == WPN_PROBE_TEAM)
                 probes++;
             else if (u->weapon_type == WPN_SUPPLY_TRANSPORT)
-                crawlers += (veh->move_status == STATUS_CONVOY ? 1 : 5);
+                crawlers += (veh->move_status == ORDER_CONVOY ? 1 : 5);
             else if (u->weapon_type == WPN_TROOP_TRANSPORT)
                 transports++;
         }
@@ -833,7 +849,8 @@ int select_prod(int id) {
     bool has_formers = has_weapon(fac, WPN_TERRAFORMING_UNIT);
     bool has_supply = has_weapon(fac, WPN_SUPPLY_TRANSPORT);
     bool build_ships = can_build_ships(id);
-    bool build_pods = (base->pop_size > 1 || base->nutrient_surplus > 1)
+    bool build_pods = ~*tx_game_rules & RULES_SCN_NO_COLONY_PODS
+        && (base->pop_size > 1 || base->nutrient_surplus > 1)
         && pods < 2 && *tx_total_num_bases < 500 && base_ratio < 1.0;
     bool sea_base = is_sea_base(id);
     f->thinker_enemy_range = (enemyrange + 7 * f->thinker_enemy_range)/8;

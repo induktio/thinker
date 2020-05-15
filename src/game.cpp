@@ -36,6 +36,10 @@ bool has_weapon(int fac, int wpn) {
 
 bool has_terra(int fac, int act, bool ocean) {
     int preq_tech = (ocean ? tx_terraform[act].preq_tech_sea : tx_terraform[act].preq_tech);
+    if ((act == FORMER_RAISE_LAND || act == FORMER_LOWER_LAND)
+    && *tx_game_rules & RULES_SCN_NO_TERRAFORMING) {
+        return false;
+    }
     if (act >= FORMER_CONDENSER && act <= FORMER_LOWER_LAND
     && has_project(fac, FAC_WEATHER_PARADIGM)) {
         return preq_tech != TECH_Disable;
@@ -44,15 +48,17 @@ bool has_terra(int fac, int act, bool ocean) {
 }
 
 bool has_project(int fac, int id) {
+    /* If faction_id is negative, check if anyone has built the project. */
     assert(fac != 0 && id >= PROJECT_ID_FIRST);
     int i = tx_secret_projects[id-PROJECT_ID_FIRST];
     return i >= 0 && (fac < 0 || tx_bases[i].faction_id == fac);
 }
 
 bool has_facility(int base_id, int id) {
-    assert((base_id >= 0 && id > 0) || id >= PROJECT_ID_FIRST);
-    if (id >= PROJECT_ID_FIRST)
-        return tx_secret_projects[id-PROJECT_ID_FIRST] != PROJECT_UNBUILT;
+    assert(base_id >= 0 && id > 0 && id <= FAC_EMPTY_SP_64);
+    if (id >= PROJECT_ID_FIRST) {
+        return tx_secret_projects[id-PROJECT_ID_FIRST] == base_id;
+    }
     int fac = tx_bases[base_id].faction_id;
     const int freebies[][2] = {
         {FAC_COMMAND_CENTER, FAC_COMMAND_NEXUS},
@@ -64,34 +70,49 @@ bool has_facility(int base_id, int id) {
         {FAC_QUANTUM_CONVERTER, FAC_SINGULARITY_INDUCTOR},
     };
     for (const int* p : freebies) {
-        if (p[0] == id && has_project(fac, p[1]))
+        if (p[0] == id && has_project(fac, p[1])) {
             return true;
+        }
     }
     return tx_bases[base_id].facilities_built[id/8] & (1 << (id % 8));
 }
 
 bool can_build(int base_id, int id) {
-    assert(base_id >= 0 && id > 0);
+    assert(base_id >= 0 && id > 0 && id <= FAC_EMPTY_SP_64);
     BASE* base = &tx_bases[base_id];
     int fac = base->faction_id;
     Faction* f = &tx_factions[fac];
-    if (id == FAC_STOCKPILE_ENERGY)
+    if (id == FAC_HEADQUARTERS && find_hq(fac) >= 0) {
         return false;
-    if (id == FAC_HEADQUARTERS && find_hq(fac) >= 0)
+    }
+    if (id == FAC_RECYCLING_TANKS && has_facility(base_id, FAC_PRESSURE_DOME)) {
         return false;
-    if (id == FAC_RECYCLING_TANKS && has_facility(base_id, FAC_PRESSURE_DOME))
-        return false;
+    }
     if (id == FAC_HOLOGRAM_THEATRE && (has_project(fac, FAC_VIRTUAL_WORLD)
-    || !has_facility(base_id, FAC_RECREATION_COMMONS)))
+    || !has_facility(base_id, FAC_RECREATION_COMMONS))) {
         return false;
+    }
     if ((id == FAC_RECREATION_COMMONS || id == FAC_HOLOGRAM_THEATRE)
-    && has_project(fac, FAC_TELEPATHIC_MATRIX))
+    && has_project(fac, FAC_TELEPATHIC_MATRIX)) {
         return false;
-    if ((id == FAC_HAB_COMPLEX || id == FAC_HABITATION_DOME) && base->nutrient_surplus < 2)
+    }
+    if ((id == FAC_HAB_COMPLEX || id == FAC_HABITATION_DOME) && base->nutrient_surplus < 2) {
         return false;
-    if (id == FAC_ASCENT_TO_TRANSCENDENCE)
+    }
+    if (id >= PROJECT_ID_FIRST && id <= PROJECT_ID_LAST) {
+        if (tx_secret_projects[id-PROJECT_ID_FIRST] != PROJECT_UNBUILT
+        || *tx_game_rules & RULES_SCN_NO_BUILDING_SP) {
+            return false;
+        }
+    }
+    if (id == FAC_VOICE_OF_PLANET && ~*tx_game_rules & RULES_VICTORY_HIGHER_GOAL) {
+        return false;
+    }
+    if (id == FAC_ASCENT_TO_TRANSCENDENCE) {
         return has_project(-1, FAC_VOICE_OF_PLANET)
-            && !has_project(-1, FAC_ASCENT_TO_TRANSCENDENCE);
+            && !has_project(-1, FAC_ASCENT_TO_TRANSCENDENCE)
+            && *tx_game_rules & RULES_VICTORY_HIGHER_GOAL;
+    }
     if (id == FAC_SUBSPACE_GENERATOR) {
         if (base->pop_size < tx_basic->base_size_subspace_gen)
             return false;
@@ -109,10 +130,24 @@ bool can_build(int base_id, int id) {
         if ((id == FAC_SKY_HYDRO_LAB && f->satellites_nutrient + n >= conf.max_sat)
         || (id == FAC_ORBITAL_POWER_TRANS && f->satellites_energy + n >= conf.max_sat)
         || (id == FAC_NESSUS_MINING_STATION && f->satellites_mineral + n >= conf.max_sat)
-        || (id == FAC_ORBITAL_DEFENSE_POD && f->satellites_ODP + n >= conf.max_sat))
+        || (id == FAC_ORBITAL_DEFENSE_POD && f->satellites_ODP + n >= conf.max_sat)) {
             return false;
+        }
+    }
+    /* Rare special case if the game engine reaches the global unit limit. */
+    if (id == FAC_STOCKPILE_ENERGY && !can_build_unit(fac, -1)) {
+        return (*tx_current_turn + base_id) % 4 > 0;
     }
     return has_tech(fac, tx_facility[id].preq_tech) && !has_facility(base_id, id);
+}
+
+bool can_build_unit(int fac, int id) {
+    assert(fac >= 0 && fac < 8 && id >= -1);
+    UNIT* u = &tx_units[id];
+    if (id >= 0 && id < 64 && u->preq_tech != TECH_None && !has_tech(fac, u->preq_tech)) {
+        return false;
+    }
+    return *tx_total_num_vehicles < 2000;
 }
 
 bool is_human(int fac) {
@@ -168,9 +203,9 @@ int veh_speed(int id) {
 }
 
 int unit_triad(int id) {
-    int tr = tx_chassis[tx_units[id].chassis_type].triad;
-    assert(tr == TRIAD_LAND || tr == TRIAD_SEA || tr == TRIAD_AIR);
-    return tr;
+    int triad = tx_chassis[tx_units[id].chassis_type].triad;
+    assert(triad == TRIAD_LAND || triad == TRIAD_SEA || triad == TRIAD_AIR);
+    return triad;
 }
 
 int unit_speed(int id) {
@@ -281,7 +316,7 @@ int set_move_to(int id, int x, int y) {
     VEH* veh = &tx_vehicles[id];
     veh->waypoint_1_x = x;
     veh->waypoint_1_y = y;
-    veh->move_status = STATUS_GOTO;
+    veh->move_status = ORDER_MOVE_TO;
     veh->status_icon = 'G';
     return SYNC;
 }
@@ -290,14 +325,14 @@ int set_road_to(int id, int x, int y) {
     VEH* veh = &tx_vehicles[id];
     veh->waypoint_1_x = x;
     veh->waypoint_1_y = y;
-    veh->move_status = STATUS_ROAD_TO;
+    veh->move_status = ORDER_ROAD_TO;
     veh->status_icon = 'R';
     return SYNC;
 }
 
 int set_action(int id, int act, char icon) {
     VEH* veh = &tx_vehicles[id];
-    if (act == FORMER_THERMAL_BORE+4)
+    if (act == ORDER_THERMAL_BOREHOLE)
         boreholes.insert({veh->x, veh->y});
     veh->move_status = act;
     veh->status_icon = icon;
@@ -309,7 +344,7 @@ int set_convoy(int id, int res) {
     VEH* veh = &tx_vehicles[id];
     convoys.insert({veh->x, veh->y});
     veh->type_crawling = res-1;
-    veh->move_status = STATUS_CONVOY;
+    veh->move_status = ORDER_CONVOY;
     veh->status_icon = 'C';
     return tx_veh_skip(id);
 }
@@ -329,7 +364,7 @@ int veh_skip(int id) {
 }
 
 bool at_target(VEH* veh) {
-    return veh->move_status == STATUS_IDLE || (veh->waypoint_1_x < 0 && veh->waypoint_1_y < 0)
+    return veh->move_status == ORDER_NONE || (veh->waypoint_1_x < 0 && veh->waypoint_1_y < 0)
         || (veh->x == veh->waypoint_1_x && veh->y == veh->waypoint_1_y);
 }
 
@@ -453,7 +488,19 @@ void print_veh(int id) {
         v->morale, v->damage_taken, v->iter_count, v->unk_1, v->unk_2, v->unk_3);
 }
 
+void print_base(int id) {
+    BASE* base = &tx_bases[id];
+    int prod = base->queue_items[0];
+    debug("[ turn: %d faction: %d base: %2d x: %2d y: %2d "\
+        "pop: %d tal: %d dro: %d mins: %2d acc: %2d | %08x | %3d %s | %s ]\n",
+        *tx_current_turn, base->faction_id, id, base->x, base->y,
+        base->pop_size, base->talent_total, base->drone_total,
+        base->mineral_surplus, base->minerals_accumulated,
+        base->status_flags, prod, prod_name(prod), (char*)&(base->name));
+}
+
 void TileSearch::init(int x, int y, int tp) {
+    assert(tp == TRIAD_LAND || tp == TRIAD_SEA || tp == TRIAD_AIR || tp == NEAR_ROADS);
     head = 0;
     tail = 0;
     items = 0;

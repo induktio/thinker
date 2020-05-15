@@ -7,8 +7,8 @@ const char** tx_date = (const char**)0x691874;
 
 int*  tx_current_base_id = (int*)0x689370;
 BASE* tx_current_base_ptr = (BASE*)0x90EA30;
-int* tx_game_rules = (int*)0x9A64C0;
-int* tx_scen_rules = (int*)0x9A649C;
+int* tx_game_state = (int*)0x9A64C0;
+int* tx_game_rules = (int*)0x9A649C;
 int* tx_diff_level = (int*)0x9A64C4;
 int* tx_human_players = (int*)0x9A64E8;
 int* tx_current_turn = (int*)0x9A64D4;
@@ -28,7 +28,7 @@ int* tx_cost_ratios = (int*)0x689378;
 
 byte* tx_tech_discovered = (byte*)0x9A6670;
 int* tx_secret_projects = (int*)0x9A6514;
-short* tx_faction_rankings = (short*)0x9A68AC;
+short (*tx_faction_rankings)[8] = (short (*)[8])(0x9A68AC);
 MetaFaction* tx_metafactions = (MetaFaction*)0x946A50;
 Faction* tx_factions = (Faction*)0x96C9E0;
 BASE* tx_bases = (BASE*)0x97D040;

@@ -71,10 +71,6 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define RES_NUTRIENT 1
 #define RES_MINERAL 2
 #define RES_ENERGY 3
-#define STATUS_IDLE 0
-#define STATUS_CONVOY 3
-#define STATUS_GOTO 24
-#define STATUS_ROAD_TO 27
 #define ATT false
 #define DEF true
 

@@ -211,10 +211,10 @@ struct MetaFaction {
 
 struct Goal {
     short type;
-    short unk_1;
+    short priority;
     int x;
     int y;
-    int unk_2;
+    int base_id;
 };
 
 struct Faction {
