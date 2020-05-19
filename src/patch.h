@@ -1,5 +1,4 @@
-#ifndef __PATCH_H__
-#define __PATCH_H__
+#pragma once
 
 #include "main.h"
 
@@ -10,4 +9,3 @@ extern const char* lm_params[];
 
 bool patch_setup(Config* cf);
 
-#endif // __PATCH_H__

@@ -30,8 +30,8 @@ bool FileExists(const char* path) {
     return GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES;
 }
 
-HOOK_API int crop_yield(int fac, int base, int x, int y, int tf) {
-    int value = tx_crop_yield(fac, base, x, y, tf);
+HOOK_API int crop_yield(int faction, int base, int x, int y, int tf) {
+    int value = tx_crop_yield(faction, base, x, y, tf);
     MAP* sq = mapsq(x, y);
     if (sq && sq->items & TERRA_THERMAL_BORE) {
         value++;
@@ -46,14 +46,14 @@ void process_map(int k) {
     natives.clear();
     goodtiles.clear();
     /* Map area square root values: Standard = 56, Huge = 90 */
-    int limit = *tx_map_area_sq_root * (*tx_map_area_sq_root < 70 ? 1 : 2);
+    int limit = *map_area_sq_root * (*map_area_sq_root < 70 ? 1 : 2);
 
-    for (int y = 0; y < *tx_map_axis_y; y++) {
-        for (int x = y&1; x < *tx_map_axis_x; x+=2) {
+    for (int y = 0; y < *map_axis_y; y++) {
+        for (int x = y&1; x < *map_axis_x; x+=2) {
             MAP* sq = mapsq(x, y);
             if (unit_in_tile(sq) == 0)
                 natives.insert({x, y});
-            if (y < 4 || y >= *tx_map_axis_x - 4)
+            if (y < 4 || y >= *map_axis_x - 4)
                 continue;
             if (sq && !is_ocean(sq) && !visited.count({x, y})) {
                 int n = 0;
@@ -75,14 +75,14 @@ void process_map(int k) {
             }
         }
     }
-    if ((int)goodtiles.size() < *tx_map_area_sq_root * 8) {
+    if ((int)goodtiles.size() < *map_area_sq_root * 8) {
         goodtiles.clear();
     }
-    debug("process_map %d %d %d %d %d\n", *tx_map_axis_x, *tx_map_axis_y,
-        *tx_map_area_sq_root, visited.size(), goodtiles.size());
+    debug("process_map %d %d %d %d %d\n", *map_axis_x, *map_axis_y,
+        *map_area_sq_root, visited.size(), goodtiles.size());
 }
 
-bool valid_start (int fac, int iter, int x, int y, bool aquatic) {
+bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
     Points pods;
     MAP* sq = mapsq(x, y);
     if (!sq || sq->items & BASE_DISALLOWED || (sq->rocks & TILE_ROCKY && !is_ocean(sq)))
@@ -129,7 +129,7 @@ bool valid_start (int fac, int iter, int x, int y, bool aquatic) {
         }
     }
     int min_sc = 160 - iter/2;
-    bool need_bonus = (!aquatic && conf.nutrient_bonus > is_human(fac));
+    bool need_bonus = (!aquatic && conf.nutrient_bonus > is_human(faction));
     debug("find_score %2d | %3d %3d | %d %d %d %d\n", iter, x, y, pods.size(), nut, min_sc, sc);
     if (sc >= min_sc && need_bonus && (int)pods.size() > 1 - iter/50) {
         int n = 0;
@@ -147,17 +147,17 @@ bool valid_start (int fac, int iter, int x, int y, bool aquatic) {
     return sc >= min_sc && (!need_bonus || nut > 1);
 }
 
-HOOK_API void find_start(int fac, int* tx, int* ty) {
-    bool aquatic = tx_metafactions[fac].rule_flags & FACT_AQUATIC;
-    int k = (*tx_map_axis_y < 80 ? 8 : 16);
-    if (*tx_random_seed != prev_rnd) {
+HOOK_API void find_start(int faction, int* tx, int* ty) {
+    bool aquatic = tx_metafactions[faction].rule_flags & FACT_AQUATIC;
+    int k = (*map_axis_y < 80 ? 8 : 16);
+    if (*map_random_seed != prev_rnd) {
         process_map(k/2);
-        prev_rnd = *tx_random_seed;
+        prev_rnd = *map_random_seed;
     }
     spawns.clear();
-    for (int i=0; i<*tx_total_num_vehicles; i++) {
+    for (int i=0; i<*total_num_vehicles; i++) {
         VEH* v = &tx_vehicles[i];
-        if (v->faction_id != 0 && v->faction_id != fac) {
+        if (v->faction_id != 0 && v->faction_id != faction) {
             spawns.insert({v->x, v->y});
         }
     }
@@ -172,20 +172,20 @@ HOOK_API void find_start(int fac, int* tx, int* ty) {
             x = it->first;
             y = it->second;
         } else {
-            y = (random(*tx_map_axis_y - k) + k/2);
-            x = (random(*tx_map_axis_x) &~1) + (y&1);
+            y = (random(*map_axis_y - k) + k/2);
+            x = (random(*map_axis_x) &~1) + (y&1);
         }
-        int min_range = max(8, *tx_map_area_sq_root/3 - i/5);
+        int min_range = max(8, *map_area_sq_root/3 - i/5);
         z = point_range(spawns, x, y);
-        debug("find_iter %d %d | %3d %3d | %2d %2d\n", fac, i, x, y, min_range, z);
-        if (z >= min_range && valid_start(fac, i, x, y, aquatic)) {
+        debug("find_iter %d %d | %3d %3d | %2d %2d\n", faction, i, x, y, min_range, z);
+        if (z >= min_range && valid_start(faction, i, x, y, aquatic)) {
             *tx = x;
             *ty = y;
             break;
         }
     }
     tx_site_set(*tx, *ty, tx_world_site(*tx, *ty, 0));
-    debug("find_start %d %d %d %d %d\n", fac, i, *tx, *ty, point_range(spawns, *tx, *ty));
+    debug("find_start %d %d %d %d %d\n", faction, i, *tx, *ty, point_range(spawns, *tx, *ty));
     fflush(debug_log);
 }
 
@@ -205,8 +205,8 @@ void write_bytes(int addr, const byte* old_bytes, const byte* new_bytes, int len
     }
     for (int i=0; i<len; i++) {
         if (*((byte*)addr + i) != old_bytes[i]) {
-            debug("write_bytes: old byte doesn't match at address: %p, byte at addr: %x, byte expected: %x.",
-                  (byte*)addr + i, *((byte*)addr + i), old_bytes[i]);
+            debug("write_bytes: old byte doesn't match at address: %08x, value: %02x, expected: %02x",
+                addr + i, *((byte*)addr + i), old_bytes[i]);
             exit_fail();
         }
         *((byte*)addr + i) = new_bytes[i];

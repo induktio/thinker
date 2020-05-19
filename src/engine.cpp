@@ -3,10 +3,38 @@
 #include "game.h"
 #include "tech.h"
 #include "move.h"
+#include "engine.h"
 
-typedef int __cdecl fp_ccici(const char*, const char*, int, const char*, int);
-typedef int __cdecl fp_icii(int, const char*, int, int);
 const char* ScriptTxtID = "SCRIPT";
+
+int*  current_base_id = (int*)0x689370;
+BASE* current_base_ptr = (BASE*)0x90EA30;
+int* game_settings = (int*)0x9A6490;
+int* game_state = (int*)0x9A64C0;
+int* game_rules = (int*)0x9A649C;
+int* diff_level = (int*)0x9A64C4;
+int* human_players = (int*)0x9A64E8;
+int* current_turn = (int*)0x9A64D4;
+int* active_faction = (int*)0x9A6820;
+int* total_num_bases = (int*)0x9A64CC;
+int* total_num_vehicles = (int*)0x9A64C8;
+int* map_random_seed = (int*)0x949878;
+int* map_toggle_flat = (int*)0x94988C;
+int* map_area_sq_root = (int*)0x949888;
+int* map_axis_x = (int*)0x949870;
+int* map_axis_y = (int*)0x949874;
+int* map_half_x = (int*)0x68FAF0;
+int* climate_future_change = (int*)0x9A67D8;
+int* un_charter_repeals = (int*)0x9A6638;
+int* un_charter_reinstates = (int*)0x9A663C;
+int* gender_default = (int*)0x9BBFEC;
+int* plurality_default = (int*)0x9BBFF0;
+int* current_player_faction = (int*)0x939284;
+int* multiplayer_active = (int*)0x93F660;
+int* pbem_active = (int*)0x93A95C;
+int* sunspot_duration = (int*)0x9A6800;
+int* diplo_active_faction = (int*)0x93F7CC;
+int* diplo_current_friction = (int*)0x93FA74;
 
 fp_1int* social_upkeep = (fp_1int*)0x5B44D0;
 fp_1int* repair_phase = (fp_1int*)0x526030;
@@ -24,28 +52,28 @@ fp_2int* parse_num = (fp_2int*)0x625E30;
 fp_icii* parse_says = (fp_icii*)0x625EC0;
 fp_ccici* popp = (fp_ccici*)0x48C0A0;
 
-int* game_settings = (int*)0x9A6490;
-int* gender_default = (int*)0x9BBFEC;
-int* plurality_default = (int*)0x9BBFF0;
-int* current_player_faction = (int*)0x939284;
-int* multiplayer_active = (int*)0x93F660;
-
 
 bool victory_done() {
     // TODO: Check for scenario victory conditions
-    return *tx_game_state & (STATE_VICTORY_CONQUER | STATE_VICTORY_DIPLOMATIC | STATE_VICTORY_ECONOMIC)
+    return *game_state & (STATE_VICTORY_CONQUER | STATE_VICTORY_DIPLOMATIC | STATE_VICTORY_ECONOMIC)
         || has_project(-1, FAC_ASCENT_TO_TRANSCENDENCE);
 }
 
-int game_year(int n) {
+/*
+Original Offset: 005C89A0
+*/
+HOOK_API int game_year(int n) {
     return tx_basic->normal_start_year + n;
 }
 
+/*
+Original Offset: 00527290
+*/
 HOOK_API int faction_upkeep(int faction) {
     Faction* f = &tx_factions[faction];
     MetaFaction* m = &tx_metafactions[faction];
 
-    debug("faction_upkeep %d %d\n", *tx_current_turn, faction);
+    debug("faction_upkeep %d %d %08x\n", *current_turn, faction, *human_players);
     init_save_game(faction);
     if (ai_enabled(faction)) {
         move_upkeep(faction);
@@ -58,7 +86,7 @@ HOOK_API int faction_upkeep(int faction) {
     do_all_non_input();
     production_phase(faction);
     do_all_non_input();
-    if (!(*tx_game_state & 1) || *tx_game_state & 8) {
+    if (!(*game_state & STATE_UNK_1) || *game_state & STATE_UNK_8) {
         allocate_energy(faction);
         do_all_non_input();
         enemy_diplomacy(faction);
@@ -71,8 +99,8 @@ HOOK_API int faction_upkeep(int faction) {
             int cost = corner_market(faction);
             if (!victory_done() && f->energy_credits > cost && f->corner_market_active < 1
             && has_tech(faction, tx_basic->tech_preq_economic_victory)
-            && *tx_game_rules & RULES_VICTORY_MINE_ALL_MINE) {
-                f->corner_market_turn = *tx_current_turn + tx_basic->turns_corner_global_energy_market;
+            && *game_rules & RULES_VICTORY_ECONOMIC) {
+                f->corner_market_turn = *current_turn + tx_basic->turns_corner_global_energy_market;
                 f->corner_market_active = cost;
                 f->energy_credits -= cost;
 
@@ -88,7 +116,7 @@ HOOK_API int faction_upkeep(int faction) {
             }
         }
     }
-    for (int i=0; i<*tx_total_num_bases; i++) {
+    for (int i=0; i<*total_num_bases; i++) {
         BASE* base = &tx_bases[i];
         if (base->faction_id == faction) {
             base->status_flags &= ~(BASE_UNK_1 | BASE_HURRY_PRODUCTION);
@@ -106,10 +134,10 @@ HOOK_API int faction_upkeep(int faction) {
     *(int*)0x945B18 = -1;
     *(int*)0x945B1C = -1;
 
-    if (!(*tx_game_state & 1) || *tx_game_state & 8) {
-        if (faction == *current_player_faction && !(*tx_game_state & 0x14000)
-        && can_call_council(faction, 0) && !(*tx_game_state & 1)) {
-            *tx_game_state |= 0x4000;
+    if (!(*game_state & STATE_UNK_1) || *game_state & STATE_UNK_8) {
+        if (faction == *current_player_faction && !(*game_state & (STATE_UNK_10000 | STATE_UNK_4000))
+        && can_call_council(faction, 0) && !(*game_state & STATE_UNK_1)) {
+            *game_state |= STATE_UNK_4000;
             popp(ScriptTxtID, "COUNCILOPEN", 0, "council_sm.pcx", 0);
         }
         if (!is_human(faction)) {
@@ -122,4 +150,3 @@ HOOK_API int faction_upkeep(int faction) {
     fflush(debug_log);
     return 0;
 }
-

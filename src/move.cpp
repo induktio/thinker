@@ -3,21 +3,24 @@
 
 typedef int PMTable[MAPSZ*2][MAPSZ];
 /*
-    Priority Management Tables contain values calculated for each map square
-    to guide the AI in its move planning.
 
-    The tables contain only ephemeral values: they are recalculated each turn
-    for every active faction, and the values are never saved with the save games.
+Priority Management Tables contain values calculated for each map square
+to guide the AI in its move planning.
 
-    For example, pm_former counter is decremented whenever a former starts
-    work on a given square to prevent too many of them converging on the same spot.
-    It is also used as a shortcut to determine if a square has a friendly base
-    in a 2-tile radius, because formers are only allowed to work on squares which
-    are reachable by a friendly base worker.
+The tables contain only ephemeral values: they are recalculated each turn
+for every active faction, and the values are never saved with the save games.
 
-    Non-combat units controlled by Thinker use pm_safety table to decide if
-    there are enemy units too close to them. PM_SAFE defines the threshold below
-    which the units will attempt to flee to the square chosen by escape_move.
+For example, pm_former counter is decremented whenever a former starts
+work on a given square to prevent too many of them converging on the same spot.
+It is also used as a shortcut to determine if a square has a friendly base
+in a 2-tile radius, because formers are only allowed to work on squares which
+are reachable by a friendly base worker.
+
+Non-combat units controlled by Thinker (formers, colony pods, land-based crawlers)
+use pm_safety table to decide if there are enemy units too close to them.
+PM_SAFE defines the threshold below which the units will attempt to flee
+to the square chosen by escape_move.
+
 */
 
 PMTable pm_former;
@@ -37,21 +40,21 @@ void adjust_value(int x, int y, int range, int value, PMTable tbl) {
     }
 }
 
-bool other_in_tile(int fac, MAP* sq) {
+bool other_in_tile(int faction, MAP* sq) {
     int u = unit_in_tile(sq);
-    return (u >= 0 && u != fac);
+    return (u >= 0 && u != faction);
 }
 
-bool non_ally_in_tile(int fac, MAP* sq) {
+bool non_ally_in_tile(int faction, MAP* sq) {
     int u = unit_in_tile(sq);
-    return (u >= 0 && u != fac && ~tx_factions[fac].diplo_status[u] & DIPLO_PACT);
+    return (u >= 0 && u != faction && ~tx_factions[faction].diplo_status[u] & DIPLO_PACT);
 }
 
 HOOK_API int enemy_move(int id) {
     assert(id >= 0 && id < UNITS);
     VEH* veh = &tx_vehicles[id];
-    int fac = veh->faction_id;
-    if (ai_enabled(fac)) {
+    int faction = veh->faction_id;
+    if (ai_enabled(faction)) {
         int w = tx_units[veh->proto_id].weapon_type;
         if (w == WPN_COLONY_MODULE) {
             return colony_move(id);
@@ -71,7 +74,7 @@ HOOK_API int enemy_move(int id) {
 HOOK_API int log_veh_kill(int UNUSED(ptr), int id, int UNUSED(owner), int UNUSED(unit_id)) {
     /* This logging function is called whenever a vehicle is removed/killed for any reason. */
     VEH* veh = &tx_vehicles[id];
-    if (ai_enabled(*tx_active_faction) && at_war(*tx_active_faction, veh->faction_id)) {
+    if (ai_enabled(*active_faction) && at_war(*active_faction, veh->faction_id)) {
         assert(veh->x >= 0 && veh->y >= 0);
         adjust_value(veh->x, veh->y, 3, -1, pm_enemy_near);
         pm_enemy[veh->x][veh->y]--;
@@ -79,7 +82,7 @@ HOOK_API int log_veh_kill(int UNUSED(ptr), int id, int UNUSED(owner), int UNUSED
     return 0;
 }
 
-void move_upkeep(int fac) {
+void move_upkeep(int faction) {
     int enemymask = 1;
     convoys.clear();
     boreholes.clear();
@@ -90,9 +93,9 @@ void move_upkeep(int fac) {
     memset(pm_enemy_near, 0, sizeof(pm_enemy_near));
 
     for (int i=1; i<8; i++) {
-        enemymask |= (at_war(fac, i) ? 1 : 0) << i;
+        enemymask |= (at_war(faction, i) ? 1 : 0) << i;
     }
-    for (int i=0; i<*tx_total_num_vehicles; i++) {
+    for (int i=0; i<*total_num_vehicles; i++) {
         VEH* veh = &tx_vehicles[i];
         UNIT* u = &tx_units[veh->proto_id];
         auto xy = mp(veh->x, veh->y);
@@ -108,7 +111,7 @@ void move_upkeep(int fac) {
             }
             adjust_value(veh->x, veh->y, 3, 1, pm_enemy_near);
             pm_enemy[veh->x][veh->y]++;
-        } else if (veh->faction_id == fac) {
+        } else if (veh->faction_id == faction) {
             if (u->weapon_type <= WPN_PSI_ATTACK) {
                 adjust_value(veh->x, veh->y, 1, 40, pm_safety);
                 pm_safety[veh->x][veh->y] += 60;
@@ -123,20 +126,20 @@ void move_upkeep(int fac) {
             }
         }
     }
-    for (int i=0; i<*tx_total_num_bases; i++) {
+    for (int i=0; i<*total_num_bases; i++) {
         BASE* base = &tx_bases[i];
-        if (base->faction_id == fac) {
+        if (base->faction_id == faction) {
             adjust_value(base->x, base->y, 2, base->pop_size, pm_former);
             pm_safety[base->x][base->y] += 10000;
         }
     }
 }
 
-bool has_transport(int x, int y, int fac) {
-    for (int i=0; i<*tx_total_num_vehicles; i++) {
+bool has_transport(int x, int y, int faction) {
+    for (int i=0; i<*total_num_vehicles; i++) {
         VEH* veh = &tx_vehicles[i];
         UNIT* u = &tx_units[veh->proto_id];
-        if (veh->faction_id == fac && veh->x == x && veh->y == y
+        if (veh->faction_id == faction && veh->x == x && veh->y == y
         && tx_weapon[u->weapon_type].mode == WMODE_TRANSPORT) {
             return true;
         }
@@ -144,22 +147,22 @@ bool has_transport(int x, int y, int fac) {
     return false;
 }
 
-bool non_combat_move(int x, int y, int fac, int triad) {
+bool non_combat_move(int x, int y, int faction, int triad) {
     MAP* sq = mapsq(x, y);
     int other = unit_in_tile(sq);
     if (x < 0 || y < 0 || !sq || (triad != TRIAD_AIR && is_ocean(sq) != (triad == TRIAD_SEA))) {
         return false;
     }
-    if (sq->owner > 0 && sq->owner != fac) {
+    if (sq->owner > 0 && sq->owner != faction) {
         return false;
     }
-    if (other < 0 || other == fac) {
+    if (other < 0 || other == faction) {
         return pm_safety[x][y] >= PM_NEAR_SAFE;
     }
     return false;
 }
 
-void count_bases(int x, int y, int fac, int triad, int* area, int* bases) {
+void count_bases(int x, int y, int faction, int triad, int* area, int* bases) {
     assert(triad == TRIAD_LAND || triad == TRIAD_SEA || triad == TRIAD_AIR);
     MAP* sq;
     *area = 0;
@@ -170,17 +173,17 @@ void count_bases(int x, int y, int fac, int triad, int* area, int* bases) {
     while (i++ < 160 && (sq = ts.get_next()) != NULL) {
         if (sq->items & TERRA_BASE_IN_TILE) {
             (*bases)++;
-        } else if (can_build_base(ts.rx, ts.ry, fac, triad)) {
+        } else if (can_build_base(ts.rx, ts.ry, faction, triad)) {
             (*area)++;
         }
     }
     debug("count_bases %d %d %d %d %d\n", x, y, triad, *area, *bases);
 }
 
-bool has_base_sites(int x, int y, int fac, int triad) {
+bool has_base_sites(int x, int y, int faction, int triad) {
     int area;
     int bases;
-    count_bases(x, y, fac, triad, &area, &bases);
+    count_bases(x, y, faction, triad, &area, &bases);
     return area > bases+4;
 }
 
@@ -221,7 +224,7 @@ int escape_move(int id) {
     MAP* sq = mapsq(veh->x, veh->y);
     if (defend_tile(veh, sq))
         return veh_skip(id);
-    int fac = veh->faction_id;
+    int faction = veh->faction_id;
     int tscore = pm_safety[veh->x][veh->y];
     int i = 0;
     int tx = -1;
@@ -230,7 +233,7 @@ int escape_move(int id) {
     ts.init(veh->x, veh->y, veh_triad(id));
     while (i++ < (tscore < 500 ? 80 : 24) && (sq = ts.get_next()) != NULL) {
         int score = escape_score(ts.rx, ts.ry, ts.dist-1, veh, sq);
-        if (score > tscore && !non_ally_in_tile(fac, sq) && !ts.has_zoc(fac)) {
+        if (score > tscore && !non_ally_in_tile(faction, sq) && !ts.has_zoc(faction)) {
             tx = ts.rx;
             ty = ts.ry;
             tscore = score;
@@ -250,7 +253,7 @@ int escape_move(int id) {
 
 int trans_move(int id) {
     VEH* veh = &tx_vehicles[id];
-    int fac = veh->faction_id;
+    int faction = veh->faction_id;
     int triad = veh_triad(id);
     auto xy = mp(veh->x, veh->y);
     if (needferry.count(xy)) {
@@ -264,7 +267,7 @@ int trans_move(int id) {
         ts.init(veh->x, veh->y, TRIAD_SEA);
         while (i++ < 120 && (sq = ts.get_next()) != NULL) {
             xy = mp(ts.rx, ts.ry);
-            if (needferry.count(xy) && non_combat_move(ts.rx, ts.ry, fac, triad)) {
+            if (needferry.count(xy) && non_combat_move(ts.rx, ts.ry, faction, triad)) {
                 needferry.erase(xy);
                 debug("trans_move %d %d -> %d %d\n", veh->x, veh->y, ts.rx, ts.ry);
                 return set_move_to(id, ts.rx, ts.ry);
@@ -274,8 +277,8 @@ int trans_move(int id) {
     return tx_enemy_move(id);
 }
 
-int want_convoy(int fac, int x, int y, MAP* sq) {
-    if (sq && sq->owner == fac && !convoys.count({x, y})
+int want_convoy(int faction, int x, int y, MAP* sq) {
+    if (sq && sq->owner == faction && !convoys.count({x, y})
     && !(sq->items & BASE_DISALLOWED)) {
         int bonus = tx_bonus_at(x, y);
         if (bonus == RES_ENERGY)
@@ -344,7 +347,7 @@ int crawler_move(int id) {
     return veh_skip(id);
 }
 
-bool safe_path(const TileSearch& ts, int fac) {
+bool safe_path(const TileSearch& ts, int faction) {
     int i = 0;
     const PathNode* node = &ts.newtiles[ts.cur];
 
@@ -352,12 +355,12 @@ bool safe_path(const TileSearch& ts, int fac) {
         assert(node->prev >= 0);
         MAP* sq = mapsq(node->x, node->y);
         if (pm_safety[node->x][node->y] < PM_SAFE) {
-            debug("path_unsafe %d %d %d\n", fac, node->x, node->y);
+            debug("path_unsafe %d %d %d\n", faction, node->x, node->y);
             return false;
         }
-        if (sq && sq->owner > 0 && sq->owner != fac
-        && ~tx_factions[fac].diplo_status[sq->owner] & DIPLO_PACT) {
-            debug("path_foreign %d %d %d\n", fac, node->x, node->y);
+        if (sq && sq->owner > 0 && sq->owner != faction
+        && ~tx_factions[faction].diplo_status[sq->owner] & DIPLO_PACT) {
+            debug("path_foreign %d %d %d\n", faction, node->x, node->y);
             return false;
         }
         node = &ts.newtiles[node->prev];
@@ -367,32 +370,33 @@ bool safe_path(const TileSearch& ts, int fac) {
 
 bool valid_colony_path(int id) {
     VEH* veh = &tx_vehicles[id];
-    int fac = veh->faction_id;
+    int faction = veh->faction_id;
     int tx = veh->waypoint_1_x;
     int ty = veh->waypoint_1_y;
 
-    if (at_target(veh) || !can_build_base(tx, ty, fac, veh_triad(id))) {
+    if (at_target(veh) || !can_build_base(tx, ty, faction, veh_triad(id))) {
         return false;
     }
-    if (~veh->flags_1 & 0x40000 && (veh->flags_1 & 0x2000 || map_range(veh->x, veh->y, tx, ty) > 10)) {
+    if (~veh->state & VSTATE_UNK_40000 && (veh->state & VSTATE_UNK_2000
+    || map_range(veh->x, veh->y, tx, ty) > 10)) {
         return false;
     }
     return true;
 }
 
-bool can_build_base(int x, int y, int fac, int triad) {
+bool can_build_base(int x, int y, int faction, int triad) {
     MAP* sq = mapsq(x, y);
-    if (!sq || y < 3 || y >= *tx_map_axis_y-3 || (~sq->landmarks & LM_JUNGLE && pm_former[x][y] > 0))
+    if (!sq || y < 3 || y >= *map_axis_y-3 || (~sq->landmarks & LM_JUNGLE && pm_former[x][y] > 0))
         return false;
     if ((sq->rocks & TILE_ROCKY && !is_ocean(sq)) || (sq->items & (BASE_DISALLOWED | IMP_ADVANCED)))
         return false;
-    if (sq->owner > 0 && fac != sq->owner && !at_war(fac, sq->owner))
+    if (sq->owner > 0 && faction != sq->owner && !at_war(faction, sq->owner))
         return false;
-    if (non_ally_in_tile(fac, sq))
+    if (non_ally_in_tile(faction, sq))
         return false;
     if (sq->landmarks & LM_VOLCANO && sq->art_ref_id == 0)
         return false;
-    if (sq->landmarks & LM_JUNGLE && !is_ocean(sq) && *tx_current_turn > 40) {
+    if (sq->landmarks & LM_JUNGLE && !is_ocean(sq) && *current_turn > 40) {
         if (bases_in_range(x, y, 1) > 0 || bases_in_range(x, y, 2) > 1)
             return false;
     } else {
@@ -451,7 +455,7 @@ int base_tile_score(int x1, int y1, int range, int triad) {
 int colony_move(int id) {
     VEH* veh = &tx_vehicles[id];
     MAP* sq = mapsq(veh->x, veh->y);
-    int fac = veh->faction_id;
+    int faction = veh->faction_id;
     int triad = veh_triad(id);
     if (defend_tile(veh, sq) || veh->iter_count > 7) {
         return veh_skip(id);
@@ -459,19 +463,19 @@ int colony_move(int id) {
     if (pm_safety[veh->x][veh->y] < PM_SAFE) {
         return escape_move(id);
     }
-    if ((at_target(veh) || triad == TRIAD_LAND) && can_build_base(veh->x, veh->y, fac, triad)) {
+    if ((at_target(veh) || triad == TRIAD_LAND) && can_build_base(veh->x, veh->y, faction, triad)) {
         tx_action_build(id, 0);
         return SYNC;
     }
     if (is_ocean(sq) && triad == TRIAD_LAND) {
-        if (!has_transport(veh->x, veh->y, fac)) {
+        if (!has_transport(veh->x, veh->y, faction)) {
             needferry.insert({veh->x, veh->y});
             return veh_skip(id);
         }
         for (const int* t : offset) {
             int x2 = wrap(veh->x + t[0]);
             int y2 = veh->y + t[1];
-            if (non_combat_move(x2, y2, fac, triad) && has_base_sites(x2, y2, fac, TRIAD_LAND)) {
+            if (non_combat_move(x2, y2, faction, triad) && has_base_sites(x2, y2, faction, TRIAD_LAND)) {
                 debug("colony_trans %d %d -> %d %d\n", veh->x, veh->y, x2, y2);
                 return set_move_to(id, x2, y2);
             }
@@ -483,11 +487,11 @@ int colony_move(int id) {
         int tscore = INT_MIN;
         int tx = -1;
         int ty = -1;
-        int limit = (!((*tx_current_turn + id) % 8) ? 500 : 200);
+        int limit = (!((*current_turn + id) % 8) ? 500 : 200);
         TileSearch ts;
         ts.init(veh->x, veh->y, triad, 2);
         while (i++ < limit && k < 20 && (sq = ts.get_next()) != NULL) {
-            if (!can_build_base(ts.rx, ts.ry, fac, triad) || !safe_path(ts, fac))
+            if (!can_build_base(ts.rx, ts.ry, faction, triad) || !safe_path(ts, faction))
                 continue;
             int score = base_tile_score(ts.rx, ts.ry, ts.dist, triad);
             k++;
@@ -498,10 +502,10 @@ int colony_move(int id) {
             }
         }
         if (tx >= 0) {
-            debug("colony_move %d %d -> %d %d | %d %d | %d\n", veh->x, veh->y, tx, ty, fac, id, tscore);
+            debug("colony_move %d %d -> %d %d | %d %d | %d\n", veh->x, veh->y, tx, ty, faction, id, tscore);
             adjust_value(tx, ty, 1, 1, pm_former);
-            veh->flags_1 |= 0x40000; /* Disable default unit automation. */
-            veh->flags_1 &= ~0x2000;
+            veh->state |= VSTATE_UNK_40000; /* Disable default unit automation. */
+            veh->state &= ~VSTATE_UNK_2000;
             return set_move_to(id, tx, ty);
         }
     }
@@ -514,8 +518,8 @@ int colony_move(int id) {
     return veh_skip(id);
 }
 
-bool can_bridge(int x, int y, int fac, MAP* sq) {
-    if (is_ocean(sq) || !has_terra(fac, FORMER_RAISE_LAND, 0))
+bool can_bridge(int x, int y, int faction, MAP* sq) {
+    if (is_ocean(sq) || !has_terra(faction, FORMER_RAISE_LAND, 0))
         return false;
     if (coast_tiles(x, y) < 3)
         return false;
@@ -531,7 +535,7 @@ bool can_bridge(int x, int y, int fac, MAP* sq) {
             int x2 = wrap(x + i);
             int y2 = y + j;
             sq = mapsq(x2, y2);
-            if (sq && y2 > 0 && y2 < *tx_map_axis_y-1 && !is_ocean(sq)
+            if (sq && y2 > 0 && y2 < *map_axis_y-1 && !is_ocean(sq)
             && !ts.oldtiles.count({x2, y2})) {
                 n++;
             }
@@ -541,13 +545,13 @@ bool can_bridge(int x, int y, int fac, MAP* sq) {
     return n > 4;
 }
 
-bool can_borehole(int x, int y, int fac, int bonus, MAP* sq) {
-    if (!has_terra(fac, FORMER_THERMAL_BORE, is_ocean(sq)))
+bool can_borehole(int x, int y, int faction, int bonus, MAP* sq) {
+    if (!has_terra(faction, FORMER_THERMAL_BORE, is_ocean(sq)))
         return false;
     if (!sq || sq->items & (BASE_DISALLOWED | IMP_ADVANCED) || bonus == RES_NUTRIENT)
         return false;
     // Planet factions should build boreholes only in reduced numbers.
-    if (tx_factions[fac].SE_planet_base > 0 && (map_hash(x, y) % 101 > 14))
+    if (tx_factions[faction].SE_planet_base > 0 && (map_hash(x, y) % 101 > 14))
         return false;
     if (bonus == RES_NONE && sq->rocks & TILE_ROLLING)
         return false;
@@ -567,9 +571,9 @@ bool can_borehole(int x, int y, int fac, int bonus, MAP* sq) {
     return true;
 }
 
-bool can_farm(int x, int y, int fac, int bonus, bool has_nut, MAP* sq) {
+bool can_farm(int x, int y, int faction, int bonus, bool has_nut, MAP* sq) {
     bool rain = sq->level & (TILE_RAINY | TILE_MOIST);
-    if (!has_terra(fac, FORMER_FARM, is_ocean(sq)))
+    if (!has_terra(faction, FORMER_FARM, is_ocean(sq)))
         return false;
     if (bonus == RES_NUTRIENT && (has_nut || (rain && sq->rocks & TILE_ROLLING)))
         return true;
@@ -586,18 +590,18 @@ bool can_farm(int x, int y, int fac, int bonus, bool has_nut, MAP* sq) {
     return (has_nut && !(x % 2) && !(y % 2) && !(abs(x-y) % 4));
 }
 
-bool can_fungus(int x, int y, int fac, int bonus, MAP* sq) {
+bool can_fungus(int x, int y, int faction, int bonus, MAP* sq) {
     if (sq->items & (TERRA_BASE_IN_TILE | TERRA_MONOLITH | IMP_ADVANCED))
         return false;
-    return !can_borehole(x, y, fac, bonus, sq) && nearby_items(x, y, 1, TERRA_FUNGUS) < 5;
+    return !can_borehole(x, y, faction, bonus, sq) && nearby_items(x, y, 1, TERRA_FUNGUS) < 5;
 }
 
-bool can_road(int x, int y, int fac, MAP* sq) {
-    if (is_ocean(sq) || !pm_former[x][y] || !has_terra(fac, FORMER_ROAD, 0)
+bool can_road(int x, int y, int faction, MAP* sq) {
+    if (is_ocean(sq) || !pm_former[x][y] || !has_terra(faction, FORMER_ROAD, 0)
     || sq->items & (TERRA_ROAD | TERRA_BASE_IN_TILE))
         return false;
-    if (sq->items & TERRA_FUNGUS && (!has_tech(fac, tx_basic->tech_preq_build_road_fungus)
-    || has_project(fac, FAC_XENOEMPATHY_DOME)))
+    if (sq->items & TERRA_FUNGUS && (!has_tech(faction, tx_basic->tech_preq_build_road_fungus)
+    || has_project(faction, FAC_XENOEMPATHY_DOME)))
         return false;
     if (!(sq->items & (TERRA_FOREST | TERRA_SENSOR)))
         return true;
@@ -606,7 +610,7 @@ bool can_road(int x, int y, int fac, MAP* sq) {
     int r[] = {0,0,0,0,0,0,0,0};
     for (const int* t : offset) {
         sq = mapsq(wrap(x + t[0]), y + t[1]);
-        if (!is_ocean(sq) && sq->owner == fac) {
+        if (!is_ocean(sq) && sq->owner == faction) {
             int pm = pm_former[wrap(x + t[0])][y + t[1]];
             if (sq->items & (TERRA_ROAD | TERRA_BASE_IN_TILE)) {
                 r[i] = 1;
@@ -627,32 +631,32 @@ bool can_road(int x, int y, int fac, MAP* sq) {
     return k > 3 && r[0]+r[2]+r[4]+r[6] < 3;
 }
 
-bool can_sensor(int x, int y, int fac, MAP* sq) {
-    return has_terra(fac, FORMER_SENSOR, is_ocean(sq))
+bool can_sensor(int x, int y, int faction, MAP* sq) {
+    return has_terra(faction, FORMER_SENSOR, is_ocean(sq))
         && ~sq->items & TERRA_SENSOR
         && !nearby_items(x, y, 2, TERRA_SENSOR)
-        && (~sq->items & TERRA_FUNGUS || has_tech(fac, tx_basic->tech_preq_improv_fungus))
-        && *tx_current_turn > random(20);
+        && (~sq->items & TERRA_FUNGUS || has_tech(faction, tx_basic->tech_preq_improv_fungus))
+        && *current_turn > random(20);
 }
 
-int select_item(int x, int y, int fac, MAP* sq) {
+int select_item(int x, int y, int faction, MAP* sq) {
     int items = sq->items;
     int bonus = tx_bonus_at(x, y);
     bool sea = is_ocean(sq);
     bool rocky_sq = sq->rocks & TILE_ROCKY;
-    bool has_eco = has_terra(fac, FORMER_CONDENSER, 0);
-    bool has_min = has_tech(fac, tx_basic->tech_preq_allow_3_minerals_sq);
-    bool has_nut = has_tech(fac, tx_basic->tech_preq_allow_3_nutrients_sq);
-    bool road = can_road(x, y, fac, sq);
+    bool has_eco = has_terra(faction, FORMER_CONDENSER, 0);
+    bool has_min = has_tech(faction, tx_basic->tech_preq_allow_3_minerals_sq);
+    bool has_nut = has_tech(faction, tx_basic->tech_preq_allow_3_nutrients_sq);
+    bool road = can_road(x, y, faction, sq);
 
     if (items & TERRA_BASE_IN_TILE || (sea && !is_ocean_shelf(sq))
     || (sq->landmarks & LM_VOLCANO && sq->art_ref_id == 0))
         return -1;
     if (items & TERRA_FUNGUS) {
-        if (plans[fac].keep_fungus && can_fungus(x, y, fac, bonus, sq)) {
+        if (plans[faction].keep_fungus && can_fungus(x, y, faction, bonus, sq)) {
             if (road)
                 return FORMER_ROAD;
-            else if (can_sensor(x, y, fac, sq))
+            else if (can_sensor(x, y, faction, sq))
                 return FORMER_SENSOR;
             return -1;
         }
@@ -660,43 +664,45 @@ int select_item(int x, int y, int fac, MAP* sq) {
     } else if (items & TERRA_MONOLITH && road) {
         return FORMER_ROAD;
     }
-    if (can_bridge(x, y, fac, sq)) {
-        int cost = tx_terraform_cost(x, y, fac);
-        if (cost < tx_factions[fac].energy_credits/10) {
+    if (can_bridge(x, y, faction, sq)) {
+        int cost = tx_terraform_cost(x, y, faction);
+        if (cost < tx_factions[faction].energy_credits/10) {
             return FORMER_RAISE_LAND;
         }
     }
-    if (!workable_tile(x, y, fac) || items & (TERRA_MONOLITH | TERRA_FUNGUS))
+    if (!workable_tile(x, y, faction) || items & (TERRA_MONOLITH | TERRA_FUNGUS))
         return -1;
-    if (plans[fac].plant_fungus && can_fungus(x, y, fac, bonus, sq))
+    if (plans[faction].plant_fungus && can_fungus(x, y, faction, bonus, sq))
         return FORMER_PLANT_FUNGUS;
     if (sea) {
         bool improved = items & (TERRA_MINE | TERRA_SOLAR | TERRA_SENSOR);
-        if (~items & TERRA_FARM && has_terra(fac, FORMER_FARM, sea))
+        if (~items & TERRA_FARM && has_terra(faction, FORMER_FARM, sea))
             return FORMER_FARM;
-        else if (!improved && bonus == RES_NONE && can_sensor(x, y, fac, sq))
+        else if (!improved && bonus == RES_NONE && can_sensor(x, y, faction, sq))
             return FORMER_SENSOR;
-        else if (!improved && has_terra(fac, FORMER_SOLAR, sea) && bonus != RES_MINERAL
+        else if (!improved && has_terra(faction, FORMER_SOLAR, sea) && bonus != RES_MINERAL
         && (bonus == RES_NUTRIENT || nearby_items(x, y, 1, TERRA_SOLAR)+1 < nearby_items(x, y, 1, TERRA_MINE)))
             return FORMER_SOLAR;
-        else if (!improved && has_terra(fac, FORMER_MINE, sea))
+        else if (!improved && has_terra(faction, FORMER_MINE, sea))
             return FORMER_MINE;
         return -1;
     }
-    if ((has_min || bonus != RES_NONE) && can_borehole(x, y, fac, bonus, sq))
+    if ((has_min || bonus != RES_NONE) && can_borehole(x, y, faction, bonus, sq))
         return road ? FORMER_ROAD : FORMER_THERMAL_BORE;
     if (items & TERRA_THERMAL_BORE)
         return road ? FORMER_ROAD : -1;
-    if (rocky_sq && ~items & TERRA_MINE && (has_min || bonus == RES_MINERAL) && has_terra(fac, FORMER_MINE, sea))
+    if (rocky_sq && ~items & TERRA_MINE && (has_min || bonus == RES_MINERAL)
+    && has_terra(faction, FORMER_MINE, sea))
         return road ? FORMER_ROAD : FORMER_MINE;
-    if (rocky_sq && (bonus == RES_NUTRIENT || sq->landmarks & LM_JUNGLE) && has_terra(fac, FORMER_LEVEL_TERRAIN, sea))
+    if (rocky_sq && (bonus == RES_NUTRIENT || sq->landmarks & LM_JUNGLE)
+    && has_terra(faction, FORMER_LEVEL_TERRAIN, sea))
         return FORMER_LEVEL_TERRAIN;
-    if (!rocky_sq && can_farm(x, y, fac, bonus, has_nut, sq)) {
+    if (!rocky_sq && can_farm(x, y, faction, bonus, has_nut, sq)) {
         bool improved = items & (TERRA_CONDENSER | TERRA_SOLAR);
         if (road)
             return FORMER_ROAD;
         if (!has_nut) {
-            if (!improved && sq->level & TILE_RAINY && has_terra(fac, FORMER_SOLAR, sea))
+            if (!improved && sq->level & TILE_RAINY && has_terra(faction, FORMER_SOLAR, sea))
                 return FORMER_SOLAR;
             else if (~items & TERRA_FARM && sq->level & TILE_MOIST && sq->rocks & TILE_ROLLING)
                 return FORMER_FARM;
@@ -706,16 +712,16 @@ int select_item(int x, int y, int fac, MAP* sq) {
                 return FORMER_FARM;
             else if (~items & TERRA_CONDENSER && has_eco)
                 return FORMER_CONDENSER;
-            else if (~items & TERRA_SOIL_ENR && has_terra(fac, FORMER_SOIL_ENR, sea))
+            else if (~items & TERRA_SOIL_ENR && has_terra(faction, FORMER_SOIL_ENR, sea))
                 return FORMER_SOIL_ENR;
-            else if (!has_eco && !improved && has_terra(fac, FORMER_SOLAR, sea)
+            else if (!has_eco && !improved && has_terra(faction, FORMER_SOLAR, sea)
             && (bonus != RES_NONE || items & TERRA_RIVER))
                 return FORMER_SOLAR;
         }
     } else if (!rocky_sq && !(items & IMP_ADVANCED)) {
-        if (can_sensor(x, y, fac, sq))
+        if (can_sensor(x, y, faction, sq))
             return FORMER_SENSOR;
-        else if (~items & TERRA_FOREST && has_terra(fac, FORMER_FOREST, sea))
+        else if (~items & TERRA_FOREST && has_terra(faction, FORMER_FOREST, sea))
             return FORMER_FOREST;
     }
     if (road)
@@ -723,7 +729,7 @@ int select_item(int x, int y, int fac, MAP* sq) {
     return -1;
 }
 
-int former_tile_score(int x1, int y1, int x2, int y2, int fac, MAP* sq) {
+int former_tile_score(int x1, int y1, int x2, int y2, int faction, MAP* sq) {
     const int priority[][2] = {
         {TERRA_RIVER, 2},
         {TERRA_RIVER_SRC, 2},
@@ -742,7 +748,7 @@ int former_tile_score(int x1, int y1, int x2, int y2, int fac, MAP* sq) {
     int score = (sq->landmarks ? 3 : 0);
 
     if (bonus && !(items & IMP_ADVANCED)) {
-        bool bh = (bonus == RES_MINERAL || bonus == RES_ENERGY) && can_borehole(x2, y2, fac, bonus, sq);
+        bool bh = (bonus == RES_MINERAL || bonus == RES_ENERGY) && can_borehole(x2, y2, faction, bonus, sq);
         int w = (bh || !(items & IMP_SIMPLE) ? 5 : 1);
         score += w * (bonus == RES_NUTRIENT ? 3 : 2);
     }
@@ -753,10 +759,10 @@ int former_tile_score(int x1, int y1, int x2, int y2, int fac, MAP* sq) {
     }
     if (items & TERRA_FUNGUS) {
         score += (items & IMP_ADVANCED ? 20 : 0);
-        score += (plans[fac].keep_fungus ? -10 : -2);
-        score += (plans[fac].plant_fungus && (items & TERRA_ROAD) ? -8 : 0);
+        score += (plans[faction].keep_fungus ? -10 : -2);
+        score += (plans[faction].plant_fungus && (items & TERRA_ROAD) ? -8 : 0);
     }
-    if (items & (TERRA_FOREST | TERRA_SENSOR) && can_road(x2, y2, fac, sq)) {
+    if (items & (TERRA_FOREST | TERRA_SENSOR) && can_road(x2, y2, faction, sq)) {
         score += 8;
     }
     return score - range/2 + min(8, pm_former[x2][y2]) + min(0, pm_safety[x2][y2]);
@@ -764,14 +770,14 @@ int former_tile_score(int x1, int y1, int x2, int y2, int fac, MAP* sq) {
 
 int former_move(int id) {
     VEH* veh = &tx_vehicles[id];
-    int fac = veh->faction_id;
+    int faction = veh->faction_id;
     int triad = veh_triad(id);
     int x = veh->x;
     int y = veh->y;
     MAP* sq = mapsq(x, y);
     bool safe = pm_safety[x][y] >= PM_SAFE;
     int item;
-    if (!sq || sq->owner != fac) {
+    if (!sq || sq->owner != faction) {
         return tx_enemy_move(id);
     }
     if (defend_tile(veh, sq)) {
@@ -782,15 +788,15 @@ int former_move(int id) {
         || (triad != TRIAD_LAND && !at_target(veh))) {
             return SYNC;
         }
-        item = select_item(x, y, fac, sq);
+        item = select_item(x, y, faction, sq);
         if (item >= 0) {
             pm_former[x][y] -= 2;
             if (item == FORMER_RAISE_LAND) {
-                int cost = tx_terraform_cost(x, y, fac);
-                tx_factions[fac].energy_credits -= cost;
-                debug("bridge_cost %d %d %d %d\n", x, y, fac, cost);
+                int cost = tx_terraform_cost(x, y, faction);
+                tx_factions[faction].energy_credits -= cost;
+                debug("bridge_cost %d %d %d %d\n", x, y, faction, cost);
             }
-            debug("former_action %d %d %d %d %d\n", x, y, fac, id, item);
+            debug("former_action %d %d %d %d %d\n", x, y, faction, id, item);
             return set_action(id, item+4, *tx_terraform[item].shortcuts);
         }
     } else if (!safe) {
@@ -811,13 +817,13 @@ int former_move(int id) {
     ts.init(x, y, triad);
 
     while (i++ < limit/(tx >= 0 ? 2 : 1) && (sq = ts.get_next()) != NULL) {
-        if (sq->owner != fac || sq->items & TERRA_BASE_IN_TILE
+        if (sq->owner != faction || sq->items & TERRA_BASE_IN_TILE
         || pm_safety[ts.rx][ts.ry] < PM_SAFE
         || pm_former[ts.rx][ts.ry] < 1
-        || other_in_tile(fac, sq))
+        || other_in_tile(faction, sq))
             continue;
-        int score = former_tile_score(bx, by, ts.rx, ts.ry, fac, sq);
-        if (score > tscore && (item = select_item(ts.rx, ts.ry, fac, sq)) != -1) {
+        int score = former_tile_score(bx, by, ts.rx, ts.ry, faction, sq);
+        if (score > tscore && (item = select_item(ts.rx, ts.ry, faction, sq)) != -1) {
             tx = ts.rx;
             ty = ts.ry;
             tscore = score;
@@ -825,18 +831,18 @@ int former_move(int id) {
     }
     if (tx >= 0) {
         pm_former[tx][ty] -= 2;
-        debug("former_move %d %d -> %d %d | %d %d | %d %d\n", x, y, tx, ty, fac, id, item, tscore);
+        debug("former_move %d %d -> %d %d | %d %d | %d %d\n", x, y, tx, ty, faction, id, item, tscore);
         return set_move_to(id, tx, ty);
     } else if (!random(4)) {
         return set_move_to(id, bx, by);
     }
-    debug("former_skip %d %d | %d %d\n", x, y, fac, id);
+    debug("former_skip %d %d | %d %d\n", x, y, faction, id);
     return veh_skip(id);
 }
 
-int best_defender(int x, int y, int fac, int att_id) {
+int best_defender(int x, int y, int faction, int att_id) {
     int id = tx_veh_at(x, y);
-    if (id < 0 || ~tx_vehicles[id].visibility & (1 << fac))
+    if (id < 0 || ~tx_vehicles[id].visibility & (1 << faction))
         return -1;
     return tx_best_defender(id, att_id, 0);
 }
@@ -859,7 +865,7 @@ int combat_move(int id) {
     VEH* veh = &tx_vehicles[id];
     MAP* sq = mapsq(veh->x, veh->y);
     UNIT* u = &tx_units[veh->proto_id];
-    int fac = veh->faction_id;
+    int faction = veh->faction_id;
     if (is_ocean(sq) || u->ability_flags & ABL_ARTILLERY)
         return tx_enemy_move(id);
     if (pm_enemy_near[veh->x][veh->y] < 1 || veh->iter_count > 7) {
@@ -874,7 +880,7 @@ int combat_move(int id) {
     int defenders = 0;
 
     if (at_base) {
-        for (int i=0; i<*tx_total_num_vehicles; i++) {
+        for (int i=0; i<*total_num_vehicles; i++) {
             VEH* v = &tx_vehicles[i];
             if (veh->x == v->x && veh->y == v->y && v->damage_taken < 5
             && tx_units[v->proto_id].weapon_type <= WPN_PSI_ATTACK) {
@@ -898,16 +904,16 @@ int combat_move(int id) {
         assert(map_range(veh->x, veh->y, ts.rx, ts.ry) <= ts.dist);
         assert((at_base && to_base) < ts.dist);
 
-        if (at_war(fac, fac2) && (id2 = best_defender(ts.rx, ts.ry, fac, id)) != -1) {
+        if (at_war(faction, fac2) && (id2 = best_defender(ts.rx, ts.ry, faction, id)) != -1) {
             VEH* veh2 = &tx_vehicles[id2];
             UNIT* u2 = &tx_units[veh2->proto_id];
             max_dist = min(ts.dist, max_dist);
-            if (ts.dist > 1 && ~veh2->visibility & (1 << fac))
+            if (ts.dist > 1 && ~veh2->visibility & (1 << faction))
                 continue;
             if (!to_base && veh_triad(id2) == TRIAD_AIR && ~u->ability_flags & ABL_AIR_SUPERIORITY)
                 continue;
             double v1 = battle_eval(id, id2, moves - ts.dist + 1, mov_rate);
-            double v2 = (sq->owner == fac ? 0.1 : 0.0)
+            double v2 = (sq->owner == faction ? 0.1 : 0.0)
                 + (to_base ? 0.0 : 0.05 * (pm_enemy[ts.rx][ts.ry]))
                 + min(12, abs(offense_value(u2)))*(u2->chassis_type == CHS_INFANTRY ? 0.008 : 0.02);
             double v3 = min(1.6, v1) + min(0.5, max(-0.5, v2));
@@ -915,13 +921,13 @@ int combat_move(int id) {
             debug("attack_odds %2d %2d -> %2d %2d | %d %d %d %d | %d %d %.4f %.4f %.4f %.4f | %d %d %s | %d %d %s\n",
                 veh->x, veh->y, ts.rx, ts.ry, ts.dist, max_dist, at_base, to_base,
                 pm_enemy[ts.rx][ts.ry], pm_safety[ts.rx][ts.ry], v1, v2, v3, odds,
-                id, fac, u->name, id2, fac2, u2->name);
+                id, faction, u->name, id2, fac2, u2->name);
             if (v3 > odds) {
                 tx = ts.rx;
                 ty = ts.ry;
                 odds = v3;
             }
-        } else if (to_base && at_war(fac, sq->owner) && pm_enemy[ts.rx][ts.ry] < 1) {
+        } else if (to_base && at_war(faction, sq->owner) && pm_enemy[ts.rx][ts.ry] < 1) {
             tx = ts.rx;
             ty = ts.ry;
             break;

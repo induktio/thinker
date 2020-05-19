@@ -1,5 +1,4 @@
-#ifndef __MOVE_H__
-#define __MOVE_H__
+#pragma once
 
 #include "main.h"
 #include "game.h"
@@ -14,15 +13,14 @@
 
 HOOK_API int enemy_move(int id);
 HOOK_API int log_veh_kill(int a, int b, int c, int d);
-void move_upkeep(int fac);
-bool has_transport(int x, int y, int fac);
-bool non_combat_move(int x, int y, int fac, int triad);
-bool can_build_base(int x, int y, int fac, int triad);
-bool has_base_sites(int x, int y, int fac, int triad);
+void move_upkeep(int faction);
+bool has_transport(int x, int y, int faction);
+bool non_combat_move(int x, int y, int faction, int triad);
+bool can_build_base(int x, int y, int faction, int triad);
+bool has_base_sites(int x, int y, int faction, int triad);
 int crawler_move(int id);
 int colony_move(int id);
 int former_move(int id);
 int trans_move(int id);
 int combat_move(int id);
 
-#endif // __MOVE_H__

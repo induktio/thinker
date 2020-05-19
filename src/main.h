@@ -1,5 +1,4 @@
-#ifndef __MAIN_H__
-#define __MAIN_H__
+#pragma once
 
 #ifdef BUILD_REL
     #define MOD_VERSION "Thinker Mod v1.0"
@@ -128,19 +127,17 @@ extern Points needferry;
 DLL_EXPORT int ThinkerDecide();
 HOOK_API int turn_upkeep();
 HOOK_API int base_production(int id, int v1, int v2, int v3);
-HOOK_API int tech_value(int tech, int fac, int flag);
-HOOK_API int social_ai(int fac, int v1, int v2, int v3, int v4, int v5);
+HOOK_API int tech_value(int tech, int faction, int flag);
+HOOK_API int social_ai(int faction, int v1, int v2, int v3, int v4, int v5);
 
-int need_psych(int);
-int need_defense(int);
-int consider_hurry(int);
-int select_prod(int);
-int find_facility(int);
-int find_project(int);
-int find_proto(int, int, int, bool);
-int select_combat(int, bool, bool, int, int);
-
-#endif // __MAIN_H__
+int need_defense(int id);
+int need_psych(int id);
+int consider_hurry(int id);
+int find_project(int id);
+int find_facility(int id);
+int select_prod(int id);
+int find_proto(int faction, int triad, int mode, bool defend);
+int select_combat(int id, bool sea_base, bool build_ships, int probes, int def_land);
 
 
 

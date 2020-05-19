@@ -99,8 +99,8 @@ struct UNIT {
 struct VEH {
     short x;
     short y;
-    int flags_1;
-    short flags_2;
+    int state;
+    short flags;
     short proto_id;
     short pad_0;
     char faction_id;
@@ -143,6 +143,7 @@ struct MAP {
     /*
     The game keeps track of disjoint land/water areas and assigns each of them an ID number
     which is used to index the [128] planning variable arrays in Faction struct.
+    Valid ranges: 1-62 (land), 65-126 (sea).
     */
     byte region;
     byte visibility;
@@ -218,36 +219,36 @@ struct Goal {
 };
 
 struct Faction {
-    int diplo_flags;
-    int ranking;
+    int player_flags;
+    int ranking; // 0 (lowest) to 7 (highest)
     int diff_level;
-    int unk_0;
-    int unk_1;
-    int tutorial_more_bases;
-    int diplo_status[8];
+    int base_name_offset; // Keep track which base names have been used
+    int base_sea_name_offset; // Keep track which sea base names have been used
+    int last_base_turn; // Turn for last built, captured or acquired (drone riot) base
+    int diplo_status[8]; // Contains all formal treaties
     int diplo_agenda[8];
-    int diplo_friction_1[8];
-    int diplo_turn_check[8];
-    int diplo_treaty_turns[8];
-    char diplo_friction_2[8];
-    int sanction_turns;
-    int loan_years[8];
-    int loan_payment[8];
-    char gap_104[32];
-    int minor_atrocities;
+    int diplo_friction[8];
+    int diplo_spoke[8]; // Turn for the last player-to-AI communication; -1 for never
+    int diplo_merc[8]; // Possibly higher values indicate willingness for deal-making
+    char diplo_patience[8]; // AI-to-player
+    int sanction_turns; // Turns left for economic sanctions imposed by other factions for atrocities
+    int loan_balance[8]; // Loan balance remaining this faction owes another to be paid over term
+    int loan_payment[8]; // The per turn payment amount this faction owes another faction
+    int unk_1[8]; // unused?
+    int integrity_blemishes;
     int global_reputation;
-    int diplo_unk1[8];
-    int diplo_unk2[8];
-    int diplo_backstabs[8];
-    int diplo_unk3[8];
-    int diplo_unk4[8];
-    int map_trade_done;
-    int governor_def_flags;
-    int unk_2;
-    int major_atrocities;
-    int unk_3;
-    int unk_4[8];
-    int unk_5[8];
+    int diplo_gifts[8]; // ? Gifts and bribes we have received
+    int diplo_wrongs[8]; // Number of times we double crossed this faction
+    int diplo_betrayed[8]; // Number of times double crossed by this faction
+    int diplo_unk_3[8]; // ? combat related
+    int diplo_unk_4[8]; // ? combat related
+    int traded_maps; // bitfield of other factions that have traded maps with faction
+    int base_governor_adv; // default advanced Governor settings
+    int atrocities; // count committed by faction
+    int major_atrocities; // count committed by faction
+    int subvert_total; // ? probe: mind control base (+4) / subvert unit (+1) total
+    int diplo_subvert[8]; // ? probe: mind control base (+4) / subvert unit (+1) per faction
+    int stolen_data_count[8]; // probe: successfully procured research data (tech/map) per faction
     int energy_credits;
     int energy_cost;
     int SE_Politics_pending;
@@ -305,8 +306,8 @@ struct Faction {
     int SE_research_base;
     int unk_13;
     int unk_14;
-    int tech_commerce_bonus;
-    int unk_16;
+    int tech_commerce_bonus; // Increases commerce income
+    int turn_commerce_income;
     int unk_17;
     int unk_18;
     int tech_fungus_nutrient;
@@ -338,7 +339,7 @@ struct Faction {
     int council_call_turn;
     int unk_29[11]; // unused
     int unk_30[11]; // unused
-    int unk_31; // unused
+    byte facility_announced[4]; // bitfield - used to determine one time play of fac audio blurb
     int unk_32; // unused
     int unk_33; // unused
     int unk_35;
@@ -355,7 +356,7 @@ struct Faction {
     int unk_45;
     int unk_46;
     int unk_47;
-    int unk_48;
+    int nutrient_surplus_total;
     int labs_total;
     int satellites_nutrient;
     int satellites_mineral;
@@ -404,7 +405,7 @@ struct Faction {
     short region_unk_5[128]; // Unknown reset_territory/enemy_move counter
     byte region_unk_6[128]; // Unknown enemy_strategy state
     byte region_unk_7[128]; // Unknown base_prod_choices state
-    byte region_unk_8[128]; // Unknown enemy_move state
+    byte region_base_plan[128]; // visible in map UI with omni view + debug mode under base name
     /* End of block */
     Goal goals_1[75];
     Goal goals_2[25];
@@ -422,7 +423,7 @@ struct Faction {
     int unk_101;
     int unk_102;
     int unk_103;
-    int unk_104;
+    int player_flags_ext;
     int unk_105;
     int unk_106;
     int unk_107;
