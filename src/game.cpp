@@ -389,7 +389,10 @@ bool is_sea_base(int id) {
 
 bool workable_tile(int x, int y, int faction) {
     assert(faction > 0 && faction < 8);
-    MAP* sq;
+    MAP* sq = mapsq(x, y);
+    if (!sq || ~sq->items & TERRA_BASE_RADIUS) {
+        return false;
+    }
     for (int i=0; i<20; i++) {
         sq = mapsq(wrap(x + offset_tbl[i][0]), y + offset_tbl[i][1]);
         if (sq && sq->owner == faction && sq->items & TERRA_BASE_IN_TILE) {
@@ -491,7 +494,7 @@ void print_veh(int id) {
         tx_units[v->proto_id].name, v->proto_id, id, v->faction_id,
         v->state, v->flags, v->visibility, v->move_status, v->status_icon,
         v->x, v->y, v->waypoint_1_x, v->waypoint_1_y,
-        v->morale, v->damage_taken, v->iter_count, v->unk_1, v->unk_2, v->unk_3);
+        v->morale, v->damage_taken, v->iter_count, v->unk_1, v->probe_action, v->probe_sabotage_id);
 }
 
 void print_base(int id) {

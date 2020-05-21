@@ -1,9 +1,8 @@
 
-#include "main.h"
+#include "engine.h"
 #include "game.h"
 #include "tech.h"
 #include "move.h"
-#include "engine.h"
 
 const char* ScriptTxtID = "SCRIPT";
 
@@ -35,6 +34,7 @@ int* pbem_active = (int*)0x93A95C;
 int* sunspot_duration = (int*)0x9A6800;
 int* diplo_active_faction = (int*)0x93F7CC;
 int* diplo_current_friction = (int*)0x93FA74;
+int* diplo_opponent_faction = (int*)0x8A4164;
 
 fp_1int* social_upkeep = (fp_1int*)0x5B44D0;
 fp_1int* repair_phase = (fp_1int*)0x526030;
@@ -75,9 +75,6 @@ HOOK_API int faction_upkeep(int faction) {
 
     debug("faction_upkeep %d %d %08x\n", *current_turn, faction, *human_players);
     init_save_game(faction);
-    if (ai_enabled(faction)) {
-        move_upkeep(faction);
-    }
 
     *(int*)0x93A934 = 1;
     social_upkeep(faction);
@@ -93,8 +90,15 @@ HOOK_API int faction_upkeep(int faction) {
         do_all_non_input();
         enemy_strategy(faction);
         do_all_non_input();
+        /*
+        Thinker-specific AI planning routines.
+        If the new social_ai is disabled from the config old version gets called instead.
+        Player factions always skip the new social_ai function.
+        */
         social_ai(faction, -1, -1, -1, -1, 0);
+        move_upkeep(faction);
         do_all_non_input();
+
         if (!is_human(faction)) {
             int cost = corner_market(faction);
             if (!victory_done() && f->energy_credits > cost && f->corner_market_active < 1

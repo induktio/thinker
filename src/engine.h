@@ -34,6 +34,7 @@ extern int* pbem_active;
 extern int* sunspot_duration;
 extern int* diplo_active_faction;
 extern int* diplo_current_friction;
+extern int* diplo_opponent_faction;
 
 HOOK_API int faction_upkeep(int faction);
 

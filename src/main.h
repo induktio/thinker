@@ -93,6 +93,8 @@ struct Config {
     int revised_tech_cost = 1;
     int eco_damage_fix = 1;
     int collateral_damage_value = 3;
+    int disable_planetpearls = 0;
+    int disable_aquatic_bonus_minerals = 0;
 };
 
 /*
@@ -108,6 +110,7 @@ struct AIPlans {
     */
     int proj_limit = 5;
     int psi_score = 0;
+    int need_police = 1;
     int keep_fungus = 0;
     int plant_fungus = 0;
     /*
@@ -127,7 +130,6 @@ extern Points needferry;
 DLL_EXPORT int ThinkerDecide();
 HOOK_API int turn_upkeep();
 HOOK_API int base_production(int id, int v1, int v2, int v3);
-HOOK_API int tech_value(int tech, int faction, int flag);
 HOOK_API int social_ai(int faction, int v1, int v2, int v3, int v4, int v5);
 
 int need_defense(int id);
@@ -136,7 +138,7 @@ int consider_hurry(int id);
 int find_project(int id);
 int find_facility(int id);
 int select_prod(int id);
-int find_proto(int faction, int triad, int mode, bool defend);
+int find_proto(int base_id, int triad, int mode, bool defend);
 int select_combat(int id, bool sea_base, bool build_ships, int probes, int def_land);
 
 

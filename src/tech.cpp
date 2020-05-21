@@ -3,7 +3,6 @@
 
 void init_save_game(int faction) {
     Faction* f = &tx_factions[faction];
-    check_zeros((int*)&f->unk_29, 100);
     check_zeros((int*)&f->thinker_unused, sizeof(f->thinker_unused));
 
     if (f->thinker_header != THINKER_HEADER) {
@@ -16,6 +15,24 @@ void init_save_game(int faction) {
     if (f->thinker_enemy_range < 2 || f->thinker_enemy_range > 40) {
         f->thinker_enemy_range = 20;
     }
+}
+
+HOOK_API int tech_value(int tech, int faction, int flag) {
+    int value = tx_tech_val(tech, faction, flag);
+    if (conf.tech_balance && ai_enabled(faction)) {
+        if (tech == tx_weapon[WPN_TERRAFORMING_UNIT].preq_tech
+        || tech == tx_weapon[WPN_SUPPLY_TRANSPORT].preq_tech
+        || tech == tx_weapon[WPN_PROBE_TEAM].preq_tech
+        || tech == tx_facility[FAC_RECYCLING_TANKS].preq_tech
+        || tech == tx_facility[FAC_CHILDREN_CRECHE].preq_tech
+        || tech == tx_basic->tech_preq_allow_3_energy_sq
+        || tech == tx_basic->tech_preq_allow_3_minerals_sq
+        || tech == tx_basic->tech_preq_allow_3_nutrients_sq) {
+            value += 40;
+        }
+    }
+    debug("tech_value %d %d %d %s\n", tech, faction, value, tx_techs[tech].name);
+    return value;
 }
 
 int tech_level(int id, int lvl) {
@@ -45,7 +62,7 @@ int tech_cost(int faction, int tech) {
         }
         owned = __builtin_popcount(tx_tech_discovered[tech] & links);
     }
-    double base = 3 * pow(level, 3) + 117 * level;
+    double base = 6 * pow(level, 3) + 114 * level;
     double dw;
     double cost = base * *map_area_sq_root / 56
         * m->rule_techcost / 100

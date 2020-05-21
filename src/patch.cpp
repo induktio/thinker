@@ -22,7 +22,6 @@ const char* lm_params[] = {
 };
 
 int prev_rnd = -1;
-Points spawns;
 Points natives;
 Points goodtiles;
 
@@ -148,13 +147,13 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
 }
 
 HOOK_API void find_start(int faction, int* tx, int* ty) {
+    Points spawns;
     bool aquatic = tx_metafactions[faction].rule_flags & FACT_AQUATIC;
     int k = (*map_axis_y < 80 ? 8 : 16);
     if (*map_random_seed != prev_rnd) {
         process_map(k/2);
         prev_rnd = *map_random_seed;
     }
-    spawns.clear();
     for (int i=0; i<*total_num_vehicles; i++) {
         VEH* v = &tx_vehicles[i];
         if (v->faction_id != 0 && v->faction_id != faction) {
@@ -198,6 +197,7 @@ void exit_fail() {
 /*
 Replaces old byte sequence with a new byte sequence at address.
 Verifies that address contains old values before replacing.
+If new_bytes is a null pointer, replace old_bytes with NOP code instead.
 */
 void write_bytes(int addr, const byte* old_bytes, const byte* new_bytes, int len) {
     if ((int*)addr < (int*)AC_IMAGE_BASE || (int*)addr + len > (int*)AC_IMAGE_BASE + AC_IMAGE_LEN) {
@@ -209,7 +209,11 @@ void write_bytes(int addr, const byte* old_bytes, const byte* new_bytes, int len
                 addr + i, *((byte*)addr + i), old_bytes[i]);
             exit_fail();
         }
-        *((byte*)addr + i) = new_bytes[i];
+        if (new_bytes != NULL) {
+            *((byte*)addr + i) = new_bytes[i];
+        } else {
+            *((byte*)addr + i) = 0x90;
+        }
     }
 }
 
@@ -331,6 +335,19 @@ bool patch_setup(Config* cf) {
         const byte old_bytes[] = {0xB2, 0x03};
         const byte new_bytes[] = {0xB2, (byte)cf->collateral_damage_value};
         write_bytes(0x50AAA5, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+    if (cf->disable_aquatic_bonus_minerals) {
+        const byte old_bytes[] = {0x46};
+        const byte new_bytes[] = {0x90};
+        write_bytes(0x4E7604, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+    if (cf->disable_planetpearls) {
+        const byte old_bytes[] = {
+            0x8B,0x45,0x08,0x6A,0x00,0x6A,0x01,0x50,0xE8,0x46,
+            0xAD,0x0B,0x00,0x83,0xC4,0x0C,0x40,0x8D,0x0C,0x80,
+            0x8B,0x06,0xD1,0xE1,0x03,0xC1,0x89,0x06
+        };
+        write_bytes(0x5060ED, old_bytes, NULL, sizeof(old_bytes));
     }
 
     if (lm & LM_JUNGLE) remove_call(0x5C88A0);

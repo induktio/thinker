@@ -1,7 +1,6 @@
-#ifndef __TERRANX_TYPES_H__
-#define __TERRANX_TYPES_H__
-
+#pragma once
 #pragma pack(push, 1)
+
 struct BASE {
     short x;
     short y;
@@ -102,7 +101,7 @@ struct VEH {
     int state;
     short flags;
     short proto_id;
-    short pad_0;
+    short pad_0; // unused
     char faction_id;
     char year_end_lurking;
     char damage_taken;
@@ -125,8 +124,8 @@ struct VEH {
     char unk_1;
     char iter_count;
     char status_icon;
-    char unk_2;
-    char unk_3;
+    char probe_action;
+    char probe_sabotage_id;
     short home_base_id;
     short next_unit_id_stack;
     short prev_unit_id_stack;
@@ -234,7 +233,7 @@ struct Faction {
     int sanction_turns; // Turns left for economic sanctions imposed by other factions for atrocities
     int loan_balance[8]; // Loan balance remaining this faction owes another to be paid over term
     int loan_payment[8]; // The per turn payment amount this faction owes another faction
-    int unk_1[8]; // unused?
+    int unk_1[8]; // unused
     int integrity_blemishes;
     int global_reputation;
     int diplo_gifts[8]; // ? Gifts and bribes we have received
@@ -248,7 +247,7 @@ struct Faction {
     int major_atrocities; // count committed by faction
     int subvert_total; // ? probe: mind control base (+4) / subvert unit (+1) total
     int diplo_subvert[8]; // ? probe: mind control base (+4) / subvert unit (+1) per faction
-    int stolen_data_count[8]; // probe: successfully procured research data (tech/map) per faction
+    int diplo_stolen_techs[8]; // probe: successfully procured research data (tech/map) per faction
     int energy_credits;
     int energy_cost;
     int SE_Politics_pending;
@@ -317,8 +316,8 @@ struct Faction {
     int SE_alloc_psych;
     int SE_alloc_labs;
     int unk_25;
-    int unk_26[11];
-    int tech_ranking;
+    int unk_26[11]; // unused
+    int tech_ranking; // Twice the number of techs discovered
     int unk_27;
     int ODP_deployed;
     int theory_of_everything;
@@ -337,11 +336,11 @@ struct Faction {
     int target_y;
     int unk_28;
     int council_call_turn;
-    int unk_29[11]; // unused
-    int unk_30[11]; // unused
+    int unk_29[11]; // Council related
+    int unk_30[11]; // Council related
     byte facility_announced[4]; // bitfield - used to determine one time play of fac audio blurb
-    int unk_32; // unused
-    int unk_33; // unused
+    int unk_32;
+    int unk_33;
     int unk_35;
     int unk_36;
     int unk_37;
@@ -604,9 +603,10 @@ struct R_Ability {
     char* description;
     char* abbreviation;
     int cost;
-    int padding;
+    int unk_1;
     int flags;
-    int preq_tech;
+    short preq_tech;
+    short pad;
 };
 
 struct R_Chassis {
@@ -697,4 +697,3 @@ struct R_Weapon {
 
 #pragma pack(pop)
 
-#endif // __TERRANX_TYPES_H__

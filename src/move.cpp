@@ -83,6 +83,9 @@ HOOK_API int log_veh_kill(int UNUSED(ptr), int id, int UNUSED(owner), int UNUSED
 }
 
 void move_upkeep(int faction) {
+    if (!ai_enabled(faction)) {
+        return;
+    }
     int enemymask = 1;
     convoys.clear();
     boreholes.clear();
@@ -431,20 +434,25 @@ int base_tile_score(int x1, int y1, int range, int triad) {
         if (sq) {
             int items = sq->items;
             score += (tx_bonus_at(x2, y2) ? 6 : 0);
-            if (sq->landmarks && !(sq->landmarks & (LM_DUNES | LM_SARGASSO | LM_UNITY)))
+            if (sq->landmarks && !(sq->landmarks & (LM_DUNES | LM_SARGASSO | LM_UNITY))) {
                 score += (sq->landmarks & LM_JUNGLE ? 3 : 2);
-            if (i < 8) {
+            }
+            if (i < 8) { // Only adjacent tiles
                 if (triad == TRIAD_SEA && !is_ocean(sq)
-                && nearby_tiles(x2, y2, TRIAD_LAND, 20) >= 20 && ++land < 4)
-                    score += (sq->owner < 1 ? 20 : 5);
-                if (is_ocean_shelf(sq))
+                && nearby_tiles(x2, y2, TRIAD_LAND, 20) >= 20 && ++land < 3) {
+                    score += (sq->owner < 1 ? 20 : 3);
+                }
+                if (is_ocean_shelf(sq)) {
                     score += (triad == TRIAD_SEA ? 3 : 2);
+                }
             }
             if (!is_ocean(sq)) {
-                if (sq->level & TILE_RAINY)
+                if (sq->level & TILE_RAINY) {
                     score += 2;
-                if (sq->level & TILE_MOIST && sq->rocks & TILE_ROLLING)
+                }
+                if (sq->level & TILE_MOIST && sq->rocks & TILE_ROLLING) {
                     score += 2;
+                }
             }
             for (const int* p : priority) if (items & p[0]) score += p[1];
         }
@@ -490,7 +498,7 @@ int colony_move(int id) {
         int limit = (!((*current_turn + id) % 8) ? 500 : 200);
         TileSearch ts;
         ts.init(veh->x, veh->y, triad, 2);
-        while (i++ < limit && k < 20 && (sq = ts.get_next()) != NULL) {
+        while (i++ < limit && k < 30 && (sq = ts.get_next()) != NULL) {
             if (!can_build_base(ts.rx, ts.ry, faction, triad) || !safe_path(ts, faction))
                 continue;
             int score = base_tile_score(ts.rx, ts.ry, ts.dist, triad);
@@ -597,6 +605,7 @@ bool can_fungus(int x, int y, int faction, int bonus, MAP* sq) {
 }
 
 bool can_road(int x, int y, int faction, MAP* sq) {
+    assert(faction > 0 && faction < 8);
     if (is_ocean(sq) || !pm_former[x][y] || !has_terra(faction, FORMER_ROAD, 0)
     || sq->items & (TERRA_ROAD | TERRA_BASE_IN_TILE))
         return false;
@@ -632,6 +641,7 @@ bool can_road(int x, int y, int faction, MAP* sq) {
 }
 
 bool can_sensor(int x, int y, int faction, MAP* sq) {
+    assert(faction > 0 && faction < 8);
     return has_terra(faction, FORMER_SENSOR, is_ocean(sq))
         && ~sq->items & TERRA_SENSOR
         && !nearby_items(x, y, 2, TERRA_SENSOR)

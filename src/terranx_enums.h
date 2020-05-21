@@ -1,5 +1,4 @@
-#ifndef __TERRANX_ENUMS_H__
-#define __TERRANX_ENUMS_H__
+#pragma once
 
 enum facility_id {
     FAC_HEADQUARTERS = 1,
@@ -247,7 +246,7 @@ enum tech_flags {
     TECH_FLAGS_INC_NUTRIENT_FUNGUS = 0x100,
 };
 
-enum probe_action_id {
+enum probe_action {
     PRB_INFILTRATE_DATALINKS = 0x0,
     PRB_PROCURE_RESEARCH_DATA = 0x1,
     PRB_ACTIVATE_SABOTAGE_VIRUS = 0x2,
@@ -865,4 +864,3 @@ enum ai_goal_types {
     AI_GOAL_UNK_2 = 121,
 };
 
-#endif // __TERRANX_ENUMS_H__
