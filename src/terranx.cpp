@@ -55,7 +55,6 @@ fp_4int* tx_base_prod_choices = (fp_4int*)0x4F81A0;
 fp_void* tx_turn_upkeep = (fp_void*)0x5258C0;
 fp_1int* tx_faction_upkeep = (fp_1int*)0x527290;
 fp_3int* tx_tech_val = (fp_3int*)0x5BCBE0;
-fp_5int* tx_crop_yield = (fp_5int*)0x4E6E50;
 fp_6int* tx_social_ai = (fp_6int*)0x5B4790;
 fp_1int* tx_social_set = (fp_1int*)0x5B4600;
 fp_1int* tx_pop_goal = (fp_1int*)0x4EF090;

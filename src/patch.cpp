@@ -29,13 +29,32 @@ bool FileExists(const char* path) {
     return GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES;
 }
 
-HOOK_API int crop_yield(int faction, int base, int x, int y, int tf) {
-    int value = tx_crop_yield(faction, base, x, y, tf);
+HOOK_API int mod_crop_yield(int faction, int base, int x, int y, int tf) {
+    int value = crop_yield(faction, base, x, y, tf);
     MAP* sq = mapsq(x, y);
     if (sq && sq->items & TERRA_THERMAL_BORE) {
         value++;
     }
     return value;
+}
+
+HOOK_API int mod_base_draw(int ptr, int base_id, int x, int y, int zoom, int v1) {
+    BASE* b = &tx_bases[base_id];
+    base_draw(ptr, base_id, x, y, zoom, v1);
+
+    if (zoom >= -8 && has_facility(base_id, FAC_HEADQUARTERS)) {
+        // Game engine uses this way to determine the population label width
+        const char* s1 = "8";
+        const char* s2 = "88";
+        int w = font_width(*(int*)0x93FC24, (int)(b->pop_size >= 10 ? s2 : s1)) + 5;
+        int h = *(int*)((*(int*)0x93FC24)+16) + 4;
+
+        for (int i=1; i<3; i++) {
+            RECT rr = {x-i, y-i, x+w+i, y+h+i};
+            buffer_box(ptr, (int)(&rr), 255, 255);
+        }
+    }
+    return 0;
 }
 
 void process_map(int k) {
@@ -44,7 +63,7 @@ void process_map(int k) {
     Points current;
     natives.clear();
     goodtiles.clear();
-    /* Map area square root values: Standard = 56, Huge = 90 */
+    // Map area square root values: Standard = 56, Huge = 90
     int limit = *map_area_sq_root * (*map_area_sq_root < 70 ? 1 : 2);
 
     for (int y = 0; y < *map_axis_y; y++) {
@@ -262,10 +281,12 @@ bool patch_setup(Config* cf) {
     write_call(0x52768A, (int)turn_upkeep);
     write_call(0x52A4AD, (int)turn_upkeep);
     write_call(0x4E61D0, (int)base_production);
-    write_call(0x4E888C, (int)crop_yield);
     write_call(0x5BDC4C, (int)tech_value);
     write_call(0x579362, (int)enemy_move);
     write_call(0x5C0908, (int)log_veh_kill);
+    write_call(0x4E888C, (int)mod_crop_yield);
+    write_call(0x4672A7, (int)mod_base_draw);
+    write_call(0x40F45A, (int)mod_base_draw);
 
     /*
     Fixes issue where attacking other satellites doesn't work in

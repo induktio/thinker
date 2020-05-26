@@ -12,6 +12,7 @@ int* game_settings = (int*)0x9A6490;
 int* game_state = (int*)0x9A64C0;
 int* game_rules = (int*)0x9A649C;
 int* diff_level = (int*)0x9A64C4;
+int* smacx_enabled = (int*)0x9A6488;
 int* human_players = (int*)0x9A64E8;
 int* current_turn = (int*)0x9A64D4;
 int* active_faction = (int*)0x9A6820;
@@ -51,6 +52,12 @@ fp_void* auto_save = (fp_void*)0x5ABD20;
 fp_2int* parse_num = (fp_2int*)0x625E30;
 fp_icii* parse_says = (fp_icii*)0x625EC0;
 fp_ccici* popp = (fp_ccici*)0x48C0A0;
+fp_5int* crop_yield = (fp_5int*)0x4E6E50;
+fp_6int* base_draw = (fp_6int*)0x55AF20;
+tc_2int* font_width = (tc_2int*)0x619280;
+tc_4int* buffer_box = (tc_4int*)0x5E3203;
+tc_3int* buffer_fill3 = (tc_3int*)0x5DFCD0;
+tc_5int* buffer_write_l = (tc_5int*)0x5DCEA0;
 
 
 bool victory_done() {

@@ -70,7 +70,6 @@ extern fp_4int* tx_base_prod_choices;
 extern fp_void* tx_turn_upkeep;
 extern fp_1int* tx_faction_upkeep;
 extern fp_3int* tx_tech_val;
-extern fp_5int* tx_crop_yield;
 extern fp_6int* tx_social_ai;
 extern fp_1int* tx_social_set;
 extern fp_1int* tx_pop_goal;

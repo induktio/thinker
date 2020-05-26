@@ -2,9 +2,22 @@
 
 #include "main.h"
 
+/* Temporarily disable warnings for thiscall parameter type. */
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
+#endif
+
 typedef int __cdecl fp_ccici(const char*, const char*, int, const char*, int);
 typedef int __cdecl fp_icii(int, const char*, int, int);
+typedef int __thiscall tc_2int(int, int);
+typedef int __thiscall tc_3int(int, int, int);
+typedef int __thiscall tc_4int(int, int, int, int);
+typedef int __thiscall tc_5int(int, int, int, int, int);
 
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 extern int*  current_base_id;
 extern BASE* current_base_ptr;
@@ -12,6 +25,7 @@ extern int* game_settings;
 extern int* game_state;
 extern int* game_rules;
 extern int* diff_level;
+extern int* smacx_enabled;
 extern int* human_players;
 extern int* current_turn;
 extern int* active_faction;
@@ -35,6 +49,13 @@ extern int* sunspot_duration;
 extern int* diplo_active_faction;
 extern int* diplo_current_friction;
 extern int* diplo_opponent_faction;
+
+extern fp_5int* crop_yield;
+extern fp_6int* base_draw;
+extern tc_2int* font_width;
+extern tc_4int* buffer_box;
+extern tc_3int* buffer_fill3;
+extern tc_5int* buffer_write_l;
 
 HOOK_API int faction_upkeep(int faction);
 
