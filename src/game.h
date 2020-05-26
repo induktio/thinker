@@ -105,6 +105,7 @@ class TileSearch {
     int roads;
     int items;
     int y_skip;
+    int owner;
     MAP* sq;
     public:
     int rx, ry, dist, cur;

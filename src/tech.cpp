@@ -46,7 +46,7 @@ int tech_level(int id, int lvl) {
 }
 
 int tech_cost(int faction, int tech) {
-    assert(faction >= 0 && faction < 8);
+    assert(faction > 0 && faction < 8);
     Faction* f = &tx_factions[faction];
     MetaFaction* m = &tx_metafactions[faction];
     int level = 1;
@@ -62,11 +62,10 @@ int tech_cost(int faction, int tech) {
         }
         owned = __builtin_popcount(tx_tech_discovered[tech] & links);
     }
-    double base = 6 * pow(level, 3) + 114 * level;
+    double base = 5 * pow(level, 3) + 115 * level;
     double dw;
     double cost = base * *map_area_sq_root / 56
         * m->rule_techcost / 100
-        * (10 - min(5, max(-5, f->SE_research))) / 10
         * (2 * min(10, max(1, f->tech_ranking/2)) + 1) / 21
         * (*game_rules & RULES_TECH_STAGNATION ? 1.5 : 1.0)
         * tx_basic->rules_tech_discovery_rate / 100

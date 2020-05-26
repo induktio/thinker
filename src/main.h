@@ -66,6 +66,7 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define SYNC 0
 #define NO_SYNC 1
 #define NEAR_ROADS 3
+#define TERRITORY_LAND 4
 #define RES_NONE 0
 #define RES_NUTRIENT 1
 #define RES_MINERAL 2
@@ -109,6 +110,10 @@ struct AIPlans {
     and only the top third are selected for project building.
     */
     int proj_limit = 5;
+    /*
+    PSI combat units are only selected for production if this score is higher than zero.
+    Higher values will make the prototype picker choose these units more often.
+    */
     int psi_score = 0;
     int need_police = 1;
     int keep_fungus = 0;

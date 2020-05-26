@@ -498,7 +498,7 @@ int unit_score(int id, int faction, int cfactor, int minerals, bool def) {
         }
     }
     int turns = u->cost * cfactor / max(2, minerals);
-    int score = v - 9 * turns;
+    int score = v - turns * (u->weapon_type == WPN_COLONY_MODULE ? 18 : 9);
     debug("unit_score %s cfactor: %d minerals: %d cost: %d turns: %d score: %d\n",
         u->name, cfactor, minerals, u->cost, turns, score);
     return score;
@@ -868,7 +868,7 @@ int select_prod(int id) {
         && (base->pop_size > 1 || base->nutrient_surplus > 1)
         && pods < 2 && *total_num_bases < 500 && base_ratio < 1.0;
     bool sea_base = is_sea_base(id);
-    f->thinker_enemy_range = (enemyrange + 7 * f->thinker_enemy_range)/8;
+    f->thinker_enemy_range = (enemyrange + 9 * f->thinker_enemy_range)/10;
 
     double w1 = min(1.0, max(0.5, 1.0 * minerals / p->proj_limit));
     double w2 = 2.0 * enemymil / (f->thinker_enemy_range * 0.1 + 0.1) + 0.5 * p->enemy_bases
@@ -890,11 +890,13 @@ int select_prod(int id) {
         return -FAC_HEADQUARTERS;
     } else if (minerals > reserve && random(100) < (int)(100.0 * threat)) {
         return select_combat(id, sea_base, build_ships, probes, (defenders < 2 && enemyrange < 12));
-    } else if (has_formers && formers < (base->pop_size < (sea_base ? 4 : 3) ? 1 : 2)) {
+    } else if (has_formers && formers < (base->pop_size < (sea_base ? 4 : 3) ? 1 : 2)
+    && (need_formers(base->x, base->y, faction) || (!formers && id & 1))) {
         if (base->mineral_surplus >= 8 && has_chassis(faction, CHS_GRAVSHIP)) {
             int unit = find_proto(id, TRIAD_AIR, WMODE_TERRAFORMER, DEF);
-            if (unit_triad(unit) == TRIAD_AIR)
+            if (unit_triad(unit) == TRIAD_AIR) {
                 return unit;
+            }
         }
         if (sea_base || (build_ships && formers == 1 && !random(3)))
             return find_proto(id, TRIAD_SEA, WMODE_TERRAFORMER, DEF);
@@ -909,8 +911,9 @@ int select_prod(int id) {
             return find_proto(id, TRIAD_SEA, WMODE_TRANSPORT, DEF);
         } else if (build_pods && !can_build(id, FAC_RECYCLING_TANKS)) {
             int tr = select_colony(id, pods, build_ships);
-            if (tr == TRIAD_LAND || tr == TRIAD_SEA)
+            if (tr == TRIAD_LAND || tr == TRIAD_SEA) {
                 return find_proto(id, tr, WMODE_COLONIST, DEF);
+            }
         }
         return find_facility(id);
     }

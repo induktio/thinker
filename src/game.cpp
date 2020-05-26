@@ -136,8 +136,8 @@ bool can_build(int base_id, int id) {
         }
     }
     /* Rare special case if the game engine reaches the global unit limit. */
-    if (id == FAC_STOCKPILE_ENERGY && !can_build_unit(faction, -1)) {
-        return (*current_turn + base_id) % 4 > 0;
+    if (id == FAC_STOCKPILE_ENERGY) {
+        return (*current_turn + base_id) % 4 > 0 || !can_build_unit(faction, -1);
     }
     return has_tech(faction, tx_facility[id].preq_tech) && !has_facility(base_id, id);
 }
@@ -509,11 +509,13 @@ void print_base(int id) {
 }
 
 void TileSearch::init(int x, int y, int tp) {
-    assert(tp == TRIAD_LAND || tp == TRIAD_SEA || tp == TRIAD_AIR || tp == NEAR_ROADS);
+    assert(tp == TRIAD_LAND || tp == TRIAD_SEA || tp == TRIAD_AIR
+        || tp == NEAR_ROADS || tp == TERRITORY_LAND);
     head = 0;
     tail = 0;
     items = 0;
     roads = 0;
+    owner = 0;
     y_skip = 0;
     type = tp;
     oldtiles.clear();
@@ -521,6 +523,7 @@ void TileSearch::init(int x, int y, int tp) {
     if (sq) {
         items++;
         tail = 1;
+        owner = sq->owner;
         newtiles[0] = {x, y, 0, -1};
         oldtiles.insert({x, y});
         if (!is_ocean(sq)) {
@@ -570,7 +573,8 @@ MAP* TileSearch::get_next() {
             continue;
         bool skip = (type == TRIAD_LAND && is_ocean(sq)) ||
                     (type == TRIAD_SEA && !is_ocean(sq)) ||
-                    (type == NEAR_ROADS && (is_ocean(sq) || !(sq->items & roads)));
+                    (type == NEAR_ROADS && (is_ocean(sq) || !(sq->items & roads))) ||
+                    (type == TERRITORY_LAND && (is_ocean(sq) || sq->owner != owner));
         if (!first && skip) {
             if (type == NEAR_ROADS && !is_ocean(sq))
                 return sq;

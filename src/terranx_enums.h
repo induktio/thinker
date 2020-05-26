@@ -817,7 +817,7 @@ enum former_action {
     FORMER_SOLAR = 3,
     FORMER_FOREST = 4,
     FORMER_ROAD = 5,
-    FORMER_MAG_TUBE = 6,
+    FORMER_MAGTUBE = 6,
     FORMER_BUNKER = 7,
     FORMER_AIRBASE = 8,
     FORMER_SENSOR = 9,
