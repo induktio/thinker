@@ -92,7 +92,7 @@ PlaEcon, ; Technology for economic victory
 50,      ; Maximum % damage inflicted by arty versus units in base/bunker
 99,      ; Maximum % damage inflicted by arty versus units in open
 100,     ; Maximum % damage inflicted by arty versus units at sea
-1, 2     ; Numerator/Denominator for frequency of global warming (1,2 would be "half" normal warming).
+1, 3     ; Numerator/Denominator for frequency of global warming (1,2 would be "half" normal warming).
 2100     ; Normal starting year
 2600     ; Normal ending year for lowest 3 difficulty levels
 2500     ; Normal ending year for highest 3 difficulty levels
@@ -608,7 +608,7 @@ Missile,    Missile-, Miss., M
 ; Reac    = Reactor level 1-4
 ;
 #UNITS
-23
+25
 Colony Pod,             Infantry, Colony Pod,   Scout,      8, 0, 0, None,    -1, 00000000000000000000000000
 Formers,                Infantry, Formers,      Scout,      9, 0, 0, Ecology, -1, 00000000000000000000000000
 Scout Patrol,           Infantry, Gun,          Scout,      3, 0, 0, None,    -1, 00000000000000000000000000
@@ -632,6 +632,8 @@ Fungal Tower,           Infantry, Psi,          Psi,        3, 0, 0, Disable,  1
 Unity Mining Laser,     Infantry, Laser,        Scout,      0, 0, 0, Disable, -1, 00000000000000000000000000
 Sea Escape Pod,         Foil,     Colony Pod,   Scout,      8, 0, 0, Disable, -1, 00000000000000000000000000
 Unity Gunship,          Foil,     Gun,          Scout,     -1, 0, 0, Disable, -1, 00000000000000000000000000
+Trance Scout Patrol,    Infantry, Gun,          Scout,      3, 0, 0, Brain,   -1, 00000001000000000000000000
+Police Garrison,        Infantry, Gun,          Scout,      2, 0, 0, Integ,   -1, 00010000000000000000000000
 
 ;
 ; Base Facilities

@@ -303,6 +303,16 @@ int point_range(const Points& S, int x, int y) {
     return z;
 }
 
+double mean_range(const Points& S, int x, int y) {
+    int n = 0;
+    int sum = 0;
+    for (auto& p : S) {
+        sum += map_range(x, y, p.first, p.second);
+        n++;
+    }
+    return (n > 0 ? (double)sum/n : 0);
+}
+
 MAP* mapsq(int x, int y) {
     if (x >= 0 && y >= 0 && x < *map_axis_x && y < *map_axis_y) {
         int i = x/2 + (*map_half_x) * y;

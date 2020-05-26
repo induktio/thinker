@@ -50,8 +50,10 @@ extern int* diplo_active_faction;
 extern int* diplo_current_friction;
 extern int* diplo_opponent_faction;
 
+extern fp_3int* capture_base;
 extern fp_5int* crop_yield;
 extern fp_6int* base_draw;
+extern fp_3int* draw_tile;
 extern tc_2int* font_width;
 extern tc_4int* buffer_box;
 extern tc_3int* buffer_fill3;

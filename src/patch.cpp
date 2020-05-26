@@ -57,6 +57,41 @@ HOOK_API int mod_base_draw(int ptr, int base_id, int x, int y, int zoom, int v1)
     return 0;
 }
 
+HOOK_API int mod_capture_base(int base_id, int faction, int probe) {
+    int old_faction = tx_bases[base_id].faction_id;
+    capture_base(base_id, faction, probe);
+    assert(faction > 0 && faction < 8 && faction != old_faction);
+
+    if (find_hq(old_faction) < 0) {
+        double best_score = INT_MIN;
+        int best_id = -1;
+        Points bases;
+        for (int i=0; i<*total_num_bases; i++) {
+            BASE* b = &tx_bases[i];
+            if (b->faction_id == old_faction) {
+                bases.insert({b->x, b->y});
+            }
+        }
+        for (int i=0; i<*total_num_bases; i++) {
+            BASE* b = &tx_bases[i];
+            if (b->faction_id == old_faction) {
+                double score = b->pop_size*0.2 - mean_range(bases, b->x, b->y);
+                debug("relocate_hq %.4f %s\n", score, b->name);
+                if (score > best_score) {
+                    best_id = i;
+                    best_score = score;
+                }
+            }
+        }
+        if (best_id >= 0) {
+            BASE* b = &tx_bases[best_id];
+            b->facilities_built[FAC_HEADQUARTERS/8] |= (1 << (FAC_HEADQUARTERS % 8));
+            draw_tile(b->x, b->y, 0);
+        }
+    }
+    return 0;
+}
+
 void process_map(int k) {
     TileSearch ts;
     Points visited;
@@ -346,6 +381,11 @@ bool patch_setup(Config* cf) {
         write_call(0x5BE5E1, (int)tech_selection);
         write_call(0x5BE690, (int)tech_selection);
         write_call(0x5BEB5D, (int)tech_selection);
+    }
+    if (cf->auto_relocate_hq) {
+        write_call(0x4CCF13, (int)mod_capture_base);
+        write_call(0x598778, (int)mod_capture_base);
+        write_call(0x5A4AB0, (int)mod_capture_base);
     }
     if (cf->eco_damage_fix) {
         const byte old_bytes[] = {0x84,0x05,0xE8,0x64,0x9A,0x00,0x74,0x24};

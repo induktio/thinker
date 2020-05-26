@@ -92,6 +92,7 @@ struct Config {
     int nutrient_bonus = 1;
     int landmarks = 0xffff;
     int revised_tech_cost = 1;
+    int auto_relocate_hq = 1;
     int eco_damage_fix = 1;
     int collateral_damage_value = 3;
     int disable_planetpearls = 0;

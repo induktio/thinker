@@ -51,6 +51,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->nutrient_bonus = atoi(value);
     } else if (MATCH("thinker", "revised_tech_cost")) {
         cf->revised_tech_cost = atoi(value);
+    } else if (MATCH("thinker", "auto_relocate_hq")) {
+        cf->auto_relocate_hq = atoi(value);
     } else if (MATCH("thinker", "eco_damage_fix")) {
         cf->eco_damage_fix = atoi(value);
     } else if (MATCH("thinker", "collateral_damage_value")) {
@@ -886,7 +888,7 @@ int select_prod(int id) {
             return find_proto(id, TRIAD_LAND, COMBAT, DEF);
         else
             return BSC_SCOUT_PATROL;
-    } else if (relocate_hq(id)) {
+    } else if (!conf.auto_relocate_hq && relocate_hq(id)) {
         return -FAC_HEADQUARTERS;
     } else if (minerals > reserve && random(100) < (int)(100.0 * threat)) {
         return select_combat(id, sea_base, build_ships, probes, (defenders < 2 && enemyrange < 12));
