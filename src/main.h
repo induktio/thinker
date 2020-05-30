@@ -98,6 +98,9 @@ struct Config {
     int collateral_damage_value = 3;
     int disable_planetpearls = 0;
     int disable_aquatic_bonus_minerals = 0;
+    int patch_content_pop = 0;
+    int content_pop_player[6] = {6,5,4,3,2,1};
+    int content_pop_computer[6] = {3,3,3,3,3,3};
 };
 
 /*
@@ -147,6 +150,7 @@ int find_facility(int id);
 int select_prod(int id);
 int find_proto(int base_id, int triad, int mode, bool defend);
 int select_combat(int id, bool sea_base, bool build_ships, int probes, int def_land);
+int opt_list_parse(int* ptr, char* buf, int len, int min_val);
 
 
 

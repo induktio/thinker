@@ -64,12 +64,13 @@ int handler(void* user, const char* section, const char* name, const char* value
     } else if (MATCH("thinker", "disable_aquatic_bonus_minerals")) {
         cf->disable_aquatic_bonus_minerals = max(0, atoi(value));
     } else if (MATCH("thinker", "cost_factor")) {
-        const char *d=",";
-        char *s, *p;
-        p = strtok_r(buf, d, &s);
-        for (int i=0; i<6 && p != NULL; i++, p = strtok_r(NULL, d, &s)) {
-            tx_cost_ratios[i] = max(1, atoi(p));
-        }
+        opt_list_parse(tx_cost_ratios, buf, 6, 1);
+    } else if (MATCH("thinker", "content_pop_player")) {
+        opt_list_parse(conf.content_pop_player, buf, 6, 0);
+        conf.patch_content_pop = 1;
+    } else if (MATCH("thinker", "content_pop_computer")) {
+        opt_list_parse(conf.content_pop_computer, buf, 6, 0);
+        conf.patch_content_pop = 1;
     } else {
         for (int i=0; i<16; i++) {
             if (MATCH("thinker", lm_params[i])) {
@@ -78,6 +79,16 @@ int handler(void* user, const char* section, const char* name, const char* value
             }
         }
         return 0;  /* unknown section/name, error */
+    }
+    return 1;
+}
+
+int opt_list_parse(int* ptr, char* buf, int len, int min_val) {
+    const char *d=",";
+    char *s, *p;
+    p = strtok_r(buf, d, &s);
+    for (int i=0; i<len && p != NULL; i++, p = strtok_r(NULL, d, &s)) {
+        ptr[i] = max(min_val, atoi(p));
     }
     return 1;
 }
