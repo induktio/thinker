@@ -76,6 +76,7 @@ static_assert(sizeof(struct MAP) == 44, "");
 
 struct Config {
     int free_formers = 0;
+    int free_colony_pods = 0;
     int satellites_nutrient = 0;
     int satellites_mineral = 0;
     int satellites_energy = 0;

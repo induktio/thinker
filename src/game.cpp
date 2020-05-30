@@ -314,6 +314,7 @@ double mean_range(const Points& S, int x, int y) {
 }
 
 MAP* mapsq(int x, int y) {
+    assert((x + y)%2 == 0);
     if (x >= 0 && y >= 0 && x < *map_axis_x && y < *map_axis_y) {
         int i = x/2 + (*map_half_x) * y;
         return &((*tx_map_ptr)[i]);
@@ -464,6 +465,17 @@ int coast_tiles(int x, int y) {
         }
     }
     return n;
+}
+
+int spawn_veh(int unit_id, int faction, int x, int y, int base_id) {
+    int id = tx_veh_init(unit_id, faction, x, y);
+    if (id >= 0) {
+        tx_vehicles[id].home_base_id = base_id;
+        // Set these flags to disable any non-Thinker unit automation.
+        tx_vehicles[id].state |= VSTATE_UNK_40000;
+        tx_vehicles[id].state &= ~VSTATE_UNK_2000;
+    }
+    return id;
 }
 
 char* parse_str(char* buf, int len, const char* s1, const char* s2, const char* s3, const char* s4) {

@@ -31,7 +31,8 @@ HOOK_API int tech_value(int tech, int faction, int flag) {
             value += 40;
         }
     }
-    debug("tech_value %d %d %d %s\n", tech, faction, value, tx_techs[tech].name);
+    debug("tech_value %d %d value: %3d tech: %2d %s\n",
+        *current_turn, faction, value, tech, tx_techs[tech].name);
     return value;
 }
 
@@ -62,24 +63,21 @@ int tech_cost(int faction, int tech) {
         }
         owned = __builtin_popcount(tx_tech_discovered[tech] & links);
     }
-    double base = 5 * pow(level, 3) + 115 * level;
-    double dw;
-    double cost = base * *map_area_sq_root / 56
+    double diff_factor = 1.0;
+    if (!is_human(faction)) {
+        diff_factor = (1.0 + 0.08 * (tx_cost_ratios[*diff_level] - 10));
+    }
+    double cost = (5 * pow(level, 3) + 75 * level - 20)
+        * diff_factor
+        * *map_area_sq_root / 56
         * m->rule_techcost / 100
-        * (2 * min(10, max(1, f->tech_ranking/2)) + 1) / 21
         * (*game_rules & RULES_TECH_STAGNATION ? 1.5 : 1.0)
         * tx_basic->rules_tech_discovery_rate / 100
         * (owned > 0 ? (owned > 1 ? 0.75 : 0.85) : 1.0);
 
-    if (is_human(faction)) {
-        dw = (1.0 + 0.1 * (*diff_level +
-            (*diff_level < DIFF_LIBRARIAN ? 1 : 0) - DIFF_LIBRARIAN));
-    } else {
-        dw = (1.0 + 0.1 * (tx_cost_ratios[*diff_level] - 10));
-    }
-    cost *= dw;
-    debug("tech_cost %d %d | %8.4f %8.4f %8.4f %d %d %d %s\n", *current_turn, faction,
-        base, dw, cost, level, owned, tech, (tech >= 0 ? tx_techs[tech].name : NULL));
+    debug("tech_cost %d %d diff: %.4f cost: %8.4f level: %d owned: %d tech: %d %s\n",
+        *current_turn, faction, diff_factor, cost, level, owned, tech,
+        (tech >= 0 ? tx_techs[tech].name : NULL));
 
     return max(2, (int)cost);
 }

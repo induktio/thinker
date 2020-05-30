@@ -86,6 +86,7 @@ int nearby_items(int x, int y, int range, uint32_t item);
 int bases_in_range(int x, int y, int range);
 int nearby_tiles(int x, int y, int type, int limit);
 int coast_tiles(int x, int y);
+int spawn_veh(int unit_id, int faction, int x, int y, int base_id);
 char* parse_str(char* buf, int len, const char* s1, const char* s2, const char* s3, const char* s4);
 void check_zeros(int* ptr, int len);
 void print_map(int x, int y);

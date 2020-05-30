@@ -21,6 +21,8 @@ int handler(void* user, const char* section, const char* name, const char* value
     #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
     if (MATCH("thinker", "free_formers")) {
         cf->free_formers = atoi(value);
+    } else if (MATCH("thinker", "free_colony_pods")) {
+        cf->free_colony_pods = atoi(value);
     } else if (MATCH("thinker", "satellites_nutrient")) {
         cf->satellites_nutrient = max(0, atoi(value));
     } else if (MATCH("thinker", "satellites_mineral")) {
@@ -176,8 +178,8 @@ HOOK_API int base_production(int id, int v1, int v2, int v3) {
 
 HOOK_API int turn_upkeep() {
     tx_turn_upkeep();
-    debug("turn_upkeep %d bases=%d units=%d\n",
-    *current_turn, *total_num_bases, *total_num_vehicles);
+    debug("turn_upkeep %d bases: %d vehicles: %d\n",
+        *current_turn, *total_num_bases, *total_num_vehicles);
 
     for (int i=1; i<8 && conf.design_units; i++) {
         if (is_human(i) || !tx_factions[i].current_num_bases)
@@ -238,12 +240,13 @@ HOOK_API int turn_upkeep() {
             if (1 << veh->faction_id & bonus) {
                 bonus &= ~(1 << veh->faction_id);
                 MAP* sq = mapsq(veh->x, veh->y);
-                int unit = (is_ocean(sq) ? BSC_SEA_FORMERS : BSC_FORMERS);
+                int former = (is_ocean(sq) ? BSC_SEA_FORMERS : BSC_FORMERS);
+                int colony = (is_ocean(sq) ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
                 for (int j=0; j<conf.free_formers; j++) {
-                    int k = tx_veh_init(unit, veh->faction_id, veh->x, veh->y);
-                    if (k >= 0) {
-                        tx_vehicles[k].home_base_id = -1;
-                    }
+                    spawn_veh(former, veh->faction_id, veh->x, veh->y, -1);
+                }
+                for (int j=0; j<conf.free_colony_pods; j++) {
+                    spawn_veh(colony, veh->faction_id, veh->x, veh->y, -1);
                 }
             }
         }
@@ -315,9 +318,9 @@ HOOK_API int turn_upkeep() {
         } else {
             plans[i].plant_fungus = 0;
         }
-        debug("turn_values %d proj_limit=%d psi=%d keep_fungus=%d "\
-            "plant_fungus=%d enemy_bases=%d enemy_range=%.4f\n",
-            i, plans[i].proj_limit, psi, plans[i].keep_fungus, plans[i].plant_fungus,
+        debug("turn_values %d %d proj_limit: %d psi: %d keep_fungus: %d "\
+            "plant_fungus: %d enemy_bases: %d enemy_range: %.4f\n",
+            *current_turn, i, plans[i].proj_limit, psi, plans[i].keep_fungus, plans[i].plant_fungus,
             plans[i].enemy_bases, f->thinker_enemy_range);
     }
 
@@ -1057,7 +1060,8 @@ HOOK_API int social_ai(int faction, int v1, int v2, int v3, int v4, int v5) {
             pop_boom = ((f->SE_growth < 4 ? 4 : 8) * want_pop) >= pop_total;
         }
     }
-    debug("social_params %d %d %8s | %d %3d %3d | %2d %4x %4x %4x\n", *current_turn, faction, m->filename,
+    debug("social_params %d %d %8s pop_boom: %d want_pop: %3d pop_total: %3d range: %2d "\
+        "immunity: %04x impunity: %04x penalty: %04x\n", *current_turn, faction, m->filename,
         pop_boom, want_pop, pop_total, range, immunity, impunity, penalty);
     int score_diff = 1 + random(6);
     int sf = -1;
@@ -1082,11 +1086,12 @@ HOOK_API int social_ai(int faction, int v1, int v2, int v3, int v4, int v5) {
     int cost = (m->rule_flags & FACT_ALIEN ? 36 : 24);
     if (sf >= 0 && f->energy_credits > cost) {
         int sm1 = (&f->SE_Politics)[sf];
-        debug("social_change %d %d %8s | %d %d %2d %2d | %s -> %s\n", *current_turn, faction, m->filename,
-            sf, sm2, cost, score_diff, s[sf].soc_name[sm1], s[sf].soc_name[sm2]);
         (&f->SE_Politics_pending)[sf] = sm2;
         f->energy_credits -= cost;
         f->SE_upheaval_cost_paid += cost;
+        debug("social_change %d %d %8s cost: %2d score_diff: %2d %s -> %s\n",
+            *current_turn, faction, m->filename,
+            cost, score_diff, s[sf].soc_name[sm1], s[sf].soc_name[sm2]);
     }
     tx_social_set(faction);
     tx_consider_designs(faction);

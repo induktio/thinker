@@ -19,8 +19,8 @@ typedef int __thiscall tc_5int(int, int, int, int, int);
 #pragma GCC diagnostic pop
 #endif
 
-extern int*  current_base_id;
-extern BASE* current_base_ptr;
+extern BASE** current_base_ptr;
+extern int* current_base_id;
 extern int* game_settings;
 extern int* game_state;
 extern int* game_rules;
@@ -33,6 +33,7 @@ extern int* total_num_bases;
 extern int* total_num_vehicles;
 extern int* map_random_seed;
 extern int* map_toggle_flat;
+extern int* map_area_tiles;
 extern int* map_area_sq_root;
 extern int* map_axis_x;
 extern int* map_axis_y;
@@ -51,6 +52,7 @@ extern int* diplo_current_friction;
 extern int* diplo_opponent_faction;
 
 extern fp_3int* capture_base;
+extern fp_1int* base_kill;
 extern fp_5int* crop_yield;
 extern fp_6int* base_draw;
 extern fp_3int* draw_tile;

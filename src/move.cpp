@@ -471,6 +471,8 @@ bool valid_colony_path(int id) {
 }
 
 bool can_build_base(int x, int y, int faction, int triad) {
+    if ((x + y)%2) // Invalid map coordinates
+        return false;
     MAP* sq = mapsq(x, y);
     if (!sq || y < 3 || y >= *map_axis_y-3 || (~sq->landmarks & LM_JUNGLE && pm_former[x][y] > 0))
         return false;
@@ -595,7 +597,8 @@ int colony_move(int id) {
         if (tx >= 0) {
             debug("colony_move %d %d -> %d %d | %d %d | %d\n", veh->x, veh->y, tx, ty, faction, id, tscore);
             adjust_value(pm_former, tx, ty, 1, 1);
-            veh->state |= VSTATE_UNK_40000; /* Disable default unit automation. */
+            // Set these flags to disable any non-Thinker unit automation.
+            veh->state |= VSTATE_UNK_40000;
             veh->state &= ~VSTATE_UNK_2000;
             return set_move_to(id, tx, ty);
         }

@@ -6,8 +6,8 @@
 
 const char* ScriptTxtID = "SCRIPT";
 
-int*  current_base_id = (int*)0x689370;
-BASE* current_base_ptr = (BASE*)0x90EA30;
+BASE** current_base_ptr = (BASE**)0x90EA30;
+int* current_base_id = (int*)0x689370;
 int* game_settings = (int*)0x9A6490;
 int* game_state = (int*)0x9A64C0;
 int* game_rules = (int*)0x9A649C;
@@ -20,6 +20,7 @@ int* total_num_bases = (int*)0x9A64CC;
 int* total_num_vehicles = (int*)0x9A64C8;
 int* map_random_seed = (int*)0x949878;
 int* map_toggle_flat = (int*)0x94988C;
+int* map_area_tiles = (int*)0x949884;
 int* map_area_sq_root = (int*)0x949888;
 int* map_axis_x = (int*)0x949870;
 int* map_axis_y = (int*)0x949874;
@@ -53,6 +54,7 @@ fp_2int* parse_num = (fp_2int*)0x625E30;
 fp_icii* parse_says = (fp_icii*)0x625EC0;
 fp_ccici* popp = (fp_ccici*)0x48C0A0;
 fp_3int* capture_base = (fp_3int*)0x50C510;
+fp_1int* base_kill = (fp_1int*)0x4E5250;
 fp_5int* crop_yield = (fp_5int*)0x4E6E50;
 fp_6int* base_draw = (fp_6int*)0x55AF20;
 fp_3int* draw_tile = (fp_3int*)0x46AF40;
@@ -82,7 +84,7 @@ HOOK_API int faction_upkeep(int faction) {
     Faction* f = &tx_factions[faction];
     MetaFaction* m = &tx_metafactions[faction];
 
-    debug("faction_upkeep %d %d %08x\n", *current_turn, faction, *human_players);
+    debug("faction_upkeep %d %d\n", *current_turn, faction);
     init_save_game(faction);
 
     *(int*)0x93A934 = 1;

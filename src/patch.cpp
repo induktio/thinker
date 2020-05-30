@@ -57,24 +57,20 @@ HOOK_API int mod_base_draw(int ptr, int base_id, int x, int y, int zoom, int v1)
     return 0;
 }
 
-HOOK_API int mod_capture_base(int base_id, int faction, int probe) {
-    int old_faction = tx_bases[base_id].faction_id;
-    capture_base(base_id, faction, probe);
-    assert(faction > 0 && faction < 8 && faction != old_faction);
-
-    if (find_hq(old_faction) < 0) {
+void check_relocate_hq(int faction) {
+    if (find_hq(faction) < 0) {
         double best_score = INT_MIN;
         int best_id = -1;
         Points bases;
         for (int i=0; i<*total_num_bases; i++) {
             BASE* b = &tx_bases[i];
-            if (b->faction_id == old_faction) {
+            if (b->faction_id == faction) {
                 bases.insert({b->x, b->y});
             }
         }
         for (int i=0; i<*total_num_bases; i++) {
             BASE* b = &tx_bases[i];
-            if (b->faction_id == old_faction) {
+            if (b->faction_id == faction) {
                 double score = b->pop_size*0.2 - mean_range(bases, b->x, b->y);
                 debug("relocate_hq %.4f %s\n", score, b->name);
                 if (score > best_score) {
@@ -89,6 +85,21 @@ HOOK_API int mod_capture_base(int base_id, int faction, int probe) {
             draw_tile(b->x, b->y, 0);
         }
     }
+}
+
+HOOK_API int mod_capture_base(int base_id, int faction, int probe) {
+    int old_faction = tx_bases[base_id].faction_id;
+    assert(faction > 0 && faction < 8 && faction != old_faction);
+    capture_base(base_id, faction, probe);
+    check_relocate_hq(old_faction);
+    return 0;
+}
+
+HOOK_API int mod_base_kill(int base_id) {
+    int old_faction = tx_bases[base_id].faction_id;
+    assert(base_id >= 0 && base_id < *total_num_bases);
+    base_kill(base_id);
+    check_relocate_hq(old_faction);
     return 0;
 }
 
@@ -338,6 +349,12 @@ bool patch_setup(Config* cf) {
     }
 
     if (cf->smac_only) {
+        if (!FileExists("ac_mod/alphax.txt") || !FileExists("ac_mod/conceptsx.txt")
+        || !FileExists("ac_mod/tutor.txt") || !FileExists("ac_mod/helpx.txt")) {
+            MessageBoxA(0, "Error while opening ac_mod folder. Unable to start smac_only mode.",
+                MOD_VERSION, MB_OK | MB_ICONSTOP);
+            exit(EXIT_FAILURE);
+        }
         *(int*)0x45F97A = 0;
         *(const char**)0x691AFC = ac_alpha;
         *(const char**)0x691B00 = ac_help;
@@ -386,6 +403,16 @@ bool patch_setup(Config* cf) {
         write_call(0x4CCF13, (int)mod_capture_base);
         write_call(0x598778, (int)mod_capture_base);
         write_call(0x5A4AB0, (int)mod_capture_base);
+        write_call(0x4CD629, (int)mod_base_kill); // action_oblit
+        write_call(0x4F1466, (int)mod_base_kill); // base_production
+        write_call(0x4EF319, (int)mod_base_kill); // base_growth
+        write_call(0x500FD7, (int)mod_base_kill); // planet_busting
+        write_call(0x50ADA8, (int)mod_base_kill); // battle_fight_2
+        write_call(0x50AE77, (int)mod_base_kill); // battle_fight_2
+        write_call(0x520E1A, (int)mod_base_kill); // random_events
+        write_call(0x521121, (int)mod_base_kill); // random_events
+        write_call(0x5915A6, (int)mod_base_kill); // alt_set
+        write_call(0x598673, (int)mod_base_kill); // order_veh
     }
     if (cf->eco_damage_fix) {
         const byte old_bytes[] = {0x84,0x05,0xE8,0x64,0x9A,0x00,0x74,0x24};
