@@ -67,7 +67,7 @@ int tech_cost(int faction, int tech) {
     if (!is_human(faction)) {
         diff_factor = (1.0 + 0.08 * (tx_cost_ratios[*diff_level] - 10));
     }
-    double cost = (5 * pow(level, 3) + 75 * level - 20)
+    double cost = (6 * pow(level, 3) + 74 * level - 20)
         * diff_factor
         * *map_area_sq_root / 56
         * m->rule_techcost / 100

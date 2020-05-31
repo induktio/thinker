@@ -1,6 +1,34 @@
 
 # Thinker mod release changelog
-<!-- Full documentation available at: https://github.com/induktio/thinker -->
+
+
+## Version 2.0 (2020-05-31)
+* Road building algorithm has been completely rewritten to build more natural looking road networks.
+* AI will now build magtubes after the tech is acquired.
+* Draw a visual marker around the population label of HQ bases to identify them more easily.
+* Tech costs in revised_tech_cost formula towards the late game are increased. Techs in the lower tiers are slightly cheaper than before.
+* AI research bonuses in revised_tech_cost have been significantly reduced.
+* Remove the mechanic where the first 10 techs are cheaper.
+* Adjust the mod to calculate Social Engineering research effect similarly to vanilla game.
+* AI prototype selection formula has been revamped to take into account more factors and to avoid selecting units that would take too long to produce.
+* Adjust the AI logic whether to build conventional or PSI units. AI now takes into account if the faction has Worm Police ability.
+* AI now attempts to design various units equipped with the Trance ability.
+* AI sometimes builds Tachyon Fields, Geosynchronous Survey Pods and Flechette Defense Systems.
+* Reduce overall sea level rise frequency to 1/3.
+* Add Trance Scout Patrol and Police Garrison predefined units.
+* Add proper parsing for special scenario rules: No terraforming, No colony pods can be built and No secret projects can be built.
+* Add better handling for cases where the global unit count is nearing the limit (2048) and make the AI build facilities instead. If no suitable facilities are available, AI will switch production to Stockpile Energy.
+* Add meaningful error message dialogs if some of the startup checks for Thinker fail.
+* Import the following patches from Will To Power mod by tnevolin: collateral_damage_value, disable_planetpearls, disable_aquatic_bonus_minerals. Each of them also has their own config option.
+* New option: auto_relocate_hq will automatically move lost HQs to another suitable base.
+* New option: eco_damage_fix will equalize the eco damage between player and AI bases.
+* New option: content_pop_player/content_pop_computer will adjust the default number of content population in each base.
+* New option: free_colony_pods can be used to spawn extra units for the computer factions.
+* Fix issue where AI might build Voice of Planet even if Transcendence victory condition was disabled.
+* Fix issue where AI bases sometimes persist without any defenders. AI will now force switch production away from facilities if no valid defenders are present.
+* Fix a bug where attacking other satellites didn't work in Orbital Attack View when smac_only was activated. Credits: Scient.
+* Fix engine bug where a faction with enough energy credits would attempt to Corner Energy Market every turn. Now the AI properly only attempts it once and waits for the countdown to complete.
+
 
 ## Version 1.0 (2019-12-12)
 * SMAC in SMACX mod files are now included with Thinker by default (can be enabled with smac_only=1)
