@@ -21,9 +21,9 @@ const char* lm_params[] = {
     "borehole", "nexus", "unity", "fossil"
 };
 
-int prev_rnd = -1;
 Points natives;
 Points goodtiles;
+bool has_supply_pods = true;
 
 bool FileExists(const char* path) {
     return GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES;
@@ -113,59 +113,77 @@ HOOK_API int content_pop() {
 }
 
 void process_map(int k) {
-    TileSearch ts;
-    Points visited;
-    Points current;
     natives.clear();
     goodtiles.clear();
-    // Map area square root values: Standard = 56, Huge = 90
+    /*
+    How many tiles a particular region has. Regions are disjoint land/water areas
+    and the partitions are already calculated by the game engine.
+    */
+    int region_count[REGIONS] = {};
+    /*
+    This value defines how many tiles an area needs to have before it's
+    considered sufficiently large to be a faction starting location.
+    Map area square root values: Standard = 56, Huge = 90
+    */
     int limit = *map_area_sq_root * (*map_area_sq_root < 70 ? 1 : 2);
+    /*
+    Some user created maps might have only manually assigned supply pods.
+    We need to account for the fact that the pods might not be where they're
+    supposed to be as implied by the default placement algorithm.
+    If there are insufficient pods present, has_supply_pods is set to false.
+    */
+    int pods_removed = 0;
 
     for (int y = 0; y < *map_axis_y; y++) {
         for (int x = y&1; x < *map_axis_x; x+=2) {
             MAP* sq = mapsq(x, y);
-            if (unit_in_tile(sq) == 0)
-                natives.insert({x, y});
-            if (y < 4 || y >= *map_axis_x - 4)
+            if (sq) {
+                if (unit_in_tile(sq) == 0) {
+                    natives.insert({x, y});
+                }
+                assert(sq->region >= 0 && sq->region < REGIONS);
+                region_count[sq->region]++;
+                if (!is_ocean(sq) && sq->items & TERRA_SUPPLY_REMOVE) {
+                    pods_removed++;
+                }
+            }
+        }
+    }
+    for (int y = 0; y < *map_axis_y; y++) {
+        for (int x = y&1; x < *map_axis_x; x+=2) {
+            if (y < k || y >= *map_axis_y - k) {
                 continue;
-            if (sq && !is_ocean(sq) && !visited.count({x, y})) {
-                int n = 0;
-                ts.init(x, y, TRIAD_LAND, k);
-                while ((sq = ts.get_next()) != NULL) {
-                    auto p = mp(ts.rx, ts.ry);
-                    visited.insert(p);
-                    if (~sq->items & TERRA_FUNGUS && !(sq->landmarks & ~LM_FRESH)) {
-                        current.insert(p);
-                    }
-                    n++;
-                }
-                if (n >= limit) {
-                    for (auto& p : current) {
-                        goodtiles.insert(p);
-                    }
-                }
-                current.clear();
+            }
+            MAP* sq = mapsq(x, y);
+            if (sq && !is_ocean(sq) && ~sq->items & TERRA_FUNGUS && !(sq->landmarks & ~LM_FRESH)
+            && region_count[sq->region] >= limit) {
+                goodtiles.insert({x, y});
             }
         }
     }
     if ((int)goodtiles.size() < *map_area_sq_root * 8) {
         goodtiles.clear();
     }
-    debug("process_map %d %d %d %d %d\n", *map_axis_x, *map_axis_y,
-        *map_area_sq_root, visited.size(), goodtiles.size());
+    has_supply_pods = (*map_area_tiles > pods_removed * 20);
+    debug("process_map %d %d %d %d %d %d\n", *map_axis_x, *map_axis_y,
+        *map_area_sq_root, goodtiles.size(), pods_removed, has_supply_pods);
 }
 
 bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
     Points pods;
     MAP* sq = mapsq(x, y);
-    if (!sq || sq->items & BASE_DISALLOWED || (sq->rocks & TILE_ROCKY && !is_ocean(sq)))
+    if (!sq || sq->items & BASE_DISALLOWED || (sq->rocks & TILE_ROCKY && !is_ocean(sq))) {
         return false;
-    if (sq->landmarks & ~LM_FRESH)
+    }
+    if (sq->landmarks & ~LM_FRESH) {
         return false;
-    if (aquatic != is_ocean(sq) || tx_bonus_at(x, y) != RES_NONE)
+    }
+    if (aquatic != is_ocean(sq) || tx_bonus_at(x, y) != RES_NONE) {
         return false;
-    if (point_range(natives, x, y) < 4)
+    }
+    if (point_range(natives, x, y) < 4) {
         return false;
+    }
     int sc = 0;
     int nut = 0;
     for (int i=0; i<44; i++) {
@@ -175,34 +193,39 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
         if (sq) {
             int bonus = tx_bonus_at(x2, y2);
             if (is_ocean(sq)) {
-                if (!is_ocean_shelf(sq))
+                if (!is_ocean_shelf(sq)) {
                     sc--;
-                else if (aquatic)
+                } else if (aquatic) {
                     sc += 4;
+                }
             } else {
                 sc += (sq->level & (TILE_RAINY | TILE_MOIST) ? 3 : 1);
-                if (sq->items & TERRA_RIVER)
+                if (sq->items & TERRA_RIVER) {
                     sc += (i < 20 ? 4 : 2);
-                if (sq->rocks & TILE_ROLLING)
+                }
+                if (sq->rocks & TILE_ROLLING) {
                     sc += 1;
+                }
             }
             if (bonus > 0) {
-                if (i < 20 && bonus == RES_NUTRIENT && !is_ocean(sq))
+                if (i < 20 && bonus == RES_NUTRIENT && !is_ocean(sq)) {
                     nut++;
+                }
                 sc += (i < 20 ? 10 : 5);
             }
             if (tx_goody_at(x2, y2) > 0) {
                 sc += (i < 20 ? 25 : 8);
-                if (!is_ocean(sq) && (i < 20 || pods.size() < 2))
+                if (!is_ocean(sq) && (i < 20 || pods.size() < 2)) {
                     pods.insert({x2, y2});
+                }
             }
             if (sq->items & TERRA_FUNGUS) {
                 sc -= (i < 20 ? 4 : 1);
             }
         }
     }
-    int min_sc = 160 - iter/2;
-    bool need_bonus = (!aquatic && conf.nutrient_bonus > is_human(faction));
+    int min_sc = (has_supply_pods ? 160 : 100) - iter/2;
+    bool need_bonus = (has_supply_pods && !aquatic && conf.nutrient_bonus > is_human(faction));
     debug("find_score %2d | %3d %3d | %d %d %d %d\n", iter, x, y, pods.size(), nut, min_sc, sc);
     if (sc >= min_sc && need_bonus && (int)pods.size() > 1 - iter/50) {
         int n = 0;
@@ -223,11 +246,8 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
 HOOK_API void find_start(int faction, int* tx, int* ty) {
     Points spawns;
     bool aquatic = tx_metafactions[faction].rule_flags & FACT_AQUATIC;
-    int k = (*map_axis_y < 80 ? 8 : 16);
-    if (*map_random_seed != prev_rnd) {
-        process_map(k/2);
-        prev_rnd = *map_random_seed;
-    }
+    int k = (*map_axis_y < 80 ? 4 : 8);
+    process_map(k/2);
     for (int i=0; i<*total_num_vehicles; i++) {
         VEH* v = &tx_vehicles[i];
         if (v->faction_id != 0 && v->faction_id != faction) {
@@ -245,7 +265,7 @@ HOOK_API void find_start(int faction, int* tx, int* ty) {
             x = it->first;
             y = it->second;
         } else {
-            y = (random(*map_axis_y - k) + k/2);
+            y = (random(*map_axis_y - k*2) + k);
             x = (random(*map_axis_x) &~1) + (y&1);
         }
         int min_range = max(8, *map_area_sq_root/3 - i/5);
@@ -350,6 +370,18 @@ bool patch_setup(Config* cf) {
     if (*(int*)0x4AB327 == 0x1D2) {
         *(byte*)0x4AB327 = 0x75;
     }
+
+    /*
+    Patch AI vehicle home base reassignment bug.
+    This change inverts the old condition where an apparent oversight made
+    the engine to reassign vehicles to bases with mineral_surplus < 2.
+    */
+    {
+        const byte old_bytes[] = {0x8D};
+        const byte new_bytes[] = {0x8C};
+        write_bytes(0x562095, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+
     /*
     Make sure the game engine can read movie settings from "movlistx.txt".
     */

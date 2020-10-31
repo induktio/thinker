@@ -62,6 +62,7 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define QSIZE 512
 #define BASES 512
 #define UNITS 2048
+#define REGIONS 128
 #define COMBAT 0
 #define SYNC 0
 #define NO_SYNC 1
