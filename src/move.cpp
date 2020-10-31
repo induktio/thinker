@@ -2,6 +2,11 @@
 #include "list"
 #include "move.h"
 
+constexpr int IMP_SIMPLE = (TERRA_FARM | TERRA_MINE | TERRA_FOREST);
+constexpr int IMP_ADVANCED = (TERRA_CONDENSER | TERRA_THERMAL_BORE);
+constexpr int PM_SAFE = -20;
+constexpr int PM_NEAR_SAFE = -40;
+
 typedef int PMTable[MAPSZ*2][MAPSZ];
 /*
 
@@ -23,12 +28,12 @@ PM_SAFE defines the threshold below which the units will attempt to flee
 to the square chosen by escape_move.
 
 */
-
 PMTable pm_former;
 PMTable pm_safety;
 PMTable pm_roads;
 PMTable pm_enemy;
 PMTable pm_enemy_near;
+
 bool build_tubes = false;
 
 void adjust_value(PMTable tbl, int x, int y, int range, int value) {
@@ -175,6 +180,9 @@ void move_upkeep(int faction) {
     for (int y=0; y < *map_axis_y; y++) {
         for (int x=y&1; x < *map_axis_x; x += 2) {
             sq = mapsq(x, y);
+            if (!sq) {
+                continue;
+            }
             if (sq->owner == faction && ((!build_tubes && sq->items & TERRA_ROAD)
             || (build_tubes && sq->items & TERRA_MAGTUBE))) {
                 pm_roads[x][y]++;
@@ -384,10 +392,12 @@ int want_convoy(int faction, int x, int y, MAP* sq) {
 int crawler_move(int id) {
     VEH* veh = &tx_vehicles[id];
     MAP* sq = mapsq(veh->x, veh->y);
-    if (!sq || veh->home_base_id < 0)
+    if (!sq || veh->home_base_id < 0) {
         return veh_skip(id);
-    if (!at_target(veh))
+    }
+    if (!at_target(veh)) {
         return SYNC;
+    }
     BASE* base = &tx_bases[veh->home_base_id];
     int res = want_convoy(veh->faction_id, veh->x, veh->y, sq);
     bool prefer_min = base->nutrient_surplus > 5;
@@ -407,8 +417,6 @@ int crawler_move(int id) {
     while (++i < 50 && (sq = ts.get_next()) != NULL) {
         int other = unit_in_tile(sq);
         if (other > 0 && other != veh->faction_id) {
-            debug("convoy_skip %d %d %d %d %d %d\n", veh->x, veh->y,
-                ts.rx, ts.ry, veh->faction_id, other);
             continue;
         }
         res = want_convoy(veh->faction_id, ts.rx, ts.ry, sq);
@@ -426,10 +434,12 @@ int crawler_move(int id) {
             }
         }
     }
-    if (tx >= 0)
+    if (tx >= 0) {
         return set_move_to(id, tx, ty);
-    if (v1 > 0)
+    }
+    if (v1 > 0) {
         return set_convoy(id, RES_MINERAL);
+    }
     return veh_skip(id);
 }
 
@@ -656,11 +666,13 @@ bool can_borehole(int x, int y, int faction, int bonus, MAP* sq) {
         int x2 = wrap(x + t[0]);
         int y2 = y + t[1];
         sq = mapsq(x2, y2);
-        if (!sq || sq->items & TERRA_THERMAL_BORE || boreholes.count({x2, y2}))
+        if (!sq || sq->items & TERRA_THERMAL_BORE || boreholes.count({x2, y2})) {
             return false;
+        }
         int level2 = sq->level >> 5;
-        if (level2 < level && level2 > LEVEL_OCEAN_SHELF)
+        if (level2 < level && level2 > LEVEL_OCEAN_SHELF) {
             return false;
+        }
     }
     return true;
 }

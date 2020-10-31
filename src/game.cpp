@@ -155,6 +155,10 @@ bool is_human(int faction) {
     return *human_players & (1 << faction);
 }
 
+bool is_alien(int faction) {
+    return tx_metafactions[faction].rule_flags & FACT_ALIEN;
+}
+
 bool ai_faction(int faction) {
     /* Exclude native life since Thinker AI routines don't apply to them. */
     return faction > 0 && !(*human_players & (1 << faction));
@@ -191,6 +195,19 @@ int find_hq(int faction) {
         BASE* base = &tx_bases[i];
         if (base->faction_id == faction && has_facility(i, FAC_HEADQUARTERS)) {
             return i;
+        }
+    }
+    return -1;
+}
+
+int manifold_nexus_owner() {
+    for (int y=0; y < *map_axis_y; y++) {
+        for (int x=y&1; x < *map_axis_x; x += 2) {
+            MAP* sq = mapsq(x, y);
+            /* First Manifold Nexus tile must also be visible to the owner. */
+            if (sq && sq->landmarks & LM_NEXUS && sq->art_ref_id == 0) {
+                return (sq->owner >= 0 && sq->visibility & (1 << sq->owner) ? sq->owner : -1);
+            }
         }
     }
     return -1;
