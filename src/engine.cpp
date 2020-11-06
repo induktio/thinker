@@ -37,6 +37,7 @@ int* sunspot_duration = (int*)0x9A6800;
 int* diplo_active_faction = (int*)0x93F7CC;
 int* diplo_current_friction = (int*)0x93FA74;
 int* diplo_opponent_faction = (int*)0x8A4164;
+int* base_find_dist = (int*)0x90EA04;
 
 fp_1int* social_upkeep = (fp_1int*)0x5B44D0;
 fp_1int* repair_phase = (fp_1int*)0x526030;
@@ -46,6 +47,7 @@ fp_1int* enemy_diplomacy = (fp_1int*)0x55F930;
 fp_1int* enemy_strategy = (fp_1int*)0x561080;
 fp_1int* corner_market = (fp_1int*)0x59EE50;
 fp_1int* call_council = (fp_1int*)0x52C880;
+fp_3int* setup_player = (fp_3int*)0x5B0E00;
 fp_2int* eliminate_player = (fp_2int*)0x5B3380;
 fp_2int* can_call_council = (fp_2int*)0x52C670;
 fp_void* do_all_non_input = (fp_void*)0x5FCB20;
@@ -57,12 +59,39 @@ fp_3int* capture_base = (fp_3int*)0x50C510;
 fp_1int* base_kill = (fp_1int*)0x4E5250;
 fp_5int* crop_yield = (fp_5int*)0x4E6E50;
 fp_6int* base_draw = (fp_6int*)0x55AF20;
+fp_6int* base_find3 = (fp_6int*)0x4E3D50;
 fp_3int* draw_tile = (fp_3int*)0x46AF40;
 tc_2int* font_width = (tc_2int*)0x619280;
 tc_4int* buffer_box = (tc_4int*)0x5E3203;
 tc_3int* buffer_fill3 = (tc_3int*)0x5DFCD0;
 tc_5int* buffer_write_l = (tc_5int*)0x5DCEA0;
 
+
+void init_save_game(int faction) {
+    Faction* f = &tx_factions[faction];
+    MetaFaction* m = &tx_metafactions[faction];
+
+    if (m->thinker_header != THINKER_HEADER) {
+        m->thinker_header = THINKER_HEADER;
+        m->thinker_flags = 0;
+        /* Convert old save game to the new format. */
+        if (f->old_thinker_header == THINKER_HEADER) {
+            m->thinker_tech_id = f->old_thinker_tech_id;
+            m->thinker_tech_cost = f->old_thinker_tech_cost;
+            m->thinker_enemy_range = f->old_thinker_enemy_range;
+            memset(&f->old_thinker_header, 0, 12);
+        } else {
+            m->thinker_tech_id = f->tech_research_id;
+            m->thinker_tech_cost = f->tech_cost;
+            m->thinker_enemy_range = 20;
+        }
+    } else {
+        assert(f->old_thinker_header != THINKER_HEADER);
+    }
+    if (m->thinker_enemy_range < 2 || m->thinker_enemy_range > 40) {
+        m->thinker_enemy_range = 20;
+    }
+}
 
 bool victory_done() {
     // TODO: Check for scenario victory conditions
@@ -165,3 +194,53 @@ HOOK_API int faction_upkeep(int faction) {
     fflush(debug_log);
     return 0;
 }
+
+/*
+Original Offset: 004E3D50
+*/
+HOOK_API int mod_base_find3(int x, int y, int faction1, int region, int faction2, int faction3) {
+    int dist = 9999;
+    int result = -1;
+    MAP* sq = mapsq(x, y);
+    bool ocean = conf.territory_border_fix && sq && is_ocean(sq) && sq->items & TERRA_BASE_RADIUS;
+
+    for (int i=0; i<*total_num_bases; ++i) {
+        BASE* base = &tx_bases[i];
+        MAP* bsq = mapsq(base->x, base->y);
+
+        if (bsq && (region < 0 || bsq->region == region || ocean)) {
+            if ((faction1 < 0 && (faction2 < 0 || faction2 != base->faction_id))
+            || (faction1 == base->faction_id)
+            || (faction2 == -2 && tx_factions[faction1].diplo_status[base->faction_id] & DIPLO_PACT)
+            || (faction2 >= 0 && faction2 == base->faction_id)) {
+                if (faction3 < 0 || base->faction_id == faction3 || base->factions_spotted_flags & (1 << faction3)) {
+                    int dx = abs(x - base->x);
+                    int dy = abs(y - base->y);
+                    if (!(*map_toggle_flat & 1 || dx <= *map_half_x)) {
+                        dx = *map_axis_x - dx;
+                    }
+                    int val = max(dx, dy) - ((((dx + dy) / 2) - min(dx, dy) + 1) / 2);
+                    if (conf.territory_border_fix ? val < dist : val <= dist) {
+                        dist = val;
+                        result = i;
+                    }
+                }
+            }
+        }
+    }
+    if (DEBUG && !conf.territory_border_fix) {
+        int res = base_find3(x, y, faction1, region, faction2, faction3);
+        debug("base_find3 x: %2d y: %2d r: %2d %2d %2d %2d %2d %4d\n",
+              x, y, region, faction1, faction2, faction3, result, dist);
+        assert(res == result);
+        assert(*base_find_dist == dist);
+    }
+    *base_find_dist = 9999;
+    if (result >= 0) {
+        *base_find_dist = dist;
+    }
+    return result;
+}
+
+
+

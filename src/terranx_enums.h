@@ -864,3 +864,32 @@ enum ai_goal_types {
     AI_GOAL_UNK_2 = 121,
 };
 
+enum social_category_types {
+    SOCIAL_C_POLITICS = 0,
+    SOCIAL_C_ECONOMICS = 1,
+    SOCIAL_C_VALUES = 2,
+    SOCIAL_C_FUTURE = 3,
+};
+
+enum social_model_types {
+    SOCIAL_M_FRONTIER = 0,
+    SOCIAL_M_POLICE_STATE = 1,
+    SOCIAL_M_DEMOCRATIC = 2,
+    SOCIAL_M_FUNDAMENTALIST = 3,
+
+    SOCIAL_M_SIMPLE = 0,
+    SOCIAL_M_FREE_MARKET = 1,
+    SOCIAL_M_PLANNED = 2,
+    SOCIAL_M_GREEN = 3,
+
+    SOCIAL_M_SURVIVAL = 0,
+    SOCIAL_M_POWER = 1,
+    SOCIAL_M_KNOWLEDGE = 2,
+    SOCIAL_M_WEALTH = 3,
+
+    SOCIAL_M_NONE = 0,
+    SOCIAL_M_CYBERNETIC = 1,
+    SOCIAL_M_EUDAIMONIC = 2,
+    SOCIAL_M_THOUGHT_CONTROL = 3,
+};
+

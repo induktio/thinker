@@ -1,21 +1,6 @@
 
 #include "tech.h"
 
-void init_save_game(int faction) {
-    Faction* f = &tx_factions[faction];
-    check_zeros((int*)&f->thinker_unused, sizeof(f->thinker_unused));
-
-    if (f->thinker_header != THINKER_HEADER) {
-        f->thinker_header = THINKER_HEADER;
-        f->thinker_flags = 0;
-        f->thinker_tech_id = f->tech_research_id;
-        f->thinker_tech_cost = f->tech_cost;
-        memset(&f->thinker_unused, 0, sizeof(f->thinker_unused));
-    }
-    if (f->thinker_enemy_range < 2 || f->thinker_enemy_range > 40) {
-        f->thinker_enemy_range = 20;
-    }
-}
 
 HOOK_API int tech_value(int tech, int faction, int flag) {
     int value = tx_tech_val(tech, faction, flag);
@@ -89,19 +74,20 @@ HOOK_API int tech_rate(int faction) {
     before recalculating the cost.
     */
     Faction* f = &tx_factions[faction];
+    MetaFaction* m = &tx_metafactions[faction];
 
-    if (f->tech_research_id != f->thinker_tech_id) {
-        f->thinker_tech_cost = tech_cost(faction, f->tech_research_id);
-        f->thinker_tech_id = f->tech_research_id;
+    if (f->tech_research_id != m->thinker_tech_id) {
+        m->thinker_tech_cost = tech_cost(faction, f->tech_research_id);
+        m->thinker_tech_id = f->tech_research_id;
     }
-    return f->thinker_tech_cost;
+    return m->thinker_tech_cost;
 }
 
 HOOK_API int tech_selection(int faction) {
-    Faction* f = &tx_factions[faction];
+    MetaFaction* m = &tx_metafactions[faction];
     int tech = tx_tech_selection(faction);
-    f->thinker_tech_cost = tech_cost(faction, tech);
-    f->thinker_tech_id = tech;
+    m->thinker_tech_cost = tech_cost(faction, tech);
+    m->thinker_tech_id = tech;
     return tech;
 }
 

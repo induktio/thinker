@@ -71,7 +71,8 @@ void check_relocate_hq(int faction) {
         for (int i=0; i<*total_num_bases; i++) {
             BASE* b = &tx_bases[i];
             if (b->faction_id == faction) {
-                double score = b->pop_size*0.2 - mean_range(bases, b->x, b->y);
+                double score = b->pop_size*0.2 - mean_range(bases, b->x, b->y)
+                    + (has_facility(i, FAC_PERIMETER_DEFENSE) ? 0.5 : 0);
                 debug("relocate_hq %.4f %s\n", score, b->name);
                 if (score > best_score) {
                     best_id = i;
@@ -110,6 +111,31 @@ HOOK_API int content_pop() {
         return conf.content_pop_player[*diff_level];
     }
     return conf.content_pop_computer[*diff_level];
+}
+
+HOOK_API int mod_setup_player(int faction, int v1, int v2) {
+    setup_player(faction, v1, v2);
+    if (!is_human(faction)) {
+        for (int i=0; i<*total_num_vehicles; i++) {
+            VEH* veh = &tx_vehicles[i];
+            if (veh->faction_id == faction) {
+                MAP* sq = mapsq(veh->x, veh->y);
+                int former = (is_ocean(sq) ? BSC_SEA_FORMERS : BSC_FORMERS);
+                int colony = (is_ocean(sq) ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
+                for (int j=0; j<conf.free_formers; j++) {
+                    spawn_veh(former, faction, veh->x, veh->y, -1);
+                }
+                for (int j=0; j<conf.free_colony_pods; j++) {
+                    spawn_veh(colony, faction, veh->x, veh->y, -1);
+                }
+                break;
+            }
+        }
+        tx_factions[faction].satellites_nutrient = conf.satellites_nutrient;
+        tx_factions[faction].satellites_mineral = conf.satellites_mineral;
+        tx_factions[faction].satellites_energy = conf.satellites_energy;
+    }
+    return 0;
 }
 
 void process_map(int k) {
@@ -362,13 +388,20 @@ bool patch_setup(Config* cf) {
     write_call(0x4E888C, (int)mod_crop_yield);
     write_call(0x4672A7, (int)mod_base_draw);
     write_call(0x40F45A, (int)mod_base_draw);
+    write_call(0x525CC7, (int)mod_setup_player);
+    write_call(0x5A3C9B, (int)mod_setup_player);
+    write_call(0x5B341C, (int)mod_setup_player);
+    write_call(0x5B3C03, (int)mod_setup_player);
+    write_call(0x5B3C4C, (int)mod_setup_player);
 
     /*
     Fixes issue where attacking other satellites doesn't work in
     Orbital Attack View when smac_only is activated.
     */
-    if (*(int*)0x4AB327 == 0x1D2) {
-        *(byte*)0x4AB327 = 0x75;
+    {
+        const byte old_bytes[] = {0xD2,0x01,0x00,0x00};
+        const byte new_bytes[] = {0x75,0x01,0x00,0x00};
+        write_bytes(0x4AB327, old_bytes, new_bytes, sizeof(new_bytes));
     }
 
     /*
@@ -377,9 +410,9 @@ bool patch_setup(Config* cf) {
     the engine to reassign vehicles to bases with mineral_surplus < 2.
     */
     {
-        const byte old_bytes[] = {0x8D};
-        const byte new_bytes[] = {0x8C};
-        write_bytes(0x562095, old_bytes, new_bytes, sizeof(new_bytes));
+        const byte old_bytes[] = {0x0F,0x8D,0x83,0x00,0x00,0x00};
+        const byte new_bytes[] = {0x0F,0x8C,0x83,0x00,0x00,0x00};
+        write_bytes(0x562094, old_bytes, new_bytes, sizeof(new_bytes));
     }
 
     /*
@@ -424,6 +457,10 @@ bool patch_setup(Config* cf) {
         memset((void*)0x5B2257, 0x90, 11);
         memcpy((void*)0x5B220F, asm_find_start, sizeof(asm_find_start));
         write_call(0x5B221B, (int)find_start);
+    }
+    if (cf->territory_border_fix || DEBUG) {
+        write_call(0x523ED7, (int)mod_base_find3);
+        write_call(0x52417F, (int)mod_base_find3);
     }
     if (cf->revised_tech_cost) {
         write_call(0x4452D5, (int)tech_rate);

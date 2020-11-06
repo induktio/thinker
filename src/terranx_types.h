@@ -166,7 +166,24 @@ struct MetaFaction {
     char adj_insult_leader[128];
     char adj_faction[128];
     char adj_insult_faction[128];
-    char pad_1[128];
+    /*
+    Thinker-specific save game variables.
+    */
+    short thinker_header;
+    char thinker_flags;
+    char thinker_tech_id;
+    int thinker_tech_cost;
+    /*
+    Exponentially weighted moving average of distances to nearest enemy bases.
+    This is updated while choosing base production, and it is used as a
+    general heuristic to determine the level of threat from other factions.
+    When no enemies are present, the range is capped at 40.
+    */
+    float thinker_enemy_range;
+    char pad_1[116];
+    /*
+    End of block
+    */
     char noun_faction[24];
     int noun_gender;
     int is_noun_plural;
@@ -428,21 +445,14 @@ struct Faction {
     int unk_107;
     int unk_108;
     /*
-    Thinker-specific save game variables.
-    The game engine only writes to these locations during the endgame score calculation.
+    Thinker variables in the old save game format.
     */
-    short thinker_header;
-    char thinker_flags;
-    char thinker_tech_id;
-    int thinker_tech_cost;
-    /*
-    Exponentially weighted moving average of distances to nearest enemy bases.
-    This is updated while choosing base production, and it is used as a
-    general heuristic to determine the level of threat from other factions.
-    When no enemies are present, the range is capped at 40.
-    */
-    float thinker_enemy_range;
-    int thinker_unused[7];
+    short old_thinker_header;
+    char old_thinker_flags;
+    char old_thinker_tech_id;
+    int old_thinker_tech_cost;
+    float old_thinker_enemy_range;
+    int padding[7];
 };
 
 struct R_Basic {
