@@ -58,8 +58,8 @@ bool non_ally_in_tile(int faction, MAP* sq) {
     return (u >= 0 && u != faction && ~tx_factions[faction].diplo_status[u] & DIPLO_PACT);
 }
 
-HOOK_API int enemy_move(int id) {
-    assert(id >= 0 && id < UNITS);
+HOOK_API int mod_enemy_move(int id) {
+    assert(id >= 0 && id < VEHICLES);
     VEH* veh = &tx_vehicles[id];
     int faction = veh->faction_id;
     if (ai_enabled(faction)) {
@@ -76,7 +76,7 @@ HOOK_API int enemy_move(int id) {
             return combat_move(id);
         }
     }
-    return tx_enemy_move(id);
+    return enemy_move(id);
 }
 
 HOOK_API int log_veh_kill(int UNUSED(ptr), int id, int UNUSED(owner), int UNUSED(unit_id)) {
@@ -148,7 +148,7 @@ void move_upkeep(int faction) {
         VEH* veh = &tx_vehicles[i];
         UNIT* u = &tx_units[veh->proto_id];
         auto xy = mp(veh->x, veh->y);
-        if (veh->move_status == FORMER_THERMAL_BORE+4) {
+        if (veh->move_status == ORDER_THERMAL_BOREHOLE) {
             boreholes.insert(xy);
         }
         if ((1 << veh->faction_id) & enemymask) {
@@ -341,7 +341,7 @@ int escape_move(int id) {
         return set_move_to(id, tx, ty);
     }
     if (tx_units[veh->proto_id].weapon_type <= WPN_PSI_ATTACK)
-        return tx_enemy_move(id);
+        return enemy_move(id);
     return veh_skip(id);
 }
 
@@ -359,7 +359,7 @@ int trans_move(int id) {
         int i = 0;
         TileSearch ts;
         ts.init(veh->x, veh->y, TRIAD_SEA);
-        while (i++ < 120 && (sq = ts.get_next()) != NULL) {
+        while (++i < 120 && (sq = ts.get_next()) != NULL) {
             xy = mp(ts.rx, ts.ry);
             if (needferry.count(xy) && non_combat_move(ts.rx, ts.ry, faction, triad)) {
                 needferry.erase(xy);
@@ -368,7 +368,7 @@ int trans_move(int id) {
             }
         }
     }
-    return tx_enemy_move(id);
+    return enemy_move(id);
 }
 
 int want_convoy(int faction, int x, int y, MAP* sq) {
@@ -617,7 +617,7 @@ int colony_move(int id) {
         return SYNC;
     }
     if (triad == TRIAD_LAND) {
-        return tx_enemy_move(id);
+        return enemy_move(id);
     }
     return veh_skip(id);
 }
@@ -896,7 +896,7 @@ int former_move(int id) {
     bool safe = pm_safety[x][y] >= PM_SAFE;
     int item;
     if (!sq || sq->owner != faction) {
-        return tx_enemy_move(id);
+        return enemy_move(id);
     }
     if (defend_tile(veh, sq)) {
         return veh_skip(id);
@@ -962,11 +962,12 @@ int former_move(int id) {
     return veh_skip(id);
 }
 
-int best_defender(int x, int y, int faction, int att_id) {
+int choose_defender(int x, int y, int faction, int att_id) {
     int id = tx_veh_at(x, y);
-    if (id < 0 || ~tx_vehicles[id].visibility & (1 << faction))
+    if (id < 0 || ~tx_vehicles[id].visibility & (1 << faction)) {
         return -1;
-    return tx_best_defender(id, att_id, 0);
+    }
+    return best_defender(id, att_id, 0);
 }
 
 int combat_value(int id, int power, int moves, int mov_rate) {
@@ -977,7 +978,7 @@ int combat_value(int id, int power, int moves, int mov_rate) {
 double battle_eval(int id1, int id2, int moves, int mov_rate) {
     int s1;
     int s2;
-    tx_battle_compute(id1, id2, (int)&s1, (int)&s2, 0);
+    battle_compute(id1, id2, (int)&s1, (int)&s2, 0);
     int v1 = combat_value(id1, s1, moves, mov_rate);
     int v2 = combat_value(id2, s2, mov_rate, mov_rate);
     return 1.0 * v1/v2;
@@ -988,12 +989,14 @@ int combat_move(int id) {
     MAP* sq = mapsq(veh->x, veh->y);
     UNIT* u = &tx_units[veh->proto_id];
     int faction = veh->faction_id;
-    if (is_ocean(sq) || u->ability_flags & ABL_ARTILLERY)
-        return tx_enemy_move(id);
+    if (is_ocean(sq) || u->ability_flags & ABL_ARTILLERY) {
+        return enemy_move(id);
+    }
     if (pm_enemy_near[veh->x][veh->y] < 1 || veh->iter_count > 7) {
-        if (need_heals(veh))
+        if (need_heals(veh)) {
             return escape_move(id);
-        return tx_enemy_move(id);
+        }
+        return enemy_move(id);
     }
     bool at_base = sq->items & TERRA_BASE_IN_TILE;
     int mov_rate = tx_basic->mov_rate_along_roads;
@@ -1019,24 +1022,26 @@ int combat_move(int id) {
     TileSearch ts;
     ts.init(veh->x, veh->y, NEAR_ROADS);
 
-    while (i++ < 50 && (sq = ts.get_next()) != NULL && ts.dist <= max_dist) {
+    while (++i < 50 && (sq = ts.get_next()) != NULL && ts.dist <= max_dist) {
         bool to_base = sq->items & TERRA_BASE_IN_TILE;
         int fac2 = unit_in_tile(sq);
         assert(veh->x != ts.rx || veh->y != ts.ry);
         assert(map_range(veh->x, veh->y, ts.rx, ts.ry) <= ts.dist);
         assert((at_base && to_base) < ts.dist);
 
-        if (at_war(faction, fac2) && (id2 = best_defender(ts.rx, ts.ry, faction, id)) != -1) {
+        if (at_war(faction, fac2) && (id2 = choose_defender(ts.rx, ts.ry, faction, id)) != -1) {
             VEH* veh2 = &tx_vehicles[id2];
             UNIT* u2 = &tx_units[veh2->proto_id];
             max_dist = min(ts.dist, max_dist);
-            if (ts.dist > 1 && ~veh2->visibility & (1 << faction))
+            if (ts.dist > 1 && ~veh2->visibility & (1 << faction)) {
                 continue;
-            if (!to_base && veh_triad(id2) == TRIAD_AIR && ~u->ability_flags & ABL_AIR_SUPERIORITY)
+            }
+            if (!to_base && veh_triad(id2) == TRIAD_AIR && ~u->ability_flags & ABL_AIR_SUPERIORITY) {
                 continue;
+            }
             double v1 = battle_eval(id, id2, moves - ts.dist + 1, mov_rate);
             double v2 = (sq->owner == faction ? 0.1 : 0.0)
-                + (to_base ? 0.0 : 0.05 * (pm_enemy[ts.rx][ts.ry]))
+                + (to_base || !conf.collateral_damage_value ? 0.0 : 0.05 * (pm_enemy[ts.rx][ts.ry]))
                 + min(12, abs(offense_value(u2)))*(u2->chassis_type == CHS_INFANTRY ? 0.008 : 0.02);
             double v3 = min(1.6, v1) + min(0.5, max(-0.5, v2));
 
@@ -1062,7 +1067,7 @@ int combat_move(int id) {
     if (need_heals(veh)) {
         return escape_move(id);
     }
-    return tx_enemy_move(id);
+    return enemy_move(id);
 }
 
 

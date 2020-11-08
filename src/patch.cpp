@@ -21,6 +21,8 @@ const char* lm_params[] = {
     "borehole", "nexus", "unity", "fossil"
 };
 
+UNIT fission_reactor[PROTOTYPES];
+const int unit_reactor = 0x9AB88F;
 Points natives;
 Points goodtiles;
 bool has_supply_pods = true;
@@ -82,7 +84,7 @@ void check_relocate_hq(int faction) {
         }
         if (best_id >= 0) {
             BASE* b = &tx_bases[best_id];
-            b->facilities_built[FAC_HEADQUARTERS/8] |= (1 << (FAC_HEADQUARTERS % 8));
+            set_base_facility(best_id, FAC_HEADQUARTERS, true);
             draw_tile(b->x, b->y, 0);
         }
     }
@@ -382,8 +384,8 @@ bool patch_setup(Config* cf) {
     write_call(0x52768A, (int)turn_upkeep);
     write_call(0x52A4AD, (int)turn_upkeep);
     write_call(0x4E61D0, (int)base_production);
-    write_call(0x5BDC4C, (int)tech_value);
-    write_call(0x579362, (int)enemy_move);
+    write_call(0x5BDC4C, (int)mod_tech_value);
+    write_call(0x579362, (int)mod_enemy_move);
     write_call(0x5C0908, (int)log_veh_kill);
     write_call(0x4E888C, (int)mod_crop_yield);
     write_call(0x4672A7, (int)mod_base_draw);
@@ -457,6 +459,27 @@ bool patch_setup(Config* cf) {
         memset((void*)0x5B2257, 0x90, 11);
         memcpy((void*)0x5B220F, asm_find_start, sizeof(asm_find_start));
         write_call(0x5B221B, (int)find_start);
+    }
+    if (cf->ignore_reactor_power) {
+        const int locations[][2] = {
+            {(int)battle_fight_2, 0x4DA0},
+            {(int)best_defender, 0x5CB},
+        };
+        memset(fission_reactor, 1, sizeof(fission_reactor));
+        int num = 0;
+        for (const int* loc : locations) {
+            int p = loc[0];
+            while (p < loc[0] + loc[1]) {
+                if (*(int*)p == unit_reactor) {
+                    *(int*)p = (int)&fission_reactor;
+                    num++;
+                }
+                p++;
+            }
+        }
+        if (num != 48) {
+            exit_fail();
+        }
     }
     if (cf->territory_border_fix || DEBUG) {
         write_call(0x523ED7, (int)mod_base_find3);

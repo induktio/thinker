@@ -61,7 +61,8 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define MAPSZ 256
 #define QSIZE 512
 #define BASES 512
-#define UNITS 2048
+#define VEHICLES 2048
+#define PROTOTYPES 512
 #define REGIONS 128
 #define COMBAT 0
 #define SYNC 0
@@ -95,6 +96,7 @@ struct Config {
     int landmarks = 0xffff;
     int revised_tech_cost = 1;
     int auto_relocate_hq = 1;
+    int ignore_reactor_power = 0;
     int territory_border_fix = 1;
     int eco_damage_fix = 1;
     int collateral_damage_value = 3;
@@ -142,7 +144,7 @@ extern Points needferry;
 DLL_EXPORT int ThinkerDecide();
 HOOK_API int turn_upkeep();
 HOOK_API int base_production(int id, int v1, int v2, int v3);
-HOOK_API int social_ai(int faction, int v1, int v2, int v3, int v4, int v5);
+HOOK_API int mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5);
 
 int need_defense(int id);
 int need_psych(int id);

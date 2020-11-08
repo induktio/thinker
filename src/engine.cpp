@@ -65,6 +65,18 @@ tc_2int* font_width = (tc_2int*)0x619280;
 tc_4int* buffer_box = (tc_4int*)0x5E3203;
 tc_3int* buffer_fill3 = (tc_3int*)0x5DFCD0;
 tc_5int* buffer_write_l = (tc_5int*)0x5DCEA0;
+fp_6int* social_ai = (fp_6int*)0x5B4790;
+fp_1int* social_set = (fp_1int*)0x5B4600;
+fp_1int* pop_goal = (fp_1int*)0x4EF090;
+fp_1int* consider_designs = (fp_1int*)0x581260;
+fp_3int* tech_val = (fp_3int*)0x5BCBE0;
+fp_1int* tech_rate = (fp_1int*)0x5BE6B0;
+fp_1int* tech_selection = (fp_1int*)0x5BE380;
+fp_1int* enemy_move = (fp_1int*)0x56B5B0;
+fp_3int* best_defender = (fp_3int*)0x5044D0;
+fp_5int* battle_compute = (fp_5int*)0x501DA0;
+fp_6int* battle_kill = (fp_6int*)0x505D80;
+fp_7int* battle_fight_2 = (fp_7int*)0x506AF0;
 
 
 void init_save_game(int faction) {
@@ -135,7 +147,7 @@ HOOK_API int faction_upkeep(int faction) {
         If the new social_ai is disabled from the config old version gets called instead.
         Player factions always skip the new social_ai function.
         */
-        social_ai(faction, -1, -1, -1, -1, 0);
+        mod_social_ai(faction, -1, -1, -1, -1, 0);
         move_upkeep(faction);
         do_all_non_input();
 

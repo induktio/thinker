@@ -39,6 +39,7 @@ typedef int __cdecl fp_3int(int, int, int);
 typedef int __cdecl fp_4int(int, int, int, int);
 typedef int __cdecl fp_5int(int, int, int, int, int);
 typedef int __cdecl fp_6int(int, int, int, int, int, int);
+typedef int __cdecl fp_7int(int, int, int, int, int, int, int);
 typedef int __cdecl fp_7intstr(int, int, int, int, int, int, int, const char*);
 
 // params: faction, chassis, module, armor, specials, reactor, unit_plan, name
@@ -51,10 +52,6 @@ extern fp_1int* tx_veh_skip;
 extern fp_2int* tx_veh_at;
 extern fp_2int* tx_veh_speed;
 extern fp_3int* tx_zoc_any;
-extern fp_3int* tx_best_defender;
-extern fp_5int* tx_battle_compute;
-extern fp_6int* tx_battle_kill;
-extern fp_1int* tx_enemy_move;
 extern fp_1int* tx_monolith;
 extern fp_2int* tx_action_build;
 extern fp_3int* tx_action_terraform;
@@ -69,14 +66,7 @@ extern fp_1int* tx_base_compute;
 extern fp_4int* tx_base_prod_choices;
 extern fp_void* tx_turn_upkeep;
 extern fp_1int* tx_faction_upkeep;
-extern fp_3int* tx_tech_val;
-extern fp_6int* tx_social_ai;
-extern fp_1int* tx_social_set;
-extern fp_1int* tx_pop_goal;
-extern fp_1int* tx_consider_designs;
 extern fp_1int* tx_action_staple;
-extern fp_1int* tx_tech_rate;
-extern fp_1int* tx_tech_selection;
 
 
 

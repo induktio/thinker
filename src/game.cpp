@@ -276,13 +276,16 @@ int best_reactor(int faction) {
 }
 
 int offense_value(UNIT* u) {
-    if (u->weapon_type == WPN_CONVENTIONAL_PAYLOAD)
-        return tx_factions[*active_faction].best_weapon_value * u->reactor_type;
-    return tx_weapon[u->weapon_type].offense_value * u->reactor_type;
+    int w = (conf.ignore_reactor_power ? (int)REC_FISSION : u->reactor_type);
+    if (u->weapon_type == WPN_CONVENTIONAL_PAYLOAD) {
+        return tx_factions[*active_faction].best_weapon_value * w;
+    }
+    return tx_weapon[u->weapon_type].offense_value * w;
 }
 
 int defense_value(UNIT* u) {
-    return tx_defense[u->armor_type].defense_value * u->reactor_type;
+    int w = (conf.ignore_reactor_power ? (int)REC_FISSION : u->reactor_type);
+    return tx_defense[u->armor_type].defense_value * w;
 }
 
 int random(int n) {
@@ -298,17 +301,19 @@ double lerp(double a, double b, double t) {
 }
 
 int wrap(int a) {
-    if (!*map_toggle_flat)
+    if (!*map_toggle_flat) {
         return (a < 0 ? a + *map_axis_x : a % *map_axis_x);
-    else
+    } else {
         return a;
+    }
 }
 
 int map_range(int x1, int y1, int x2, int y2) {
     int xd = abs(x1-x2);
     int yd = abs(y1-y2);
-    if (!*map_toggle_flat && xd > *map_axis_x/2)
+    if (!*map_toggle_flat && xd > *map_axis_x/2) {
         xd = *map_axis_x - xd;
+    }
     return (xd + yd)/2;
 }
 
@@ -366,8 +371,9 @@ int set_road_to(int id, int x, int y) {
 
 int set_action(int id, int act, char icon) {
     VEH* veh = &tx_vehicles[id];
-    if (act == ORDER_THERMAL_BOREHOLE)
+    if (act == ORDER_THERMAL_BOREHOLE) {
         boreholes.insert({veh->x, veh->y});
+    }
     veh->move_status = act;
     veh->status_icon = icon;
     veh->state &= 0xFFFEFFFF;
@@ -482,6 +488,16 @@ int coast_tiles(int x, int y) {
         }
     }
     return n;
+}
+
+int set_base_facility(int base_id, int facility_id, bool add) {
+    assert(base_id >= 0 && facility_id > 0 && facility_id <= FAC_EMPTY_FACILITY_64);
+    if (add) {
+        tx_bases[base_id].facilities_built[facility_id/8] |= (1 << (facility_id % 8));
+    } else {
+        tx_bases[base_id].facilities_built[facility_id/8] &= ~(1 << (facility_id % 8));
+    }
+    return 0;
 }
 
 int spawn_veh(int unit_id, int faction, int x, int y, int base_id) {

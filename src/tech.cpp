@@ -2,8 +2,8 @@
 #include "tech.h"
 
 
-HOOK_API int tech_value(int tech, int faction, int flag) {
-    int value = tx_tech_val(tech, faction, flag);
+HOOK_API int mod_tech_value(int tech, int faction, int flag) {
+    int value = tech_val(tech, faction, flag);
     if (conf.tech_balance && ai_enabled(faction)) {
         if (tech == tx_weapon[WPN_TERRAFORMING_UNIT].preq_tech
         || tech == tx_weapon[WPN_SUPPLY_TRANSPORT].preq_tech
@@ -67,7 +67,7 @@ int tech_cost(int faction, int tech) {
     return max(2, (int)cost);
 }
 
-HOOK_API int tech_rate(int faction) {
+HOOK_API int mod_tech_rate(int faction) {
     /*
     Normally the game engine would recalculate research cost before the next tech
     is selected, but we need to wait until the tech is decided in tech_selection
@@ -76,6 +76,9 @@ HOOK_API int tech_rate(int faction) {
     Faction* f = &tx_factions[faction];
     MetaFaction* m = &tx_metafactions[faction];
 
+    if (m->thinker_tech_cost < 2) {
+        init_save_game(faction);
+    }
     if (f->tech_research_id != m->thinker_tech_id) {
         m->thinker_tech_cost = tech_cost(faction, f->tech_research_id);
         m->thinker_tech_id = f->tech_research_id;
@@ -83,9 +86,9 @@ HOOK_API int tech_rate(int faction) {
     return m->thinker_tech_cost;
 }
 
-HOOK_API int tech_selection(int faction) {
+HOOK_API int mod_tech_selection(int faction) {
     MetaFaction* m = &tx_metafactions[faction];
-    int tech = tx_tech_selection(faction);
+    int tech = tech_selection(faction);
     m->thinker_tech_cost = tech_cost(faction, tech);
     m->thinker_tech_id = tech;
     return tech;

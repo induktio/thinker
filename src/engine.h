@@ -16,6 +16,7 @@ typedef int __thiscall tc_2int(int, int);
 typedef int __thiscall tc_3int(int, int, int);
 typedef int __thiscall tc_4int(int, int, int, int);
 typedef int __thiscall tc_5int(int, int, int, int, int);
+typedef int __thiscall tc_6int(int, int, int, int, int, int);
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
@@ -64,7 +65,20 @@ extern tc_2int* font_width;
 extern tc_4int* buffer_box;
 extern tc_3int* buffer_fill3;
 extern tc_5int* buffer_write_l;
+extern fp_6int* social_ai;
+extern fp_1int* social_set;
+extern fp_1int* pop_goal;
+extern fp_1int* consider_designs;
+extern fp_3int* tech_val;
+extern fp_1int* tech_rate;
+extern fp_1int* tech_selection;
+extern fp_1int* enemy_move;
+extern fp_3int* best_defender;
+extern fp_5int* battle_compute;
+extern fp_6int* battle_kill;
+extern fp_7int* battle_fight_2;
 
+void init_save_game(int faction);
 HOOK_API int faction_upkeep(int faction);
 HOOK_API int mod_base_find3(int x, int y, int faction1, int region, int faction2, int faction3);
 

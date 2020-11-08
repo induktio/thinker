@@ -55,6 +55,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->revised_tech_cost = atoi(value);
     } else if (MATCH("thinker", "auto_relocate_hq")) {
         cf->auto_relocate_hq = atoi(value);
+    } else if (MATCH("thinker", "ignore_reactor_power")) {
+        cf->ignore_reactor_power = atoi(value);
     } else if (MATCH("thinker", "territory_border_fix")) {
         cf->territory_border_fix = atoi(value);
     } else if (MATCH("thinker", "eco_damage_fix")) {
@@ -478,7 +480,8 @@ int unit_score(int id, int faction, int cfactor, int minerals, bool def) {
     int v = 18 * (def ? defense_value(u) : offense_value(u));
     if (v < 0) {
         v = (def ? tx_factions[faction].best_armor_value : tx_factions[faction].best_weapon_value)
-            * best_reactor(faction) + plans[faction].psi_score * 12;
+            * (conf.ignore_reactor_power ? REC_FISSION : best_reactor(faction))
+            + plans[faction].psi_score * 12;
     }
     if (unit_triad(id) == TRIAD_LAND) {
         v += (def ? 10 : 18) * unit_speed(id);
@@ -969,9 +972,18 @@ int robust, int immunity, int impunity, int penalty) {
         }
     }
     if (m->soc_priority_category >= 0 && m->soc_priority_model >= 0) {
-        if ((sf != m->soc_priority_category && (&f->SE_Politics)[m->soc_priority_category] == m->soc_priority_model)
-        || (sf == m->soc_priority_category && sm == m->soc_priority_model)) {
-            sc += 14;
+        if (sf == m->soc_priority_category) {
+            if (sm == m->soc_priority_model) {
+                sc += 8;
+            } else if (sm != SOCIAL_M_FRONTIER) {
+                sc -= 8;
+            }
+        } else {
+            if ((&f->SE_Politics)[m->soc_priority_category] == m->soc_priority_model) {
+                sc += 8;
+            } else if ((&f->SE_Politics)[m->soc_priority_category] != SOCIAL_M_FRONTIER) {
+                sc -= 8;
+            }
         }
     }
     if (vals[ECO] >= 2) {
@@ -1031,7 +1043,7 @@ int robust, int immunity, int impunity, int penalty) {
     return sc;
 }
 
-HOOK_API int social_ai(int faction, int v1, int v2, int v3, int v4, int v5) {
+HOOK_API int mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5) {
     Faction* f = &tx_factions[faction];
     MetaFaction* m = &tx_metafactions[faction];
     R_Social* s = tx_social;
@@ -1044,10 +1056,10 @@ HOOK_API int social_ai(int faction, int v1, int v2, int v3, int v4, int v5) {
     int penalty = 0;
 
     if (!conf.social_ai || !ai_enabled(faction)) {
-        return tx_social_ai(faction, v1, v2, v3, v4, v5);
+        return social_ai(faction, v1, v2, v3, v4, v5);
     }
     if (f->SE_upheaval_cost_paid > 0) {
-        tx_social_set(faction);
+        social_set(faction);
         return 0;
     }
     int range = (int)(m->thinker_enemy_range / (1.0 + 0.1 * min(4, plans[faction].enemy_bases)));
@@ -1080,13 +1092,13 @@ HOOK_API int social_ai(int faction, int v1, int v2, int v3, int v4, int v5) {
         for (int i=0; i<*total_num_bases; i++) {
             BASE* b = &tx_bases[i];
             if (b->faction_id == faction) {
-                want_pop += (tx_pop_goal(i) - b->pop_size)
+                want_pop += (pop_goal(i) - b->pop_size)
                     * (b->nutrient_surplus > 1 && has_facility(i, FAC_CHILDREN_CRECHE) ? 4 : 1);
-                pop_total += 4 * b->pop_size;
+                pop_total += b->pop_size;
             }
         }
         if (pop_total > 0) {
-            pop_boom = ((f->SE_growth < 4 ? 4 : 8) * want_pop) >= pop_total;
+            pop_boom = ((f->SE_growth < 4 ? 1 : 2) * want_pop) >= pop_total;
         }
     }
     debug("social_params %d %d %8s range: %2d has_nexus: %d pop_boom: %d want_pop: %3d pop_total: %3d "\
@@ -1102,8 +1114,9 @@ HOOK_API int social_ai(int faction, int v1, int v2, int v3, int v4, int v5) {
 
         for (int j=0; j<4; j++) {
             if (j == sm1 || !has_tech(faction, s[i].soc_preq_tech[j]) ||
-            (i == m->soc_opposition_category && j == m->soc_opposition_model))
+            (i == m->soc_opposition_category && j == m->soc_opposition_model)) {
                 continue;
+            }
             int sc2 = social_score(faction, i, j, range, pop_boom, has_nexus, robust, immunity, impunity, penalty);
             if (sc2 - sc1 > score_diff) {
                 sf = i;
@@ -1122,8 +1135,8 @@ HOOK_API int social_ai(int faction, int v1, int v2, int v3, int v4, int v5) {
             *current_turn, faction, m->filename,
             cost, score_diff, s[sf].soc_name[sm1], s[sf].soc_name[sm2]);
     }
-    tx_social_set(faction);
-    tx_consider_designs(faction);
+    social_set(faction);
+    consider_designs(faction);
     return 0;
 }
 
