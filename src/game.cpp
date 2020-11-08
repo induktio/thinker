@@ -180,10 +180,23 @@ bool un_charter() {
 }
 
 int prod_count(int faction, int id, int skip) {
+    assert(faction > 0 && faction < 8);
     int n = 0;
     for (int i=0; i<*total_num_bases; i++) {
         BASE* base = &tx_bases[i];
         if (base->faction_id == faction && base->queue_items[0] == id && i != skip) {
+            n++;
+        }
+    }
+    return n;
+}
+
+int facility_count(int faction, int facility) {
+    assert(faction > 0 && faction < 8 && facility >= 0);
+    int n = 0;
+    for (int i=0; i<*total_num_bases; i++) {
+        BASE* base = &tx_bases[i];
+        if (base->faction_id == faction && has_facility(i, facility)) {
             n++;
         }
     }

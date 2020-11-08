@@ -517,8 +517,11 @@ bool patch_setup(Config* cf) {
     }
     if (cf->eco_damage_fix) {
         const byte old_bytes[] = {0x84,0x05,0xE8,0x64,0x9A,0x00,0x74,0x24};
-        const byte new_bytes[] = {0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90};
-        write_bytes(0x4EA0B9, old_bytes, new_bytes, sizeof(new_bytes));
+        write_bytes(0x4EA0B9, old_bytes, NULL, sizeof(old_bytes));
+
+        /* Patch clean minerals calculation. */
+        const byte old_bytes_2[] = {0x85,0xC0,0x74,0x07};
+        write_bytes(0x4F2AC6, old_bytes_2, NULL, sizeof(old_bytes_2));
     }
     if (cf->collateral_damage_value != 3) {
         const byte old_bytes[] = {0xB2, 0x03};

@@ -326,6 +326,40 @@ int project_score(int faction, int proj) {
         + (f->AI_tech+1) * p->AI_tech + (f->AI_wealth+1) * p->AI_wealth;
 }
 
+bool redundant_project(int faction, int proj) {
+    Faction* f = &tx_factions[faction];
+    if (proj == FAC_PLANETARY_DATALINKS) {
+        int n = 0;
+        for (int i=0; i<8; i++) {
+            if (tx_factions[i].current_num_bases > 0) {
+                n++;
+            }
+        }
+        return n < 4;
+    }
+    if (proj == FAC_CITIZENS_DEFENSE_FORCE) {
+        return tx_facility[FAC_CITIZENS_DEFENSE_FORCE].maint == 0
+            && facility_count(faction, FAC_CITIZENS_DEFENSE_FORCE)*4 < 3*f->current_num_bases;
+    }
+    if (proj == FAC_MARITIME_CONTROL_CENTER) {
+        int n = 0;
+        for (int i=0; i<*total_num_vehicles; i++) {
+            VEH* veh = &tx_vehicles[i];
+            if (veh->faction_id == faction && unit_triad(veh->proto_id) == TRIAD_SEA) {
+                n++;
+            }
+        }
+        return n < f->current_num_bases/4 && facility_count(faction, FAC_NAVAL_YARD) < 4;
+    }
+    if (proj == FAC_HUNTER_SEEKER_ALGO) {
+        return f->SE_probe >= 3;
+    }
+    if (proj == FAC_LIVING_REFINERY) {
+        return f->SE_support >= 3;
+    }
+    return false;
+}
+
 int find_project(int id) {
     BASE* base = &tx_bases[id];
     int faction = base->faction_id;
@@ -389,7 +423,8 @@ int find_project(int id) {
             && tech >= 0 && !(tx_tech_discovered[tech] & *human_players)) {
                 continue;
             }
-            if (can_build(id, i) && prod_count(faction, -i, id) < similar_limit) {
+            if (can_build(id, i) && prod_count(faction, -i, id) < similar_limit
+            && (similar_limit > 1 || !redundant_project(faction, i))) {
                 int sc = project_score(faction, i);
                 choice = (sc > score ? i : choice);
                 score = max(score, sc);
@@ -418,10 +453,12 @@ bool relocate_hq(int id) {
         int t = b->queue_items[0];
         if (b->faction_id == faction) {
             if (i != id) {
-                if (i < id)
+                if (i < id) {
                     k++;
-                if (map_range(base->x, base->y, b->x, b->y) < 7)
+                }
+                if (map_range(base->x, base->y, b->x, b->y) < 7) {
                     n++;
+                }
             }
             if (t == -FAC_HEADQUARTERS || has_facility(i, FAC_HEADQUARTERS)) {
                 return false;
@@ -839,19 +876,21 @@ int select_prod(int id) {
     for (int i=0; i<*total_num_vehicles; i++) {
         VEH* veh = &tx_vehicles[i];
         UNIT* u = &tx_units[veh->proto_id];
-        if (veh->faction_id != faction)
+        if (veh->faction_id != faction) {
             continue;
+        }
         if (veh->home_base_id == id) {
-            if (u->weapon_type == WPN_TERRAFORMING_UNIT)
+            if (u->weapon_type == WPN_TERRAFORMING_UNIT) {
                 formers++;
-            else if (u->weapon_type == WPN_COLONY_MODULE)
+            } else if (u->weapon_type == WPN_COLONY_MODULE) {
                 pods++;
-            else if (u->weapon_type == WPN_PROBE_TEAM)
+            } else if (u->weapon_type == WPN_PROBE_TEAM) {
                 probes++;
-            else if (u->weapon_type == WPN_SUPPLY_TRANSPORT)
+            } else if (u->weapon_type == WPN_SUPPLY_TRANSPORT) {
                 crawlers += (veh->move_status == ORDER_CONVOY ? 1 : 5);
-            else if (u->weapon_type == WPN_TROOP_TRANSPORT)
+            } else if (u->weapon_type == WPN_TROOP_TRANSPORT) {
                 transports++;
+            }
         }
         int range = map_range(base->x, base->y, veh->x, veh->y);
         if (range <= 1) {
@@ -882,10 +921,11 @@ int select_prod(int id) {
     minerals, reserve, p->proj_limit, enemyrange, enemymil, w1, w2, threat);
 
     if (defenders < def_target && minerals > 2) {
-        if (def_target < 2 && (*current_turn > 30 || enemyrange < 15))
+        if (def_target < 2 && (*current_turn > 30 || enemyrange < 15)) {
             return find_proto(id, TRIAD_LAND, COMBAT, DEF);
-        else
+        } else {
             return BSC_SCOUT_PATROL;
+        }
     } else if (!conf.auto_relocate_hq && relocate_hq(id)) {
         return -FAC_HEADQUARTERS;
     } else if (minerals > reserve && random(100) < (int)(100.0 * threat)) {
@@ -1022,6 +1062,7 @@ int robust, int immunity, int impunity, int penalty) {
             sc += (sm == SOCIAL_M_PLANNED ? 10 : 0);
             sc += (sm == SOCIAL_M_SIMPLE || sm == SOCIAL_M_GREEN ? 5 : 0);
         }
+        sc += min(5, max(-5, vals[TAL])) * 3;
     }
     if (!has_project(faction, FAC_CLONING_VATS)) {
         if (pop_boom && vals[GRW] >= 4) {

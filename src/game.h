@@ -53,6 +53,7 @@ bool ai_enabled(int faction);
 bool at_war(int faction1, int faction2);
 bool un_charter();
 int prod_count(int faction, int id, int skip);
+int facility_count(int faction, int facility);
 int find_hq(int faction);
 int manifold_nexus_owner();
 int veh_triad(int id);
