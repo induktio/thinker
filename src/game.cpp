@@ -3,23 +3,26 @@
 
 
 char* prod_name(int prod) {
-    if (prod >= 0)
+    if (prod >= 0) {
         return (char*)&(tx_units[prod].name);
-    else
+    } else {
         return (char*)(tx_facility[-prod].name);
+    }
 }
 
 int mineral_cost(int faction, int prod) {
-    if (prod >= 0)
-        return tx_units[prod].cost * tx_cost_factor(faction, 1, -1);
-    else
-        return tx_facility[-prod].cost * tx_cost_factor(faction, 1, -1);
+    if (prod >= 0) {
+        return tx_units[prod].cost * cost_factor(faction, 1, -1);
+    } else {
+        return tx_facility[-prod].cost * cost_factor(faction, 1, -1);
+    }
 }
 
 bool has_tech(int faction, int tech) {
     assert(faction > 0 && faction < 8);
-    if (tech == TECH_None)
+    if (tech == TECH_None) {
         return true;
+    }
     return tech >= 0 && tx_tech_discovered[tech] & (1 << faction);
 }
 
@@ -230,8 +233,8 @@ int veh_triad(int id) {
     return unit_triad(tx_vehicles[id].proto_id);
 }
 
-int veh_speed(int id) {
-    return tx_veh_speed(id, 0);
+int mod_veh_speed(int id) {
+    return veh_speed(id, 0);
 }
 
 int unit_triad(int id) {
@@ -399,10 +402,10 @@ int set_convoy(int id, int res) {
     veh->type_crawling = res-1;
     veh->move_status = ORDER_CONVOY;
     veh->status_icon = 'C';
-    return tx_veh_skip(id);
+    return veh_skip(id);
 }
 
-int veh_skip(int id) {
+int mod_veh_skip(int id) {
     VEH* veh = &tx_vehicles[id];
     veh->waypoint_1_x = veh->x;
     veh->waypoint_1_y = veh->y;
@@ -410,10 +413,10 @@ int veh_skip(int id) {
     if (veh->damage_taken) {
         MAP* sq = mapsq(veh->x, veh->y);
         if (sq && sq->items & TERRA_MONOLITH) {
-            tx_monolith(id);
+            monolith(id);
         }
     }
-    return tx_veh_skip(id);
+    return veh_skip(id);
 }
 
 bool at_target(VEH* veh) {
@@ -514,7 +517,7 @@ int set_base_facility(int base_id, int facility_id, bool add) {
 }
 
 int spawn_veh(int unit_id, int faction, int x, int y, int base_id) {
-    int id = tx_veh_init(unit_id, faction, x, y);
+    int id = veh_init(unit_id, faction, x, y);
     if (id >= 0) {
         tx_vehicles[id].home_base_id = base_id;
         // Set these flags to disable any non-Thinker unit automation.
@@ -551,7 +554,7 @@ void check_zeros(int* ptr, int len) {
 void print_map(int x, int y) {
     MAP* m = mapsq(x, y);
     debug("MAP %2d %2d | %2d %d | %02x %02x %02x | %02x %02x %02x | %02x %02x %02x | %08x %08x\n",
-        x, y, m->owner, tx_bonus_at(x, y), m->level, m->altitude, m->rocks,
+        x, y, m->owner, bonus_at(x, y), m->level, m->altitude, m->rocks,
         m->flags, m->region, m->visibility, m->unk_1, m->unk_2, m->art_ref_id,
         m->items, m->landmarks);
 }
@@ -569,7 +572,7 @@ void print_base(int id) {
     BASE* base = &tx_bases[id];
     int prod = base->queue_items[0];
     debug("[ turn: %d faction: %d base: %2d x: %2d y: %2d "\
-        "pop: %d tal: %d dro: %d mins: %2d acc: %2d | %08x | %3d %s | %s ]\n",
+        "pop: %d tal: %d dro: %d min: %2d acc: %2d | %08x | %3d %s | %s ]\n",
         *current_turn, base->faction_id, id, base->x, base->y,
         base->pop_size, base->talent_total, base->drone_total,
         base->mineral_surplus, base->minerals_accumulated,
@@ -617,7 +620,7 @@ bool TileSearch::has_zoc(int faction) {
     int j = cur;
     while (j >= 0 && i++ < 20) {
         auto p = newtiles[j];
-        if (tx_zoc_any(p.x, p.y, faction) && ++zoc > 1)
+        if (zoc_any(p.x, p.y, faction) && ++zoc > 1)
             return true;
         j = p.prev;
     }

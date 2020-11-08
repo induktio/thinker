@@ -39,6 +39,27 @@ int* diplo_current_friction = (int*)0x93FA74;
 int* diplo_opponent_faction = (int*)0x8A4164;
 int* base_find_dist = (int*)0x90EA04;
 
+fp_7intstr* propose_proto = (fp_7intstr*)0x580860;
+fp_4int* veh_init = (fp_4int*)0x5C03D0;
+fp_1int* veh_skip = (fp_1int*)0x5C1D20;
+fp_2int* veh_at = (fp_2int*)0x5BFE90;
+fp_2int* veh_speed = (fp_2int*)0x5C1540;
+fp_3int* zoc_any = (fp_3int*)0x5C89F0;
+fp_1int* monolith = (fp_1int*)0x57A050;
+fp_2int* action_build = (fp_2int*)0x4C96E0;
+fp_3int* action_terraform = (fp_3int*)0x4C9B00;
+fp_3int* terraform_cost = (fp_3int*)0x4C9420;
+fp_2int* bonus_at = (fp_2int*)0x592030;
+fp_2int* goody_at = (fp_2int*)0x592140;
+fp_3int* cost_factor = (fp_3int*)0x4E4430;
+fp_3int* site_set = (fp_3int*)0x591B50;
+fp_3int* world_site = (fp_3int*)0x5C4FD0;
+fp_1int* set_base = (fp_1int*)0x4E39D0;
+fp_1int* base_compute = (fp_1int*)0x4EC3B0;
+fp_4int* base_prod_choices = (fp_4int*)0x4F81A0;
+fp_void* turn_upkeep = (fp_void*)0x5258C0;
+fp_1int* faction_upkeep = (fp_1int*)0x527290;
+fp_1int* action_staple = (fp_1int*)0x4CA7F0;
 fp_1int* social_upkeep = (fp_1int*)0x5B44D0;
 fp_1int* repair_phase = (fp_1int*)0x526030;
 fp_1int* production_phase = (fp_1int*)0x526E70;
@@ -121,7 +142,7 @@ HOOK_API int game_year(int n) {
 /*
 Original Offset: 00527290
 */
-HOOK_API int faction_upkeep(int faction) {
+HOOK_API int mod_faction_upkeep(int faction) {
     Faction* f = &tx_factions[faction];
     MetaFaction* m = &tx_metafactions[faction];
 

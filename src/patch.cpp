@@ -206,7 +206,7 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
     if (sq->landmarks & ~LM_FRESH) {
         return false;
     }
-    if (aquatic != is_ocean(sq) || tx_bonus_at(x, y) != RES_NONE) {
+    if (aquatic != is_ocean(sq) || bonus_at(x, y) != RES_NONE) {
         return false;
     }
     if (point_range(natives, x, y) < 4) {
@@ -219,7 +219,7 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
         int y2 = y + offset_tbl[i][1];
         sq = mapsq(x2, y2);
         if (sq) {
-            int bonus = tx_bonus_at(x2, y2);
+            int bonus = bonus_at(x2, y2);
             if (is_ocean(sq)) {
                 if (!is_ocean_shelf(sq)) {
                     sc--;
@@ -241,7 +241,7 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
                 }
                 sc += (i < 20 ? 10 : 5);
             }
-            if (tx_goody_at(x2, y2) > 0) {
+            if (goody_at(x2, y2) > 0) {
                 sc += (i < 20 ? 25 : 8);
                 if (!is_ocean(sq) && (i < 20 || pods.size() < 2)) {
                     pods.insert({x2, y2});
@@ -305,7 +305,7 @@ HOOK_API void find_start(int faction, int* tx, int* ty) {
             break;
         }
     }
-    tx_site_set(*tx, *ty, tx_world_site(*tx, *ty, 0));
+    site_set(*tx, *ty, world_site(*tx, *ty, 0));
     debug("find_start %d %d %d %d %d\n", faction, i, *tx, *ty, point_range(spawns, *tx, *ty));
     fflush(debug_log);
 }
@@ -380,10 +380,10 @@ bool patch_setup(Config* cf) {
     if (!VirtualProtect(AC_IMAGE_BASE, AC_IMAGE_LEN, PAGE_EXECUTE_READWRITE, &attrs))
         return false;
 
-    write_jump(0x527290, (int)faction_upkeep);
-    write_call(0x52768A, (int)turn_upkeep);
-    write_call(0x52A4AD, (int)turn_upkeep);
-    write_call(0x4E61D0, (int)base_production);
+    write_jump(0x527290, (int)mod_faction_upkeep);
+    write_call(0x52768A, (int)mod_turn_upkeep);
+    write_call(0x52A4AD, (int)mod_turn_upkeep);
+    write_call(0x4E61D0, (int)mod_base_production);
     write_call(0x5BDC4C, (int)mod_tech_value);
     write_call(0x579362, (int)mod_enemy_move);
     write_call(0x5C0908, (int)log_veh_kill);

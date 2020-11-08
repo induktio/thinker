@@ -4,6 +4,20 @@
 
 #define THINKER_HEADER (short)0xACAC
 
+void init_save_game(int faction);
+HOOK_API int mod_faction_upkeep(int faction);
+HOOK_API int mod_base_find3(int x, int y, int faction1, int region, int faction2, int faction3);
+
+typedef int __cdecl fp_void();
+typedef int __cdecl fp_1int(int);
+typedef int __cdecl fp_2int(int, int);
+typedef int __cdecl fp_3int(int, int, int);
+typedef int __cdecl fp_4int(int, int, int, int);
+typedef int __cdecl fp_5int(int, int, int, int, int);
+typedef int __cdecl fp_6int(int, int, int, int, int, int);
+typedef int __cdecl fp_7int(int, int, int, int, int, int, int);
+typedef int __cdecl fp_7intstr(int, int, int, int, int, int, int, const char*);
+
 /* Temporarily disable warnings for thiscall parameter type. */
 #ifdef __GNUC__
 #pragma GCC diagnostic push
@@ -54,6 +68,27 @@ extern int* diplo_active_faction;
 extern int* diplo_current_friction;
 extern int* diplo_opponent_faction;
 
+extern fp_7intstr* propose_proto;
+extern fp_4int* veh_init;
+extern fp_1int* veh_skip;
+extern fp_2int* veh_at;
+extern fp_2int* veh_speed;
+extern fp_3int* zoc_any;
+extern fp_1int* monolith;
+extern fp_2int* action_build;
+extern fp_3int* action_terraform;
+extern fp_3int* terraform_cost;
+extern fp_2int* bonus_at;
+extern fp_2int* goody_at;
+extern fp_3int* cost_factor;
+extern fp_3int* site_set;
+extern fp_3int* world_site;
+extern fp_1int* set_base;
+extern fp_1int* base_compute;
+extern fp_4int* base_prod_choices;
+extern fp_void* turn_upkeep;
+extern fp_1int* faction_upkeep;
+extern fp_1int* action_staple;
 extern fp_3int* setup_player;
 extern fp_3int* capture_base;
 extern fp_1int* base_kill;
@@ -77,8 +112,4 @@ extern fp_3int* best_defender;
 extern fp_5int* battle_compute;
 extern fp_6int* battle_kill;
 extern fp_7int* battle_fight_2;
-
-void init_save_game(int faction);
-HOOK_API int faction_upkeep(int faction);
-HOOK_API int mod_base_find3(int x, int y, int faction1, int region, int faction2, int faction3);
 

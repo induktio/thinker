@@ -145,7 +145,7 @@ DLL_EXPORT int ThinkerDecide() {
     return 0;
 }
 
-HOOK_API int base_production(int id, int v1, int v2, int v3) {
+HOOK_API int mod_base_production(int id, int v1, int v2, int v3) {
     assert(id >= 0 && id < *total_num_bases);
     BASE* base = &tx_bases[id];
     int prod = base->queue_items[0];
@@ -155,13 +155,13 @@ HOOK_API int base_production(int id, int v1, int v2, int v3) {
 
     if (is_human(faction)) {
         debug("skipping human base\n");
-        choice = tx_base_prod_choices(id, v1, v2, v3);
+        choice = base_prod_choices(id, v1, v2, v3);
     } else if (!ai_enabled(faction)) {
         debug("skipping computer base\n");
-        choice = tx_base_prod_choices(id, v1, v2, v3);
+        choice = base_prod_choices(id, v1, v2, v3);
     } else {
-        tx_set_base(id);
-        tx_base_compute(1);
+        set_base(id);
+        base_compute(1);
         if ((choice = need_psych(id)) != 0 && choice != prod) {
             debug("BUILD PSYCH\n");
         } else if (base->status_flags & BASE_PRODUCTION_DONE) {
@@ -191,8 +191,8 @@ HOOK_API int base_production(int id, int v1, int v2, int v3) {
     return choice;
 }
 
-HOOK_API int turn_upkeep() {
-    tx_turn_upkeep();
+HOOK_API int mod_turn_upkeep() {
+    turn_upkeep();
     debug("turn_upkeep %d bases: %d vehicles: %d\n",
         *current_turn, *total_num_bases, *total_num_vehicles);
 
@@ -211,13 +211,13 @@ HOOK_API int turn_upkeep() {
             int algo = has_ability(i, ABL_ID_ALGO_ENHANCEMENT) ? ABL_ALGO_ENHANCEMENT : 0;
             if (has_chassis(i, CHS_FOIL)) {
                 int ship = (rec >= REC_FUSION && has_chassis(i, CHS_CRUISER) ? CHS_CRUISER : CHS_FOIL);
-                tx_propose_proto(i, ship, WPN_PROBE_TEAM, (rec >= REC_FUSION ? arm : 0), algo,
+                propose_proto(i, ship, WPN_PROBE_TEAM, (rec >= REC_FUSION ? arm : 0), algo,
                 rec, PLAN_INFO_WARFARE, (ship == CHS_FOIL ? "Foil Probe Team" : "Cruiser Probe Team"));
             }
             if (arm != ARM_NO_ARMOR && rec >= REC_FUSION) {
                 char* name = parse_str(buf, 32, tx_reactor[rec-1].name_short, " ",
                     tx_defense[arm].name_short, " Probe Team");
-                tx_propose_proto(i, chs, WPN_PROBE_TEAM, arm, algo, rec, PLAN_INFO_WARFARE, name);
+                propose_proto(i, chs, WPN_PROBE_TEAM, arm, algo, rec, PLAN_INFO_WARFARE, name);
             }
         }
         if (has_ability(i, ABL_ID_AAA) && arm != ARM_NO_ARMOR) {
@@ -226,26 +226,26 @@ HOOK_API int turn_upkeep() {
                 abls |= (has_ability(i, ABL_ID_COMM_JAMMER) ? ABL_COMM_JAMMER :
                     (has_ability(i, ABL_ID_TRANCE) ? ABL_TRANCE : 0));
             }
-            tx_propose_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, abls, rec, PLAN_DEFENSIVE, NULL);
+            propose_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, abls, rec, PLAN_DEFENSIVE, NULL);
         }
         if (has_ability(i, ABL_ID_TRANCE) && !has_ability(i, ABL_ID_AAA)) {
-            tx_propose_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, ABL_TRANCE, rec, PLAN_DEFENSIVE, NULL);
+            propose_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, ABL_TRANCE, rec, PLAN_DEFENSIVE, NULL);
         }
         if (has_chassis(i, CHS_NEEDLEJET) && has_ability(i, ABL_ID_AIR_SUPERIORITY)) {
-            tx_propose_proto(i, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, ABL_AIR_SUPERIORITY | ABL_DEEP_RADAR,
+            propose_proto(i, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, ABL_AIR_SUPERIORITY | ABL_DEEP_RADAR,
             rec, PLAN_AIR_SUPERIORITY, NULL);
         }
         if (has_weapon(i, WPN_TERRAFORMING_UNIT) && rec >= REC_FUSION) {
             bool grav = has_chassis(i, CHS_GRAVSHIP);
             int abls = has_ability(i, ABL_ID_SUPER_TERRAFORMER ? ABL_SUPER_TERRAFORMER : 0) |
                 (twoabl && !grav && has_ability(i, ABL_ID_FUNGICIDAL) ? ABL_FUNGICIDAL : 0);
-            tx_propose_proto(i, (grav ? CHS_GRAVSHIP : chs), WPN_TERRAFORMING_UNIT, ARM_NO_ARMOR, abls,
+            propose_proto(i, (grav ? CHS_GRAVSHIP : chs), WPN_TERRAFORMING_UNIT, ARM_NO_ARMOR, abls,
             REC_FUSION, PLAN_TERRAFORMING, NULL);
         }
         if (has_weapon(i, WPN_SUPPLY_TRANSPORT) && rec >= REC_FUSION && arm2 != ARM_NO_ARMOR) {
             char* name = parse_str(buf, 32, tx_reactor[REC_FUSION-1].name_short, " ",
                 tx_defense[arm2].name_short, " Supply");
-            tx_propose_proto(i, CHS_INFANTRY, WPN_SUPPLY_TRANSPORT, arm2, 0, REC_FUSION, PLAN_DEFENSIVE, name);
+            propose_proto(i, CHS_INFANTRY, WPN_SUPPLY_TRANSPORT, arm2, 0, REC_FUSION, PLAN_DEFENSIVE, name);
         }
     }
     if (DEBUG) {
@@ -562,7 +562,7 @@ int find_proto(int base_id, int triad, int mode, bool defend) {
         basic = BSC_PROBE_TEAM;
     }
     int best = basic;
-    int cfactor = tx_cost_factor(faction, 1, -1);
+    int cfactor = cost_factor(faction, 1, -1);
     int minerals = b->mineral_surplus;
     int best_val = unit_score(best, faction, cfactor, minerals, defend);
 
@@ -609,7 +609,7 @@ int need_psych(int id) {
     if (b->drone_total > b->talent_total) {
         if (b->nerve_staple_count < 3 && !un_charter() && f->SE_police >= 0 && b->pop_size >= 4
         && b->faction_id_former == faction) {
-            tx_action_staple(id);
+            action_staple(id);
             return 0;
         }
         if (can_build(id, FAC_RECREATION_COMMONS))

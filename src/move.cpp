@@ -317,7 +317,7 @@ int escape_move(int id) {
     VEH* veh = &tx_vehicles[id];
     MAP* sq = mapsq(veh->x, veh->y);
     if (defend_tile(veh, sq))
-        return veh_skip(id);
+        return mod_veh_skip(id);
     int faction = veh->faction_id;
     int tscore = pm_safety[veh->x][veh->y];
     int i = 0;
@@ -342,7 +342,7 @@ int escape_move(int id) {
     }
     if (tx_units[veh->proto_id].weapon_type <= WPN_PSI_ATTACK)
         return enemy_move(id);
-    return veh_skip(id);
+    return mod_veh_skip(id);
 }
 
 int trans_move(int id) {
@@ -352,7 +352,7 @@ int trans_move(int id) {
     auto xy = mp(veh->x, veh->y);
     if (needferry.count(xy)) {
         needferry.erase(xy);
-        return veh_skip(id);
+        return mod_veh_skip(id);
     }
     if (needferry.size() > 0 && triad == TRIAD_SEA && at_target(veh)) {
         MAP* sq;
@@ -374,7 +374,7 @@ int trans_move(int id) {
 int want_convoy(int faction, int x, int y, MAP* sq) {
     if (sq && sq->owner == faction && !convoys.count({x, y})
     && !(sq->items & BASE_DISALLOWED)) {
-        int bonus = tx_bonus_at(x, y);
+        int bonus = bonus_at(x, y);
         if (bonus == RES_ENERGY)
             return RES_NONE;
         else if (sq->items & (TERRA_CONDENSER | TERRA_SOIL_ENR))
@@ -393,7 +393,7 @@ int crawler_move(int id) {
     VEH* veh = &tx_vehicles[id];
     MAP* sq = mapsq(veh->x, veh->y);
     if (!sq || veh->home_base_id < 0) {
-        return veh_skip(id);
+        return mod_veh_skip(id);
     }
     if (!at_target(veh)) {
         return SYNC;
@@ -440,7 +440,7 @@ int crawler_move(int id) {
     if (v1 > 0) {
         return set_convoy(id, RES_MINERAL);
     }
-    return veh_skip(id);
+    return mod_veh_skip(id);
 }
 
 bool safe_path(const TileSearch& ts, int faction) {
@@ -528,7 +528,7 @@ int base_tile_score(int x1, int y1, int range, int triad) {
         sq = mapsq(x2, y2);
         if (sq) {
             int items = sq->items;
-            score += (tx_bonus_at(x2, y2) ? 6 : 0);
+            score += (bonus_at(x2, y2) ? 6 : 0);
             if (sq->landmarks && !(sq->landmarks & (LM_DUNES | LM_SARGASSO | LM_UNITY))) {
                 score += (sq->landmarks & LM_JUNGLE ? 3 : 2);
             }
@@ -561,19 +561,20 @@ int colony_move(int id) {
     int faction = veh->faction_id;
     int triad = veh_triad(id);
     if (defend_tile(veh, sq) || veh->iter_count > 7) {
-        return veh_skip(id);
+        return mod_veh_skip(id);
     }
     if (pm_safety[veh->x][veh->y] < PM_SAFE) {
         return escape_move(id);
     }
-    if ((at_target(veh) || triad == TRIAD_LAND) && can_build_base(veh->x, veh->y, faction, triad)) {
-        tx_action_build(id, 0);
+    if ((at_target(veh) || triad == TRIAD_LAND || !random(12))
+    && can_build_base(veh->x, veh->y, faction, triad)) {
+        action_build(id, 0);
         return SYNC;
     }
     if (is_ocean(sq) && triad == TRIAD_LAND) {
         if (!has_transport(veh->x, veh->y, faction)) {
             needferry.insert({veh->x, veh->y});
-            return veh_skip(id);
+            return mod_veh_skip(id);
         }
         for (const int* t : offset) {
             int x2 = wrap(veh->x + t[0]);
@@ -619,7 +620,7 @@ int colony_move(int id) {
     if (triad == TRIAD_LAND) {
         return enemy_move(id);
     }
-    return veh_skip(id);
+    return mod_veh_skip(id);
 }
 
 bool can_bridge(int x, int y, int faction, MAP* sq) {
@@ -760,7 +761,7 @@ int select_item(int x, int y, int faction, MAP* sq) {
     || (sq->landmarks & LM_VOLCANO && sq->art_ref_id == 0)) {
         return -1;
     }
-    int bonus = tx_bonus_at(x, y);
+    int bonus = bonus_at(x, y);
     bool rocky_sq = sq->rocks & TILE_ROCKY;
     bool has_eco = has_terra(faction, FORMER_CONDENSER, 0);
     bool has_min = has_tech(faction, tx_basic->tech_preq_allow_3_minerals_sq);
@@ -781,7 +782,7 @@ int select_item(int x, int y, int faction, MAP* sq) {
         return FORMER_REMOVE_FUNGUS;
     }
     if (can_bridge(x, y, faction, sq)) {
-        int cost = tx_terraform_cost(x, y, faction);
+        int cost = terraform_cost(x, y, faction);
         if (cost < tx_factions[faction].energy_credits/10) {
             return FORMER_RAISE_LAND;
         }
@@ -857,7 +858,7 @@ int former_tile_score(int x1, int y1, int x2, int y2, int faction, MAP* sq) {
         {TERRA_SOIL_ENR, -4},
         {TERRA_THERMAL_BORE, -8},
     };
-    int bonus = tx_bonus_at(x2, y2);
+    int bonus = bonus_at(x2, y2);
     int range = map_range(x1, y1, x2, y2);
     int items = sq->items;
     int score = (sq->landmarks ? 3 : 0);
@@ -899,7 +900,7 @@ int former_move(int id) {
         return enemy_move(id);
     }
     if (defend_tile(veh, sq)) {
-        return veh_skip(id);
+        return mod_veh_skip(id);
     }
     if (safe || (veh->move_status >= 16 && veh->move_status < 22)) {
         if ((veh->move_status >= 4 && veh->move_status < 24)
@@ -911,7 +912,7 @@ int former_move(int id) {
             int cost = 0;
             pm_former[x][y] -= 2;
             if (item == FORMER_RAISE_LAND) {
-                cost = tx_terraform_cost(x, y, faction);
+                cost = terraform_cost(x, y, faction);
                 tx_factions[faction].energy_credits -= cost;
             }
             debug("former_action %d %d | %d %d | %d %s\n",
@@ -959,11 +960,11 @@ int former_move(int id) {
         return set_move_to(id, bx, by);
     }
     debug("former_skip %d %d | %d %d\n", x, y, faction, id);
-    return veh_skip(id);
+    return mod_veh_skip(id);
 }
 
 int choose_defender(int x, int y, int faction, int att_id) {
-    int id = tx_veh_at(x, y);
+    int id = veh_at(x, y);
     if (id < 0 || ~tx_vehicles[id].visibility & (1 << faction)) {
         return -1;
     }
@@ -1000,7 +1001,7 @@ int combat_move(int id) {
     }
     bool at_base = sq->items & TERRA_BASE_IN_TILE;
     int mov_rate = tx_basic->mov_rate_along_roads;
-    int moves = veh_speed(id) - veh->road_moves_spent;
+    int moves = mod_veh_speed(id) - veh->road_moves_spent;
     int max_dist = moves;
     int defenders = 0;
 

@@ -2,6 +2,18 @@
 # Thinker mod release changelog
 
 
+## Version 2.1 (2020-11-08)
+* New option: ignore_reactor_power (disabled by default). This makes the combat calculation ignore reactor power and treat every unit as having a fission reactor. Combat odds are also properly displayed in the confirmation dialog. More advanced reactors still provide their usual cost discounts. Planet busters are unaffected by this feature.
+* New option: territory_border_fix will make the oldest bases claim tiles that are equidistant between two bases of different factions. Coastal bases also expand territory into the ocean for each of the 20 workable tiles in the base radius.
+* Addition to eco_damage_fix: clean minerals cap will now increase every time Tree Farm, Hybrid Forest, Centauri Preserve or Temple of Planet is built even if no fungal pop has been encountered yet. It is not necessary anymore to delay building these facilities to alleviate eco damage.
+* Faction placement is improved on custom maps where some starting locations were not previously picked.
+* AI production planner tries to avoid building certain secret projects if they yield only marginal benefits.
+* Include also TALENT and ROBUST modifiers in social_ai calculation.
+* Fix issue where alien factions didn't gain the bonuses provided by free_colony_pods or free_formers.
+* Fix issue where governors didn't sometimes work in player-owned bases.
+* Fix AI vehicle home base reassignment bug where an apparent oversight made the game engine to reassign vehicles to bases with mineral_surplus < 2. Credits: Will To Power mod.
+
+
 ## Version 2.0 (2020-05-31)
 * Road building algorithm has been completely rewritten to build more natural looking road networks.
 * AI will now build magtubes after the tech is acquired.

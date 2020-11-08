@@ -80,15 +80,11 @@ Proposed alphax.txt settings for Thinker can be found from [this file](docs/alph
 
 Features not supported
 ======================
-Currently the features listed here are not supported while Thinker is enabled. The list may be subject to change in future releases.
+Currently the features listed here are not supported while Thinker is enabled. The list may be subject to change in future releases. Some requested features are not feasible to implement due to the limitations of patching a game binary.
 
-1. Network multiplayer is not supported because of the extra code required to synchronize the game state across computers.
-2. Some custom scenario rules in "Edit Scenario Rules" menus are not supported fully. This will not affect randomly generated maps.
-
-In addition, there are several often requested features that unfortunately are not feasible to implement due to the limitations of patching a game binary. These include at least:
-
-1. More factions/units/bases. These limits were hardcoded in the game binary at compilation time and are not feasible to change without a full open source port.
-2. Moddable hit points for each reactor level. Currently these values are fixed at 10x reactor level.
+1. Network multiplayer (excluding PBEM) is not supported because of the large amounts of extra code required to synchronize the game state across computers.
+2. More factions/units/bases. These limits were hardcoded in the game binary at compilation time and are not feasible to change without a full open source port.
+3. Some custom scenario rules in "Edit Scenario Rules" menus are not supported fully. This will not affect randomly generated maps. However these rules are supported: No terraforming, No colony pods can be built and No secret projects can be built.
 
 
 Known bugs
