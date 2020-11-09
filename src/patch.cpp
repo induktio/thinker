@@ -486,19 +486,19 @@ bool patch_setup(Config* cf) {
         write_call(0x52417F, (int)mod_base_find3);
     }
     if (cf->revised_tech_cost) {
-        write_call(0x4452D5, (int)tech_rate);
-        write_call(0x498D26, (int)tech_rate);
-        write_call(0x4A77DA, (int)tech_rate);
-        write_call(0x521872, (int)tech_rate);
-        write_call(0x5218BE, (int)tech_rate);
-        write_call(0x5581E9, (int)tech_rate);
-        write_call(0x5BEA4D, (int)tech_rate);
-        write_call(0x5BEAC7, (int)tech_rate);
+        write_call(0x4452D5, (int)mod_tech_rate);
+        write_call(0x498D26, (int)mod_tech_rate);
+        write_call(0x4A77DA, (int)mod_tech_rate);
+        write_call(0x521872, (int)mod_tech_rate);
+        write_call(0x5218BE, (int)mod_tech_rate);
+        write_call(0x5581E9, (int)mod_tech_rate);
+        write_call(0x5BEA4D, (int)mod_tech_rate);
+        write_call(0x5BEAC7, (int)mod_tech_rate);
 
-        write_call(0x52935F, (int)tech_selection);
-        write_call(0x5BE5E1, (int)tech_selection);
-        write_call(0x5BE690, (int)tech_selection);
-        write_call(0x5BEB5D, (int)tech_selection);
+        write_call(0x52935F, (int)mod_tech_selection);
+        write_call(0x5BE5E1, (int)mod_tech_selection);
+        write_call(0x5BE690, (int)mod_tech_selection);
+        write_call(0x5BEB5D, (int)mod_tech_selection);
     }
     if (cf->auto_relocate_hq) {
         write_call(0x4CCF13, (int)mod_capture_base);

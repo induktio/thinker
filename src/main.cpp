@@ -124,8 +124,8 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
                 return FALSE;
             }
             srand(time(0));
-            *tx_version = MOD_VERSION;
-            *tx_date = MOD_DATE;
+            *engine_version = MOD_VERSION;
+            *engine_date = MOD_DATE;
             break;
 
         case DLL_PROCESS_DETACH:

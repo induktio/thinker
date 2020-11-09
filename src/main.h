@@ -141,11 +141,6 @@ extern Points convoys;
 extern Points boreholes;
 extern Points needferry;
 
-/*
-Functions that are replacements (in full or just called first)
-to the SMACX binary versions should be prefixed with 'mod_'.
-*/
-
 DLL_EXPORT int ThinkerDecide();
 HOOK_API int mod_turn_upkeep();
 HOOK_API int mod_base_production(int id, int v1, int v2, int v3);
