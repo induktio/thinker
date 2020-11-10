@@ -140,6 +140,25 @@ HOOK_API int mod_setup_player(int faction, int v1, int v2) {
     return 0;
 }
 
+HOOK_API int skip_action_destroy(int id) {
+    veh_skip(id);
+    *veh_attack_flags = 0;
+    return 0;
+}
+
+HOOK_API int render_ocean_fungus(int x, int y) {
+    MAP* sq;
+    int k = 0;
+    for (int i=0; i<8; i++) {
+        int z = (i - 1) & 7;
+        sq = mapsq(wrap(x + offset[z][0]), y + offset[z][1]);
+        if (sq && sq->items & TERRA_FUNGUS && is_ocean_shelf(sq)) {
+            k |= (1 << i);
+        }
+    }
+    return k;
+}
+
 void process_map(int k) {
     natives.clear();
     goodtiles.clear();
@@ -377,8 +396,9 @@ void remove_call(int addr) {
 bool patch_setup(Config* cf) {
     DWORD attrs;
     int lm = ~cf->landmarks;
-    if (!VirtualProtect(AC_IMAGE_BASE, AC_IMAGE_LEN, PAGE_EXECUTE_READWRITE, &attrs))
+    if (!VirtualProtect(AC_IMAGE_BASE, AC_IMAGE_LEN, PAGE_EXECUTE_READWRITE, &attrs)) {
         return false;
+    }
 
     write_jump(0x527290, (int)mod_faction_upkeep);
     write_call(0x52768A, (int)mod_turn_upkeep);
@@ -386,7 +406,6 @@ bool patch_setup(Config* cf) {
     write_call(0x4E61D0, (int)mod_base_production);
     write_call(0x5BDC4C, (int)mod_tech_value);
     write_call(0x579362, (int)mod_enemy_move);
-    write_call(0x5C0908, (int)log_veh_kill);
     write_call(0x4E888C, (int)mod_crop_yield);
     write_call(0x4672A7, (int)mod_base_draw);
     write_call(0x40F45A, (int)mod_base_draw);
@@ -395,6 +414,32 @@ bool patch_setup(Config* cf) {
     write_call(0x5B341C, (int)mod_setup_player);
     write_call(0x5B3C03, (int)mod_setup_player);
     write_call(0x5B3C4C, (int)mod_setup_player);
+    write_call(0x5C0908, (int)log_veh_kill);
+
+    /*
+    Fix a bug that occurs after the player does an artillery attack on unoccupied
+    tile and then selects another unit to view combat odds and cancels the attack.
+    After this veh_attack_flags will not get properly cleared and the next bombardment
+    on an unoccupied tile always results in the destruction of the bombarding unit.
+    */
+    write_call(0x4CAA7C, (int)skip_action_destroy);
+
+    /*
+    Fix engine rendering issue where ocean fungus tiles displayed
+    inconsistent graphics compared to the adjacent land fungus tiles.
+    */
+    {
+        const byte old_bytes[] = {
+            0x8B,0x1D,0x8C,0x98,0x94,0x00,0x83,0xE3,0x01,0x8B,0x75,0x20,
+            0x8D,0x79,0xFF,0x83,0xE7,0x07,0xC1,0xE7,0x02,0x8B,0x87,0x50,
+        };
+        const byte new_bytes[] = {
+            0x8B,0x45,0x24,0x50,0x8B,0x45,0x20,0x50,0xE8,0x00,0x00,0x00,
+            0x00,0x83,0xC4,0x08,0x89,0x45,0xC4,0xE9,0x85,0x07,0x00,0x00,
+        };
+        write_bytes(0x463651, old_bytes, new_bytes, sizeof(new_bytes));
+        write_call(0x463659, (int)render_ocean_fungus);
+    }
 
     /*
     Fixes issue where attacking other satellites doesn't work in
@@ -575,9 +620,9 @@ bool patch_setup(Config* cf) {
     if (lm & LM_FRESH) remove_call(0x5C8933);
     if (lm & LM_GEOTHERMAL) remove_call(0x5C893C);
 
-    if (!VirtualProtect(AC_IMAGE_BASE, AC_IMAGE_LEN, PAGE_EXECUTE_READ, &attrs))
+    if (!VirtualProtect(AC_IMAGE_BASE, AC_IMAGE_LEN, PAGE_EXECUTE_READ, &attrs)) {
         return false;
-
+    }
     return true;
 }
 

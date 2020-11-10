@@ -70,6 +70,7 @@ extern int* diplo_active_faction;
 extern int* diplo_current_friction;
 extern int* diplo_opponent_faction;
 extern int* base_find_dist;
+extern int* veh_attack_flags;
 
 extern const char** engine_version;
 extern const char** engine_date;
