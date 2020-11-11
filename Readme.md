@@ -44,7 +44,9 @@ Other mods
 
 Compiling
 ---------
-Thinker can be compiled with GCC and the included CodeBlocks project. GCC version 8.1.0 or later is recommended and can be found from [mingw-w64 project](https://sourceforge.net/projects/mingw-w64/files/).
+Thinker can be compiled with mingw-w64 i686 GCC and the included CodeBlocks project. Note that mingw-w64 and mingw are not the same thing. GCC version 8.1.0 or later is recommended and can be found from [mingw-w64 project](https://sourceforge.net/projects/mingw-w64/files/).
+
+[`mingw-w64-i686-8.1.0-posix-dwarf-rt_v6-rev0`](https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/8.1.0/threads-posix/dwarf/i686-8.1.0-release-posix-dwarf-rt_v6-rev0.7z) is known to work.
 
 
 License
