@@ -6,6 +6,7 @@
 #include "tech.h"
 #include "lib/ini.h"
 
+bool unknown_option = false;
 FILE* debug_log = NULL;
 Config conf;
 AIPlans plans[8];
@@ -16,8 +17,8 @@ Points needferry;
 
 int handler(void* user, const char* section, const char* name, const char* value) {
     Config* cf = (Config*)user;
-    char buf[250];
-    strcpy_s(buf, sizeof(buf), value);
+    char buf[INI_MAX_LINE+2] = {};
+    strncpy(buf, value, INI_MAX_LINE);
     #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
     if (MATCH("thinker", "free_formers")) {
         cf->free_formers = atoi(value);
@@ -82,6 +83,7 @@ int handler(void* user, const char* section, const char* name, const char* value
                 return 1;
             }
         }
+        unknown_option = true;
         return 0;  /* unknown section/name, error */
     }
     return 1;
@@ -122,6 +124,10 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             }
             if (!cmd_parse(&conf) || !patch_setup(&conf)) {
                 return FALSE;
+            }
+            if (unknown_option) {
+                MessageBoxA(0, "Unknown configuration option detected in thinker.ini.\n"\
+                    "Game might not work as intended.", MOD_VERSION, MB_OK | MB_ICONWARNING);
             }
             srand(time(0));
             *engine_version = MOD_VERSION;
@@ -569,7 +575,7 @@ int find_proto(int base_id, int triad, int mode, bool defend) {
     for (int i=0; i < 128; i++) {
         int id = (i < 64 ? i : (faction-1)*64 + i);
         UNIT* u = &tx_units[id];
-        if (strlen(u->name) > 0 && unit_triad(id) == triad && id != best) {
+        if (u->unit_flags & UNIT_ACTIVE && strlen(u->name) > 0 && unit_triad(id) == triad && id != best) {
             if (id < 64 && !has_tech(faction, u->preq_tech)) {
                 continue;
             }
@@ -578,8 +584,9 @@ int find_proto(int base_id, int triad, int mode, bool defend) {
             || (!mode && defend && u->chassis_type != CHS_INFANTRY)
             || (u->weapon_type == WPN_PSI_ATTACK && plans[faction].psi_score < 1)
             || u->weapon_type == WPN_PLANET_BUSTER
-            || !(mode || best == basic || (defend == (offense_value(u) < defense_value(u)))))
+            || !(mode != COMBAT || best == basic || (defend == (offense_value(u) < defense_value(u))))) {
                 continue;
+            }
             int val = unit_score(id, faction, cfactor, minerals, defend);
             if (unit_is_better(&tx_units[best], u) || random(100) > 50 + best_val - val) {
                 best = id;
@@ -915,10 +922,11 @@ int select_prod(int id) {
     double threat = 1 - (1 / (1 + max(0.0, w1 * w2)));
     int def_target = (*current_turn < 50 && !sea_base && !random(3) ? 2 : 1);
 
-    debug("select_prod %d %d %2d %2d | %d %d %d %d %d %d | %2d %2d %2d | %2d %.4f %.4f %.4f %.4f\n",
-    *current_turn, faction, base->x, base->y,
-    defenders, formers, pods, probes, crawlers, build_pods,
-    minerals, reserve, p->proj_limit, enemyrange, enemymil, w1, w2, threat);
+    debug("select_prod %d %d %2d %2d def: %d frm: %d prb: %d crw: %d pods: %d expand: %d "\
+        "min: %2d res: %2d limit: %2d range: %2d mil: %.4f threat: %.4f\n",
+        *current_turn, faction, base->x, base->y,
+        defenders, formers, probes, crawlers, pods, build_pods,
+        minerals, reserve, p->proj_limit, enemyrange, enemymil, threat);
 
     if (defenders < def_target && minerals > 2) {
         if (def_target < 2 && (*current_turn > 30 || enemyrange < 15)) {

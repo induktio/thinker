@@ -9,8 +9,9 @@ Thinker is an AI improvement mod for Alpha Centauri: Alien Crossfire. By patchin
 * AI terraformers prioritize condenser-farms, boreholes and forests
 * AI builds more crawlers and deploys them better
 * AI deploys colony pods much sooner instead of wandering on the map
-* Unit auto design feature creates improved probe teams and AAA garrisons
+* More config options for many previously fixed settings in the game engine
 * Many enhancements to random map generation/spawn locations
+* Name labels for HQ bases are emphasized on the map
 * Does not affect player-run factions (with some exceptions)
 * Minimal changes to vanilla game mechanics
 * Game binary includes [Scient's patches](Details.md)
@@ -39,12 +40,14 @@ Installation
 Other mods
 ----------
 * [SMAC-in-SMACX mod](Details.md#smac-in-smacx-mod) can be installed to play a game similar to original SMAC from the SMACX game binary while Thinker is enabled.
-* [Pracx](https://github.com/DrazharLn/pracx) graphics enhancement patch can be used together with Thinker, but it is not required in any way. For easiest installation, download [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). If you already use older Pracx 1.10 you can just rename terranx_mod.exe to terranx.exe and run pracxpatch.exe so that the installer patches the right binary.
+* [PRACX](https://github.com/DrazharLn/pracx) graphics enhancement patch can be used together with Thinker, but it is not required in any way. For easiest installation, download [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). If you already use older Pracx 1.10 you can just rename terranx_mod.exe to terranx.exe and run pracxpatch.exe so that the installer patches the right binary.
 
 
 Compiling
 ---------
-Thinker can be compiled with GCC and the included CodeBlocks project. GCC version 8.1.0 or later is recommended and can be found from [mingw-w64 project](https://sourceforge.net/projects/mingw-w64/files/).
+Thinker can be compiled with GCC using the included CodeBlocks project. GCC version 8.1.0 or later is recommended.
+To avoid compiling issues, do not use the MinGW toolkit version bundled with CodeBlocks.
+Instead get the toolkit separately from the [MinGW-w64 project](https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/).
 
 
 License

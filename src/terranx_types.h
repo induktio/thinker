@@ -86,9 +86,9 @@ struct UNIT {
     char carry_capacity;
     char cost;
     char unit_plan;
-    char unk_1;
-    char factions_retired;
-    char factions;
+    char unk_1; // some kind of internal prototype category?
+    char obsolete_factions;// faction bitfield of those who marked this prototype obsolete
+    char combat_factions; // faction bitfield for those that have seen this unit in combat (atk/def)
     char icon_offset;
     char pad_1; // unused
     short unit_flags;

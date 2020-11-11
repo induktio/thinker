@@ -467,7 +467,8 @@ enum unit_ability_rules_flags {
 };
 
 enum unit_prototype_flags {
-    UNIT_ACTIVE = 0x1,
+    UNIT_ACTIVE = 0x1, // if this bit is zero, prototype has been retired
+    UNIT_CUSTOM_NAME_SET = 0x2,
     UNIT_PROTOTYPED = 0x4,
 };
 
