@@ -73,8 +73,8 @@ void check_relocate_hq(int faction) {
         for (int i=0; i<*total_num_bases; i++) {
             BASE* b = &tx_bases[i];
             if (b->faction_id == faction) {
-                double score = b->pop_size*0.2 - mean_range(bases, b->x, b->y)
-                    + (has_facility(i, FAC_PERIMETER_DEFENSE) ? 0.5 : 0);
+                double score = b->pop_size*0.3 - mean_range(bases, b->x, b->y)
+                    + (has_facility(i, FAC_PERIMETER_DEFENSE) ? 1 : 0);
                 debug("relocate_hq %.4f %s\n", score, b->name);
                 if (score > best_score) {
                     best_id = i;
@@ -212,8 +212,8 @@ void process_map(int k) {
         goodtiles.clear();
     }
     has_supply_pods = (*map_area_tiles > pods_removed * 20);
-    debug("process_map %d %d %d %d %d %d\n", *map_axis_x, *map_axis_y,
-        *map_area_sq_root, goodtiles.size(), pods_removed, has_supply_pods);
+    debug("process_map x: %d y: %d sqrt: %d goodtiles: %d removed: %d has_pods: %d\n",
+        *map_axis_x, *map_axis_y, *map_area_sq_root, goodtiles.size(), pods_removed, has_supply_pods);
 }
 
 bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
@@ -228,7 +228,7 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
     if (aquatic != is_ocean(sq) || bonus_at(x, y) != RES_NONE) {
         return false;
     }
-    if (point_range(natives, x, y) < 4) {
+    if (min_range(natives, x, y) < max(4, 8 - iter/16)) {
         return false;
     }
     int sc = 0;
@@ -273,7 +273,8 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
     }
     int min_sc = (has_supply_pods ? 160 : 100) - iter/2;
     bool need_bonus = (has_supply_pods && !aquatic && conf.nutrient_bonus > is_human(faction));
-    debug("find_score %2d | %3d %3d | %d %d %d %d\n", iter, x, y, pods.size(), nut, min_sc, sc);
+    debug("find_score %d %d x: %3d y: %3d pods: %d nuts: %d min: %d score: %d\n",
+        faction, iter, x, y, pods.size(), nut, min_sc, sc);
     if (sc >= min_sc && need_bonus && (int)pods.size() > 1 - iter/50) {
         int n = 0;
         while (!aquatic && pods.size() > 0 && nut + n < 2) {
@@ -305,8 +306,8 @@ HOOK_API void find_start(int faction, int* tx, int* ty) {
     int x = 0;
     int y = 0;
     int i = 0;
-    while (++i < 120) {
-        if (!aquatic && goodtiles.size() > 0) {
+    while (++i < 150) {
+        if (!aquatic && goodtiles.size() > 0 && i < 120) {
             Points::const_iterator it(goodtiles.begin());
             std::advance(it, random(goodtiles.size()));
             x = it->first;
@@ -315,17 +316,17 @@ HOOK_API void find_start(int faction, int* tx, int* ty) {
             y = (random(*map_axis_y - k*2) + k);
             x = (random(*map_axis_x) &~1) + (y&1);
         }
-        int min_range = max(8, *map_area_sq_root/3 - i/5);
-        z = point_range(spawns, x, y);
-        debug("find_iter %d %d | %3d %3d | %2d %2d\n", faction, i, x, y, min_range, z);
-        if (z >= min_range && valid_start(faction, i, x, y, aquatic)) {
+        int limit = max(8, *map_area_sq_root/3 - i/6);
+        z = min_range(spawns, x, y);
+        debug("find_iter  %d %d x: %3d y: %3d limit: %2d range: %2d\n", faction, i, x, y, limit, z);
+        if (z >= limit && valid_start(faction, i, x, y, aquatic)) {
             *tx = x;
             *ty = y;
             break;
         }
     }
     site_set(*tx, *ty, world_site(*tx, *ty, 0));
-    debug("find_start %d %d %d %d %d\n", faction, i, *tx, *ty, point_range(spawns, *tx, *ty));
+    debug("find_start %d %d x: %3d y: %3d range: %d\n", faction, i, *tx, *ty, min_range(spawns, *tx, *ty));
     fflush(debug_log);
 }
 
@@ -564,9 +565,14 @@ bool patch_setup(Config* cf) {
         const byte old_bytes[] = {0x84,0x05,0xE8,0x64,0x9A,0x00,0x74,0x24};
         write_bytes(0x4EA0B9, old_bytes, NULL, sizeof(old_bytes));
 
-        /* Patch clean minerals calculation. */
+        /* Patch Tree Farms to always increase the clean minerals limit. */
         const byte old_bytes_2[] = {0x85,0xC0,0x74,0x07};
         write_bytes(0x4F2AC6, old_bytes_2, NULL, sizeof(old_bytes_2));
+    }
+    if (cf->clean_minerals != 16) {
+        const byte old_bytes[] = {0x83, 0xC6, 0x10};
+        const byte new_bytes[] = {0x83, 0xC6, (byte)cf->clean_minerals};
+        write_bytes(0x4E9E41, old_bytes, new_bytes, sizeof(new_bytes));
     }
     if (cf->collateral_damage_value != 3) {
         const byte old_bytes[] = {0xB2, 0x03};

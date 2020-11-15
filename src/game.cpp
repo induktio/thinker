@@ -333,7 +333,7 @@ int map_range(int x1, int y1, int x2, int y2) {
     return (xd + yd)/2;
 }
 
-int point_range(const Points& S, int x, int y) {
+int min_range(const Points& S, int x, int y) {
     int z = MAPSZ;
     for (auto& p : S) {
         z = min(z, map_range(x, y, p.first, p.second));

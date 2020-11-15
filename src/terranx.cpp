@@ -33,7 +33,7 @@ int* diplo_active_faction = (int*)0x93F7CC;
 int* diplo_current_friction = (int*)0x93FA74;
 int* diplo_opponent_faction = (int*)0x8A4164;
 int* base_find_dist = (int*)0x90EA04;
-int *veh_attack_flags = (int *)0x93E904;
+int* veh_attack_flags = (int*)0x93E904;
 
 const char** engine_version = (const char**)0x691870;
 const char** engine_date = (const char**)0x691874;

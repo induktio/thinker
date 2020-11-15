@@ -40,6 +40,16 @@ bool victory_done() {
         || has_project(-1, FAC_ASCENT_TO_TRANSCENDENCE);
 }
 
+bool has_colony_pods(int faction) {
+    for (int i=0; i<*total_num_vehicles; i++) {
+        VEH* veh = &tx_vehicles[i];
+        if (veh->faction_id == faction && tx_units[veh->proto_id].weapon_type == WPN_COLONY_MODULE) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /*
 Original Offset: 005C89A0
 */
@@ -112,7 +122,7 @@ HOOK_API int mod_faction_upkeep(int faction) {
     if (f->energy_credits < 0) {
         f->energy_credits = 0;
     }
-    if (!f->current_num_bases && !f->units_active[BSC_COLONY_POD] && !f->units_active[BSC_SEA_ESCAPE_POD]) {
+    if (!f->current_num_bases && !has_colony_pods(faction)) {
         eliminate_player(faction, 0);
     }
     *(int*)0x93A934 = 0;

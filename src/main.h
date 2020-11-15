@@ -99,6 +99,7 @@ struct Config {
     int ignore_reactor_power = 0;
     int territory_border_fix = 1;
     int eco_damage_fix = 1;
+    int clean_minerals = 16;
     int collateral_damage_value = 3;
     int disable_planetpearls = 0;
     int disable_aquatic_bonus_minerals = 0;

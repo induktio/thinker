@@ -70,7 +70,7 @@ int map_hash(int x, int y);
 double lerp(double a, double b, double t);
 int wrap(int a);
 int map_range(int x1, int y1, int x2, int y2);
-int point_range(const Points& S, int x, int y);
+int min_range(const Points& S, int x, int y);
 double mean_range(const Points& S, int x, int y);
 MAP* mapsq(int x, int y);
 int unit_in_tile(MAP* sq);

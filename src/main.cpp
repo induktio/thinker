@@ -62,12 +62,14 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->territory_border_fix = atoi(value);
     } else if (MATCH("thinker", "eco_damage_fix")) {
         cf->eco_damage_fix = atoi(value);
+    } else if (MATCH("thinker", "clean_minerals")) {
+        cf->clean_minerals = max(0, atoi(value));
     } else if (MATCH("thinker", "collateral_damage_value")) {
         cf->collateral_damage_value = atoi(value);
     } else if (MATCH("thinker", "disable_planetpearls")) {
         cf->disable_planetpearls = atoi(value);
     } else if (MATCH("thinker", "disable_aquatic_bonus_minerals")) {
-        cf->disable_aquatic_bonus_minerals = max(0, atoi(value));
+        cf->disable_aquatic_bonus_minerals = atoi(value);
     } else if (MATCH("thinker", "cost_factor")) {
         opt_list_parse(tx_cost_ratios, buf, 6, 1);
     } else if (MATCH("thinker", "content_pop_player")) {
@@ -345,7 +347,7 @@ bool redundant_project(int faction, int proj) {
     }
     if (proj == FAC_CITIZENS_DEFENSE_FORCE) {
         return tx_facility[FAC_CITIZENS_DEFENSE_FORCE].maint == 0
-            && facility_count(faction, FAC_CITIZENS_DEFENSE_FORCE)*4 < 3*f->current_num_bases;
+            && facility_count(faction, FAC_CITIZENS_DEFENSE_FORCE) > f->current_num_bases/2 + 2;
     }
     if (proj == FAC_MARITIME_CONTROL_CENTER) {
         int n = 0;
@@ -840,12 +842,18 @@ double expansion_ratio(Faction* f) {
 
 int select_prod(int id) {
     BASE* base = &tx_bases[id];
+    MAP* sq1 = mapsq(base->x, base->y);
     int faction = base->faction_id;
     int minerals = base->mineral_surplus;
     Faction* f = &tx_factions[faction];
     MetaFaction* m = &tx_metafactions[faction];
     AIPlans* p = &plans[faction];
 
+    int reserve = max(2, base->mineral_intake / 2);
+    bool has_formers = has_weapon(faction, WPN_TERRAFORMING_UNIT);
+    bool has_supply = has_weapon(faction, WPN_SUPPLY_TRANSPORT);
+    bool build_ships = can_build_ships(id);
+    bool sea_base = is_sea_base(id);
     int might = faction_might(faction);
     int transports = 0;
     int defenders = 0;
@@ -858,8 +866,9 @@ int select_prod(int id) {
     double enemymil = 0;
 
     for (int i=1; i<8; i++) {
-        if (i==faction || ~f->diplo_status[i] & DIPLO_COMMLINK)
+        if (i==faction || ~f->diplo_status[i] & DIPLO_COMMLINK) {
             continue;
+        }
         double mil = min(5.0, 1.0 * faction_might(i) / might);
         if (f->diplo_status[i] & DIPLO_VENDETTA) {
             enemymask |= (1 << i);
@@ -872,10 +881,9 @@ int select_prod(int id) {
         BASE* b = &tx_bases[i];
         if ((1 << b->faction_id) & enemymask) {
             int range = map_range(base->x, base->y, b->x, b->y);
-            MAP* sq1 = mapsq(base->x, base->y);
             MAP* sq2 = mapsq(b->x, b->y);
             if (sq1 && sq2 && sq1->region != sq2->region) {
-                range = range*3/2;
+                range = 3*range/2;
             }
             enemyrange = min(enemyrange, range);
         }
@@ -894,7 +902,10 @@ int select_prod(int id) {
             } else if (u->weapon_type == WPN_PROBE_TEAM) {
                 probes++;
             } else if (u->weapon_type == WPN_SUPPLY_TRANSPORT) {
-                crawlers += (veh->move_status == ORDER_CONVOY ? 1 : 5);
+                crawlers++;
+                if (veh->move_status != ORDER_CONVOY) {
+                    has_supply = false;
+                }
             } else if (u->weapon_type == WPN_TROOP_TRANSPORT) {
                 transports++;
             }
@@ -906,14 +917,9 @@ int select_prod(int id) {
             }
         }
     }
-    int reserve = max(2, base->mineral_intake / 2);
-    bool has_formers = has_weapon(faction, WPN_TERRAFORMING_UNIT);
-    bool has_supply = has_weapon(faction, WPN_SUPPLY_TRANSPORT);
-    bool build_ships = can_build_ships(id);
     bool build_pods = ~*game_rules & RULES_SCN_NO_COLONY_PODS
         && (base->pop_size > 1 || base->nutrient_surplus > 1)
         && pods < 2 && *total_num_bases < 500 && expansion_ratio(f) < 1.0;
-    bool sea_base = is_sea_base(id);
     m->thinker_enemy_range = (enemyrange + 9 * m->thinker_enemy_range)/10;
 
     double w1 = min(1.0, max(0.5, 1.0 * minerals / p->proj_limit));
@@ -946,10 +952,11 @@ int select_prod(int id) {
                 return unit;
             }
         }
-        if (sea_base || (build_ships && formers == 1 && !random(3)))
+        if (sea_base || (build_ships && formers == 1 && !random(3))) {
             return find_proto(id, TRIAD_SEA, WMODE_TERRAFORMER, DEF);
-        else
+        } else {
             return find_proto(id, TRIAD_LAND, WMODE_TERRAFORMER, DEF);
+        }
     } else {
         int crawl_target = 1 + min(base->pop_size/3,
             (base->mineral_surplus >= p->proj_limit ? 2 : 1));
