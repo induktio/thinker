@@ -46,7 +46,7 @@ For example, on standard maps level 1 techs cost 60 labs before other factors ar
 * If 2 or more factions with commlink to the current faction has the tech, multiply by 0.75.
 * If only 1 commlink faction has it, multiply by 0.85.
 
-The final cost calculated by this formula is visible in the F2 status screen after the label "TECH COST".
+The final cost calculated by this formula is visible in the F2 status screen after the label "TECH COST". Note that the social engineering RESEARCH rating does not affect this number. Instead it changes "TECH PER TURN" value displayed on the same screen.
 
 
 SMAC in SMACX mod

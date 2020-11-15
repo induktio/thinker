@@ -2,6 +2,15 @@
 # Thinker mod release changelog
 
 
+## Version 2.2 (2020-11-15)
+* New option: clean_minerals sets the amount of minerals a base can produce before experiencing eco damage.
+* Improve rendering on ocean fungus tiles where they now display consistent graphics compared to the adjacent land fungus tiles.
+* Game now displays a warning on startup if an unknown config option is detected in thinker.ini.
+* Fix issue where revised_tech_cost was not working in the previous version.
+* Fix engine bug where selecting bombardment on an empty square sometimes resulted in the attacking unit being destroyed.
+* Fix very rare issue where a faction might get eliminated even when they had active colony pods.
+
+
 ## Version 2.1 (2020-11-08)
 * New option: ignore_reactor_power (disabled by default). This makes the combat calculation ignore reactor power and treat every unit as having a fission reactor. Combat odds are also properly displayed in the confirmation dialog. More advanced reactors still provide their usual cost discounts. Planet busters are unaffected by this feature.
 * New option: territory_border_fix will make the oldest bases claim tiles that are equidistant between two bases of different factions. Coastal bases also expand territory into the ocean for each of the 20 workable tiles in the base radius.

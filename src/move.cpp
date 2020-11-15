@@ -83,9 +83,10 @@ HOOK_API int log_veh_kill(int UNUSED(ptr), int id, int UNUSED(owner), int UNUSED
     /* This logging function is called whenever a vehicle is removed/killed for any reason. */
     VEH* veh = &tx_vehicles[id];
     if (ai_enabled(*active_faction) && at_war(*active_faction, veh->faction_id)) {
-        assert(veh->x >= 0 && veh->y >= 0);
-        adjust_value(pm_enemy_near, veh->x, veh->y, 3, -1);
-        pm_enemy[veh->x][veh->y]--;
+        if (veh->x >= 0 && veh->y >= 0) {
+            adjust_value(pm_enemy_near, veh->x, veh->y, 3, -1);
+            pm_enemy[veh->x][veh->y]--;
+        }
     }
     return 0;
 }
