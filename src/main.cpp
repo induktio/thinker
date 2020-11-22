@@ -48,6 +48,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->max_sat = atoi(value);
     } else if (MATCH("thinker", "smac_only")) {
         cf->smac_only = atoi(value);
+    } else if (MATCH("thinker", "cpu_idle_fix")) {
+        cf->cpu_idle_fix = atoi(value);
     } else if (MATCH("thinker", "faction_placement")) {
         cf->faction_placement = atoi(value);
     } else if (MATCH("thinker", "nutrient_bonus")) {
@@ -80,7 +82,7 @@ int handler(void* user, const char* section, const char* name, const char* value
         conf.patch_content_pop = 1;
     } else {
         for (int i=0; i<16; i++) {
-            if (MATCH("thinker", lm_params[i])) {
+            if (MATCH("thinker", landmark_params[i])) {
                 cf->landmarks &= ~((atoi(value) ? 0 : 1) << i);
                 return 1;
             }

@@ -14,15 +14,19 @@ const char* ac_movlist = "movlist";
 const char* ac_movlist_txt = "movlist.txt";
 const char* ac_movlistx_txt = "movlistx.txt";
 
-const char* lm_params[] = {
+const char* landmark_params[] = {
     "crater", "volcano", "jungle", "uranium",
     "sargasso", "ruins", "dunes", "fresh",
     "mesa", "canyon", "geothermal", "ridge",
     "borehole", "nexus", "unity", "fossil"
 };
 
+const LPVOID peek_message_addr = (LPVOID)0x669358;
+int* top_menu_handle = (int*)0x945824;
+int* msg_status = (int*)0x9B7B9C;
+int peek_delay = 0;
+
 UNIT fission_reactor[PROTOTYPES];
-const int unit_reactor = 0x9AB88F;
 Points natives;
 Points goodtiles;
 bool has_supply_pods = true;
@@ -330,6 +334,18 @@ HOOK_API void find_start(int faction, int* tx, int* ty) {
     fflush(debug_log);
 }
 
+BOOL WINAPI ModPeekMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg) {
+    int wait_time = (*top_menu_handle != 0 || *msg_status == 0 ? peek_delay : 0);
+
+    int wait_result = MsgWaitForMultipleObjectsEx(0, 0, wait_time, QS_ALLINPUT, MWMO_INPUTAVAILABLE);
+    if (wait_result == WAIT_TIMEOUT) {
+        peek_delay = 8;
+    } else {
+        peek_delay = 0;
+    }
+    return PeekMessage(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, wRemoveMsg);
+}
+
 void exit_fail() {
     MessageBoxA(0, "Error while patching game binary. Game will now exit.",
         MOD_VERSION, MB_OK | MB_ICONSTOP);
@@ -396,11 +412,22 @@ void remove_call(int addr) {
 
 bool patch_setup(Config* cf) {
     DWORD attrs;
+    DWORD oldattrs;
     int lm = ~cf->landmarks;
+
+    if (cf->cpu_idle_fix) {
+        if (!VirtualProtect(peek_message_addr, sizeof(LPVOID), PAGE_EXECUTE_READWRITE, &oldattrs)) {
+            return false;
+        }
+        *(int*)peek_message_addr = (int)ModPeekMessage;
+        if (!VirtualProtect(peek_message_addr, sizeof(LPVOID), oldattrs, &attrs)) {
+            return false;
+        }
+    }
+
     if (!VirtualProtect(AC_IMAGE_BASE, AC_IMAGE_LEN, PAGE_EXECUTE_READWRITE, &attrs)) {
         return false;
     }
-
     write_jump(0x527290, (int)mod_faction_upkeep);
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
@@ -507,9 +534,10 @@ bool patch_setup(Config* cf) {
         write_call(0x5B221B, (int)find_start);
     }
     if (cf->ignore_reactor_power) {
+        const int unit_reactor = 0x9AB88F;
         const int locations[][2] = {
             {(int)battle_fight_2, 0x4DA0},
-            {(int)best_defender, 0x5CB},
+            {(int)best_defender,  0x5CB},
         };
         memset(fission_reactor, 1, sizeof(fission_reactor));
         int num = 0;
@@ -545,6 +573,11 @@ bool patch_setup(Config* cf) {
         write_call(0x5BE5E1, (int)mod_tech_selection);
         write_call(0x5BE690, (int)mod_tech_selection);
         write_call(0x5BEB5D, (int)mod_tech_selection);
+
+        /* Remove start delay from factions with negative SOCIAL, RESEARCH value. */
+        const byte old_bytes[] = {0x33, 0xFF};
+        const byte new_bytes[] = {0x90, 0x90};
+        write_bytes(0x4F4F17, old_bytes, new_bytes, sizeof(new_bytes));
     }
     if (cf->auto_relocate_hq) {
         write_call(0x4CCF13, (int)mod_capture_base);

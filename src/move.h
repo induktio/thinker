@@ -3,7 +3,7 @@
 #include "main.h"
 #include "game.h"
 
-#define BASE_DISALLOWED (TERRA_BASE_IN_TILE | TERRA_MONOLITH | TERRA_FUNGUS | TERRA_THERMAL_BORE)
+constexpr int BASE_DISALLOWED = (TERRA_BASE_IN_TILE | TERRA_MONOLITH | TERRA_FUNGUS | TERRA_THERMAL_BORE);
 
 HOOK_API int mod_enemy_move(int id);
 HOOK_API int log_veh_kill(int a, int b, int c, int d);

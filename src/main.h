@@ -91,6 +91,7 @@ struct Config {
     int limit_project_start = 3;
     int max_sat = 10;
     int smac_only = 0;
+    int cpu_idle_fix = 1;
     int faction_placement = 1;
     int nutrient_bonus = 1;
     int landmarks = 0xffff;
