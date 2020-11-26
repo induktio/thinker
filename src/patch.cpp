@@ -4,6 +4,7 @@
 #include "move.h"
 #include "tech.h"
 #include "engine.h"
+#include "test.h"
 
 const char* ac_alpha = "ac_mod\\alphax";
 const char* ac_help = "ac_mod\\helpx";
@@ -424,10 +425,11 @@ bool patch_setup(Config* cf) {
             return false;
         }
     }
-
     if (!VirtualProtect(AC_IMAGE_BASE, AC_IMAGE_LEN, PAGE_EXECUTE_READWRITE, &attrs)) {
         return false;
     }
+    extra_setup(cf);
+
     write_jump(0x527290, (int)mod_faction_upkeep);
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);

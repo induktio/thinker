@@ -66,8 +66,8 @@ HOOK_API int mod_faction_upkeep(int faction) {
 
     debug("faction_upkeep %d %d\n", *current_turn, faction);
     init_save_game(faction);
-
-    *(int*)0x93A934 = 1;
+    
+    *dword_93A934 = 1;
     social_upkeep(faction);
     do_all_non_input();
     repair_phase(faction);
@@ -125,9 +125,9 @@ HOOK_API int mod_faction_upkeep(int faction) {
     if (!f->current_num_bases && !has_colony_pods(faction)) {
         eliminate_player(faction, 0);
     }
-    *(int*)0x93A934 = 0;
-    *(int*)0x945B18 = -1;
-    *(int*)0x945B1C = -1;
+    *dword_93A934 = 0;
+    *dword_945B18 = -1;
+    *dword_945B1C = -1;
 
     if (!(*game_state & STATE_UNK_1) || *game_state & STATE_UNK_8) {
         if (faction == *current_player_faction && !(*game_state & (STATE_UNK_10000 | STATE_UNK_4000))

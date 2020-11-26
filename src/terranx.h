@@ -14,6 +14,8 @@ typedef int __cdecl fp_5int(int, int, int, int, int);
 typedef int __cdecl fp_6int(int, int, int, int, int, int);
 typedef int __cdecl fp_7int(int, int, int, int, int, int, int);
 typedef int __cdecl fp_7intstr(int, int, int, int, int, int, int, const char*);
+typedef int __cdecl fp_ccici(const char*, const char*, int, const char*, int);
+typedef int __cdecl fp_icii(int, const char*, int, int);
 
 /* Temporarily disable warnings for thiscall parameter type. */
 #ifdef __GNUC__
@@ -21,13 +23,13 @@ typedef int __cdecl fp_7intstr(int, int, int, int, int, int, int, const char*);
 #pragma GCC diagnostic ignored "-Wattributes"
 #endif
 
-typedef int __cdecl fp_ccici(const char*, const char*, int, const char*, int);
-typedef int __cdecl fp_icii(int, const char*, int, int);
+typedef int __thiscall tc_1int(int);
 typedef int __thiscall tc_2int(int, int);
 typedef int __thiscall tc_3int(int, int, int);
 typedef int __thiscall tc_4int(int, int, int, int);
 typedef int __thiscall tc_5int(int, int, int, int, int);
 typedef int __thiscall tc_6int(int, int, int, int, int, int);
+typedef int __thiscall tc_7int(int, int, int, int, int, int, int);
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
@@ -38,6 +40,8 @@ Thinker functions that are replacements to the SMACX binary versions
 should be prefixed with 'mod_' if their equivalent is also listed here.
 */
 
+extern const char** engine_version;
+extern const char** engine_date;
 extern BASE** current_base_ptr;
 extern int* current_base_id;
 extern int* game_settings;
@@ -72,8 +76,11 @@ extern int* diplo_opponent_faction;
 extern int* base_find_dist;
 extern int* veh_attack_flags;
 
-extern const char** engine_version;
-extern const char** engine_date;
+extern int* dword_93A934;
+extern int* dword_945B18;
+extern int* dword_945B1C;
+extern int* screen_width;
+extern int* screen_height;
 
 extern byte* tx_tech_discovered;
 extern int* tx_secret_projects;

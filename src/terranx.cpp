@@ -1,6 +1,8 @@
 
 #include "terranx.h"
 
+const char** engine_version = (const char**)0x691870;
+const char** engine_date = (const char**)0x691874;
 BASE** current_base_ptr = (BASE**)0x90EA30;
 int* current_base_id = (int*)0x689370;
 int* game_settings = (int*)0x9A6490;
@@ -35,8 +37,11 @@ int* diplo_opponent_faction = (int*)0x8A4164;
 int* base_find_dist = (int*)0x90EA04;
 int* veh_attack_flags = (int*)0x93E904;
 
-const char** engine_version = (const char**)0x691870;
-const char** engine_date = (const char**)0x691874;
+int* dword_93A934 = (int*)0x93A934;
+int* dword_945B18 = (int*)0x945B18;
+int* dword_945B1C = (int*)0x945B1C;
+int* screen_width = (int*)0x9B7B1C;
+int* screen_height = (int*)0x9B7B20;
 
 byte* tx_tech_discovered = (byte*)0x9A6670;
 int* tx_secret_projects = (int*)0x9A6514;

@@ -580,6 +580,8 @@ enum social_effect {
 
 enum game_state {
     STATE_UNK_1 = 0x1,
+    STATE_UNK_2 = 0x2,
+    STATE_UNK_4 = 0x4,
     STATE_UNK_8 = 0x8,
     STATE_IS_SCENARIO = 0x10,
     STATE_SCENARIO_CHEATED_FLAG = 0x20,
