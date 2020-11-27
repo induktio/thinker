@@ -75,6 +75,7 @@ extern int* diplo_current_friction;
 extern int* diplo_opponent_faction;
 extern int* base_find_dist;
 extern int* veh_attack_flags;
+extern int* game_not_started;
 
 extern int* dword_93A934;
 extern int* dword_945B18;
@@ -165,4 +166,5 @@ extern fp_3int* best_defender;
 extern fp_5int* battle_compute;
 extern fp_6int* battle_kill;
 extern fp_7int* battle_fight_2;
+extern fp_void* draw_cursor;
 

@@ -46,10 +46,12 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->limit_project_start = atoi(value);
     } else if (MATCH("thinker", "max_satellites")) {
         cf->max_sat = atoi(value);
-    } else if (MATCH("thinker", "smac_only")) {
-        cf->smac_only = atoi(value);
+    } else if (MATCH("thinker", "smooth_scrolling")) {
+        cf->smooth_scrolling = atoi(value);
     } else if (MATCH("thinker", "cpu_idle_fix")) {
         cf->cpu_idle_fix = atoi(value);
+    } else if (MATCH("thinker", "smac_only")) {
+        cf->smac_only = atoi(value);
     } else if (MATCH("thinker", "faction_placement")) {
         cf->faction_placement = atoi(value);
     } else if (MATCH("thinker", "nutrient_bonus")) {
@@ -206,9 +208,17 @@ HOOK_API int mod_turn_upkeep() {
     debug("turn_upkeep %d bases: %d vehicles: %d\n",
         *current_turn, *total_num_bases, *total_num_vehicles);
 
+    if (DEBUG) {
+        if (conf.debug_mode) {
+            *game_state |= STATE_DEBUG_MODE;
+        } else {
+            *game_state &= ~STATE_DEBUG_MODE;
+        }
+    }
     for (int i=1; i<8 && conf.design_units; i++) {
-        if (is_human(i) || !tx_factions[i].current_num_bases)
+        if (is_human(i) || !tx_factions[i].current_num_bases) {
             continue;
+        }
         int rec = best_reactor(i);
         int wpn = best_weapon(i);
         int arm = best_armor(i, false);
@@ -258,16 +268,14 @@ HOOK_API int mod_turn_upkeep() {
             propose_proto(i, CHS_INFANTRY, WPN_SUPPLY_TRANSPORT, arm2, 0, REC_FUSION, PLAN_DEFENSIVE, name);
         }
     }
-    if (DEBUG) {
-        *game_state |= STATE_DEBUG_MODE;
-    }
     int minerals[BASES];
     for (int i=1; i<8; i++) {
         Faction* f = &tx_factions[i];
         MetaFaction* m = &tx_metafactions[i];
         R_Resource* r = tx_resource;
-        if (is_human(i) || !f->current_num_bases)
+        if (is_human(i) || !f->current_num_bases) {
             continue;
+        }
         plans[i].enemy_bases = 0;
         plans[i].diplo_flags = 0;
         for (int j=1; j<8; j++) {
@@ -291,16 +299,21 @@ HOOK_API int mod_turn_upkeep() {
             && !has_project(i, FAC_TELEPATHIC_MATRIX));
 
         int psi = max(-4, 2 - f->best_weapon_value);
-        if (has_project(i, FAC_NEURAL_AMPLIFIER))
+        if (has_project(i, FAC_NEURAL_AMPLIFIER)) {
             psi += 2;
-        if (has_project(i, FAC_DREAM_TWISTER))
+        }
+        if (has_project(i, FAC_DREAM_TWISTER)) {
             psi += 2;
-        if (has_project(i, FAC_PHOLUS_MUTAGEN))
+        }
+        if (has_project(i, FAC_PHOLUS_MUTAGEN)) {
             psi++;
-        if (has_project(i, FAC_XENOEMPATHY_DOME))
+        }
+        if (has_project(i, FAC_XENOEMPATHY_DOME)) {
             psi++;
-        if (tx_metafactions[i].rule_flags & FACT_WORMPOLICE && plans[i].need_police)
+        }
+        if (tx_metafactions[i].rule_flags & FACT_WORMPOLICE && plans[i].need_police) {
             psi += 2;
+        }
         psi += min(2, max(-2, (f->enemy_best_weapon_value - f->best_weapon_value)/2));
         psi += tx_metafactions[i].rule_psi/10 + 2*f->SE_planet;
         plans[i].psi_score = psi;

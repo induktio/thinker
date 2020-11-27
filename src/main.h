@@ -42,6 +42,10 @@
 #include <set>
 #include "terranx.h"
 
+struct Point {
+    int x;
+    int y;
+};
 typedef std::set<std::pair<int,int>> Points;
 #define mp(x, y) std::make_pair(x, y)
 #define min(x, y) std::min(x, y)
@@ -90,8 +94,9 @@ struct Config {
     double expansion_factor = 1;
     int limit_project_start = 3;
     int max_sat = 10;
-    int smac_only = 0;
+    int smooth_scrolling = 1;
     int cpu_idle_fix = 1;
+    int smac_only = 0;
     int faction_placement = 1;
     int nutrient_bonus = 1;
     int landmarks = 0xffff;
@@ -107,6 +112,7 @@ struct Config {
     int patch_content_pop = 0;
     int content_pop_player[6] = {6,5,4,3,2,1};
     int content_pop_computer[6] = {3,3,3,3,3,3};
+    int debug_mode = DEBUG;
 };
 
 /*

@@ -36,6 +36,7 @@ int* diplo_current_friction = (int*)0x93FA74;
 int* diplo_opponent_faction = (int*)0x8A4164;
 int* base_find_dist = (int*)0x90EA04;
 int* veh_attack_flags = (int*)0x93E904;
+int* game_not_started = (int*)0x68F21C;
 
 int* dword_93A934 = (int*)0x93A934;
 int* dword_945B18 = (int*)0x945B18;
@@ -126,4 +127,5 @@ fp_3int* best_defender = (fp_3int*)0x5044D0;
 fp_5int* battle_compute = (fp_5int*)0x501DA0;
 fp_6int* battle_kill = (fp_6int*)0x505D80;
 fp_7int* battle_fight_2 = (fp_7int*)0x506AF0;
+fp_void* draw_cursor = (fp_void*)0x46AE00;
 

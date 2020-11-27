@@ -4,6 +4,11 @@
 
 const LPVOID AC_IMAGE_BASE = (LPVOID)0x401000;
 const SIZE_T AC_IMAGE_LEN = (SIZE_T)0x263000;
+const LPVOID AC_IMPORT_BASE = (LPVOID)0x669000;
+const SIZE_T AC_IMPORT_LEN = (SIZE_T)0x3A0;
+
+const LPVOID PeekMessageImport = (LPVOID)0x669358;
+const LPVOID RegisterClassImport = (LPVOID)0x66929C;
 
 extern const char* landmark_params[];
 

@@ -1,5 +1,6 @@
 
 #include "patch.h"
+#include "gui.h"
 #include "game.h"
 #include "move.h"
 #include "tech.h"
@@ -22,9 +23,8 @@ const char* landmark_params[] = {
     "borehole", "nexus", "unity", "fossil"
 };
 
-const LPVOID peek_message_addr = (LPVOID)0x669358;
 int* top_menu_handle = (int*)0x945824;
-int* msg_status = (int*)0x9B7B9C;
+int* peek_msg_status = (int*)0x9B7B9C;
 int peek_delay = 0;
 
 UNIT fission_reactor[PROTOTYPES];
@@ -336,7 +336,7 @@ HOOK_API void find_start(int faction, int* tx, int* ty) {
 }
 
 BOOL WINAPI ModPeekMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg) {
-    int wait_time = (*top_menu_handle != 0 || *msg_status == 0 ? peek_delay : 0);
+    int wait_time = (*top_menu_handle != 0 || *peek_msg_status == 0 ? peek_delay : 0);
 
     int wait_result = MsgWaitForMultipleObjectsEx(0, 0, wait_time, QS_ALLINPUT, MWMO_INPUTAVAILABLE);
     if (wait_result == WAIT_TIMEOUT) {
@@ -416,15 +416,19 @@ bool patch_setup(Config* cf) {
     DWORD oldattrs;
     int lm = ~cf->landmarks;
 
-    if (cf->cpu_idle_fix) {
-        if (!VirtualProtect(peek_message_addr, sizeof(LPVOID), PAGE_EXECUTE_READWRITE, &oldattrs)) {
-            return false;
-        }
-        *(int*)peek_message_addr = (int)ModPeekMessage;
-        if (!VirtualProtect(peek_message_addr, sizeof(LPVOID), oldattrs, &attrs)) {
-            return false;
-        }
+    if (!VirtualProtect(AC_IMPORT_BASE, AC_IMPORT_LEN, PAGE_EXECUTE_READWRITE, &oldattrs)) {
+        return false;
     }
+    if (cf->smooth_scrolling) {
+        *(int*)RegisterClassImport = (int)ModRegisterClassA;
+    }
+    if (cf->cpu_idle_fix) {
+        *(int*)PeekMessageImport = (int)ModPeekMessage;
+    }
+    if (!VirtualProtect(AC_IMPORT_BASE, AC_IMPORT_LEN, oldattrs, &attrs)) {
+        return false;
+    }
+
     if (!VirtualProtect(AC_IMAGE_BASE, AC_IMAGE_LEN, PAGE_EXECUTE_READWRITE, &attrs)) {
         return false;
     }
@@ -445,6 +449,19 @@ bool patch_setup(Config* cf) {
     write_call(0x5B3C03, (int)mod_setup_player);
     write_call(0x5B3C4C, (int)mod_setup_player);
     write_call(0x5C0908, (int)log_veh_kill);
+
+    if (cf->smooth_scrolling) {
+        write_offset(0x50F3DC, (void*)blink_timer);
+        write_call(0x46AB81, (int)draw_map);
+        write_call(0x46ABD1, (int)draw_map);
+        write_call(0x46AC56, (int)draw_map);
+        write_call(0x46ACC5, (int)draw_map);
+        write_call(0x46A5A9, (int)zoom_process);
+        write_call(0x48B6C2, (int)zoom_process);
+        write_call(0x48B893, (int)zoom_process);
+        write_call(0x48B91F, (int)zoom_process);
+        write_call(0x48BA15, (int)zoom_process);
+    }
 
     /*
     Fix a bug that occurs after the player does an artillery attack on unoccupied

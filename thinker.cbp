@@ -80,6 +80,8 @@
 		<Unit filename="src/engine.h" />
 		<Unit filename="src/game.cpp" />
 		<Unit filename="src/game.h" />
+		<Unit filename="src/gui.cpp" />
+		<Unit filename="src/gui.h" />
 		<Unit filename="src/lib/ini.c">
 			<Option compilerVar="CC" />
 		</Unit>
