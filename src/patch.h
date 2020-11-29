@@ -9,6 +9,7 @@ const SIZE_T AC_IMPORT_LEN = (SIZE_T)0x3A0;
 
 const LPVOID PeekMessageImport = (LPVOID)0x669358;
 const LPVOID RegisterClassImport = (LPVOID)0x66929C;
+const LPVOID GetSystemMetricsImport = (LPVOID)0x669334;
 
 extern const char* landmark_params[];
 

@@ -577,12 +577,10 @@ struct CMainMenu {
 struct CMain {
     CMap oMap;
     CWinBuffed oWinBuffed;
-    char field_2247C[1412];
-    int field_22A00;
+    CCanvas oCanvas1;
     CTimer oTimer;
     CMainMenu oMainMenu;
-    char field_23590[1412];
-    int field_23B14;
+    CCanvas oCanvas2;
     CSprite oSprite1;
     CSprite aoSprite2[3];
     int field_23BC8;
@@ -617,7 +615,6 @@ struct CMain {
     int field_23D84;
     int field_23D88;
     int field_23D8C;
-    int field_23D90;
     CWinBuffed oClass2_2;
 };
 
@@ -693,13 +690,27 @@ struct CInfoWin {
 };
 #pragma pack(pop)
 
+static_assert(sizeof(CFont) == 40, "");
+static_assert(sizeof(CTimer) == 40, "");
+static_assert(sizeof(CSprite) == 44, "");
+static_assert(sizeof(CMainArrayItem) == 608, "");
+static_assert(sizeof(CWinBase) == 1092, "");
+static_assert(sizeof(CCanvas) == 1416, "");
+static_assert(sizeof(CMainMenu) == 2916, "");
+static_assert(sizeof(CWinBuffed) == 2580, "");
+static_assert(sizeof(CMap) == 137832, "");
+static_assert(sizeof(CMain) == 149412, "");
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
 
+ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass);
+int WINAPI ModGetSystemMetrics(int nIndex);
 int __cdecl blink_timer();
 int __thiscall zoom_process(CMain* This);
 int __thiscall draw_map(CMain* This, int iOwner, int fUnitsOnly);
-ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass);
 
 #pragma GCC diagnostic pop
+
+
 

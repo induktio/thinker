@@ -81,6 +81,13 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define DEF true
 
 struct Config {
+    int cpu_idle_fix = 1;
+    int smooth_scrolling = 1;
+    int scroll_area = 40;
+    int windowed = 0;
+    int window_width = 1024;
+    int window_height = 768;
+    int smac_only = 0;
     int free_formers = 0;
     int free_colony_pods = 0;
     int satellites_nutrient = 0;
@@ -94,9 +101,6 @@ struct Config {
     double expansion_factor = 1;
     int limit_project_start = 3;
     int max_sat = 10;
-    int smooth_scrolling = 1;
-    int cpu_idle_fix = 1;
-    int smac_only = 0;
     int faction_placement = 1;
     int nutrient_bonus = 1;
     int landmarks = 0xffff;

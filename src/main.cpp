@@ -46,10 +46,18 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->limit_project_start = atoi(value);
     } else if (MATCH("thinker", "max_satellites")) {
         cf->max_sat = atoi(value);
-    } else if (MATCH("thinker", "smooth_scrolling")) {
-        cf->smooth_scrolling = atoi(value);
     } else if (MATCH("thinker", "cpu_idle_fix")) {
         cf->cpu_idle_fix = atoi(value);
+    } else if (MATCH("thinker", "smooth_scrolling")) {
+        cf->smooth_scrolling = atoi(value);
+    } else if (MATCH("thinker", "scroll_area")) {
+        cf->scroll_area = max(0, atoi(value));
+    } else if (MATCH("thinker", "windowed")) {
+        cf->windowed = atoi(value);
+    } else if (MATCH("thinker", "window_width")) {
+        cf->window_width = max(800, atoi(value));
+    } else if (MATCH("thinker", "window_height")) {
+        cf->window_height = max(600, atoi(value));
     } else if (MATCH("thinker", "smac_only")) {
         cf->smac_only = atoi(value);
     } else if (MATCH("thinker", "faction_placement")) {
@@ -112,6 +120,8 @@ int cmd_parse(Config* cf) {
     for (int i=1; i<argc; i++) {
         if (wcscmp(argv[i], L"-smac") == 0) {
             cf->smac_only = 1;
+        } else if (wcscmp(argv[i], L"-windowed") == 0) {
+            cf->windowed = 1;
         }
     }
     return 1;

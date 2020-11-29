@@ -416,11 +416,19 @@ bool patch_setup(Config* cf) {
     DWORD oldattrs;
     int lm = ~cf->landmarks;
 
+    if (conf.smooth_scrolling && strcmp((const char*)0x668165, "prax") == 0) {
+        MessageBoxA(0, "Smooth scrolling feature will be disabled while PRACX is also running.",
+            MOD_VERSION, MB_OK | MB_ICONWARNING);
+        conf.smooth_scrolling = 0;
+    }
     if (!VirtualProtect(AC_IMPORT_BASE, AC_IMPORT_LEN, PAGE_EXECUTE_READWRITE, &oldattrs)) {
         return false;
     }
     if (cf->smooth_scrolling) {
         *(int*)RegisterClassImport = (int)ModRegisterClassA;
+    }
+    if (cf->windowed) {
+        *(int*)GetSystemMetricsImport = (int)ModGetSystemMetrics;
     }
     if (cf->cpu_idle_fix) {
         *(int*)PeekMessageImport = (int)ModPeekMessage;

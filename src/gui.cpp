@@ -5,24 +5,17 @@
 #pragma GCC diagnostic ignored "-Wattributes"
 
 
-#define CONSOLE_HEIGHT                  219  // Height in pixels of the UI console
-#define DEFAULT_SCROLL_AREA             40
-#define DEFAULT_SCROLL_MIN              1
-#define DEFAULT_SCROLL_MAX              20
-#define DEFAULT_LIST_SCROLL_DELTA       1
-#define DEFAULT_MOUSE_OVER_TILE_INFO    1
+// Size in pixels of the bottom middle UI console
+#define CONSOLE_HEIGHT 219
+#define CONSOLE_WIDTH  1024
 
 struct ConsoleState {
-    const int ScrollArea = DEFAULT_SCROLL_AREA;
-    const int ScrollMin = DEFAULT_SCROLL_MIN;
-    const int ScrollMax = DEFAULT_SCROLL_MAX;
-    const int ListScrollDelta = DEFAULT_LIST_SCROLL_DELTA;
-    bool MouseOverTileInfo = DEFAULT_MOUSE_OVER_TILE_INFO;
+    const int ScrollMin = 1;
+    const int ScrollMax = 20;
+    const int ListScrollDelta = 1;
     POINT ScreenSize;
-    POINT WindowSize;
+    bool MouseOverTileInfo = true;
     bool TimersEnabled = false;
-    bool Windowed = false;
-    bool Minimised = false;
     bool Scrolling = false;
     bool RightButtonDown = false;
     bool ScrollDragging = false;
@@ -32,6 +25,12 @@ struct ConsoleState {
 };
 
 ConsoleState CState;
+
+/*
+The following lists contain definitions copied directly from PRACX (e.g. functions with _F suffix).
+These are mostly provided for reference and using them should be avoided because the names should be
+converted to the actual names reversed from the SMACX binary (add F prefix for function prototypes).
+*/
 
 typedef int(__stdcall *START_F)(HINSTANCE, HINSTANCE, LPSTR, int);
 typedef int(__thiscall *CCANVAS_CREATE_F)(CCanvas* pthis);
@@ -130,6 +129,8 @@ CMAINMENU_UPDATEVISIBLE_F      pfncMainMenuUpdateVisible =      (CMAINMENU_UPDAT
 CMAINMENU_RENAMEMENUITEM_F     pfncMainMenuRenameMenuItem =     (CMAINMENU_RENAMEMENUITEM_F    )0x5FB700;
 CMAP_GETCORNERYOFFSET_F        pfncMapGetCornerYOffset =        (CMAP_GETCORNERYOFFSET_F       )0x46FE70;
 
+// End of PRACX definitions
+
 typedef int(__thiscall *FMapWin_pixel_to_tile)(CMain* This, int x, int y, long* px, long* py);
 typedef int(__thiscall *FMapWin_tile_to_pixel)(CMain* This, int x, int y, long* px, long* py);
 typedef int(__thiscall *FMapWin_set_center)(CMain* This, int x, int y, int v1);
@@ -162,71 +163,40 @@ FConsole_zoom         Console_zoom         = (FConsole_zoom        )0x5150D0;
 FWin_update_screen    Win_update_screen    = (FWin_update_screen   )0x5F7320;
 FWin_flip             Win_flip             = (FWin_flip            )0x5EFD20;
 
-
-CMain* MapWin = (CMain*)0x9156B0; // ConsoleParent
-CWinBase* TutWin = (CWinBase*)0x8C6E68;
-CWinBase* BaseWin = (CWinBase*)0x6A7628;
-CWinBase* PlanWin = (CWinBase*)0x834D70;
-CWinBase* WorldWin = (CWinBase*)0x8E9F60;
-CWinBase* SocialWin = (CWinBase*)0x8A6270;
+CMain* MapWin = (CMain*)0x9156B0; // ConsoleParent len: 0x247A4 end: 0x939E54
+CWinBase* BaseWin   = (CWinBase*)0x6A7628;
 CWinBase* StringBox = (CWinBase*)0x7CD2EC;
+CWinBase* PlanWin   = (CWinBase*)0x834D70;
+CWinBase* SocialWin = (CWinBase*)0x8A6270;
 CWinBase* StatusWin = (CWinBase*)0x8C5568;
+CWinBase* TutWin    = (CWinBase*)0x8C6E68;
+CWinBase* WorldWin  = (CWinBase*)0x8E9F60;
 
-int* dword_68F21C = (int*)0x68F21C;
 int* dword_915620 = (int*)0x915620;
-int* dword_939298 = (int*)0x939298;
-int* dword_9B2068 = (int*)0x9B2068;
-int* dword_9392AC = (int*)0x9392AC;
 int* dword_939294 = (int*)0x939294;
+int* dword_939298 = (int*)0x939298;
 int* dword_9392A8 = (int*)0x9392A8;
+int* dword_9392AC = (int*)0x9392AC;
 int* dword_939430 = (int*)0x939430;
 int* dword_939434 = (int*)0x939434;
 int* dword_939438 = (int*)0x939438;
 int* dword_93943C = (int*)0x93943C;
+int* dword_9B2068 = (int*)0x9B2068;
 int* dword_9B7AE4 = (int*)0x9B7AE4;
 
 
-bool base_is_visible(void) {
+bool base_is_visible() {
     return CState.TimersEnabled
         && !*game_not_started
         && Win_is_visible(BaseWin);
 }
 
-bool map_is_visible(void) {
+bool map_is_visible() {
     return CState.TimersEnabled
         && !*game_not_started
         && !base_is_visible()
         && !Win_is_visible(SocialWin)
         && !Win_is_visible(TutWin);
-}
-
-/*
-This maps points from the Client (Game window) coordinate system to the Backbuffer
-(Buffer which gets rendered to screen)
-*/
-void ClientToBackbuffer(POINT* pPt) {
-    RECT r;
-    if (CState.Windowed && *phWnd) {
-        GetClientRect(*phWnd, &r);
-        if (r.left < r.right && r.top < r.bottom) {
-            pPt->x = (pPt->x - r.left) * CState.ScreenSize.x / (r.right - r.left);
-            pPt->y = (pPt->y - r.top) * CState.ScreenSize.y / (r.bottom - r.top);
-        }
-    }
-}
-
-BOOL WINAPI ModGetCursorPos(LPPOINT p) {
-    RECT r;
-    BOOL fRet;
-    fRet = GetCursorPos(p); // Fixed
-    if (CState.Windowed) {
-        // Have to map the coordinate to the backbuffer if we're windowed.
-        GetClientRect(*phWnd, &r);
-        ScreenToClient(*phWnd, p);
-        fRet = PtInRect(&r, *p);
-        ClientToBackbuffer(p);
-    }
-    return fRet;
 }
 
 void mouse_over_tile(POINT* p) {
@@ -247,7 +217,7 @@ void mouse_over_tile(POINT* p) {
     }
 }
 
-ULONGLONG get_ms_count(void) {
+ULONGLONG get_ms_count() {
     static LONGLONG llFrequency = 0;
     static ULONGLONG ullLast = 0;
     static ULONGLONG ullHigh = 0;
@@ -369,7 +339,7 @@ bool do_scroll(double x, double y) {
 
 void check_scroll() {
     POINT p;
-    if (CState.Scrolling || (!ModGetCursorPos(&p) && !(CState.ScrollDragging && CState.RightButtonDown))) {
+    if (CState.Scrolling || (!GetCursorPos(&p) && !(CState.ScrollDragging && CState.RightButtonDown))) {
         return;
     }
     CState.Scrolling = true;
@@ -381,7 +351,7 @@ void check_scroll() {
     BOOL fScrolled;
     BOOL fScrolledAtAll = false;
     BOOL fLeftButtonDown = (GetAsyncKeyState(VK_LBUTTON) < 0);
-    int iScrollArea = CState.ScrollArea * CState.ScreenSize.x / 1024;
+    int iScrollArea = conf.scroll_area * CState.ScreenSize.x / 1024;
 
     if (CState.RightButtonDown && GetAsyncKeyState(VK_RBUTTON) < 0) {
         if (labs((long)hypot((double)(p.x-CState.ScrollDragPos.x), (double)(p.y-CState.ScrollDragPos.y))) > 2.5) {
@@ -425,9 +395,10 @@ void check_scroll() {
                 dy = (double)(ullNewTickCount - ullOldTickCount) * dTPS * (double)pMain->oMap.iPixelsPerTileY / -1000.0;
 
             } else if (h - p.y <= iScrollArea && h >= p.y &&
-                       (p.x <= (CState.ScreenSize.x - 1024) / 2 ||
-                        p.x >= (CState.ScreenSize.x - 1024) / 2 + 1024 ||
-                        h - p.y < (CState.Windowed ? 8 : 5) * CState.ScreenSize.y / 756)) {
+            // These extra conditions will stop movement when the mouse is over the bottom middle console.
+            (p.x <= (CState.ScreenSize.x - CONSOLE_WIDTH) / 2 ||
+             p.x >= (CState.ScreenSize.x - CONSOLE_WIDTH) / 2 + CONSOLE_WIDTH ||
+             h - p.y <= 8 * CState.ScreenSize.y / 768)) {
                 fScrolled = true;
                 dTPS = dMin + (dArea - (double)(h - p.y)) / dArea * (dMax - dMin);
                 dy = (double)(ullNewTickCount - ullOldTickCount) * dTPS * (double)pMain->oMap.iPixelsPerTileY / 1000.0;
@@ -437,8 +408,10 @@ void check_scroll() {
             ullOldTickCount = ullNewTickCount;
             if (do_scroll(dx, dy)) {
                 fScrolledAtAll = true;
-                Sleep(5);
             } else {
+                Sleep(0);
+            }
+            if (DEBUG) {
                 Sleep(5);
             }
             ullNewTickCount = get_ms_count();
@@ -449,7 +422,7 @@ void check_scroll() {
                 (int)p.x, (int)p.y, CState.ScrollOffsetX, CState.ScrollOffsetY, dx, dy, dTPS);
         }
 
-    } while (fScrolled && (ModGetCursorPos(&p) || (CState.ScrollDragging && CState.RightButtonDown)));
+    } while (fScrolled && (GetCursorPos(&p) || (CState.ScrollDragging && CState.RightButtonDown)));
 
     // TODO: determine the purpose of this code
     if (fScrolledAtAll) {
@@ -472,7 +445,7 @@ void check_scroll() {
     fflush(debug_log);
 }
 
-LRESULT __stdcall ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     static int iDeltaAccum = 0;
     bool fHasFocus = (GetFocus() == *phWnd);
     POINT p;
@@ -510,7 +483,7 @@ LRESULT __stdcall ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 
         } else if (msg == WM_RBUTTONDOWN) {
             CState.RightButtonDown = true;
-            ModGetCursorPos(&p);
+            GetCursorPos(&p);
             memcpy(&CState.ScrollDragPos, &p, sizeof(POINT));
 
         } else if (msg == WM_RBUTTONUP) {
@@ -527,10 +500,11 @@ LRESULT __stdcall ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
         } else {
             WinProc(hwnd, msg, wParam, lParam);
         }
-        
+
     } else if (msg == WM_CHAR && wParam == 'r' && GetAsyncKeyState(VK_MENU) < 0) {
         debug("WM_CHAR alt+r\n");
         CState.MouseOverTileInfo = !CState.MouseOverTileInfo;
+
     } else if (DEBUG && msg == WM_CHAR && wParam == 'd' && GetAsyncKeyState(VK_MENU) < 0) {
         debug("WM_CHAR alt+d\n");
         conf.debug_mode = !conf.debug_mode;
@@ -541,10 +515,28 @@ LRESULT __stdcall ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
         }
         MapWin_draw_map(pMain, 0);
         InvalidateRect(hwnd, NULL, false);
+
     } else {
         return WinProc(hwnd, msg, wParam, lParam);
     }
     return 0;
+}
+
+/*
+Override Windows API call to give fake screensize values to SMACX while in windowed mode.
+When DirectDraw=0 is set, this allows us to force SMACX run in a borderless window, enabling
+very fast rendering and full user access to the other windows.
+*/
+int WINAPI ModGetSystemMetrics(int nIndex) {
+    if (conf.windowed) {
+        if (nIndex == SM_CXSCREEN) {
+            return conf.window_width;
+        }
+        if (nIndex == SM_CYSCREEN) {
+            return conf.window_height;
+        }
+    }
+    return GetSystemMetrics(nIndex);
 }
 
 ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass) {
@@ -656,7 +648,7 @@ int __thiscall zoom_process(CMain* This) {
 }
 
 int __cdecl blink_timer() {
-    if (!*dword_68F21C) {
+    if (!*game_not_started) {
         if (!*dword_915620) {
             if (Win_is_visible(BaseWin)) {
                 return TutWin_draw_arrow(TutWin);
