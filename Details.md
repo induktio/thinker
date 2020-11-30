@@ -32,7 +32,7 @@ Revised tech costs
 ==================
 In the original game, research costs were mainly decided by how many techs a faction had already researched. That meant the current research target was irrelevant as far as the costs were concerned. For speed runs, it made sense to avoid researching any techs that were not strictly necessary to keep the cost of discovering new techs as low as possible.
 
-The config option `revised_tech_cost` attempts to remake this mechanic so that the research cost for any particular tech is fixed and depends mainly on the level of the tech. This follows the game design choices that were also made in later Civilization games. For example, in the default tech tree, Social Psych is level 1 and Transcendent Thought is level 16. Enabling this feature should notably delay the tech race in mid to late game. See also [a helpful chart](http://alphacentauri2.info/index.php?action=downloads;sa=view;down=355) of the standard tech tree. The base cost for any particular tech is determined by this formula:
+The config option `revised_tech_cost` attempts to remake this mechanic so that the research cost for any particular tech is fixed and depends mainly on the level of the tech. This follows the game design choices that were also made in later Civilization games. For example, in the default tech tree, Social Psych is level 1 and Transcendent Thought is level 16. Enabling this feature should notably delay the tech race in mid to late game. See also [a helpful chart](https://alphacentauri2.info/index.php?action=downloads;sa=view;down=355) of the standard tech tree. The base cost for any particular tech is determined by this formula:
 
     6 * Level^3 + 74 * Level - 20
 
@@ -51,18 +51,21 @@ The final cost calculated by this formula is visible in the F2 status screen aft
 
 SMAC in SMACX mod
 =================
-Thinker includes the files necessary to play a game similar to the original SMAC while disabling all expansion-related content. See the original release posts of SMAC in SMACX [here](https://github.com/DrazharLn/smac-in-smax/) and [here](http://alphacentauri2.info/index.php?topic=17869.0).
+Thinker includes the files necessary to play a game similar to the original SMAC while disabling all expansion-related content. See the original release posts of SMAC in SMACX [here](https://github.com/DrazharLn/smac-in-smax/) and [here](https://alphacentauri2.info/index.php?topic=17869.0).
 
 Thinker also adds support for custom factions that are not aliens while using this feature. Installing this mod doesn't require any extra steps since the files are bundled in the zip file.
 
-1. Download the latest develop build that includes `ac_mod` folder in the zip.
+1. Download the latest version that includes `ac_mod` folder in the zip.
 2. Extract all the files to Alpha Centauri game folder.
 3. Open `thinker.ini` and change the configuration to `smac_only=1` ***OR*** start the game with command line parameter `terranx_mod.exe -smac`
 4. When smac_only is started properly, the main menu will change color to blue as it was in the original SMAC, instead of the SMACX green color scheme.
 5. The game reads these files from `ac_mod` folder while smac_only is enabled: alphax.txt, helpx.txt, conceptsx.txt, tutor.txt. Therefore it is possible to keep the mod installed without overwriting any of the files from the base game.
 6. To install custom factions while using this mod, just edit `ac_mod/alphax.txt` instead of the normal `alphax.txt` file and add the faction names to `#CUSTOMFACTIONS` section. Note that you only have to extract the faction definitions to the main game folder because the same files are used in smac_only mode.
 
-See also [Sigma Faction Set](http://alphacentauri2.info/index.php?action=downloads;sa=view;down=264). The factions can be played in both game modes and they are also fairly balanced overall.
+See below for some custom faction sets. The factions can be played in both game modes and they are also fairly balanced overall.
+
+* [Sigma Faction Set](https://alphacentauri2.info/index.php?action=downloads;sa=view;down=264)
+* [Tayta's Dystopian Faction Set](https://alphacentauri2.info/index.php?topic=21515)
 
 
 Recommended alphax.txt settings
@@ -90,11 +93,12 @@ Currently the features listed here are not supported while Thinker is enabled. T
 Known bugs
 ==========
 1. While `collateral_damage_value` is set to 0, the game might still display temporary messages about collateral damage being inflicted on units on the stack, but none of them will actually take any damage.
+2. The faction selection dialog in game setup is limited to showing only the first 24 factions even if installed factions in alphax.txt exceed this number.
 
 
 Bugfix patches included
 =======================
-Thinker includes the binary patches from both [Scient's patch v2.0 and v2.1](http://alphacentauri2.info/index.php?action=downloads;sa=view;down=365). The differences between these versions include only changes to the txt files to prevent the game from crashing when opening certain datalinks entries.
+Thinker includes the binary patches from both [Scient's patch v2.0 and v2.1](https://alphacentauri2.info/index.php?action=downloads;sa=view;down=365). The differences between these versions include only changes to the txt files to prevent the game from crashing when opening certain datalinks entries.
 Installing the modded txt files is purely optional, and Thinker does not include those files by default. The following fixes from Scient's binary patch are included in `terranx_mod.exe`.
 
 1.  [BUG] If a faction's cumulative PROBE value is greater than 3 (SE morale, covert ops center) it is possible to "mind control" their bases when they should be immune. If the University uses SE Knowledge putting PROBE value down to -4, it would act as if it were 0 erroneously increasing "mind control" costs. After patch, PROBE values greater than 3 will always be immune to regular probes and values less than -2 will be treated as if they were -2.
