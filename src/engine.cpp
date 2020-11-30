@@ -74,7 +74,7 @@ HOOK_API int mod_faction_upkeep(int faction) {
     do_all_non_input();
     production_phase(faction);
     do_all_non_input();
-    if (!(*game_state & STATE_UNK_1) || *game_state & STATE_UNK_8) {
+    if (!(*game_state & STATE_GAME_DONE) || *game_state & STATE_FINAL_SCORE_DONE) {
         allocate_energy(faction);
         do_all_non_input();
         enemy_diplomacy(faction);
@@ -129,17 +129,18 @@ HOOK_API int mod_faction_upkeep(int faction) {
     *dword_945B18 = -1;
     *dword_945B1C = -1;
 
-    if (!(*game_state & STATE_UNK_1) || *game_state & STATE_UNK_8) {
-        if (faction == *current_player_faction && !(*game_state & (STATE_UNK_10000 | STATE_UNK_4000))
-        && can_call_council(faction, 0) && !(*game_state & STATE_UNK_1)) {
-            *game_state |= STATE_UNK_4000;
+    if (!(*game_state & STATE_GAME_DONE) || *game_state & STATE_FINAL_SCORE_DONE) {
+        if (faction == *current_player_faction
+        && !(*game_state & (STATE_COUNCIL_HAS_CONVENED | STATE_DISPLAYED_COUNCIL_AVAIL_MSG))
+        && can_call_council(faction, 0) && !(*game_state & STATE_GAME_DONE)) {
+            *game_state |= STATE_DISPLAYED_COUNCIL_AVAIL_MSG;
             popp(ScriptTxtID, "COUNCILOPEN", 0, "council_sm.pcx", 0);
         }
         if (!is_human(faction)) {
             call_council(faction);
         }
     }
-    if (!*multiplayer_active && *game_settings & 2 && faction == *current_player_faction) {
+    if (!*multiplayer_active && *game_preferences & PREF_UNK_2 && faction == *current_player_faction) {
         auto_save();
     }
     fflush(debug_log);

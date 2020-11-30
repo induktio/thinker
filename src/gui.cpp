@@ -171,6 +171,7 @@ CWinBase* SocialWin = (CWinBase*)0x8A6270;
 CWinBase* StatusWin = (CWinBase*)0x8C5568;
 CWinBase* TutWin    = (CWinBase*)0x8C6E68;
 CWinBase* WorldWin  = (CWinBase*)0x8E9F60;
+CWinBase* Datalink  = (CWinBase*)0x703EA0;
 
 int* dword_915620 = (int*)0x915620;
 int* dword_939294 = (int*)0x939294;
@@ -185,18 +186,13 @@ int* dword_9B2068 = (int*)0x9B2068;
 int* dword_9B7AE4 = (int*)0x9B7AE4;
 
 
-bool base_is_visible() {
-    return CState.TimersEnabled
-        && !*game_not_started
-        && Win_is_visible(BaseWin);
-}
-
 bool map_is_visible() {
     return CState.TimersEnabled
         && !*game_not_started
-        && !base_is_visible()
+        && !Win_is_visible(BaseWin)
         && !Win_is_visible(SocialWin)
-        && !Win_is_visible(TutWin);
+        && !Win_is_visible(TutWin)
+        && !Win_is_visible(Datalink);
 }
 
 void mouse_over_tile(POINT* p) {
@@ -426,13 +422,13 @@ void check_scroll() {
 
     // TODO: determine the purpose of this code
     if (fScrolledAtAll) {
-        pMain->oMap.field_21A44 = 1;
+        pMain->oMap.drawOnlyCursor = 1;
         MapWin_set_center(pMain, pMain->oMap.iTileX, pMain->oMap.iTileY, 1);
-        pMain->oMap.field_21A44 = 0;
+        pMain->oMap.drawOnlyCursor = 0;
         for (int i = 1; i < 8; i++) {
             if (ppMain[i] && ppMain[i]->oMap.field_1DD74 &&
-                    (!fLeftButtonDown || ppMain[i]->oMap.field_1DD80) &&
-                    ppMain[i]->oMap.iMapTilesOddX + ppMain[i]->oMap.iMapTilesEvenX < *map_axis_x) {
+            (!fLeftButtonDown || ppMain[i]->oMap.field_1DD80) &&
+            ppMain[i]->oMap.iMapTilesOddX + ppMain[i]->oMap.iMapTilesEvenX < *map_axis_x) {
                 MapWin_set_center(ppMain[i], pMain->oMap.iTileX, pMain->oMap.iTileY, 1);
             }
         }
@@ -479,7 +475,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         if (!map_is_visible() || !fHasFocus) {
             CState.RightButtonDown = false;
             CState.ScrollDragging = false;
-            WinProc(hwnd, msg, wParam, lParam);
+            return WinProc(hwnd, msg, wParam, lParam);
 
         } else if (msg == WM_RBUTTONDOWN) {
             CState.RightButtonDown = true;
@@ -493,12 +489,12 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 SetCursor(LoadCursor(0, IDC_ARROW));
             } else {
                 WinProc(hwnd, WM_RBUTTONDOWN, wParam | MK_RBUTTON, lParam);
-                WinProc(hwnd, WM_RBUTTONUP, wParam, lParam);
+                return WinProc(hwnd, WM_RBUTTONUP, wParam, lParam);
             }
         } else if (CState.RightButtonDown) {
             check_scroll();
         } else {
-            WinProc(hwnd, msg, wParam, lParam);
+            return WinProc(hwnd, msg, wParam, lParam);
         }
 
     } else if (msg == WM_CHAR && wParam == 'r' && GetAsyncKeyState(VK_MENU) < 0) {
@@ -516,6 +512,15 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         MapWin_draw_map(pMain, 0);
         InvalidateRect(hwnd, NULL, false);
 
+    // If window has just become inactive e.g. ALT+TAB
+    } else if (msg == WM_ACTIVATEAPP) {
+        // wParam is 0 if the window has become inactive.
+        if (!LOWORD(wParam)) {
+            ShowWindow(*phWnd, SW_MINIMIZE);
+        } else {
+            ShowWindow(*phWnd, SW_RESTORE);
+        }
+        return WinProc(hwnd, msg, wParam, lParam);
     } else {
         return WinProc(hwnd, msg, wParam, lParam);
     }
@@ -548,6 +553,7 @@ int __thiscall draw_map(CMain* This, int iOwner, int fUnitsOnly) {
 
     if (This == pMain) {
         debug("draw_map %d %.4f %.4f\n", CState.Scrolling, CState.ScrollOffsetX, CState.ScrollOffsetY);
+
         // Save these values to restore them later
         int iMapPixelLeft = This->oMap.iMapPixelLeft;
         int iMapPixelTop = This->oMap.iMapPixelTop;
@@ -647,6 +653,9 @@ int __thiscall zoom_process(CMain* This) {
     return 0;
 }
 
+/*
+Original Offset: 0050EA40
+*/
 int __cdecl blink_timer() {
     if (!*game_not_started) {
         if (!*dword_915620) {
@@ -670,7 +679,7 @@ int __cdecl blink_timer() {
 
                 if ((int)*phInstance == GetWindowLongA(GetFocus(), GWL_HINSTANCE) && !Win_is_visible(TutWin)) {
                     if (*dword_939430 != -1 && *dword_939434 != -1 && *dword_939438 != -1 && *dword_93943C != -1) {
-                        if (*game_settings & 0x1000 || mouse_btn_down || *dword_9B7AE4 != 0) {
+                        if (*game_preferences & PREF_UNK_1000 || mouse_btn_down || *dword_9B7AE4 != 0) {
 
                             CState.ScreenSize.x = *screen_width;
                             CState.ScreenSize.y = *screen_height;

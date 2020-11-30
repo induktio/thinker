@@ -151,7 +151,7 @@ struct MAP {
     char owner;
     int items;
     short landmarks;
-    byte unk_2;
+    byte unk_2; // 0x40 = set_dirty()
     byte art_ref_id;
     int visible_items[7];
 };

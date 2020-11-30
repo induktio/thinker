@@ -1,3 +1,21 @@
+/*
+ * Thinker - AI improvement mod for Sid Meier's Alpha Centauri.
+ * https://github.com/induktio/thinker/
+ *
+ * Thinker is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * Thinker is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with Thinker.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #ifdef BUILD_REL
@@ -81,6 +99,9 @@ static_assert(sizeof(struct MAP) == 44, "");
 #define DEF true
 
 struct Config {
+    // Set negative value to use the defaults from Alpha Centauri.ini.
+    int directdraw = -1;
+    int disable_opening_movie = -1;
     int cpu_idle_fix = 1;
     int smooth_scrolling = 1;
     int scroll_area = 40;

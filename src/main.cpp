@@ -1,3 +1,20 @@
+/*
+ * Thinker - AI improvement mod for Sid Meier's Alpha Centauri.
+ * https://github.com/induktio/thinker/
+ *
+ * Thinker is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * Thinker is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with Thinker.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 #include "main.h"
 #include "patch.h"
@@ -20,7 +37,26 @@ int handler(void* user, const char* section, const char* name, const char* value
     char buf[INI_MAX_LINE+2] = {};
     strncpy(buf, value, INI_MAX_LINE);
     #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
-    if (MATCH("thinker", "free_formers")) {
+
+    if (MATCH("thinker", "DirectDraw")) {
+        cf->directdraw = atoi(value);
+    } else if (MATCH("thinker", "DisableOpeningMovie")) {
+        cf->disable_opening_movie = atoi(value);
+    } else if (MATCH("thinker", "cpu_idle_fix")) {
+        cf->cpu_idle_fix = atoi(value);
+    } else if (MATCH("thinker", "smooth_scrolling")) {
+        cf->smooth_scrolling = atoi(value);
+    } else if (MATCH("thinker", "scroll_area")) {
+        cf->scroll_area = max(0, atoi(value));
+    } else if (MATCH("thinker", "windowed")) {
+        cf->windowed = atoi(value);
+    } else if (MATCH("thinker", "window_width")) {
+        cf->window_width = max(800, atoi(value));
+    } else if (MATCH("thinker", "window_height")) {
+        cf->window_height = max(600, atoi(value));
+    } else if (MATCH("thinker", "smac_only")) {
+        cf->smac_only = atoi(value);
+    } else if (MATCH("thinker", "free_formers")) {
         cf->free_formers = atoi(value);
     } else if (MATCH("thinker", "free_colony_pods")) {
         cf->free_colony_pods = atoi(value);
@@ -46,20 +82,6 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->limit_project_start = atoi(value);
     } else if (MATCH("thinker", "max_satellites")) {
         cf->max_sat = atoi(value);
-    } else if (MATCH("thinker", "cpu_idle_fix")) {
-        cf->cpu_idle_fix = atoi(value);
-    } else if (MATCH("thinker", "smooth_scrolling")) {
-        cf->smooth_scrolling = atoi(value);
-    } else if (MATCH("thinker", "scroll_area")) {
-        cf->scroll_area = max(0, atoi(value));
-    } else if (MATCH("thinker", "windowed")) {
-        cf->windowed = atoi(value);
-    } else if (MATCH("thinker", "window_width")) {
-        cf->window_width = max(800, atoi(value));
-    } else if (MATCH("thinker", "window_height")) {
-        cf->window_height = max(600, atoi(value));
-    } else if (MATCH("thinker", "smac_only")) {
-        cf->smac_only = atoi(value);
     } else if (MATCH("thinker", "faction_placement")) {
         cf->faction_placement = atoi(value);
     } else if (MATCH("thinker", "nutrient_bonus")) {
@@ -1169,6 +1191,7 @@ HOOK_API int mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5) 
         /* Power & Thought Control */
         impunity |= (1 << (4*SOCIAL_C_VALUES + SOCIAL_M_POWER))
             | (1 << (4*SOCIAL_C_FUTURE + SOCIAL_M_THOUGHT_CONTROL));
+
     } else if (has_tech(faction, tx_facility[FAC_CHILDREN_CRECHE].preq_tech)) {
         for (int i=0; i<*total_num_bases; i++) {
             BASE* b = &tx_bases[i];
@@ -1185,7 +1208,7 @@ HOOK_API int mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5) 
     debug("social_params %d %d %8s range: %2d has_nexus: %d pop_boom: %d want_pop: %3d pop_total: %3d "\
         "robust: %04x immunity: %04x impunity: %04x penalty: %04x\n", *current_turn, faction, m->filename,
         range, has_nexus, pop_boom, want_pop, pop_total, robust, immunity, impunity, penalty);
-    int score_diff = 1 + random(6);
+    int score_diff = 1 + map_hash(*current_turn, faction) % 6;
     int sf = -1;
     int sm2 = -1;
 

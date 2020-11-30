@@ -25,7 +25,6 @@ const char* landmark_params[] = {
 
 int* top_menu_handle = (int*)0x945824;
 int* peek_msg_status = (int*)0x9B7B9C;
-int peek_delay = 0;
 
 UNIT fission_reactor[PROTOTYPES];
 Points natives;
@@ -335,16 +334,36 @@ HOOK_API void find_start(int faction, int* tx, int* ty) {
     fflush(debug_log);
 }
 
-BOOL WINAPI ModPeekMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg) {
-    int wait_time = (*top_menu_handle != 0 || *peek_msg_status == 0 ? peek_delay : 0);
-
+BOOL WINAPI ModPeekMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg)
+{
+    static bool wait_next = false;
+    int wait_time = (wait_next && (*top_menu_handle != 0 || *peek_msg_status == 0) ? 8 : 0);
     int wait_result = MsgWaitForMultipleObjectsEx(0, 0, wait_time, QS_ALLINPUT, MWMO_INPUTAVAILABLE);
+
     if (wait_result == WAIT_TIMEOUT) {
-        peek_delay = 8;
+        wait_next = true;
     } else {
-        peek_delay = 0;
+        wait_next = false;
     }
     return PeekMessage(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, wRemoveMsg);
+}
+
+DWORD WINAPI ModGetPrivateProfileStringA(LPCSTR lpAppName, LPCSTR lpKeyName,
+LPCSTR lpDefault, LPSTR lpReturnedString, DWORD nSize, LPCSTR lpFileName)
+{
+    debug("GET %s %s %s\n", lpAppName, lpKeyName, lpDefault);
+    if (!strcmp(lpAppName, "Alpha Centauri")) {
+        if (conf.directdraw >= 0 && !strcmp(lpKeyName, "DirectDraw")) {
+            strcpy_s(lpReturnedString, 2, (conf.directdraw ? "1" : "0"));
+            return 1;
+        }
+        if (conf.disable_opening_movie >= 0 && !strcmp(lpKeyName, "DisableOpeningMovie")) {
+            strcpy_s(lpReturnedString, 2, (conf.disable_opening_movie ? "1" : "0"));
+            return 1;
+        }
+    }
+    return GetPrivateProfileStringA(lpAppName, lpKeyName,
+        lpDefault, lpReturnedString, nSize, lpFileName);
 }
 
 void exit_fail() {
@@ -424,6 +443,8 @@ bool patch_setup(Config* cf) {
     if (!VirtualProtect(AC_IMPORT_BASE, AC_IMPORT_LEN, PAGE_EXECUTE_READWRITE, &oldattrs)) {
         return false;
     }
+    *(int*)GetPrivateProfileStringAImport = (int)ModGetPrivateProfileStringA;
+
     if (cf->smooth_scrolling) {
         *(int*)RegisterClassImport = (int)ModRegisterClassA;
     }
