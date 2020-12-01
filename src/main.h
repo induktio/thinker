@@ -64,21 +64,11 @@ struct Point {
     int x;
     int y;
 };
+
 typedef std::set<std::pair<int,int>> Points;
 #define mp(x, y) std::make_pair(x, y)
 #define min(x, y) std::min(x, y)
 #define max(x, y) std::max(x, y)
-
-static_assert(sizeof(struct R_Basic) == 308, "");
-static_assert(sizeof(struct R_Social) == 212, "");
-static_assert(sizeof(struct R_Facility) == 48, "");
-static_assert(sizeof(struct R_Tech) == 44, "");
-static_assert(sizeof(struct MetaFaction) == 1436, "");
-static_assert(sizeof(struct Faction) == 8396, "");
-static_assert(sizeof(struct BASE) == 308, "");
-static_assert(sizeof(struct UNIT) == 52, "");
-static_assert(sizeof(struct VEH) == 52, "");
-static_assert(sizeof(struct MAP) == 44, "");
 
 #define MAPSZ 256
 #define QSIZE 512
@@ -100,8 +90,8 @@ static_assert(sizeof(struct MAP) == 44, "");
 
 struct Config {
     // Set negative value to use the defaults from Alpha Centauri.ini.
-    int directdraw = -1;
-    int disable_opening_movie = -1;
+    int directdraw = 0;
+    int disable_opening_movie = 1;
     int cpu_idle_fix = 1;
     int smooth_scrolling = 1;
     int scroll_area = 40;
@@ -119,7 +109,7 @@ struct Config {
     int social_ai = 1;
     int tech_balance = 0;
     int hurry_items = 1;
-    double expansion_factor = 1;
+    float expansion_factor = 1;
     int limit_project_start = 3;
     int max_sat = 10;
     int faction_placement = 1;

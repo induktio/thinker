@@ -529,10 +529,10 @@ int spawn_veh(int unit_id, int faction, int x, int y, int base_id) {
 
 char* parse_str(char* buf, int len, const char* s1, const char* s2, const char* s3, const char* s4) {
     buf[0] = '\0';
-    strcat_s(buf, len, s1);
-    strcat_s(buf, len, s2);
-    strcat_s(buf, len, s3);
-    strcat_s(buf, len, s4);
+    strncat(buf, s1, len);
+    strncat(buf, s2, len);
+    strncat(buf, s3, len);
+    strncat(buf, s4, len);
     return (strlen(buf) > 0 ? buf : NULL);
 }
 

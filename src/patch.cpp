@@ -23,6 +23,9 @@ const char* landmark_params[] = {
     "borehole", "nexus", "unity", "fossil"
 };
 
+typedef int(__cdecl *Fexcept_handler3)(EXCEPTION_RECORD*, PVOID, CONTEXT*);
+Fexcept_handler3 _except_handler3 = (Fexcept_handler3)0x646DF8;
+
 int* top_menu_handle = (int*)0x945824;
 int* peek_msg_status = (int*)0x9B7B9C;
 
@@ -121,7 +124,7 @@ HOOK_API int content_pop() {
 
 HOOK_API int mod_setup_player(int faction, int v1, int v2) {
     setup_player(faction, v1, v2);
-    if (!is_human(faction)) {
+    if (faction > 0 && !is_human(faction)) {
         for (int i=0; i<*total_num_vehicles; i++) {
             VEH* veh = &tx_vehicles[i];
             if (veh->faction_id == faction) {
@@ -334,6 +337,9 @@ HOOK_API void find_start(int faction, int* tx, int* ty) {
     fflush(debug_log);
 }
 
+/*
+Read more about the idea behind idle loop patch: https://github.com/vinceho/smac-cpu-fix/
+*/
 BOOL WINAPI ModPeekMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg)
 {
     static bool wait_next = false;
@@ -354,11 +360,11 @@ LPCSTR lpDefault, LPSTR lpReturnedString, DWORD nSize, LPCSTR lpFileName)
     debug("GET %s %s %s\n", lpAppName, lpKeyName, lpDefault);
     if (!strcmp(lpAppName, "Alpha Centauri")) {
         if (conf.directdraw >= 0 && !strcmp(lpKeyName, "DirectDraw")) {
-            strcpy_s(lpReturnedString, 2, (conf.directdraw ? "1" : "0"));
+            strncpy(lpReturnedString, (conf.directdraw ? "1" : "0"), 2);
             return 1;
         }
         if (conf.disable_opening_movie >= 0 && !strcmp(lpKeyName, "DisableOpeningMovie")) {
-            strcpy_s(lpReturnedString, 2, (conf.disable_opening_movie ? "1" : "0"));
+            strncpy(lpReturnedString, (conf.disable_opening_movie ? "1" : "0"), 2);
             return 1;
         }
     }
@@ -370,6 +376,66 @@ void exit_fail() {
     MessageBoxA(0, "Error while patching game binary. Game will now exit.",
         MOD_VERSION, MB_OK | MB_ICONSTOP);
     exit(EXIT_FAILURE);
+}
+
+/*
+Replace the default C++ exception handler in SMACX binary with a custom version.
+This allows us to get more information about crash locations.
+https://en.wikipedia.org/wiki/Microsoft-specific_exception_handling_mechanisms
+*/
+int __cdecl mod_except_handler3(EXCEPTION_RECORD *rec, PVOID *frame, CONTEXT *ctx)
+{
+    #define dump(...) fprintf(debug_log, __VA_ARGS__);
+    if (!debug_log && !(debug_log = fopen("debug.txt", "w"))) {
+        return _except_handler3(rec, frame, ctx);
+    }
+    time_t now = time(0);
+    char* datetime = ctime(&now);
+
+    dump("****************************************\n"
+         "ModVersion %s (%s)\n"
+         "CrashTime  %s"
+         "SavedGame  %s\n"
+         "****************************************\n"
+         "ExceptionCode    %08x\n"
+         "ExceptionFlags   %08x\n"
+         "ExceptionRecord  %08x\n"
+         "ExceptionAddress %08x\n",
+         MOD_VERSION,
+         MOD_DATE,
+         datetime,
+         last_save_path,
+         (int)rec->ExceptionCode,
+         (int)rec->ExceptionFlags,
+         (int)rec->ExceptionRecord,
+         (int)rec->ExceptionAddress);
+
+    dump("CFlags %08lx\n", ctx->ContextFlags);
+    dump("EFlags %08lx\n", ctx->EFlags);
+    dump("EAX %08lx\n", ctx->Eax);
+    dump("EBX %08lx\n", ctx->Ebx);
+    dump("ECX %08lx\n", ctx->Ecx);
+    dump("EDX %08lx\n", ctx->Edx);
+    dump("ESI %08lx\n", ctx->Esi);
+    dump("EDI %08lx\n", ctx->Edi);
+    dump("EBP %08lx\n", ctx->Ebp);
+    dump("ESP %08lx\n", ctx->Esp);
+    dump("EIP %08lx\n", ctx->Eip);
+    dump("Dr0 %08lx\n", ctx->Dr0);
+    dump("Dr1 %08lx\n", ctx->Dr1);
+    dump("Dr2 %08lx\n", ctx->Dr2);
+    dump("Dr3 %08lx\n", ctx->Dr3);
+    dump("Dr6 %08lx\n", ctx->Dr6);
+    dump("Dr7 %08lx\n", ctx->Dr7);
+
+    int32_t* p = (int32_t*)&conf;
+    for (int32_t i = 0; i < (int32_t)sizeof(conf)/4; i++) {
+        dump("Config %d: %d\n", i, p[i]);
+    }
+
+    fflush(debug_log);
+    return _except_handler3(rec, frame, ctx);
+    #undef dump
 }
 
 /*
@@ -478,6 +544,10 @@ bool patch_setup(Config* cf) {
     write_call(0x5B3C03, (int)mod_setup_player);
     write_call(0x5B3C4C, (int)mod_setup_player);
     write_call(0x5C0908, (int)log_veh_kill);
+    write_offset(0x646FDE, (void*)mod_except_handler3);
+    write_offset(0x646CA7, (void*)mod_except_handler3);
+    write_offset(0x6492D4, (void*)mod_except_handler3);
+    write_offset(0x64908C, (void*)mod_except_handler3);
 
     if (cf->smooth_scrolling) {
         write_offset(0x50F3DC, (void*)blink_timer);

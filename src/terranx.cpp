@@ -3,6 +3,7 @@
 
 const char** engine_version = (const char**)0x691870;
 const char** engine_date = (const char**)0x691874;
+const char* last_save_path = (const char*)0x9A66C9;
 BASE** current_base_ptr = (BASE**)0x90EA30;
 int* current_base_id = (int*)0x689370;
 int* game_preferences = (int*)0x9A6490;
@@ -69,7 +70,7 @@ R_Resource* tx_resource = (R_Resource*)0x945F50;
 R_Terraform* tx_terraform = (R_Terraform*)0x691878;
 R_Weapon* tx_weapon = (R_Weapon*)0x94AE60;
 
-fp_7intstr* propose_proto = (fp_7intstr*)0x580860;
+fp_7ic* propose_proto = (fp_7ic*)0x580860;
 fp_4int* veh_init = (fp_4int*)0x5C03D0;
 fp_1int* veh_skip = (fp_1int*)0x5C1D20;
 fp_2int* veh_at = (fp_2int*)0x5BFE90;

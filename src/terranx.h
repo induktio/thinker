@@ -13,7 +13,7 @@ typedef int __cdecl fp_4int(int, int, int, int);
 typedef int __cdecl fp_5int(int, int, int, int, int);
 typedef int __cdecl fp_6int(int, int, int, int, int, int);
 typedef int __cdecl fp_7int(int, int, int, int, int, int, int);
-typedef int __cdecl fp_7intstr(int, int, int, int, int, int, int, const char*);
+typedef int __cdecl fp_7ic(int, int, int, int, int, int, int, const char*);
 typedef int __cdecl fp_ccici(const char*, const char*, int, const char*, int);
 typedef int __cdecl fp_icii(int, const char*, int, int);
 
@@ -35,6 +35,17 @@ typedef int __thiscall tc_7int(int, int, int, int, int, int, int);
 #pragma GCC diagnostic pop
 #endif
 
+static_assert(sizeof(struct R_Basic) == 308, "");
+static_assert(sizeof(struct R_Social) == 212, "");
+static_assert(sizeof(struct R_Facility) == 48, "");
+static_assert(sizeof(struct R_Tech) == 44, "");
+static_assert(sizeof(struct MetaFaction) == 1436, "");
+static_assert(sizeof(struct Faction) == 8396, "");
+static_assert(sizeof(struct BASE) == 308, "");
+static_assert(sizeof(struct UNIT) == 52, "");
+static_assert(sizeof(struct VEH) == 52, "");
+static_assert(sizeof(struct MAP) == 44, "");
+
 /*
 Thinker functions that are replacements to the SMACX binary versions 
 should be prefixed with 'mod_' if their equivalent is also listed here.
@@ -42,6 +53,7 @@ should be prefixed with 'mod_' if their equivalent is also listed here.
 
 extern const char** engine_version;
 extern const char** engine_date;
+extern const char* last_save_path;
 extern BASE** current_base_ptr;
 extern int* current_base_id;
 extern int* game_preferences;
@@ -108,7 +120,7 @@ extern R_Resource* tx_resource;
 extern R_Terraform* tx_terraform;
 extern R_Weapon* tx_weapon;
 
-extern fp_7intstr* propose_proto;
+extern fp_7ic* propose_proto;
 extern fp_4int* veh_init;
 extern fp_1int* veh_skip;
 extern fp_2int* veh_at;

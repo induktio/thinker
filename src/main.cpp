@@ -77,7 +77,7 @@ int handler(void* user, const char* section, const char* name, const char* value
     } else if (MATCH("thinker", "hurry_items")) {
         cf->hurry_items = atoi(value);
     } else if (MATCH("thinker", "expansion_factor")) {
-        cf->expansion_factor = max(0, atoi(value)) / 100.0;
+        cf->expansion_factor = max(0, atoi(value)) / 100.0f;
     } else if (MATCH("thinker", "limit_project_start")) {
         cf->limit_project_start = atoi(value);
     } else if (MATCH("thinker", "max_satellites")) {

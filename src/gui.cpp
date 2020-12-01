@@ -359,7 +359,7 @@ void check_scroll() {
     CState.ScrollOffsetY = pMain->oMap.iMapPixelTop;
     ullNewTickCount = get_ms_count();
     ullOldTickCount = ullNewTickCount;
-    debug("scroll_check %d %d %d\n", CState.Scrolling, (int)CState.ScrollDragPos.x, (int)CState.ScrollDragPos.y);
+//    debug("scroll_check %d %d %d\n", CState.Scrolling, (int)CState.ScrollDragPos.x, (int)CState.ScrollDragPos.y);
     do {
         double dTPS = -1;
         double dx = 0;
