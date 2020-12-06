@@ -423,8 +423,8 @@ struct Faction {
     byte region_unk_7[128]; // Unknown base_prod_choices state
     byte region_base_plan[128]; // visible in map UI with omni view + debug mode under base name
     /* End of block */
-    Goal goals_1[75];
-    Goal goals_2[25];
+    Goal goals[75];
+    Goal sites[25];
     int unk_92;
     int unk_93;
     int unk_94;

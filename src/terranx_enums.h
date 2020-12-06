@@ -866,16 +866,22 @@ enum terrain_basic_flags {
 
 enum ai_goal_types {
     AI_GOAL_UNUSED = -1,
-    AI_GOAL_ATTACK = 0,
-    AI_GOAL_DEFEND = 2,
-    AI_GOAL_SCOUT = 3,
-    AI_GOAL_UNK_1 = 6,
-    AI_GOAL_COLONIZE = 8,
-    AI_GOAL_TERRAFORM_LAND = 9,
-    AI_GOAL_PRIORITY_COMBAT = 16,
+    AI_GOAL_ATTACK = 0, // 'a', red
+    AI_GOAL_DEFEND = 2, // 'd', yellow
+    AI_GOAL_SCOUT = 3, // 's', pink
+    AI_GOAL_UNK_1 = 6, // 'n', blue ; related to tile visibility
+    AI_GOAL_UNK_2 = 7, // related to movement
+    AI_GOAL_COLONIZE = 8, // 'c', teal
+    AI_GOAL_TERRAFORM_LAND = 9, // 'f', green ' ;
+    AI_GOAL_UNK_3 = 11, // related to combat
+    AI_GOAL_ECHELON_MIRROR = 13,
+    AI_GOAL_PRIORITY_COMBAT = 16, // possibly artillery related
     AI_GOAL_TERRAFORM_WATER = 25,
-    AI_GOAL_LANDING_SITE = 41,
-    AI_GOAL_UNK_2 = 121,
+    AI_GOAL_LANDING_SITE = 41, // '^', white
+    AI_GOAL_CONDENSER = 73,
+    AI_GOAL_THERMAL_BOREHOLE = 105,
+    AI_GOAL_SENSOR_ARRAY = 121,
+    AI_GOAL_RAISE_LAND = 200,
 };
 
 enum social_category_types {

@@ -51,6 +51,7 @@ bool is_alien(int faction);
 bool ai_faction(int faction);
 bool ai_enabled(int faction);
 bool at_war(int faction1, int faction2);
+bool has_pact(int faction1, int faction2);
 bool un_charter();
 int prod_count(int faction, int id, int skip);
 int facility_count(int faction, int facility);
@@ -65,6 +66,7 @@ int best_weapon(int faction);
 int best_reactor(int faction);
 int offense_value(UNIT* u);
 int defense_value(UNIT* u);
+int faction_might(int faction);
 int random(int n);
 int map_hash(int x, int y);
 double lerp(double a, double b, double t);
@@ -74,14 +76,15 @@ int min_range(const Points& S, int x, int y);
 double mean_range(const Points& S, int x, int y);
 MAP* mapsq(int x, int y);
 int unit_in_tile(MAP* sq);
-int set_move_to(int id, int x, int y);
-int set_road_to(int id, int x, int y);
-int set_action(int id, int act, char icon);
-int set_convoy(int id, int res);
-int mod_veh_skip(int id);
+int set_move_to(int veh_id, int x, int y);
+int set_road_to(int veh_id, int x, int y);
+int set_action(int veh_id, int act, char icon);
+int set_convoy(int veh_id, int res);
+int mod_veh_skip(int veh_id);
 bool at_target(VEH* veh);
 bool is_ocean(MAP* sq);
 bool is_ocean_shelf(MAP* sq);
+bool is_shore_level(MAP* sq);
 bool is_sea_base(int id);
 bool workable_tile(int x, int y, int faction);
 bool has_defenders(int x, int y, int faction);
@@ -96,6 +99,21 @@ void check_zeros(int* ptr, int len);
 void print_map(int x, int y);
 void print_veh(int id);
 void print_base(int id);
+
+void __cdecl add_goal(int faction, int type, int priority, int x, int y, int base_id);
+void __cdecl wipe_goals(int faction);
+
+const int PathLimit = 50;
+const int QueueSize = 640;
+
+enum tilesearch_types {
+    TS_TRIAD_LAND = 0,
+    TS_TRIAD_SEA = 1,
+    TS_TRIAD_AIR = 2,
+    TS_NEAR_ROADS = 3,
+    TS_TERRITORY_LAND = 4,
+    TS_SEA_AND_SHORE = 5,
+};
 
 struct PathNode {
     int x;
@@ -115,11 +133,12 @@ class TileSearch {
     MAP* sq;
     public:
     int rx, ry, dist, cur;
-    PathNode newtiles[QSIZE];
+    PathNode newtiles[QueueSize];
     Points oldtiles;
-    void init(int, int, int);
-    void init(int, int, int, int);
+    void init(int x, int y, int tp);
+    void init(int x, int y, int tp, int y_skip);
     bool has_zoc(int);
+    PointList& get_route(PointList& pp);
     MAP* get_next();
 };
 

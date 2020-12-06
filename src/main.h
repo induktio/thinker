@@ -56,37 +56,46 @@
 #include <limits.h>
 #include <time.h>
 #include <math.h>
+#include <psapi.h>
 #include <algorithm>
 #include <set>
+#include <list>
+#include <string>
 #include "terranx.h"
 
-struct Point {
-    int x;
-    int y;
-};
-
-typedef std::set<std::pair<int,int>> Points;
-#define mp(x, y) std::make_pair(x, y)
 #define min(x, y) std::min(x, y)
 #define max(x, y) std::max(x, y)
-
-#define MAPSZ 256
-#define QSIZE 512
-#define BASES 512
-#define VEHICLES 2048
-#define PROTOTYPES 512
-#define REGIONS 128
 #define COMBAT 0
 #define SYNC 0
 #define NO_SYNC 1
-#define NEAR_ROADS 3
-#define TERRITORY_LAND 4
-#define RES_NONE 0
-#define RES_NUTRIENT 1
-#define RES_MINERAL 2
-#define RES_ENERGY 3
 #define ATT false
 #define DEF true
+
+const int MaxMapW = 512;
+const int MaxMapH = 256;
+const int MaxRegionNum = 128;
+
+const int MaxPlayerNum = 8;
+const int MaxGoalsNum = 75;
+const int MaxSitesNum = 25;
+const int MaxBaseNum = 512;
+const int MaxVehNum = 2048;
+const int MaxProtoNum = 512;
+const int MaxProtoFactionNum = 64;
+
+const int MaxTechnologyNum = 89;
+const int MaxChassisNum = 9;
+const int MaxWeaponNum = 26;
+const int MaxArmorNum = 14;
+const int MaxReactorNum = 4;
+const int MaxAbilityNum = 29;
+
+const int MaxFacilityNum = 134; // 0 slot unused
+const int MaxSecretProjectNum = 64;
+const int MaxSocialCatNum = 4;
+const int MaxSocialModelNum = 4;
+const int MaxSocialEffectNum = 11;
+
 
 struct Config {
     // Set negative value to use the defaults from Alpha Centauri.ini.
@@ -157,12 +166,56 @@ struct AIPlans {
     int enemy_bases = 0;
 };
 
+enum crawl_resource_types {
+    RES_NONE = 0,
+    RES_NUTRIENT = 1,
+    RES_MINERAL = 2,
+    RES_ENERGY = 3,
+};
+
+enum nodeset_types {
+    NODE_CONVOY = 1,
+    NODE_BOREHOLE = 2,
+    NODE_NEED_FERRY = 3,
+    NODE_RAISE_LAND = 4,
+    NODE_GOAL_RAISE_LAND = 5,
+};
+
+struct Point {
+    int x;
+    int y;
+};
+
+struct PointComp {
+    bool operator()(const Point& p1, const Point& p2) const
+    {
+        return p1.x < p2.x || (p1.x == p2.x && p1.y < p2.y);
+    }
+};
+
+struct MapNode {
+    int x;
+    int y;
+    int type;
+};
+
+struct NodeComp {
+    bool operator()(const MapNode& p1, const MapNode& p2) const
+    {
+        return p1.x < p2.x || (p1.x == p2.x && (
+            p1.y < p2.y || (p1.y == p2.y && (p1.type < p2.type))
+        ));
+    }
+};
+
+typedef std::set<MapNode,NodeComp> NodeSet;
+typedef std::set<Point,PointComp> Points;
+typedef std::list<Point> PointList;
+
 extern FILE* debug_log;
 extern Config conf;
 extern AIPlans plans[8];
-extern Points convoys;
-extern Points boreholes;
-extern Points needferry;
+extern NodeSet mapnodes;
 
 DLL_EXPORT int ThinkerDecide();
 HOOK_API int mod_turn_upkeep();

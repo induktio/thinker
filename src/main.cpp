@@ -27,10 +27,8 @@ bool unknown_option = false;
 FILE* debug_log = NULL;
 Config conf;
 AIPlans plans[8];
+NodeSet mapnodes;
 
-Points convoys;
-Points boreholes;
-Points needferry;
 
 int handler(void* user, const char* section, const char* name, const char* value) {
     Config* cf = (Config*)user;
@@ -300,7 +298,7 @@ HOOK_API int mod_turn_upkeep() {
             propose_proto(i, CHS_INFANTRY, WPN_SUPPLY_TRANSPORT, arm2, 0, REC_FUSION, PLAN_DEFENSIVE, name);
         }
     }
-    int minerals[BASES];
+    int minerals[MaxBaseNum];
     for (int i=1; i<8; i++) {
         Faction* f = &tx_factions[i];
         MetaFaction* m = &tx_metafactions[i];
@@ -364,7 +362,7 @@ HOOK_API int mod_turn_upkeep() {
         } else {
             plans[i].plant_fungus = 0;
         }
-        debug("turn_values %d %d proj_limit: %d psi: %d keep_fungus: %d "\
+        debug("turn_values %d %d proj_limit: %2d psi: %2d keep_fungus: %d "\
             "plant_fungus: %d enemy_bases: %d enemy_range: %.4f\n",
             *current_turn, i, plans[i].proj_limit, psi, plans[i].keep_fungus, plans[i].plant_fungus,
             plans[i].enemy_bases, m->thinker_enemy_range);
@@ -605,6 +603,7 @@ int find_proto(int base_id, int triad, int mode, bool defend) {
     int faction = b->faction_id;
     int basic = BSC_SCOUT_PATROL;
     debug("find_proto faction: %d triad: %d mode: %d def: %d\n", faction, triad, mode, defend);
+
     if (mode == WMODE_COLONIST) {
         basic = (triad == TRIAD_SEA ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
     } else if (mode == WMODE_TERRAFORMER) {
@@ -621,11 +620,11 @@ int find_proto(int base_id, int triad, int mode, bool defend) {
     int minerals = b->mineral_surplus;
     int best_val = unit_score(best, faction, cfactor, minerals, defend);
 
-    for (int i=0; i < 128; i++) {
-        int id = (i < 64 ? i : (faction-1)*64 + i);
+    for (int i=0; i < 2*MaxProtoFactionNum; i++) {
+        int id = (i < MaxProtoFactionNum ? i : (faction-1)*MaxProtoFactionNum + i);
         UNIT* u = &tx_units[id];
         if (u->unit_flags & UNIT_ACTIVE && strlen(u->name) > 0 && unit_triad(id) == triad && id != best) {
-            if (id < 64 && !has_tech(faction, u->preq_tech)) {
+            if (id < MaxProtoFactionNum && !has_tech(faction, u->preq_tech)) {
                 continue;
             }
             if ((mode && tx_weapon[u->weapon_type].mode != mode)
@@ -768,8 +767,9 @@ int find_facility(int id) {
 
     if (*climate_future_change > 0) {
         MAP* sq = mapsq(base->x, base->y);
-        if (sq && (sq->level >> 5) == LEVEL_SHORE_LINE && can_build(id, FAC_PRESSURE_DOME))
+        if (is_shore_level(sq) && can_build(id, FAC_PRESSURE_DOME)) {
             return -FAC_PRESSURE_DOME;
+        }
     }
     if (base->drone_total > 0 && can_build(id, FAC_RECREATION_COMMONS))
         return -FAC_RECREATION_COMMONS;
@@ -877,11 +877,6 @@ int select_combat(int id, bool sea_base, bool build_ships, int probes, int def_l
     return find_proto(id, TRIAD_LAND, COMBAT, (!random(4) ? DEF : ATT));
 }
 
-int faction_might(int faction) {
-    Faction* f = &tx_factions[faction];
-    return max(1, f->mil_strength_1 + f->mil_strength_2 + f->pop_total) * (is_human(faction) ? 2 : 1);
-}
-
 double expansion_ratio(Faction* f) {
     return f->current_num_bases / (pow(*map_half_x * *map_axis_y, 0.4) *
         min(1.0, max(0.4, *map_area_sq_root / 56.0)) * conf.expansion_factor);
@@ -913,14 +908,14 @@ int select_prod(int id) {
     double enemymil = 0;
 
     for (int i=1; i<8; i++) {
-        if (i==faction || ~f->diplo_status[i] & DIPLO_COMMLINK) {
+        if (i == faction || ~f->diplo_status[i] & DIPLO_COMMLINK) {
             continue;
         }
-        double mil = min(5.0, 1.0 * faction_might(i) / might);
-        if (f->diplo_status[i] & DIPLO_VENDETTA) {
+        double mil = min(5.0, (is_human(faction) ? 2.0 : 1.0) * faction_might(i) / might);
+        if (at_war(faction, i)) {
             enemymask |= (1 << i);
             enemymil = max(enemymil, 1.0 * mil);
-        } else if (~f->diplo_status[i] & DIPLO_PACT) {
+        } else if (!has_pact(faction, i)) {
             enemymil = max(enemymil, 0.3 * mil);
         }
     }
@@ -987,10 +982,13 @@ int select_prod(int id) {
         } else {
             return BSC_SCOUT_PATROL;
         }
+
     } else if (!conf.auto_relocate_hq && relocate_hq(id)) {
         return -FAC_HEADQUARTERS;
+
     } else if (minerals > reserve && random(100) < (int)(100.0 * threat)) {
         return select_combat(id, sea_base, build_ships, probes, (defenders < 2 && enemyrange < 12));
+
     } else if (has_formers && formers < (base->pop_size < (sea_base ? 4 : 3) ? 1 : 2)
     && (need_formers(base->x, base->y, faction) || (!formers && id & 1))) {
         if (base->mineral_surplus >= 8 && has_chassis(faction, CHS_GRAVSHIP)) {
@@ -1007,10 +1005,13 @@ int select_prod(int id) {
     } else {
         int crawl_target = 1 + min(base->pop_size/3,
             (base->mineral_surplus >= p->proj_limit ? 2 : 1));
+
         if (has_supply && !sea_base && crawlers < crawl_target) {
             return find_proto(id, TRIAD_LAND, WMODE_CONVOY, DEF);
-        } else if (build_ships && !transports && needferry.count({base->x, base->y})) {
+
+        } else if (build_ships && !transports && mapnodes.count({base->x, base->y, NODE_NEED_FERRY})) {
             return find_proto(id, TRIAD_SEA, WMODE_TRANSPORT, DEF);
+
         } else if (build_pods && !can_build(id, FAC_RECYCLING_TANKS)) {
             int tr = select_colony(id, pods, build_ships);
             if (tr == TRIAD_LAND || tr == TRIAD_SEA) {
@@ -1063,13 +1064,11 @@ int robust, int immunity, int impunity, int penalty) {
             }
             vals[PLA]++;
         }
-        for (int i=0; i<4; i++) {
-            for (int k=0; k<11; k++) {
-                if ((1 << k) & immunity) {
-                    vals[k] = max(0, vals[k]);
-                } else if ((1 << k) & robust && vals[k] < 0) {
-                    vals[k] /= 2;
-                }
+        for (int k=0; k<11; k++) {
+            if ((1 << k) & immunity) {
+                vals[k] = max(0, vals[k]);
+            } else if ((1 << k) & robust && vals[k] < 0) {
+                vals[k] /= 2;
             }
         }
     }
@@ -1098,7 +1097,7 @@ int robust, int immunity, int impunity, int penalty) {
         sc -= 10;
     }
     if (vals[SUP] < 0) {
-        sc -= (int)((1 - base_ratio) * 10);
+        sc -= (int)((1.0 - base_ratio) * 10.0);
     }
     if (vals[MOR] >= 1 && vals[MOR] + morale >= 4) {
         sc += 10;

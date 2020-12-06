@@ -29,7 +29,7 @@ Fexcept_handler3 _except_handler3 = (Fexcept_handler3)0x646DF8;
 int* top_menu_handle = (int*)0x945824;
 int* peek_msg_status = (int*)0x9B7B9C;
 
-UNIT fission_reactor[PROTOTYPES];
+UNIT fission_reactor[MaxProtoNum];
 Points natives;
 Points goodtiles;
 bool has_supply_pods = true;
@@ -173,7 +173,7 @@ void process_map(int k) {
     How many tiles a particular region has. Regions are disjoint land/water areas
     and the partitions are already calculated by the game engine.
     */
-    int region_count[REGIONS] = {};
+    int region_count[MaxRegionNum] = {};
     /*
     This value defines how many tiles an area needs to have before it's
     considered sufficiently large to be a faction starting location.
@@ -195,7 +195,7 @@ void process_map(int k) {
                 if (unit_in_tile(sq) == 0) {
                     natives.insert({x, y});
                 }
-                assert(sq->region >= 0 && sq->region < REGIONS);
+                assert(sq->region >= 0 && sq->region < MaxRegionNum);
                 region_count[sq->region]++;
                 if (!is_ocean(sq) && sq->items & TERRA_SUPPLY_REMOVE) {
                     pods_removed++;
@@ -287,7 +287,7 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
         while (!aquatic && pods.size() > 0 && nut + n < 2) {
             Points::const_iterator it(pods.begin());
             std::advance(it, random(pods.size()));
-            sq = mapsq(it->first, it->second);
+            sq = mapsq(it->x, it->y);
             pods.erase(it);
             sq->items &= ~(TERRA_FUNGUS | TERRA_MINERAL_RES | TERRA_ENERGY_RES);
             sq->items |= (TERRA_SUPPLY_REMOVE | TERRA_BONUS_RES | TERRA_NUTRIENT_RES);
@@ -317,8 +317,8 @@ HOOK_API void find_start(int faction, int* tx, int* ty) {
         if (!aquatic && goodtiles.size() > 0 && i < 120) {
             Points::const_iterator it(goodtiles.begin());
             std::advance(it, random(goodtiles.size()));
-            x = it->first;
-            y = it->second;
+            x = it->x;
+            y = it->y;
         } else {
             y = (random(*map_axis_y - k*2) + k);
             x = (random(*map_axis_x) &~1) + (y&1);
@@ -385,17 +385,23 @@ https://en.wikipedia.org/wiki/Microsoft-specific_exception_handling_mechanisms
 */
 int __cdecl mod_except_handler3(EXCEPTION_RECORD *rec, PVOID *frame, CONTEXT *ctx)
 {
-    #define dump(...) fprintf(debug_log, __VA_ARGS__);
     if (!debug_log && !(debug_log = fopen("debug.txt", "w"))) {
         return _except_handler3(rec, frame, ctx);
     }
-    time_t now = time(0);
-    char* datetime = ctime(&now);
+    time_t rawtime = time(&rawtime);
+    struct tm *now = localtime(&rawtime);
+    char datetime[70];
+    char filepath[1024];
+    strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", now);
+    HANDLE hProcess = GetCurrentProcess();
+    int ret = GetMappedFileNameA(hProcess, (LPVOID)ctx->Eip, filepath, sizeof(filepath));
 
-    dump("****************************************\n"
+    fprintf(debug_log,
+         "****************************************\n"
          "ModVersion %s (%s)\n"
-         "CrashTime  %s"
+         "CrashTime  %s\n"
          "SavedGame  %s\n"
+         "ModuleName %s\n"
          "****************************************\n"
          "ExceptionCode    %08x\n"
          "ExceptionFlags   %08x\n"
@@ -405,37 +411,35 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD *rec, PVOID *frame, CONTEXT *ct
          MOD_DATE,
          datetime,
          last_save_path,
+         (ret != 0 ? filepath : ""),
          (int)rec->ExceptionCode,
          (int)rec->ExceptionFlags,
          (int)rec->ExceptionRecord,
          (int)rec->ExceptionAddress);
 
-    dump("CFlags %08lx\n", ctx->ContextFlags);
-    dump("EFlags %08lx\n", ctx->EFlags);
-    dump("EAX %08lx\n", ctx->Eax);
-    dump("EBX %08lx\n", ctx->Ebx);
-    dump("ECX %08lx\n", ctx->Ecx);
-    dump("EDX %08lx\n", ctx->Edx);
-    dump("ESI %08lx\n", ctx->Esi);
-    dump("EDI %08lx\n", ctx->Edi);
-    dump("EBP %08lx\n", ctx->Ebp);
-    dump("ESP %08lx\n", ctx->Esp);
-    dump("EIP %08lx\n", ctx->Eip);
-    dump("Dr0 %08lx\n", ctx->Dr0);
-    dump("Dr1 %08lx\n", ctx->Dr1);
-    dump("Dr2 %08lx\n", ctx->Dr2);
-    dump("Dr3 %08lx\n", ctx->Dr3);
-    dump("Dr6 %08lx\n", ctx->Dr6);
-    dump("Dr7 %08lx\n", ctx->Dr7);
+     fprintf(debug_log,
+        "CFlags %08lx\n"
+        "EFlags %08lx\n"
+        "EAX %08lx\n"
+        "EBX %08lx\n"
+        "ECX %08lx\n"
+        "EDX %08lx\n"
+        "ESI %08lx\n"
+        "EDI %08lx\n"
+        "EBP %08lx\n"
+        "ESP %08lx\n"
+        "EIP %08lx\n",
+        ctx->ContextFlags, ctx->EFlags,
+        ctx->Eax, ctx->Ebx, ctx->Ecx, ctx->Edx,
+        ctx->Esi, ctx->Edi, ctx->Ebp, ctx->Esp, ctx->Eip);
 
     int32_t* p = (int32_t*)&conf;
     for (int32_t i = 0; i < (int32_t)sizeof(conf)/4; i++) {
-        dump("Config %d: %d\n", i, p[i]);
+        fprintf(debug_log, "Config %d: %d\n", i, p[i]);
     }
 
     fflush(debug_log);
     return _except_handler3(rec, frame, ctx);
-    #undef dump
 }
 
 /*
@@ -462,13 +466,11 @@ void write_bytes(int addr, const byte* old_bytes, const byte* new_bytes, int len
 }
 
 /*
-Verify that the location contains standard function prologue before patching.
-
-55          push    ebp
-8B EC       mov     ebp, esp
+Verify that the location contains a standard function prologue (55 8B EC)
+or a near call with absolute indirect address (FF 25) before patching.
 */
 void write_jump(int addr, int func) {
-    if ((*(int*)addr & 0xFFFFFF) != 0xEC8B55) {
+    if ((*(int*)addr & 0xFFFFFF) != 0xEC8B55 && *(int16_t*)addr != 0x25FF) {
         exit_fail();
     }
     *(byte*)addr = 0xE9;
@@ -511,7 +513,7 @@ bool patch_setup(Config* cf) {
     }
     *(int*)GetPrivateProfileStringAImport = (int)ModGetPrivateProfileStringA;
 
-    if (cf->smooth_scrolling) {
+    if (cf->smooth_scrolling || DEBUG) {
         *(int*)RegisterClassImport = (int)ModRegisterClassA;
     }
     if (cf->windowed) {
@@ -530,6 +532,8 @@ bool patch_setup(Config* cf) {
     extra_setup(cf);
 
     write_jump(0x527290, (int)mod_faction_upkeep);
+    write_jump(0x579D80, (int)wipe_goals);
+    write_jump(0x579A30, (int)add_goal);
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
     write_call(0x4E61D0, (int)mod_base_production);

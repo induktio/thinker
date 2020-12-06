@@ -118,15 +118,17 @@ bool can_build(int base_id, int id) {
             && *game_rules & RULES_VICTORY_TRANSCENDENCE;
     }
     if (id == FAC_SUBSPACE_GENERATOR) {
-        if (base->pop_size < tx_basic->base_size_subspace_gen)
+        if (base->pop_size < tx_basic->base_size_subspace_gen) {
             return false;
+        }
         int n = 0;
         for (int i=0; i<*total_num_bases; i++) {
             BASE* b = &tx_bases[i];
             if (b->faction_id == faction && has_facility(i, FAC_SUBSPACE_GENERATOR)
             && b->pop_size >= tx_basic->base_size_subspace_gen
-            && ++n >= tx_basic->subspace_gen_req)
+            && ++n >= tx_basic->subspace_gen_req) {
                 return false;
+            }
         }
     }
     if (id >= FAC_SKY_HYDRO_LAB && id <= FAC_ORBITAL_DEFENSE_POD) {
@@ -151,7 +153,7 @@ bool can_build_unit(int faction, int id) {
     if (id >= 0 && id < 64 && u->preq_tech != TECH_None && !has_tech(faction, u->preq_tech)) {
         return false;
     }
-    return *total_num_vehicles < 2000;
+    return *total_num_vehicles < 15 * MaxVehNum / 16;
 }
 
 bool is_human(int faction) {
@@ -176,6 +178,11 @@ bool at_war(int faction1, int faction2) {
         return false;
     return !faction1 || !faction2
         || tx_factions[faction1].diplo_status[faction2] & DIPLO_VENDETTA;
+}
+
+bool has_pact(int faction1, int faction2) {
+    return faction1 > 0 && faction2 > 0
+        && tx_factions[faction1].diplo_status[faction2] & DIPLO_PACT;
 }
 
 bool un_charter() {
@@ -304,8 +311,13 @@ int defense_value(UNIT* u) {
     return tx_defense[u->armor_type].defense_value * w;
 }
 
+int faction_might(int faction) {
+    Faction* f = &tx_factions[faction];
+    return max(1, f->mil_strength_1 + f->mil_strength_2 + f->pop_total);
+}
+
 int random(int n) {
-    return (n != 0 ? rand() % n : 0);
+    return (n > 0 ? rand() % n : 0);
 }
 
 int map_hash(int x, int y) {
@@ -334,9 +346,9 @@ int map_range(int x1, int y1, int x2, int y2) {
 }
 
 int min_range(const Points& S, int x, int y) {
-    int z = MAPSZ;
+    int z = MaxMapW;
     for (auto& p : S) {
-        z = min(z, map_range(x, y, p.first, p.second));
+        z = min(z, map_range(x, y, p.x, p.y));
     }
     return z;
 }
@@ -345,7 +357,7 @@ double mean_range(const Points& S, int x, int y) {
     int n = 0;
     int sum = 0;
     for (auto& p : S) {
-        sum += map_range(x, y, p.first, p.second);
+        sum += map_range(x, y, p.x, p.y);
         n++;
     }
     return (n > 0 ? (double)sum/n : 0);
@@ -362,13 +374,14 @@ MAP* mapsq(int x, int y) {
 }
 
 int unit_in_tile(MAP* sq) {
-    if (!sq || (sq->flags & 0xf) == 0xf)
+    if (!sq || (sq->flags & 0xf) == 0xf) {
         return -1;
+    }
     return sq->flags & 0xf;
 }
 
-int set_move_to(int id, int x, int y) {
-    VEH* veh = &tx_vehicles[id];
+int set_move_to(int veh_id, int x, int y) {
+    VEH* veh = &tx_vehicles[veh_id];
     veh->waypoint_1_x = x;
     veh->waypoint_1_y = y;
     veh->move_status = ORDER_MOVE_TO;
@@ -376,8 +389,8 @@ int set_move_to(int id, int x, int y) {
     return SYNC;
 }
 
-int set_road_to(int id, int x, int y) {
-    VEH* veh = &tx_vehicles[id];
+int set_road_to(int veh_id, int x, int y) {
+    VEH* veh = &tx_vehicles[veh_id];
     veh->waypoint_1_x = x;
     veh->waypoint_1_y = y;
     veh->move_status = ORDER_ROAD_TO;
@@ -385,10 +398,12 @@ int set_road_to(int id, int x, int y) {
     return SYNC;
 }
 
-int set_action(int id, int act, char icon) {
-    VEH* veh = &tx_vehicles[id];
+int set_action(int veh_id, int act, char icon) {
+    VEH* veh = &tx_vehicles[veh_id];
     if (act == ORDER_THERMAL_BOREHOLE) {
-        boreholes.insert({veh->x, veh->y});
+        mapnodes.insert({veh->x, veh->y, NODE_BOREHOLE});
+    } else if (act == ORDER_TERRAFORM_UP) {
+        mapnodes.insert({veh->x, veh->y, NODE_RAISE_LAND});
     }
     veh->move_status = act;
     veh->status_icon = icon;
@@ -396,27 +411,27 @@ int set_action(int id, int act, char icon) {
     return SYNC;
 }
 
-int set_convoy(int id, int res) {
-    VEH* veh = &tx_vehicles[id];
-    convoys.insert({veh->x, veh->y});
+int set_convoy(int veh_id, int res) {
+    VEH* veh = &tx_vehicles[veh_id];
+    mapnodes.insert({veh->x, veh->y, NODE_CONVOY});
     veh->type_crawling = res-1;
     veh->move_status = ORDER_CONVOY;
     veh->status_icon = 'C';
-    return veh_skip(id);
+    return veh_skip(veh_id);
 }
 
-int mod_veh_skip(int id) {
-    VEH* veh = &tx_vehicles[id];
+int mod_veh_skip(int veh_id) {
+    VEH* veh = &tx_vehicles[veh_id];
     veh->waypoint_1_x = veh->x;
     veh->waypoint_1_y = veh->y;
     veh->status_icon = '-';
     if (veh->damage_taken) {
         MAP* sq = mapsq(veh->x, veh->y);
         if (sq && sq->items & TERRA_MONOLITH) {
-            monolith(id);
+            monolith(veh_id);
         }
     }
-    return veh_skip(id);
+    return veh_skip(veh_id);
 }
 
 bool at_target(VEH* veh) {
@@ -430,6 +445,10 @@ bool is_ocean(MAP* sq) {
 
 bool is_ocean_shelf(MAP* sq) {
     return (sq && (sq->level >> 5) == LEVEL_OCEAN_SHELF);
+}
+
+bool is_shore_level(MAP* sq) {
+    return (sq && (sq->level >> 5) == LEVEL_SHORE_LINE);
 }
 
 bool is_sea_base(int id) {
@@ -579,9 +598,89 @@ void print_base(int id) {
         base->status_flags, prod, prod_name(prod), (char*)&(base->name));
 }
 
+/*
+Goal types that are entirely redundant for Thinker AIs.
+*/
+bool ignore_goal(int type) {
+    return type == AI_GOAL_COLONIZE || type == AI_GOAL_TERRAFORM_LAND
+        || type == AI_GOAL_TERRAFORM_WATER || type == AI_GOAL_CONDENSER
+        || type == AI_GOAL_THERMAL_BOREHOLE || type == AI_GOAL_ECHELON_MIRROR
+        || type == AI_GOAL_SENSOR_ARRAY;
+}
+
+/*
+Original Offset: 0x579A30
+*/
+void __cdecl add_goal(int faction, int type, int priority, int x, int y, int base_id) {
+    if (!mapsq(x, y)) {
+        return;
+    }
+    if (ai_enabled(faction) && ignore_goal(type)) {
+        return;
+    }
+    debug("add_goal %d type: %3d pr: %2d x: %3d y: %3d base: %d\n",
+        faction, type, priority, x, y, base_id);
+
+    for (int i = 0; i < MaxGoalsNum; i++) {
+        Goal& goal = tx_factions[faction].goals[i];
+        if (goal.x == x && goal.y == y && goal.type == type) {
+            if (goal.priority <= priority) {
+                goal.priority = (int16_t)priority;
+            }
+            return;
+        }
+    }
+    int goal_score = 0, goal_id = -1;
+    for (int i = 0; i < MaxGoalsNum; i++) {
+        Goal& goal = tx_factions[faction].goals[i];
+
+        if (goal.type < 0 || goal.priority < priority) {
+            int cmp = goal.type >= 0 ? 0 : 1000;
+            if (!cmp) {
+                cmp = goal.priority > 0 ? 20 - goal.priority : goal.priority + 100;
+            }
+            if (cmp > goal_score) {
+                goal_score = cmp;
+                goal_id = i;
+            }
+        }
+    }
+    if (goal_id >= 0) {
+        Goal& goal = tx_factions[faction].goals[goal_id];
+        goal.type = (int16_t)type;
+        goal.priority = (int16_t)priority;
+        goal.x = x;
+        goal.y = y;
+        goal.base_id = base_id;
+    }
+}
+
+/*
+Original Offset: 0x579D80
+*/
+void __cdecl wipe_goals(int faction) {
+    for (int i = 0; i < MaxGoalsNum; i++) {
+        Goal& goal = tx_factions[faction].goals[i];
+        // Mod: instead of always deleting decrement priority each turn
+        if (goal.priority > 0) {
+            goal.priority--;
+        }
+        if (goal.priority <= 0 || ignore_goal(goal.type)) {
+            goal.type = AI_GOAL_UNUSED;
+        }
+    }
+    for (int i = 0; i < MaxSitesNum; i++) {
+        Goal& site = tx_factions[faction].sites[i];
+        int16_t type = site.type;
+        if (type >= 0) {
+            add_goal(faction, type, site.priority, site.x, site.y, -1);
+        }
+    }
+}
+
 void TileSearch::init(int x, int y, int tp) {
-    assert(tp == TRIAD_LAND || tp == TRIAD_SEA || tp == TRIAD_AIR
-        || tp == NEAR_ROADS || tp == TERRITORY_LAND);
+    assert(tp == TS_TRIAD_LAND || tp == TS_TRIAD_SEA || tp == TS_TRIAD_AIR
+        || tp == TS_NEAR_ROADS || tp == TS_TERRITORY_LAND || tp == TS_SEA_AND_SHORE);
     head = 0;
     tail = 0;
     items = 0;
@@ -598,10 +697,12 @@ void TileSearch::init(int x, int y, int tp) {
         newtiles[0] = {x, y, 0, -1};
         oldtiles.insert({x, y});
         if (!is_ocean(sq)) {
-            if (sq->items & (TERRA_ROAD | TERRA_BASE_IN_TILE))
+            if (sq->items & (TERRA_ROAD | TERRA_BASE_IN_TILE)) {
                 roads |= TERRA_ROAD;
-            if (sq->items & (TERRA_RIVER | TERRA_BASE_IN_TILE))
+            }
+            if (sq->items & (TERRA_RIVER | TERRA_BASE_IN_TILE)) {
                 roads |= TERRA_RIVER;
+            }
         }
     }
 }
@@ -611,6 +712,18 @@ void TileSearch::init(int x, int y, int tp, int skip) {
     y_skip = skip;
 }
 
+PointList& TileSearch::get_route(PointList& pp) {
+    pp.clear();
+    int i = 0;
+    int j = cur;
+    while (j >= 0 && ++i < PathLimit) {
+        auto p = newtiles[j];
+        j = p.prev;
+        pp.push_front({p.x, p.y});
+    }
+    return pp;
+}
+
 /*
 Traverse current search path and check for zones of control.
 */
@@ -618,10 +731,11 @@ bool TileSearch::has_zoc(int faction) {
     int zoc = 0;
     int i = 0;
     int j = cur;
-    while (j >= 0 && i++ < 20) {
+    while (j >= 0 && ++i < PathLimit) {
         auto p = newtiles[j];
-        if (zoc_any(p.x, p.y, faction) && ++zoc > 1)
+        if (zoc_any(p.x, p.y, faction) && ++zoc > 1) {
             return true;
+        }
         j = p.prev;
     }
     return false;
@@ -638,26 +752,29 @@ MAP* TileSearch::get_next() {
         rx = newtiles[head].x;
         ry = newtiles[head].y;
         dist = newtiles[head].dist;
-        head = (head + 1) % QSIZE;
+        head = (head + 1) % QueueSize;
         items--;
-        if (!(sq = mapsq(rx, ry)))
+        if (!(sq = mapsq(rx, ry))) {
             continue;
-        bool skip = (type == TRIAD_LAND && is_ocean(sq)) ||
-                    (type == TRIAD_SEA && !is_ocean(sq)) ||
-                    (type == NEAR_ROADS && (is_ocean(sq) || !(sq->items & roads))) ||
-                    (type == TERRITORY_LAND && (is_ocean(sq) || sq->owner != owner));
+        }
+        bool skip = (type == TS_TRIAD_LAND && is_ocean(sq)) ||
+                    (type == TS_TRIAD_SEA && !is_ocean(sq)) ||
+                    (type == TS_NEAR_ROADS && (is_ocean(sq) || !(sq->items & roads))) ||
+                    (type == TS_TERRITORY_LAND && (is_ocean(sq) || sq->owner != owner)) ||
+                    (type == TS_SEA_AND_SHORE && !is_ocean(sq));
         if (!first && skip) {
-            if (type == NEAR_ROADS && !is_ocean(sq))
+            if ((type == TS_NEAR_ROADS && !is_ocean(sq)) || type == TS_SEA_AND_SHORE) {
                 return sq;
+            }
             continue;
         }
         for (const int* t : offset) {
             int x2 = wrap(rx + t[0]);
             int y2 = ry + t[1];
             if (y2 >= y_skip && y2 < *map_axis_y - y_skip
-            && items < QSIZE && !oldtiles.count({x2, y2})) {
+            && items < QueueSize && !oldtiles.count({x2, y2})) {
                 newtiles[tail] = {x2, y2, dist+1, cur};
-                tail = (tail + 1) % QSIZE;
+                tail = (tail + 1) % QueueSize;
                 items++;
                 oldtiles.insert({x2, y2});
             }

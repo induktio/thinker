@@ -18,10 +18,8 @@ typedef int __cdecl fp_ccici(const char*, const char*, int, const char*, int);
 typedef int __cdecl fp_icii(int, const char*, int, int);
 
 /* Temporarily disable warnings for thiscall parameter type. */
-#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
-#endif
 
 typedef int __thiscall tc_1int(int);
 typedef int __thiscall tc_2int(int, int);
@@ -31,9 +29,7 @@ typedef int __thiscall tc_5int(int, int, int, int, int);
 typedef int __thiscall tc_6int(int, int, int, int, int, int);
 typedef int __thiscall tc_7int(int, int, int, int, int, int, int);
 
-#ifdef __GNUC__
 #pragma GCC diagnostic pop
-#endif
 
 static_assert(sizeof(struct R_Basic) == 308, "");
 static_assert(sizeof(struct R_Social) == 212, "");

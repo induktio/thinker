@@ -1,5 +1,6 @@
 
 #include "gui.h"
+#include "game.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
@@ -22,9 +23,7 @@ struct ConsoleState {
     double ScrollOffsetX = 0.0;
     double ScrollOffsetY = 0.0;
     POINT ScrollDragPos = {0, 0};
-};
-
-ConsoleState CState;
+} CState;
 
 /*
 The following lists contain definitions copied directly from PRACX (e.g. functions with _F suffix).
@@ -501,10 +500,73 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         debug("WM_CHAR alt+r\n");
         CState.MouseOverTileInfo = !CState.MouseOverTileInfo;
 
+    } else if (msg == WM_CHAR && wParam == 't' && GetAsyncKeyState(VK_MENU) < 0
+    && *game_state & STATE_OMNISCIENT_VIEW) {
+        debug("WM_CHAR alt+t\n");
+        int total_pop = 0,
+            total_minerals = 0,
+            total_energy = 0,
+            faction_pop = 0,
+            faction_units = 0,
+            faction_minerals = 0,
+            faction_energy = 0;
+
+        Faction* f = &tx_factions[*current_player_faction];
+        for (int i=0; i<*total_num_bases; ++i) {
+            BASE* b = &tx_bases[i];
+            if (b->faction_id == *current_player_faction) {
+                faction_pop += b->pop_size;
+                faction_minerals += b->mineral_intake_2;
+                faction_energy += b->energy_intake_2;
+            }
+            total_pop += b->pop_size;
+            total_minerals += b->mineral_intake_2;
+            total_energy += b->energy_intake_2;
+        }
+        for (int i=0; i<*total_num_vehicles; i++) {
+            VEH* v = &tx_vehicles[i];
+            if (v->faction_id == *current_player_faction) {
+                faction_units++;
+            }
+        }
+        char buf[1002];
+        snprintf(buf, 1000,
+            "Total bases: %d\n"
+            "Total units: %d\n"
+            "Total population: %d\n"
+            "Total mineral production: %d\n"
+            "Total energy production: %d\n"
+            "Faction bases: %d\n"
+            "Faction units: %d\n"
+            "Faction population: %d\n"
+            "Faction mineral production: %d\n"
+            "Faction energy production: %d\n"
+            "Clean minerals: %d\n",
+            *total_num_bases,
+            *total_num_vehicles,
+            total_pop,
+            total_minerals,
+            total_energy,
+            f->current_num_bases,
+            faction_units,
+            f->pop_total,
+            faction_minerals,
+            faction_energy,
+            f->clean_minerals_modifier + conf.clean_minerals
+        );
+        MessageBox(0, buf, MOD_VERSION, MB_OK | MB_ICONINFORMATION);
+
     } else if (DEBUG && msg == WM_CHAR && wParam == 'd' && GetAsyncKeyState(VK_MENU) < 0) {
         debug("WM_CHAR alt+d\n");
         conf.debug_mode = !conf.debug_mode;
         if (conf.debug_mode) {
+            for (int i=1; i<8; i++) {
+                Faction& f = tx_factions[i];
+                if (!f.current_num_bases) {
+                    memset(f.goals, 0, sizeof(f.goals));
+                    memset(f.sites, 0, sizeof(f.sites));
+                }
+            }
             *game_state |= STATE_DEBUG_MODE;
         } else {
             *game_state &= ~STATE_DEBUG_MODE;
@@ -514,11 +576,11 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
     // If window has just become inactive e.g. ALT+TAB
     } else if (msg == WM_ACTIVATEAPP) {
-        // wParam is 0 if the window has become inactive.
-        if (!LOWORD(wParam)) {
-            ShowWindow(*phWnd, SW_MINIMIZE);
-        } else {
+        if (LOWORD(wParam)) {
             ShowWindow(*phWnd, SW_RESTORE);
+        } else {
+            //wParam is 0 if the window has become inactive.
+            //ShowWindow(*phWnd, SW_MINIMIZE);
         }
         return WinProc(hwnd, msg, wParam, lParam);
     } else {

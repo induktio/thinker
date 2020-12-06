@@ -1,7 +1,8 @@
 #pragma once
 
 #include "main.h"
-#include "game.h"
+
+typedef int PMTable[MaxMapW][MaxMapH];
 
 constexpr int BASE_DISALLOWED = (TERRA_BASE_IN_TILE | TERRA_MONOLITH | TERRA_FUNGUS | TERRA_THERMAL_BORE);
 
