@@ -1,6 +1,7 @@
 
 #include "gui.h"
 #include "game.h"
+#include "move.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
@@ -32,43 +33,43 @@ converted to the actual names reversed from the SMACX binary (add F prefix for f
 */
 
 typedef int(__stdcall *START_F)(HINSTANCE, HINSTANCE, LPSTR, int);
-typedef int(__thiscall *CCANVAS_CREATE_F)(CCanvas* pthis);
+typedef int(__thiscall *CCANVAS_CREATE_F)(Buffer* pthis);
 typedef int(__stdcall *WNDPROC_F)(HWND, int, WPARAM, LPARAM);
-typedef int(__thiscall *CMAIN_ZOOMPROCESSING_F)(CMain* pthis);
+typedef int(__thiscall *CMAIN_ZOOMPROCESSING_F)(Console* pthis);
 typedef int(__stdcall *PROC_ZOOM_KEY_F)(int iZoomType, int iZero);
-typedef int(__thiscall *CMAIN_TILETOPT_F)(CMain* pthis, int iTileX, int iTileY, long* piX, long* piY);
-typedef int(__thiscall *CMAIN_MOVEMAP_F)(CMain *pthis, int iXPos, int iYPos, int a4);
-typedef int(__thiscall *CMAIN_REDRAWMAP_F)(CMain *pthis, int a2);
-typedef int(__thiscall *CMAIN_DRAWMAP_F)(CMain* This, int iOwner, int fUnitsOnly);
-typedef int(__thiscall *CMAIN_PTTOTILE_F)(CMain* This, POINT p, long* piTileX, long* piTileY);
-typedef int(__thiscall *CINFOWIN_DRAWTILEINFO_F)(CInfoWin* This);
+typedef int(__thiscall *CMAIN_TILETOPT_F)(Console* pthis, int iTileX, int iTileY, long* piX, long* piY);
+typedef int(__thiscall *CMAIN_MOVEMAP_F)(Console *pthis, int iXPos, int iYPos, int a4);
+typedef int(__thiscall *CMAIN_REDRAWMAP_F)(Console *pthis, int a2);
+typedef int(__thiscall *CMAIN_DRAWMAP_F)(Console* This, int iOwner, int fUnitsOnly);
+typedef int(__thiscall *CMAIN_PTTOTILE_F)(Console* This, POINT p, long* piTileX, long* piTileY);
+typedef int(__thiscall *CINFOWIN_DRAWTILEINFO_F)(StatusWin* This);
 typedef int(__cdecl *PAINTHANDLER_F)(RECT *prRect, int a2);
 typedef int(__cdecl *PAINTMAIN_F)(RECT *pRect);
-typedef int(__thiscall *CSPRITE_FROMCANVASRECTTRANS_F)(CSprite *This, CCanvas *poCanvas,
+typedef int(__thiscall *CSPRITE_FROMCANVASRECTTRANS_F)(Sprite *This, Buffer *poCanvas,
     int iTransparentIndex, int iLeft, int iTop, int iWidth, int iHeight, int a8);
-typedef int(__thiscall *CCANVAS_DESTROY4_F)(CCanvas *This);
+typedef int(__thiscall *CCANVAS_DESTROY4_F)(Buffer *This);
 typedef int (__thiscall *CSPRITE_STRETCHCOPYTOCANVAS_F)
-    (CSprite *This, CCanvas *poCanvasDest, int cTransparentIndex, int iLeft, int iTop);
+    (Sprite *This, Buffer *poCanvasDest, int cTransparentIndex, int iLeft, int iTop);
 typedef int(__thiscall *CSPRITE_STRETCHCOPYTOCANVAS1_F)
-    (CSprite *This, CCanvas *poCanvasDest, int cTransparentIndex, int iLeft, int iTop, int iDestScale, int iSourceScale);
+    (Sprite *This, Buffer *poCanvasDest, int cTransparentIndex, int iLeft, int iTop, int iDestScale, int iSourceScale);
 typedef int (__thiscall *CSPRITE_STRETCHDRAWTOCANVAS2_F)
-    (CSprite *This, CCanvas *poCanvas, int a1, int a2, int a3, int a4, int a7, int a8);
-typedef int(__thiscall *CWINBASE_ISVISIBLE_F)(CWinBase *This);
-typedef int(__thiscall *CTIMER_STARTTIMER_F)(CTimer *This, int a2, int a3, int iDelay, int iElapse, int uResolution);
-typedef int(__thiscall *CTIMER_STOPTIMER_F)(CTimer *This);
-typedef int(__thiscall *DRAWCITYMAP_F)(CWinBase *This, int a2);
+    (Sprite *This, Buffer *poCanvas, int a1, int a2, int a3, int a4, int a7, int a8);
+typedef int(__thiscall *CWINBASE_ISVISIBLE_F)(Win *This);
+typedef int(__thiscall *CTIMER_STARTTIMER_F)(Time *This, int a2, int a3, int iDelay, int iElapse, int uResolution);
+typedef int(__thiscall *CTIMER_STOPTIMER_F)(Time *This);
+typedef int(__thiscall *DRAWCITYMAP_F)(Win *This, int a2);
 typedef int(__cdecl *GETFOODCOUNT_F)(int iForFaction, int a2, int iTileX, int iTileY, bool fWithFarm);
 typedef int(__cdecl *GETPRODCOUNT_F)(int iForFaction, int a2, int iTileX, int iTileY, bool fWithMine);
 typedef int(__cdecl *GETENERGYCOUNT_F)(int iForFaction, int a2, int iTileX, int iTileY, bool fWithSolar);
-typedef int(__thiscall *IMAGEFROMCANVAS_F)(CImage *This, CCanvas *poCanvasSource, int iLeft, int iTop, int iWidth, int iHeight, int a7);
+typedef int(__thiscall *IMAGEFROMCANVAS_F)(CImage *This, Buffer *poCanvasSource, int iLeft, int iTop, int iWidth, int iHeight, int a7);
 typedef int(__cdecl *GETELEVATION_F)(int iTileX, int iTileY);
-typedef int(__thiscall *CIMAGE_COPYTOCANVAS2_F)(CImage *This, CCanvas *poCanvasDest, int x, int y, int a5, int a6, int a7);
-typedef int(__thiscall *CMAINMENU_ADDSUBMENU_F)(CMainMenu* This, int iMenuID, int iMenuItemID, char *lpString);
-typedef int(__thiscall *CMAINMENU_ADDBASEMENU_F)(CMainMenu *This, int iMenuItemID, const char *pszCaption, int a4);
-typedef int(__thiscall *CMAINMENU_ADDSEPARATOR_F)(CMainMenu *This, int iMenuItemID, int iSubMenuItemID);
-typedef int(__thiscall *CMAINMENU_UPDATEVISIBLE_F)(CMainMenu *This, int a2);
-typedef int(__thiscall *CMAINMENU_RENAMEMENUITEM_F)(CMainMenu *This, int iMenuItemID, int iSubMenuItemID, const char *pszCaption);
-typedef long(__thiscall *CMAP_GETCORNERYOFFSET_F)(CMap *This, int iTileX, int iTileY, int iCorner);
+typedef int(__thiscall *CIMAGE_COPYTOCANVAS2_F)(CImage *This, Buffer *poCanvasDest, int x, int y, int a5, int a6, int a7);
+typedef int(__thiscall *CMAINMENU_ADDSUBMENU_F)(Menu* This, int iMenuID, int iMenuItemID, char *lpString);
+typedef int(__thiscall *CMAINMENU_ADDBASEMENU_F)(Menu *This, int iMenuItemID, const char *pszCaption, int a4);
+typedef int(__thiscall *CMAINMENU_ADDSEPARATOR_F)(Menu *This, int iMenuItemID, int iSubMenuItemID);
+typedef int(__thiscall *CMAINMENU_UPDATEVISIBLE_F)(Menu *This, int a2);
+typedef int(__thiscall *CMAINMENU_RENAMEMENUITEM_F)(Menu *This, int iMenuItemID, int iSubMenuItemID, const char *pszCaption);
+typedef long(__thiscall *CMAP_GETCORNERYOFFSET_F)(MapWin_Alt *This, int iTileX, int iTileY, int iCorner);
 
 START_F                        pfncWinMain =                    (START_F                       )0x45F950;
 HDC*                           phDC =                           (HDC*                          )0x9B7B2C;
@@ -77,7 +78,7 @@ HPALETTE*                      phPallete =                      (HPALETTE*      
 HINSTANCE*                     phInstance =                     (HINSTANCE*                    )0x9B7B14;
 WNDPROC_F                      pfncWinProc =                    (WNDPROC_F                     )0x5F0650;
 CMAIN_ZOOMPROCESSING_F         pfncZoomProcessing =             (CMAIN_ZOOMPROCESSING_F        )0x462980;
-CMain*                         pMain =                          (CMain*                        )0x9156B0;
+Console*                       pMain =                          (Console*                      )0x9156B0;
 int*                           piMaxTileX =                     (int*                          )0x949870;
 int*                           piMaxTileY =                     (int*                          )0x949874;
 PROC_ZOOM_KEY_F                pfncProcZoomKey =                (PROC_ZOOM_KEY_F               )0x5150D0;
@@ -88,21 +89,21 @@ CMAIN_MOVEMAP_F                pfncMoveMap =                    (CMAIN_MOVEMAP_F
 CMAIN_REDRAWMAP_F              pfncRedrawMap =                  (CMAIN_REDRAWMAP_F             )0x46A550;
 CMAIN_DRAWMAP_F                pfncDrawMap =                    (CMAIN_DRAWMAP_F               )0x469CA0;
 CMAIN_PTTOTILE_F               pfncPtToTile =                   (CMAIN_PTTOTILE_F              )0x463040;
-CInfoWin*                      pInfoWin =                       (CInfoWin*                     )0x8C5568;
+StatusWin*                     pInfoWin =                       (StatusWin*                    )0x8C5568;
 CINFOWIN_DRAWTILEINFO_F        pfncDrawTileInfo =               (CINFOWIN_DRAWTILEINFO_F       )0x4B8890; // Fixed
-CMain**                        ppMain =                         (CMain**                       )0x7D3C3C;
+Console**                      ppMain =                         (Console**                     )0x7D3C3C;
 PAINTHANDLER_F                 pfncPaintHandler =               (PAINTHANDLER_F                )0x5F7320;
 PAINTMAIN_F                    pfncPaintMain =                  (PAINTMAIN_F                   )0x5EFD20;
 CSPRITE_FROMCANVASRECTTRANS_F  pfncSpriteFromCanvasRectTrans =  (CSPRITE_FROMCANVASRECTTRANS_F )0x5E39A0;
-CCanvas*                       poLoadingCanvas =                (CCanvas*                      )0x798668;
+Buffer*                        poLoadingCanvas =                (Buffer*                       )0x798668;
 CCANVAS_DESTROY4_F             pfncCanvasDestroy4 =             (CCANVAS_DESTROY4_F            )0x5D7470;
 CSPRITE_STRETCHCOPYTOCANVAS_F  pfncSpriteStretchCopyToCanvas =  (CSPRITE_STRETCHCOPYTOCANVAS_F )0x5E4B9A;
 CSPRITE_STRETCHCOPYTOCANVAS1_F pfncSpriteStretchCopyToCanvas1 = (CSPRITE_STRETCHCOPYTOCANVAS1_F)0x5E4B4A;
 CSPRITE_STRETCHDRAWTOCANVAS2_F pfncSpriteStretchDrawToCanvas2 = (CSPRITE_STRETCHDRAWTOCANVAS2_F)0x5E3E00;
-CSprite*                       pSprResourceIcons =              (CSprite*                      )0x7A72A0;
-CWinBase*                      pCityWindow =                    (CWinBase*                     )0x6A7628;
-CWinBase*                      pAnotherWindow =                 (CWinBase*                     )0x8A6270;
-CWinBase*                      pAnotherWindow2 =                (CWinBase*                     )0x8C6E68;
+Sprite*                        pSprResourceIcons =              (Sprite*                       )0x7A72A0;
+Win*                           pCityWindow =                    (Win*                          )0x6A7628;
+Win*                           pAnotherWindow =                 (Win*                          )0x8A6270;
+Win*                           pAnotherWindow2 =                (Win*                          )0x8C6E68;
 int*                           pfGameNotStarted =               (int*                          )0x68F21C;
 CWINBASE_ISVISIBLE_F           pfncWinIsVisible =               (CWINBASE_ISVISIBLE_F          )0x5F7E90;
 CTIMER_STARTTIMER_F            pfncStartTimer =                 (CTIMER_STARTTIMER_F           )0x616350;
@@ -130,22 +131,6 @@ CMAP_GETCORNERYOFFSET_F        pfncMapGetCornerYOffset =        (CMAP_GETCORNERY
 
 // End of PRACX definitions
 
-typedef int(__thiscall *FMapWin_pixel_to_tile)(CMain* This, int x, int y, long* px, long* py);
-typedef int(__thiscall *FMapWin_tile_to_pixel)(CMain* This, int x, int y, long* px, long* py);
-typedef int(__thiscall *FMapWin_set_center)(CMain* This, int x, int y, int v1);
-typedef int(__thiscall *FMapWin_calculate_dim)(CMain* This);
-typedef int(__thiscall *FWin_is_visible)(CWinBase* This);
-typedef int(__thiscall *FTutWin_draw_arrow)(CWinBase* This);
-typedef int(__thiscall *FPlanWin_blink)(CWinBase* This);
-typedef int(__thiscall *FStringBox_clip_ids)(CWinBase* This, int len);
-typedef int(__thiscall *FStatusWin_on_redraw)(CInfoWin* This);
-typedef int(__thiscall *FMapWin_gen_map)(CMain* This, int owner, int units_only);
-typedef int(__thiscall *FMapWin_draw_map)(CMain* This, int v1);
-typedef int(__stdcall *FWinProc)(HWND, int, WPARAM, LPARAM);
-typedef int(__stdcall *FConsole_zoom)(int zoom_type, int v1);
-typedef int(__cdecl *FWin_update_screen)(RECT *prRect, int v1);
-typedef int(__cdecl *FWin_flip)(RECT *pRect);
-
 FMapWin_pixel_to_tile MapWin_pixel_to_tile = (FMapWin_pixel_to_tile)0x463040;
 FMapWin_tile_to_pixel MapWin_tile_to_pixel = (FMapWin_tile_to_pixel)0x462F00;
 FMapWin_set_center    MapWin_set_center    = (FMapWin_set_center   )0x46B1F0;
@@ -162,15 +147,15 @@ FConsole_zoom         Console_zoom         = (FConsole_zoom        )0x5150D0;
 FWin_update_screen    Win_update_screen    = (FWin_update_screen   )0x5F7320;
 FWin_flip             Win_flip             = (FWin_flip            )0x5EFD20;
 
-CMain* MapWin = (CMain*)0x9156B0; // ConsoleParent len: 0x247A4 end: 0x939E54
-CWinBase* BaseWin   = (CWinBase*)0x6A7628;
-CWinBase* StringBox = (CWinBase*)0x7CD2EC;
-CWinBase* PlanWin   = (CWinBase*)0x834D70;
-CWinBase* SocialWin = (CWinBase*)0x8A6270;
-CWinBase* StatusWin = (CWinBase*)0x8C5568;
-CWinBase* TutWin    = (CWinBase*)0x8C6E68;
-CWinBase* WorldWin  = (CWinBase*)0x8E9F60;
-CWinBase* Datalink  = (CWinBase*)0x703EA0;
+Console* MapWin    = (Console*)0x9156B0; // ConsoleParent len: 0x247A4 end: 0x939E54
+Win*     BaseWin   = (Win*)0x6A7628;
+Win*     StringBox = (Win*)0x7CD2EC;
+Win*     PlanWin   = (Win*)0x834D70;
+Win*     SocialWin = (Win*)0x8A6270;
+Win*     StatusWin = (Win*)0x8C5568;
+Win*     TutWin    = (Win*)0x8C6E68;
+Win*     WorldWin  = (Win*)0x8E9F60;
+Win*     Datalink  = (Win*)0x703EA0;
 
 int* dword_915620 = (int*)0x915620;
 int* dword_939294 = (int*)0x939294;
@@ -495,13 +480,22 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         } else {
             return WinProc(hwnd, msg, wParam, lParam);
         }
+    } else if (msg == WM_ACTIVATEAPP) {
+        // If window has just become inactive e.g. ALT+TAB
+        if (LOWORD(wParam)) {
+            ShowWindow(*phWnd, SW_RESTORE);
+        } else {
+            //wParam is 0 if the window has become inactive.
+            //ShowWindow(*phWnd, SW_MINIMIZE);
+        }
+        return WinProc(hwnd, msg, wParam, lParam);
 
     } else if (msg == WM_CHAR && wParam == 'r' && GetAsyncKeyState(VK_MENU) < 0) {
         debug("WM_CHAR alt+r\n");
         CState.MouseOverTileInfo = !CState.MouseOverTileInfo;
 
     } else if (msg == WM_CHAR && wParam == 't' && GetAsyncKeyState(VK_MENU) < 0
-    && *game_state & STATE_OMNISCIENT_VIEW) {
+    && !*game_not_started && !*pbem_active && !*multiplayer_active) {
         debug("WM_CHAR alt+t\n");
         int total_pop = 0,
             total_minerals = 0,
@@ -573,16 +567,6 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         }
         MapWin_draw_map(pMain, 0);
         InvalidateRect(hwnd, NULL, false);
-
-    // If window has just become inactive e.g. ALT+TAB
-    } else if (msg == WM_ACTIVATEAPP) {
-        if (LOWORD(wParam)) {
-            ShowWindow(*phWnd, SW_RESTORE);
-        } else {
-            //wParam is 0 if the window has become inactive.
-            //ShowWindow(*phWnd, SW_MINIMIZE);
-        }
-        return WinProc(hwnd, msg, wParam, lParam);
     } else {
         return WinProc(hwnd, msg, wParam, lParam);
     }
@@ -611,7 +595,7 @@ ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass) {
     return RegisterClassA(pstWndClass);
 }
 
-int __thiscall draw_map(CMain* This, int iOwner, int fUnitsOnly) {
+int __thiscall draw_map(Console* This, int iOwner, int fUnitsOnly) {
 
     if (This == pMain) {
         debug("draw_map %d %.4f %.4f\n", CState.Scrolling, CState.ScrollOffsetX, CState.ScrollOffsetY);
@@ -669,7 +653,7 @@ int __thiscall draw_map(CMain* This, int iOwner, int fUnitsOnly) {
     return 0;
 }
 
-int __thiscall zoom_process(CMain* This) {
+int __thiscall zoom_process(Console* This) {
     static POINT ptOldTile = {-1, -1};
     POINT ptOldCenter;
     POINT ptNewCenter;
