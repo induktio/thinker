@@ -61,7 +61,6 @@
 #include <set>
 #include <list>
 #include <string>
-#include "terranx.h"
 
 #define min(x, y) std::min(x, y)
 #define max(x, y) std::max(x, y)
@@ -212,6 +211,15 @@ typedef std::set<MapNode,NodeComp> NodeSet;
 typedef std::set<Point,PointComp> Points;
 typedef std::list<Point> PointList;
 
+#include "terranx.h"
+#include "patch.h"
+#include "gui.h"
+#include "game.h"
+#include "move.h"
+#include "tech.h"
+#include "engine.h"
+#include "test.h"
+
 extern FILE* debug_log;
 extern Config conf;
 extern AIPlans plans[8];
@@ -231,7 +239,6 @@ int select_prod(int id);
 int find_proto(int base_id, int triad, int mode, bool defend);
 int select_combat(int id, bool sea_base, bool build_ships, int probes, int def_land);
 int opt_list_parse(int* ptr, char* buf, int len, int min_val);
-
 
 
 

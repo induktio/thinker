@@ -17,10 +17,6 @@
  */
 
 #include "main.h"
-#include "patch.h"
-#include "game.h"
-#include "move.h"
-#include "tech.h"
 #include "lib/ini.h"
 
 bool unknown_option = false;

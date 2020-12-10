@@ -1,7 +1,5 @@
 
 #include "gui.h"
-#include "game.h"
-#include "move.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
@@ -146,6 +144,9 @@ FWinProc              WinProc              = (FWinProc             )0x5F0650;
 FConsole_zoom         Console_zoom         = (FConsole_zoom        )0x5150D0;
 FWin_update_screen    Win_update_screen    = (FWin_update_screen   )0x5F7320;
 FWin_flip             Win_flip             = (FWin_flip            )0x5EFD20;
+FBuffer_set_text_color Buffer_set_text_color = (FBuffer_set_text_color)0x5DACB0;
+FBuffer_set_font       Buffer_set_font       = (FBuffer_set_font      )0x5DAC70;
+FBuffer_write_cent_l3  Buffer_write_cent_l3  = (FBuffer_write_cent_l3 )0x5DD130;
 
 Console* MapWin    = (Console*)0x9156B0; // ConsoleParent len: 0x247A4 end: 0x939E54
 Win*     BaseWin   = (Win*)0x6A7628;
@@ -567,10 +568,141 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         }
         MapWin_draw_map(pMain, 0);
         InvalidateRect(hwnd, NULL, false);
+
+    } else if (DEBUG && msg == WM_CHAR && wParam == 'v' && GetAsyncKeyState(VK_MENU) < 0
+    && !*game_not_started) {
+        pMain->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
+        memset(pm_overlay, 0, sizeof(pm_overlay));
+        static int ts_type = 0;
+        int i = 0;
+        TileSearch ts;
+        ts_type = (ts_type+1) % 6;
+        ts.init(pMain->oMap.iTileX, pMain->oMap.iTileY, ts_type, 2);
+        while (++i < 500 && ts.get_next() != NULL) {
+            pm_overlay[ts.rx][ts.ry] = i;
+        }
+        MapWin_draw_map(pMain, 0);
+        InvalidateRect(hwnd, NULL, false);
+
+    } else if (DEBUG && msg == WM_CHAR && wParam == 'y' && GetAsyncKeyState(VK_MENU) < 0
+    && !*game_not_started) {
+        static int draw_diplo = 0;
+        draw_diplo = !draw_diplo;
+        if (draw_diplo) {
+            pMain->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_DIPLO_STATE;
+            *game_state |= STATE_DEBUG_MODE;
+        } else {
+            pMain->oMap.iWhatToDrawFlags &= ~MAPWIN_DRAW_DIPLO_STATE;
+        }
+        MapWin_draw_map(pMain, 0);
+        InvalidateRect(hwnd, NULL, false);
+
+    } else if (DEBUG && msg == WM_CHAR && wParam == 'f' && GetAsyncKeyState(VK_MENU) < 0
+    && !*game_not_started) {
+        pMain->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
+        memset(pm_overlay, 0, sizeof(pm_overlay));
+        MAP* sq = mapsq(pMain->oMap.iTileX, pMain->oMap.iTileY);
+        if (sq && sq->owner > 0) {
+            move_upkeep(sq->owner, true);
+            MapWin_draw_map(pMain, 0);
+            InvalidateRect(hwnd, NULL, false);
+        }
+
+    } else if (DEBUG && msg == WM_CHAR && wParam == 'b' && GetAsyncKeyState(VK_MENU) < 0
+    && !*game_not_started) {
+        pMain->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
+        memset(pm_overlay, 0, sizeof(pm_overlay));
+        for (int i=1; i < MaxPlayerNum; i++) {
+            land_raise_plan(i, true);
+        }
+        MapWin_draw_map(pMain, 0);
+        InvalidateRect(hwnd, NULL, false);
+
     } else {
         return WinProc(hwnd, msg, wParam, lParam);
     }
     return 0;
+}
+
+/*
+Render custom debug overlays with original goals.
+*/
+void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
+{
+    Buffer* Canvas = (Buffer*)0x939888;
+    RECT rt;
+    if (*game_state & STATE_OMNISCIENT_VIEW && pMain->oMap.iWhatToDrawFlags & MAPWIN_DRAW_GOALS)
+    {
+        MapWin_tile_to_pixel(This, x, y, &rt.left, &rt.top);
+        rt.right = rt.left + This->oMap.iPixelsPerTileX;
+        rt.bottom = rt.top + This->oMap.iPixelsPerHalfTileX;
+
+        char buf[20] = {};
+        bool found = false;
+        int color = 255;
+        int value = pm_overlay[x][y];
+
+        for (int faction = 1; faction < MaxPlayerNum && !found; faction++) {
+            Faction& f = tx_factions[faction];
+            MetaFaction& m = tx_metafactions[faction];
+            if (!f.current_num_bases) {
+                continue;
+            }
+            for (int i = 0; i < MaxGoalsNum && !found; i++) {
+                Goal& goal = tx_factions[faction].goals[i];
+                if (goal.x == x && goal.y == y && goal.priority > 0
+                && goal.type != AI_GOAL_UNUSED ) {
+                    found = true;
+                    buf[0] = m.filename[0];
+                    switch (goal.type) {
+                        case AI_GOAL_ATTACK:
+                            buf[1] = 'a';
+                            color = 249;
+                            break;
+                        case AI_GOAL_DEFEND:
+                            buf[1] = 'd';
+                            color = 251;
+                            break;
+                        case AI_GOAL_SCOUT:
+                            buf[1] = 's';
+                            color = 253;
+                            break;
+                        case AI_GOAL_UNK_1:
+                            buf[1] = 'n';
+                            color = 252;
+                            break;
+                        case AI_GOAL_COLONIZE:
+                            buf[1] = 'c';
+                            color = 254;
+                            break;
+                        case AI_GOAL_TERRAFORM_LAND:
+                            buf[1] = 'f';
+                            color = 250;
+                            break;
+                        case AI_GOAL_LANDING_SITE:
+                            buf[1] = '^';
+                            break;
+                        case AI_GOAL_RAISE_LAND:
+                            buf[1] = 'r';
+                            break;
+                        default:
+                            buf[1] = '*';
+                            break;
+                    }
+                    _itoa(goal.priority, &buf[2], 10);
+                }
+            }
+        }
+        if (!found && value != 0) {
+            color = (value >= 0 ? 255 : 251);
+            _itoa(value, buf, 10);
+        }
+        if (found || value) {
+            Buffer_set_text_color(Canvas, color, 0, 1, 1);
+            Buffer_set_font(Canvas, &This->oMap.oFont2, 0, 0, 0);
+            Buffer_write_cent_l3(Canvas, buf, &rt, 10);
+        }
+    }
 }
 
 /*

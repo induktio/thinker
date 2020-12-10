@@ -1,6 +1,5 @@
 
 #include "move.h"
-#include "game.h"
 
 constexpr int IMP_SIMPLE = (TERRA_FARM | TERRA_MINE | TERRA_FOREST);
 constexpr int IMP_ADVANCED = (TERRA_CONDENSER | TERRA_THERMAL_BORE);
@@ -32,6 +31,7 @@ PMTable pm_safety;
 PMTable pm_roads;
 PMTable pm_enemy;
 PMTable pm_enemy_near;
+PMTable pm_overlay;
 
 bool build_tubes = false;
 int raise_land = 0;
@@ -132,7 +132,7 @@ int route_distance(PMTable tbl, int x1, int y1, int x2, int y2) {
 Evaluate possible land bridge routes from home continent to other regions.
 Planned routes are stored in the faction goal struct and persist in save games.
 */
-void land_raise_plan(int faction) {
+void land_raise_plan(int faction, bool visual) {
     int tile_count[MaxRegionNum] = {};
     int base_count[MaxRegionNum] = {};
     PMTable pm_shore = {};
@@ -140,7 +140,7 @@ void land_raise_plan(int faction) {
     for (int y = 0; y < *map_axis_y; y++) {
         for (int x = y&1; x < *map_axis_x; x+=2) {
             MAP* sq = mapsq(x, y);
-            if (sq) {
+            if (sq && sq->region < MaxRegionNum) {
                 tile_count[sq->region]++;
                 if (sq->items & TERRA_BASE_IN_TILE) {
                     base_count[sq->region]++;
@@ -156,6 +156,7 @@ void land_raise_plan(int faction) {
     int main_region = -1;
     int best_score = 10;
     int goal_count = 0;
+    int land = 0;
     int bases = 0;
     PointList path;
     Points mainland;
@@ -168,65 +169,69 @@ void land_raise_plan(int faction) {
         if (base->faction_id == faction && (bsq = mapsq(base->x, base->y)) && !is_ocean(bsq)) {
             main_region = bsq->region;
             ts.init(base->x, base->y, TS_TERRITORY_LAND, 4);
-            int i = 0;
-            while (++i < 500 && (sq = ts.get_next()) != NULL) {
-                mainland.insert({ts.rx, ts.ry});
+            while (++land < 500 && (sq = ts.get_next()) != NULL) {
+                assert(!is_ocean(sq));
                 if (sq->items & TERRA_BASE_IN_TILE) {
                     bases++;
+                } else {
+                    mainland.insert({ts.rx, ts.ry});
                 }
             }
             break;
         }
     }
-    debug("raise_plan %d %d %d %d\n", faction, mainland.size(),
-        base_count[main_region], tile_count[main_region]);
-
+    debug("raise_plan %d land: %d bases: %d region_land: %d region_bases: %d\n",
+        faction, land, bases, tile_count[main_region], base_count[main_region]);
     if (main_region < 0) {
         return;
     }
+
     for (auto pt : mainland) {
         int x = pt.x;
         int y = pt.y;
+        int i = 0;
         bsq = mapsq(x, y);
-        if (pm_shore[x][y] > 2 && !is_ocean(bsq) && ~bsq->items & TERRA_BASE_IN_TILE) {
-            int i = 0;
-            ts.init(x, y, TS_SEA_AND_SHORE, 4);
-            
-            while (++i < 500 && (sq = ts.get_next()) != NULL && ts.dist <= 12) {
-                if (sq->region != main_region && sq->region > 0 && sq->region < 63) {
+        if (pm_shore[x][y] < 3 || !bsq || bsq->items & TERRA_BASE_IN_TILE) {
+            continue;
+        }
+        ts.init(x, y, TS_SEA_AND_SHORE, 4);
 
-                    int score = min(100, tile_count[sq->region]) - ts.dist*ts.dist/3
-                        + (bsq->items & TERRA_BASE_RADIUS ? 30 : 0);
-                    
-                    // Check if we should bridge to hostile territory
-                    if (sq->owner != faction && sq->owner > 0 && !has_pact(faction, sq->owner)) {
-                        int w1 = faction_might(faction);
-                        int w2 = faction_might(sq->owner);
-                        score += min(80, 80*(w1-w2)/w1) + min(0, pm_safety[ts.rx][ts.ry] / 4);
+        while (++i < 500 && (sq = ts.get_next()) != NULL && ts.dist <= 12) {
+            if (!(sq->region != main_region && sq->region > 0 && sq->region < 63)) {
+                continue;
+            }
+            int score = min(100, tile_count[sq->region]) - ts.dist*ts.dist/2
+                + (bsq->items & TERRA_BASE_RADIUS ? 20 : 0);
+
+            // Check if we should bridge to hostile territory
+            if (sq->owner != faction && sq->owner > 0 && !has_pact(faction, sq->owner)) {
+                int w1 = faction_might(faction);
+                int w2 = faction_might(sq->owner);
+                score += 80*(w1-w2)/w1 + min(0, pm_safety[ts.rx][ts.ry] / 4);
+            }
+            if (score > best_score) {
+                best_score = score;
+                debug("raise_goal %2d %2d -> %2d %2d dist: %2d size: %3d owner: %d score: %d\n",
+                    x, y, ts.rx, ts.ry, ts.dist, tile_count[sq->region], sq->owner, score);
+
+                for (auto pp : ts.get_route(path)) {
+                    if (visual) {
+                        pm_overlay[pp.x][pp.y] = score;
+                    } else {
+                        add_goal(faction, AI_GOAL_RAISE_LAND, 5, pp.x, pp.y, -1);
                     }
-                    
-                    debug("raise %2d %2d -> %2d %2d dist: %2d size: %3d owner: %d score: %d\n",
-                    x, y, ts.rx, ts.ry, ts.dist,
-                    tile_count[sq->region], sq->owner, score);
-                    
-                    if (score > best_score) {
-                        best_score = score;
-                        for (auto pp : ts.get_route(path)) {
-                            add_goal(faction, AI_GOAL_RAISE_LAND, 5, pp.x, pp.y, -1);
-                            goal_count++;
-                        }
-                    }
-                }
-                if (goal_count > 15) {
-                    return;
+                    goal_count++;
                 }
             }
-            adjust_value(pm_shore, x, y, 1, -10); // Skip adjacent tiles
+            if (goal_count > 15) {
+                return;
+            }
         }
+        adjust_value(pm_shore, x, y, 1, -10); // Skip adjacent tiles
     }
 }
 
-void move_upkeep(int faction) {
+void move_upkeep(int faction, bool visual) {
     if (!ai_enabled(faction)) {
         return;
     }
@@ -313,9 +318,13 @@ void move_upkeep(int faction) {
             }
         }
     }
+    if (visual) {
+        memcpy(pm_overlay, pm_safety, sizeof(pm_safety));
+        return;
+    }
     if (has_terra(faction, FORMER_RAISE_LAND, 0)
     && f->energy_credits > 100 && !(*current_turn % 3)) {
-        land_raise_plan(faction);
+        land_raise_plan(faction, false);
     }
     for (int i=0; i<MaxGoalsNum; i++) {
         Goal &goal = f->goals[i];
@@ -357,7 +366,7 @@ bool has_transport(int x, int y, int faction) {
 bool non_combat_move(int x, int y, int faction, int triad) {
     MAP* sq = mapsq(x, y);
     int other = unit_in_tile(sq);
-    if (x < 0 || y < 0 || !sq || (triad != TRIAD_AIR && is_ocean(sq) != (triad == TRIAD_SEA))) {
+    if (!sq || (triad != TRIAD_AIR && is_ocean(sq) != (triad == TRIAD_SEA))) {
         return false;
     }
     if (sq->owner > 0 && sq->owner != faction) {

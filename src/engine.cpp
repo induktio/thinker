@@ -1,9 +1,5 @@
 
-#include "terranx.h"
 #include "engine.h"
-#include "game.h"
-#include "tech.h"
-#include "move.h"
 
 const char* ScriptTxtID = "SCRIPT";
 
@@ -87,7 +83,7 @@ HOOK_API int mod_faction_upkeep(int faction) {
         Player factions always skip the new social_ai function.
         */
         mod_social_ai(faction, -1, -1, -1, -1, 0);
-        move_upkeep(faction);
+        move_upkeep(faction, false);
         do_all_non_input();
 
         if (!is_human(faction)) {

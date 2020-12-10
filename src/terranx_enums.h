@@ -502,11 +502,11 @@ enum veh_state {
     VSTATE_UNK_10000 = 0x10000,
     VSTATE_UNK_20000 = 0x20000,
     VSTATE_UNK_40000 = 0x40000,
-    VSTATE_UNK_80000 = 0x80000,
+    VSTATE_USED_NERVE_GAS = 0x80000, // set/reset on attacking Veh after each attack
     VSTATE_UNK_100000 = 0x100000,
     VSTATE_PACIFISM_DRONE = 0x200000,
     VSTATE_PACIFISM_FREE_SKIP = 0x400000,
-    VSTATE_UNK_800000 = 0x800000,
+    VSTATE_ASSISTANT_WORM = 0x800000, // Int: Brood Trainer; Human player's 1st spawned Mind Worm
     VSTATE_UNK_1000000 = 0x1000000,
     VSTATE_UNK_2000000 = 0x2000000,
     VSTATE_CRAWLING = 0x4000000, // more than just crawling, terraforming also?
@@ -911,5 +911,27 @@ enum social_model_types {
     SOCIAL_M_CYBERNETIC = 1,
     SOCIAL_M_EUDAIMONIC = 2,
     SOCIAL_M_THOUGHT_CONTROL = 3,
+};
+
+enum mapwin_state {
+    MAPWIN_DRAW_TRANSLUCENT = 0x2, // render translucent sprites, farms/forests excl. fungus
+    MAPWIN_DRAW_SITES = 0x4, // debug overlay
+    MAPWIN_UNK_10 = 0x10, // render some random yellow sprites
+    MAPWIN_DRAW_IMPROVEMENTS = 0x20, // render terrain improvements
+    MAPWIN_DRAW_UNITS = 0x40,
+    MAPWIN_DRAW_BASE_TILES = 0x80,
+    MAPWIN_DRAW_BONUS_RES = 0x200, // render supply pods, bonus resources, landmarks
+    MAPWIN_DRAW_RIVERS = 0x400,
+    MAPWIN_DRAW_BASE_NAMES = 0x800,
+    MAPWIN_HIDE_UNITS_BASES = 0x1000, // hide units/base tiles
+    MAPWIN_DRAW_GOALS = 0x2000, // debug overlay
+    MAPWIN_UNK_4000 = 0x4000, // zeros in almost every tile
+    MAPWIN_DRAW_BORDERS = 0x10000,
+    MAPWIN_DRAW_CURSOR_COMPASS = 0x20000,
+    MAPWIN_DRAW_DIPLO_STATE = 0x100000, // show faction treaty status matrix in window corner
+    MAPWIN_DRAW_SOLID_RADIUS = 0x1000000, // faction base radius solid color terrain view
+    MAPWIN_HIDE_OCEAN_BASE = 0x2000000, // stop rendering ocean base layer
+    MAPWIN_HIDE_TERRAIN = 0x10000000, // stop rendering all terrain
+    MAPWIN_DRAW_SOLID_BORDERS = 0x80000000, // faction borders solid color terrain view
 };
 

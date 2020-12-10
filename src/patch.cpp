@@ -1,11 +1,5 @@
 
 #include "patch.h"
-#include "gui.h"
-#include "game.h"
-#include "move.h"
-#include "tech.h"
-#include "engine.h"
-#include "test.h"
 
 const char* ac_alpha = "ac_mod\\alphax";
 const char* ac_help = "ac_mod\\helpx";
@@ -511,11 +505,9 @@ bool patch_setup(Config* cf) {
     if (!VirtualProtect(AC_IMPORT_BASE, AC_IMPORT_LEN, PAGE_EXECUTE_READWRITE, &oldattrs)) {
         return false;
     }
+    *(int*)RegisterClassImport = (int)ModRegisterClassA;
     *(int*)GetPrivateProfileStringAImport = (int)ModGetPrivateProfileStringA;
 
-    if (cf->smooth_scrolling || DEBUG) {
-        *(int*)RegisterClassImport = (int)ModRegisterClassA;
-    }
     if (cf->windowed) {
         *(int*)GetSystemMetricsImport = (int)ModGetSystemMetrics;
     }
@@ -534,6 +526,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x527290, (int)mod_faction_upkeep);
     write_jump(0x579D80, (int)wipe_goals);
     write_jump(0x579A30, (int)add_goal);
+    write_jump(0x4688E0, (int)MapWin_gen_overlays);
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
     write_call(0x4E61D0, (int)mod_base_production);

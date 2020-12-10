@@ -386,6 +386,7 @@ int set_move_to(int veh_id, int x, int y) {
     veh->waypoint_1_y = y;
     veh->move_status = ORDER_MOVE_TO;
     veh->status_icon = 'G';
+    veh->terraforming_turns = 0;
     return SYNC;
 }
 
@@ -615,7 +616,7 @@ void __cdecl add_goal(int faction, int type, int priority, int x, int y, int bas
     if (!mapsq(x, y)) {
         return;
     }
-    if (ai_enabled(faction) && ignore_goal(type)) {
+    if (ai_enabled(faction) && (priority < 3 || ignore_goal(type))) {
         return;
     }
     debug("add_goal %d type: %3d pr: %2d x: %3d y: %3d base: %d\n",
@@ -681,13 +682,13 @@ void __cdecl wipe_goals(int faction) {
 void TileSearch::init(int x, int y, int tp) {
     assert(tp == TS_TRIAD_LAND || tp == TS_TRIAD_SEA || tp == TS_TRIAD_AIR
         || tp == TS_NEAR_ROADS || tp == TS_TERRITORY_LAND || tp == TS_SEA_AND_SHORE);
+    type = tp;
     head = 0;
     tail = 0;
     items = 0;
-    roads = 0;
     owner = 0;
+    roads = 0;
     y_skip = 0;
-    type = tp;
     oldtiles.clear();
     sq = mapsq(x, y);
     if (sq) {
@@ -698,10 +699,10 @@ void TileSearch::init(int x, int y, int tp) {
         oldtiles.insert({x, y});
         if (!is_ocean(sq)) {
             if (sq->items & (TERRA_ROAD | TERRA_BASE_IN_TILE)) {
-                roads |= TERRA_ROAD;
+                roads |= TERRA_ROAD | TERRA_BASE_IN_TILE;
             }
             if (sq->items & (TERRA_RIVER | TERRA_BASE_IN_TILE)) {
-                roads |= TERRA_RIVER;
+                roads |= TERRA_RIVER | TERRA_BASE_IN_TILE;
             }
         }
     }

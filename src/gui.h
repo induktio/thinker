@@ -1623,7 +1623,6 @@ static_assert(sizeof(CWinBuffed) == 2580, "");
 static_assert(sizeof(CMap) == 137832, "");
 static_assert(sizeof(CMain) == 149412, "");
 
-extern Console* pMain;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
@@ -1643,12 +1642,24 @@ typedef int(__stdcall *FWinProc)(HWND, int, WPARAM, LPARAM);
 typedef int(__stdcall *FConsole_zoom)(int zoom_type, int v1);
 typedef int(__cdecl *FWin_update_screen)(RECT *prRect, int v1);
 typedef int(__cdecl *FWin_flip)(RECT *pRect);
+typedef int(__thiscall *FBuffer_set_text_color)(Buffer* This, int a2, int a3, int a4, int a5);
+typedef int(__thiscall *FBuffer_set_font)(Buffer* This, Font* font, int a3, int a4, int a5);
+typedef int(__thiscall *FBuffer_write_cent_l3)(Buffer* This, LPCSTR lpString, RECT* rt, int len);
+
+extern Console* pMain;
+extern FMapWin_pixel_to_tile MapWin_pixel_to_tile;
+extern FMapWin_tile_to_pixel MapWin_tile_to_pixel;
+extern FBuffer_set_text_color Buffer_set_text_color;
+extern FBuffer_set_font Buffer_set_font;
+extern FBuffer_write_cent_l3 Buffer_write_cent_l3;
+
 
 ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass);
 int WINAPI ModGetSystemMetrics(int nIndex);
 int __cdecl blink_timer();
 int __thiscall zoom_process(Console* This);
 int __thiscall draw_map(Console* This, int iOwner, int fUnitsOnly);
+void __thiscall MapWin_gen_overlays(Console* This, int x, int y);
 
 #pragma GCC diagnostic pop
 
