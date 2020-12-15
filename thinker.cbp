@@ -90,6 +90,8 @@
 		<Unit filename="src/move.h" />
 		<Unit filename="src/patch.cpp" />
 		<Unit filename="src/patch.h" />
+		<Unit filename="src/path.cpp" />
+		<Unit filename="src/path.h" />
 		<Unit filename="src/tech.cpp" />
 		<Unit filename="src/tech.h" />
 		<Unit filename="src/terranx.cpp" />
@@ -99,9 +101,6 @@
 		<Unit filename="src/test.cpp" />
 		<Unit filename="src/test.h" />
 		<Extensions>
-			<code_completion />
-			<envvars />
-			<debugger />
 			<lib_finder disable_auto="1" />
 		</Extensions>
 	</Project>

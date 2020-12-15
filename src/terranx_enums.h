@@ -483,7 +483,7 @@ enum veh_flags {
 };
 
 enum veh_state {
-    VSTATE_UNK_1 = 0x1,
+    VSTATE_IN_TRANSPORT = 0x1,
     VSTATE_UNK_2 = 0x2,
     VSTATE_UNK_4 = 0x4,
     VSTATE_UNK_8 = 0x8,
@@ -882,6 +882,9 @@ enum ai_goal_types {
     AI_GOAL_THERMAL_BOREHOLE = 105,
     AI_GOAL_SENSOR_ARRAY = 121,
     AI_GOAL_RAISE_LAND = 200,
+    AI_GOAL_NAVAL_START = 201,
+    AI_GOAL_NAVAL_END = 202,
+    AI_GOAL_NAVAL_BEACH = 203,
 };
 
 enum social_category_types {

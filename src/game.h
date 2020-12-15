@@ -3,7 +3,6 @@
 #include "main.h"
 
 /*
-
 Function parameter naming conventions
 
 Faction ID is always written as "faction". It is also written with a number suffix
@@ -11,27 +10,47 @@ Faction ID is always written as "faction". It is also written with a number suff
 
 Generic "id" is used to denote any parameter for base, unit, or vehicle IDs.
 It is assumed the meaning of the parameter is clear from the function context.
-
-If there multiple non-faction ID parameters, the first one is written with a full name
-"base_id" etc. and the second can be "id" if the meaning is clear from the context.
-
 */
 
-const int offset[][2] = {
+const int NearbyTiles[][2] = {
     {1,-1},{2,0},{1,1},{0,2},{-1,1},{-2,0},{-1,-1},{0,-2}
 };
-
-const int offset_tbl[][2] = {
-    {1,-1},{2,0},{1,1},{0,2},{-1,1},{-2,0},{-1,-1},{0,-2},
-    {2,-2},{2,2},{-2,2},{-2,-2},{1,-3},{3,-1},{3,1},{1,3},
-    {-1,3},{-3,1},{-3,-1},{-1,-3},{4,0},{-4,0},{0,4},{0,-4},
-    {1,-5},{2,-4},{3,-3},{4,-2},{5,-1},{5,1},{4,2},{3,3},
-    {2,4},{1,5},{-1,5},{-2,4},{-3,3},{-4,2},{-5,1},{-5,-1},
-    {-4,-2},{-3,-3},{-2,-4},{-1,-5},{0,6},{6,0},{0,-6},{-6,0},
-    {0,-8},{1,-7},{2,-6},{3,-5},{4,-4},{5,-3},{6,-2},{7,-1},
-    {8,0},{7,1},{6,2},{5,3},{4,4},{3,5},{2,6},{1,7},
-    {0,8},{-1,7},{-2,6},{-3,5},{-4,4},{-5,3},{-6,2},{-7,1},
-    {-8,0},{-7,-1},{-6,-2},{-5,-3},{-4,-4},{-3,-5},{-2,-6},{-1,-7},
+const int BaseOffsetX[] = { 1, 2, 1, 0, -1, -2, -1,  0, 0};
+const int BaseOffsetY[] = {-1, 0, 1, 2,  1,  0, -1, -2, 0};
+const int TableRange[] = {1, 9, 25, 49, 81, 121, 169, 225, 289};
+const int TableOffsetX[] = {
+     0,  1,  2,  1,  0, -1, -2,  -1,   0,   2,   2,  -2,  -2,   1,   3,   3,   1,  -1,  -3,  -3,
+    -1,  4, -4,  0,  0,  1,  2,   3,   4,   5,   5,   4,   3,   2,   1,  -1,  -2,  -3,  -4,  -5,
+    -5, -4, -3, -2, -1,  0,  6,   0,  -6,   0,   1,   2,   3,   4,   5,   6,   7,   8,   7,   6,
+     5,  4,  3,  2,  1,  0, -1,  -2,  -3,  -4,  -5,  -6,  -7,  -8,  -7,  -6,  -5,  -4,  -3,  -2,
+    -1,  0,  1,  2,  3,  4,  5,   6,   7,   8,   9,  10,   9,   8,   7,   6,   5,   4,   3,   2,
+     1,  0, -1, -2, -3, -4, -5,  -6,  -7,  -8,  -9, -10,  -9,  -8,  -7,  -6,  -5,  -4,  -3,  -2,
+    -1,  0,  1,  2,  3,  4,  5,   6,   7,   8,   9,  10,  11,  12,  11,  10,   9,   8,   7,   6,
+     5,  4,  3,  2,  1,  0, -1,  -2,  -3,  -4,  -5,  -6,  -7,  -8,  -9, -10, -11, -12, -11, -10,
+    -9, -8, -7, -6, -5, -4, -3,  -2,  -1,   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,
+    11, 12, 13, 14, 13, 12, 11,  10,   9,   8,   7,   6,   5,   4,   3,   2,   1,   0,  -1,  -2,
+    -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -13, -12, -11, -10,  -9,  -8,  -7,  -6,
+    -5, -4, -3, -2, -1,  0,  1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,
+    15, 16, 15, 14, 13, 12, 11,  10,   9,   8,   7,   6,   5,   4,   3,   2,   1,   0,  -1,  -2,
+    -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -15, -14, -13, -12, -11, -10,
+    -9, -8, -7, -6, -5, -4, -3,  -2,  -1,
+};
+const int TableOffsetY[] = {
+     0,  -1,   0,   1,   2,   1,   0,  -1,  -2,  -2,   2,   2,  -2,  -3, -1,  1,  3,  3,  1, -1,
+    -3,   0,   0,   4,  -4,  -5,  -4,  -3,  -2,  -1,   1,   2,   3,   4,  5,  5,  4,  3,  2,  1,
+    -1,  -2,  -3,  -4,  -5,   6,   0,  -6,   0,  -8,  -7,  -6,  -5,  -4, -3, -2, -1,  0,  1,  2,
+     3,   4,   5,   6,   7,   8,   7,   6,   5,   4,   3,   2,   1,   0, -1, -2, -3, -4, -5, -6,
+    -7, -10,  -9,  -8,  -7,  -6,  -5,  -4,  -3,  -2,  -1,   0,   1,   2,  3,  4,  5,  6,  7,  8,
+     9,  10,   9,   8,   7,   6,   5,   4,   3,   2,   1,   0,  -1,  -2, -3, -4, -5, -6, -7, -8,
+    -9, -12, -11, -10,  -9,  -8,  -7,  -6,  -5,  -4,  -3,  -2,  -1,   0,  1,  2,  3,  4,  5,  6,
+     7,   8,   9,  10,  11,  12,  11,  10,   9,   8,   7,   6,   5,   4,  3,  2,  1,  0, -1, -2,
+    -3,  -4,  -5,  -6,  -7,  -8,  -9, -10, -11, -14, -13, -12, -11, -10, -9, -8, -7, -6, -5, -4,
+    -3,  -2,  -1,   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10, 11, 12, 13, 14, 13, 12,
+    11,  10,   9,   8,   7,   6,   5,   4,   3,   2,   1,   0,  -1,  -2, -3, -4, -5, -6, -7, -8,
+    -9, -10, -11, -12, -13, -16, -15, -14, -13, -12, -11, -10,  -9,  -8, -7, -6, -5, -4, -3, -2,
+    -1,   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12, 13, 14, 15, 16, 15, 14,
+    13,  12,  11,  10,   9,   8,   7,   6,   5,   4,   3,   2,   1,   0, -1, -2, -3, -4, -5, -6,
+    -7,  -8,  -9, -10, -11, -12, -13, -14, -15,
 };
 
 char* prod_name(int prod);
@@ -56,10 +75,10 @@ int prod_count(int faction, int id, int skip);
 int facility_count(int faction, int facility);
 int find_hq(int faction);
 int manifold_nexus_owner();
-int veh_triad(int id);
-int mod_veh_speed(int id);
-int unit_triad(int id);
-int unit_speed(int id);
+int veh_triad(int veh_id);
+int mod_veh_speed(int veh_id);
+int unit_triad(int unit_id);
+int unit_speed(int unit_id);
 int best_armor(int faction, bool cheap);
 int best_weapon(int faction);
 int best_reactor(int faction);
@@ -72,20 +91,22 @@ double lerp(double a, double b, double t);
 int wrap(int a);
 int map_range(int x1, int y1, int x2, int y2);
 int min_range(const Points& S, int x, int y);
-double mean_range(const Points& S, int x, int y);
+double mean_square(const Points& S, int x, int y);
 MAP* mapsq(int x, int y);
 int unit_in_tile(MAP* sq);
 int set_move_to(int veh_id, int x, int y);
 int set_road_to(int veh_id, int x, int y);
 int set_action(int veh_id, int act, char icon);
 int set_convoy(int veh_id, int res);
+int set_board_to(int veh_id, int trans_veh_id);
+int cargo_loaded(int veh_id);
+int cargo_capacity(int veh_id);
 int mod_veh_skip(int veh_id);
 bool at_target(VEH* veh);
 bool is_ocean(MAP* sq);
+bool is_ocean(BASE* base);
 bool is_ocean_shelf(MAP* sq);
 bool is_shore_level(MAP* sq);
-bool is_sea_base(int id);
-bool workable_tile(int x, int y, int faction);
 bool has_defenders(int x, int y, int faction);
 int nearby_items(int x, int y, int range, uint32_t item);
 int bases_in_range(int x, int y, int range);
@@ -101,6 +122,8 @@ void print_base(int id);
 
 void __cdecl add_goal(int faction, int type, int priority, int x, int y, int base_id);
 void __cdecl wipe_goals(int faction);
+int has_goal(int faction, int type, int x, int y);
+std::vector<MapTile> iterate_tiles(int x, int y, int start_index, int end_index);
 
 const int PathLimit = 50;
 const int QueueSize = 640;

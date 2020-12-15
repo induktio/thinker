@@ -61,12 +61,13 @@
 #include <set>
 #include <list>
 #include <string>
+#include <vector>
+#include "terranx.h"
 
 #define min(x, y) std::min(x, y)
 #define max(x, y) std::max(x, y)
 #define COMBAT 0
 #define SYNC 0
-#define NO_SYNC 1
 #define ATT false
 #define DEF true
 
@@ -143,6 +144,20 @@ struct Config {
     that are recalculated each turn. These values are not stored in the save game.
 */
 struct AIPlans {
+    int main_region = -1;
+    int main_region_x = -1;
+    int main_region_y = -1;
+    int main_sea_region = -1;
+    int aircraft = 0;
+    int transports = 0;
+    int prioritize_naval = 0;
+    int naval_score = INT_MIN;
+    int naval_start_x = -1;
+    int naval_start_y = -1;
+    int naval_beach_x = -1;
+    int naval_beach_y = -1;
+    int naval_end_x = -1;
+    int naval_end_y = -1;
     int diplo_flags = 0;
     /*
     Amount of minerals a base needs to produce before it is allowed to build secret projects.
@@ -178,6 +193,16 @@ enum nodeset_types {
     NODE_NEED_FERRY = 3,
     NODE_RAISE_LAND = 4,
     NODE_GOAL_RAISE_LAND = 5,
+    NODE_GOAL_NAVAL_START = 6,
+    NODE_GOAL_NAVAL_BEACH = 7,
+    NODE_GOAL_NAVAL_END = 8,
+    NODE_PATROL = 9,
+};
+
+struct MapTile {
+    int x;
+    int y;
+    MAP* sq;
 };
 
 struct Point {
@@ -211,8 +236,8 @@ typedef std::set<MapNode,NodeComp> NodeSet;
 typedef std::set<Point,PointComp> Points;
 typedef std::list<Point> PointList;
 
-#include "terranx.h"
 #include "patch.h"
+#include "path.h"
 #include "gui.h"
 #include "game.h"
 #include "move.h"
@@ -237,7 +262,7 @@ int find_project(int id);
 int find_facility(int id);
 int select_prod(int id);
 int find_proto(int base_id, int triad, int mode, bool defend);
-int select_combat(int id, bool sea_base, bool build_ships, int probes, int def_land);
+int select_combat(int base_id, bool sea_base, bool build_ships, bool probes, bool def_land);
 int opt_list_parse(int* ptr, char* buf, int len, int min_val);
 
 

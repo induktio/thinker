@@ -1,6 +1,7 @@
 #pragma once
 
-typedef unsigned char byte;
+#include <stdint.h>
+typedef uint8_t byte;
 
 #include "terranx_enums.h"
 #include "terranx_types.h"
@@ -176,4 +177,8 @@ extern fp_5int* battle_compute;
 extern fp_6int* battle_kill;
 extern fp_7int* battle_fight_2;
 extern fp_void* draw_cursor;
+extern fp_1int* veh_kill;
+extern fp_1int* veh_wake;
+extern fp_1int* stack_fix;
+extern fp_2int* stack_veh;
 

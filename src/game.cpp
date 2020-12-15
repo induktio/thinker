@@ -174,10 +174,8 @@ bool ai_enabled(int faction) {
 }
 
 bool at_war(int faction1, int faction2) {
-    if (faction1 == faction2 || faction1 < 0 || faction2 < 0)
-        return false;
-    return !faction1 || !faction2
-        || tx_factions[faction1].diplo_status[faction2] & DIPLO_VENDETTA;
+    return faction1 != faction2 && (!faction1 || !faction2
+        || tx_factions[faction1].diplo_status[faction2] & DIPLO_VENDETTA);
 }
 
 bool has_pact(int faction1, int faction2) {
@@ -229,7 +227,7 @@ int manifold_nexus_owner() {
             MAP* sq = mapsq(x, y);
             /* First Manifold Nexus tile must also be visible to the owner. */
             if (sq && sq->landmarks & LM_NEXUS && sq->art_ref_id == 0) {
-                return (sq->owner >= 0 && sq->visibility & (1 << sq->owner) ? sq->owner : -1);
+                return (sq->owner >= 0 && sq->is_visible(sq->owner) ? sq->owner : -1);
             }
         }
     }
@@ -353,11 +351,12 @@ int min_range(const Points& S, int x, int y) {
     return z;
 }
 
-double mean_range(const Points& S, int x, int y) {
+double mean_square(const Points& S, int x, int y) {
     int n = 0;
     int sum = 0;
     for (auto& p : S) {
-        sum += map_range(x, y, p.x, p.y);
+        int r = map_range(x, y, p.x, p.y);
+        sum += r*r;
         n++;
     }
     return (n > 0 ? (double)sum/n : 0);
@@ -421,6 +420,40 @@ int set_convoy(int veh_id, int res) {
     return veh_skip(veh_id);
 }
 
+int set_board_to(int veh_id, int trans_veh_id) {
+    VEH* veh = &tx_vehicles[veh_id];
+    VEH* v2 = &tx_vehicles[trans_veh_id];
+    assert(veh_id != trans_veh_id);
+    assert(veh->x == v2->x && veh->y == v2->y);
+    assert(v2->weapon_type() == WPN_TROOP_TRANSPORT);
+    veh->move_status = ORDER_SENTRY_BOARD;
+    veh->waypoint_1_x = trans_veh_id;
+    veh->waypoint_1_y = 0;
+    veh->status_icon = 'L';
+    return veh_skip(veh_id);
+}
+
+int cargo_loaded(int veh_id) {
+    int n=0;
+    for (int i=0; i<*total_num_vehicles; i++) {
+        VEH* veh = &tx_vehicles[i];
+        if (veh->move_status == ORDER_SENTRY_BOARD && veh->waypoint_1_x == veh_id) {
+            n++;
+        }
+    }
+    return n;
+}
+
+int cargo_capacity(int veh_id) {
+    VEH* v = &tx_vehicles[veh_id];
+    UNIT* u = &tx_units[v->proto_id];
+    if (u->carry_capacity > 0 && veh_id < MaxProtoFactionNum 
+    && tx_weapon[u->weapon_type].offense_value < 0) {
+        return v->morale + 1;
+    }
+    return u->carry_capacity;
+}
+
 int mod_veh_skip(int veh_id) {
     VEH* veh = &tx_vehicles[veh_id];
     veh->waypoint_1_x = veh->x;
@@ -444,32 +477,16 @@ bool is_ocean(MAP* sq) {
     return (!sq || (sq->level >> 5) < LEVEL_SHORE_LINE);
 }
 
+bool is_ocean(BASE* base) {
+    return is_ocean(mapsq(base->x, base->y));
+}
+
 bool is_ocean_shelf(MAP* sq) {
     return (sq && (sq->level >> 5) == LEVEL_OCEAN_SHELF);
 }
 
 bool is_shore_level(MAP* sq) {
     return (sq && (sq->level >> 5) == LEVEL_SHORE_LINE);
-}
-
-bool is_sea_base(int id) {
-    MAP* sq = mapsq(tx_bases[id].x, tx_bases[id].y);
-    return is_ocean(sq);
-}
-
-bool workable_tile(int x, int y, int faction) {
-    assert(faction > 0 && faction < 8);
-    MAP* sq = mapsq(x, y);
-    if (!sq || ~sq->items & TERRA_BASE_RADIUS) {
-        return false;
-    }
-    for (int i=0; i<20; i++) {
-        sq = mapsq(wrap(x + offset_tbl[i][0]), y + offset_tbl[i][1]);
-        if (sq && sq->owner == faction && sq->items & TERRA_BASE_IN_TILE) {
-            return true;
-        }
-    }
-    return false;
 }
 
 bool has_defenders(int x, int y, int faction) {
@@ -517,7 +534,7 @@ int nearby_tiles(int x, int y, int type, int limit) {
 int coast_tiles(int x, int y) {
     MAP* sq;
     int n = 0;
-    for (const int* t : offset) {
+    for (const int* t : NearbyTiles) {
         sq = mapsq(wrap(x + t[0]), y + t[1]);
         if (sq && is_ocean(sq)) {
             n++;
@@ -581,9 +598,9 @@ void print_map(int x, int y) {
 
 void print_veh(int id) {
     VEH* v = &tx_vehicles[id];
-    debug("VEH %22s %3d %3d %d | %08x %04x %02x | %2d %3d | %2d %2d %2d %2d | %2d %2d %d %d %d %d\n",
+    debug("VEH %22s %3d %3d %d | %08x %04x %02x | %2d %c | %2d %2d -> %2d %2d | %2d %2d %d %d %d %d\n",
         tx_units[v->proto_id].name, v->proto_id, id, v->faction_id,
-        v->state, v->flags, v->visibility, v->move_status, v->status_icon,
+        v->state, v->flags, v->visibility, v->move_status, (v->status_icon ? v->status_icon : ' '),
         v->x, v->y, v->waypoint_1_x, v->waypoint_1_y,
         v->morale, v->damage_taken, v->iter_count, v->unk_1, v->probe_action, v->probe_sabotage_id);
 }
@@ -679,6 +696,32 @@ void __cdecl wipe_goals(int faction) {
     }
 }
 
+int has_goal(int faction, int type, int x, int y) {
+    assert(faction < MaxPlayerNum && mapsq(x, y));
+    for (int i = 0; i < MaxGoalsNum; i++) {
+        Goal& goal = tx_factions[faction].goals[i];
+        if (goal.priority > 0 && goal.x == x && goal.y == y && goal.type == type) {
+            return goal.priority;
+        }
+    }
+    return 0;
+}
+
+std::vector<MapTile> iterate_tiles(int x, int y, int start_index, int end_index) {
+    std::vector<MapTile> tiles;
+    assert(start_index < end_index && (unsigned)end_index <= sizeof(TableOffsetX)/sizeof(int));
+
+    for (int i = start_index; i < end_index; i++) {
+        int x2 = wrap(x + TableOffsetX[i]);
+        int y2 = y + TableOffsetY[i];
+        MAP* sq = mapsq(x2, y2);
+        if (sq) {
+            tiles.push_back({x2, y2, sq});
+        }
+    }
+    return tiles;
+}
+
 void TileSearch::init(int x, int y, int tp) {
     assert(tp == TS_TRIAD_LAND || tp == TS_TRIAD_SEA || tp == TS_TRIAD_AIR
         || tp == TS_NEAR_ROADS || tp == TS_TERRITORY_LAND || tp == TS_SEA_AND_SHORE);
@@ -769,7 +812,7 @@ MAP* TileSearch::get_next() {
             }
             continue;
         }
-        for (const int* t : offset) {
+        for (const int* t : NearbyTiles) {
             int x2 = wrap(rx + t[0]);
             int y2 = ry + t[1];
             if (y2 >= y_skip && y2 < *map_axis_y - y_skip

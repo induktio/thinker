@@ -1,6 +1,11 @@
 #pragma once
 #pragma pack(push, 1)
 
+struct UNIT;
+extern UNIT* tx_units;
+struct VEH;
+extern VEH* tx_vehicles;
+
 struct BASE {
     short x;
     short y;
@@ -129,6 +134,16 @@ struct VEH {
     short home_base_id;
     short next_unit_id_stack;
     short prev_unit_id_stack;
+
+    int weapon_type() {
+        return tx_units[proto_id].weapon_type;
+    }
+    bool is_combat_unit() {
+        return tx_units[proto_id].weapon_type <= WPN_PSI_ATTACK;
+    }
+    bool is_visible(int faction) {
+        return visibility & (1 << faction);
+    }
 };
 
 struct MAP {
@@ -161,6 +176,13 @@ struct MAP {
     byte unk_2; // 0x40 = set_dirty()
     byte art_ref_id;
     int visible_items[7];
+
+    bool is_visible(int faction) {
+        return visibility & (1 << faction);
+    }
+    bool is_base() {
+        return items & TERRA_BASE_IN_TILE;
+    }
 };
 
 struct MetaFaction {
@@ -421,13 +443,13 @@ struct Faction {
     byte region_total_bases[128];
     byte region_total_offensive_units[128];
     short region_force_rating[128]; // Combined offensive/morale rating of all units in the area
-    short region_unk_1[128]; // Movement planning flags
-    short region_unk_2[128]; // Unknown reset_territory counter
-    short region_unk_3[128]; // Unknown counter
-    short region_unk_4[128]; // Unknown reset_territory/enemy_move counter
+    short region_flags[128]; // Movement planning flags
+    short region_territory_tiles[128];
+    short region_visible_tiles[128];
+    short region_good_tiles[128];
     short region_unk_5[128]; // Unknown reset_territory/enemy_move counter
     byte region_unk_6[128]; // Unknown enemy_strategy state
-    byte region_unk_7[128]; // Unknown base_prod_choices state
+    byte region_territory_goodies[128];
     byte region_base_plan[128]; // visible in map UI with omni view + debug mode under base name
     /* End of block */
     Goal goals[75];

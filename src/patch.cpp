@@ -74,8 +74,8 @@ void check_relocate_hq(int faction) {
         for (int i=0; i<*total_num_bases; i++) {
             BASE* b = &tx_bases[i];
             if (b->faction_id == faction) {
-                double score = b->pop_size*0.3 - mean_range(bases, b->x, b->y)
-                    + (has_facility(i, FAC_PERIMETER_DEFENSE) ? 1 : 0);
+                double score = b->pop_size - mean_square(bases, b->x, b->y)
+                    + (has_facility(i, FAC_PERIMETER_DEFENSE) ? 4 : 0);
                 debug("relocate_hq %.4f %s\n", score, b->name);
                 if (score > best_score) {
                     best_id = i;
@@ -152,7 +152,7 @@ HOOK_API int render_ocean_fungus(int x, int y) {
     int k = 0;
     for (int i=0; i<8; i++) {
         int z = (i - 1) & 7;
-        sq = mapsq(wrap(x + offset[z][0]), y + offset[z][1]);
+        sq = mapsq(wrap(x + NearbyTiles[z][0]), y + NearbyTiles[z][1]);
         if (sq && sq->items & TERRA_FUNGUS && is_ocean_shelf(sq)) {
             k |= (1 << i);
         }
@@ -234,9 +234,9 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
     }
     int sc = 0;
     int nut = 0;
-    for (int i=0; i<44; i++) {
-        int x2 = wrap(x + offset_tbl[i][0]);
-        int y2 = y + offset_tbl[i][1];
+    for (int i=1; i<45; i++) {
+        int x2 = wrap(x + TableOffsetX[i]);
+        int y2 = y + TableOffsetY[i];
         sq = mapsq(x2, y2);
         if (sq) {
             int bonus = bonus_at(x2, y2);

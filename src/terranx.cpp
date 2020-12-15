@@ -130,4 +130,8 @@ fp_5int* battle_compute = (fp_5int*)0x501DA0;
 fp_6int* battle_kill = (fp_6int*)0x505D80;
 fp_7int* battle_fight_2 = (fp_7int*)0x506AF0;
 fp_void* draw_cursor = (fp_void*)0x46AE00;
+fp_1int* veh_kill = (fp_1int*)0x5C08C0;
+fp_1int* veh_wake = (fp_1int*)0x5C1D70;
+fp_1int* stack_fix = (fp_1int*)0x5B8E10;
+fp_2int* stack_veh = (fp_2int*)0x5B8EE0;
 

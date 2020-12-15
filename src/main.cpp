@@ -757,7 +757,7 @@ int find_facility(int id) {
     int hab_dome_limit = tx_basic->pop_limit_wo_hab_dome - pop_rule;
     Faction* f = &tx_factions[faction];
     MetaFaction* m = &tx_metafactions[faction];
-    bool sea_base = is_sea_base(id);
+    bool sea_base = is_ocean(base);
     bool core_base = minerals+extra >= plans[faction].proj_limit;
     bool can_build_units = can_build_unit(faction, -1);
 
@@ -834,12 +834,12 @@ int select_colony(int id, int pods, bool build_ships) {
     if (pods >= limit) {
         return -1;
     }
-    if (is_sea_base(id)) {
-        for (const int* t : offset) {
-            int x2 = wrap(base->x + t[0]);
-            int y2 = base->y + t[1];
-            if (land && non_combat_move(x2, y2, faction, TRIAD_LAND) && !random(6)) {
-                return TRIAD_LAND;
+    if (is_ocean(base)) {
+        for (MapTile& m : iterate_tiles(base->x, base->y, 1, 9)) {
+            if (land && non_combat_move(m.x, m.y, faction, TRIAD_LAND)) {
+                if (m.sq->owner < 1 || !random(6)) {
+                    return TRIAD_LAND;
+                }
             }
         }
         if (sea) {
@@ -855,22 +855,26 @@ int select_colony(int id, int pods, bool build_ships) {
     return -1;
 }
 
-int select_combat(int id, bool sea_base, bool build_ships, int probes, int def_land) {
-    BASE* base = &tx_bases[id];
+int select_combat(int base_id, bool sea_base, bool build_ships, bool probes, bool def_land) {
+    BASE* base = &tx_bases[base_id];
     int faction = base->faction_id;
     Faction* f = &tx_factions[faction];
     bool reserve = base->mineral_surplus >= base->mineral_intake/2;
 
+    int w1 = 4*plans[faction].aircraft < f->current_num_bases ? 2 : 5;
+    int w2 = 4*plans[faction].transports < f->current_num_bases ? 2 : 5;
+    int w3 = plans[faction].prioritize_naval ? 2 : 5;
+
     if (has_weapon(faction, WPN_PROBE_TEAM) && (!random(probes ? 6 : 3) || !reserve)) {
-        return find_proto(id, (build_ships ? TRIAD_SEA : TRIAD_LAND), WMODE_INFOWAR, DEF);
+        return find_proto(base_id, (build_ships ? TRIAD_SEA : TRIAD_LAND), WMODE_INFOWAR, DEF);
 
-    } else if (has_chassis(faction, CHS_NEEDLEJET) && f->SE_police >= -3 && !random(3)) {
-        return find_proto(id, TRIAD_AIR, COMBAT, ATT);
+    } else if (has_chassis(faction, CHS_NEEDLEJET) && f->SE_police >= -3 && !random(w1)) {
+        return find_proto(base_id, TRIAD_AIR, COMBAT, ATT);
 
-    } else if (build_ships && (sea_base || (!def_land && !random(3)))) {
-        return find_proto(id, TRIAD_SEA, (!random(3) ? WMODE_TRANSPORT : COMBAT), ATT);
+    } else if (build_ships && (sea_base || (!def_land && !random(w3)))) {
+        return find_proto(base_id, TRIAD_SEA, (!random(w2) ? WMODE_TRANSPORT : COMBAT), ATT);
     }
-    return find_proto(id, TRIAD_LAND, COMBAT, (!random(4) ? DEF : ATT));
+    return find_proto(base_id, TRIAD_LAND, COMBAT, (!random(4) ? DEF : ATT));
 }
 
 double expansion_ratio(Faction* f) {
@@ -891,7 +895,7 @@ int select_prod(int id) {
     bool has_formers = has_weapon(faction, WPN_TERRAFORMING_UNIT);
     bool has_supply = has_weapon(faction, WPN_SUPPLY_TRANSPORT);
     bool build_ships = can_build_ships(id);
-    bool sea_base = is_sea_base(id);
+    bool sea_base = is_ocean(base);
     int might = faction_might(faction);
     int transports = 0;
     int defenders = 0;
@@ -899,7 +903,6 @@ int select_prod(int id) {
     int formers = 0;
     int probes = 0;
     int pods = 0;
-    int enemymask = 1;
     int enemyrange = 40;
     double enemymil = 0;
 
@@ -909,7 +912,6 @@ int select_prod(int id) {
         }
         double mil = min(5.0, (is_human(faction) ? 2.0 : 1.0) * faction_might(i) / might);
         if (at_war(faction, i)) {
-            enemymask |= (1 << i);
             enemymil = max(enemymil, 1.0 * mil);
         } else if (!has_pact(faction, i)) {
             enemymil = max(enemymil, 0.3 * mil);
@@ -917,7 +919,7 @@ int select_prod(int id) {
     }
     for (int i=0; i<*total_num_bases; i++) {
         BASE* b = &tx_bases[i];
-        if ((1 << b->faction_id) & enemymask) {
+        if (at_war(faction, b->faction_id)) {
             int range = map_range(base->x, base->y, b->x, b->y);
             MAP* sq2 = mapsq(b->x, b->y);
             if (sq1 && sq2 && sq1->region != sq2->region) {

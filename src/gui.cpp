@@ -429,6 +429,7 @@ void check_scroll() {
 LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     static int iDeltaAccum = 0;
     bool fHasFocus = (GetFocus() == *phWnd);
+    bool tools = DEBUG && !*game_not_started;
     POINT p;
 
     if (msg == WM_MOUSEWHEEL && fHasFocus) {
@@ -551,7 +552,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         );
         MessageBox(0, buf, MOD_VERSION, MB_OK | MB_ICONINFORMATION);
 
-    } else if (DEBUG && msg == WM_CHAR && wParam == 'd' && GetAsyncKeyState(VK_MENU) < 0) {
+    } else if (tools && msg == WM_CHAR && wParam == 'd' && GetAsyncKeyState(VK_MENU) < 0) {
         debug("WM_CHAR alt+d\n");
         conf.debug_mode = !conf.debug_mode;
         if (conf.debug_mode) {
@@ -569,8 +570,19 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         MapWin_draw_map(pMain, 0);
         InvalidateRect(hwnd, NULL, false);
 
-    } else if (DEBUG && msg == WM_CHAR && wParam == 'v' && GetAsyncKeyState(VK_MENU) < 0
-    && !*game_not_started) {
+    } else if (tools && msg == WM_CHAR && wParam == 'y' && GetAsyncKeyState(VK_MENU) < 0) {
+        static int draw_diplo = 0;
+        draw_diplo = !draw_diplo;
+        if (draw_diplo) {
+            pMain->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_DIPLO_STATE;
+            *game_state |= STATE_DEBUG_MODE;
+        } else {
+            pMain->oMap.iWhatToDrawFlags &= ~MAPWIN_DRAW_DIPLO_STATE;
+        }
+        MapWin_draw_map(pMain, 0);
+        InvalidateRect(hwnd, NULL, false);
+
+    } else if (tools && msg == WM_CHAR && wParam == 'v' && GetAsyncKeyState(VK_MENU) < 0) {
         pMain->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
         memset(pm_overlay, 0, sizeof(pm_overlay));
         static int ts_type = 0;
@@ -584,21 +596,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         MapWin_draw_map(pMain, 0);
         InvalidateRect(hwnd, NULL, false);
 
-    } else if (DEBUG && msg == WM_CHAR && wParam == 'y' && GetAsyncKeyState(VK_MENU) < 0
-    && !*game_not_started) {
-        static int draw_diplo = 0;
-        draw_diplo = !draw_diplo;
-        if (draw_diplo) {
-            pMain->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_DIPLO_STATE;
-            *game_state |= STATE_DEBUG_MODE;
-        } else {
-            pMain->oMap.iWhatToDrawFlags &= ~MAPWIN_DRAW_DIPLO_STATE;
-        }
-        MapWin_draw_map(pMain, 0);
-        InvalidateRect(hwnd, NULL, false);
-
-    } else if (DEBUG && msg == WM_CHAR && wParam == 'f' && GetAsyncKeyState(VK_MENU) < 0
-    && !*game_not_started) {
+    } else if (tools && msg == WM_CHAR && wParam == 'f' && GetAsyncKeyState(VK_MENU) < 0) {
         pMain->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
         memset(pm_overlay, 0, sizeof(pm_overlay));
         MAP* sq = mapsq(pMain->oMap.iTileX, pMain->oMap.iTileY);
@@ -608,15 +606,33 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             InvalidateRect(hwnd, NULL, false);
         }
 
-    } else if (DEBUG && msg == WM_CHAR && wParam == 'b' && GetAsyncKeyState(VK_MENU) < 0
-    && !*game_not_started) {
+    } else if (tools && msg == WM_CHAR && wParam == 'x' && GetAsyncKeyState(VK_MENU) < 0) {
         pMain->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
-        memset(pm_overlay, 0, sizeof(pm_overlay));
-        for (int i=1; i < MaxPlayerNum; i++) {
-            land_raise_plan(i, true);
+        static int px = 0, py = 0;
+        int x = pMain->oMap.iTileX, y = pMain->oMap.iTileY;
+
+        for (int i=0; i<*total_num_vehicles; i++) {
+            VEH& v = tx_vehicles[i];
+            if (v.x == x && v.y == y) {
+                print_veh(i);
+            }
         }
+        int unit = is_ocean(mapsq(x, y)) ? BSC_UNITY_FOIL : BSC_UNITY_ROVER;
+        path_distance(px, py, x, y, unit, 1);
+        px=x;
+        py=y;
         MapWin_draw_map(pMain, 0);
         InvalidateRect(hwnd, NULL, false);
+
+    } else if (tools && msg == WM_CHAR && wParam == 'z' && GetAsyncKeyState(VK_MENU) < 0) {
+        int x = pMain->oMap.iTileX, y = pMain->oMap.iTileY;
+        MAP* sq = mapsq(x, y);
+        if (sq) {
+            int unit = is_ocean(sq) ? BSC_UNITY_FOIL : BSC_UNITY_ROVER;
+            spawn_veh(unit, max(1, (int)sq->owner), x, y, -1);
+            MapWin_draw_map(pMain, 0);
+            InvalidateRect(hwnd, NULL, false);
+        }
 
     } else {
         return WinProc(hwnd, msg, wParam, lParam);
@@ -686,7 +702,7 @@ void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
                             buf[1] = 'r';
                             break;
                         default:
-                            buf[1] = '*';
+                            buf[1] = (goal.type < 200 ? '*' : 'g');
                             break;
                     }
                     _itoa(goal.priority, &buf[2], 10);
