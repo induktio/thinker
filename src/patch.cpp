@@ -42,7 +42,7 @@ HOOK_API int mod_crop_yield(int faction, int base, int x, int y, int tf) {
 }
 
 HOOK_API int mod_base_draw(int ptr, int base_id, int x, int y, int zoom, int v1) {
-    BASE* b = &tx_bases[base_id];
+    BASE* b = &Bases[base_id];
     base_draw(ptr, base_id, x, y, zoom, v1);
 
     if (zoom >= -8 && has_facility(base_id, FAC_HEADQUARTERS)) {
@@ -66,13 +66,13 @@ void check_relocate_hq(int faction) {
         int best_id = -1;
         Points bases;
         for (int i=0; i<*total_num_bases; i++) {
-            BASE* b = &tx_bases[i];
+            BASE* b = &Bases[i];
             if (b->faction_id == faction) {
                 bases.insert({b->x, b->y});
             }
         }
         for (int i=0; i<*total_num_bases; i++) {
-            BASE* b = &tx_bases[i];
+            BASE* b = &Bases[i];
             if (b->faction_id == faction) {
                 double score = b->pop_size - mean_square(bases, b->x, b->y)
                     + (has_facility(i, FAC_PERIMETER_DEFENSE) ? 4 : 0);
@@ -84,7 +84,7 @@ void check_relocate_hq(int faction) {
             }
         }
         if (best_id >= 0) {
-            BASE* b = &tx_bases[best_id];
+            BASE* b = &Bases[best_id];
             set_base_facility(best_id, FAC_HEADQUARTERS, true);
             draw_tile(b->x, b->y, 0);
         }
@@ -92,7 +92,7 @@ void check_relocate_hq(int faction) {
 }
 
 HOOK_API int mod_capture_base(int base_id, int faction, int probe) {
-    int old_faction = tx_bases[base_id].faction_id;
+    int old_faction = Bases[base_id].faction_id;
     assert(faction > 0 && faction < 8 && faction != old_faction);
     capture_base(base_id, faction, probe);
     check_relocate_hq(old_faction);
@@ -100,7 +100,7 @@ HOOK_API int mod_capture_base(int base_id, int faction, int probe) {
 }
 
 HOOK_API int mod_base_kill(int base_id) {
-    int old_faction = tx_bases[base_id].faction_id;
+    int old_faction = Bases[base_id].faction_id;
     assert(base_id >= 0 && base_id < *total_num_bases);
     base_kill(base_id);
     check_relocate_hq(old_faction);
@@ -120,7 +120,7 @@ HOOK_API int mod_setup_player(int faction, int v1, int v2) {
     setup_player(faction, v1, v2);
     if (faction > 0 && !is_human(faction)) {
         for (int i=0; i<*total_num_vehicles; i++) {
-            VEH* veh = &tx_vehicles[i];
+            VEH* veh = &Vehicles[i];
             if (veh->faction_id == faction) {
                 MAP* sq = mapsq(veh->x, veh->y);
                 int former = (is_ocean(sq) ? BSC_SEA_FORMERS : BSC_FORMERS);
@@ -134,9 +134,9 @@ HOOK_API int mod_setup_player(int faction, int v1, int v2) {
                 break;
             }
         }
-        tx_factions[faction].satellites_nutrient = conf.satellites_nutrient;
-        tx_factions[faction].satellites_mineral = conf.satellites_mineral;
-        tx_factions[faction].satellites_energy = conf.satellites_energy;
+        Factions[faction].satellites_nutrient = conf.satellites_nutrient;
+        Factions[faction].satellites_mineral = conf.satellites_mineral;
+        Factions[faction].satellites_energy = conf.satellites_energy;
     }
     return 0;
 }
@@ -294,11 +294,11 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
 
 HOOK_API void find_start(int faction, int* tx, int* ty) {
     Points spawns;
-    bool aquatic = tx_metafactions[faction].rule_flags & FACT_AQUATIC;
+    bool aquatic = MFactions[faction].rule_flags & FACT_AQUATIC;
     int k = (*map_axis_y < 80 ? 4 : 8);
     process_map(k/2);
     for (int i=0; i<*total_num_vehicles; i++) {
-        VEH* v = &tx_vehicles[i];
+        VEH* v = &Vehicles[i];
         if (v->faction_id != 0 && v->faction_id != faction) {
             spawns.insert({v->x, v->y});
         }

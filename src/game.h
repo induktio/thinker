@@ -95,6 +95,7 @@ double mean_square(const Points& S, int x, int y);
 MAP* mapsq(int x, int y);
 int unit_in_tile(MAP* sq);
 int set_move_to(int veh_id, int x, int y);
+int set_move_next(int veh_id, int offset);
 int set_road_to(int veh_id, int x, int y);
 int set_action(int veh_id, int act, char icon);
 int set_convoy(int veh_id, int res);
@@ -120,13 +121,14 @@ void print_map(int x, int y);
 void print_veh(int id);
 void print_base(int id);
 
+bool __cdecl can_arty(int unit_id, bool allow_sea_arty);
 void __cdecl add_goal(int faction, int type, int priority, int x, int y, int base_id);
 void __cdecl wipe_goals(int faction);
 int has_goal(int faction, int type, int x, int y);
 std::vector<MapTile> iterate_tiles(int x, int y, int start_index, int end_index);
 
 const int PathLimit = 50;
-const int QueueSize = 640;
+const int QueueSize = 2048;
 
 enum tilesearch_types {
     TS_TRIAD_LAND = 0,
@@ -149,19 +151,20 @@ class TileSearch {
     int head;
     int tail;
     int roads;
-    int items;
     int y_skip;
     int owner;
     MAP* sq;
+    void reset();
+    void add_start(int x, int y);
     public:
     int rx, ry, dist, cur;
-    PathNode newtiles[QueueSize];
+    PathNode paths[QueueSize];
     Points oldtiles;
     void init(int x, int y, int tp);
     void init(int x, int y, int tp, int y_skip);
-    bool has_zoc(int);
+    void init(const PointList& points, int tp, int skip);
+    bool has_zoc(int faction);
     PointList& get_route(PointList& pp);
     MAP* get_next();
 };
-
 

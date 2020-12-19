@@ -66,10 +66,13 @@
 
 #define min(x, y) std::min(x, y)
 #define max(x, y) std::max(x, y)
-#define COMBAT 0
-#define SYNC 0
-#define ATT false
-#define DEF true
+
+const int COMBAT = 0;
+const int SYNC = 0;
+const bool DEF = true;
+const bool ATT = false;
+const bool SEA = true;
+const bool LAND = false;
 
 const int MaxMapW = 512;
 const int MaxMapH = 256;
@@ -148,8 +151,7 @@ struct AIPlans {
     int main_region_x = -1;
     int main_region_y = -1;
     int main_sea_region = -1;
-    int aircraft = 0;
-    int transports = 0;
+    int target_land_region = 0;
     int prioritize_naval = 0;
     int naval_score = INT_MIN;
     int naval_start_x = -1;
@@ -158,6 +160,8 @@ struct AIPlans {
     int naval_beach_y = -1;
     int naval_end_x = -1;
     int naval_end_y = -1;
+    int aircraft = 0;
+    int transports = 0;
     int diplo_flags = 0;
     /*
     Amount of minerals a base needs to produce before it is allowed to build secret projects.

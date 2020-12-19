@@ -10,10 +10,12 @@ extern PMTable pm_overlay;
 
 HOOK_API int mod_enemy_move(int id);
 HOOK_API int log_veh_kill(int a, int b, int c, int d);
+void update_main_region(int faction);
 void move_upkeep(int faction, bool visual);
 void land_raise_plan(int faction, bool visual);
 bool need_formers(int x, int y, int faction);
 bool has_transport(int x, int y, int faction);
+bool combat_move(int x, int y, int faction, int triad);
 bool non_combat_move(int x, int y, int faction, int triad);
 bool can_build_base(int x, int y, int faction, int triad);
 bool has_base_sites(int x, int y, int faction, int triad);

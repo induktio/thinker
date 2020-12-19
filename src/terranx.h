@@ -14,9 +14,6 @@ typedef int __cdecl fp_4int(int, int, int, int);
 typedef int __cdecl fp_5int(int, int, int, int, int);
 typedef int __cdecl fp_6int(int, int, int, int, int, int);
 typedef int __cdecl fp_7int(int, int, int, int, int, int, int);
-typedef int __cdecl fp_7ic(int, int, int, int, int, int, int, const char*);
-typedef int __cdecl fp_ccici(const char*, const char*, int, const char*, int);
-typedef int __cdecl fp_icii(int, const char*, int, int);
 
 /* Temporarily disable warnings for thiscall parameter type. */
 #pragma GCC diagnostic push
@@ -32,11 +29,11 @@ typedef int __thiscall tc_7int(int, int, int, int, int, int, int);
 
 #pragma GCC diagnostic pop
 
-static_assert(sizeof(struct R_Basic) == 308, "");
-static_assert(sizeof(struct R_Social) == 212, "");
-static_assert(sizeof(struct R_Facility) == 48, "");
-static_assert(sizeof(struct R_Tech) == 44, "");
-static_assert(sizeof(struct MetaFaction) == 1436, "");
+static_assert(sizeof(struct CRules) == 308, "");
+static_assert(sizeof(struct CSocial) == 212, "");
+static_assert(sizeof(struct CFacility) == 48, "");
+static_assert(sizeof(struct CTech) == 44, "");
+static_assert(sizeof(struct MFaction) == 1436, "");
 static_assert(sizeof(struct Faction) == 8396, "");
 static_assert(sizeof(struct BASE) == 308, "");
 static_assert(sizeof(struct UNIT) == 52, "");
@@ -86,38 +83,58 @@ extern int* diplo_opponent_faction;
 extern int* base_find_dist;
 extern int* veh_attack_flags;
 extern int* game_not_started;
-
-extern int* dword_93A934;
-extern int* dword_945B18;
-extern int* dword_945B1C;
 extern int* screen_width;
 extern int* screen_height;
 
-extern byte* tx_tech_discovered;
-extern int* tx_secret_projects;
-extern int* tx_cost_ratios;
-extern short (*tx_faction_rankings)[8];
-extern MetaFaction* tx_metafactions;
-extern Faction* tx_factions;
-extern BASE* tx_bases;
-extern UNIT* tx_units;
-extern VEH* tx_vehicles;
-extern MAP** tx_map_ptr;
+extern int* dword_915620;
+extern int* dword_9B2068;
+extern int* dword_9B7AE4;
+extern int* dword_93A934;
+extern int* dword_945B18;
+extern int* dword_945B1C;
 
-extern R_Basic* tx_basic;
-extern R_Tech* tx_techs;
-extern R_Social* tx_social;
-extern R_Facility* tx_facility;
-extern R_Ability* tx_ability;
-extern R_Chassis* tx_chassis;
-extern R_Citizen* tx_citizen;
-extern R_Defense* tx_defense;
-extern R_Reactor* tx_reactor;
-extern R_Resource* tx_resource;
-extern R_Terraform* tx_terraform;
-extern R_Weapon* tx_weapon;
+// Per turn might ratings for each faction.
+extern int16_t (*FactionRankings)[8];
+extern uint8_t* TechOwners;
+extern int* SecretProjects;
+extern int* CostRatios;
+extern MFaction* MFactions;
+extern Faction* Factions;
+extern BASE* Bases;
+extern UNIT* Units;
+extern VEH* Vehicles;
+extern MAP** MapPtr;
 
-extern fp_7ic* propose_proto;
+// Rules parsed from alphax.txt
+extern CRules* Rules;
+extern CTech* Tech;
+extern CSocial* Social;
+extern CFacility* Facility;
+extern CAbility* Ability;
+extern CChassis* Chassis;
+extern CCitizen* Citizen;
+extern CDefense* Armor;
+extern CReactor* Reactor;
+extern CResource* Resource;
+extern CTerraform* Terraform;
+extern CWeapon* Weapon;
+
+typedef int(__cdecl *Fpropose_proto)(int faction, int chassis, int weapon, int armor, 
+    int abilities, int reactor, int ai_plan, const char* name);
+typedef int(__cdecl *Fhas_abil)(int unit_id, int ability_flag);
+typedef int(__cdecl *Fparse_says)(int index, const char* text, int v1, int v2);
+typedef int(__cdecl *Fpopp)(const char* file_name, const char* label, int v1, 
+    const char* pcx_file_name, int v2);
+typedef int(__cdecl *Fbattle_fight_1)(int veh_id, int offset, bool use_table_offset, int v1, int v2);
+typedef int(__cdecl *Fhex_cost)(int unit_id, int faction, int x1, int y1, int x2, int y2, int a7);
+
+extern Fbattle_fight_1 battle_fight_1;
+extern Fpropose_proto propose_proto;
+extern Fhas_abil has_abil;
+extern Fparse_says parse_says;
+extern Fpopp popp;
+extern Fhex_cost hex_cost;
+
 extern fp_4int* veh_init;
 extern fp_1int* veh_skip;
 extern fp_2int* veh_at;
@@ -152,8 +169,6 @@ extern fp_2int* can_call_council;
 extern fp_void* do_all_non_input;
 extern fp_void* auto_save;
 extern fp_2int* parse_num;
-extern fp_icii* parse_says;
-extern fp_ccici* popp;
 extern fp_3int* capture_base;
 extern fp_1int* base_kill;
 extern fp_5int* crop_yield;

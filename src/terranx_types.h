@@ -2,9 +2,9 @@
 #pragma pack(push, 1)
 
 struct UNIT;
-extern UNIT* tx_units;
+extern UNIT* Units;
 struct VEH;
-extern VEH* tx_vehicles;
+extern VEH* Vehicles;
 
 struct BASE {
     short x;
@@ -105,7 +105,7 @@ struct VEH {
     short y;
     int state;
     short flags;
-    short proto_id;
+    short unit_id;
     short pad_0; // unused
     char faction_id;
     char year_end_lurking;
@@ -135,11 +135,17 @@ struct VEH {
     short next_unit_id_stack;
     short prev_unit_id_stack;
 
+    const char* name() {
+        return Units[unit_id].name;
+    }
     int weapon_type() {
-        return tx_units[proto_id].weapon_type;
+        return Units[unit_id].weapon_type;
     }
     bool is_combat_unit() {
-        return tx_units[proto_id].weapon_type <= WPN_PSI_ATTACK;
+        return Units[unit_id].weapon_type <= WPN_PSI_ATTACK && unit_id != BSC_FUNGAL_TOWER;
+    }
+    bool is_probe() {
+        return Units[unit_id].weapon_type == WPN_PROBE_TEAM;
     }
     bool is_visible(int faction) {
         return visibility & (1 << faction);
@@ -185,7 +191,7 @@ struct MAP {
     }
 };
 
-struct MetaFaction {
+struct MFaction {
     int is_leader_female;
     char filename[24];
     char search_key[24];
@@ -484,7 +490,7 @@ struct Faction {
     int padding[7];
 };
 
-struct R_Basic {
+struct CRules {
     int mov_rate_along_roads;
     int nutrient_intake_req_citizen;
     int max_airdrop_rng_wo_orbital_insert;
@@ -564,7 +570,7 @@ struct R_Basic {
     int subspace_gen_req;
 };
 
-struct R_Resource {
+struct CResource {
     int ocean_sq_nutrient;
     int ocean_sq_mineral;
     int ocean_sq_energy;
@@ -603,14 +609,14 @@ struct R_Resource {
     int pad_8;
 };
 
-struct R_Social {
+struct CSocial {
     char* field_name;
     int   soc_preq_tech[4];
     char* soc_name[4];
     int   effects[4][11];
 };
 
-struct R_Facility {
+struct CFacility {
     char* name;
     char* effect;
     int pad;
@@ -625,7 +631,7 @@ struct R_Facility {
     int AI_power;
 };
 
-struct R_Tech {
+struct CTech {
     int flags;
     char* name;
     char short_name[12];
@@ -637,7 +643,7 @@ struct R_Tech {
     int preq_tech2;
 };
 
-struct R_Ability {
+struct CAbility {
     char* name;
     char* description;
     char* abbreviation;
@@ -648,7 +654,7 @@ struct R_Ability {
     short pad;
 };
 
-struct R_Chassis {
+struct CChassis {
     char* offsv1_name;
     char* offsv2_name;
     char* offsv_name_lrg;
@@ -684,7 +690,7 @@ struct R_Chassis {
     short preq_tech;
 };
 
-struct R_Citizen {
+struct CCitizen {
     char* singular_name;
     char* plural_name;
     int preq_tech;
@@ -694,7 +700,7 @@ struct R_Citizen {
     int research_bonus;
 };
 
-struct R_Defense {
+struct CDefense {
     char* name;
     char* name_short;
     char defense_value;
@@ -705,14 +711,14 @@ struct R_Defense {
     short padding2;
 };
 
-struct R_Reactor {
+struct CReactor {
     char* name;
     char* name_short;
     short preq_tech;
     short padding;
 };
 
-struct R_Terraform {
+struct CTerraform {
     char* name;
     char* name_sea;
     int preq_tech;
@@ -723,7 +729,7 @@ struct R_Terraform {
     char* shortcuts;
 };
 
-struct R_Weapon {
+struct CWeapon {
     char* name;
     char* name_short;
     char offense_value;

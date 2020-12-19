@@ -5,8 +5,8 @@ const char* ScriptTxtID = "SCRIPT";
 
 
 void init_save_game(int faction) {
-    Faction* f = &tx_factions[faction];
-    MetaFaction* m = &tx_metafactions[faction];
+    Faction* f = &Factions[faction];
+    MFaction* m = &MFactions[faction];
 
     if (m->thinker_header != THINKER_HEADER) {
         m->thinker_header = THINKER_HEADER;
@@ -38,8 +38,8 @@ bool victory_done() {
 
 bool has_colony_pods(int faction) {
     for (int i=0; i<*total_num_vehicles; i++) {
-        VEH* veh = &tx_vehicles[i];
-        if (veh->faction_id == faction && tx_units[veh->proto_id].weapon_type == WPN_COLONY_MODULE) {
+        VEH* veh = &Vehicles[i];
+        if (veh->faction_id == faction && Units[veh->unit_id].weapon_type == WPN_COLONY_MODULE) {
             return true;
         }
     }
@@ -50,15 +50,15 @@ bool has_colony_pods(int faction) {
 Original Offset: 005C89A0
 */
 HOOK_API int game_year(int n) {
-    return tx_basic->normal_start_year + n;
+    return Rules->normal_start_year + n;
 }
 
 /*
 Original Offset: 00527290
 */
 HOOK_API int mod_faction_upkeep(int faction) {
-    Faction* f = &tx_factions[faction];
-    MetaFaction* m = &tx_metafactions[faction];
+    Faction* f = &Factions[faction];
+    MFaction* m = &MFactions[faction];
 
     debug("faction_upkeep %d %d\n", *current_turn, faction);
     init_save_game(faction);
@@ -89,9 +89,9 @@ HOOK_API int mod_faction_upkeep(int faction) {
         if (!is_human(faction)) {
             int cost = corner_market(faction);
             if (!victory_done() && f->energy_credits > cost && f->corner_market_active < 1
-            && has_tech(faction, tx_basic->tech_preq_economic_victory)
+            && has_tech(faction, Rules->tech_preq_economic_victory)
             && *game_rules & RULES_VICTORY_ECONOMIC) {
-                f->corner_market_turn = *current_turn + tx_basic->turns_corner_global_energy_market;
+                f->corner_market_turn = *current_turn + Rules->turns_corner_global_energy_market;
                 f->corner_market_active = cost;
                 f->energy_credits -= cost;
 
@@ -108,7 +108,7 @@ HOOK_API int mod_faction_upkeep(int faction) {
         }
     }
     for (int i=0; i<*total_num_bases; i++) {
-        BASE* base = &tx_bases[i];
+        BASE* base = &Bases[i];
         if (base->faction_id == faction) {
             base->status_flags &= ~(BASE_UNK_1 | BASE_HURRY_PRODUCTION);
         }
@@ -153,13 +153,13 @@ HOOK_API int mod_base_find3(int x, int y, int faction1, int region, int faction2
     bool ocean = conf.territory_border_fix && sq && is_ocean(sq) && sq->items & TERRA_BASE_RADIUS;
 
     for (int i=0; i<*total_num_bases; ++i) {
-        BASE* base = &tx_bases[i];
+        BASE* base = &Bases[i];
         MAP* bsq = mapsq(base->x, base->y);
 
         if (bsq && (region < 0 || bsq->region == region || ocean)) {
             if ((faction1 < 0 && (faction2 < 0 || faction2 != base->faction_id))
             || (faction1 == base->faction_id)
-            || (faction2 == -2 && tx_factions[faction1].diplo_status[base->faction_id] & DIPLO_PACT)
+            || (faction2 == -2 && Factions[faction1].diplo_status[base->faction_id] & DIPLO_PACT)
             || (faction2 >= 0 && faction2 == base->faction_id)) {
                 if (faction3 < 0 || base->faction_id == faction3 || base->factions_spotted_flags & (1 << faction3)) {
                     int dx = abs(x - base->x);

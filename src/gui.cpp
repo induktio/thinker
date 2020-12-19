@@ -158,18 +158,6 @@ Win*     TutWin    = (Win*)0x8C6E68;
 Win*     WorldWin  = (Win*)0x8E9F60;
 Win*     Datalink  = (Win*)0x703EA0;
 
-int* dword_915620 = (int*)0x915620;
-int* dword_939294 = (int*)0x939294;
-int* dword_939298 = (int*)0x939298;
-int* dword_9392A8 = (int*)0x9392A8;
-int* dword_9392AC = (int*)0x9392AC;
-int* dword_939430 = (int*)0x939430;
-int* dword_939434 = (int*)0x939434;
-int* dword_939438 = (int*)0x939438;
-int* dword_93943C = (int*)0x93943C;
-int* dword_9B2068 = (int*)0x9B2068;
-int* dword_9B7AE4 = (int*)0x9B7AE4;
-
 
 bool map_is_visible() {
     return CState.TimersEnabled
@@ -507,9 +495,9 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             faction_minerals = 0,
             faction_energy = 0;
 
-        Faction* f = &tx_factions[*current_player_faction];
+        Faction* f = &Factions[*current_player_faction];
         for (int i=0; i<*total_num_bases; ++i) {
-            BASE* b = &tx_bases[i];
+            BASE* b = &Bases[i];
             if (b->faction_id == *current_player_faction) {
                 faction_pop += b->pop_size;
                 faction_minerals += b->mineral_intake_2;
@@ -520,7 +508,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             total_energy += b->energy_intake_2;
         }
         for (int i=0; i<*total_num_vehicles; i++) {
-            VEH* v = &tx_vehicles[i];
+            VEH* v = &Vehicles[i];
             if (v->faction_id == *current_player_faction) {
                 faction_units++;
             }
@@ -557,7 +545,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         conf.debug_mode = !conf.debug_mode;
         if (conf.debug_mode) {
             for (int i=1; i<8; i++) {
-                Faction& f = tx_factions[i];
+                Faction& f = Factions[i];
                 if (!f.current_num_bases) {
                     memset(f.goals, 0, sizeof(f.goals));
                     memset(f.sites, 0, sizeof(f.sites));
@@ -612,7 +600,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         int x = pMain->oMap.iTileX, y = pMain->oMap.iTileY;
 
         for (int i=0; i<*total_num_vehicles; i++) {
-            VEH& v = tx_vehicles[i];
+            VEH& v = Vehicles[i];
             if (v.x == x && v.y == y) {
                 print_veh(i);
             }
@@ -659,13 +647,13 @@ void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
         int value = pm_overlay[x][y];
 
         for (int faction = 1; faction < MaxPlayerNum && !found; faction++) {
-            Faction& f = tx_factions[faction];
-            MetaFaction& m = tx_metafactions[faction];
+            Faction& f = Factions[faction];
+            MFaction& m = MFactions[faction];
             if (!f.current_num_bases) {
                 continue;
             }
             for (int i = 0; i < MaxGoalsNum && !found; i++) {
-                Goal& goal = tx_factions[faction].goals[i];
+                Goal& goal = Factions[faction].goals[i];
                 if (goal.x == x && goal.y == y && goal.priority > 0
                 && goal.type != AI_GOAL_UNUSED ) {
                     found = true;
@@ -862,19 +850,21 @@ int __cdecl blink_timer() {
             PlanWin_blink(PlanWin);
             StringBox_clip_ids(StringBox, 150);
 
-            if ((!*dword_939298 && (!*multiplayer_active || !(*game_state & STATE_UNK_2))) || *dword_9B2068) {
-                *dword_9392AC = 0;
+            if ((!MapWin->field_23BE8 && (!*multiplayer_active || !(*game_state & STATE_UNK_2))) || *dword_9B2068) {
+                MapWin->field_23BFC = 0;
                 return 0;
             }
-            if (*dword_939294 || (*multiplayer_active && *game_state & STATE_UNK_2)) {
-                *dword_9392A8 = !*dword_9392A8;
+            if (MapWin->field_23BE4 || (*multiplayer_active && *game_state & STATE_UNK_2)) {
+                MapWin->field_23BF8 = !MapWin->field_23BF8;
                 draw_cursor();
                 bool mouse_btn_down = GetAsyncKeyState(VK_LBUTTON) < 0;
 
                 if ((int)*phInstance == GetWindowLongA(GetFocus(), GWL_HINSTANCE) && !Win_is_visible(TutWin)) {
-                    if (*dword_939430 != -1 && *dword_939434 != -1 && *dword_939438 != -1 && *dword_93943C != -1) {
+                    if (MapWin->field_23D80 != -1
+                    && MapWin->field_23D84 != -1
+                    && MapWin->field_23D88 != -1
+                    && MapWin->field_23D8C != -1) {
                         if (*game_preferences & PREF_UNK_1000 || mouse_btn_down || *dword_9B7AE4 != 0) {
-
                             CState.ScreenSize.x = *screen_width;
                             CState.ScreenSize.y = *screen_height;
                             CState.TimersEnabled = true;
