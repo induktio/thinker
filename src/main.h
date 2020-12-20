@@ -42,6 +42,7 @@
 #ifdef __GNUC__
     #define UNUSED(x) UNUSED_ ## x __attribute__((__unused__))
     #pragma GCC diagnostic ignored "-Wchar-subscripts"
+    #pragma GCC diagnostic ignored "-Wparentheses"
 #else
     #define UNUSED(x) UNUSED_ ## x
 #endif
@@ -160,6 +161,7 @@ struct AIPlans {
     int naval_beach_y = -1;
     int naval_end_x = -1;
     int naval_end_y = -1;
+    int combat_units = 0;
     int aircraft = 0;
     int transports = 0;
     int diplo_flags = 0;

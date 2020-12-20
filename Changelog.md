@@ -1,6 +1,20 @@
 
 # Thinker mod release changelog
 
+## Next Release
+* New option: smooth_scrolling adds support for user interface enhancements using the code provided by PlotinusRedux's PRACX mod.
+* New option: cpu_idle_fix lowers the game idle CPU consumption to a minimum by reducing unnecessary API calls.
+* Config file now includes options to set the display mode for the game. These options will override any values in Alpha Centauri.ini.
+* Add support for windowed mode using user-supplied resolution.
+* By default the game starts now in native desktop resolution. Opening movie will also be skipped by default.
+* New feature: ALT+T shortcut displays general statistics about the factions.
+* Thinker now controls the movement of most combat units, with the only major exception being air units that are managed by the vanilla AI code.
+* AI garrisoning priorities are rewritten to move defending units to bases that are the most threatened.
+* Add AI planning capability to execute naval invasions over long distances with multiple transports using other combat ships as cover.
+* Combat ships will now engage other targets with artillery much more often instead of always defaulting to normal direct attack.
+* All artillery units will use new targeting logic to place them in more useful positions and prioritize threats more accurately.
+* AI will now attempt to raise land bridges between continents more often using better pathing. These goals are also stored in the save game.
+
 
 ## Version 2.2 (2020-11-15)
 * New option: clean_minerals sets the amount of minerals a base can produce before experiencing eco damage.

@@ -569,7 +569,7 @@ int unit_score(int id, int faction, int cfactor, int minerals, bool def) {
             * (conf.ignore_reactor_power ? REC_FISSION : best_reactor(faction))
             + plans[faction].psi_score * 12;
     }
-    if (unit_triad(id) == TRIAD_LAND) {
+    if (unit_triad(id) == TRIAD_LAND || u->weapon_type == WPN_TROOP_TRANSPORT) {
         v += (def ? 10 : 18) * unit_speed(id);
     }
     if (u->ability_flags & ABL_POLICE_2X && plans[faction].need_police) {
@@ -761,12 +761,6 @@ int find_facility(int id) {
     bool core_base = minerals+extra >= plans[faction].proj_limit;
     bool can_build_units = can_build_unit(faction, -1);
 
-    if (*climate_future_change > 0) {
-        MAP* sq = mapsq(base->x, base->y);
-        if (is_shore_level(sq) && can_build(id, FAC_PRESSURE_DOME)) {
-            return -FAC_PRESSURE_DOME;
-        }
-    }
     if (base->drone_total > 0 && can_build(id, FAC_RECREATION_COMMONS))
         return -FAC_RECREATION_COMMONS;
     if (can_build(id, FAC_RECYCLING_TANKS))
@@ -898,10 +892,11 @@ int select_prod(int id) {
     bool sea_base = is_ocean(base);
     int might = faction_might(faction);
     int transports = 0;
+    int landprobes = 0;
+    int seaprobes = 0;
     int defenders = 0;
     int crawlers = 0;
     int formers = 0;
-    int probes = 0;
     int pods = 0;
     int enemyrange = 40;
     double enemymil = 0;
@@ -940,7 +935,11 @@ int select_prod(int id) {
             } else if (u->weapon_type == WPN_COLONY_MODULE) {
                 pods++;
             } else if (u->weapon_type == WPN_PROBE_TEAM) {
-                probes++;
+                if (veh_triad(i) == TRIAD_LAND) {
+                    landprobes++;
+                } else {
+                    seaprobes++;
+                }
             } else if (u->weapon_type == WPN_SUPPLY_TRANSPORT) {
                 crawlers++;
                 if (veh->move_status != ORDER_CONVOY) {
@@ -971,7 +970,7 @@ int select_prod(int id) {
     debug("select_prod %d %d %2d %2d def: %d frm: %d prb: %d crw: %d pods: %d expand: %d "\
         "min: %2d res: %2d limit: %2d range: %2d mil: %.4f threat: %.4f\n",
         *current_turn, faction, base->x, base->y,
-        defenders, formers, probes, crawlers, pods, build_pods,
+        defenders, formers, landprobes+seaprobes, crawlers, pods, build_pods,
         minerals, reserve, p->proj_limit, enemyrange, enemymil, threat);
 
     if (defenders < def_target && minerals > 2) {
@@ -981,11 +980,16 @@ int select_prod(int id) {
             return BSC_SCOUT_PATROL;
         }
 
+    } else if (*climate_future_change > 0 && is_shore_level(mapsq(base->x, base->y))
+    && can_build(id, FAC_PRESSURE_DOME)) {
+            return -FAC_PRESSURE_DOME;
+
     } else if (!conf.auto_relocate_hq && relocate_hq(id)) {
         return -FAC_HEADQUARTERS;
 
     } else if (minerals > reserve && random(100) < (int)(100.0 * threat)) {
-        return select_combat(id, sea_base, build_ships, probes, (defenders < 2 && enemyrange < 12));
+        return select_combat(id, sea_base, build_ships, landprobes+seaprobes,
+            (defenders < 2 && enemyrange < 12));
 
     } else if (has_formers && formers < (base->pop_size < (sea_base ? 4 : 3) ? 1 : 2)
     && (need_formers(base->x, base->y, faction) || (!formers && id & 1))) {
@@ -1001,12 +1005,11 @@ int select_prod(int id) {
             return find_proto(id, TRIAD_LAND, WMODE_TERRAFORMER, DEF);
         }
 
-    } else if (build_ships && !probes && has_weapon(faction, WPN_PROBE_TEAM)
-    && !((*current_turn + id) % 3)) {
+    } else if (build_ships && !seaprobes && has_weapon(faction, WPN_PROBE_TEAM) && !random(3)) {
         return find_proto(id, TRIAD_SEA, WMODE_INFOWAR, DEF);
 
     } else {
-        int crawl_target = 1 + min(base->pop_size/3,
+        int crawl_target = 1 + min(base->pop_size/4,
             (base->mineral_surplus >= p->proj_limit ? 2 : 1));
 
         if (has_supply && !sea_base && crawlers < crawl_target) {
