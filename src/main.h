@@ -100,9 +100,11 @@ const int MaxSocialCatNum = 4;
 const int MaxSocialModelNum = 4;
 const int MaxSocialEffectNum = 11;
 
-
+/*
+Config parsed from thinker.ini. Alpha Centauri.ini related options
+can be set negative values to use the defaults from Alpha Centauri.ini.
+*/
 struct Config {
-    // Set negative value to use the defaults from Alpha Centauri.ini.
     int directdraw = 0;
     int disable_opening_movie = 1;
     int cpu_idle_fix = 1;
@@ -126,7 +128,8 @@ struct Config {
     int limit_project_start = 3;
     int max_sat = 10;
     int faction_placement = 1;
-    int nutrient_bonus = 1;
+    int nutrient_bonus = 0;
+    int rare_supply_pods = 0;
     int landmarks = 0xffff;
     int revised_tech_cost = 1;
     int auto_relocate_hq = 1;
@@ -144,8 +147,8 @@ struct Config {
 };
 
 /*
-    AIPlans contains several general purpose variables for AI decision-making
-    that are recalculated each turn. These values are not stored in the save game.
+AIPlans contains several general purpose variables for AI decision-making
+that are recalculated each turn. These values are not stored in the save game.
 */
 struct AIPlans {
     int main_region = -1;
@@ -155,6 +158,8 @@ struct AIPlans {
     int target_land_region = 0;
     int prioritize_naval = 0;
     int naval_score = INT_MIN;
+    int naval_airbase_x = -1;
+    int naval_airbase_y = -1;
     int naval_start_x = -1;
     int naval_start_y = -1;
     int naval_beach_x = -1;
@@ -164,6 +169,8 @@ struct AIPlans {
     int combat_units = 0;
     int aircraft = 0;
     int transports = 0;
+    int unknown_factions = 0;
+    int contacted_factions = 0;
     int diplo_flags = 0;
     /*
     Amount of minerals a base needs to produce before it is allowed to build secret projects.
@@ -261,6 +268,7 @@ HOOK_API int mod_turn_upkeep();
 HOOK_API int mod_base_production(int id, int v1, int v2, int v3);
 HOOK_API int mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5);
 
+int plans_upkeep(int faction);
 int need_defense(int id);
 int need_psych(int id);
 int consider_hurry(int id);

@@ -76,6 +76,8 @@ CWeapon*    Weapon    = (CWeapon*)0x94AE60;
 
 Fbattle_fight_1 battle_fight_1 = (Fbattle_fight_1)0x506A60;
 Fpropose_proto propose_proto = (Fpropose_proto)0x580860;
+Faction_airdrop action_airdrop = (Faction_airdrop)0x4CC360;
+Faction_destroy action_destroy = (Faction_destroy)0x4CAA50;
 Fhas_abil has_abil = (Fhas_abil)0x5BF1F0;
 Fparse_says parse_says = (Fparse_says)0x625EC0;
 Fpopp popp = (Fpopp)0x48C0A0;

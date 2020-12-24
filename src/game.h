@@ -87,11 +87,11 @@ int defense_value(UNIT* u);
 int faction_might(int faction);
 int random(int n);
 int map_hash(int x, int y);
-double lerp(double a, double b, double t);
 int wrap(int a);
 int map_range(int x1, int y1, int x2, int y2);
+int vector_dist(int x1, int y1, int x2, int y2);
 int min_range(const Points& S, int x, int y);
-double mean_square(const Points& S, int x, int y);
+double avg_range(const Points& S, int x, int y);
 MAP* mapsq(int x, int y);
 int unit_in_tile(MAP* sq);
 int set_move_to(int veh_id, int x, int y);
@@ -127,8 +127,9 @@ void __cdecl wipe_goals(int faction);
 int has_goal(int faction, int type, int x, int y);
 std::vector<MapTile> iterate_tiles(int x, int y, int start_index, int end_index);
 
-const int PathLimit = 50;
-const int QueueSize = 2048;
+const int PathLimit = 60;
+const int QueueSize = 4096;
+const int MaxTileSearchType = 6;
 
 enum tilesearch_types {
     TS_TRIAD_LAND = 0,
@@ -136,7 +137,8 @@ enum tilesearch_types {
     TS_TRIAD_AIR = 2,
     TS_NEAR_ROADS = 3,
     TS_TERRITORY_LAND = 4,
-    TS_SEA_AND_SHORE = 5,
+    TS_TERRITORY_BORDERS = 5,
+    TS_SEA_AND_SHORE = 6,
 };
 
 struct PathNode {
@@ -162,7 +164,7 @@ class TileSearch {
     Points oldtiles;
     void init(int x, int y, int tp);
     void init(int x, int y, int tp, int y_skip);
-    void init(const PointList& points, int tp, int skip);
+    void init(const PointList& points, int tp, int y_skip);
     bool has_zoc(int faction);
     PointList& get_route(PointList& pp);
     MAP* get_next();

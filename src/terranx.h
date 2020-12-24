@@ -119,17 +119,21 @@ extern CResource* Resource;
 extern CTerraform* Terraform;
 extern CWeapon* Weapon;
 
+typedef int(__cdecl *Fbattle_fight_1)(int veh_id, int offset, bool use_table_offset, int v1, int v2);
 typedef int(__cdecl *Fpropose_proto)(int faction, int chassis, int weapon, int armor, 
     int abilities, int reactor, int ai_plan, const char* name);
+typedef int(__cdecl *Faction_airdrop)(int veh_id, int x, int y, int veh_attack_flags);
+typedef int(__cdecl *Faction_destroy)(int veh_id, int flags, int x, int y);
 typedef int(__cdecl *Fhas_abil)(int unit_id, int ability_flag);
 typedef int(__cdecl *Fparse_says)(int index, const char* text, int v1, int v2);
 typedef int(__cdecl *Fpopp)(const char* file_name, const char* label, int v1, 
     const char* pcx_file_name, int v2);
-typedef int(__cdecl *Fbattle_fight_1)(int veh_id, int offset, bool use_table_offset, int v1, int v2);
 typedef int(__cdecl *Fhex_cost)(int unit_id, int faction, int x1, int y1, int x2, int y2, int a7);
 
 extern Fbattle_fight_1 battle_fight_1;
 extern Fpropose_proto propose_proto;
+extern Faction_airdrop action_airdrop;
+extern Faction_destroy action_destroy;
 extern Fhas_abil has_abil;
 extern Fparse_says parse_says;
 extern Fpopp popp;

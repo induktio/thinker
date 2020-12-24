@@ -80,6 +80,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->faction_placement = atoi(value);
     } else if (MATCH("thinker", "nutrient_bonus")) {
         cf->nutrient_bonus = atoi(value);
+    } else if (MATCH("thinker", "rare_supply_pods")) {
+        cf->rare_supply_pods = atoi(value);
     } else if (MATCH("thinker", "revised_tech_cost")) {
         cf->revised_tech_cost = atoi(value);
     } else if (MATCH("thinker", "auto_relocate_hq")) {
@@ -241,10 +243,15 @@ HOOK_API int mod_turn_upkeep() {
             *game_state &= ~STATE_DEBUG_MODE;
         }
     }
-    for (int i=1; i<8 && conf.design_units; i++) {
-        if (is_human(i) || !Factions[i].current_num_bases) {
-            continue;
-        }
+    return 0;
+}
+
+int plans_upkeep(int faction) {
+    const int i = faction;
+    if (is_human(i) || !Factions[i].current_num_bases) {
+        return 0;
+    }
+    if (conf.design_units) {
         int rec = best_reactor(i);
         int wpn = best_weapon(i);
         int arm = best_armor(i, false);
@@ -294,24 +301,30 @@ HOOK_API int mod_turn_upkeep() {
             propose_proto(i, CHS_INFANTRY, WPN_SUPPLY_TRANSPORT, arm2, 0, REC_FUSION, PLAN_DEFENSIVE, name);
         }
     }
-    int minerals[MaxBaseNum];
-    for (int i=1; i<8; i++) {
+
+    if (ai_enabled(i)) {
+        int minerals[MaxBaseNum];
         Faction* f = &Factions[i];
         MFaction* m = &MFactions[i];
-        CResource* r = Resource;
-        if (is_human(i) || !f->current_num_bases) {
-            continue;
-        }
+
+        plans[i].unknown_factions = 0;
+        plans[i].contacted_factions = 0;
         plans[i].enemy_bases = 0;
         plans[i].diplo_flags = 0;
-        for (int j=1; j<8; j++) {
-            int st = f->diplo_status[j];
-            if (i != j && st & DIPLO_COMMLINK) {
-                plans[i].diplo_flags |= st;
+
+        for (int j=1; j < MaxPlayerNum; j++) {
+            int diplo = f->diplo_status[j];
+            if (i != j && Factions[j].current_num_bases > 0) {
+                plans[i].diplo_flags |= diplo;
+                if (diplo & DIPLO_COMMLINK) {
+                    plans[i].contacted_factions++;
+                } else {
+                    plans[i].unknown_factions++;
+                }
             }
         }
         int n = 0;
-        for (int j=0; j<*total_num_bases; j++) {
+        for (int j=0; j < *total_num_bases; j++) {
             BASE* base = &Bases[j];
             if (base->faction_id == i) {
                 minerals[n++] = base->mineral_surplus;
@@ -346,9 +359,9 @@ HOOK_API int mod_turn_upkeep() {
 
         const int manifold[][3] = {{0,0,0}, {0,1,0}, {1,1,0}, {1,1,1}, {1,2,1}};
         int p = (has_project(i, FAC_MANIFOLD_HARMONICS) ? min(4, max(0, f->SE_planet + 1)) : 0);
-        int dn = manifold[p][0] + f->tech_fungus_nutrient - r->forest_sq_nutrient;
-        int dm = manifold[p][1] + f->tech_fungus_mineral - r->forest_sq_mineral;
-        int de = manifold[p][2] + f->tech_fungus_energy - r->forest_sq_energy;
+        int dn = manifold[p][0] + f->tech_fungus_nutrient - Resource->forest_sq_nutrient;
+        int dm = manifold[p][1] + f->tech_fungus_mineral - Resource->forest_sq_mineral;
+        int de = manifold[p][2] + f->tech_fungus_energy - Resource->forest_sq_energy;
         bool terra_fungus = has_terra(i, FORMER_PLANT_FUNGUS, LAND)
             && (has_tech(i, Rules->tech_preq_ease_fungus_mov) || has_project(i, FAC_XENOEMPATHY_DOME));
 
@@ -358,12 +371,11 @@ HOOK_API int mod_turn_upkeep() {
         } else {
             plans[i].plant_fungus = 0;
         }
-        debug("turn_values %d %d proj_limit: %2d psi: %2d keep_fungus: %d "\
-            "plant_fungus: %d enemy_bases: %d enemy_range: %.4f\n",
-            *current_turn, i, plans[i].proj_limit, psi, plans[i].keep_fungus, plans[i].plant_fungus,
-            plans[i].enemy_bases, m->thinker_enemy_range);
+        debug("plans_upkeep %d %d proj_limit: %2d psi: %2d keep_fungus: %d "\
+              "plant_fungus: %d enemy_bases: %d enemy_range: %.4f\n",
+              *current_turn, i, plans[i].proj_limit, psi, plans[i].keep_fungus,
+              plans[i].plant_fungus, plans[i].enemy_bases, m->thinker_enemy_range);
     }
-
     return 0;
 }
 
@@ -557,9 +569,10 @@ int unit_score(int id, int faction, int cfactor, int minerals, bool def) {
         {ABL_TRANCE, 3},
         {ABL_TRAINED, 2},
         {ABL_COMM_JAMMER, 3},
+        {ABL_CLEAN_REACTOR, 2},
         {ABL_ANTIGRAV_STRUTS, 3},
         {ABL_BLINK_DISPLACER, 3},
-        {ABL_DEEP_PRESSURE_HULL, 4},
+        {ABL_DEEP_PRESSURE_HULL, 2},
         {ABL_SUPER_TERRAFORMER, 8},
     };
     UNIT* u = &Units[id];
@@ -569,8 +582,8 @@ int unit_score(int id, int faction, int cfactor, int minerals, bool def) {
             * (conf.ignore_reactor_power ? REC_FISSION : best_reactor(faction))
             + plans[faction].psi_score * 12;
     }
-    if (unit_triad(id) == TRIAD_LAND || u->weapon_type == WPN_TROOP_TRANSPORT) {
-        v += (def ? 10 : 18) * unit_speed(id);
+    if (unit_triad(id) != TRIAD_AIR) {
+        v += (def ? 10 : 16) * unit_speed(id);
     }
     if (u->ability_flags & ABL_POLICE_2X && plans[faction].need_police) {
         v += 20;
@@ -647,7 +660,7 @@ int need_defense(int id) {
     int prod = b->queue_items[0];
     /* Do not interrupt secret project building. */
     return !has_defenders(b->x, b->y, b->faction_id)
-        && prod < 0 && prod > -FAC_HUMAN_GENOME_PROJ;
+        && (Rules->retool_strictness == 0 || (prod < 0 && prod > -FAC_HUMAN_GENOME_PROJ));
 }
 
 int need_psych(int id) {
@@ -705,7 +718,8 @@ int consider_hurry(int id) {
         return hurry_item(b, mins, cost);
     if (t < 0 && turns > 1) {
         if (t == -FAC_RECYCLING_TANKS || t == -FAC_PRESSURE_DOME
-        || t == -FAC_RECREATION_COMMONS || t == -FAC_HEADQUARTERS)
+        || t == -FAC_RECREATION_COMMONS || t == -FAC_TREE_FARM
+        || t == -FAC_HEADQUARTERS)
             return hurry_item(b, mins, cost);
         if (t == -FAC_CHILDREN_CRECHE && f->SE_growth >= 2)
             return hurry_item(b, mins, cost);
@@ -960,6 +974,7 @@ int select_prod(int id) {
         && (base->pop_size > 1 || base->nutrient_surplus > 1)
         && pods < 2 && *total_num_bases < 500 && expansion_ratio(f) < 1.0;
     m->thinker_enemy_range = (enemyrange + 9 * m->thinker_enemy_range)/10;
+    bool need_scouts = plans[faction].unknown_factions > 1 && plans[faction].contacted_factions < 2;
 
     double w1 = min(1.0, max(0.5, 1.0 * minerals / p->proj_limit));
     double w2 = 2.0 * enemymil / (m->thinker_enemy_range * 0.1 + 0.1) + 0.5 * p->enemy_bases
@@ -1005,14 +1020,19 @@ int select_prod(int id) {
             return find_proto(id, TRIAD_LAND, WMODE_TERRAFORMER, DEF);
         }
 
-    } else if (build_ships && !seaprobes && has_weapon(faction, WPN_PROBE_TEAM) && !random(3)) {
+    } else if (build_ships && has_weapon(faction, WPN_PROBE_TEAM)
+    && ocean_shoreline(base->x, base->y) && need_scouts && !random(3)) {
         return find_proto(id, TRIAD_SEA, WMODE_INFOWAR, DEF);
 
     } else {
         int crawl_target = 1 + min(base->pop_size/4,
             (base->mineral_surplus >= p->proj_limit ? 2 : 1));
 
-        if (has_supply && !sea_base && crawlers < crawl_target) {
+        if (minerals >= 12 && base->eco_damage > 0 && can_build(id, FAC_TREE_FARM)
+        && Factions[faction].SE_planet_base >= 0) {
+            return -FAC_TREE_FARM;
+
+        } else if (has_supply && !sea_base && crawlers < crawl_target) {
             return find_proto(id, TRIAD_LAND, WMODE_CONVOY, DEF);
 
         } else if (build_ships && !transports && mapnodes.count({base->x, base->y, NODE_NEED_FERRY})) {

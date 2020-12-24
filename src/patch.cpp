@@ -74,7 +74,7 @@ void check_relocate_hq(int faction) {
         for (int i=0; i<*total_num_bases; i++) {
             BASE* b = &Bases[i];
             if (b->faction_id == faction) {
-                double score = b->pop_size - mean_square(bases, b->x, b->y)
+                double score = b->pop_size - avg_range(bases, b->x, b->y)
                     + (has_facility(i, FAC_PERIMETER_DEFENSE) ? 4 : 0);
                 debug("relocate_hq %.4f %s\n", score, b->name);
                 if (score > best_score) {
@@ -261,7 +261,7 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
                 }
                 sc += (i < 20 ? 10 : 5);
             }
-            if (goody_at(x2, y2) > 0) {
+            if (goody_at(x2, y2) > 0 || bonus == RES_MINERAL || bonus == RES_ENERGY) {
                 sc += (i < 20 ? 25 : 8);
                 if (!is_ocean(sq) && (i < 20 || pods.size() < 2)) {
                     pods.insert({x2, y2});
@@ -560,6 +560,12 @@ bool patch_setup(Config* cf) {
     }
 
     /*
+    Hide unnecessary region_base_plan display next to base names in debug mode.
+    */
+    remove_call(0x468175);
+    remove_call(0x468186);
+
+    /*
     Fix a bug that occurs after the player does an artillery attack on unoccupied
     tile and then selects another unit to view combat odds and cancels the attack.
     After this veh_attack_flags will not get properly cleared and the next bombardment
@@ -755,6 +761,11 @@ bool patch_setup(Config* cf) {
         };
         write_bytes(0x4EA56D, old_bytes, new_bytes, sizeof(new_bytes));
         write_call(0x4EA56D, (int)content_pop);
+    }
+    if (cf->rare_supply_pods) {
+        *(byte*)0x592085 = 0xEB; // bonus_at
+        *(byte*)0x5920E9 = 0xEB; // bonus_at
+        *(byte*)0x5921C8 = 0xEB; // goody_at
     }
 
     if (lm & LM_JUNGLE) remove_call(0x5C88A0);

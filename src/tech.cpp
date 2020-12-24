@@ -57,7 +57,7 @@ int tech_cost(int faction, int tech) {
         * *map_area_sq_root / 56
         * m->rule_techcost / 100
         * (*game_rules & RULES_TECH_STAGNATION ? 1.5 : 1.0)
-        * Rules->rules_tech_discovery_rate / 100
+        * 100 / max(1, Rules->rules_tech_discovery_rate)
         * (owned > 0 ? (owned > 1 ? 0.75 : 0.85) : 1.0);
 
     debug("tech_cost %d %d diff: %.4f cost: %8.4f level: %d owned: %d tech: %d %s\n",

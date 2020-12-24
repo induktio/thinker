@@ -62,7 +62,8 @@ HOOK_API int mod_faction_upkeep(int faction) {
 
     debug("faction_upkeep %d %d\n", *current_turn, faction);
     init_save_game(faction);
-    
+    plans_upkeep(faction);
+
     *dword_93A934 = 1;
     social_upkeep(faction);
     do_all_non_input();
@@ -149,25 +150,19 @@ Original Offset: 004E3D50
 HOOK_API int mod_base_find3(int x, int y, int faction1, int region, int faction2, int faction3) {
     int dist = 9999;
     int result = -1;
-    MAP* sq = mapsq(x, y);
-    bool ocean = conf.territory_border_fix && sq && is_ocean(sq) && sq->items & TERRA_BASE_RADIUS;
+    bool border_fix = conf.territory_border_fix && region >= MaxRegionNum/2;
 
     for (int i=0; i<*total_num_bases; ++i) {
         BASE* base = &Bases[i];
         MAP* bsq = mapsq(base->x, base->y);
 
-        if (bsq && (region < 0 || bsq->region == region || ocean)) {
+        if (bsq && (region < 0 || bsq->region == region || border_fix)) {
             if ((faction1 < 0 && (faction2 < 0 || faction2 != base->faction_id))
             || (faction1 == base->faction_id)
             || (faction2 == -2 && Factions[faction1].diplo_status[base->faction_id] & DIPLO_PACT)
             || (faction2 >= 0 && faction2 == base->faction_id)) {
                 if (faction3 < 0 || base->faction_id == faction3 || base->factions_spotted_flags & (1 << faction3)) {
-                    int dx = abs(x - base->x);
-                    int dy = abs(y - base->y);
-                    if (!(*map_toggle_flat & 1 || dx <= *map_half_x)) {
-                        dx = *map_axis_x - dx;
-                    }
-                    int val = max(dx, dy) - ((((dx + dy) / 2) - min(dx, dy) + 1) / 2);
+                    int val = vector_dist(x, y, base->x, base->y);
                     if (conf.territory_border_fix ? val < dist : val <= dist) {
                         dist = val;
                         result = i;

@@ -174,8 +174,8 @@ bool ai_enabled(int faction) {
 }
 
 bool at_war(int faction1, int faction2) {
-    return faction1 != faction2 && (!faction1 || !faction2
-        || Factions[faction1].diplo_status[faction2] & DIPLO_VENDETTA);
+    return faction1 != faction2 && faction1 >= 0 && faction2 >= 0
+        && Factions[faction1].diplo_status[faction2] & DIPLO_VENDETTA;
 }
 
 bool has_pact(int faction1, int faction2) {
@@ -299,7 +299,7 @@ int best_reactor(int faction) {
 int offense_value(UNIT* u) {
     int w = (conf.ignore_reactor_power ? (int)REC_FISSION : u->reactor_type);
     if (u->weapon_type == WPN_CONVENTIONAL_PAYLOAD) {
-        return Factions[*active_faction].best_weapon_value * w;
+        return Factions[*active_faction].best_weapon_value * w * 4/5;
     }
     return Weapon[u->weapon_type].offense_value * w;
 }
@@ -322,10 +322,6 @@ int map_hash(int x, int y) {
     return ((*map_random_seed ^ x) * 127) ^ (y * 179);
 }
 
-double lerp(double a, double b, double t) {
-    return a + t*(b-a);
-}
-
 int wrap(int a) {
     if (!*map_toggle_flat) {
         return (a < 0 ? a + *map_axis_x : a % *map_axis_x);
@@ -337,10 +333,19 @@ int wrap(int a) {
 int map_range(int x1, int y1, int x2, int y2) {
     int xd = abs(x1-x2);
     int yd = abs(y1-y2);
-    if (!*map_toggle_flat && xd > *map_axis_x/2) {
+    if (!*map_toggle_flat & 1 && xd > *map_axis_x/2) {
         xd = *map_axis_x - xd;
     }
     return (xd + yd)/2;
+}
+
+int vector_dist(int x1, int y1, int x2, int y2) {
+    int dx = abs(x1 - x2);
+    int dy = abs(y1 - y2);
+    if (!(*map_toggle_flat & 1 || dx <= *map_half_x)) {
+        dx = *map_axis_x - dx;
+    }
+    return max(dx, dy) - ((((dx + dy) / 2) - min(dx, dy) + 1) / 2);
 }
 
 int min_range(const Points& S, int x, int y) {
@@ -351,12 +356,11 @@ int min_range(const Points& S, int x, int y) {
     return z;
 }
 
-double mean_square(const Points& S, int x, int y) {
+double avg_range(const Points& S, int x, int y) {
     int n = 0;
     int sum = 0;
     for (auto& p : S) {
-        int r = map_range(x, y, p.x, p.y);
-        sum += r*r;
+        sum += map_range(x, y, p.x, p.y);
         n++;
     }
     return (n > 0 ? (double)sum/n : 0);
@@ -668,7 +672,7 @@ void __cdecl add_goal(int faction, int type, int priority, int x, int y, int bas
     if (!mapsq(x, y)) {
         return;
     }
-    if (ai_enabled(faction) && (priority < 3 || ignore_goal(type))) {
+    if (ai_enabled(faction) && type < 200) {
         return;
     }
     debug("add_goal %d type: %3d pr: %2d x: %3d y: %3d base: %d\n",
@@ -718,7 +722,7 @@ void __cdecl wipe_goals(int faction) {
         if (goal.priority > 0) {
             goal.priority--;
         }
-        if (goal.priority <= 0 || ignore_goal(goal.type)) {
+        if (goal.priority <= 0) {
             goal.type = AI_GOAL_UNUSED;
         }
     }
@@ -785,8 +789,7 @@ void TileSearch::add_start(int x, int y) {
 }
 
 void TileSearch::init(int x, int y, int tp) {
-    assert(tp == TS_TRIAD_LAND || tp == TS_TRIAD_SEA || tp == TS_TRIAD_AIR
-        || tp == TS_NEAR_ROADS || tp == TS_TERRITORY_LAND || tp == TS_SEA_AND_SHORE);
+    assert(tp >= TS_TRIAD_LAND && tp <= MaxTileSearchType);
     reset();
     type = tp;
     add_start(x, y);
@@ -854,9 +857,12 @@ MAP* TileSearch::get_next() {
                     (type == TS_TRIAD_SEA && !is_ocean(sq)) ||
                     (type == TS_NEAR_ROADS && (is_ocean(sq) || !(sq->items & roads))) ||
                     (type == TS_TERRITORY_LAND && (is_ocean(sq) || sq->owner != owner)) ||
+                    (type == TS_TERRITORY_BORDERS && (is_ocean(sq) || sq->owner != owner)) ||
                     (type == TS_SEA_AND_SHORE && !is_ocean(sq));
         if (!first && skip) {
-            if ((type == TS_NEAR_ROADS && !is_ocean(sq)) || type == TS_SEA_AND_SHORE) {
+            if ((type == TS_NEAR_ROADS && !is_ocean(sq))
+            || type == TS_TERRITORY_BORDERS
+            || type == TS_SEA_AND_SHORE) {
                 return sq;
             }
             continue;
@@ -865,7 +871,8 @@ MAP* TileSearch::get_next() {
             int x2 = wrap(rx + t[0]);
             int y2 = ry + t[1];
             if (y2 >= y_skip && y2 < *map_axis_y - y_skip
-            && tail < QueueSize && !oldtiles.count({x2, y2})) {
+            && tail < QueueSize && dist < PathLimit
+            && !oldtiles.count({x2, y2})) {
                 paths[tail] = {x2, y2, dist+1, cur};
                 tail++;
                 oldtiles.insert({x2, y2});
