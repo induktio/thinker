@@ -256,7 +256,8 @@ int plans_upkeep(int faction) {
         int wpn = best_weapon(i);
         int arm = best_armor(i, false);
         int arm2 = best_armor(i, true);
-        int chs = has_chassis(i, CHS_HOVERTANK) ? CHS_HOVERTANK : CHS_SPEEDER;
+        int chs = has_chassis(i, CHS_HOVERTANK) ? CHS_HOVERTANK : 
+            (has_chassis(i, CHS_SPEEDER) ? CHS_SPEEDER : CHS_INFANTRY);
         bool twoabl = has_tech(i, Rules->tech_preq_allow_2_spec_abil);
         char buf[200];
 
@@ -264,12 +265,14 @@ int plans_upkeep(int faction) {
             int algo = has_ability(i, ABL_ID_ALGO_ENHANCEMENT) ? ABL_ALGO_ENHANCEMENT : 0;
             if (has_chassis(i, CHS_FOIL)) {
                 int ship = (rec >= REC_FUSION && has_chassis(i, CHS_CRUISER) ? CHS_CRUISER : CHS_FOIL);
+                char* name = parse_str(buf, 32, Armor[arm].name_short, " ",
+                    Chassis[ship].offsv1_name, " Probe Team");
                 propose_proto(i, ship, WPN_PROBE_TEAM, (rec >= REC_FUSION ? arm : 0), algo,
-                rec, PLAN_INFO_WARFARE, (ship == CHS_FOIL ? "Foil Probe Team" : "Cruiser Probe Team"));
+                rec, PLAN_INFO_WARFARE, name);
             }
             if (arm != ARM_NO_ARMOR && rec >= REC_FUSION) {
-                char* name = parse_str(buf, 32, Reactor[rec-1].name_short, " ",
-                    Armor[arm].name_short, " Probe Team");
+                char* name = parse_str(buf, 32, Armor[arm].name_short, " ",
+                    Chassis[chs].offsv1_name, " Probe Team");
                 propose_proto(i, chs, WPN_PROBE_TEAM, arm, algo, rec, PLAN_INFO_WARFARE, name);
             }
         }
@@ -564,7 +567,7 @@ int unit_score(int id, int faction, int cfactor, int minerals, bool def) {
         {ABL_ALGO_ENHANCEMENT, 5},
         {ABL_AMPHIBIOUS, -4},
         {ABL_ARTILLERY, -2},
-        {ABL_DROP_POD, 2},
+        {ABL_DROP_POD, 3},
         {ABL_EMPATH, 2},
         {ABL_TRANCE, 3},
         {ABL_TRAINED, 2},
@@ -583,7 +586,7 @@ int unit_score(int id, int faction, int cfactor, int minerals, bool def) {
             + plans[faction].psi_score * 12;
     }
     if (unit_triad(id) != TRIAD_AIR) {
-        v += (def ? 10 : 16) * unit_speed(id);
+        v += (def ? 12 : 32) * unit_speed(id);
     }
     if (u->ability_flags & ABL_POLICE_2X && plans[faction].need_police) {
         v += 20;
@@ -829,7 +832,15 @@ int find_facility(int id) {
     }
     debug("BUILD OFFENSE\n");
     bool build_ships = can_build_ships(id) && (sea_base || !random(3));
-    return select_combat(id, sea_base, build_ships, 0, 0);
+    int probes = 0;
+    for (int i=0; i<*total_num_vehicles; i++) {
+        VEH* veh = &Vehicles[i];
+        if (veh->faction_id == faction && veh->home_base_id == id
+        && Units[veh->unit_id].weapon_type == WPN_PROBE_TEAM) {
+            probes++;
+        }
+    }
+    return select_combat(id, probes, sea_base, build_ships, false);
 }
 
 int select_colony(int id, int pods, bool build_ships) {
@@ -863,7 +874,7 @@ int select_colony(int id, int pods, bool build_ships) {
     return -1;
 }
 
-int select_combat(int base_id, bool sea_base, bool build_ships, bool probes, bool def_land) {
+int select_combat(int base_id, int probes, bool sea_base, bool build_ships, bool def_land) {
     BASE* base = &Bases[base_id];
     int faction = base->faction_id;
     Faction* f = &Factions[faction];
@@ -873,7 +884,7 @@ int select_combat(int base_id, bool sea_base, bool build_ships, bool probes, boo
     int w2 = 4*plans[faction].transports < f->current_num_bases ? 2 : 5;
     int w3 = plans[faction].prioritize_naval ? 2 : 5;
 
-    if (has_weapon(faction, WPN_PROBE_TEAM) && (!random(probes ? 6 : 3) || !reserve)) {
+    if (has_weapon(faction, WPN_PROBE_TEAM) && (!random(probes + 4) || !reserve)) {
         return find_proto(base_id, (build_ships ? TRIAD_SEA : TRIAD_LAND), WMODE_INFOWAR, DEF);
 
     } else if (has_chassis(faction, CHS_NEEDLEJET) && f->SE_police >= -3 && !random(w1)) {
@@ -1003,7 +1014,7 @@ int select_prod(int id) {
         return -FAC_HEADQUARTERS;
 
     } else if (minerals > reserve && random(100) < (int)(100.0 * threat)) {
-        return select_combat(id, sea_base, build_ships, landprobes+seaprobes,
+        return select_combat(id, landprobes+seaprobes, sea_base, build_ships,
             (defenders < 2 && enemyrange < 12));
 
     } else if (has_formers && formers < (base->pop_size < (sea_base ? 4 : 3) ? 1 : 2)

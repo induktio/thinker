@@ -576,7 +576,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         static int ts_type = 0;
         int i = 0;
         TileSearch ts;
-        ts_type = (ts_type+1) % 6;
+        ts_type = (ts_type+1) % MaxTileSearchType;
         ts.init(pMain->oMap.iTileX, pMain->oMap.iTileY, ts_type, 2);
         while (++i < 500 && ts.get_next() != NULL) {
             pm_overlay[ts.rx][ts.ry] = i;
@@ -598,13 +598,6 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         pMain->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
         static int px = 0, py = 0;
         int x = pMain->oMap.iTileX, y = pMain->oMap.iTileY;
-
-        for (int i=0; i<*total_num_vehicles; i++) {
-            VEH& v = Vehicles[i];
-            if (v.x == x && v.y == y) {
-                print_veh(i);
-            }
-        }
         int unit = is_ocean(mapsq(x, y)) ? BSC_UNITY_FOIL : BSC_UNITY_ROVER;
         path_distance(px, py, x, y, unit, 1);
         px=x;
@@ -614,13 +607,14 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
     } else if (tools && msg == WM_CHAR && wParam == 'z' && GetAsyncKeyState(VK_MENU) < 0) {
         int x = pMain->oMap.iTileX, y = pMain->oMap.iTileY;
-        MAP* sq = mapsq(x, y);
-        if (sq) {
-            int unit = is_ocean(sq) ? BSC_UNITY_FOIL : BSC_UNITY_ROVER;
-            spawn_veh(unit, max(1, (int)sq->owner), x, y, -1);
-            MapWin_draw_map(pMain, 0);
-            InvalidateRect(hwnd, NULL, false);
+        print_map(x, y);
+        for (int k=0; k < *total_num_vehicles; k++) {
+            VEH* veh = &Vehicles[k];
+            if (veh->x == x && veh->y == y) {
+                print_veh(k);
+            }
         }
+        fflush(debug_log);
 
     } else {
         return WinProc(hwnd, msg, wParam, lParam);

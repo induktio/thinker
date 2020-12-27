@@ -25,5 +25,6 @@ int crawler_move(int id);
 int colony_move(int id);
 int former_move(int id);
 int trans_move(int id);
+int aircraft_move(int id);
 int combat_move(int id);
 

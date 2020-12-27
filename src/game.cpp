@@ -609,7 +609,8 @@ void check_zeros(int* ptr, int len) {
 
 void print_map(int x, int y) {
     MAP* m = mapsq(x, y);
-    debug("MAP %2d %2d | %2d %d | %02x %02x %02x | %02x %02x %02x | %02x %02x %02x | %08x %08x\n",
+    debug("MAP %2d %2d owner: %2d bonus: %d level: %02x alt: %02x rocks: %02x "\
+          "flags: %02x reg: %02x vis: %02x unk1: %02x unk2: %02x art: %02x items: %08x lm: %08x\n",
         x, y, m->owner, bonus_at(x, y), m->level, m->altitude, m->rocks,
         m->flags, m->region, m->visibility, m->unk_1, m->unk_2, m->art_ref_id,
         m->items, m->landmarks);
@@ -617,10 +618,12 @@ void print_map(int x, int y) {
 
 void print_veh(int id) {
     VEH* v = &Vehicles[id];
-    debug("VEH %22s %3d %3d %d | %08x %04x %02x | %2d %c | %3d %3d -> %3d %3d | %2d %2d %d %d %d %d\n",
+    debug("VEH %22s %3d %3d %d order: %2d %c %3d %3d -> %3d %3d moves: %2d "
+          "state: %08x flags: %04x vis: %02x mor: %d dmg: %d iter: %d unk1: %d prb: %d sbt: %d\n",
         Units[v->unit_id].name, v->unit_id, id, v->faction_id,
-        v->state, v->flags, v->visibility, v->move_status, (v->status_icon ? v->status_icon : ' '),
-        v->x, v->y, v->waypoint_1_x, v->waypoint_1_y,
+        v->move_status, (v->status_icon ? v->status_icon : ' '),
+        v->x, v->y, v->waypoint_1_x, v->waypoint_1_y, v->road_moves_spent,
+        v->state, v->flags, v->visibility,
         v->morale, v->damage_taken, v->iter_count, v->unk_1, v->probe_action, v->probe_sabotage_id);
 }
 

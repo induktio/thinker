@@ -62,7 +62,7 @@ HOOK_API int mod_base_draw(int ptr, int base_id, int x, int y, int zoom, int v1)
 
 void check_relocate_hq(int faction) {
     if (find_hq(faction) < 0) {
-        double best_score = INT_MIN;
+        int best_score = INT_MIN;
         int best_id = -1;
         Points bases;
         for (int i=0; i<*total_num_bases; i++) {
@@ -74,9 +74,9 @@ void check_relocate_hq(int faction) {
         for (int i=0; i<*total_num_bases; i++) {
             BASE* b = &Bases[i];
             if (b->faction_id == faction) {
-                double score = b->pop_size - avg_range(bases, b->x, b->y)
+                int score = b->pop_size - (int)(10 * avg_range(bases, b->x, b->y))
                     + (has_facility(i, FAC_PERIMETER_DEFENSE) ? 4 : 0);
-                debug("relocate_hq %.4f %s\n", score, b->name);
+                debug("relocate_hq %4d %s\n", score, b->name);
                 if (score > best_score) {
                     best_id = i;
                     best_score = score;
@@ -391,25 +391,25 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD *rec, PVOID *frame, CONTEXT *ct
     int ret = GetMappedFileNameA(hProcess, (LPVOID)ctx->Eip, filepath, sizeof(filepath));
 
     fprintf(debug_log,
-         "****************************************\n"
-         "ModVersion %s (%s)\n"
-         "CrashTime  %s\n"
-         "SavedGame  %s\n"
-         "ModuleName %s\n"
-         "****************************************\n"
-         "ExceptionCode    %08x\n"
-         "ExceptionFlags   %08x\n"
-         "ExceptionRecord  %08x\n"
-         "ExceptionAddress %08x\n",
-         MOD_VERSION,
-         MOD_DATE,
-         datetime,
-         last_save_path,
-         (ret != 0 ? filepath : ""),
-         (int)rec->ExceptionCode,
-         (int)rec->ExceptionFlags,
-         (int)rec->ExceptionRecord,
-         (int)rec->ExceptionAddress);
+        "**************************************************\n"
+        "ModVersion %s (%s)\n"
+        "CrashTime  %s\n"
+        "SavedGame  %s\n"
+        "ModuleName %s\n"
+        "**************************************************\n"
+        "ExceptionCode    %08x\n"
+        "ExceptionFlags   %08x\n"
+        "ExceptionRecord  %08x\n"
+        "ExceptionAddress %08x\n",
+        MOD_VERSION,
+        MOD_DATE,
+        datetime,
+        last_save_path,
+        (ret != 0 ? filepath : ""),
+        (int)rec->ExceptionCode,
+        (int)rec->ExceptionFlags,
+        (int)rec->ExceptionRecord,
+        (int)rec->ExceptionAddress);
 
      fprintf(debug_log,
         "CFlags %08lx\n"

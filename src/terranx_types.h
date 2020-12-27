@@ -189,6 +189,12 @@ struct MAP {
     bool is_base() {
         return items & TERRA_BASE_IN_TILE;
     }
+    bool is_base_radius() {
+        return items & TERRA_BASE_RADIUS;
+    }
+    bool is_base_bunker() {
+        return items & (TERRA_BUNKER | TERRA_BASE_IN_TILE);
+    }
 };
 
 struct MFaction {

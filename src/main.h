@@ -108,7 +108,7 @@ struct Config {
     int directdraw = 0;
     int disable_opening_movie = 1;
     int cpu_idle_fix = 1;
-    int smooth_scrolling = 1;
+    int smooth_scrolling = 0;
     int scroll_area = 40;
     int windowed = 0;
     int window_width = 1024;
@@ -276,7 +276,7 @@ int find_project(int id);
 int find_facility(int id);
 int select_prod(int id);
 int find_proto(int base_id, int triad, int mode, bool defend);
-int select_combat(int base_id, bool sea_base, bool build_ships, bool probes, bool def_land);
+int select_combat(int base_id, int probes, bool sea_base, bool build_ships, bool def_land);
 int opt_list_parse(int* ptr, char* buf, int len, int min_val);
 
 
