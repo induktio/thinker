@@ -28,6 +28,17 @@ In addition to the bugfix patches listed separately, items that are listed after
 8. Game draws a white marker around the population label of HQ bases to identify them more easily. Optional `auto_relocate_hq` feature will import a game mechanic from Civilization 3 where lost/captured headquarters are automatically moved to another suitable base.
 
 
+Improved unit movement
+======================
+Since v2.3 Thinker also controls the movement of nearly all combat units, not just non-combat units like formers or colony pods. AI code for land, sea and air units has been almost entirely rewritten. The only major exception here are any units with the missile chassis which are still handled by the default AI. Note that the interceptor behaviour for AI air units is not implemented, so they will not activate needlejets to intercept enemy units during the other factions turn. For balance reasons it is recommended to disable Copter chassis in any case.
+
+Another novel addition has been naval invasions executed by the AI. This has been traditionally been a weak spot for many AIs since they lack the coordination between many units to pull off such strategies. Thinker however is capable of gathering an invasion fleet with many transports and using other warships as cover to move them to a landing zone.
+
+Thinker prioritizes naval invasions if the closest enemy is located on another continent. Otherwise, most of the focus is spent on building land and air units. At any given time, only one priority landing zone can be active for the AI. Maximum distance for invasions depends slightly on pathfinding but it should be possible on all Huge maps.
+
+Base garrisoning priorities are also handled entirely by the new logic which tries prioritize vulnerable border bases much more than usual. Air units also utilize the same priorities when deciding where to rebase. You might notice there's less massive AI stacks being rebased around for no meaningful reason. Instead Thinker tries to rebase the aircraft in much smaller stacks to more bases so that they can cover a larger area.
+
+
 Revised tech costs
 ==================
 In the original game, research costs were mainly decided by how many techs a faction had already researched. That meant the current research target was irrelevant as far as the costs were concerned. For speed runs, it made sense to avoid researching any techs that were not strictly necessary to keep the cost of discovering new techs as low as possible.
@@ -40,8 +51,8 @@ For example, on standard maps level 1 techs cost 60 labs before other factors ar
 
 * For AI factions, each unit of `cost_factor` applies a 8% bonus/penalty, e.g. `cost_factor=10` equals 100% of human cost while `cost_factor=7` equals 76% of human cost.
 * Multiply by the square root of the map size divided by the square root of a standard map size (56).
-* Multiply by faction specific TECHCOST modifier.
-* Multiply by Technology discovery rate set in alphax.txt.
+* Multiply by faction specific TECHCOST modifier (lower values means faster progress).
+* Divide by Technology discovery rate set in alphax.txt (lower values means slower progress).
 * If tech stagnation is enabled, multiply by 1.5.
 * If 2 or more factions with commlink to the current faction has the tech, multiply by 0.75.
 * If only 1 commlink faction has it, multiply by 0.85.
@@ -94,6 +105,7 @@ Known bugs
 ==========
 1. While `collateral_damage_value` is set to 0, the game might still display temporary messages about collateral damage being inflicted on units on the stack, but none of them will actually take any damage.
 2. The faction selection dialog in game setup is limited to showing only the first 24 factions even if installed factions in alphax.txt exceed this number.
+3. Maximum supported map size by Thinker is 256x256. This is also the largest map that the game interface will allow selecting.
 
 
 Bugfix patches included

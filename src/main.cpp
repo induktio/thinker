@@ -631,7 +631,9 @@ int find_proto(int base_id, int triad, int mode, bool defend) {
     int cfactor = cost_factor(faction, 1, -1);
     int minerals = b->mineral_surplus;
     int best_val = unit_score(best, faction, cfactor, minerals, defend);
-
+    if (unit_triad(best) != triad) {
+        best_val -= 40;
+    }
     for (int i=0; i < 2*MaxProtoFactionNum; i++) {
         int id = (i < MaxProtoFactionNum ? i : (faction-1)*MaxProtoFactionNum + i);
         UNIT* u = &Units[id];
@@ -831,7 +833,6 @@ int find_facility(int id) {
         return -FAC_STOCKPILE_ENERGY;
     }
     debug("BUILD OFFENSE\n");
-    bool build_ships = can_build_ships(id) && (sea_base || !random(3));
     int probes = 0;
     for (int i=0; i<*total_num_vehicles; i++) {
         VEH* veh = &Vehicles[i];
@@ -840,7 +841,7 @@ int find_facility(int id) {
             probes++;
         }
     }
-    return select_combat(id, probes, sea_base, build_ships, false);
+    return select_combat(id, probes, sea_base, can_build_ships(id), false);
 }
 
 int select_colony(int id, int pods, bool build_ships) {

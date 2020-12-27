@@ -40,7 +40,7 @@ Installation
 Other mods
 ----------
 * [SMAC-in-SMACX mod](Details.md#smac-in-smacx-mod) can be installed to play a game similar to original SMAC from the SMACX game binary while Thinker is enabled.
-* [PRACX](https://github.com/DrazharLn/pracx) graphics enhancement patch can be used together with Thinker, but it is not required in any way. For easiest installation, download [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). If you already use older Pracx 1.10 you can just rename terranx_mod.exe to terranx.exe and run pracxpatch.exe so that the installer patches the right binary.
+* [PRACX](https://github.com/DrazharLn/pracx) graphics enhancement patch can be used together with Thinker. Note that since v2.3 some of these features are included with Thinker. For easiest installation, download [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). If you already use older Pracx 1.10 you can just rename terranx_mod.exe to terranx.exe and run pracxpatch.exe so that the installer patches the right binary.
 * [OpenSMACX](https://github.com/b-casey/OpenSMACX) is a long-term project to decompile and create a full open source clone of SMACX.
 
 

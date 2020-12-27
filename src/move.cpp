@@ -35,11 +35,12 @@ PMTable pm_enemy_near;
 PMTable pm_shore;
 PMTable pm_overlay;
 
+Points nonally;
+int last_faction = 0;
+int build_tubes = false;
 int defend_goal[MaxBaseNum] = {};
 int tile_count[MaxRegionNum] = {};
 int base_count[MaxRegionNum] = {};
-bool build_tubes = false;
-int last_faction = 0;
 
 int arty_value(int x, int y);
 int garrison_goal(int x, int y, int faction);
@@ -54,14 +55,8 @@ void adjust_value(PMTable tbl, int x, int y, int range, int value) {
     }
 }
 
-bool other_in_tile(int faction, MAP* sq) {
-    int u = unit_in_tile(sq);
-    return (u >= 0 && u != faction);
-}
-
-bool non_ally_in_tile(int faction, MAP* sq) {
-    int u = unit_in_tile(sq);
-    return u >= 0 && u != faction && !has_pact(faction, u);
+bool non_ally_in_tile(int x, int y, int faction) {
+    return faction == last_faction && nonally.count({x, y}) > 0;
 }
 
 bool ocean_shoreline(int x, int y) {
@@ -272,7 +267,7 @@ void invasion_plan(int faction) {
                 + (sq->items & (TERRA_ROAD | TERRA_RIVER) ? 35 : 0)
                 + (sq->items & (TERRA_FOREST) ? 30 : 0)
                 - 16*ts.dist;
-
+                    
             if (score > p.naval_score) {
                 p.target_land_region = sq->region;
                 p.naval_score = score;
@@ -373,6 +368,7 @@ void move_upkeep(int faction, bool visual) {
     }
     last_faction = faction;
     mapnodes.clear();
+    nonally.clear();
     memset(pm_former, 0, sizeof(pm_former));
     memset(pm_safety, 0, sizeof(pm_safety));
     memset(pm_roads, 0, sizeof(pm_roads));
@@ -472,6 +468,9 @@ void move_upkeep(int faction, bool visual) {
             if (veh->unit_id != BSC_FUNGAL_TOWER) {
                 adjust_value(pm_enemy_near, veh->x, veh->y, 2, 1);
             }
+            nonally.insert({veh->x, veh->y});
+        } else if (!has_pact(faction, veh->faction_id)) {
+            nonally.insert({veh->x, veh->y});
         }
     }
     TileSearch ts;
@@ -632,7 +631,7 @@ bool has_transport(int x, int y, int faction) {
 
 bool allow_move(int x, int y, int faction, int triad) {
     MAP* sq;
-    if (!(sq = mapsq(x, y)) || non_ally_in_tile(faction, sq)) {
+    if (!(sq = mapsq(x, y)) || non_ally_in_tile(x, y, faction)) {
         return false;
     }
     if (triad != TRIAD_AIR && is_ocean(sq) != (triad == TRIAD_SEA)) {
@@ -651,7 +650,7 @@ bool non_combat_move(int x, int y, int faction, int triad) {
     if (triad != TRIAD_AIR && !sq->is_base() && is_ocean(sq) != (triad == TRIAD_SEA)) {
         return false;
     }
-    if (!non_ally_in_tile(faction, sq)) {
+    if (!non_ally_in_tile(x, y, faction)) {
         return last_faction != faction || pm_safety[x][y] >= PM_NEAR_SAFE;
     }
     return false;
@@ -730,7 +729,7 @@ int escape_move(int id) {
     ts.init(veh->x, veh->y, veh_triad(id));
     while (++i < 120 && (sq = ts.get_next()) != NULL) {
         int score = escape_score(ts.rx, ts.ry, ts.dist-1, veh, sq);
-        if (score > tscore && !non_ally_in_tile(faction, sq) && !ts.has_zoc(faction)) {
+        if (score > tscore && !non_ally_in_tile(ts.rx, ts.ry, faction) && !ts.has_zoc(faction)) {
             tx = ts.rx;
             ty = ts.ry;
             tscore = score;
@@ -893,7 +892,7 @@ bool can_build_base(int x, int y, int faction, int triad) {
         return false;
     if (sq->owner > 0 && faction != sq->owner && !at_war(faction, sq->owner))
         return false;
-    if (non_ally_in_tile(faction, sq))
+    if (non_ally_in_tile(x, y, faction))
         return false;
     if (sq->landmarks & LM_VOLCANO && sq->art_ref_id == 0)
         return false;
@@ -1363,7 +1362,7 @@ int former_move(int id) {
         if (sq->owner != faction || sq->items & TERRA_BASE_IN_TILE
         || pm_safety[ts.rx][ts.ry] < PM_SAFE
         || (pm_former[ts.rx][ts.ry] < 1 && pm_roads[ts.rx][ts.ry] < 1)
-        || other_in_tile(faction, sq)) {
+        || non_ally_in_tile(ts.rx, ts.ry, faction)) {
             continue;
         }
         int score = former_tile_score(bx, by, ts.rx, ts.ry, faction, sq);
@@ -1751,8 +1750,7 @@ int aircraft_move(int id) {
         int range = map_range(veh->x, veh->y, tx, ty);
         if (range > 1) {
             for (auto m : iterate_tiles(veh->x, veh->y, 1, 9)) {
-                sq = mapsq(m.x, m.y);
-                if (sq && !sq->is_base() && !non_ally_in_tile(faction, sq)
+                if (!m.sq->is_base() && !non_ally_in_tile(m.x, m.y, faction)
                 && map_range(m.x, m.y, tx, ty) < range) {
                     return set_move_to(id, m.x, m.y);
                 }
@@ -1872,7 +1870,7 @@ bool airdrop_move(int id, MAP* sq) {
     for (int i = 1; i < TableRange[Rules->max_airdrop_rng_wo_orbital_insert]; i++) {
         int x2 = wrap(veh->x + TableOffsetX[i]);
         int y2 = veh->y + TableOffsetY[i];
-        if ((sq = mapsq(x2, y2)) && sq->is_base() && !non_ally_in_tile(faction, sq)) {
+        if ((sq = mapsq(x2, y2)) && sq->is_base() && !non_ally_in_tile(x2, y2, faction)) {
             if (at_war(faction, sq->owner)) {
                 action_airdrop(id, x2, y2, 3);
                 return true;

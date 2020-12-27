@@ -1,19 +1,28 @@
 
 # Thinker mod release changelog
 
-## Next Release
-* New option: smooth_scrolling adds support for user interface enhancements using the code provided by PlotinusRedux's PRACX mod.
-* New option: cpu_idle_fix lowers the game idle CPU consumption to a minimum by reducing unnecessary API calls.
-* Config file now includes options to set the display mode for the game. These options will override any values in Alpha Centauri.ini.
-* Add support for windowed mode using user-supplied resolution.
+## Version 2.3 (2020-12-27)
+* New option: cpu_idle_fix lowers the processing power consumption to a minimum by throttling unnecessary code. This uses the same method than smac-cpu-fix patch.
+* New option: rare_supply_pods will reduce the frequency of supply pods to around one third of previous levels and instead places bonus resources on random maps. This option is a lesser version of "no unity scattering".
+* New option: smooth_scrolling (disabled by default) adds support for some user interface enhancements provided by PlotinusRedux's PRACX mod.
+* New option: windowed adds support to run the game using a user-supplied resolution. Command line option -windowed is also supported.
+* Config file now includes options to set the display mode for the game. DirectDraw / DisableOpeningMovie options will override any values in Alpha Centauri.ini.
 * By default the game starts now in native desktop resolution. Opening movie will also be skipped by default.
-* New feature: ALT+T shortcut displays general statistics about the factions.
-* Thinker now controls the movement of most combat units, with the only major exception being air units that are managed by the vanilla AI code.
+* Thinker now controls the movement of nearly all combat units, with the only major exception being missile units that are managed by the vanilla AI code.
 * AI garrisoning priorities are rewritten to move defending units to bases that are the most threatened.
 * Add AI planning capability to execute naval invasions over long distances with multiple transports using other combat ships as cover.
 * Combat ships will now engage other targets with artillery much more often instead of always defaulting to normal direct attack.
 * All artillery units will use new targeting logic to place them in more useful positions and prioritize threats more accurately.
+* AI will occasionally use Drop Pods ability to deploy troops to other bases.
+* Foil probe teams will now also attack coastal bases instead of only sea bases like previously.
+* Changed territory_border_fix to increase the expansion of coastal base territory into ocean to an equal amount of actual sea bases.
+* New feature: ALT+T shortcut displays general statistics about the factions.
+* New feature: the game engine has a crash handler provided by Thinker that writes output to debug.txt if the game happens to crash for any reason.
+* Set config option ignore_reactor_power enabled by default. This is non-vanilla but a much needed balance fix.
+* AI tries to leave slightly more space between bases and prioritize locating bases on the ocean coastline.
+* AI should build Tree Farms faster if the bases encounter eco damage unless the faction file has a negative PLANET modifier.
 * AI will now attempt to raise land bridges between continents more often using better pathing. These goals are also stored in the save game.
+* AI will occasionally disband formers or colony pods if there's no use for them.
 
 
 ## Version 2.2 (2020-11-15)
