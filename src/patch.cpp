@@ -496,8 +496,9 @@ bool patch_setup(Config* cf) {
     DWORD attrs;
     DWORD oldattrs;
     int lm = ~cf->landmarks;
+    bool pracx = strcmp((const char*)0x668165, "prax") == 0;
 
-    if (conf.smooth_scrolling && strcmp((const char*)0x668165, "prax") == 0) {
+    if (conf.smooth_scrolling && pracx) {
         MessageBoxA(0, "Smooth scrolling feature will be disabled while PRACX is also running.",
             MOD_VERSION, MB_OK | MB_ICONWARNING);
         conf.smooth_scrolling = 0;
@@ -505,10 +506,11 @@ bool patch_setup(Config* cf) {
     if (!VirtualProtect(AC_IMPORT_BASE, AC_IMPORT_LEN, PAGE_EXECUTE_READWRITE, &oldattrs)) {
         return false;
     }
-    *(int*)RegisterClassImport = (int)ModRegisterClassA;
     *(int*)GetPrivateProfileStringAImport = (int)ModGetPrivateProfileStringA;
-
-    if (cf->windowed) {
+    if (!pracx) {
+        *(int*)RegisterClassImport = (int)ModRegisterClassA;
+    }
+    if (cf->windowed && !pracx) {
         *(int*)GetSystemMetricsImport = (int)ModGetSystemMetrics;
     }
     if (cf->cpu_idle_fix) {
@@ -541,10 +543,20 @@ bool patch_setup(Config* cf) {
     write_call(0x5B3C03, (int)mod_setup_player);
     write_call(0x5B3C4C, (int)mod_setup_player);
     write_call(0x5C0908, (int)log_veh_kill);
-    write_offset(0x646FDE, (void*)mod_except_handler3);
+    write_offset(0x6456EE, (void*)mod_except_handler3);
+    write_offset(0x64576E, (void*)mod_except_handler3);
+    write_offset(0x6457CC, (void*)mod_except_handler3);
+    write_offset(0x645F98, (void*)mod_except_handler3);
     write_offset(0x646CA7, (void*)mod_except_handler3);
-    write_offset(0x6492D4, (void*)mod_except_handler3);
+    write_offset(0x646FDE, (void*)mod_except_handler3);
+    write_offset(0x648C54, (void*)mod_except_handler3);
+    write_offset(0x648D83, (void*)mod_except_handler3);
+    write_offset(0x648EC8, (void*)mod_except_handler3);
     write_offset(0x64908C, (void*)mod_except_handler3);
+    write_offset(0x6492D4, (void*)mod_except_handler3);
+    write_offset(0x649335, (void*)mod_except_handler3);
+    write_offset(0x64A3C0, (void*)mod_except_handler3);
+    write_offset(0x64D947, (void*)mod_except_handler3);
 
     if (cf->smooth_scrolling) {
         write_offset(0x50F3DC, (void*)blink_timer);

@@ -86,6 +86,7 @@ const int MaxBaseNum = 512;
 const int MaxVehNum = 2048;
 const int MaxProtoNum = 512;
 const int MaxProtoFactionNum = 64;
+const int MaxProtoNameLen = 32;
 
 const int MaxTechnologyNum = 89;
 const int MaxChassisNum = 9;

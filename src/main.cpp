@@ -248,7 +248,37 @@ HOOK_API int mod_turn_upkeep() {
 
 int plans_upkeep(int faction) {
     const int i = faction;
-    if (is_human(i) || !Factions[i].current_num_bases) {
+    if (!faction || is_human(faction)) {
+        return 0;
+    }
+    /*
+    Remove bugged prototypes from the savegame.
+    */
+    if (~MFactions[faction].thinker_flags & 1) {
+        for (int j=0; j < MaxProtoFactionNum; j++) {
+            int id = faction*MaxProtoFactionNum + j;
+            UNIT* u = &Units[id];
+            if (strlen(u->name) >= MaxProtoNameLen
+            || u->chassis_type < CHS_INFANTRY
+            || u->chassis_type > CHS_MISSILE
+            || __builtin_popcount(u->ability_flags) >= 4) {
+                for (int k = *total_num_vehicles-1; k >= 0; k--) {
+                    if (Vehicles[k].unit_id == id) {
+                        veh_kill(k);
+                    }
+                }
+                for (int k=0; k < *total_num_bases; k++) {
+                    if (Bases[k].queue_items[0] == id) {
+                        Bases[k].queue_items[0] = -FAC_STOCKPILE_ENERGY;
+                    }
+                }
+                memset(u, 0, sizeof(UNIT));
+            }
+        }
+        MFactions[faction].thinker_flags |= 1;
+    }
+
+    if (!Factions[faction].current_num_bases) {
         return 0;
     }
     if (conf.design_units) {
@@ -265,14 +295,14 @@ int plans_upkeep(int faction) {
             int algo = has_ability(i, ABL_ID_ALGO_ENHANCEMENT) ? ABL_ALGO_ENHANCEMENT : 0;
             if (has_chassis(i, CHS_FOIL)) {
                 int ship = (rec >= REC_FUSION && has_chassis(i, CHS_CRUISER) ? CHS_CRUISER : CHS_FOIL);
-                char* name = parse_str(buf, 32, Armor[arm].name_short, " ",
-                    Chassis[ship].offsv1_name, " Probe Team");
+                char* name = parse_str(buf, MaxProtoNameLen, Armor[arm].name_short, " ",
+                    Chassis[ship].offsv1_name, " Probe");
                 propose_proto(i, ship, WPN_PROBE_TEAM, (rec >= REC_FUSION ? arm : 0), algo,
                 rec, PLAN_INFO_WARFARE, name);
             }
             if (arm != ARM_NO_ARMOR && rec >= REC_FUSION) {
-                char* name = parse_str(buf, 32, Armor[arm].name_short, " ",
-                    Chassis[chs].offsv1_name, " Probe Team");
+                char* name = parse_str(buf, MaxProtoNameLen, Armor[arm].name_short, " ",
+                    Chassis[chs].offsv1_name, " Probe");
                 propose_proto(i, chs, WPN_PROBE_TEAM, arm, algo, rec, PLAN_INFO_WARFARE, name);
             }
         }
@@ -299,7 +329,7 @@ int plans_upkeep(int faction) {
             REC_FUSION, PLAN_TERRAFORMING, NULL);
         }
         if (has_weapon(i, WPN_SUPPLY_TRANSPORT) && rec >= REC_FUSION && arm2 != ARM_NO_ARMOR) {
-            char* name = parse_str(buf, 32, Reactor[REC_FUSION-1].name_short, " ",
+            char* name = parse_str(buf, MaxProtoNameLen, Reactor[REC_FUSION-1].name_short, " ",
                 Armor[arm2].name_short, " Supply");
             propose_proto(i, CHS_INFANTRY, WPN_SUPPLY_TRANSPORT, arm2, 0, REC_FUSION, PLAN_DEFENSIVE, name);
         }

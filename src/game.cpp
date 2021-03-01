@@ -589,7 +589,11 @@ char* parse_str(char* buf, int len, const char* s1, const char* s2, const char* 
     strncat(buf, s2, len);
     strncat(buf, s3, len);
     strncat(buf, s4, len);
-    return (strlen(buf) > 0 ? buf : NULL);
+    // strlen count does not include the first null character.
+    if (strlen(buf) > 0 && strlen(buf) < (size_t)len) {
+        return buf;
+    }
+    return NULL;
 }
 
 /*
