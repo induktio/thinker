@@ -103,11 +103,29 @@ int handler(void* user, const char* section, const char* name, const char* value
     } else if (MATCH("thinker", "cost_factor")) {
         opt_list_parse(CostRatios, buf, 6, 1);
     } else if (MATCH("thinker", "content_pop_player")) {
-        opt_list_parse(conf.content_pop_player, buf, 6, 0);
-        conf.patch_content_pop = 1;
+        opt_list_parse(cf->content_pop_player, buf, 6, 0);
+        cf->patch_content_pop = 1;
     } else if (MATCH("thinker", "content_pop_computer")) {
-        opt_list_parse(conf.content_pop_computer, buf, 6, 0);
-        conf.patch_content_pop = 1;
+        opt_list_parse(cf->content_pop_computer, buf, 6, 0);
+        cf->patch_content_pop = 1;
+    } else if (MATCH("thinker", "repair_minimal")) {
+        cf->repair_minimal = min(10, max(0, atoi(value)));
+    } else if (MATCH("thinker", "repair_fungus")) {
+        cf->repair_fungus = min(10, max(0, atoi(value)));
+    } else if (MATCH("thinker", "repair_friendly")) {
+        cf->repair_friendly = !!atoi(value);
+    } else if (MATCH("thinker", "repair_airbase")) {
+        cf->repair_airbase = !!atoi(value);
+    } else if (MATCH("thinker", "repair_bunker")) {
+        cf->repair_bunker = !!atoi(value);
+    } else if (MATCH("thinker", "repair_base")) {
+        cf->repair_base = min(10, max(0, atoi(value)));
+    } else if (MATCH("thinker", "repair_base_native")) {
+        cf->repair_base_native = min(10, max(0, atoi(value)));
+    } else if (MATCH("thinker", "repair_base_facility")) {
+        cf->repair_base_facility = min(10, max(0, atoi(value)));
+    } else if (MATCH("thinker", "repair_nano_factory")) {
+        cf->repair_nano_factory = min(10, max(0, atoi(value)));
     } else {
         for (int i=0; i<16; i++) {
             if (MATCH("thinker", landmark_params[i])) {

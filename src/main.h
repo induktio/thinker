@@ -151,6 +151,15 @@ struct Config {
     int patch_content_pop = 0;
     int content_pop_player[6] = {6,5,4,3,2,1};
     int content_pop_computer[6] = {3,3,3,3,3,3};
+    int repair_minimal = 1;
+    int repair_fungus = 2;
+    int repair_friendly = true;
+    int repair_airbase = true;
+    int repair_bunker = true;
+    int repair_base = 1;
+    int repair_base_native = 10;
+    int repair_base_facility = 10;
+    int repair_nano_factory = 10;
     int debug_mode = DEBUG;
 };
 
