@@ -254,28 +254,24 @@ int plans_upkeep(int faction) {
     /*
     Remove bugged prototypes from the savegame.
     */
-    if (~MFactions[faction].thinker_flags & 1) {
-        for (int j=0; j < MaxProtoFactionNum; j++) {
-            int id = faction*MaxProtoFactionNum + j;
-            UNIT* u = &Units[id];
-            if (strlen(u->name) >= MaxProtoNameLen
-            || u->chassis_type < CHS_INFANTRY
-            || u->chassis_type > CHS_MISSILE
-            || __builtin_popcount(u->ability_flags) >= 4) {
-                for (int k = *total_num_vehicles-1; k >= 0; k--) {
-                    if (Vehicles[k].unit_id == id) {
-                        veh_kill(k);
-                    }
+    for (int j=0; j < MaxProtoFactionNum; j++) {
+        int id = faction*MaxProtoFactionNum + j;
+        UNIT* u = &Units[id];
+        if (strlen(u->name) >= MaxProtoNameLen
+        || u->chassis_type < CHS_INFANTRY
+        || u->chassis_type > CHS_MISSILE) {
+            for (int k = *total_num_vehicles-1; k >= 0; k--) {
+                if (Vehicles[k].unit_id == id) {
+                    veh_kill(k);
                 }
-                for (int k=0; k < *total_num_bases; k++) {
-                    if (Bases[k].queue_items[0] == id) {
-                        Bases[k].queue_items[0] = -FAC_STOCKPILE_ENERGY;
-                    }
-                }
-                memset(u, 0, sizeof(UNIT));
             }
+            for (int k=0; k < *total_num_bases; k++) {
+                if (Bases[k].queue_items[0] == id) {
+                    Bases[k].queue_items[0] = -FAC_STOCKPILE_ENERGY;
+                }
+            }
+            memset(u, 0, sizeof(UNIT));
         }
-        MFactions[faction].thinker_flags |= 1;
     }
 
     if (!Factions[faction].current_num_bases) {
@@ -1050,7 +1046,7 @@ int select_prod(int id) {
 
     } else if (has_formers && formers < (base->pop_size < (sea_base ? 4 : 3) ? 1 : 2)
     && (need_formers(base->x, base->y, faction) || (!formers && id & 1))) {
-        if (base->mineral_surplus >= 8 && has_chassis(faction, CHS_GRAVSHIP)) {
+        if (minerals >= 8 && has_chassis(faction, CHS_GRAVSHIP)) {
             int unit = find_proto(id, TRIAD_AIR, WMODE_TERRAFORMER, DEF);
             if (unit_triad(unit) == TRIAD_AIR) {
                 return unit;
@@ -1068,7 +1064,7 @@ int select_prod(int id) {
 
     } else {
         int crawl_target = 1 + min(base->pop_size/4,
-            (base->mineral_surplus >= p->proj_limit ? 2 : 1));
+            (minerals >= p->proj_limit ? 2 : 1));
 
         if (minerals >= 12 && base->eco_damage > 0 && can_build(id, FAC_TREE_FARM)
         && Factions[faction].SE_planet_base >= 0) {
@@ -1145,13 +1141,13 @@ int robust, int immunity, int impunity, int penalty) {
             if (sm == m->soc_priority_model) {
                 sc += 8;
             } else if (sm != SOCIAL_M_FRONTIER) {
-                sc -= 8;
+                sc -= (conf.social_ai > 1 ? 1000 : 12);
             }
         } else {
             if ((&f->SE_Politics)[m->soc_priority_category] == m->soc_priority_model) {
                 sc += 8;
             } else if ((&f->SE_Politics)[m->soc_priority_category] != SOCIAL_M_FRONTIER) {
-                sc -= 8;
+                sc -= (conf.social_ai > 1 ? 1000 : 12);
             }
         }
     }

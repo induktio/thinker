@@ -234,22 +234,24 @@ int manifold_nexus_owner() {
     return -1;
 }
 
-int veh_triad(int id) {
-    return unit_triad(Vehicles[id].unit_id);
+int veh_triad(int veh_id) {
+    return unit_triad(Vehicles[veh_id].unit_id);
 }
 
-int mod_veh_speed(int id) {
-    return veh_speed(id, 0);
+int mod_veh_speed(int veh_id) {
+    return veh_speed(veh_id, 0);
 }
 
-int unit_triad(int id) {
-    int triad = Chassis[Units[id].chassis_type].triad;
+int unit_triad(int unit_id) {
+    assert(unit_id >= 0 && unit_id < MaxProtoNum);
+    int triad = Chassis[Units[unit_id].chassis_type].triad;
     assert(triad == TRIAD_LAND || triad == TRIAD_SEA || triad == TRIAD_AIR);
     return triad;
 }
 
-int unit_speed(int id) {
-    return Chassis[Units[id].chassis_type].speed;
+int unit_speed(int unit_id) {
+    assert(unit_id >= 0 && unit_id < MaxProtoNum);
+    return Chassis[Units[unit_id].chassis_type].speed;
 }
 
 int best_armor(int faction, bool cheap) {
@@ -622,13 +624,14 @@ void print_map(int x, int y) {
 
 void print_veh(int id) {
     VEH* v = &Vehicles[id];
-    debug("VEH %22s %3d %3d %d order: %2d %c %3d %3d -> %3d %3d moves: %2d "
-          "state: %08x flags: %04x vis: %02x mor: %d dmg: %d iter: %d unk1: %d prb: %d sbt: %d\n",
+    int speed = veh_speed(id, 0);
+    debug("VEH %22s %3d %3d %d order: %2d %c %3d %3d -> %3d %3d moves: %2d speed: %2d damage: %d "
+          "state: %08x flags: %04x vis: %02x mor: %d iter: %d prb: %d sbt: %d\n",
         Units[v->unit_id].name, v->unit_id, id, v->faction_id,
         v->move_status, (v->status_icon ? v->status_icon : ' '),
-        v->x, v->y, v->waypoint_1_x, v->waypoint_1_y, v->road_moves_spent,
-        v->state, v->flags, v->visibility,
-        v->morale, v->damage_taken, v->iter_count, v->unk_1, v->probe_action, v->probe_sabotage_id);
+        v->x, v->y, v->waypoint_1_x, v->waypoint_1_y, speed - v->road_moves_spent, speed,
+        v->damage_taken, v->state, v->flags, v->visibility, v->morale,
+        v->iter_count, v->probe_action, v->probe_sabotage_id);
 }
 
 void print_base(int id) {

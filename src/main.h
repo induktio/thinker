@@ -47,9 +47,6 @@
     #define UNUSED(x) UNUSED_ ## x
 #endif
 
-#define DLL_EXPORT extern "C" __declspec(dllexport)
-#define HOOK_API extern "C"
-
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -65,8 +62,18 @@
 #include <vector>
 #include "terranx.h"
 
+#define DLL_EXPORT extern "C" __declspec(dllexport)
+#define HOOK_API extern "C"
 #define min(x, y) std::min(x, y)
 #define max(x, y) std::max(x, y)
+
+#ifdef BUILD_DEBUG
+#undef assert
+#define assert(_Expression) \
+((!!(_Expression)) \
+|| (fprintf(debug_log, "Assertion Failed: %s %s %d\n", #_Expression, __FILE__, __LINE__) \
+&& (_assert(#_Expression, __FILE__, __LINE__), 0)))
+#endif
 
 const int COMBAT = 0;
 const int SYNC = 0;

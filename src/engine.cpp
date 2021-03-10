@@ -7,7 +7,6 @@ const char* ScriptTxtID = "SCRIPT";
 void init_save_game(int faction) {
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
-
     if (m->thinker_header != THINKER_HEADER) {
         m->thinker_header = THINKER_HEADER;
         m->thinker_flags = 0;
@@ -61,8 +60,10 @@ HOOK_API int mod_faction_upkeep(int faction) {
     MFaction* m = &MFactions[faction];
 
     debug("faction_upkeep %d %d\n", *current_turn, faction);
-    init_save_game(faction);
-    plans_upkeep(faction);
+    if (faction > 0) {
+        init_save_game(faction);
+        plans_upkeep(faction);
+    }
 
     *dword_93A934 = 1;
     social_upkeep(faction);
