@@ -8,7 +8,6 @@ const int PM_NEAR_SAFE = -40;
 const int ShoreLine = 256;
 
 /*
-
 Priority Map Tables contain values calculated for each map square
 to guide the AI in its move planning.
 
@@ -24,8 +23,8 @@ Non-combat units controlled by Thinker (formers, colony pods, land-based crawler
 use pm_safety table to decide if there are enemy units too close to them.
 PM_SAFE defines the threshold below which the units will attempt to flee
 to the square chosen by escape_move.
-
 */
+
 PMTable pm_former;
 PMTable pm_safety;
 PMTable pm_roads;
@@ -82,21 +81,20 @@ HOOK_API int mod_enemy_move(const int id) {
     debug("enemy_move %2d %2d %s\n", veh->x, veh->y, veh->name());
 
     if (ai_enabled(veh->faction_id)) {
-        int w = u->weapon_type;
         int triad = Chassis[u->chassis_type].triad;
         if (!mapsq(veh->x, veh->y)) {
             return SYNC;
-        } else if (w == WPN_COLONY_MODULE) {
+        } else if (u->weapon_type == WPN_COLONY_MODULE) {
             return colony_move(id);
-        } else if (w == WPN_SUPPLY_TRANSPORT) {
+        } else if (u->weapon_type == WPN_SUPPLY_TRANSPORT) {
             return crawler_move(id);
-        } else if (w == WPN_TERRAFORMING_UNIT) {
+        } else if (u->weapon_type == WPN_TERRAFORMING_UNIT) {
             return former_move(id);
         } else if (triad == TRIAD_SEA && cargo_capacity(id) > 0) {
             return trans_move(id);
-        } else if (triad == TRIAD_AIR && w <= WPN_PSI_ATTACK) {
+        } else if (triad == TRIAD_AIR && veh->is_combat_unit()) {
             return aircraft_move(id);
-        } else if (triad != TRIAD_AIR && (w <= WPN_PSI_ATTACK || w == WPN_PROBE_TEAM)) {
+        } else if (triad != TRIAD_AIR && (veh->is_combat_unit() || veh->is_probe())) {
             return combat_move(id);
         }
     }
@@ -233,7 +231,6 @@ void invasion_plan(int faction) {
         if (sq->region == p.main_region && base->faction_id == faction
         && pm_shore[base->x][base->y] >= ShoreLine) {
             path.push_back({base->x, base->y});
-            debug("invasion start %2d %2d %d %d\n", base->x, base->y, p.main_region, sq->region);
 
         } else if (at_war(faction, base->faction_id) && !is_ocean(sq)) {
             for (const MapTile& m : iterate_tiles(base->x, base->y, 0, TableRange[3])) {
@@ -273,10 +270,10 @@ void invasion_plan(int faction) {
                 p.naval_score = score;
                 p.naval_start_x = path.begin()->x;
                 p.naval_start_y = path.begin()->y;
-                p.naval_beach_x = ts.rx;
-                p.naval_beach_y = ts.ry;
                 p.naval_end_x = prev.x;
                 p.naval_end_y = prev.y;
+                p.naval_beach_x = ts.rx;
+                p.naval_beach_y = ts.ry;
 
                 debug("invasion %d -> %d start: %2d %2d end: %2d %2d dist: %2d score: %d\n",
                     faction, sq->owner, path.begin()->x, path.begin()->y, ts.rx, ts.ry, ts.dist, score);
@@ -413,8 +410,7 @@ void move_upkeep(int faction, bool visual) {
     }
     for (int y = 0; y < *map_axis_y; y++) {
         for (int x = y&1; x < *map_axis_x; x+=2) {
-            sq = mapsq(x, y);
-            if (sq && sq->region == p.main_sea_region) {
+            if ((sq = mapsq(x, y)) && sq->region == p.main_sea_region) {
                 adjust_value(pm_shore, x, y, 1, ShoreLine);
             }
         }
@@ -427,7 +423,7 @@ void move_upkeep(int faction, bool visual) {
         if (veh->move_status == ORDER_THERMAL_BOREHOLE) {
             mapnodes.insert({veh->x, veh->y, NODE_BOREHOLE});
         }
-        if (veh->faction_id == faction) {
+        if (veh->faction_id == faction && (sq = mapsq(veh->x, veh->y))) {
             if (veh->is_combat_unit()) {
                 adjust_value(pm_safety, veh->x, veh->y, 1, 40);
                 pm_safety[veh->x][veh->y] += 60;
@@ -438,13 +434,12 @@ void move_upkeep(int faction, bool visual) {
             if (veh->is_combat_unit() || veh->is_probe()) {
                 p.combat_units++;
             }
-            if (triad == TRIAD_LAND && !is_ocean(mapsq(veh->x, veh->y))) {
+            if (triad == TRIAD_LAND && !is_ocean(sq)) {
                 veh->state &= ~VSTATE_IN_TRANSPORT;
             }
             if ((u->weapon_type == WPN_COLONY_MODULE || u->weapon_type == WPN_TERRAFORMING_UNIT)
             && triad == TRIAD_LAND) {
-                sq = mapsq(veh->x, veh->y);
-                if (sq && is_ocean(sq) && sq->is_base() && coast_tiles(veh->x, veh->y) < 8) {
+                if (is_ocean(sq) && sq->is_base() && coast_tiles(veh->x, veh->y) < 8) {
                     mapnodes.insert({veh->x, veh->y, NODE_NEED_FERRY});
                 }
             }
@@ -476,13 +471,14 @@ void move_upkeep(int faction, bool visual) {
     TileSearch ts;
     for (int i=0; i < *total_num_bases; i++) {
         BASE* base = &Bases[i];
-        sq = mapsq(base->x, base->y);
-        pm_former[base->x][base->y] = 0; // Combat unit counter
 
         if (base->faction_id == faction) {
             adjust_value(pm_former, base->x, base->y, 2, base->pop_size);
             pm_safety[base->x][base->y] += 10000;
 
+            if (unit_in_tile(mapsq(base->x, base->y)) < 0) { // Undefended base
+                mapnodes.insert({base->x, base->y, NODE_PATROL});
+            }
             if (!is_ocean(base)) {
                 int j = 0;
                 int k = 0;
@@ -497,9 +493,7 @@ void move_upkeep(int faction, bool visual) {
                     }
                 }
             }
-            if (unit_in_tile(sq) < 0) { // Undefended base
-                mapnodes.insert({base->x, base->y, NODE_PATROL});
-            }
+            pm_former[base->x][base->y] = 0; // Combat unit counter
         }
     }
     if (f.current_num_bases > 0) {
@@ -510,18 +504,18 @@ void move_upkeep(int faction, bool visual) {
 
         for (int i=0; i < *total_num_bases; i++) {
             BASE* base = &Bases[i];
-            sq = mapsq(base->x, base->y);
             int base_value = INT_MIN;
-            if (sq && base->faction_id == faction) {
+            if (base->faction_id == faction && (sq = mapsq(base->x, base->y))) {
                 int region = sq->region;
                 for (int k=0; k < *total_num_bases; k++) {
                     BASE* b = &Bases[k];
-                    sq = mapsq(b->x, b->y);
-                    if (sq && faction != b->faction_id && !has_pact(faction, b->faction_id)) {
+                    if (faction != b->faction_id
+                    && !has_pact(faction, b->faction_id)
+                    && (sq = mapsq(b->x, b->y))) {
                         int value = base->pop_size + 10 * pm_enemy_near[base->x][base->y]
-                        - (sq->region == region && sq->region < 64 ? 1 : 2)
-                        * (at_war(faction, b->faction_id) ? 1 : 3)
-                        * map_range(base->x, base->y, b->x, b->y);
+                            - (sq->region == region && sq->region < 64 ? 1 : 2)
+                            * (at_war(faction, b->faction_id) ? 1 : 3)
+                            * map_range(base->x, base->y, b->x, b->y);
                         if (value > base_value) {
                             base_value = value;
                         }
@@ -993,7 +987,7 @@ int colony_move(const int id) {
         int tscore = INT_MIN;
         int tx = -1;
         int ty = -1;
-        int limit = (!((*current_turn + id) % 5) ? 500 : 200);
+        int limit = ((*current_turn + id) % 5 ? 200 : 500);
         TileSearch ts;
         if (triad == TRIAD_SEA && invasion_unit(id) && ocean_shoreline(veh->x, veh->y)) {
             ts.init(plans[faction].naval_end_x, plans[faction].naval_end_y, triad, 2);
@@ -1344,7 +1338,7 @@ int former_move(const int id) {
         return escape_move(id);
     }
     int i = 0;
-    int limit = (!((*current_turn + id) % 5) ? 200 : 50);
+    int limit = ((*current_turn + id) % 5 ? 50 : 200);
     int tscore = INT_MIN;
     int action = -1;
     int tx = -1;
@@ -1431,7 +1425,8 @@ bool enemy_bases(int faction, int region, bool probe) {
     for (int i=0; i < *total_num_bases; i++) {
         BASE* base = &Bases[i];
         MAP* sq = mapsq(base->x, base->y);
-        if (sq && sq->region == region && (at_war(faction, base->faction_id)
+        if (sq && sq->region == region
+        && (at_war(faction, base->faction_id)
         || (probe && allow_probe(faction, base->faction_id)))) {
             return true;
         }
@@ -1570,7 +1565,6 @@ int trans_move(const int id) {
     int defenders = 0;
     int capacity = cargo_capacity(id);
     bool at_ocean = is_ocean(sq);
-    bool need_ferry = false;
 
     for (int k=0; k < *total_num_vehicles; k++) {
         VEH* v = &Vehicles[k];
@@ -1632,12 +1626,7 @@ int trans_move(const int id) {
     if (at_ocean && cargo > 0 && sq->region == p.main_sea_region && p.naval_end_x >= 0) {
         return set_move_to(id, p.naval_end_x, p.naval_end_y);
     }
-    for (const MapNode& n : mapnodes) {
-        if (n.type == NODE_NEED_FERRY) {
-            need_ferry = true;
-        }
-    }
-    int limit = (need_ferry ? 1600 : 200);
+    int limit = ((*current_turn + id) % 5 ? 200 : 1200);
     int i = 0;
     int tx = -1;
     int ty = -1;
@@ -1656,8 +1645,7 @@ int trans_move(const int id) {
                 debug("trans_move %2d %2d -> %2d %2d patrol\n", veh->x, veh->y, ts.rx, ts.ry);
                 return set_move_to(id, ts.rx, ts.ry);
 
-            } else if (i < 200 && !sq->is_visible(veh->faction_id)
-            && !invasion_unit(id) && !random(8)) {
+            } else if (ts.dist < 12 && allow_scout(veh->faction_id, sq) && !invasion_unit(id)) {
                 tx = ts.rx;
                 ty = ts.ry;
             }
@@ -1758,7 +1746,7 @@ int aircraft_move(const int id) {
     TileSearch ts;
     ts.init(veh->x, veh->y, TRIAD_AIR);
 
-    while (++i < 441 && (sq = ts.get_next()) != NULL && ts.dist <= max_dist) {
+    while (++i < 625 && (sq = ts.get_next()) != NULL && ts.dist <= max_dist) {
         bool to_base = sq->is_base();
         int faction2 = unit_in_tile(sq);
 
@@ -1832,12 +1820,15 @@ int aircraft_move(const int id) {
     return veh_skip(id);
 }
 
-bool attack_search(const int id, int max_dist, int* tx, int* ty) {
+bool attack_search(const int id, int* tx, int* ty) {
     VEH* veh = &Vehicles[id];
     int faction = veh->faction_id;
     int triad = unit_triad(veh->unit_id);
+    assert(triad != TRIAD_AIR);
     int type = (triad == TRIAD_SEA ? TS_SEA_AND_SHORE : triad);
     int skip = (triad == TRIAD_LAND ? 2 : 0);
+    int max_dist = PathLimit;
+    int limit = ((*current_turn + id) % 5 ? 1200 : 4000);
     int tolerance = (triad == TRIAD_LAND ? 1 : 2) + (!pm_enemy_near[veh->x][veh->y] ? 2 : 0);
     int priority = 0;
     int path_node = 0;
@@ -1849,11 +1840,13 @@ bool attack_search(const int id, int max_dist, int* tx, int* ty) {
     MAP* sq;
     TileSearch ts;
     ts.init(veh->x, veh->y, type, skip);
-    while (++i < 2000 && (sq = ts.get_next()) != NULL && ts.dist <= max_dist) {
+    while (++i < limit && (sq = ts.get_next()) != NULL && ts.dist <= max_dist) {
         if (sq->is_base()
         && (at_war(faction, sq->owner) || (veh->is_probe() && allow_probe(faction, sq->owner)))
         && (!priority || target_priority(faction, sq->owner))) {
-            max_dist = (*tx < 0 ? ts.dist + tolerance : max_dist);
+            if (*tx < 0) {
+                max_dist = ts.dist + tolerance;
+            }
             *tx = ts.rx;
             *ty = ts.ry;
             path_node = ts.cur;
@@ -1868,19 +1861,20 @@ bool attack_search(const int id, int max_dist, int* tx, int* ty) {
         PathNode& prev = ts.paths[ts.paths[path_node].prev];
         if (!veh->is_probe()) {
             int id2;
-            if (path_dist < 3 && (id2 = choose_defender(*tx, *ty, faction, id)) >= 0
+            if (path_dist < 3
+            && (id2 = choose_defender(*tx, *ty, faction, id)) >= 0
             && battle_eval(id, id2, 1, 1) < 0.7) {
                 debug("attack_skip %2d %2d -> %2d %2d %s %s\n",
                     veh->x, veh->y, *tx, *ty, veh->name(), Units[Vehicles[id2].unit_id].name);
                 for (auto m : iterate_tiles(veh->x, veh->y, 0, 9)) {
                     if (allow_move(m.x, m.y, faction, triad)
-                    && at_war(faction, m.sq->owner)) {
-                        if (m.sq->items & (TERRA_SENSOR | TERRA_BUNKER | TERRA_FOREST) && !random(2)) {
-                            *tx = m.x;
-                            *ty = m.y;
-                            debug("attack_flank %2d %2d -> %2d %2d %s\n", veh->x, veh->y, *tx, *ty, veh->name());
-                            return (m.x != veh->x || m.y != veh->y);
-                        }
+                    && at_war(faction, m.sq->owner)
+                    && m.sq->items & (TERRA_SENSOR | TERRA_BUNKER | TERRA_FOREST)
+                    && !random(2)) {
+                        *tx = m.x;
+                        *ty = m.y;
+                        debug("attack_flank %2d %2d -> %2d %2d %s\n", veh->x, veh->y, *tx, *ty, veh->name());
+                        return (m.x != veh->x || m.y != veh->y);
                     }
                 }
                 *tx = -1;
@@ -1972,6 +1966,9 @@ int combat_move(const int id) {
     }
     if (veh->is_probe() && need_heals(veh)) {
         return escape_move(id);
+    }
+    if (!at_target(veh) && veh->iter_count < 2) {
+        return SYNC;
     }
     if (at_base) {
         defenders = defender_count(veh->x, veh->y, faction, id); // Excluding this unit
@@ -2147,7 +2144,6 @@ int combat_move(const int id) {
             }
         }
     }
-    int search_limit = (triad == TRIAD_SEA ? 60 : 40);
     bool defend;
     if (triad == TRIAD_SEA) {
         defend = (at_home && (id % 11) < 3 && !veh->is_probe())
@@ -2159,7 +2155,7 @@ int combat_move(const int id) {
     }
 
     if (veh->is_probe() && !defend) {
-        attack_search(id, search_limit, &tx, &ty);
+        attack_search(id, &tx, &ty);
         if (tx >= 0) {
             return set_move_to(id, tx, ty);
         }
@@ -2181,7 +2177,7 @@ int combat_move(const int id) {
             }
         }
     } else { // Find a base to attack on the same region
-        attack_search(id, search_limit, &tx, &ty);
+        attack_search(id, &tx, &ty);
     }
     if (tx >= 0) {
         return set_move_to(id, tx, ty);

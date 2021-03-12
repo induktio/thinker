@@ -145,6 +145,10 @@ struct Config {
     int territory_border_fix = 1;
     int eco_damage_fix = 1;
     int clean_minerals = 16;
+    int spawn_fungal_towers = 1;
+    int spawn_spore_launchers = 1;
+    int spawn_sealurks = 1;
+    int spawn_battle_ogres = 1;
     int collateral_damage_value = 3;
     int disable_planetpearls = 0;
     int disable_aquatic_bonus_minerals = 0;

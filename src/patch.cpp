@@ -740,6 +740,30 @@ bool patch_setup(Config* cf) {
         const byte new_bytes[] = {0x83, 0xC6, (byte)cf->clean_minerals};
         write_bytes(0x4E9E41, old_bytes, new_bytes, sizeof(new_bytes));
     }
+    if (!cf->spawn_fungal_towers) {
+        /* Spawn nothing in this case. */
+        remove_call(0x4F7143);
+        remove_call(0x5C363F);
+        remove_call(0x57BBC9);
+    }
+    if (!cf->spawn_spore_launchers) {
+        /* Patch the game to spawn Mind Worms instead. */
+        *(byte*)0x4F73DB = 0xEB;
+        *(byte*)0x4F74D3 = 0xEB;
+        *(byte*)0x522808 = 0xEB;
+        *(byte*)0x522A9C = 0xEB;
+        *(byte*)0x522B8B = 0xEB;
+        *(byte*)0x522D8B = 0xEB;
+        *(byte*)0x57C804 = 0xEB;
+        *(byte*)0x57C99A = 0xEB;
+        *(byte*)0x5956FC = 0xEB;
+    }
+    if (!cf->spawn_sealurks) {
+        *(byte*)0x522777 = 0xEB;
+    }
+    if (!cf->spawn_battle_ogres) {
+        *(byte*)0x57BC90 = 0xEB;
+    }
     if (cf->collateral_damage_value != 3) {
         const byte old_bytes[] = {0xB2, 0x03};
         const byte new_bytes[] = {0xB2, (byte)cf->collateral_damage_value};

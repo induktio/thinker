@@ -94,6 +94,14 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->eco_damage_fix = atoi(value);
     } else if (MATCH("thinker", "clean_minerals")) {
         cf->clean_minerals = max(0, atoi(value));
+    } else if (MATCH("thinker", "spawn_fungal_towers")) {
+        cf->spawn_fungal_towers = atoi(value);
+    } else if (MATCH("thinker", "spawn_spore_launchers")) {
+        cf->spawn_spore_launchers = atoi(value);
+    } else if (MATCH("thinker", "spawn_sealurks")) {
+        cf->spawn_sealurks = atoi(value);
+    } else if (MATCH("thinker", "spawn_battle_ogres")) {
+        cf->spawn_battle_ogres = atoi(value);
     } else if (MATCH("thinker", "collateral_damage_value")) {
         cf->collateral_damage_value = atoi(value);
     } else if (MATCH("thinker", "disable_planetpearls")) {
@@ -309,10 +317,11 @@ int plans_upkeep(int faction) {
             int algo = has_ability(i, ABL_ID_ALGO_ENHANCEMENT) ? ABL_ALGO_ENHANCEMENT : 0;
             if (has_chassis(i, CHS_FOIL)) {
                 int ship = (rec >= REC_FUSION && has_chassis(i, CHS_CRUISER) ? CHS_CRUISER : CHS_FOIL);
-                char* name = parse_str(buf, MaxProtoNameLen, Armor[arm].name_short, " ",
-                    Chassis[ship].offsv1_name, " Probe");
-                propose_proto(i, ship, WPN_PROBE_TEAM, (rec >= REC_FUSION ? arm : 0), algo,
-                rec, PLAN_INFO_WARFARE, name);
+                char* name = parse_str(buf, MaxProtoNameLen,
+                    Armor[(rec >= REC_FUSION ? arm : ARM_NO_ARMOR)].name_short,
+                    " ", Chassis[ship].offsv1_name, " Probe");
+                propose_proto(i, ship, WPN_PROBE_TEAM,
+                    (rec >= REC_FUSION ? arm : ARM_NO_ARMOR), algo, rec, PLAN_INFO_WARFARE, name);
             }
             if (arm != ARM_NO_ARMOR && rec >= REC_FUSION) {
                 char* name = parse_str(buf, MaxProtoNameLen, Armor[arm].name_short, " ",
@@ -333,14 +342,14 @@ int plans_upkeep(int faction) {
         }
         if (has_chassis(i, CHS_NEEDLEJET) && has_ability(i, ABL_ID_AIR_SUPERIORITY)) {
             propose_proto(i, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, ABL_AIR_SUPERIORITY | ABL_DEEP_RADAR,
-            rec, PLAN_AIR_SUPERIORITY, NULL);
+                rec, PLAN_AIR_SUPERIORITY, NULL);
         }
         if (has_weapon(i, WPN_TERRAFORMING_UNIT) && rec >= REC_FUSION) {
             bool grav = has_chassis(i, CHS_GRAVSHIP);
             int abls = has_ability(i, ABL_ID_SUPER_TERRAFORMER ? ABL_SUPER_TERRAFORMER : 0) |
                 (twoabl && !grav && has_ability(i, ABL_ID_FUNGICIDAL) ? ABL_FUNGICIDAL : 0);
             propose_proto(i, (grav ? CHS_GRAVSHIP : chs), WPN_TERRAFORMING_UNIT, ARM_NO_ARMOR, abls,
-            REC_FUSION, PLAN_TERRAFORMING, NULL);
+                REC_FUSION, PLAN_TERRAFORMING, NULL);
         }
         if (has_weapon(i, WPN_SUPPLY_TRANSPORT) && rec >= REC_FUSION && arm2 != ARM_NO_ARMOR) {
             char* name = parse_str(buf, MaxProtoNameLen, Reactor[REC_FUSION-1].name_short, " ",
