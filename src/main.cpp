@@ -42,6 +42,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->smooth_scrolling = atoi(value);
     } else if (MATCH("thinker", "scroll_area")) {
         cf->scroll_area = max(0, atoi(value));
+    } else if (MATCH("thinker", "world_map_labels")) {
+        cf->world_map_labels = atoi(value);
     } else if (MATCH("thinker", "windowed")) {
         cf->windowed = atoi(value);
     } else if (MATCH("thinker", "window_width")) {
@@ -1014,7 +1016,7 @@ int select_prod(int id) {
             } else if (u->weapon_type == WPN_COLONY_MODULE) {
                 pods++;
             } else if (u->weapon_type == WPN_PROBE_TEAM) {
-                if (veh_triad(i) == TRIAD_LAND) {
+                if (veh->triad() == TRIAD_LAND) {
                     landprobes++;
                 } else {
                     seaprobes++;

@@ -42,19 +42,31 @@ HOOK_API int mod_crop_yield(int faction, int base, int x, int y, int tf) {
 }
 
 HOOK_API int mod_base_draw(int ptr, int base_id, int x, int y, int zoom, int v1) {
+    int color = -1;
+    int width = 1;
     BASE* b = &Bases[base_id];
     base_draw(ptr, base_id, x, y, zoom, v1);
 
-    if (zoom >= -8 && has_facility(base_id, FAC_HEADQUARTERS)) {
+    if (conf.world_map_labels > 0 && zoom >= -8) {
+        if (has_facility(base_id, FAC_HEADQUARTERS)) {
+            color = 255;
+            width = 2;
+        }
+        if (b->status_flags & BASE_GOLDEN_AGE_ACTIVE) {
+            color = 251;
+        }
+        if (color < 0) {
+            return 0;
+        }
         // Game engine uses this way to determine the population label width
         const char* s1 = "8";
         const char* s2 = "88";
         int w = font_width(*(int*)0x93FC24, (int)(b->pop_size >= 10 ? s2 : s1)) + 5;
         int h = *(int*)((*(int*)0x93FC24)+16) + 4;
 
-        for (int i=1; i<3; i++) {
+        for (int i=1; i <= width; i++) {
             RECT rr = {x-i, y-i, x+w+i, y+h+i};
-            buffer_box(ptr, (int)(&rr), 255, 255);
+            buffer_box(ptr, (int)(&rr), color, color);
         }
     }
     return 0;

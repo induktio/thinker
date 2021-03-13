@@ -118,6 +118,7 @@ struct Config {
     int cpu_idle_fix = 1;
     int smooth_scrolling = 0;
     int scroll_area = 40;
+    int world_map_labels = 1;
     int windowed = 0;
     int window_width = 1024;
     int window_height = 768;

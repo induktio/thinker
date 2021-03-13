@@ -234,10 +234,6 @@ int manifold_nexus_owner() {
     return -1;
 }
 
-int veh_triad(int veh_id) {
-    return unit_triad(Vehicles[veh_id].unit_id);
-}
-
 int mod_veh_speed(int veh_id) {
     return veh_speed(veh_id, 0);
 }

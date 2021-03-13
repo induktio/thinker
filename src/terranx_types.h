@@ -1,6 +1,8 @@
 #pragma once
 #pragma pack(push, 1)
 
+struct CChassis;
+extern CChassis* Chassis;
 struct UNIT;
 extern UNIT* Units;
 struct VEH;
@@ -79,77 +81,6 @@ struct BASE {
     int nerve_staple_count;
     int pad_6;
     int pad_7;
-};
-
-struct UNIT {
-    char name[32];
-    int ability_flags;
-    char chassis_type;
-    char weapon_type;
-    char armor_type;
-    char reactor_type;
-    char carry_capacity;
-    char cost;
-    char unit_plan;
-    char unk_1; // some kind of internal prototype category?
-    char obsolete_factions;// faction bitfield of those who marked this prototype obsolete
-    char combat_factions; // faction bitfield for those that have seen this unit in combat (atk/def)
-    char icon_offset;
-    char pad_1; // unused
-    short unit_flags;
-    short preq_tech;
-};
-
-struct VEH {
-    short x;
-    short y;
-    int state;
-    short flags;
-    short unit_id;
-    short pad_0; // unused
-    char faction_id;
-    char year_end_lurking;
-    char damage_taken;
-    char move_status;
-    char waypoint_count;
-    char patrol_current_point;
-    short waypoint_1_x;
-    short waypoint_2_x;
-    short waypoint_3_x;
-    short waypoint_4_x;
-    short waypoint_1_y;
-    short waypoint_2_y;
-    short waypoint_3_y;
-    short waypoint_4_y;
-    char morale;
-    char terraforming_turns;
-    char type_crawling;
-    byte visibility;
-    char road_moves_spent;
-    char unk_1;
-    char iter_count;
-    char status_icon;
-    char probe_action;
-    char probe_sabotage_id;
-    short home_base_id;
-    short next_unit_id_stack;
-    short prev_unit_id_stack;
-
-    const char* name() {
-        return Units[unit_id].name;
-    }
-    int weapon_type() {
-        return Units[unit_id].weapon_type;
-    }
-    bool is_combat_unit() {
-        return Units[unit_id].weapon_type <= WPN_PSI_ATTACK && unit_id != BSC_FUNGAL_TOWER;
-    }
-    bool is_probe() {
-        return Units[unit_id].weapon_type == WPN_PROBE_TEAM;
-    }
-    bool is_visible(int faction) {
-        return visibility & (1 << faction);
-    }
 };
 
 struct MAP {
@@ -744,6 +675,80 @@ struct CWeapon {
     char cost;
     short preq_tech;
     short padding;
+};
+
+struct UNIT {
+    char name[32];
+    int ability_flags;
+    char chassis_type;
+    char weapon_type;
+    char armor_type;
+    char reactor_type;
+    char carry_capacity;
+    char cost;
+    char unit_plan;
+    char unk_1; // some kind of internal prototype category?
+    char obsolete_factions;// faction bitfield of those who marked this prototype obsolete
+    char combat_factions; // faction bitfield for those that have seen this unit in combat (atk/def)
+    char icon_offset;
+    char pad_1; // unused
+    short unit_flags;
+    short preq_tech;
+};
+
+struct VEH {
+    short x;
+    short y;
+    int state;
+    short flags;
+    short unit_id;
+    short pad_0; // unused
+    char faction_id;
+    char year_end_lurking;
+    char damage_taken;
+    char move_status;
+    char waypoint_count;
+    char patrol_current_point;
+    short waypoint_1_x;
+    short waypoint_2_x;
+    short waypoint_3_x;
+    short waypoint_4_x;
+    short waypoint_1_y;
+    short waypoint_2_y;
+    short waypoint_3_y;
+    short waypoint_4_y;
+    char morale;
+    char terraforming_turns;
+    char type_crawling;
+    byte visibility;
+    char road_moves_spent;
+    char unk_1;
+    char iter_count;
+    char status_icon;
+    char probe_action;
+    char probe_sabotage_id;
+    short home_base_id;
+    short next_unit_id_stack;
+    short prev_unit_id_stack;
+
+    const char* name() {
+        return Units[unit_id].name;
+    }
+    int triad() {
+        return Chassis[(int)Units[unit_id].chassis_type].triad;
+    }
+    int weapon_type() {
+        return Units[unit_id].weapon_type;
+    }
+    bool is_combat_unit() {
+        return Units[unit_id].weapon_type <= WPN_PSI_ATTACK && unit_id != BSC_FUNGAL_TOWER;
+    }
+    bool is_probe() {
+        return Units[unit_id].weapon_type == WPN_PROBE_TEAM;
+    }
+    bool is_visible(int faction) {
+        return visibility & (1 << faction);
+    }
 };
 
 #pragma pack(pop)
