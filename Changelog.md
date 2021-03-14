@@ -1,6 +1,19 @@
 
 # Thinker mod release changelog
 
+## Version 2.4 (2021-03-14)
+* Add config options to choose if the Planet should randomly spawn expansion-only units. This works even if smac_only is not selected.
+* Add many new config options for unit repair rates. This is the same implementation than in Will To Power.
+* Unit repair rates have been reduced from standard values. In particular, Command Centers and similar facilities heal only 20% per turn.
+* Bases in golden age are now highlighted with a colored label on the world map. This can be toggled with world_map_labels config option.
+* Config options for social_ai have been expanded.
+* Many general improvements to AI combat movement logic to take into account more factors.
+* AI tries to avoid probing enemy factions that have the Hunter Seeker Algorithm.
+* AI is updated to sometimes choose a wider variety of naval invasion locations.
+* Fix issue where AI wasted Choppers because of fuel exhaustion.
+* Fix bug with design_units that caused some AI prototypes to become corrupted in the savegame. The fix automatically prunes incorrect prototypes from the savegame while processing next turn change.
+
+
 ## Version 2.3 (2020-12-27)
 * New option: cpu_idle_fix lowers the processing power consumption to a minimum by throttling unnecessary code. This uses the same method than smac-cpu-fix patch.
 * New option: rare_supply_pods will reduce the frequency of supply pods to around one third of previous levels and instead places bonus resources on random maps. This option is a lesser version of "no unity scattering".

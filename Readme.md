@@ -18,12 +18,12 @@ Thinker is an AI improvement mod for Alpha Centauri: Alien Crossfire. By patchin
 
 This mod is tested to work with the [GOG version](https://www.gog.com/game/sid_meiers_alpha_centauri) of Alpha Centauri.
 More information about the features and recommended settings can be found from [Details](Details.md).
-Remember also to star and watch the repository to receive new updates!
+Remember also to star and watch the repository to receive notifications about new updates.
 
 
 Download
 --------
-See also the [Changelog](Changelog.md) for useful release notes.
+This is the only place to download binary releases. See also the [Changelog](Changelog.md) for useful release notes.
 
 * [Release versions](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAp6ioWxdo7vnG6Ity5W3o1a?dl=0&lst=)
 

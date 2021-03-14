@@ -27,6 +27,7 @@ bool has_tech(int faction, int tech) {
 }
 
 bool has_ability(int faction, int abl) {
+    assert(abl >= 0 && abl <= ABL_ID_ALGO_ENHANCEMENT);
     return has_tech(faction, Ability[abl].preq_tech);
 }
 

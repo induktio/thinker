@@ -19,7 +19,7 @@
 #pragma once
 
 #ifdef BUILD_REL
-    #define MOD_VERSION "Thinker Mod v2.3"
+    #define MOD_VERSION "Thinker Mod v2.4"
 #else
     #define MOD_VERSION "Thinker Mod develop build"
 #endif
@@ -193,6 +193,7 @@ struct AIPlans {
     int transports = 0;
     int unknown_factions = 0;
     int contacted_factions = 0;
+    int enemy_factions = 0;
     int diplo_flags = 0;
     /*
     Amount of minerals a base needs to produce before it is allowed to build secret projects.

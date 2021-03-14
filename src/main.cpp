@@ -367,6 +367,7 @@ int plans_upkeep(int faction) {
 
         plans[i].unknown_factions = 0;
         plans[i].contacted_factions = 0;
+        plans[i].enemy_factions = 0;
         plans[i].enemy_bases = 0;
         plans[i].diplo_flags = 0;
 
@@ -378,6 +379,9 @@ int plans_upkeep(int faction) {
                     plans[i].contacted_factions++;
                 } else {
                     plans[i].unknown_factions++;
+                }
+                if (at_war(i, j)) {
+                    plans[i].enemy_factions++;
                 }
             }
         }
