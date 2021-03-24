@@ -2,13 +2,15 @@
 SMACX Thinker Mod
 =================
 
-Thinker is an AI improvement mod for Alpha Centauri: Alien Crossfire. By patching the game to use an additional dll, new functionality can be developed in C++. This mod increases the level of challenge in single player while providing many gameplay enhancements. Some of the features include:
+Thinker is an AI improvement mod for Alpha Centauri: Alien Crossfire.
+This mod increases the level of challenge in single player while providing many gameplay enhancements.
+By patching the game to use an additional DLL, new functionality can be developed in C++. Most important features include:
 
 * Vastly improved production/terraforming AI
-* Rewritten code for AI social engineering choices
-* AI terraformers prioritize condenser-farms, boreholes and forests
-* AI builds more crawlers and deploys them better
+* Improved code for AI social engineering choices
+* AI combat units are rewritten to use more variety in tactics
 * AI deploys colony pods much sooner instead of wandering on the map
+* AI builds more crawlers and deploys them better
 * More config options for many previously fixed settings in the game engine
 * Many enhancements to random map generation/spawn locations
 * Name labels for HQ bases are emphasized on the map
@@ -17,7 +19,8 @@ Thinker is an AI improvement mod for Alpha Centauri: Alien Crossfire. By patchin
 * Game binary includes [Scient's patches](Details.md)
 
 This mod is tested to work with the [GOG version](https://www.gog.com/game/sid_meiers_alpha_centauri) of Alpha Centauri.
-More information about the features and recommended settings can be found from [Details](Details.md).
+[More information](Details.md) about the features and recommended settings.
+[Discuss here](https://github.com/induktio/thinker/discussions) about anything related to Thinker development.
 Remember also to star and watch the repository to receive notifications about new updates.
 
 
@@ -40,7 +43,7 @@ Installation
 Other mods
 ----------
 * [SMAC-in-SMACX mod](Details.md#smac-in-smacx-mod) can be installed to play a game similar to original SMAC from the SMACX game binary while Thinker is enabled.
-* [PRACX](https://github.com/DrazharLn/pracx) graphics enhancement patch can be used together with Thinker. Note that since v2.3 some of these features are included with Thinker. For easiest installation, download [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). If you already use older Pracx 1.10 you can just rename terranx_mod.exe to terranx.exe and run pracxpatch.exe so that the installer patches the right binary.
+* [PRACX](https://github.com/DrazharLn/pracx) graphics enhancement patch can be used together with Thinker. Note that since v2.3 some of these features are [included with Thinker](Details.md#compatibility-with-other-mods). For easiest installation, download [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). If you already use older Pracx 1.10 you can just rename terranx_mod.exe to terranx.exe and run pracxpatch.exe so that the installer patches the right binary.
 * [OpenSMACX](https://github.com/b-casey/OpenSMACX) is a long-term project to decompile and create a full open source clone of SMACX.
 
 

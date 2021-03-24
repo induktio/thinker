@@ -5,11 +5,11 @@ Thinker has several advanced planning routines that enhance the base game AI to 
 
 Thinker does not have any special save game format, so it's possible to open an old save and have the factions switch to the new AI and vice-versa. None of the config options are preserved in the save game either, but the units or resources spawned at the game start will remain.
 
-Enabling Thinker AI will affect many AI behaviors as it is described in the list below. Thinker will not change the automated behaviour of units or governors in player-controlled factions.
+Enabling Thinker AI will affect many AI behaviors as it is described in the list below. Thinker will not change the automated behaviour of units or governors in player-controlled factions. For an exhaustive list of all features provided by this mod, refer to both this file and `thinker.ini`.
 
 For testing purposes it is also possible to run old/new AIs side-by-side by setting `factions_enabled=3` or similar. In that case, only the factions in the first 3 slots will use Thinker AI if they are not player-controlled. By default, `factions_enabled=7` setting enables Thinker AI for all computer factions.
 
-1. Thinker fully controls the movement of colony pods, terraformers and crawlers to manage the base placement and production much more effectively than usual.
+1. Thinker fully controls the movement of most units, combat and non-combat alike, to manage the base placement and production much more effectively than usual.
 2. New combat routines for land-based units will attempt to counter-attack nearby enemy units more often. If the odds are good enough, hasty attacks are executed more often than usual. The AI will fight the native units more aggressively, and it will also try to heal its units at monoliths.
 3. Thinker base production AI will decide every item that is produced in a base. The build order can differ substantially from anything the normal AIs might decide to produce, and the difference can be easily noted in the vastly increased quantity of formers and crawlers the AIs might have.
 4. Social AI feature will decide the social engineering models the AI factions will choose. It will attempt to take into account the various cumulative/non-linear effects of the society models and any bonuses provided by the secret projects. The AI is now capable of pop-booming if enough growth is attainable, and it will also try to avoid pacifist drones by switching out of SE models with too many police penalties. All the SE model effects are moddable because the AI is not hardcoded in any particular choices. This feature is also capable of managing all the custom factions.
@@ -25,7 +25,8 @@ In addition to the bugfix patches listed separately, items that are listed after
 5. All expansion related content can be disabled by using the `smac_only` setting, see further below.
 6. AI mineral/nutrient production cost factors for each difficulty level can be changed from the `cost_factor` setting. Does not affect other difficulty related modifiers.
 7. Content (non-drone) base population for each difficulty level can be adjusted from `content_pop_player` and `content_pop_computer` variables. By default these have the same values than vanilla game mechanics.
-8. Game draws a white marker around the population label of HQ bases to identify them more easily. Optional `auto_relocate_hq` feature will import a game mechanic from Civilization 3 where lost/captured headquarters are automatically moved to another suitable base.
+8. New `wold_map_labels` feature draws a white marker around the population label of HQ bases to identify them more easily. Bases in golden age are also highlighted with a yellow label.
+9. New `auto_relocate_hq` feature imports a game mechanic from Civilization 3 where lost/captured headquarters are automatically moved to another suitable base.
 
 
 Improved unit movement
@@ -90,6 +91,17 @@ Proposed alphax.txt settings for Thinker can be found from [this file](docs/alph
 5. [BUG] Enabled the "Antigrav Struts" special ability for air units as stated in the manual.
 6. [BUG] Disabled the "Clean Reactor" special ability for Probe Teams because they already don't require any support.
 7. Add new predefined units Trance Scout Patrol and Police Garrison.
+
+
+Compatibility with other mods
+=============================
+While it is possible to run both Thinker and PRACX at the same time, some optional features provided by Thinker will be disabled because they would patch conflicting areas of the game binary. As of v2.4, these disabled features include:
+
+* Smooth scrolling config option.
+* Windowed mode config option.
+* Any keyboard/mouse shortcuts provided by Thinker.
+
+Scient's patch is already included in the Thinker binary and does not need any additional installation steps from the user. Yitzi's patch or any other mod that uses a custom patched game binary is NOT supported while running Thinker. Note also that Yitzi's patch uses an incompatible version of alphax.txt that can't be used by the vanilla game binary or Thinker.
 
 
 Features not supported
