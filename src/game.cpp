@@ -19,7 +19,7 @@ int mineral_cost(int faction, int prod) {
 }
 
 bool has_tech(int faction, int tech) {
-    assert(faction > 0 && faction < 8);
+    assert(valid_player(faction));
     if (tech == TECH_None) {
         return true;
     }
@@ -149,7 +149,7 @@ bool can_build(int base_id, int id) {
 }
 
 bool can_build_unit(int faction, int id) {
-    assert(faction > 0 && faction < 8 && id >= -1);
+    assert(valid_player(faction) && id >= -1);
     UNIT* u = &Units[id];
     if (id >= 0 && id < 64 && u->preq_tech != TECH_None && !has_tech(faction, u->preq_tech)) {
         return false;
@@ -165,13 +165,10 @@ bool is_alien(int faction) {
     return MFactions[faction].rule_flags & FACT_ALIEN;
 }
 
-bool ai_faction(int faction) {
-    /* Exclude native life since Thinker AI routines don't apply to them. */
-    return faction > 0 && !(*human_players & (1 << faction));
-}
-
 bool ai_enabled(int faction) {
-    return ai_faction(faction) && faction <= conf.factions_enabled;
+    /* Exclude native life since Thinker AI routines don't apply to them. */
+    return faction > 0 && !(*human_players & (1 << faction))
+        && faction <= conf.factions_enabled;
 }
 
 bool at_war(int faction1, int faction2) {
@@ -188,8 +185,16 @@ bool un_charter() {
     return *un_charter_repeals <= *un_charter_reinstates;
 }
 
+bool valid_player(int faction) {
+    return faction > 0 && faction < MaxPlayerNum;
+}
+
+bool valid_triad(int triad) {
+    return (triad == TRIAD_LAND || triad == TRIAD_SEA || triad == TRIAD_AIR);
+}
+
 int prod_count(int faction, int id, int skip) {
-    assert(faction > 0 && faction < 8);
+    assert(valid_player(faction));
     int n = 0;
     for (int i=0; i<*total_num_bases; i++) {
         BASE* base = &Bases[i];
@@ -201,7 +206,7 @@ int prod_count(int faction, int id, int skip) {
 }
 
 int facility_count(int faction, int facility) {
-    assert(faction > 0 && faction < 8 && facility >= 0);
+    assert(valid_player(faction) && facility >= 0);
     int n = 0;
     for (int i=0; i<*total_num_bases; i++) {
         BASE* base = &Bases[i];
@@ -237,18 +242,6 @@ int manifold_nexus_owner() {
 
 int mod_veh_speed(int veh_id) {
     return veh_speed(veh_id, 0);
-}
-
-int unit_triad(int unit_id) {
-    assert(unit_id >= 0 && unit_id < MaxProtoNum);
-    int triad = Chassis[Units[unit_id].chassis_type].triad;
-    assert(triad == TRIAD_LAND || triad == TRIAD_SEA || triad == TRIAD_AIR);
-    return triad;
-}
-
-int unit_speed(int unit_id) {
-    assert(unit_id >= 0 && unit_id < MaxProtoNum);
-    return Chassis[Units[unit_id].chassis_type].speed;
 }
 
 int best_armor(int faction, bool cheap) {
@@ -508,12 +501,12 @@ bool is_shore_level(MAP* sq) {
 }
 
 bool has_defenders(int x, int y, int faction) {
-    assert(faction > 0 && faction < 8);
+    assert(valid_player(faction));
     for (int i=0; i<*total_num_vehicles; i++) {
         VEH* veh = &Vehicles[i];
         UNIT* u = &Units[veh->unit_id];
         if (veh->faction_id == faction && veh->x == x && veh->y == y
-        && u->weapon_type <= WPN_PSI_ATTACK && unit_triad(veh->unit_id) == TRIAD_LAND) {
+        && u->weapon_type <= WPN_PSI_ATTACK && veh->triad() == TRIAD_LAND) {
             return true;
         }
     }
@@ -622,13 +615,13 @@ void print_map(int x, int y) {
 void print_veh(int id) {
     VEH* v = &Vehicles[id];
     int speed = veh_speed(id, 0);
-    debug("VEH %22s %3d %3d %d order: %2d %c %3d %3d -> %3d %3d moves: %2d speed: %2d damage: %d "
-          "state: %08x flags: %04x vis: %02x mor: %d iter: %d prb: %d sbt: %d\n",
+    debug("VEH %24s %3d %3d %d order: %2d %c %3d %3d -> %3d %3d moves: %2d speed: %2d damage: %d "
+          "state: %08x flags: %04x vis: %02x mor: %d iter: %d angle: %d\n",
         Units[v->unit_id].name, v->unit_id, id, v->faction_id,
         v->move_status, (v->status_icon ? v->status_icon : ' '),
         v->x, v->y, v->waypoint_1_x, v->waypoint_1_y, speed - v->road_moves_spent, speed,
         v->damage_taken, v->state, v->flags, v->visibility, v->morale,
-        v->iter_count, v->probe_action, v->probe_sabotage_id);
+        v->iter_count, v->rotate_angle);
 }
 
 void print_base(int id) {
@@ -652,11 +645,10 @@ bool __cdecl can_arty(int unit_id, bool allow_sea_arty) {
     && unit_id != BSC_SPORE_LAUNCHER) { // Spore Launcher exception
         return false;
     }
-    int triad = unit_triad(unit_id);
-    if (triad == TRIAD_SEA) {
+    if (u.triad() == TRIAD_SEA) {
         return allow_sea_arty;
     }
-    if (triad == TRIAD_AIR) {
+    if (u.triad() == TRIAD_AIR) {
         return false;
     }
     return has_abil(unit_id, ABL_ARTILLERY); // TRIAD_LAND
@@ -811,7 +803,7 @@ void TileSearch::init(const PointList& points, int tp, int skip) {
     reset();
     type = tp;
     y_skip = skip;
-    for (auto p : points) {
+    for (auto& p : points) {
         add_start(p.x, p.y);
     }
 }

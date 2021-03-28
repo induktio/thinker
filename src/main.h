@@ -68,11 +68,13 @@
 #define max(x, y) std::max(x, y)
 
 #ifdef BUILD_DEBUG
+#ifdef assert
 #undef assert
 #define assert(_Expression) \
 ((!!(_Expression)) \
 || (fprintf(debug_log, "Assertion Failed: %s %s %d\n", #_Expression, __FILE__, __LINE__) \
 && (_assert(#_Expression, __FILE__, __LINE__), 0)))
+#endif
 #endif
 
 const int COMBAT = 0;
@@ -86,6 +88,7 @@ const int MaxMapW = 512;
 const int MaxMapH = 256;
 const int MaxRegionNum = 128;
 
+const int MaxDiffNum = 6;
 const int MaxPlayerNum = 8;
 const int MaxGoalsNum = 75;
 const int MaxSitesNum = 25;
@@ -131,6 +134,7 @@ struct Config {
     int design_units = 1;
     int factions_enabled = 7;
     int social_ai = 1;
+    int social_ai_bias = 10;
     int tech_balance = 0;
     int hurry_items = 1;
     float expansion_factor = 1;
@@ -184,10 +188,10 @@ struct AIPlans {
     int naval_airbase_y = -1;
     int naval_start_x = -1;
     int naval_start_y = -1;
-    int naval_beach_x = -1;
-    int naval_beach_y = -1;
     int naval_end_x = -1;
     int naval_end_y = -1;
+    int naval_beach_x = -1;
+    int naval_beach_y = -1;
     int combat_units = 0;
     int aircraft = 0;
     int transports = 0;
@@ -283,14 +287,16 @@ typedef std::list<Point> PointList;
 
 extern FILE* debug_log;
 extern Config conf;
-extern AIPlans plans[8];
 extern NodeSet mapnodes;
+extern AIPlans plans[MaxPlayerNum];
+extern int TechCostRatios[MaxDiffNum];
 
 DLL_EXPORT int ThinkerDecide();
 HOOK_API int mod_turn_upkeep();
 HOOK_API int mod_base_production(int id, int v1, int v2, int v3);
 HOOK_API int mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5);
 
+double expansion_ratio(int faction);
 int plans_upkeep(int faction);
 int need_defense(int id);
 int need_psych(int id);

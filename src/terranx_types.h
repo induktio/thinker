@@ -694,6 +694,13 @@ struct UNIT {
     char pad_1; // unused
     short unit_flags;
     short preq_tech;
+
+    int triad() {
+        return Chassis[(int)chassis_type].triad;
+    }
+    int speed() {
+        return Chassis[(int)chassis_type].speed;
+    }
 };
 
 struct VEH {
@@ -722,7 +729,7 @@ struct VEH {
     char type_crawling;
     byte visibility;
     char road_moves_spent;
-    char unk_1;
+    char rotate_angle;
     char iter_count;
     char status_icon;
     char probe_action;

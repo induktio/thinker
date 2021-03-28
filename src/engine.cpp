@@ -83,6 +83,9 @@ HOOK_API int mod_faction_upkeep(int faction) {
         Thinker-specific AI planning routines.
         If the new social_ai is disabled from the config old version gets called instead.
         Player factions always skip the new social_ai function.
+        Note that move_upkeep is updated after all the production is done,
+        so that the movement code can utilize up-to-date priority maps.
+        This means we mostly cannot use move_upkeep variables in production phase.
         */
         mod_social_ai(faction, -1, -1, -1, -1, 0);
         move_upkeep(faction, false);

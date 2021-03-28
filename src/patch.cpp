@@ -105,7 +105,7 @@ void check_relocate_hq(int faction) {
 
 HOOK_API int mod_capture_base(int base_id, int faction, int probe) {
     int old_faction = Bases[base_id].faction_id;
-    assert(faction > 0 && faction < 8 && faction != old_faction);
+    assert(valid_player(faction) && faction != old_faction);
     capture_base(base_id, faction, probe);
     check_relocate_hq(old_faction);
     return 0;
@@ -121,7 +121,7 @@ HOOK_API int mod_base_kill(int base_id) {
 
 HOOK_API int content_pop() {
     int faction = (*current_base_ptr)->faction_id;
-    assert(faction > 0 && faction < 8);
+    assert(valid_player(faction));
     if (is_human(faction)) {
         return conf.content_pop_player[*diff_level];
     }

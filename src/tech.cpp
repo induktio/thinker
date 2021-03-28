@@ -32,7 +32,7 @@ int tech_level(int id, int lvl) {
 }
 
 int tech_cost(int faction, int tech) {
-    assert(faction > 0 && faction < 8);
+    assert(valid_player(faction));
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
     int level = 1;
@@ -50,7 +50,7 @@ int tech_cost(int faction, int tech) {
     }
     double diff_factor = 1.0;
     if (!is_human(faction)) {
-        diff_factor = (1.0 + 0.08 * (CostRatios[*diff_level] - 10));
+        diff_factor = (1.0 + 0.01 * (TechCostRatios[*diff_level] - 100));
     }
     double cost = (6 * pow(level, 3) + 74 * level - 20)
         * diff_factor
