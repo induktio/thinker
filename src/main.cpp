@@ -75,8 +75,14 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->tech_balance = atoi(value);
     } else if (MATCH("thinker", "hurry_items")) {
         cf->hurry_items = atoi(value);
+    } else if (MATCH("thinker", "base_spacing")) {
+        cf->base_spacing = min(8, max(2, atoi(value)));
+    } else if (MATCH("thinker", "base_nearby_limit")) {
+        cf->base_nearby_limit = atoi(value);
     } else if (MATCH("thinker", "expansion_factor")) {
-        cf->expansion_factor = max(0, atoi(value)) / 100.0f;
+        cf->expansion_factor = max(0, atoi(value));
+    } else if (MATCH("thinker", "expansion_autoscale")) {
+        cf->expansion_autoscale = atoi(value);
     } else if (MATCH("thinker", "limit_project_start")) {
         cf->limit_project_start = atoi(value);
     } else if (MATCH("thinker", "max_satellites")) {
@@ -458,7 +464,7 @@ bool redundant_project(int faction, int proj) {
     Faction* f = &Factions[faction];
     if (proj == FAC_PLANETARY_DATALINKS) {
         int n = 0;
-        for (int i=0; i<8; i++) {
+        for (int i=0; i < MaxPlayerNum; i++) {
             if (Factions[i].current_num_bases > 0) {
                 n++;
             }
@@ -919,7 +925,7 @@ int select_colony(int id, int pods, bool build_ships) {
         return -1;
     }
     if (is_ocean(base)) {
-        for (MapTile& m : iterate_tiles(base->x, base->y, 1, 9)) {
+        for (const auto& m : iterate_tiles(base->x, base->y, 1, 9)) {
             if (land && non_combat_move(m.x, m.y, faction, TRIAD_LAND)) {
                 if (m.sq->owner < 1 || !random(6)) {
                     return TRIAD_LAND;
@@ -961,12 +967,6 @@ int select_combat(int base_id, int probes, bool sea_base, bool build_ships, bool
     return find_proto(base_id, TRIAD_LAND, COMBAT, (!random(4) ? DEF : ATT));
 }
 
-double expansion_ratio(int faction) {
-    Faction* f = &Factions[faction];
-    return f->current_num_bases / (pow(*map_half_x * *map_axis_y, 0.4) *
-        min(1.0, max(0.4, *map_area_sq_root / 56.0)) * conf.expansion_factor);
-}
-
 int select_prod(int id) {
     BASE* base = &Bases[id];
     MAP* sq1 = mapsq(base->x, base->y);
@@ -992,7 +992,7 @@ int select_prod(int id) {
     int enemyrange = 40;
     double enemymil = 0;
 
-    for (int i=1; i<8; i++) {
+    for (int i=1; i < MaxPlayerNum; i++) {
         if (i == faction || ~f->diplo_status[i] & DIPLO_COMMLINK) {
             continue;
         }

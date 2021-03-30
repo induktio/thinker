@@ -137,7 +137,10 @@ struct Config {
     int social_ai_bias = 10;
     int tech_balance = 0;
     int hurry_items = 1;
-    float expansion_factor = 1;
+    int base_spacing = 3;
+    int base_nearby_limit = -1;
+    int expansion_factor = 100;
+    int expansion_autoscale = 1;
     int limit_project_start = 3;
     int max_sat = 10;
     int faction_placement = 1;
@@ -158,8 +161,8 @@ struct Config {
     int disable_planetpearls = 0;
     int disable_aquatic_bonus_minerals = 0;
     int patch_content_pop = 0;
-    int content_pop_player[6] = {6,5,4,3,2,1};
-    int content_pop_computer[6] = {3,3,3,3,3,3};
+    int content_pop_player[MaxDiffNum] = {6,5,4,3,2,1};
+    int content_pop_computer[MaxDiffNum] = {3,3,3,3,3,3};
     int repair_minimal = 1;
     int repair_fungus = 2;
     int repair_friendly = true;
@@ -296,7 +299,6 @@ HOOK_API int mod_turn_upkeep();
 HOOK_API int mod_base_production(int id, int v1, int v2, int v3);
 HOOK_API int mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5);
 
-double expansion_ratio(int faction);
 int plans_upkeep(int faction);
 int need_defense(int id);
 int need_psych(int id);

@@ -151,10 +151,11 @@ bool can_build(int base_id, int id) {
 bool can_build_unit(int faction, int id) {
     assert(valid_player(faction) && id >= -1);
     UNIT* u = &Units[id];
-    if (id >= 0 && id < 64 && u->preq_tech != TECH_None && !has_tech(faction, u->preq_tech)) {
+    if (id >= 0 && id < MaxProtoFactionNum && u->preq_tech != TECH_None
+    && !has_tech(faction, u->preq_tech)) {
         return false;
     }
-    return *total_num_vehicles < 15 * MaxVehNum / 16;
+    return *total_num_vehicles < MaxVehNum * 15 / 16;
 }
 
 bool is_human(int faction) {
@@ -304,6 +305,19 @@ int defense_value(UNIT* u) {
 int faction_might(int faction) {
     Faction* f = &Factions[faction];
     return max(1, f->mil_strength_1 + f->mil_strength_2 + f->pop_total);
+}
+
+double expansion_ratio(int faction) {
+    int bases = 0;
+    for (int i=1; i < MaxPlayerNum && conf.expansion_autoscale > 0; i++) {
+        if (is_human(i)) {
+            bases = Factions[i].current_num_bases;
+            break;
+        }
+    }
+    double limit = max(1.0 * bases, (pow(*map_half_x * *map_axis_y, 0.4) *
+        min(1.0, max(0.4, *map_area_sq_root / 56.0)) * conf.expansion_factor / 100.0));
+    return (limit > 0 ? Factions[faction].current_num_bases / limit : 1);
 }
 
 int random(int n) {

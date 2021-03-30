@@ -83,6 +83,7 @@ int best_reactor(int faction);
 int offense_value(UNIT* u);
 int defense_value(UNIT* u);
 int faction_might(int faction);
+double expansion_ratio(int faction);
 int random(int n);
 int map_hash(int x, int y);
 int wrap(int a);
