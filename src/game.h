@@ -109,7 +109,6 @@ bool is_ocean_shelf(MAP* sq);
 bool is_shore_level(MAP* sq);
 bool has_defenders(int x, int y, int faction);
 int nearby_items(int x, int y, int range, uint32_t item);
-int bases_in_range(int x, int y, int range);
 int nearby_tiles(int x, int y, int type, int limit);
 int coast_tiles(int x, int y);
 int set_base_facility(int base_id, int facility_id, bool add);
@@ -120,6 +119,8 @@ void print_map(int x, int y);
 void print_veh(int id);
 void print_base(int id);
 
+int __cdecl mod_bonus_at(int x, int y);
+int __cdecl mod_goody_at(int x, int y);
 bool __cdecl can_arty(int unit_id, bool allow_sea_arty);
 void __cdecl add_goal(int faction, int type, int priority, int x, int y, int base_id);
 void __cdecl wipe_goals(int faction);

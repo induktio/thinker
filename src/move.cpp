@@ -234,7 +234,7 @@ bool target_priority(int faction, MAP* sq) {
             score += 400;
         }
     }
-    score += (sq->rocks & TILE_ROCKY ? 50 : 0)
+    score += (sq->is_rocky() ? 50 : 0)
         + (sq->items & TERRA_SENSOR && at_war(faction, sq->owner) ? 120 : 0)
         + (sq->items & TERRA_BUNKER ? 100 : 0)
         + (sq->items & TERRA_ROAD ? 70 : 0)
@@ -457,6 +457,8 @@ void move_upkeep(int faction, bool visual) {
             if ((sq = mapsq(x, y)) && sq->region == p.main_sea_region) {
                 adjust_value(pm_shore, x, y, 1, ShoreLine);
             }
+            assert(goody_at(x, y) == mod_goody_at(x, y));
+            assert(bonus_at(x, y) == mod_bonus_at(x, y));
         }
     }
     for (int i=0; i < *total_num_vehicles; i++) {
@@ -735,12 +737,11 @@ bool need_heals(VEH* veh) {
 }
 
 bool defend_tile(VEH* veh, MAP* sq) {
-    UNIT* u = &Units[veh->unit_id];
     if (!sq) {
         return true;
     } else if (need_heals(veh) && sq->items & (TERRA_BASE_IN_TILE | TERRA_MONOLITH)) {
         return true;
-    } else if (~sq->items & TERRA_BASE_IN_TILE || u->weapon_type <= WPN_PSI_ATTACK) {
+    } else if (~sq->items & TERRA_BASE_IN_TILE || veh->is_combat_unit()) {
         return false;
     }
     int n = 0;
@@ -759,7 +760,7 @@ int escape_score(int x, int y, int range, VEH* veh, MAP* sq) {
         + (sq->items & TERRA_MONOLITH && need_heals(veh) ? 1000 : 0)
         + (sq->items & TERRA_BUNKER ? 500 : 0)
         + (sq->items & TERRA_FOREST ? 100 : 0)
-        + (sq->rocks & TILE_ROCKY ? 100 : 0);
+        + (sq->is_rocky() ? 100 : 0);
 }
 
 int escape_move(const int id) {
@@ -829,7 +830,7 @@ int want_convoy(int faction, int x, int y, MAP* sq) {
             return RES_NUTRIENT;
         else if (bonus == RES_NUTRIENT)
             return RES_NONE;
-        else if (sq->items & TERRA_MINE && sq->rocks & TILE_ROCKY)
+        else if (sq->items & TERRA_MINE && sq->is_rocky())
             return RES_MINERAL;
         else if (sq->items & TERRA_FOREST && ~sq->items & TERRA_RIVER)
             return RES_MINERAL;
@@ -930,15 +931,14 @@ bool valid_colony_path(int id) {
 bool can_build_base(int x, int y, int faction, int triad) {
     assert(valid_player(faction));
     assert(valid_triad(triad));
-    if ((x + y)&1) // Invalid map coordinates
+    MAP* sq;
+    if ((x + y)&1 || !(sq = mapsq(x, y))) // Invalid map coordinates
         return false;
-    MAP* sq = mapsq(x, y);
-    // Check pm_former to prevent multiple pods being sent to the same tile
-    if (!sq || y < 3 || y >= *map_axis_y-3 || pm_former[x][y] > 0)
+    if (y < 3 || y >= *map_axis_y - 3)
         return false;
-    if (*map_toggle_flat & 1 && (x < 2 || x >= *map_axis_x-2))
+    if (*map_toggle_flat & 1 && (x < 2 || x >= *map_axis_x - 2))
         return false;
-    if ((sq->rocks & TILE_ROCKY && !is_ocean(sq)) || (sq->items & (BASE_DISALLOWED | IMP_ADVANCED)))
+    if ((sq->is_rocky() && !is_ocean(sq)) || (sq->items & (BASE_DISALLOWED | IMP_ADVANCED)))
         return false;
     if (sq->owner > 0 && faction != sq->owner && !at_war(faction, sq->owner))
         return false;
@@ -1003,10 +1003,10 @@ int base_tile_score(int x1, int y1, int range, int triad) {
                 }
             }
             if (!is_ocean(sq)) {
-                if (sq->level & TILE_RAINY) {
+                if (sq->is_rainy()) {
                     score += 2;
                 }
-                if (sq->level & TILE_MOIST && sq->rocks & TILE_ROLLING) {
+                if (sq->is_moist() && sq->is_rolling()) {
                     score += 2;
                 }
             }
@@ -1062,7 +1062,9 @@ int colony_move(const int id) {
             ts.init(veh->x, veh->y, triad, 2);
         }
         while (++i < limit && k < 50 && (sq = ts.get_next()) != NULL) {
-            if (!can_build_base(ts.rx, ts.ry, faction, triad) || !safe_path(ts, faction)) {
+            if (mapnodes.count({ts.rx, ts.ry, NODE_BASE_SITE})
+            || !can_build_base(ts.rx, ts.ry, faction, triad)
+            || !safe_path(ts, faction)) {
                 continue;
             }
             int score = base_tile_score(ts.rx, ts.ry, ts.dist, triad);
@@ -1075,12 +1077,15 @@ int colony_move(const int id) {
         }
         if (tx >= 0) {
             debug("colony_move %d %d -> %d %d score: %d\n", veh->x, veh->y, tx, ty, tscore);
-            adjust_value(pm_former, tx, ty, conf.base_spacing - 1, 1);
+            for (auto& m : iterate_tiles(tx, ty, 0, TableRange[conf.base_spacing - 1])) {
+                mapnodes.insert({m.x, m.y, NODE_BASE_SITE});
+            }
             // Set these flags to disable any non-Thinker unit automation.
             veh->state |= VSTATE_UNK_40000;
             veh->state &= ~VSTATE_UNK_2000;
             return set_move_to(id, tx, ty);
-        } else if (limit == 500 && !invasion_unit(id)) {
+
+        } else if (limit == 500 && !invasion_unit(id) && *current_turn > 20) {
             debug("disband colony %d\n", id);
             return veh_kill(id);
         }
@@ -1108,18 +1113,13 @@ bool can_bridge(int x, int y, int faction, MAP* sq) {
     while (++k < 120 && ts.get_next() != NULL);
 
     int n = 0;
-    for (int i=-range*2; i<=range*2; i++) {
-        for (int j=-range*2 + abs(i); j<=range*2 - abs(i); j+=2) {
-            int x2 = wrap(x + i);
-            int y2 = y + j;
-            sq = mapsq(x2, y2);
-            if (sq && y2 > 0 && y2 < *map_axis_y-1 && !is_ocean(sq)
-            && !ts.oldtiles.count({x2, y2})) {
-                n++;
-                if (sq->owner > 0 && sq->owner != faction
-                && faction_might(faction) < faction_might(sq->owner)) {
-                    return false;
-                }
+    for (auto& m : iterate_tiles(x, y, 0, TableRange[range])) {
+        if (!is_ocean(m.sq) && m.y > 0 && m.y < *map_axis_y-1
+        && !ts.oldtiles.count({m.x, m.y})) {
+            n++;
+            if (m.sq->owner > 0 && m.sq->owner != faction
+            && faction_might(faction) < faction_might(m.sq->owner)) {
+                return false;
             }
         }
     }
@@ -1133,13 +1133,13 @@ bool can_borehole(int x, int y, int faction, int bonus, MAP* sq) {
     if (!sq || sq->items & (BASE_DISALLOWED | IMP_ADVANCED) || bonus == RES_NUTRIENT)
         return false;
     // Planet factions should build boreholes only in reduced numbers.
-    if (Factions[faction].SE_planet_base > 0 && (map_hash(x, y) % 101 > 14))
+    if (Factions[faction].SE_planet_base > 0 && (map_hash(x, y) % 101 > 12))
         return false;
-    if (bonus == RES_NONE && sq->rocks & TILE_ROLLING)
+    if (bonus == RES_NONE && sq->is_rolling())
         return false;
     if (pm_former[x][y] < 4 && !mapnodes.count({x, y, NODE_BOREHOLE}))
         return false;
-    int level = sq->level >> 5;
+    int level = sq->alt_level();
     for (const int* t : NearbyTiles) {
         int x2 = wrap(x + t[0]);
         int y2 = y + t[1];
@@ -1147,8 +1147,8 @@ bool can_borehole(int x, int y, int faction, int bonus, MAP* sq) {
         if (!sq || sq->items & TERRA_THERMAL_BORE || mapnodes.count({x2, y2, NODE_BOREHOLE})) {
             return false;
         }
-        int level2 = sq->level >> 5;
-        if (level2 < level && level2 > LEVEL_OCEAN_SHELF) {
+        int level2 = sq->alt_level();
+        if (level2 < level && level2 > ALT_OCEAN_SHELF) {
             return false;
         }
     }
@@ -1156,10 +1156,10 @@ bool can_borehole(int x, int y, int faction, int bonus, MAP* sq) {
 }
 
 bool can_farm(int x, int y, int faction, int bonus, bool has_nut, MAP* sq) {
-    bool rain = sq->level & (TILE_RAINY | TILE_MOIST);
+    bool rain = sq->is_rainy_or_moist();
     if (!has_terra(faction, FORMER_FARM, is_ocean(sq)))
         return false;
-    if (bonus == RES_NUTRIENT && (has_nut || (rain && sq->rocks & TILE_ROLLING)))
+    if (bonus == RES_NUTRIENT && (has_nut || (rain && sq->is_rolling())))
         return true;
     if (bonus == RES_ENERGY || bonus == RES_MINERAL)
         return false;
@@ -1169,7 +1169,7 @@ bool can_farm(int x, int y, int faction, int bonus, bool has_nut, MAP* sq) {
         return false;
     if (!has_nut && nearby_items(x, y, 1, TERRA_FARM | TERRA_SOLAR) > 2)
         return false;
-    if (rain && sq->rocks & TILE_ROLLING)
+    if (rain && sq->is_rolling())
         return nearby_items(x, y, 1, TERRA_FARM | TERRA_CONDENSER) < 3;
     return (has_nut && !(x % 2) && !(y % 2) && !(abs(x-y) % 4));
 }
@@ -1240,7 +1240,7 @@ int select_item(int x, int y, int faction, MAP* sq) {
         return -1;
     }
     int bonus = bonus_at(x, y);
-    bool rocky_sq = sq->rocks & TILE_ROCKY;
+    bool rocky_sq = sq->is_rocky();
     bool has_eco = has_terra(faction, FORMER_CONDENSER, LAND);
     bool has_min = has_tech(faction, Rules->tech_preq_allow_3_minerals_sq);
     bool has_nut = has_tech(faction, Rules->tech_preq_allow_3_nutrients_sq);
@@ -1300,9 +1300,9 @@ int select_item(int x, int y, int faction, MAP* sq) {
     if (!rocky_sq && can_farm(x, y, faction, bonus, has_nut, sq)) {
         bool improved = items & (TERRA_CONDENSER | TERRA_SOLAR);
         if (!has_nut) {
-            if (!improved && sq->level & TILE_RAINY && has_terra(faction, FORMER_SOLAR, sea))
+            if (!improved && sq->is_rainy() && has_terra(faction, FORMER_SOLAR, sea))
                 return FORMER_SOLAR;
-            else if (~items & TERRA_FARM && sq->level & TILE_MOIST && sq->rocks & TILE_ROLLING)
+            else if (~items & TERRA_FARM && sq->is_moist() && sq->is_rolling())
                 return FORMER_FARM;
         }
         if (has_nut || bonus == RES_NUTRIENT) {
@@ -1371,7 +1371,6 @@ int former_tile_score(int x1, int y1, int x2, int y2, int faction, MAP* sq) {
 int former_move(const int id) {
     VEH* veh = &Vehicles[id];
     int faction = veh->faction_id;
-    int triad = veh->triad();
     int x = veh->x;
     int y = veh->y;
     MAP* sq = mapsq(x, y);
@@ -1385,7 +1384,7 @@ int former_move(const int id) {
     }
     if (safe || (veh->move_status >= 16 && veh->move_status < 22)) {
         if ((veh->move_status >= 4 && veh->move_status < 24)
-        || (triad != TRIAD_LAND && !at_target(veh))) {
+        || (veh->triad() != TRIAD_LAND && !at_target(veh))) {
             return SYNC;
         }
         item = select_item(x, y, faction, sq);
@@ -1416,10 +1415,11 @@ int former_move(const int id) {
         by = Bases[veh->home_base_id].y;
     }
     TileSearch ts;
-    ts.init(x, y, triad);
+    ts.init(x, y, veh->triad());
 
     while (++i < limit && (sq = ts.get_next()) != NULL) {
-        if (sq->owner != faction || sq->items & TERRA_BASE_IN_TILE
+        if (sq->owner != faction
+        || sq->items & TERRA_BASE_IN_TILE
         || pm_safety[ts.rx][ts.ry] < PM_SAFE
         || (pm_former[ts.rx][ts.ry] < 1 && pm_roads[ts.rx][ts.ry] < 1)
         || non_ally_in_tile(ts.rx, ts.ry, faction)) {
@@ -1440,7 +1440,7 @@ int former_move(const int id) {
         return set_move_to(id, tx, ty);
     } else if (!random(4)) {
         return set_move_to(id, bx, by);
-    } else if (limit == 200) {
+    } else if (limit == 200 && *current_turn > 20) {
         debug("disband former %d\n", id);
         return veh_kill(id);
     }
@@ -2123,7 +2123,7 @@ int combat_move(const int id) {
             int y2 = veh->y + TableOffsetY[i];
             if ((sq = mapsq(x2, y2)) && pm_enemy[x2][y2] > 0) {
                 int arty_limit;
-                if (sq->is_base_bunker()) {
+                if (sq->is_base_or_bunker()) {
                     arty_limit = Rules->max_dmg_percent_arty_base_bunker/10;
                 } else {
                     arty_limit = (is_ocean(sq) ?

@@ -382,10 +382,10 @@ MAP* mapsq(int x, int y) {
 }
 
 int unit_in_tile(MAP* sq) {
-    if (!sq || (sq->flags & 0xf) == 0xf) {
+    if (!sq || (sq->val2 & 0xf) == 0xf) {
         return -1;
     }
-    return sq->flags & 0xf;
+    return sq->val2 & 0xf;
 }
 
 int set_move_to(int veh_id, int x, int y) {
@@ -499,7 +499,7 @@ bool at_target(VEH* veh) {
 }
 
 bool is_ocean(MAP* sq) {
-    return (!sq || (sq->level >> 5) < LEVEL_SHORE_LINE);
+    return (!sq || (sq->climate >> 5) < ALT_SHORE_LINE);
 }
 
 bool is_ocean(BASE* base) {
@@ -507,11 +507,11 @@ bool is_ocean(BASE* base) {
 }
 
 bool is_ocean_shelf(MAP* sq) {
-    return (sq && (sq->level >> 5) == LEVEL_OCEAN_SHELF);
+    return (sq && (sq->climate >> 5) == ALT_OCEAN_SHELF);
 }
 
 bool is_shore_level(MAP* sq) {
-    return (sq && (sq->level >> 5) == LEVEL_SHORE_LINE);
+    return (sq && (sq->climate >> 5) == ALT_SHORE_LINE);
 }
 
 bool has_defenders(int x, int y, int faction) {
@@ -539,10 +539,6 @@ int nearby_items(int x, int y, int range, uint32_t item) {
         }
     }
     return n;
-}
-
-int bases_in_range(int x, int y, int range) {
-    return nearby_items(x, y, range, TERRA_BASE_IN_TILE);
 }
 
 int nearby_tiles(int x, int y, int type, int limit) {
@@ -619,10 +615,10 @@ void check_zeros(int* ptr, int len) {
 
 void print_map(int x, int y) {
     MAP* m = mapsq(x, y);
-    debug("MAP %2d %2d owner: %2d bonus: %d level: %02x alt: %02x rocks: %02x "\
-          "flags: %02x reg: %02x vis: %02x unk1: %02x unk2: %02x art: %02x items: %08x lm: %08x\n",
-        x, y, m->owner, bonus_at(x, y), m->level, m->altitude, m->rocks,
-        m->flags, m->region, m->visibility, m->unk_1, m->unk_2, m->art_ref_id,
+    debug("MAP %2d %2d owner: %2d bonus: %d clim: %02x cont: %02x val3: %02x "\
+          "val2: %02x reg: %02x vis: %02x unk1: %02x unk2: %02x art: %02x items: %08x lm: %08x\n",
+        x, y, m->owner, bonus_at(x, y), m->climate, m->contour, m->val3,
+        m->val2, m->region, m->visibility, m->unk_1, m->unk_2, m->art_ref_id,
         m->items, m->landmarks);
 }
 
@@ -647,6 +643,70 @@ void print_base(int id) {
         base->pop_size, base->talent_total, base->drone_total,
         base->mineral_surplus, base->minerals_accumulated,
         base->status_flags, prod, prod_name(prod), (char*)&(base->name));
+}
+
+/*
+Purpose: Determine if the tile has a resource bonus.
+Original Offset: 00592030
+Return Value: 0 (no bonus), 1 (nutrient), 2 (mineral), 3 (energy)
+*/
+int __cdecl mod_bonus_at(int x, int y) {
+    MAP* sq = mapsq(x, y);
+    uint32_t bit = sq->items;
+    uint32_t alt = sq->climate >> 5;
+    bool has_rsc_bonus = bit & TERRA_BONUS_RES;
+    if (!has_rsc_bonus && (!*map_random_seed || (alt >= ALT_SHORE_LINE
+    && !conf.rare_supply_pods && !(*game_rules & RULES_NO_UNITY_SCATTERING)))) {
+        return 0;
+    }
+    int avg = (x + y) >> 1;
+    x -= avg;
+    int chk = (avg & 3) + 4 * (x & 3);
+    if (!has_rsc_bonus && chk != ((*map_random_seed + (-5 * (avg >> 2)) - 3 * (x >> 2)) & 0xF)) {
+        return 0;
+    }
+    if (alt < ALT_OCEAN_SHELF) {
+        return 0;
+    }
+    int ret = (alt < ALT_SHORE_LINE && !conf.rare_supply_pods) ? chk % 3 + 1 : (chk % 5) & 3;
+    if (!ret || bit & TERRA_NUTRIENT_RES) {
+        if (bit & TERRA_ENERGY_RES) {
+            return 3; // energy
+        }
+        return ((bit & TERRA_MINERAL_RES) != 0) + 1; // nutrient or mineral
+    }
+    return ret;
+}
+
+/*
+Purpose: Determine if the tile has a supply pod and if so what type.
+Original Offset: 00592140
+Return Value: 0 (no supply pod), 1 (standard supply pod), 2 (unity pod?)
+*/
+int __cdecl mod_goody_at(int x, int y) {
+    MAP* sq = mapsq(x, y);
+    uint32_t bit = sq->items;
+    if (bit & (TERRA_SUPPLY_REMOVE | TERRA_MONOLITH)) {
+        return 0; // nothing, supply pod already opened or monolith
+    }
+    if (*game_rules & RULES_NO_UNITY_SCATTERING) {
+        return (bit & (TERRA_UNK_4000000 | TERRA_UNK_8000000)) ? 2 : 0; // ?
+    }
+    if (bit & TERRA_SUPPLY_POD) {
+        return 1; // supply pod
+    }
+    if (!*map_random_seed) {
+        return 0; // nothing
+    }
+    int avg = (x + y) >> 1;
+    int x_diff = x - avg;
+    int cmp = (avg & 3) + 4 * (x_diff & 3);
+    if (!conf.rare_supply_pods && !is_ocean(sq)) {
+        if (cmp == ((-5 * (avg >> 2) - 3 * (x_diff >> 2) + *map_random_seed) & 0xF)) {
+            return 2;
+        }
+    }
+    return cmp == ((11 * (avg / 4) + 61 * (x_diff / 4) + *map_random_seed + 8) & 0x1F); // 0 or 1
 }
 
 /*

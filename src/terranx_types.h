@@ -84,8 +84,8 @@ struct BASE {
 };
 
 struct MAP {
-    byte level;
-    byte altitude;
+    byte climate; // 000 00 000 | altitude (3 bit) ; rainfall (2 bit) ; temperature (3 bit)
+    byte contour; // altitude details
     /*
     flags & 0xF0:
     AI colonization priority returned by world_site()
@@ -97,7 +97,7 @@ struct MAP {
     Faction ID of the unit occupying this tile. 0xF = unoccupied.
     Sometimes faction ID of a deleted unit persists on the tile.
     */
-    byte flags;
+    byte val2;
     /*
     The game keeps track of disjoint land/water areas and assigns each of them an ID number
     which is used to index the [128] planning variable arrays in Faction struct.
@@ -105,17 +105,20 @@ struct MAP {
     */
     byte region;
     byte visibility;
-    byte rocks;
-    byte unk_1;
-    char owner;
-    int items;
-    short landmarks;
+    byte val3; // 00 000 000 | rocky (2 bit); lock faction_id (3 bit); using faction_id (3 bit)
+    byte unk_1; // flags? bitfield
+    int8_t owner;
+    uint32_t items;
+    uint16_t landmarks;
     byte unk_2; // 0x40 = set_dirty()
     byte art_ref_id;
-    int visible_items[7];
+    uint32_t visible_items[7];
 
     bool is_visible(int faction) {
         return visibility & (1 << faction);
+    }
+    bool is_unowned() {
+        return owner < 1;
     }
     bool is_base() {
         return items & TERRA_BASE_IN_TILE;
@@ -123,8 +126,26 @@ struct MAP {
     bool is_base_radius() {
         return items & TERRA_BASE_RADIUS;
     }
-    bool is_base_bunker() {
+    bool is_base_or_bunker() {
         return items & (TERRA_BUNKER | TERRA_BASE_IN_TILE);
+    }
+    int alt_level() {
+        return climate >> 5;
+    }
+    bool is_rocky() {
+        return val3 & TILE_ROCKY;
+    }
+    bool is_rolling() {
+        return val3 & TILE_ROLLING;
+    }
+    bool is_rainy() {
+        return climate & TILE_RAINY;
+    }
+    bool is_moist() {
+        return climate & TILE_MOIST;
+    }
+    bool is_rainy_or_moist() {
+        return climate & (TILE_MOIST | TILE_RAINY);
     }
 };
 

@@ -232,7 +232,7 @@ void process_map(int k) {
 bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
     Points pods;
     MAP* sq = mapsq(x, y);
-    if (!sq || sq->items & BASE_DISALLOWED || (sq->rocks & TILE_ROCKY && !is_ocean(sq))) {
+    if (!sq || sq->items & BASE_DISALLOWED || (sq->is_rocky() && !is_ocean(sq))) {
         return false;
     }
     if (sq->landmarks & ~LM_FRESH) {
@@ -259,11 +259,11 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
                     sc += 4;
                 }
             } else {
-                sc += (sq->level & (TILE_RAINY | TILE_MOIST) ? 3 : 1);
+                sc += (sq->is_rainy_or_moist() ? 3 : 1);
                 if (sq->items & TERRA_RIVER) {
                     sc += (i < 20 ? 4 : 2);
                 }
-                if (sq->rocks & TILE_ROLLING) {
+                if (sq->is_rolling()) {
                     sc += 1;
                 }
             }

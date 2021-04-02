@@ -240,6 +240,7 @@ enum nodeset_types {
     NODE_GOAL_NAVAL_BEACH = 7,
     NODE_GOAL_NAVAL_END = 8,
     NODE_PATROL = 9,
+    NODE_BASE_SITE = 10,
 };
 
 struct MapTile {
