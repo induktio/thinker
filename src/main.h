@@ -293,7 +293,6 @@ extern FILE* debug_log;
 extern Config conf;
 extern NodeSet mapnodes;
 extern AIPlans plans[MaxPlayerNum];
-extern int TechCostRatios[MaxDiffNum];
 
 DLL_EXPORT int ThinkerDecide();
 HOOK_API int mod_turn_upkeep();

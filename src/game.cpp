@@ -493,6 +493,12 @@ int mod_veh_skip(int veh_id) {
     return veh_skip(veh_id);
 }
 
+int mod_veh_kill(int veh_id) {
+    VEH* veh = &Vehicles[veh_id];
+    debug("disband %d %d %s\n", veh->x, veh->y, veh->name());
+    return veh_kill(veh_id);
+}
+
 bool at_target(VEH* veh) {
     return veh->move_status == ORDER_NONE || (veh->waypoint_1_x < 0 && veh->waypoint_1_y < 0)
         || (veh->x == veh->waypoint_1_x && veh->y == veh->waypoint_1_y);
@@ -838,15 +844,14 @@ void TileSearch::reset() {
     type = 0;
     head = 0;
     tail = 0;
-    owner = 0;
     roads = 0;
     y_skip = 0;
+    faction = -1;
     oldtiles.clear();
 }
 
 void TileSearch::add_start(int x, int y) {
     if (tail < QueueSize/2 && (sq = mapsq(x, y)) && !oldtiles.count({x, y})) {
-        owner = sq->owner;
         paths[tail] = {x, y, 0, -1};
         oldtiles.insert({x, y});
         if (!is_ocean(sq)) {
@@ -882,28 +887,27 @@ void TileSearch::init(const PointList& points, int tp, int skip) {
     }
 }
 
-PointList& TileSearch::get_route(PointList& pp) {
+void TileSearch::get_route(PointList& pp) {
     pp.clear();
     int i = 0;
     int j = cur;
     while (j >= 0 && ++i < PathLimit) {
-        auto p = paths[j];
+        auto& p = paths[j];
         j = p.prev;
         pp.push_front({p.x, p.y});
     }
-    return pp;
 }
 
 /*
 Traverse current search path and check for zones of control.
 */
-bool TileSearch::has_zoc(int faction) {
+bool TileSearch::has_zoc(int faction_id) {
     int zoc = 0;
     int i = 0;
     int j = cur;
     while (j >= 0 && ++i < PathLimit) {
-        auto p = paths[j];
-        if (zoc_any(p.x, p.y, faction) && ++zoc > 1) {
+        auto& p = paths[j];
+        if (zoc_any(p.x, p.y, faction_id) && ++zoc > 1) {
             return true;
         }
         j = p.prev;
@@ -926,16 +930,25 @@ MAP* TileSearch::get_next() {
         if (!(sq = mapsq(rx, ry))) {
             continue;
         }
-        bool skip = (type == TS_TRIAD_LAND && is_ocean(sq)) ||
-                    (type == TS_TRIAD_SEA && !is_ocean(sq)) ||
+        if (first) {
+            faction = unit_in_tile(sq);
+            if (faction < 0) {
+                faction = sq->owner;
+            }
+        }
+        bool our_base = sq->is_base() && (faction == sq->owner || has_pact(faction, sq->owner));
+        bool skip = (sq->is_base() && !our_base) ||
+                    (type == TS_TRIAD_LAND && is_ocean(sq)) ||
+                    (type == TS_TRIAD_SEA && !is_ocean(sq) && !our_base) ||
+                    (type == TS_SEA_AND_SHORE && !is_ocean(sq) && !our_base) ||
                     (type == TS_NEAR_ROADS && (is_ocean(sq) || !(sq->items & roads))) ||
-                    (type == TS_TERRITORY_LAND && (is_ocean(sq) || sq->owner != owner)) ||
-                    (type == TS_TERRITORY_BORDERS && (is_ocean(sq) || sq->owner != owner)) ||
-                    (type == TS_SEA_AND_SHORE && !is_ocean(sq));
+                    (type == TS_TERRITORY_LAND && (is_ocean(sq) || sq->owner != faction)) ||
+                    (type == TS_TERRITORY_BORDERS && (is_ocean(sq) || sq->owner != faction));
         if (!first && skip) {
-            if ((type == TS_NEAR_ROADS && !is_ocean(sq))
-            || type == TS_TERRITORY_BORDERS
-            || type == TS_SEA_AND_SHORE) {
+            if (!((type == TS_NEAR_ROADS && is_ocean(sq))
+            || (type == TS_TERRITORY_LAND && is_ocean(sq))
+            || (type == TS_TRIAD_LAND && is_ocean(sq))
+            || (type == TS_TRIAD_SEA && !is_ocean(sq)))) {
                 return sq;
             }
             continue;

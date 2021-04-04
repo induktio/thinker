@@ -24,7 +24,6 @@ FILE* debug_log = NULL;
 Config conf;
 NodeSet mapnodes;
 AIPlans plans[MaxPlayerNum];
-int TechCostRatios[MaxDiffNum] = {124,116,108,100,84,76};
 
 
 int handler(void* user, const char* section, const char* name, const char* value) {
@@ -609,7 +608,8 @@ bool relocate_hq(int id) {
 bool can_build_ships(int id) {
     BASE* b = &Bases[id];
     int k = *map_area_sq_root + 20;
-    return has_chassis(b->faction_id, CHS_FOIL) && nearby_tiles(b->x, b->y, TRIAD_SEA, k) >= k;
+    return (has_chassis(b->faction_id, CHS_FOIL) || has_chassis(b->faction_id, CHS_CRUISER))
+        && nearby_tiles(b->x, b->y, TRIAD_SEA, k) >= k;
 }
 
 /*
@@ -630,7 +630,8 @@ bool unit_is_better(UNIT* u1, UNIT* u2) {
     return val;
 }
 
-int unit_score(int id, int faction, int cfactor, int minerals, bool def) {
+int unit_score(int id, int faction, int cfactor, int minerals, int accumulated, bool defend) {
+    assert(valid_player(faction) && id >= 0 && cfactor > 0);
     const int abls[][2] = {
         {ABL_AAA, 4},
         {ABL_AIR_SUPERIORITY, 2},
@@ -640,6 +641,7 @@ int unit_score(int id, int faction, int cfactor, int minerals, bool def) {
         {ABL_DROP_POD, 3},
         {ABL_EMPATH, 2},
         {ABL_TRANCE, 3},
+        {ABL_SLOW, -4},
         {ABL_TRAINED, 2},
         {ABL_COMM_JAMMER, 3},
         {ABL_CLEAN_REACTOR, 2},
@@ -649,14 +651,14 @@ int unit_score(int id, int faction, int cfactor, int minerals, bool def) {
         {ABL_SUPER_TERRAFORMER, 8},
     };
     UNIT* u = &Units[id];
-    int v = 18 * (def ? defense_value(u) : offense_value(u));
+    int v = 18 * (defend ? defense_value(u) : offense_value(u));
     if (v < 0) {
-        v = (def ? Factions[faction].best_armor_value : Factions[faction].best_weapon_value)
+        v = (defend ? Factions[faction].best_armor_value : Factions[faction].best_weapon_value)
             * (conf.ignore_reactor_power ? REC_FISSION : best_reactor(faction))
             + plans[faction].psi_score * 12;
     }
     if (u->triad() != TRIAD_AIR) {
-        v += (def ? 12 : 32) * u->speed();
+        v += (defend ? 12 : 32) * u->speed();
     }
     if (u->ability_flags & ABL_POLICE_2X && plans[faction].need_police) {
         v += 20;
@@ -666,8 +668,9 @@ int unit_score(int id, int faction, int cfactor, int minerals, bool def) {
             v += 8 * i[1];
         }
     }
-    int turns = u->cost * cfactor / max(2, minerals);
-    int score = v - turns * (u->weapon_type == WPN_COLONY_MODULE ? 18 : 9);
+    int turns = max(0, u->cost * cfactor - accumulated) / max(2, minerals);
+    int score = v - turns * (u->weapon_type == WPN_COLONY_MODULE ? 6 : 3)
+        * (max(3, 9 - *current_turn/10) + (minerals < 6 ? 2 : 0));
     debug("unit_score %s cfactor: %d minerals: %d cost: %d turns: %d score: %d\n",
         u->name, cfactor, minerals, u->cost, turns, score);
     return score;
@@ -680,11 +683,11 @@ and type constraints. For any combat-capable unit, mode is set to COMBAT (= 0).
 int find_proto(int base_id, int triad, int mode, bool defend) {
     assert(base_id >= 0 && base_id < *total_num_bases);
     assert(mode >= COMBAT && mode <= WMODE_INFOWAR);
-    assert(triad == TRIAD_LAND || triad == TRIAD_SEA || triad == TRIAD_AIR);
+    assert(valid_triad(triad));
     BASE* b = &Bases[base_id];
     int faction = b->faction_id;
     int basic = BSC_SCOUT_PATROL;
-    debug("find_proto faction: %d triad: %d mode: %d def: %d\n", faction, triad, mode, defend);
+    debug("find_proto faction: %d triad: %d mode: %d defend: %d\n", faction, triad, mode, defend);
 
     if (mode == WMODE_COLONIST) {
         basic = (triad == TRIAD_SEA ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
@@ -699,8 +702,8 @@ int find_proto(int base_id, int triad, int mode, bool defend) {
     }
     int best = basic;
     int cfactor = cost_factor(faction, 1, -1);
-    int minerals = b->mineral_surplus;
-    int best_val = unit_score(best, faction, cfactor, minerals, defend);
+    int best_val = unit_score(
+        best, faction, cfactor, b->mineral_surplus, b->minerals_accumulated, defend);
     if (Units[best].triad() != triad) {
         best_val -= 40;
     }
@@ -719,7 +722,8 @@ int find_proto(int base_id, int triad, int mode, bool defend) {
             || !(mode != COMBAT || best == basic || (defend == (offense_value(u) < defense_value(u))))) {
                 continue;
             }
-            int val = unit_score(id, faction, cfactor, minerals, defend);
+            int val = unit_score(
+                id, faction, cfactor, b->mineral_surplus, b->minerals_accumulated, defend);
             if (unit_is_better(&Units[best], u) || random(100) > 50 + best_val - val) {
                 best = id;
                 best_val = val;
@@ -945,6 +949,18 @@ int select_colony(int id, int pods, bool build_ships) {
     return -1;
 }
 
+bool need_scouts(int x, int y, int faction, int scouts) {
+    MAP* sq = mapsq(x, y);
+    Faction* f = &Factions[faction];
+    if (is_ocean(sq)) {
+        return false;
+    }
+    int score = (*current_turn < 40 ? 6 : 3) - 3*scouts
+        + min(8, (f->region_territory_goodies[sq->region]
+        / max(1, (int)f->region_total_bases[sq->region])));
+    return random(16) < score;
+}
+
 int select_combat(int base_id, int probes, bool sea_base, bool build_ships, bool def_land) {
     BASE* base = &Bases[base_id];
     int faction = base->faction_id;
@@ -988,6 +1004,7 @@ int select_prod(int id) {
     int defenders = 0;
     int crawlers = 0;
     int formers = 0;
+    int scouts = 0;
     int pods = 0;
     int enemyrange = 40;
     double enemymil = 0;
@@ -1003,7 +1020,7 @@ int select_prod(int id) {
             enemymil = max(enemymil, 0.3 * mil);
         }
     }
-    for (int i=0; i<*total_num_bases; i++) {
+    for (int i=0; i < *total_num_bases; i++) {
         BASE* b = &Bases[i];
         if (at_war(faction, b->faction_id)) {
             int range = map_range(base->x, base->y, b->x, b->y);
@@ -1014,7 +1031,7 @@ int select_prod(int id) {
             enemyrange = min(enemyrange, range);
         }
     }
-    for (int i=0; i<*total_num_vehicles; i++) {
+    for (int i=0; i < *total_num_vehicles; i++) {
         VEH* veh = &Vehicles[i];
         UNIT* u = &Units[veh->unit_id];
         if (veh->faction_id != faction) {
@@ -1040,10 +1057,12 @@ int select_prod(int id) {
                 transports++;
             }
         }
-        int range = map_range(base->x, base->y, veh->x, veh->y);
-        if (range <= 1) {
-            if (u->weapon_type <= WPN_PSI_ATTACK && veh->triad() == TRIAD_LAND) {
+        if (veh->is_combat_unit() && veh->triad() == TRIAD_LAND) {
+            if (map_range(base->x, base->y, veh->x, veh->y) <= 1) {
                 defenders++;
+            }
+            if (veh->home_base_id == id) {
+                scouts++;
             }
         }
     }
@@ -1052,26 +1071,20 @@ int select_prod(int id) {
         && pods < 2 && expansion_ratio(faction) < 1.0
         && *total_num_bases < MaxBaseNum * 19 / 20;
     m->thinker_enemy_range = (enemyrange + 9 * m->thinker_enemy_range)/10;
-    bool need_scouts = plans[faction].unknown_factions > 1 && plans[faction].contacted_factions < 2;
 
     double w1 = min(1.0, max(0.5, 1.0 * minerals / p->proj_limit));
     double w2 = 2.0 * enemymil / (m->thinker_enemy_range * 0.1 + 0.1) + 0.5 * p->enemy_bases
         + min(1.0, expansion_ratio(faction)) * (f->AI_fight * 0.2 + 0.8);
     double threat = 1 - (1 / (1 + max(0.0, w1 * w2)));
-    int def_target = (*current_turn < 50 && !sea_base && !random(3) ? 2 : 1);
 
     debug("select_prod %d %d %2d %2d def: %d frm: %d prb: %d crw: %d pods: %d expand: %d "\
-        "min: %2d res: %2d limit: %2d range: %2d mil: %.4f threat: %.4f\n",
+        "scouts: %d min: %2d res: %2d limit: %2d range: %2d mil: %.4f threat: %.4f\n",
         *current_turn, faction, base->x, base->y,
         defenders, formers, landprobes+seaprobes, crawlers, pods, build_pods,
-        minerals, reserve, p->proj_limit, enemyrange, enemymil, threat);
+        scouts, minerals, reserve, p->proj_limit, enemyrange, enemymil, threat);
 
-    if (defenders < def_target && minerals > 2) {
-        if (def_target < 2 && (*current_turn > 30 || enemyrange < 15)) {
-            return find_proto(id, TRIAD_LAND, COMBAT, DEF);
-        } else {
-            return BSC_SCOUT_PATROL;
-        }
+    if (minerals > 2 && defenders < 1 || need_scouts(base->x, base->y, faction, scouts)) {
+        return find_proto(id, TRIAD_LAND, COMBAT, DEF);
 
     } else if (*climate_future_change > 0 && is_shore_level(mapsq(base->x, base->y))
     && can_build(id, FAC_PRESSURE_DOME)) {
@@ -1085,7 +1098,7 @@ int select_prod(int id) {
             (defenders < 2 && enemyrange < 12));
 
     } else if (has_formers && formers < (base->pop_size < (sea_base ? 4 : 3) ? 1 : 2)
-    && (need_formers(base->x, base->y, faction) || (!formers && id & 1))) {
+    && (need_formers(base->x, base->y, faction) || (!formers && !random(6)))) {
         if (minerals >= 8 && has_chassis(faction, CHS_GRAVSHIP)) {
             int unit = find_proto(id, TRIAD_AIR, WMODE_TERRAFORMER, DEF);
             if (unit >= 0 && Units[unit].triad() == TRIAD_AIR) {
@@ -1099,7 +1112,8 @@ int select_prod(int id) {
         }
 
     } else if (build_ships && has_weapon(faction, WPN_PROBE_TEAM)
-    && ocean_shoreline(base->x, base->y) && need_scouts && !random(3)) {
+    && ocean_shoreline(base->x, base->y) && !random(seaprobes > 0 ? 6 : 3)
+    && p->unknown_factions > 1 && p->contacted_factions < 2) {
         return find_proto(id, TRIAD_SEA, WMODE_INFOWAR, DEF);
 
     } else {

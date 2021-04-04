@@ -102,6 +102,7 @@ int set_board_to(int veh_id, int trans_veh_id);
 int cargo_loaded(int veh_id);
 int cargo_capacity(int veh_id);
 int mod_veh_skip(int veh_id);
+int mod_veh_kill(int veh_id);
 bool at_target(VEH* veh);
 bool is_ocean(MAP* sq);
 bool is_ocean(BASE* base);
@@ -154,19 +155,18 @@ class TileSearch {
     int tail;
     int roads;
     int y_skip;
-    int owner;
     MAP* sq;
     void reset();
     void add_start(int x, int y);
     public:
-    int rx, ry, dist, cur;
+    int rx, ry, dist, cur, faction;
     PathNode paths[QueueSize];
     Points oldtiles;
     void init(int x, int y, int tp);
-    void init(int x, int y, int tp, int y_skip);
-    void init(const PointList& points, int tp, int y_skip);
+    void init(int x, int y, int tp, int skip);
+    void init(const PointList& points, int tp, int skip);
     bool has_zoc(int faction);
-    PointList& get_route(PointList& pp);
+    void get_route(PointList& pp);
     MAP* get_next();
 };
 

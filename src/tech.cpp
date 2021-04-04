@@ -1,6 +1,8 @@
 
 #include "tech.h"
 
+int TechCostRatios[MaxDiffNum] = {124,116,108,100,84,76};
+
 
 HOOK_API int mod_tech_value(int tech, int faction, int flag) {
     int value = tech_val(tech, faction, flag);
@@ -22,7 +24,7 @@ HOOK_API int mod_tech_value(int tech, int faction, int flag) {
 }
 
 int tech_level(int id, int lvl) {
-    if (id < 0 || id > TECH_TranT || lvl >= 20) {
+    if (id < 0 || id > TECH_TranT || lvl > TECH_TranT) {
         return lvl;
     } else {
         int v1 = tech_level(Tech[id].preq_tech1, lvl + 1);
@@ -41,7 +43,7 @@ int tech_cost(int faction, int tech) {
 
     if (tech >= 0) {
         level = tech_level(tech, 0);
-        for (int i=1; i<8; i++) {
+        for (int i=1; i < MaxPlayerNum; i++) {
             if (i != faction && f->diplo_status[i] & DIPLO_COMMLINK) {
                 links |= 1 << i;
             }
@@ -50,7 +52,7 @@ int tech_cost(int faction, int tech) {
     }
     double diff_factor = 1.0;
     if (!is_human(faction)) {
-        diff_factor = (1.0 + 0.01 * (TechCostRatios[*diff_level] - 100));
+        diff_factor = TechCostRatios[*diff_level] / 100.0;
     }
     double cost = (6 * pow(level, 3) + 74 * level - 20)
         * diff_factor
