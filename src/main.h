@@ -126,6 +126,7 @@ struct Config {
     int window_width = 1024;
     int window_height = 768;
     int smac_only = 0;
+    int player_free_units = 0;
     int free_formers = 0;
     int free_colony_pods = 0;
     int satellites_nutrient = 0;
@@ -142,7 +143,7 @@ struct Config {
     int expansion_factor = 100;
     int expansion_autoscale = 1;
     int limit_project_start = 3;
-    int max_sat = 10;
+    int max_satellites = 20;
     int faction_placement = 1;
     int nutrient_bonus = 0;
     int rare_supply_pods = 0;
@@ -216,6 +217,7 @@ struct AIPlans {
     int need_police = 1;
     int keep_fungus = 0;
     int plant_fungus = 0;
+    int satellites_goal = 0;
     /*
     Number of our bases captured by another faction we're currently at war with.
     Important heuristic in threat calculation.

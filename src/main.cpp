@@ -54,6 +54,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->smac_only = atoi(value);
     } else if (MATCH("thinker", "free_formers")) {
         cf->free_formers = atoi(value);
+    } else if (MATCH("thinker", "player_free_units")) {
+        cf->player_free_units = atoi(value);
     } else if (MATCH("thinker", "free_colony_pods")) {
         cf->free_colony_pods = atoi(value);
     } else if (MATCH("thinker", "satellites_nutrient")) {
@@ -85,7 +87,7 @@ int handler(void* user, const char* section, const char* name, const char* value
     } else if (MATCH("thinker", "limit_project_start")) {
         cf->limit_project_start = atoi(value);
     } else if (MATCH("thinker", "max_satellites")) {
-        cf->max_sat = atoi(value);
+        cf->max_satellites = atoi(value);
     } else if (MATCH("thinker", "faction_placement")) {
         cf->faction_placement = atoi(value);
     } else if (MATCH("thinker", "nutrient_bonus")) {
@@ -372,6 +374,7 @@ int plans_upkeep(int faction) {
 
     if (ai_enabled(i)) {
         int minerals[MaxBaseNum];
+        int population[MaxBaseNum];
         Faction* f = &Factions[i];
         MFaction* m = &MFactions[i];
 
@@ -399,13 +402,20 @@ int plans_upkeep(int faction) {
         for (int j=0; j < *total_num_bases; j++) {
             BASE* base = &Bases[j];
             if (base->faction_id == i) {
+                population[n] = base->pop_size;
                 minerals[n++] = base->mineral_surplus;
             } else if (base->faction_id_former == i && at_war(i, base->faction_id)) {
                 plans[i].enemy_bases += (is_human(base->faction_id) ? 4 : 1);
             }
         }
         std::sort(minerals, minerals+n);
-        plans[i].proj_limit = max(5, minerals[n*2/3]);
+        std::sort(population, population+n);
+        if (f->current_num_bases >= 20) {
+            plans[i].proj_limit = max(5, minerals[n*3/4]);
+        } else {
+            plans[i].proj_limit = max(5, minerals[n*2/3]);
+        }
+        plans[i].satellites_goal = min(conf.max_satellites, population[n*3/4]);
         plans[i].need_police = (f->SE_police > -2 && f->SE_police < 3
             && !has_project(i, FAC_TELEPATHIC_MATRIX));
 
@@ -443,10 +453,11 @@ int plans_upkeep(int faction) {
         } else {
             plans[i].plant_fungus = 0;
         }
-        debug("plans_upkeep %d %d proj_limit: %2d psi: %2d keep_fungus: %d "\
+        debug("plans_upkeep %d %d proj_limit: %2d sat_goal: %2d psi: %2d keep_fungus: %d "\
               "plant_fungus: %d enemy_bases: %d enemy_range: %.4f\n",
-              *current_turn, i, plans[i].proj_limit, psi, plans[i].keep_fungus,
-              plans[i].plant_fungus, plans[i].enemy_bases, m->thinker_enemy_range);
+              *current_turn, i, plans[i].proj_limit, plans[i].satellites_goal,
+              psi, plans[i].keep_fungus, plans[i].plant_fungus,
+              plans[i].enemy_bases, m->thinker_enemy_range);
     }
     return 0;
 }

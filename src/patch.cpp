@@ -130,17 +130,17 @@ HOOK_API int content_pop() {
 
 HOOK_API int mod_setup_player(int faction, int v1, int v2) {
     setup_player(faction, v1, v2);
-    if (faction > 0 && !is_human(faction)) {
-        for (int i=0; i<*total_num_vehicles; i++) {
+    if (faction > 0 && (!is_human(faction) || conf.player_free_units > 0)) {
+        for (int i=0; i < *total_num_vehicles; i++) {
             VEH* veh = &Vehicles[i];
             if (veh->faction_id == faction) {
                 MAP* sq = mapsq(veh->x, veh->y);
                 int former = (is_ocean(sq) ? BSC_SEA_FORMERS : BSC_FORMERS);
                 int colony = (is_ocean(sq) ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
-                for (int j=0; j<conf.free_formers; j++) {
+                for (int j=0; j < conf.free_formers; j++) {
                     spawn_veh(former, faction, veh->x, veh->y, -1);
                 }
-                for (int j=0; j<conf.free_colony_pods; j++) {
+                for (int j=0; j < conf.free_colony_pods; j++) {
                     spawn_veh(colony, faction, veh->x, veh->y, -1);
                 }
                 break;

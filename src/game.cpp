@@ -134,10 +134,13 @@ bool can_build(int base_id, int id) {
     }
     if (id >= FAC_SKY_HYDRO_LAB && id <= FAC_ORBITAL_DEFENSE_POD) {
         int n = prod_count(faction, -id, base_id);
-        if ((id == FAC_SKY_HYDRO_LAB && f->satellites_nutrient + n >= conf.max_sat)
-        || (id == FAC_ORBITAL_POWER_TRANS && f->satellites_energy + n >= conf.max_sat)
-        || (id == FAC_NESSUS_MINING_STATION && f->satellites_mineral + n >= conf.max_sat)
-        || (id == FAC_ORBITAL_DEFENSE_POD && f->satellites_ODP + n >= conf.max_sat)) {
+        int goal = (id == FAC_ORBITAL_DEFENSE_POD ?
+            min(10, conf.max_satellites/2) : plans[faction].satellites_goal);
+
+        if ((id == FAC_SKY_HYDRO_LAB && f->satellites_nutrient + n >= goal)
+        || (id == FAC_ORBITAL_POWER_TRANS && f->satellites_energy + n >= goal)
+        || (id == FAC_NESSUS_MINING_STATION && f->satellites_mineral + n >= goal)
+        || (id == FAC_ORBITAL_DEFENSE_POD && f->satellites_ODP + n >= goal)) {
             return false;
         }
     }
@@ -337,18 +340,18 @@ int wrap(int a) {
 }
 
 int map_range(int x1, int y1, int x2, int y2) {
-    int xd = abs(x1-x2);
-    int yd = abs(y1-y2);
-    if (!*map_toggle_flat & 1 && xd > *map_axis_x/2) {
-        xd = *map_axis_x - xd;
+    int dx = abs(x1 - x2);
+    int dy = abs(y1 - y2);
+    if (!*map_toggle_flat & 1 && dx > *map_half_x) {
+        dx = *map_axis_x - dx;
     }
-    return (xd + yd)/2;
+    return (dx + dy)/2;
 }
 
 int vector_dist(int x1, int y1, int x2, int y2) {
     int dx = abs(x1 - x2);
     int dy = abs(y1 - y2);
-    if (!(*map_toggle_flat & 1 || dx <= *map_half_x)) {
+    if (!*map_toggle_flat & 1 && dx > *map_half_x) {
         dx = *map_axis_x - dx;
     }
     return max(dx, dy) - ((((dx + dy) / 2) - min(dx, dy) + 1) / 2);
