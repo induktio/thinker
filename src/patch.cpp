@@ -679,26 +679,10 @@ bool patch_setup(Config* cf) {
         write_call(0x5B221B, (int)find_start);
     }
     if (cf->ignore_reactor_power) {
-        const int unit_reactor = 0x9AB88F;
-        const int locations[][2] = {
-            {(int)battle_fight_2, 0x4DA0},
-            {(int)best_defender,  0x5CB},
-        };
-        memset(fission_reactor, 1, sizeof(fission_reactor));
-        int num = 0;
-        for (const int* loc : locations) {
-            int p = loc[0];
-            while (p < loc[0] + loc[1]) {
-                if (*(int*)p == unit_reactor) {
-                    *(int*)p = (int)&fission_reactor;
-                    num++;
-                }
-                p++;
-            }
-        }
-        if (num != 48) {
-            exit_fail();
-        }
+        const byte old_bytes[] = {0x7C};
+        const byte new_bytes[] = {0xEB};
+        write_bytes(0x506F90, old_bytes, new_bytes, sizeof(new_bytes));
+        write_bytes(0x506FF6, old_bytes, new_bytes, sizeof(new_bytes));
     }
     if (cf->territory_border_fix || DEBUG) {
         write_call(0x523ED7, (int)mod_base_find3);

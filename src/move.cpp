@@ -735,7 +735,7 @@ bool has_base_sites(int x, int y, int faction, int triad) {
 }
 
 bool need_heals(VEH* veh) {
-    return veh->damage_taken > 2 && veh->unit_id != BSC_BATTLE_OGRE_MK1
+    return veh->mid_damage() && veh->unit_id != BSC_BATTLE_OGRE_MK1
         && veh->unit_id != BSC_BATTLE_OGRE_MK2 && veh->unit_id != BSC_BATTLE_OGRE_MK3;
 }
 
@@ -1737,7 +1737,9 @@ int choose_defender(int x, int y, int att_id, MAP* sq) {
 
 int combat_value(int id, int power, int moves, int mov_rate) {
     VEH* veh = &Vehicles[id];
-    return max(1, power * (10 - veh->damage_taken) * min(moves, mov_rate) / mov_rate);
+    int damage = veh->damage_taken / veh->reactor_type();
+    assert(damage >= 0 && damage < 10);
+    return max(1, power * (10 - damage) * min(moves, mov_rate) / mov_rate);
 }
 
 double battle_eval(int id1, int id2, int moves, int mov_rate) {
@@ -1801,10 +1803,10 @@ int aircraft_move(const int id) {
             return move_to_base(id);
         }
     }
-    if (u->chassis_type == CHS_COPTER && !at_base && veh->damage_taken > 3) {
-        max_dist = (veh->damage_taken > 5 ? 1 : 3);
+    if (u->chassis_type == CHS_COPTER && !at_base && veh->mid_damage()) {
+        max_dist = (veh->high_damage() ? 1 : 3);
     }
-    if (at_base && veh->damage_taken > 3) {
+    if (at_base && veh->mid_damage()) {
         max_dist = min(5, max(1, pm_unit_near[veh->x][veh->y] / 2));
     }
     int i = 0;
@@ -2172,7 +2174,9 @@ int combat_move(const int id) {
                     VEH* v = &Vehicles[k];
                     if (v->x == x2 && v->y == y2 && at_war(faction, v->faction_id)
                     && (v->triad() != TRIAD_AIR || sq->is_base())) {
-                        score += max(0, arty_limit - veh->damage_taken)
+                        int damage = v->damage_taken / v->reactor_type();
+                        assert(damage >= 0 && damage < 10);
+                        score += max(0, arty_limit - damage)
                             * (v->faction_id > 0 ? 2 : 1)
                             * (v->is_combat_unit() ? 2 : 1)
                             * (sq->owner == faction ? 2 : 1);

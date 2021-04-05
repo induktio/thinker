@@ -765,6 +765,9 @@ struct VEH {
     int triad() {
         return Chassis[(int)Units[unit_id].chassis_type].triad;
     }
+    int reactor_type() {
+        return Units[unit_id].reactor_type;
+    }
     int weapon_type() {
         return Units[unit_id].weapon_type;
     }
@@ -776,6 +779,12 @@ struct VEH {
     }
     bool is_visible(int faction) {
         return visibility & (1 << faction);
+    }
+    bool mid_damage() {
+        return damage_taken > 3*Units[unit_id].reactor_type;
+    }
+    bool high_damage() {
+        return damage_taken > 5*Units[unit_id].reactor_type;
     }
 };
 
