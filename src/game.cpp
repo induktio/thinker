@@ -318,9 +318,10 @@ double expansion_ratio(int faction) {
             break;
         }
     }
-    double limit = max(1.0 * bases, (pow(*map_half_x * *map_axis_y, 0.4) *
-        min(1.0, max(0.4, *map_area_sq_root / 56.0)) * conf.expansion_factor / 100.0));
-    return (limit > 0 ? Factions[faction].current_num_bases / limit : 1);
+    if (conf.expansion_factor > 0) {
+        return Factions[faction].current_num_bases / (1.0*max(bases, conf.expansion_factor));
+    }
+    return 0;
 }
 
 int random(int n) {

@@ -82,6 +82,7 @@ Fhas_abil has_abil = (Fhas_abil)0x5BF1F0;
 Fparse_says parse_says = (Fparse_says)0x625EC0;
 Fpopp popp = (Fpopp)0x48C0A0;
 Fhex_cost hex_cost = (Fhex_cost)0x593510;
+Fname_base name_base = (Fname_base)0x4E4090;
 
 fp_4int* veh_init = (fp_4int*)0x5C03D0;
 fp_1int* veh_skip = (fp_1int*)0x5C1D20;

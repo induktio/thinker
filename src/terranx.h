@@ -129,6 +129,7 @@ typedef int(__cdecl *Fparse_says)(int index, const char* text, int v1, int v2);
 typedef int(__cdecl *Fpopp)(const char* file_name, const char* label, int v1, 
     const char* pcx_file_name, int v2);
 typedef int(__cdecl *Fhex_cost)(int unit_id, int faction, int x1, int y1, int x2, int y2, int a7);
+typedef void(__cdecl *Fname_base)(int faction, char* name, int flags, int water);
 
 extern Fbattle_fight_1 battle_fight_1;
 extern Fpropose_proto propose_proto;
@@ -138,6 +139,7 @@ extern Fhas_abil has_abil;
 extern Fparse_says parse_says;
 extern Fpopp popp;
 extern Fhex_cost hex_cost;
+extern Fname_base name_base;
 
 extern fp_4int* veh_init;
 extern fp_1int* veh_skip;

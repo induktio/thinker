@@ -23,7 +23,6 @@ Fexcept_handler3 _except_handler3 = (Fexcept_handler3)0x646DF8;
 int* top_menu_handle = (int*)0x945824;
 int* peek_msg_status = (int*)0x9B7B9C;
 
-UNIT fission_reactor[MaxProtoNum];
 Points natives;
 Points goodtiles;
 bool has_supply_pods = true;
@@ -583,6 +582,11 @@ bool patch_setup(Config* cf) {
         write_call(0x48BA15, (int)zoom_process);
     }
 
+    if (DEBUG) {
+        remove_call(0x4E5F96); // #BEGINPROJECT
+        remove_call(0x4E5E0D); // #CHANGEPROJECT
+        remove_call(0x4F4817); // #DONEPROJECT
+    }
     /*
     Hide unnecessary region_base_plan display next to base names in debug mode.
     */
@@ -665,6 +669,11 @@ bool patch_setup(Config* cf) {
         memset((void*)0x58A5E1, 0x90, 6);
         memset((void*)0x58B76F, 0x90, 2);
         memset((void*)0x58B9F3, 0x90, 2);
+    }
+    if (cf->new_base_names) {
+        write_call(0x4CFF47, (int)mod_name_base);
+        write_call(0x4E4CFC, (int)mod_name_base);
+        write_call(0x4F7E18, (int)mod_name_base);
     }
     if (cf->faction_placement) {
         const byte asm_find_start[] = {
@@ -777,6 +786,11 @@ bool patch_setup(Config* cf) {
             0x8B,0x06,0xD1,0xE1,0x03,0xC1,0x89,0x06
         };
         write_bytes(0x5060ED, old_bytes, NULL, sizeof(old_bytes));
+    }
+    if (cf->disable_alien_guaranteed_techs) {
+        byte old_bytes[] = {0x74};
+        byte new_bytes[] = {0xEB};
+        write_bytes(0x5B29F8, old_bytes, new_bytes, sizeof(new_bytes));
     }
     if (cf->patch_content_pop) {
         const byte old_bytes[] = {

@@ -96,6 +96,7 @@ const int MaxBaseNum = 512;
 const int MaxVehNum = 2048;
 const int MaxProtoNum = 512;
 const int MaxProtoFactionNum = 64;
+const int MaxBaseNameLen = 25;
 const int MaxProtoNameLen = 32;
 
 const int MaxTechnologyNum = 89;
@@ -122,6 +123,7 @@ struct Config {
     int smooth_scrolling = 0;
     int scroll_area = 40;
     int world_map_labels = 1;
+    int new_base_names = 0;
     int windowed = 0;
     int window_width = 1024;
     int window_height = 768;
@@ -161,6 +163,7 @@ struct Config {
     int collateral_damage_value = 3;
     int disable_planetpearls = 0;
     int disable_aquatic_bonus_minerals = 0;
+    int disable_alien_guaranteed_techs = 0;
     int patch_content_pop = 0;
     int content_pop_player[MaxDiffNum] = {6,5,4,3,2,1};
     int content_pop_computer[MaxDiffNum] = {3,3,3,3,3,3};

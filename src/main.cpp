@@ -44,6 +44,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->scroll_area = max(0, atoi(value));
     } else if (MATCH("thinker", "world_map_labels")) {
         cf->world_map_labels = atoi(value);
+    } else if (MATCH("thinker", "new_base_names")) {
+        cf->new_base_names = atoi(value);
     } else if (MATCH("thinker", "windowed")) {
         cf->windowed = atoi(value);
     } else if (MATCH("thinker", "window_width")) {
@@ -81,7 +83,7 @@ int handler(void* user, const char* section, const char* name, const char* value
     } else if (MATCH("thinker", "base_nearby_limit")) {
         cf->base_nearby_limit = atoi(value);
     } else if (MATCH("thinker", "expansion_factor")) {
-        cf->expansion_factor = max(0, atoi(value));
+        cf->expansion_factor = atoi(value);
     } else if (MATCH("thinker", "expansion_autoscale")) {
         cf->expansion_autoscale = atoi(value);
     } else if (MATCH("thinker", "limit_project_start")) {
@@ -105,7 +107,7 @@ int handler(void* user, const char* section, const char* name, const char* value
     } else if (MATCH("thinker", "eco_damage_fix")) {
         cf->eco_damage_fix = atoi(value);
     } else if (MATCH("thinker", "clean_minerals")) {
-        cf->clean_minerals = max(0, atoi(value));
+        cf->clean_minerals = min(127, max(0, atoi(value)));
     } else if (MATCH("thinker", "spawn_fungal_towers")) {
         cf->spawn_fungal_towers = atoi(value);
     } else if (MATCH("thinker", "spawn_spore_launchers")) {
@@ -120,6 +122,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->disable_planetpearls = atoi(value);
     } else if (MATCH("thinker", "disable_aquatic_bonus_minerals")) {
         cf->disable_aquatic_bonus_minerals = atoi(value);
+    } else if (MATCH("thinker", "disable_alien_guaranteed_techs")) {
+        cf->disable_alien_guaranteed_techs = atoi(value);
     } else if (MATCH("thinker", "cost_factor")) {
         opt_list_parse(CostRatios, buf, MaxDiffNum, 1);
     } else if (MATCH("thinker", "tech_cost_factor")) {
@@ -1085,7 +1089,7 @@ int select_prod(int id) {
 
     double w1 = min(1.0, max(0.5, 1.0 * minerals / p->proj_limit));
     double w2 = 2.0 * enemymil / (m->thinker_enemy_range * 0.1 + 0.1) + 0.5 * p->enemy_bases
-        + min(1.0, expansion_ratio(faction)) * (f->AI_fight * 0.2 + 0.8);
+        + min(1.0, f->current_num_bases / 24.0) * (f->AI_fight * 0.2 + 0.8);
     double threat = 1 - (1 / (1 + max(0.0, w1 * w2)));
 
     debug("select_prod %d %d %2d %2d def: %d frm: %d prb: %d crw: %d pods: %d expand: %d "\

@@ -87,13 +87,13 @@ struct MAP {
     byte climate; // 000 00 000 | altitude (3 bit) ; rainfall (2 bit) ; temperature (3 bit)
     byte contour; // altitude details
     /*
-    flags & 0xF0:
+    val2 & 0xF0:
     AI colonization priority returned by world_site()
     This is written to the map struct by site_set()
     0 = unknown/not available, 1..15 higher numbers indicate a better location.
     When AltGr+4 debug overlay is enabled, MapWin_gen_terrain_poly renders
     this number on land tiles where value > 0.
-    flags & 0xF:
+    val2 & 0xF:
     Faction ID of the unit occupying this tile. 0xF = unoccupied.
     Sometimes faction ID of a deleted unit persists on the tile.
     */
@@ -681,8 +681,8 @@ struct CTerraform {
     char* name_sea;
     int preq_tech;
     int preq_tech_sea;
-    int flag;
-    int flag_sea;
+    uint32_t bit;
+    uint32_t bit_incompatible;
     int rate;
     char* shortcuts;
 };

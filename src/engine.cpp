@@ -48,14 +48,14 @@ bool has_colony_pods(int faction) {
 /*
 Original Offset: 005C89A0
 */
-HOOK_API int game_year(int n) {
+int __cdecl game_year(int n) {
     return Rules->normal_start_year + n;
 }
 
 /*
 Original Offset: 00527290
 */
-HOOK_API int mod_faction_upkeep(int faction) {
+int __cdecl mod_faction_upkeep(int faction) {
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
 
@@ -151,7 +151,7 @@ HOOK_API int mod_faction_upkeep(int faction) {
 /*
 Original Offset: 004E3D50
 */
-HOOK_API int mod_base_find3(int x, int y, int faction1, int region, int faction2, int faction3) {
+int __cdecl mod_base_find3(int x, int y, int faction1, int region, int faction2, int faction3) {
     int dist = 9999;
     int result = -1;
     bool border_fix = conf.territory_border_fix && region >= MaxRegionNum/2;
@@ -189,5 +189,137 @@ HOOK_API int mod_base_find3(int x, int y, int faction1, int region, int faction2
     return result;
 }
 
+char *strstrip(char *s) {
+    size_t size;
+    char *end;
+    size = strlen(s);
+    if (!size) {
+        return s;
+    }
+    end = s + size - 1;
+    while (end >= s && isspace(*end)) {
+        end--;
+    }
+    *(end + 1) = '\0';
+    while (*s && isspace(*s)) {
+        s++;
+    }
+    return s;
+}
 
+std::vector<std::string> read_txt_block(const char* filename, const char* section, unsigned max_len) {
+    std::vector<std::string> lines;
+    FILE* file;
+    const int buf_size = 256;
+    char filename_txt[buf_size];
+    char line[buf_size];
+    bool start = false;
+    snprintf(filename_txt, buf_size, "%s.txt", filename);
+    file = fopen(filename_txt, "r");
+    if (!file) {
+        return lines;
+    }
+    while (fgets(line, buf_size, file) != NULL) {
+        line[strlen(line) - 1] = '\0';
+        if (!start && stricmp(line, section) == 0) {
+            start = true;
+        } else if (start && stricmp(line, "#END") == 0) {
+            break;
+        } else if (start) {
+            char* p = strstrip(line);
+            if (strlen(p) > 0 && strlen(p) < max_len) {
+                lines.push_back(p);
+            }
+        }
+    }
+    fclose(file);
+    return lines;
+}
+
+/*
+Generate a base name. If all base names from faction definition are used, the name
+generated will be unique across all bases on the map, e.g. Alpha Beta Sector.
+Original Offset: 004E4090
+*/
+void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool water) {
+    const int MaxWordsNum = 24;
+    const char* words[MaxWordsNum] = {
+        "Alpha",
+        "Beta",
+        "Gamma",
+        "Delta",
+        "Epsilon",
+        "Zeta",
+        "Eta",
+        "Theta",
+        "Iota",
+        "Kappa",
+        "Lambda",
+        "Mu",
+        "Nu",
+        "Xi",
+        "Omicron",
+        "Pi",
+        "Rho",
+        "Sigma",
+        "Tau",
+        "Upsilon",
+        "Phi",
+        "Chi",
+        "Psi",
+        "Omega"
+    };
+    Faction& f = Factions[faction];
+
+    std::vector<std::string> faction_names = read_txt_block(
+        MFactions[faction].filename, (water ? "#WATERBASES" : "#BASES"), MaxBaseNameLen);
+    std::set<std::string> all_names;
+    uint32_t offset = (water ? f.base_sea_name_offset : f.base_name_offset);
+    uint32_t total = faction_names.size();
+
+    if (offset > 0 && offset < total) {
+        uint32_t seed = ((*map_random_seed + faction) & 0xFE) | 1;
+        uint32_t loop = 0;
+        do {
+            if (seed & 1) {
+                seed ^= 0x170;
+            }
+            seed >>= 1;
+        } while (seed >= total || ++loop != offset);
+        offset = seed;
+    }
+    if (offset < total) {
+        std::vector<std::string>::const_iterator it(faction_names.begin());
+        std::advance(it, offset);
+        strncpy(name, it->c_str(), MaxBaseNameLen);
+        name[MaxBaseNameLen - 1] = '\0';
+
+    } else {
+        for (int i=0; i < *total_num_bases; i++) {
+            all_names.insert(Bases[i].name);
+        }
+        int i = 0;
+        uint32_t x = 0;
+        uint32_t a = 0;
+        uint32_t b = 0;
+
+        while (i < 1024) {
+            x = map_hash(faction, ++i + offset*1024);
+            a = x % MaxWordsNum;
+            b = (x / 256) % MaxWordsNum;
+            name[0] = '\0';
+            snprintf(name, MaxBaseNameLen, "%s %s Sector", words[a], words[b]);
+            if (a != b && strlen(name) >= 14 && !all_names.count(name)) {
+                break;
+            }
+        }
+    }
+    if (save_offset) {
+        if (water) {
+            f.base_sea_name_offset++;
+        } else {
+            f.base_name_offset++;
+        }
+    }
+}
 
