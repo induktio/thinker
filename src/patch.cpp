@@ -20,18 +20,16 @@ const char* landmark_params[] = {
 typedef int(__cdecl *Fexcept_handler3)(EXCEPTION_RECORD*, PVOID, CONTEXT*);
 Fexcept_handler3 _except_handler3 = (Fexcept_handler3)0x646DF8;
 
-int* top_menu_handle = (int*)0x945824;
-int* peek_msg_status = (int*)0x9B7B9C;
+static bool has_supply_pods = true;
+static Points natives;
+static Points goodtiles;
 
-Points natives;
-Points goodtiles;
-bool has_supply_pods = true;
 
 bool FileExists(const char* path) {
     return GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES;
 }
 
-HOOK_API int mod_crop_yield(int faction, int base, int x, int y, int tf) {
+int __cdecl mod_crop_yield(int faction, int base, int x, int y, int tf) {
     int value = crop_yield(faction, base, x, y, tf);
     MAP* sq = mapsq(x, y);
     if (sq && sq->items & TERRA_THERMAL_BORE) {
@@ -40,7 +38,7 @@ HOOK_API int mod_crop_yield(int faction, int base, int x, int y, int tf) {
     return value;
 }
 
-HOOK_API int mod_base_draw(int ptr, int base_id, int x, int y, int zoom, int v1) {
+int __cdecl mod_base_draw(int ptr, int base_id, int x, int y, int zoom, int v1) {
     int color = -1;
     int width = 1;
     BASE* b = &Bases[base_id];
@@ -102,7 +100,7 @@ void check_relocate_hq(int faction) {
     }
 }
 
-HOOK_API int mod_capture_base(int base_id, int faction, int probe) {
+int __cdecl mod_capture_base(int base_id, int faction, int probe) {
     int old_faction = Bases[base_id].faction_id;
     assert(valid_player(faction) && faction != old_faction);
     capture_base(base_id, faction, probe);
@@ -110,7 +108,7 @@ HOOK_API int mod_capture_base(int base_id, int faction, int probe) {
     return 0;
 }
 
-HOOK_API int mod_base_kill(int base_id) {
+int __cdecl mod_base_kill(int base_id) {
     int old_faction = Bases[base_id].faction_id;
     assert(base_id >= 0 && base_id < *total_num_bases);
     base_kill(base_id);
@@ -118,7 +116,7 @@ HOOK_API int mod_base_kill(int base_id) {
     return 0;
 }
 
-HOOK_API int content_pop() {
+int __cdecl content_pop() {
     int faction = (*current_base_ptr)->faction_id;
     assert(valid_player(faction));
     if (is_human(faction)) {
@@ -127,9 +125,16 @@ HOOK_API int content_pop() {
     return conf.content_pop_computer[*diff_level];
 }
 
-HOOK_API int mod_setup_player(int faction, int v1, int v2) {
+int __cdecl mod_setup_player(int faction, int v1, int v2) {
     setup_player(faction, v1, v2);
     if (faction > 0 && (!is_human(faction) || conf.player_free_units > 0)) {
+        /*
+        Fix missing extra colony pods for Progenitors as mentioned by the datalinks.
+        */
+        const char* name = MFactions[faction].filename;
+        int colonies = conf.free_colony_pods
+            + (!stricmp(name, "usurper") || !stricmp(name, "caretake") ? 1 : 0);
+
         for (int i=0; i < *total_num_vehicles; i++) {
             VEH* veh = &Vehicles[i];
             if (veh->faction_id == faction) {
@@ -139,7 +144,7 @@ HOOK_API int mod_setup_player(int faction, int v1, int v2) {
                 for (int j=0; j < conf.free_formers; j++) {
                     spawn_veh(former, faction, veh->x, veh->y, -1);
                 }
-                for (int j=0; j < conf.free_colony_pods; j++) {
+                for (int j=0; j < colonies; j++) {
                     spawn_veh(colony, faction, veh->x, veh->y, -1);
                 }
                 break;
@@ -152,13 +157,13 @@ HOOK_API int mod_setup_player(int faction, int v1, int v2) {
     return 0;
 }
 
-HOOK_API int skip_action_destroy(int id) {
+int __cdecl skip_action_destroy(int id) {
     veh_skip(id);
     *veh_attack_flags = 0;
     return 0;
 }
 
-HOOK_API int render_ocean_fungus(int x, int y) {
+int __cdecl render_ocean_fungus(int x, int y) {
     MAP* sq;
     int k = 0;
     for (int i=0; i<8; i++) {
@@ -347,6 +352,8 @@ Read more about the idea behind idle loop patch: https://github.com/vinceho/smac
 */
 BOOL WINAPI ModPeekMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg)
 {
+    int* top_menu_handle = (int*)0x945824;
+    int* peek_msg_status = (int*)0x9B7B9C;
     static bool wait_next = false;
     int wait_time = (wait_next && (*top_menu_handle != 0 || *peek_msg_status == 0) ? 8 : 0);
     int wait_result = MsgWaitForMultipleObjectsEx(0, 0, wait_time, QS_ALLINPUT, MWMO_INPUTAVAILABLE);
@@ -692,6 +699,10 @@ bool patch_setup(Config* cf) {
         const byte new_bytes[] = {0xEB};
         write_bytes(0x506F90, old_bytes, new_bytes, sizeof(new_bytes));
         write_bytes(0x506FF6, old_bytes, new_bytes, sizeof(new_bytes));
+        // Adjust combat odds confirmation dialog to match new odds
+        write_call(0x506D07, (int)mod_best_defender);
+        write_call(0x5082AF, (int)battle_fight_parse_num);
+        write_call(0x5082B7, (int)battle_fight_parse_num);
     }
     if (cf->territory_border_fix || DEBUG) {
         write_call(0x523ED7, (int)mod_base_find3);

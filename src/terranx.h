@@ -104,6 +104,7 @@ extern BASE* Bases;
 extern UNIT* Units;
 extern VEH* Vehicles;
 extern MAP** MapPtr;
+extern int* ParseNumTable;
 
 // Rules parsed from alphax.txt
 extern CRules* Rules;

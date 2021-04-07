@@ -54,12 +54,12 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->window_height = max(600, atoi(value));
     } else if (MATCH("thinker", "smac_only")) {
         cf->smac_only = atoi(value);
-    } else if (MATCH("thinker", "free_formers")) {
-        cf->free_formers = atoi(value);
     } else if (MATCH("thinker", "player_free_units")) {
         cf->player_free_units = atoi(value);
+    } else if (MATCH("thinker", "free_formers")) {
+        cf->free_formers = max(0, atoi(value));
     } else if (MATCH("thinker", "free_colony_pods")) {
-        cf->free_colony_pods = atoi(value);
+        cf->free_colony_pods = max(0, atoi(value));
     } else if (MATCH("thinker", "satellites_nutrient")) {
         cf->satellites_nutrient = max(0, atoi(value));
     } else if (MATCH("thinker", "satellites_mineral")) {

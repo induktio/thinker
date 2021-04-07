@@ -85,7 +85,7 @@ int defense_value(UNIT* u);
 int faction_might(int faction);
 double expansion_ratio(int faction);
 int random(int n);
-int map_hash(int x, int y);
+uint32_t map_hash(uint32_t a, uint32_t b);
 int wrap(int a);
 int map_range(int x1, int y1, int x2, int y2);
 int vector_dist(int x1, int y1, int x2, int y2);

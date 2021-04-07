@@ -59,6 +59,7 @@ BASE* Bases = (BASE*)0x97D040;
 UNIT* Units = (UNIT*)0x9AB868;
 VEH* Vehicles = (VEH*)0x952828;
 MAP** MapPtr = (MAP**)0x94A30C;
+int* ParseNumTable = (int*)0x9BB598;
 
 // Rules parsed from alphax.txt
 CRules*     Rules     = (CRules*)0x949738;

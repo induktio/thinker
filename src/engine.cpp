@@ -2,6 +2,8 @@
 #include "engine.h"
 
 const char* ScriptTxtID = "SCRIPT";
+static int currentAttackerVehicleId = -1;
+static int currentDefenderVehicleId = -1;
 
 
 void init_save_game(int faction) {
@@ -304,7 +306,7 @@ void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool water
         uint32_t b = 0;
 
         while (i < 1024) {
-            x = map_hash(faction, ++i + offset*1024);
+            x = map_hash(faction + 8*offset, ++i);
             a = x % MaxWordsNum;
             b = (x / 256) % MaxWordsNum;
             name[0] = '\0';
@@ -321,5 +323,61 @@ void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool water
             f.base_name_offset++;
         }
     }
+}
+
+int __cdecl mod_best_defender(int defenderVehicleId, int attackerVehicleId, int bombardment)
+{
+    // store variables for modified odds dialog unless bombardment
+    int best_id = best_defender(defenderVehicleId, attackerVehicleId, bombardment);
+    if (bombardment) {
+        currentAttackerVehicleId = -1;
+        currentDefenderVehicleId = -1;
+    } else {
+        currentAttackerVehicleId = attackerVehicleId;
+        currentDefenderVehicleId = best_id;
+    }
+    return best_id;
+}
+
+int __cdecl battle_fight_parse_num(int index, int value)
+{
+    if (index > 9) {
+        return 3;
+    }
+    ParseNumTable[index] = value;
+
+    if (conf.ignore_reactor_power && index == 1) {
+        VEH* veh1 = &Vehicles[currentAttackerVehicleId];
+        VEH* veh2 = &Vehicles[currentDefenderVehicleId];
+        UNIT* u1 = &Units[veh1->unit_id];
+        UNIT* u2 = &Units[veh2->unit_id];
+        // calculate attacker and defender power
+        // artifact gets 1 HP regardless of reactor
+        int attackerPower = (u1->weapon_type == WPN_ALIEN_ARTIFACT ? 1 :
+                             u1->reactor_type * 10 - veh1->damage_taken);
+        int defenderPower = (u2->weapon_type == WPN_ALIEN_ARTIFACT ? 1 :
+                             u2->reactor_type * 10 - veh2->damage_taken);
+        // calculate firepower
+        int attackerFP = u2->reactor_type;
+        int defenderFP = u1->reactor_type;
+        // calculate hitpoints
+        int attackerHP = (attackerPower + (defenderFP - 1)) / defenderFP;
+        int defenderHP = (defenderPower + (attackerFP - 1)) / attackerFP;
+        // calculate correct odds
+        if (Weapon[u1->weapon_type].offense_value >= 0
+        && Armor[u2->armor_type].defense_value >= 0) {
+            // psi combat odds are already correct
+            // reverse engineer conventional combat odds in case of ignored reactor
+            int attackerOdds = ParseNumTable[0] * attackerHP * defenderPower;
+            int defenderOdds = ParseNumTable[1] * defenderHP * attackerPower;
+            int gcd = std::__gcd(attackerOdds, defenderOdds);
+            attackerOdds /= gcd;
+            defenderOdds /= gcd;
+            // reparse their odds into dialog
+            ParseNumTable[0] = attackerOdds;
+            ParseNumTable[1] = defenderOdds;
+        }
+    }
+    return 0;
 }
 

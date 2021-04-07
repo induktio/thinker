@@ -328,8 +328,9 @@ int random(int n) {
     return (n > 0 ? rand() % n : 0);
 }
 
-int map_hash(int x, int y) {
-    return ((*map_random_seed ^ x) * 127) ^ (y * 179);
+uint32_t map_hash(uint32_t a, uint32_t b) {
+    int h = (*map_random_seed ^ (a << 8) ^ (b << 16) ^ b) * 2654435761;
+    return h ^ (h>>16);
 }
 
 int wrap(int a) {
