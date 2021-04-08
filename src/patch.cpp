@@ -52,6 +52,10 @@ int __cdecl mod_base_draw(int ptr, int base_id, int x, int y, int zoom, int v1) 
         if (b->status_flags & BASE_GOLDEN_AGE_ACTIVE) {
             color = 251;
         }
+        if (has_facility(base_id, FAC_GEOSYNC_SURVEY_POD)
+        || has_facility(base_id, FAC_FLECHETTE_DEFENSE_SYS)) {
+            color = 254;
+        }
         if (color < 0) {
             return 0;
         }

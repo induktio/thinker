@@ -1,0 +1,37 @@
+;
+; *****************************************
+; *  SMACX Thinker Mod by Induktio        *
+; *  https://github.com/induktio/thinker  *
+; *****************************************
+;
+#MAINMENU
+#xs 400
+#caption $MSG0
+^^Mod Version: {$MSG1}
+^^Mod Build Date: {$MSG2}
+
+Close Dialog
+Show Statistics
+Toggle World Map Labels
+Open Project Homepage
+
+#STATS
+#xs 400
+#caption Thinker Mod Statistics
+^^Total bases: $NUM0
+^^Total units: $NUM1
+^^Total population: $NUM2
+^^Total mineral production: $NUM3
+^^Total energy production: $NUM4
+^^Faction bases: $NUM5
+^^Faction units: $NUM6
+^^Faction population: $NUM7
+^^Faction mineral production: $NUM8
+^^Faction energy production: $NUM9
+
+#GENERIC
+#xs 400
+#caption $MSG0
+$MSG1
+
+# ; This line must remain at end of file

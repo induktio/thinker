@@ -484,9 +484,24 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         debug("WM_CHAR alt+r\n");
         CState.MouseOverTileInfo = !CState.MouseOverTileInfo;
 
-    } else if (msg == WM_CHAR && wParam == 't' && GetAsyncKeyState(VK_MENU) < 0
-    && !*game_not_started && !*pbem_active && !*multiplayer_active) {
+    } else if (msg == WM_CHAR && wParam == 't' && GetAsyncKeyState(VK_MENU) < 0) {
         debug("WM_CHAR alt+t\n");
+        parse_says(0, MOD_VERSION, -1, -1);
+        parse_says(1, MOD_VERSION, -1, -1);
+        parse_says(2, MOD_DATE, -1, -1);
+        int ret = popp("modmenu", "MAINMENU", 0, "stars_sm.pcx", 0);
+        if (ret == 2 && !*game_not_started) {
+            conf.world_map_labels = !conf.world_map_labels;
+            MapWin_draw_map(pMain, 0);
+            InvalidateRect(hwnd, NULL, false);
+            return 0;
+        } else if (ret == 3) {
+            ShellExecute(NULL, "open", "https://github.com/induktio/thinker", NULL, NULL, SW_SHOWNORMAL);
+            return 0;
+        } else if (ret != 1 || *game_not_started || *pbem_active || *multiplayer_active) {
+            return 0;
+        }
+
         int total_pop = 0,
             total_minerals = 0,
             total_energy = 0,
@@ -513,32 +528,17 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 faction_units++;
             }
         }
-        char buf[1002];
-        snprintf(buf, 1000,
-            "Total bases: %d\n"
-            "Total units: %d\n"
-            "Total population: %d\n"
-            "Total mineral production: %d\n"
-            "Total energy production: %d\n"
-            "Faction bases: %d\n"
-            "Faction units: %d\n"
-            "Faction population: %d\n"
-            "Faction mineral production: %d\n"
-            "Faction energy production: %d\n"
-            "Clean minerals: %d\n",
-            *total_num_bases,
-            *total_num_vehicles,
-            total_pop,
-            total_minerals,
-            total_energy,
-            f->current_num_bases,
-            faction_units,
-            f->pop_total,
-            faction_minerals,
-            faction_energy,
-            f->clean_minerals_modifier + conf.clean_minerals
-        );
-        MessageBox(0, buf, MOD_VERSION, MB_OK | MB_ICONINFORMATION);
+        ParseNumTable[0] = *total_num_bases;
+        ParseNumTable[1] = *total_num_vehicles;
+        ParseNumTable[2] = total_pop;
+        ParseNumTable[3] = total_minerals;
+        ParseNumTable[4] = total_energy;
+        ParseNumTable[5] = f->current_num_bases;
+        ParseNumTable[6] = faction_units;
+        ParseNumTable[7] = f->pop_total;
+        ParseNumTable[8] = faction_minerals;
+        ParseNumTable[9] = faction_energy;
+        popp("modmenu", "STATS", 0, "markbm_sm.pcx", 0);
 
     } else if (tools && msg == WM_CHAR && wParam == 'd' && GetAsyncKeyState(VK_MENU) < 0) {
         debug("WM_CHAR alt+d\n");
