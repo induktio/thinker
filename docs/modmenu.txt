@@ -11,6 +11,16 @@
 ^^Mod Build Date: {$MSG2}
 
 Close Dialog
+Open Project Homepage
+
+#GAMEMENU
+#xs 400
+#caption $MSG0
+^^Mod Version: {$MSG1}
+^^Mod Build Date: {$MSG2}
+^^Game Time Spent: {$NUM0} hours, {$NUM1} minutes, {$NUM2} seconds.
+
+Close Dialog
 Show Statistics
 Toggle World Map Labels
 Open Project Homepage

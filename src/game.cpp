@@ -2,19 +2,19 @@
 #include "game.h"
 
 
-char* prod_name(int prod) {
-    if (prod >= 0) {
-        return (char*)&(Units[prod].name);
+char* prod_name(int item_id) {
+    if (item_id >= 0) {
+        return Units[item_id].name;
     } else {
-        return (char*)(Facility[-prod].name);
+        return Facility[-item_id].name;
     }
 }
 
-int mineral_cost(int faction, int prod) {
-    if (prod >= 0) {
-        return Units[prod].cost * cost_factor(faction, 1, -1);
+int mineral_cost(int faction, int item_id) {
+    if (item_id >= 0) {
+        return Units[item_id].cost * cost_factor(faction, 1, -1);
     } else {
-        return Facility[-prod].cost * cost_factor(faction, 1, -1);
+        return Facility[-item_id].cost * cost_factor(faction, 1, -1);
     }
 }
 
@@ -87,6 +87,9 @@ bool can_build(int base_id, int id) {
     BASE* base = &Bases[base_id];
     int faction = base->faction_id;
     Faction* f = &Factions[faction];
+    if (!has_tech(faction, Facility[id].preq_tech) || has_facility(base_id, id)) {
+        return false;
+    }
     if (id == FAC_HEADQUARTERS && find_hq(faction) >= 0) {
         return false;
     }
@@ -133,10 +136,15 @@ bool can_build(int base_id, int id) {
         }
     }
     if (id >= FAC_SKY_HYDRO_LAB && id <= FAC_ORBITAL_DEFENSE_POD) {
+        if (!has_facility(base_id, FAC_AEROSPACE_COMPLEX)) {
+            return false;
+        }
         int n = prod_count(faction, -id, base_id);
-        int goal = (id == FAC_ORBITAL_DEFENSE_POD ?
-            min(10, conf.max_satellites/2) : plans[faction].satellites_goal);
-
+        int goal = plans[faction].satellites_goal;
+        if (id == FAC_ORBITAL_DEFENSE_POD) {
+            goal = min(conf.max_satellites,
+                goal/3 + (plans[faction].diplo_flags & DIPLO_VENDETTA ? 4 : 0));
+        }
         if ((id == FAC_SKY_HYDRO_LAB && f->satellites_nutrient + n >= goal)
         || (id == FAC_ORBITAL_POWER_TRANS && f->satellites_energy + n >= goal)
         || (id == FAC_NESSUS_MINING_STATION && f->satellites_mineral + n >= goal)
@@ -144,11 +152,27 @@ bool can_build(int base_id, int id) {
             return false;
         }
     }
+    if (id == FAC_FLECHETTE_DEFENSE_SYS && f->satellites_ODP > 0) {
+        return false;
+    }
+    if (id == FAC_GEOSYNC_SURVEY_POD || id == FAC_FLECHETTE_DEFENSE_SYS) {
+        for (int i=0; i < *total_num_bases; i++) {
+            BASE* b = &Bases[i];
+            if (b->faction_id == faction && i != base_id
+            && map_range(base->x, base->y, b->x, b->y) <= 3
+            && (has_facility(i, FAC_GEOSYNC_SURVEY_POD)
+            || has_facility(i, FAC_FLECHETTE_DEFENSE_SYS)
+            || b->queue_items[0] == -FAC_GEOSYNC_SURVEY_POD
+            || b->queue_items[0] == -FAC_FLECHETTE_DEFENSE_SYS)) {
+                return false;
+            }
+        }
+    }
     /* Rare special case if the game engine reaches the global unit limit. */
     if (id == FAC_STOCKPILE_ENERGY) {
         return (*current_turn + base_id) % 4 > 0 || !can_build_unit(faction, -1);
     }
-    return has_tech(faction, Facility[id].preq_tech) && !has_facility(base_id, id);
+    return true;
 }
 
 bool can_build_unit(int faction, int id) {
@@ -310,8 +334,11 @@ int faction_might(int faction) {
     return max(1, f->mil_strength_1 + f->mil_strength_2 + f->pop_total);
 }
 
-double expansion_ratio(int faction) {
+bool allow_expand(int faction) {
     int bases = 0;
+    if (*game_rules & RULES_SCN_NO_COLONY_PODS || *total_num_bases >= MaxBaseNum * 19 / 20) {
+        return false;
+    }
     for (int i=1; i < MaxPlayerNum && conf.expansion_autoscale > 0; i++) {
         if (is_human(i)) {
             bases = Factions[i].current_num_bases;
@@ -319,18 +346,18 @@ double expansion_ratio(int faction) {
         }
     }
     if (conf.expansion_factor > 0) {
-        return Factions[faction].current_num_bases / (1.0*max(bases, conf.expansion_factor));
+        return Factions[faction].current_num_bases < max(bases, conf.expansion_factor);
     }
-    return 0;
+    return true;
+}
+
+uint32_t map_hash(uint32_t a, uint32_t b) {
+    uint32_t h = (*map_random_seed ^ (a << 8) ^ (b << 16) ^ b) * 2654435761;
+    return (h ^ (h>>16)) & 0x7fffffff;
 }
 
 int random(int n) {
     return (n > 0 ? rand() % n : 0);
-}
-
-uint32_t map_hash(uint32_t a, uint32_t b) {
-    int h = (*map_random_seed ^ (a << 8) ^ (b << 16) ^ b) * 2654435761;
-    return h ^ (h>>16);
 }
 
 int wrap(int a) {
@@ -599,14 +626,41 @@ int spawn_veh(int unit_id, int faction, int x, int y, int base_id) {
 char* parse_str(char* buf, int len, const char* s1, const char* s2, const char* s3, const char* s4) {
     buf[0] = '\0';
     strncat(buf, s1, len);
-    strncat(buf, s2, len);
-    strncat(buf, s3, len);
-    strncat(buf, s4, len);
+    if (s2) {
+        strncat(buf, " ", 2);
+        strncat(buf, s2, len);
+    }
+    if (s3) {
+        strncat(buf, " ", 2);
+        strncat(buf, s3, len);
+    }
+    if (s4) {
+        strncat(buf, " ", 2);
+        strncat(buf, s4, len);
+    }
     // strlen count does not include the first null character.
     if (strlen(buf) > 0 && strlen(buf) < (size_t)len) {
         return buf;
     }
     return NULL;
+}
+
+char* strstrip(char* s) {
+    size_t size;
+    char* end;
+    size = strlen(s);
+    if (!size) {
+        return s;
+    }
+    end = s + size - 1;
+    while (end >= s && isspace(*end)) {
+        end--;
+    }
+    *(end + 1) = '\0';
+    while (*s && isspace(*s)) {
+        s++;
+    }
+    return s;
 }
 
 /*

@@ -132,13 +132,6 @@ int __cdecl content_pop() {
 int __cdecl mod_setup_player(int faction, int v1, int v2) {
     setup_player(faction, v1, v2);
     if (faction > 0 && (!is_human(faction) || conf.player_free_units > 0)) {
-        /*
-        Fix missing extra colony pods for Progenitors as mentioned by the datalinks.
-        */
-        const char* name = MFactions[faction].filename;
-        int colonies = conf.free_colony_pods
-            + (!stricmp(name, "usurper") || !stricmp(name, "caretake") ? 1 : 0);
-
         for (int i=0; i < *total_num_vehicles; i++) {
             VEH* veh = &Vehicles[i];
             if (veh->faction_id == faction) {
@@ -148,7 +141,7 @@ int __cdecl mod_setup_player(int faction, int v1, int v2) {
                 for (int j=0; j < conf.free_formers; j++) {
                     spawn_veh(former, faction, veh->x, veh->y, -1);
                 }
-                for (int j=0; j < colonies; j++) {
+                for (int j=0; j < conf.free_colony_pods; j++) {
                     spawn_veh(colony, faction, veh->x, veh->y, -1);
                 }
                 break;
@@ -579,6 +572,7 @@ bool patch_setup(Config* cf) {
     write_offset(0x649335, (void*)mod_except_handler3);
     write_offset(0x64A3C0, (void*)mod_except_handler3);
     write_offset(0x64D947, (void*)mod_except_handler3);
+    write_offset(0x50F421, (void*)multi_timer);
 
     if (cf->smooth_scrolling) {
         write_offset(0x50F3DC, (void*)blink_timer);

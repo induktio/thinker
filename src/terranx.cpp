@@ -24,6 +24,7 @@ int* map_area_sq_root = (int*)0x949888;
 int* map_axis_x = (int*)0x949870;
 int* map_axis_y = (int*)0x949874;
 int* map_half_x = (int*)0x68FAF0;
+int* map_native_lifeforms = (int*)0x94A2B8;
 int* climate_future_change = (int*)0x9A67D8;
 int* un_charter_repeals = (int*)0x9A6638;
 int* un_charter_reinstates = (int*)0x9A663C;
@@ -60,6 +61,7 @@ UNIT* Units = (UNIT*)0x9AB868;
 VEH* Vehicles = (VEH*)0x952828;
 MAP** MapPtr = (MAP**)0x94A30C;
 int* ParseNumTable = (int*)0x9BB598;
+ThinkerData* ThinkerVars = (ThinkerData*)&MFactions[0].pad_2[0];
 
 // Rules parsed from alphax.txt
 CRules*     Rules     = (CRules*)0x949738;
@@ -69,7 +71,7 @@ CFacility*  Facility  = (CFacility*)0x9A4B68;
 CAbility*   Ability   = (CAbility*)0x9AB538;
 CChassis*   Chassis   = (CChassis*)0x94A330;
 CCitizen*   Citizen   = (CCitizen*)0x946020;
-CDefense*   Armor     = (CDefense*)0x94F278;
+CArmor*     Armor     = (CArmor*)0x94F278;
 CReactor*   Reactor   = (CReactor*)0x9527F8;
 CResource*  Resource  = (CResource*)0x945F50;
 CTerraform* Terraform = (CTerraform*)0x691878;
@@ -84,6 +86,7 @@ Fparse_says parse_says = (Fparse_says)0x625EC0;
 Fpopp popp = (Fpopp)0x48C0A0;
 Fhex_cost hex_cost = (Fhex_cost)0x593510;
 Fname_base name_base = (Fname_base)0x4E4090;
+Fveh_cost veh_cost = (Fveh_cost)0x5C1850;
 
 fp_4int* veh_init = (fp_4int*)0x5C03D0;
 fp_1int* veh_skip = (fp_1int*)0x5C1D20;

@@ -29,6 +29,16 @@ typedef int __thiscall tc_7int(int, int, int, int, int, int, int);
 
 #pragma GCC diagnostic pop
 
+/*
+pad_1 in MFaction is reserved for faction specific variables.
+pad_2 in MFaction[0] is reserved for global game state.
+*/
+struct ThinkerData {
+    uint64_t reserved;
+    uint64_t game_time_spent;
+    int8_t padding[160];
+};
+
 static_assert(sizeof(struct CRules) == 308, "");
 static_assert(sizeof(struct CSocial) == 212, "");
 static_assert(sizeof(struct CFacility) == 48, "");
@@ -39,6 +49,7 @@ static_assert(sizeof(struct BASE) == 308, "");
 static_assert(sizeof(struct UNIT) == 52, "");
 static_assert(sizeof(struct VEH) == 52, "");
 static_assert(sizeof(struct MAP) == 44, "");
+static_assert(sizeof(struct ThinkerData) == 176, "");
 
 /*
 Thinker functions that are replacements to the SMACX binary versions 
@@ -68,6 +79,7 @@ extern int* map_area_sq_root;
 extern int* map_axis_x;
 extern int* map_axis_y;
 extern int* map_half_x;
+extern int* map_native_lifeforms;
 extern int* climate_future_change;
 extern int* un_charter_repeals;
 extern int* un_charter_reinstates;
@@ -105,6 +117,7 @@ extern UNIT* Units;
 extern VEH* Vehicles;
 extern MAP** MapPtr;
 extern int* ParseNumTable;
+extern ThinkerData* ThinkerVars;
 
 // Rules parsed from alphax.txt
 extern CRules* Rules;
@@ -114,7 +127,7 @@ extern CFacility* Facility;
 extern CAbility* Ability;
 extern CChassis* Chassis;
 extern CCitizen* Citizen;
-extern CDefense* Armor;
+extern CArmor* Armor;
 extern CReactor* Reactor;
 extern CResource* Resource;
 extern CTerraform* Terraform;
@@ -131,6 +144,7 @@ typedef int(__cdecl *Fpopp)(const char* file_name, const char* label, int v1,
     const char* pcx_file_name, int v2);
 typedef int(__cdecl *Fhex_cost)(int unit_id, int faction, int x1, int y1, int x2, int y2, int a7);
 typedef void(__cdecl *Fname_base)(int faction, char* name, int flags, int water);
+typedef int(__cdecl *Fveh_cost)(int item_id, int base_id, int* ptr);
 
 extern Fbattle_fight_1 battle_fight_1;
 extern Fpropose_proto propose_proto;
@@ -141,6 +155,7 @@ extern Fparse_says parse_says;
 extern Fpopp popp;
 extern Fhex_cost hex_cost;
 extern Fname_base name_base;
+extern Fveh_cost veh_cost;
 
 extern fp_4int* veh_init;
 extern fp_1int* veh_skip;

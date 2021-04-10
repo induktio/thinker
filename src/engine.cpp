@@ -191,24 +191,6 @@ int __cdecl mod_base_find3(int x, int y, int faction1, int region, int faction2,
     return result;
 }
 
-char *strstrip(char *s) {
-    size_t size;
-    char *end;
-    size = strlen(s);
-    if (!size) {
-        return s;
-    }
-    end = s + size - 1;
-    while (end >= s && isspace(*end)) {
-        end--;
-    }
-    *(end + 1) = '\0';
-    while (*s && isspace(*s)) {
-        s++;
-    }
-    return s;
-}
-
 std::vector<std::string> read_txt_block(const char* filename, const char* section, unsigned max_len) {
     std::vector<std::string> lines;
     FILE* file;
@@ -346,7 +328,8 @@ int __cdecl battle_fight_parse_num(int index, int value)
     }
     ParseNumTable[index] = value;
 
-    if (conf.ignore_reactor_power && index == 1) {
+    if (conf.ignore_reactor_power && index == 1
+    && currentAttackerVehicleId >= 0 && currentDefenderVehicleId >= 0) {
         VEH* veh1 = &Vehicles[currentAttackerVehicleId];
         VEH* veh2 = &Vehicles[currentDefenderVehicleId];
         UNIT* u1 = &Units[veh1->unit_id];

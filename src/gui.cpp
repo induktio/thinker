@@ -414,6 +414,10 @@ void check_scroll() {
     fflush(debug_log);
 }
 
+void popup_homepage() {
+    ShellExecute(NULL, "open", "https://github.com/induktio/thinker", NULL, NULL, SW_SHOWNORMAL);
+}
+
 LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     static int iDeltaAccum = 0;
     bool fHasFocus = (GetFocus() == *phWnd);
@@ -489,14 +493,27 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         parse_says(0, MOD_VERSION, -1, -1);
         parse_says(1, MOD_VERSION, -1, -1);
         parse_says(2, MOD_DATE, -1, -1);
-        int ret = popp("modmenu", "MAINMENU", 0, "stars_sm.pcx", 0);
+
+        if (*game_not_started) {
+            int ret = popp("modmenu", "MAINMENU", 0, "stars_sm.pcx", 0);
+            if (ret == 1) {
+                popup_homepage();
+            }
+            return 0;
+        }
+        uint64_t seconds = ThinkerVars->game_time_spent / 1000;
+        ParseNumTable[0] = seconds / 3600;
+        ParseNumTable[1] = (seconds / 60) % 60;
+        ParseNumTable[2] = seconds % 60;
+        int ret = popp("modmenu", "GAMEMENU", 0, "stars_sm.pcx", 0);
+
         if (ret == 2 && !*game_not_started) {
             conf.world_map_labels = !conf.world_map_labels;
             MapWin_draw_map(pMain, 0);
             InvalidateRect(hwnd, NULL, false);
             return 0;
         } else if (ret == 3) {
-            ShellExecute(NULL, "open", "https://github.com/induktio/thinker", NULL, NULL, SW_SHOWNORMAL);
+            popup_homepage();
             return 0;
         } else if (ret != 1 || *game_not_started || *pbem_active || *multiplayer_active) {
             return 0;
@@ -872,6 +889,17 @@ int __cdecl blink_timer() {
     return 0;
 }
 
+void __cdecl multi_timer() {
+    static uint32_t prev_time = 0;
+    static uint32_t iter = 0;
+    if (!(++iter & 7)) {
+        uint32_t now = GetTickCount();
+        if (prev_time && now - prev_time > 0) {
+            ThinkerVars->game_time_spent += now - prev_time;
+        }
+        prev_time = now;
+    }
+}
 
 #pragma GCC diagnostic pop
 

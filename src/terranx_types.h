@@ -658,7 +658,7 @@ struct CCitizen {
     int research_bonus;
 };
 
-struct CDefense {
+struct CArmor {
     char* name;
     char* name_short;
     char defense_value;

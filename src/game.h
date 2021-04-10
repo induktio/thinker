@@ -53,8 +53,8 @@ const int TableOffsetY[] = {
     -7,  -8,  -9, -10, -11, -12, -13, -14, -15,
 };
 
-char* prod_name(int prod);
-int mineral_cost(int faction, int prod);
+char* prod_name(int item_id);
+int mineral_cost(int faction, int item_id);
 bool has_tech(int faction, int tech);
 bool has_ability(int faction, int abl);
 bool has_chassis(int faction, int chs);
@@ -83,9 +83,9 @@ int best_reactor(int faction);
 int offense_value(UNIT* u);
 int defense_value(UNIT* u);
 int faction_might(int faction);
-double expansion_ratio(int faction);
-int random(int n);
+bool allow_expand(int faction);
 uint32_t map_hash(uint32_t a, uint32_t b);
+int random(int n);
 int wrap(int a);
 int map_range(int x1, int y1, int x2, int y2);
 int vector_dist(int x1, int y1, int x2, int y2);
@@ -115,6 +115,7 @@ int coast_tiles(int x, int y);
 int set_base_facility(int base_id, int facility_id, bool add);
 int spawn_veh(int unit_id, int faction, int x, int y, int base_id);
 char* parse_str(char* buf, int len, const char* s1, const char* s2, const char* s3, const char* s4);
+char* strstrip(char* s);
 void check_zeros(int* ptr, int len);
 void print_map(int x, int y);
 void print_veh(int id);
@@ -154,12 +155,11 @@ class TileSearch {
     int head;
     int tail;
     int roads;
-    int y_skip;
     MAP* sq;
     void reset();
     void add_start(int x, int y);
     public:
-    int rx, ry, dist, cur, faction;
+    int rx, ry, dist, cur, faction, y_skip;
     PathNode paths[QueueSize];
     Points oldtiles;
     void init(int x, int y, int tp);
