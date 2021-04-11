@@ -82,8 +82,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->base_spacing = min(8, max(2, atoi(value)));
     } else if (MATCH("thinker", "base_nearby_limit")) {
         cf->base_nearby_limit = atoi(value);
-    } else if (MATCH("thinker", "expansion_factor")) {
-        cf->expansion_factor = atoi(value);
+    } else if (MATCH("thinker", "expansion_limit")) {
+        cf->expansion_limit = atoi(value);
     } else if (MATCH("thinker", "expansion_autoscale")) {
         cf->expansion_autoscale = atoi(value);
     } else if (MATCH("thinker", "limit_project_start")) {
@@ -249,7 +249,7 @@ HOOK_API int mod_base_production(int id, int v1, int v2, int v3) {
         if ((choice = need_psych(id)) != 0 && choice != prod) {
             debug("BUILD PSYCH\n");
         } else if (base->status_flags & BASE_PRODUCTION_DONE) {
-            choice = select_prod(id);
+            choice = select_production(id);
             base->status_flags &= ~BASE_PRODUCTION_DONE;
         } else if (prod >= 0 && !can_build_unit(faction, prod)) {
             debug("BUILD FACILITY\n");
@@ -259,7 +259,7 @@ HOOK_API int mod_base_production(int id, int v1, int v2, int v3) {
             if (base->minerals_accumulated > Rules->retool_exemption) {
                 choice = find_facility(id);
             } else {
-                choice = select_prod(id);
+                choice = select_production(id);
             }
         } else if (need_defense(id)) {
             debug("BUILD DEFENSE\n");
@@ -905,7 +905,7 @@ int find_facility(int id) {
             continue;
         if (item[1] & F_Repair && (!conf.repair_base_facility || f->SE_morale < 0))
             continue;
-        if (item[1] & F_Mineral && base->mineral_intake < 6 + fc->cost)
+        if (item[1] & F_Mineral && base->mineral_intake < 8 + fc->cost)
             continue;
         if (item[1] & F_Space && (!core_base || !has_facility(id, FAC_AEROSPACE_COMPLEX)))
             continue;
@@ -974,13 +974,12 @@ bool need_scouts(int x, int y, int faction, int scouts) {
     if (is_ocean(sq)) {
         return false;
     }
-    int score = (*current_turn < 40 ? 5 : 2)
+    int score = max(-2, 5 - *current_turn/10)
         + 2*(*map_native_lifeforms) - 3*scouts
-        + min(8, (f->region_territory_goodies[sq->region]
-        / max(1, (int)f->region_total_bases[sq->region])));
+        + min(8, f->region_territory_goodies[sq->region] / 4);
     bool val = random(16) < score;
-    debug("need_scouts %2d %2d %d %d %2d %2d\n", x, y, val, *map_native_lifeforms,
-        f->region_territory_goodies[sq->region], f->region_total_bases[sq->region]);
+    debug("need_scouts %2d %2d score: %2d value: %d goodies: %d native: %d\n",
+        x, y, score, val, f->region_territory_goodies[sq->region], *map_native_lifeforms);
     return val;
 }
 
@@ -994,7 +993,7 @@ int select_combat(int base_id, int probes, bool sea_base, bool build_ships, bool
     int w2 = 4*plans[faction].transports < f->current_num_bases ? 2 : 5;
     int w3 = plans[faction].prioritize_naval ? 2 : 5;
 
-    if (has_weapon(faction, WPN_PROBE_TEAM) && (!random(probes + 4) || !reserve)) {
+    if (has_weapon(faction, WPN_PROBE_TEAM) && (!random(probes*2 + 4) || !reserve)) {
         return find_proto(base_id, (build_ships ? TRIAD_SEA : TRIAD_LAND), WMODE_INFOWAR, DEF);
 
     } else if (has_chassis(faction, CHS_NEEDLEJET)
@@ -1007,11 +1006,12 @@ int select_combat(int base_id, int probes, bool sea_base, bool build_ships, bool
     return find_proto(base_id, TRIAD_LAND, COMBAT, (!random(4) ? DEF : ATT));
 }
 
-int select_prod(int id) {
+int select_production(const int id) {
     BASE* base = &Bases[id];
     MAP* sq1 = mapsq(base->x, base->y);
     int faction = base->faction_id;
     int minerals = base->mineral_surplus;
+    int base_region = (sq1 ? sq1->region : 0);
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
     AIPlans* p = &plans[faction];
@@ -1049,8 +1049,8 @@ int select_prod(int id) {
         if (at_war(faction, b->faction_id)) {
             int range = map_range(base->x, base->y, b->x, b->y);
             MAP* sq2 = mapsq(b->x, b->y);
-            if (sq1 && sq2 && sq1->region != sq2->region) {
-                range = 3*range/2;
+            if (sq2 && sq2->region != base_region) {
+                range = range*3/2;
             }
             enemyrange = min(enemyrange, range);
         }
@@ -1095,6 +1095,7 @@ int select_prod(int id) {
     m->thinker_enemy_range = (enemyrange + 9 * m->thinker_enemy_range)/10;
 
     double w1 = min(1.0, max(0.5, 1.0 * minerals / p->proj_limit))
+        * (base_region == p->target_land_region && p->main_region != p->target_land_region ? 3 : 1)
         * min(1.0, max(0.3, (*current_turn/40.0)));
     double w2 = 2.0 * enemymil / (m->thinker_enemy_range * 0.1 + 0.1) + 0.5 * p->enemy_bases
         + min(1.0, f->current_num_bases / 24.0) * (f->AI_fight * 0.2 + 0.8);
@@ -1106,7 +1107,7 @@ int select_prod(int id) {
         defenders, formers, landprobes+seaprobes, crawlers, pods, build_pods,
         scouts, minerals, reserve, p->proj_limit, enemyrange, enemymil, threat);
 
-    if (minerals > 2 && defenders < 1 || need_scouts(base->x, base->y, faction, scouts)) {
+    if (minerals > 2 && (defenders < 1 || need_scouts(base->x, base->y, faction, scouts))) {
         return find_proto(id, TRIAD_LAND, COMBAT, DEF);
     }
     if (*climate_future_change > 0 && is_shore_level(mapsq(base->x, base->y))
@@ -1122,7 +1123,7 @@ int select_prod(int id) {
     }
     if (has_formers && formers < (base->pop_size < (sea_base ? 4 : 3) ? 1 : 2)
     && (need_formers(base->x, base->y, faction))) {
-        if (minerals >= 8 && has_chassis(faction, CHS_GRAVSHIP)) {
+        if (has_chassis(faction, CHS_GRAVSHIP) && minerals >= Chassis[CHS_GRAVSHIP].cost) {
             int unit = find_proto(id, TRIAD_AIR, WMODE_TERRAFORMER, DEF);
             if (unit >= 0 && Units[unit].triad() == TRIAD_AIR) {
                 return unit;

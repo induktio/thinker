@@ -345,8 +345,8 @@ bool allow_expand(int faction) {
             break;
         }
     }
-    if (conf.expansion_factor > 0) {
-        return Factions[faction].current_num_bases < max(bases, conf.expansion_factor);
+    if (conf.expansion_limit > 0) {
+        return Factions[faction].current_num_bases < max(bases, conf.expansion_limit);
     }
     return true;
 }
@@ -793,9 +793,6 @@ bool __cdecl can_arty(int unit_id, bool allow_sea_arty) {
     return has_abil(unit_id, ABL_ARTILLERY); // TRIAD_LAND
 }
 
-/*
-Goal types that are entirely redundant for Thinker AIs.
-*/
 bool ignore_goal(int type) {
     return type == AI_GOAL_COLONIZE || type == AI_GOAL_TERRAFORM_LAND
         || type == AI_GOAL_TERRAFORM_WATER || type == AI_GOAL_CONDENSER
@@ -810,7 +807,7 @@ void __cdecl add_goal(int faction, int type, int priority, int x, int y, int bas
     if (!mapsq(x, y)) {
         return;
     }
-    if (ai_enabled(faction) && type < 200) {
+    if (ai_enabled(faction) && type < 200) { // Discard all non-Thinker goals
         return;
     }
     debug("add_goal %d type: %3d pr: %2d x: %3d y: %3d base: %d\n",
@@ -874,7 +871,7 @@ void __cdecl wipe_goals(int faction) {
 }
 
 int has_goal(int faction, int type, int x, int y) {
-    assert(faction < MaxPlayerNum && mapsq(x, y));
+    assert(valid_player(faction) && mapsq(x, y));
     for (int i = 0; i < MaxGoalsNum; i++) {
         Goal& goal = Factions[faction].goals[i];
         if (goal.priority > 0 && goal.x == x && goal.y == y && goal.type == type) {

@@ -61,7 +61,7 @@
 			</Target>
 		</Build>
 		<Compiler>
-			<Add option="-std=c++11 -pedantic -Wall -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wfloat-conversion" />
+			<Add option="-std=c++11 -pedantic -Wall -Wextra -Wshadow -Wpointer-arith -Wuseless-cast -Wfloat-conversion" />
 		</Compiler>
 		<Linker>
 			<Add library="user32" />
@@ -79,7 +79,7 @@
 		<Unit filename="src/gui.cpp" />
 		<Unit filename="src/gui.h" />
 		<Unit filename="src/lib/ini.c">
-			<Option compilerVar="CC" />
+			<Option compilerVar="CPP" />
 		</Unit>
 		<Unit filename="src/lib/ini.h" />
 		<Unit filename="src/main.cpp" />

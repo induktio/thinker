@@ -3,6 +3,10 @@
 
 struct CChassis;
 extern CChassis* Chassis;
+struct CWeapon;
+extern CWeapon* Weapon;
+struct CArmor;
+extern CArmor* Armor;
 struct UNIT;
 extern UNIT* Units;
 struct VEH;
@@ -768,6 +772,9 @@ struct VEH {
     int reactor_type() {
         return Units[unit_id].reactor_type;
     }
+    int armor_type() {
+        return Units[unit_id].armor_type;
+    }
     int weapon_type() {
         return Units[unit_id].weapon_type;
     }
@@ -785,6 +792,12 @@ struct VEH {
     }
     bool high_damage() {
         return damage_taken > 5*Units[unit_id].reactor_type;
+    }
+    int offense_value() {
+        return Weapon[(int)Units[unit_id].weapon_type].offense_value;
+    }
+    int defense_value() {
+        return Armor[(int)Units[unit_id].armor_type].defense_value;
     }
 };
 
