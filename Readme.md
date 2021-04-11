@@ -14,7 +14,6 @@ By patching the game to use an additional DLL, new functionality can be develope
 * More config options for many previously fixed settings in the game engine
 * Many enhancements to random map generation/spawn locations
 * Name labels for HQ bases are emphasized on the map
-* Does not affect player-run factions (with some exceptions)
 * Minimal changes to vanilla game mechanics
 * Game binary includes [Scient's patches](Details.md)
 
@@ -33,11 +32,12 @@ This is the only place to download binary releases. See also the [Changelog](Cha
 
 Installation
 ------------
-1. Extract the files to Alpha Centauri game folder.
+1. Extract the files to Alpha Centauri game folder. Alphax.txt changes are optional.
 2. Check the Changelog for release notes.
 3. Change configuration from thinker.ini or just use the defaults.
-4. Start the game from terranx_mod.exe
-5. Mod version/build date should now be visible in the game version menu (Ctrl+F4). If it is not displayed, Thinker is not correctly loaded.
+4. Start the game from terranx_mod.exe.
+5. Press ALT+T to open Thinker's options menu. Other option is to check that mod version/build date is visible in the game version menu (Ctrl+F4).
+6. If none of those options display mod version, Thinker is incorrectly installed.
 
 
 Other mods
@@ -57,7 +57,7 @@ See also more information about [patch loading](tools/Patching.md).
 
 License
 -------
-This software is licensed under the GNU General Public License version 2, or (at your option) any later version of the GPL. See [License.txt](License.txt) for details.
+This software is licensed under the GNU General Public License version 2, or (at your option) version 3 of the GPL. See [License.txt](License.txt) for details.
 
 The original game assets are not covered by this license and remain property of Firaxis Games Inc and Electronic Arts Inc.
 

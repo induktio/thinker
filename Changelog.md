@@ -1,6 +1,25 @@
 
 # Thinker mod release changelog
 
+## Version 2.5 (2021-04-11)
+* Add new in game menu support for Thinker features (ALT+T shortcut). While a game is loaded, the menu will display elapsed time during that savegame.
+* Add menu option to toggle world_map_labels while in game.
+* Bases that have Flechette Defense System or Geo Survey Pods are now highlighted with a blue label on the world map.
+* Many adjustments to combat movement logic. AI tries to distribute attackers to many more tiles to avoid collateral damage.
+* Improve AI pathfinding to take into account 1-tile chokepoints that are occupied by a base.
+* AI costs in revised_tech_cost can now be set separately with tech_cost_factor option.
+* Rename expansion_factor option to expansion_limit. It is now a fixed limit for all map sizes.
+* Replace ignore_reactor_power patch with Will To Power version. This implementation does not require any changes to script.txt and will display combat odds in the vanilla format.
+* AI base spacing can now be adjusted with base_spacing and base_nearby_limit options. By default they are the same values than previous versions.
+* Add new options: expansion_autoscale, social_ai_bias, new_base_names, disable_alien_guaranteed_techs and player_free_units.
+* AI adjusts satellite production amounts automatically based on population levels if it is below satellite_limit option.
+* AI takes facility cost and maintenance now better into account in production choices.
+* AI tries to build Geo Survey Pods in a way that they achieve better uniform coverage across territory.
+* AI builds more colony pods to expand faster if there is a lot of space available.
+* In the early game, AI tries to determine more accurately if it needs more scout units.
+* Reduce crawler production slightly if the bases are already close together.
+
+
 ## Version 2.4 (2021-03-14)
 * Add config options to choose if the Planet should randomly spawn expansion-only units. This works even if smac_only is not selected.
 * Add many new config options for unit repair rates. This is the same implementation than in Will To Power.
