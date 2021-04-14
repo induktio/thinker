@@ -51,9 +51,31 @@ The config option `revised_tech_cost` attempts to remake this mechanic so that t
 
     6 * Level^3 + 74 * Level - 20
 
-For example, on standard maps level 1 techs cost 60 labs before other factors are considered. The idea here is that level 1-3 costs stay relatively modest and the big cost increases should begin from level 4 onwards. After calculating the base cost, it is multiplied by all of the following factors.
+Here are the base costs for standard maps:
 
-* For AI factions, each unit of `cost_factor` applies a 8% bonus/penalty, e.g. `cost_factor=10` equals 100% of human cost while `cost_factor=7` equals 76% of human cost.
+| Level | Labs   |
+|-------|--------|
+|     1 |     60 |
+|     2 |    176 |
+|     3 |    364 |
+|     4 |    660 |
+|     5 |   1100 |
+|     6 |   1720 |
+|     7 |   2556 |
+|     8 |   3644 |
+|     9 |   5020 |
+|    10 |   6720 |
+|    11 |   8780 |
+|    12 |  11236 |
+|    13 |  14124 |
+|    14 |  17480 |
+|    15 |  21340 |
+|    16 |  25740 |
+
+The idea here is that level 1-3 costs stay relatively modest and the big cost increases should begin from level 4 onwards.
+After calculating the base cost, it is multiplied by all of the following factors.
+
+* For AI factions, `tech_cost_factor` scales the cost for each difficulty level, e.g. `tech_cost_factor=84` equals 84% of human cost.
 * Multiply by the square root of the map size divided by the square root of a standard map size (56).
 * Multiply by faction specific TECHCOST modifier (lower values means faster progress).
 * Divide by Technology discovery rate set in alphax.txt (lower values means slower progress).
