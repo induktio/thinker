@@ -4,7 +4,7 @@
 
 typedef int PMTable[MaxMapW][MaxMapH];
 
-const int BASE_DISALLOWED = (TERRA_BASE_IN_TILE | TERRA_MONOLITH | TERRA_FUNGUS | TERRA_THERMAL_BORE);
+const int BASE_DISALLOWED = (BIT_BASE_IN_TILE | BIT_MONOLITH | BIT_FUNGUS | BIT_THERMAL_BORE);
 
 extern PMTable pm_overlay;
 

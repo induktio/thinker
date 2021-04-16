@@ -121,6 +121,7 @@ void print_map(int x, int y);
 void print_veh(int id);
 void print_base(int id);
 
+void __cdecl bitmask(uint32_t input, uint32_t* offset, uint32_t* mask);
 int __cdecl mod_bonus_at(int x, int y);
 int __cdecl mod_goody_at(int x, int y);
 bool __cdecl can_arty(int unit_id, bool allow_sea_arty);

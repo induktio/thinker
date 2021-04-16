@@ -32,7 +32,7 @@ bool FileExists(const char* path) {
 int __cdecl mod_crop_yield(int faction, int base, int x, int y, int tf) {
     int value = crop_yield(faction, base, x, y, tf);
     MAP* sq = mapsq(x, y);
-    if (sq && sq->items & TERRA_THERMAL_BORE) {
+    if (sq && sq->items & BIT_THERMAL_BORE) {
         value++;
     }
     return value;
@@ -166,7 +166,7 @@ int __cdecl render_ocean_fungus(int x, int y) {
     for (int i=0; i<8; i++) {
         int z = (i - 1) & 7;
         sq = mapsq(wrap(x + NearbyTiles[z][0]), y + NearbyTiles[z][1]);
-        if (sq && sq->items & TERRA_FUNGUS && is_ocean_shelf(sq)) {
+        if (sq && sq->items & BIT_FUNGUS && is_ocean_shelf(sq)) {
             k |= (1 << i);
         }
     }
@@ -204,7 +204,7 @@ void process_map(int k) {
                 }
                 assert(sq->region >= 0 && sq->region < MaxRegionNum);
                 region_count[sq->region]++;
-                if (!is_ocean(sq) && sq->items & TERRA_SUPPLY_REMOVE) {
+                if (!is_ocean(sq) && sq->items & BIT_SUPPLY_REMOVE) {
                     pods_removed++;
                 }
             }
@@ -216,7 +216,7 @@ void process_map(int k) {
                 continue;
             }
             MAP* sq = mapsq(x, y);
-            if (sq && !is_ocean(sq) && ~sq->items & TERRA_FUNGUS && !(sq->landmarks & ~LM_FRESH)
+            if (sq && !is_ocean(sq) && ~sq->items & BIT_FUNGUS && !(sq->landmarks & ~LM_FRESH)
             && region_count[sq->region] >= limit) {
                 goodtiles.insert({x, y});
             }
@@ -261,7 +261,7 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
                 }
             } else {
                 sc += (sq->is_rainy_or_moist() ? 3 : 1);
-                if (sq->items & TERRA_RIVER) {
+                if (sq->items & BIT_RIVER) {
                     sc += (i < 20 ? 4 : 2);
                 }
                 if (sq->is_rolling()) {
@@ -280,7 +280,7 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
                     pods.insert({x2, y2});
                 }
             }
-            if (sq->items & TERRA_FUNGUS) {
+            if (sq->items & BIT_FUNGUS) {
                 sc -= (i < 20 ? 4 : 1);
             }
         }
@@ -296,8 +296,8 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
             std::advance(it, random(pods.size()));
             sq = mapsq(it->x, it->y);
             pods.erase(it);
-            sq->items &= ~(TERRA_FUNGUS | TERRA_MINERAL_RES | TERRA_ENERGY_RES);
-            sq->items |= (TERRA_SUPPLY_REMOVE | TERRA_BONUS_RES | TERRA_NUTRIENT_RES);
+            sq->items &= ~(BIT_FUNGUS | BIT_MINERAL_RES | BIT_ENERGY_RES);
+            sq->items |= (BIT_SUPPLY_REMOVE | BIT_BONUS_RES | BIT_NUTRIENT_RES);
             n++;
         }
         return true;

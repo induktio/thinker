@@ -1640,8 +1640,8 @@ typedef int(__thiscall *FMapWin_gen_map)(Console* This, int owner, int units_onl
 typedef int(__thiscall *FMapWin_draw_map)(Console* This, int v1);
 typedef int(__stdcall *FWinProc)(HWND, int, WPARAM, LPARAM);
 typedef int(__stdcall *FConsole_zoom)(int zoom_type, int v1);
-typedef int(__cdecl *FWin_update_screen)(RECT *prRect, int v1);
-typedef int(__cdecl *FWin_flip)(RECT *pRect);
+typedef int(__cdecl *FWin_update_screen)(RECT* prRect, int v1);
+typedef int(__cdecl *FWin_flip)(RECT* pRect);
 typedef int(__thiscall *FBuffer_set_text_color)(Buffer* This, int a2, int a3, int a4, int a5);
 typedef int(__thiscall *FBuffer_set_font)(Buffer* This, Font* font, int a3, int a4, int a5);
 typedef int(__thiscall *FBuffer_write_cent_l3)(Buffer* This, LPCSTR lpString, RECT* rt, int len);

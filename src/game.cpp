@@ -54,15 +54,15 @@ bool has_terra(int faction, int act, bool ocean) {
 
 bool has_project(int faction, int id) {
     /* If faction_id is negative, check if anyone has built the project. */
-    assert(faction != 0 && id >= PROJECT_ID_FIRST);
-    int i = SecretProjects[id-PROJECT_ID_FIRST];
+    assert(faction != 0 && id >= SP_ID_First);
+    int i = SecretProjects[id - SP_ID_First];
     return i >= 0 && (faction < 0 || Bases[i].faction_id == faction);
 }
 
 bool has_facility(int base_id, int id) {
     assert(base_id >= 0 && id > 0 && id <= FAC_EMPTY_SP_64);
-    if (id >= PROJECT_ID_FIRST) {
-        return SecretProjects[id-PROJECT_ID_FIRST] == base_id;
+    if (id >= SP_ID_First) {
+        return SecretProjects[id-SP_ID_First] == base_id;
     }
     int faction = Bases[base_id].faction_id;
     const int freebies[][2] = {
@@ -87,6 +87,23 @@ bool can_build(int base_id, int id) {
     BASE* base = &Bases[base_id];
     int faction = base->faction_id;
     Faction* f = &Factions[faction];
+    if (id >= SP_ID_First && id <= SP_ID_Last) {
+        if (SecretProjects[id-SP_ID_First] != SP_Unbuilt
+        || *game_rules & RULES_SCN_NO_BUILDING_SP) {
+            return false;
+        }
+    }
+    if ((id == FAC_ASCENT_TO_TRANSCENDENCE || id == FAC_VOICE_OF_PLANET) && is_alien(faction)) {
+        return false;
+    }
+    if (id == FAC_VOICE_OF_PLANET && ~*game_rules & RULES_VICTORY_TRANSCENDENCE) {
+        return false;
+    }
+    if (id == FAC_ASCENT_TO_TRANSCENDENCE) {
+        return has_project(-1, FAC_VOICE_OF_PLANET)
+            && !has_project(-1, FAC_ASCENT_TO_TRANSCENDENCE)
+            && *game_rules & RULES_VICTORY_TRANSCENDENCE;
+    }
     if (!has_tech(faction, Facility[id].preq_tech) || has_facility(base_id, id)) {
         return false;
     }
@@ -107,22 +124,8 @@ bool can_build(int base_id, int id) {
     if ((id == FAC_HAB_COMPLEX || id == FAC_HABITATION_DOME) && base->nutrient_surplus < 2) {
         return false;
     }
-    if (id >= PROJECT_ID_FIRST && id <= PROJECT_ID_LAST) {
-        if (SecretProjects[id-PROJECT_ID_FIRST] != PROJECT_UNBUILT
-        || *game_rules & RULES_SCN_NO_BUILDING_SP) {
-            return false;
-        }
-    }
-    if (id == FAC_VOICE_OF_PLANET && ~*game_rules & RULES_VICTORY_TRANSCENDENCE) {
-        return false;
-    }
-    if (id == FAC_ASCENT_TO_TRANSCENDENCE) {
-        return has_project(-1, FAC_VOICE_OF_PLANET)
-            && !has_project(-1, FAC_ASCENT_TO_TRANSCENDENCE)
-            && *game_rules & RULES_VICTORY_TRANSCENDENCE;
-    }
     if (id == FAC_SUBSPACE_GENERATOR) {
-        if (base->pop_size < Rules->base_size_subspace_gen) {
+        if (!is_alien(faction) || base->pop_size < Rules->base_size_subspace_gen) {
             return false;
         }
         int n = 0;
@@ -319,7 +322,8 @@ int best_reactor(int faction) {
 int offense_value(UNIT* u) {
     int w = (conf.ignore_reactor_power ? (int)REC_FISSION : u->reactor_type);
     if (u->weapon_type == WPN_CONVENTIONAL_PAYLOAD) {
-        return Factions[*active_faction].best_weapon_value * w * 4/5;
+        int wpn = best_weapon(*active_faction);
+        return max(1, Weapon[wpn].offense_value * w * 4/5);
     }
     return Weapon[u->weapon_type].offense_value * w;
 }
@@ -518,7 +522,7 @@ int mod_veh_skip(int veh_id) {
     veh->status_icon = '-';
     if (veh->damage_taken) {
         MAP* sq = mapsq(veh->x, veh->y);
-        if (sq && sq->items & TERRA_MONOLITH) {
+        if (sq && sq->items & BIT_MONOLITH) {
             monolith(veh_id);
         }
     }
@@ -711,6 +715,16 @@ void print_base(int id) {
 }
 
 /*
+Purpose: Calculate the offset and bitmask for the specified input.
+Original Offset: 0050BA00
+Return Value: n/a
+*/
+void __cdecl bitmask(uint32_t input, uint32_t* offset, uint32_t* mask) {
+    *offset = input / 8;
+    *mask = 1 << (input & 7);
+}
+
+/*
 Purpose: Determine if the tile has a resource bonus.
 Original Offset: 00592030
 Return Value: 0 (no bonus), 1 (nutrient), 2 (mineral), 3 (energy)
@@ -719,7 +733,7 @@ int __cdecl mod_bonus_at(int x, int y) {
     MAP* sq = mapsq(x, y);
     uint32_t bit = sq->items;
     uint32_t alt = sq->climate >> 5;
-    bool has_rsc_bonus = bit & TERRA_BONUS_RES;
+    bool has_rsc_bonus = bit & BIT_BONUS_RES;
     if (!has_rsc_bonus && (!*map_random_seed || (alt >= ALT_SHORE_LINE
     && !conf.rare_supply_pods && !(*game_rules & RULES_NO_UNITY_SCATTERING)))) {
         return 0;
@@ -734,11 +748,11 @@ int __cdecl mod_bonus_at(int x, int y) {
         return 0;
     }
     int ret = (alt < ALT_SHORE_LINE && !conf.rare_supply_pods) ? chk % 3 + 1 : (chk % 5) & 3;
-    if (!ret || bit & TERRA_NUTRIENT_RES) {
-        if (bit & TERRA_ENERGY_RES) {
+    if (!ret || bit & BIT_NUTRIENT_RES) {
+        if (bit & BIT_ENERGY_RES) {
             return 3; // energy
         }
-        return ((bit & TERRA_MINERAL_RES) != 0) + 1; // nutrient or mineral
+        return ((bit & BIT_MINERAL_RES) != 0) + 1; // nutrient or mineral
     }
     return ret;
 }
@@ -751,13 +765,13 @@ Return Value: 0 (no supply pod), 1 (standard supply pod), 2 (unity pod?)
 int __cdecl mod_goody_at(int x, int y) {
     MAP* sq = mapsq(x, y);
     uint32_t bit = sq->items;
-    if (bit & (TERRA_SUPPLY_REMOVE | TERRA_MONOLITH)) {
+    if (bit & (BIT_SUPPLY_REMOVE | BIT_MONOLITH)) {
         return 0; // nothing, supply pod already opened or monolith
     }
     if (*game_rules & RULES_NO_UNITY_SCATTERING) {
-        return (bit & (TERRA_UNK_4000000 | TERRA_UNK_8000000)) ? 2 : 0; // ?
+        return (bit & (BIT_UNK_4000000 | BIT_UNK_8000000)) ? 2 : 0; // ?
     }
-    if (bit & TERRA_SUPPLY_POD) {
+    if (bit & BIT_SUPPLY_POD) {
         return 1; // supply pod
     }
     if (!*map_random_seed) {
@@ -911,11 +925,11 @@ void TileSearch::add_start(int x, int y) {
         paths[tail] = {x, y, 0, -1};
         oldtiles.insert({x, y});
         if (!is_ocean(sq)) {
-            if (sq->items & (TERRA_ROAD | TERRA_BASE_IN_TILE)) {
-                roads |= TERRA_ROAD | TERRA_BASE_IN_TILE;
+            if (sq->items & (BIT_ROAD | BIT_BASE_IN_TILE)) {
+                roads |= BIT_ROAD | BIT_BASE_IN_TILE;
             }
-            if (sq->items & (TERRA_RIVER | TERRA_BASE_IN_TILE)) {
-                roads |= TERRA_RIVER | TERRA_BASE_IN_TILE;
+            if (sq->items & (BIT_RIVER | BIT_BASE_IN_TILE)) {
+                roads |= BIT_RIVER | BIT_BASE_IN_TILE;
             }
         }
         tail++;
@@ -977,7 +991,7 @@ Pathnodes are also used to keep track of the route to reach the current destinat
 */
 MAP* TileSearch::get_next() {
     while (head < tail) {
-        bool first = paths[head].dist == 0;
+        bool first = !head;
         rx = paths[head].x;
         ry = paths[head].y;
         dist = paths[head].dist;

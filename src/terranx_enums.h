@@ -1,5 +1,10 @@
 #pragma once
 
+const int SP_Unbuilt = -1;
+const int SP_Destroyed = -2;
+const int SP_ID_First = 70;
+const int SP_ID_Last = 106;
+
 enum facility_id {
     FAC_HEADQUARTERS = 1,
     FAC_CHILDREN_CRECHE = 2,
@@ -134,10 +139,6 @@ enum facility_id {
     FAC_EMPTY_SP_62 = 131,
     FAC_EMPTY_SP_63 = 132,
     FAC_EMPTY_SP_64 = 133,
-    PROJECT_UNBUILT = -1,
-    PROJECT_DESTROYED = -2,
-    PROJECT_ID_FIRST = 70,
-    PROJECT_ID_LAST = 106,
 };
 
 enum technology_id {
@@ -648,18 +649,101 @@ enum game_rules {
     RULES_SCN_NO_BUILDING_SP = 0x80000000,
 };
 
-enum game_preferences {
-    PREF_UNK_2 = 0x2,
-    PREF_UNK_1000 = 0x1000,
+enum GameBaseWarningsBitfield {
+    WARN_STOP_NEW_FAC_BUILT = 0x1,
+    WARN_STOP_NON_COMBAT_VEH_BUILT = 0x2,
+    WARN_STOP_PROTOTYPE_COMPLETE = 0x4,
+    WARN_STOP_DRONE_RIOTS = 0x8,
+    WARN_STOP_DRONE_RIOTS_END = 0x10,
+    WARN_STOP_GOLDEN_AGE = 0x20,
+    WARN_STOP_GOLDEN_AGE_END = 0x40,
+    WARN_STOP_NUTRIENT_SHORTAGE = 0x80,
+    WARN_STOP_UNK_100 = 0x100, // no text, not visible in PrefWin; set with default warning
+    WARN_STOP_BUILD_OUT_OF_DATE = 0x200,
+    WARN_STOP_COMBAT_VEH_BUILT = 0x400,
+    WARN_STOP_POP_LIMIT_REACHED = 0x800,
+    WARN_STOP_DELAY_IN_TRANSCEND = 0x1000,
+    WARN_STOP_BUILT_VIA_GOV_QUEUE = 0x2000,
+    WARN_STOP_STARVATION = 0x4000,
+    WARN_STOP_MINERAL_SHORTAGE = 0x8000,
+    WARN_STOP_ENERGY_SHORTAGE = 0x10000,
+    WARN_STOP_RANDOM_EVENT = 0x20000,
+};
+
+enum GamePreferencesBitfield {
+    PREF_BSC_PAUSE_END_TURN = 0x1,
+    PREF_BSC_AUTOSAVE_EACH_TURN = 0x2,
+    PREF_BSC_DONT_QUICK_MOVE_ENEMY_VEH = 0x4, // flag set when unchecked
+    PREF_ADV_FAST_BATTLE_RESOLUTION = 0x8,
+    PREF_UNK_10 = 0x10, // no text, not visible in PrefWin; set with default preferences
+    PREF_BSC_TUTORIAL_MSGS = 0x20,
+    //
+    PREF_AV_MAP_ANIMATIONS = 0x80,
+    PREF_MAP_SHOW_GRID = 0x100,
+    PREF_MAP_SHOW_BASE_GRID = 0x200,
+    PREF_AV_VOLUME_SFX_TOGGLE = 0x400,
+    PREF_AV_SOUND_EFFECTS = 0x400, // not displayed
+    PREF_AV_VOLUME_MUSIC_TOGGLE = 0x800,
+    PREF_AV_BACKGROUND_MUSIC = 0x800, // not displayed
+    PREF_BSC_MOUSE_EDGE_SCROLL_VIEW = 0x1000,
+    //
+    PREF_BSC_AUTO_DESIGN_VEH = 0x4000,
+    PREF_BSC_DONT_QUICK_MOVE_ALLY_VEH = 0x8000, // flag set when unchecked
+    PREF_AUTO_AIR_VEH_RET_HOME_FUEL_RNG = 0x10000,
+    PREF_AUTO_FORMER_RAISE_LWR_TERRAIN = 0x20000,
+    PREF_AV_INTERLUDES_DISABLED = 0x40000, // flag set when unchecked
+    PREF_ADV_NO_CENTER_VEH_ORDERS = 0x80000,
+    PREF_AUTO_END_MOVE_SPOT_VEH_PACT = 0x100000,
+    PREF_AUTO_END_MOVE_SPOT_VEH_TREATY = 0x200000,
+    PREF_AUTO_END_MOVE_SPOT_VEH_TRUCE = 0x400000,
+    PREF_AUTO_END_MOVE_SPOT_VEH_WAR = 0x800000,
+    PREF_AUTO_FORMER_PLANT_FORESTS = 0x1000000,
+    PREF_AUTO_FORMER_BUILD_ADV = 0x2000000, // condensers, boreholes, etc.
+    //
+    PREF_AV_SLIDING_WINDOWS = 0x8000000,
+    PREF_AV_SECRET_PROJECT_MOVIES = 0x10000000,
+    PREF_ADV_RADIO_BTN_NOT_SEL_SING_CLK = 0x20000000, // flag set when unchecked
+    PREF_AUTO_DONT_END_MOVE_DIFF_TRIAD = 0x40000000,
+    PREF_AUTO_WAKE_VEH_TRANS_REACH_LAND = 0x80000000,
+};
+
+enum GameMorePreferencesBitfield {
+    MPREF_MAP_SHOW_FOG_WAR = 0x1,
+    //
+    MPREF_ADV_ZOOM_BASE_NO_RECENTER_MAP = 0x4,
+    MPREF_AUTO_FORMER_REMOVE_FUNGUS = 0x8,
+    MPREF_ADV_PAUSE_AFTER_BATTLES = 0x10,
+    MPREF_AUTO_FORMER_BUILD_SENSORS = 0x20,
+    MPREF_ADV_QUICK_MOVE_VEH_ORDERS = 0x40,
+    MPREF_ADV_QUICK_MOVE_ALL_VEH = 0x80,
+    MPREF_ADV_RIGHT_CLICK_POPS_UP_MENU = 0x100,
+    MPREF_AV_WHOLE_VEH_BLINKS = 0x200,
+    MPREF_ADV_DETAIL_RIGHT_CLICK_MENUS = 0x400,
+    MPREF_AUTO_ALWAYS_INSPECT_MONOLITH = 0x800,
+    MPREF_MAP_SHOW_PROD_WITH_BASE_NAMES = 0x1000,
+    MPREF_MAP_SHOW_BASE_NAMES = 0x2000,
+    MPREF_AV_VOLUME_VOICE_TOGGLE = 0x4000,
+    MPREF_AV_VOICEOVER_TECH_FAC = 0x4000, // not displayed
+    MPREF_ADV_CONFIRM_ODDS_BF_ATTACKING = 0x8000,
+    MPREF_MAP_SHOW_FLAT_TERRAIN = 0x10000,
+    MPREF_AV_VOICEOVER_STOP_CLOSE_POPUP = 0x20000,
+    MPREF_ADV_CLICK_VEH_CANCELS_ORDERS = 0x40000,
+    MPREF_AV_SLIDING_SCROLLBARS = 0x80000,
+    MPREF_BSC_AUTO_PRUNE_OBS_VEH = 0x100000,
+    MPREF_ADV_DETAIL_MAIN_MENUS = 0x200000,
+    MPREF_AUTO_FORMER_CANT_BUILD_ROADS = 0x400000, // or tubes; flag set when unchecked
+    MPREF_MAP_SHOW_GRID_OCEAN_SQ = 0x800000,
+    MPREF_AV_MONUMENTS_DISABLED = 0x1000000, // flag set when unchecked
+    MPREF_MAP_HIDE_ACTIVE_VEH_GOTO_PATH = 0x2000000, // flag set when unchecked
 };
 
 enum game_diff_level {
-    DIFF_CITIZEN = 0x0,
-    DIFF_SPECIALIST = 0x1,
-    DIFF_TALENT = 0x2,
-    DIFF_LIBRARIAN = 0x3,
-    DIFF_THINKER = 0x4,
-    DIFF_TRANSCEND = 0x5,
+    DIFF_CITIZEN = 0,
+    DIFF_SPECIALIST = 1,
+    DIFF_TALENT = 2,
+    DIFF_LIBRARIAN = 3,
+    DIFF_THINKER = 4,
+    DIFF_TRANSCEND = 5,
 };
 
 enum diplo_status {
@@ -742,36 +826,72 @@ enum base_status {
     BASE_HURRY_PRODUCTION = 0x40000000,
 };
 
-enum terrain_flags {
-    TERRA_BASE_IN_TILE = 0x1,
-    TERRA_UNIT_IN_TILE = 0x2,
-    TERRA_ROAD = 0x4,
-    TERRA_MAGTUBE = 0x8,
-    TERRA_MINE = 0x10,
-    TERRA_FUNGUS = 0x20,
-    TERRA_SOLAR = 0x40,
-    TERRA_RIVER = 0x80,
-    TERRA_RIVER_SRC = 0x100, // River begins here for visual effect
-    TERRA_RIVER_LAKE = 0x200, // Shows more water for visual effect
-    TERRA_BONUS_RES = 0x400,
-    TERRA_BUNKER = 0x800,
-    TERRA_BASE_RADIUS = 0x1000, // Production radius; 21 tiles per base
-    TERRA_MONOLITH = 0x2000,
-    TERRA_FARM = 0x8000,
-    TERRA_ENERGY_RES = 0x10000,
-    TERRA_MINERAL_RES = 0x20000,
-    TERRA_AIRBASE = 0x40000,
-    TERRA_SOIL_ENR = 0x80000,
-    TERRA_SUPPLY_REMOVE = 0x100000, // Prevent randomly generated pods from appearing here
-    TERRA_FOREST = 0x200000,
-    TERRA_CONDENSER = 0x400000,
-    TERRA_ECH_MIRROR = 0x800000,
-    TERRA_THERMAL_BORE = 0x1000000,
-    TERRA_UNK_4000000 = 0x4000000,
-    TERRA_UNK_8000000 = 0x8000000,
-    TERRA_SUPPLY_POD = 0x10000000,
-    TERRA_NUTRIENT_RES = 0x20000000,
-    TERRA_SENSOR = 0x80000000,
+enum terrain_items {
+    BIT_BASE_IN_TILE = 0x1,
+    BIT_UNIT_IN_TILE = 0x2,
+    BIT_ROAD = 0x4,
+    BIT_MAGTUBE = 0x8,
+    BIT_MINE = 0x10,
+    BIT_FUNGUS = 0x20,
+    BIT_SOLAR = 0x40,
+    BIT_RIVER = 0x80,
+    BIT_RIVER_SRC = 0x100, // River begins here for visual effect
+    BIT_RIVER_LAKE = 0x200, // Shows more water for visual effect
+    BIT_BONUS_RES = 0x400,
+    BIT_BUNKER = 0x800,
+    BIT_BASE_RADIUS = 0x1000, // Production radius; 21 tiles per base
+    BIT_MONOLITH = 0x2000,
+    BIT_CANAL_COAST = 0x4000, // Land continent (this tile) + 1-tile canal + another continent.
+    // Both regions must also meet certain tile count threshold.
+    BIT_FARM = 0x8000,
+    BIT_ENERGY_RES = 0x10000,
+    BIT_MINERAL_RES = 0x20000,
+    BIT_AIRBASE = 0x40000,
+    BIT_SOIL_ENRICHER = 0x80000,
+    BIT_SUPPLY_REMOVE = 0x100000, // Prevent randomly generated pods from appearing here
+    BIT_FOREST = 0x200000,
+    BIT_CONDENSER = 0x400000,
+    BIT_ECH_MIRROR = 0x800000,
+    BIT_THERMAL_BORE = 0x1000000,
+    BIT_UNK_2000000 = 0x2000000, // related to monoliths, maybe redundant
+    BIT_UNK_4000000 = 0x4000000, // related to pods, maybe redundant
+    BIT_UNK_8000000 = 0x8000000, // related to pods, maybe redundant
+    BIT_SUPPLY_POD = 0x10000000,
+    BIT_NUTRIENT_RES = 0x20000000,
+    BIT_DOUBLE_SEA = 0x40000000, // Iterate adjacent 8 sea tiles, set bit if there are
+    // more than one group of sea tiles separated by land tiles, can be same sea region.
+    BIT_SENSOR = 0x80000000,
+};
+
+const uint32_t TerraformingBits[20][2] = { // terrain enhancement, incompatible on same tile
+    BIT_FARM,          BIT_FOREST, // farm
+    BIT_SOIL_ENRICHER, BIT_FOREST, // soil enricher
+    BIT_MINE,          BIT_MINE | BIT_SOLAR | BIT_FOREST | BIT_CONDENSER | BIT_ECH_MIRROR
+                       | BIT_THERMAL_BORE | BIT_SENSOR, // mine
+    BIT_SOLAR,         BIT_MINE | BIT_SOLAR | BIT_FOREST | BIT_CONDENSER | BIT_ECH_MIRROR
+                       | BIT_THERMAL_BORE | BIT_SENSOR, // solar collector / tidal harness
+    BIT_FOREST,        BIT_MINE | BIT_FUNGUS | BIT_SOLAR | BIT_FARM | BIT_SOIL_ENRICHER
+                       | BIT_FOREST | BIT_CONDENSER | BIT_ECH_MIRROR | BIT_THERMAL_BORE, // forest
+    BIT_ROAD,          0, // road
+    BIT_MAGTUBE,       0, // magtube
+    BIT_BUNKER,        BIT_AIRBASE, // bunker
+    BIT_AIRBASE,       BIT_BUNKER, // airbase
+    BIT_SENSOR,        BIT_MINE | BIT_SOLAR | BIT_CONDENSER | BIT_ECH_MIRROR
+                       | BIT_THERMAL_BORE, // sensor
+    0,                 BIT_FUNGUS, // fungus remove
+    BIT_FUNGUS,        BIT_MINE | BIT_SOLAR | BIT_FARM | BIT_SOIL_ENRICHER
+                       | BIT_FOREST, // fungus plant
+    BIT_CONDENSER,     BIT_MINE | BIT_SOLAR | BIT_FOREST | BIT_CONDENSER | BIT_ECH_MIRROR
+                       | BIT_THERMAL_BORE | BIT_SENSOR, // condenser
+    BIT_ECH_MIRROR,    BIT_MINE | BIT_SOLAR | BIT_FOREST | BIT_CONDENSER | BIT_ECH_MIRROR
+                       | BIT_THERMAL_BORE | BIT_SENSOR, // echelon mirror
+    BIT_THERMAL_BORE,  BIT_MINE | BIT_SOLAR | BIT_FARM | BIT_FOREST | BIT_CONDENSER
+                       | BIT_ECH_MIRROR | BIT_THERMAL_BORE | BIT_SENSOR, // thermal borehole
+    0,                 0, // aquifer
+    0,                 0, // raise land
+    0,                 0, // lower land
+    0,                 0, // level terrain
+    BIT_MONOLITH,      BIT_SUPPLY_POD | BIT_NUTRIENT_RES | BIT_BONUS_RES, // monolith
 };
 
 enum terrain_landmarks {
@@ -849,7 +969,8 @@ enum former_action {
     FORMER_MONOLITH = 19,
 };
 
-enum terrain_level {
+enum terrain_altitude {
+    ALT_OCEAN_TRENCH = 0,
     ALT_OCEAN = 1,
     ALT_OCEAN_SHELF = 2,
     ALT_SHORE_LINE = 3,
@@ -883,6 +1004,7 @@ enum ai_goal_types {
     AI_GOAL_CONDENSER = 73,
     AI_GOAL_THERMAL_BOREHOLE = 105,
     AI_GOAL_SENSOR_ARRAY = 121,
+    // Thinker goals start here
     AI_GOAL_RAISE_LAND = 200,
     AI_GOAL_NAVAL_START = 201,
     AI_GOAL_NAVAL_END = 202,

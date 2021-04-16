@@ -86,7 +86,11 @@ const bool LAND = false;
 
 const int MaxMapW = 512;
 const int MaxMapH = 256;
+const int MaxNaturalNum = 16;
+const int MaxLandmarkNum = 64;
+const int RegionBounds = 63;
 const int MaxRegionNum = 128;
+const int MaxRegionLandNum = 64;
 
 const int MaxDiffNum = 6;
 const int MaxPlayerNum = 8;
@@ -311,8 +315,8 @@ int consider_hurry(int id);
 int find_project(int id);
 int find_facility(int id);
 int select_production(int id);
+int select_combat(int base_id, bool sea_base, bool build_ships);
 int find_proto(int base_id, int triad, int mode, bool defend);
-int select_combat(int base_id, int probes, bool sea_base, bool build_ships, bool def_land);
 int opt_list_parse(int* ptr, char* buf, int len, int min_val);
 
 

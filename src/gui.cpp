@@ -628,6 +628,8 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         for (int k=0; k < *total_num_vehicles; k++) {
             VEH* veh = &Vehicles[k];
             if (veh->x == x && veh->y == y) {
+                Vehicles[k].state |= VSTATE_UNK_40000;
+                Vehicles[k].state &= ~VSTATE_UNK_2000;
                 print_veh(k);
             }
         }
@@ -875,7 +877,7 @@ int __cdecl blink_timer() {
                     && MapWin->field_23D84 != -1
                     && MapWin->field_23D88 != -1
                     && MapWin->field_23D8C != -1) {
-                        if (*game_preferences & PREF_UNK_1000 || mouse_btn_down || *dword_9B7AE4 != 0) {
+                        if (*game_preferences & PREF_BSC_MOUSE_EDGE_SCROLL_VIEW || mouse_btn_down || *dword_9B7AE4 != 0) {
                             CState.ScreenSize.x = *screen_width;
                             CState.ScreenSize.y = *screen_height;
                             CState.TimersEnabled = true;

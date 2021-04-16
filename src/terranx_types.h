@@ -39,7 +39,7 @@ struct BASE {
     int specialist_total;
     int specialist_unk_1;
     /*
-    Specialist types (R_Citizen, 4 bits per id) for the first 16 specialists in the base.
+    Specialist types (CCitizen, 4 bits per id) for the first 16 specialists in the base.
     These are assigned in base_yield and base_energy and chosen by best_specialist.
     */
     int specialist_types[2];
@@ -51,11 +51,11 @@ struct BASE {
     int pad_3;
     int pad_4;
     int nutrient_intake;
-    int mineral_intake;
+    int mineral_intake; // Before multiplier facilities
     int energy_intake;
     int unused_intake;
     int nutrient_intake_2;
-    int mineral_intake_2;
+    int mineral_intake_2; // After multiplier facilities
     int energy_intake_2;
     int unused_intake_2;
     int nutrient_surplus;
@@ -125,13 +125,13 @@ struct MAP {
         return owner < 1;
     }
     bool is_base() {
-        return items & TERRA_BASE_IN_TILE;
+        return items & BIT_BASE_IN_TILE;
     }
     bool is_base_radius() {
-        return items & TERRA_BASE_RADIUS;
+        return items & BIT_BASE_RADIUS;
     }
     bool is_base_or_bunker() {
-        return items & (TERRA_BUNKER | TERRA_BASE_IN_TILE);
+        return items & (BIT_BUNKER | BIT_BASE_IN_TILE);
     }
     int alt_level() {
         return climate >> 5;
@@ -151,6 +151,21 @@ struct MAP {
     bool is_rainy_or_moist() {
         return climate & (TILE_MOIST | TILE_RAINY);
     }
+};
+
+struct Landmark {
+    int x;
+    int y;
+    char name[32];
+};
+
+struct Continent {
+    uint32_t tile_count; // count of tiles in region
+    uint32_t open_terrain; // count of non-rocky, non-fungus tiles (only 1 movement point to travel)
+    uint32_t unk_3; // highest world_site value (0-15)
+    uint32_t pods; // current count of supply and unity pods in region
+    uint32_t unk_5; // padding?
+    uint8_t sea_coasts[8]; // sea specific regions, connections to land regions? bitmask
 };
 
 struct MFaction {
@@ -702,6 +717,11 @@ struct CWeapon {
     short padding;
 };
 
+struct CNatural {
+    char* name;
+    char* name_short;
+};
+
 struct UNIT {
     char name[32];
     int ability_flags;
@@ -725,6 +745,9 @@ struct UNIT {
     }
     int speed() {
         return Chassis[(int)chassis_type].speed;
+    }
+    int std_offense_value() {
+        return Weapon[(int)weapon_type].offense_value * reactor_type;
     }
 };
 
@@ -769,6 +792,9 @@ struct VEH {
     int triad() {
         return Chassis[(int)Units[unit_id].chassis_type].triad;
     }
+    int chassis_type() {
+        return Units[unit_id].chassis_type;
+    }
     int reactor_type() {
         return Units[unit_id].reactor_type;
     }
@@ -777,6 +803,12 @@ struct VEH {
     }
     int weapon_type() {
         return Units[unit_id].weapon_type;
+    }
+    int offense_value() {
+        return Weapon[(int)Units[unit_id].weapon_type].offense_value;
+    }
+    int defense_value() {
+        return Armor[(int)Units[unit_id].armor_type].defense_value;
     }
     bool is_combat_unit() {
         return Units[unit_id].weapon_type <= WPN_PSI_ATTACK && unit_id != BSC_FUNGAL_TOWER;
@@ -788,16 +820,14 @@ struct VEH {
         return visibility & (1 << faction);
     }
     bool mid_damage() {
-        return damage_taken > 3*Units[unit_id].reactor_type;
+        return damage_taken > 2*Units[unit_id].reactor_type;
     }
     bool high_damage() {
-        return damage_taken > 5*Units[unit_id].reactor_type;
+        return damage_taken > 4*Units[unit_id].reactor_type;
     }
-    int offense_value() {
-        return Weapon[(int)Units[unit_id].weapon_type].offense_value;
-    }
-    int defense_value() {
-        return Armor[(int)Units[unit_id].armor_type].defense_value;
+    bool need_heals() {
+        return mid_damage() && unit_id != BSC_BATTLE_OGRE_MK1
+            && unit_id != BSC_BATTLE_OGRE_MK2 && unit_id != BSC_BATTLE_OGRE_MK3;
     }
 };
 
