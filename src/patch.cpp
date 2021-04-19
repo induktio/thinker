@@ -307,7 +307,7 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
 
 HOOK_API void find_start(int faction, int* tx, int* ty) {
     Points spawns;
-    bool aquatic = MFactions[faction].rule_flags & FACT_AQUATIC;
+    bool aquatic = MFactions[faction].rule_flags & RFLAG_AQUATIC;
     int k = (*map_axis_y < 80 ? 4 : 8);
     process_map(k/2);
     for (int i=0; i<*total_num_vehicles; i++) {
@@ -546,7 +546,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x4688E0, (int)MapWin_gen_overlays);
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
-    write_call(0x4E61D0, (int)mod_base_production);
+    write_call(0x4E61D0, (int)mod_base_prod_choices);
     write_call(0x5BDC4C, (int)mod_tech_value);
     write_call(0x579362, (int)mod_enemy_move);
     write_call(0x4E888C, (int)mod_crop_yield);

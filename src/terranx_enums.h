@@ -528,43 +528,6 @@ enum probe_action {
     PRB_MIND_CONTROL_UNIT = -1,
 };
 
-enum faction_special_rules {
-    FACT_TECHSTEAL = 0x10,
-    FACT_TECHSHARE = 0x20,
-    FACT_WORMPOLICE = 0x40,
-    FACT_ALIEN = 0x80,
-    FACT_AQUATIC = 0x100,
-    FACT_FREEPROTO = 0x200,
-    FACT_FANATIC = 0x400,
-    FACT_MINDCONTROL = 0x800,
-    FACT_COMMFREQ = 0x1000,
-    FACT_TERRAFORM = 0x2000,
-    FACT_INTEREST = 0x4000,
-    FACT_MORALE = 0x8000,
-};
-
-enum faction_bonus_type {
-    FCB_FREETECH = 0,
-    FCB_FREEUNIT = 1,
-    FCB_FREEFAC = 2,
-    FCB_SOCIAL = 3,
-    FCB_IMMUNITY = 4,
-    FCB_IMPUNITY = 5,
-    FCB_PENALTY = 6,
-    FCB_FUNGNUTRIENT = 7,
-    FCB_FUNGMINERALS = 8,
-    FCB_FUNGENERGY = 9,
-    FCB_ROBUST = 10,
-    FCB_VOTES = 11,
-    FCB_FREEFAC_PREQ = 12,
-    FCB_REVOLT = 13,
-    FCB_NODRONE = 14,
-    FCB_FREEABIL_PREQ = 15,
-    FCB_PROBECOST = 16,
-    FCB_DEFENSE = 17,
-    FCB_OFFENSE = 18,
-};
-
 enum social_effect {
     SE_ECONOMY = 0,
     SE_EFFIC = 1,
@@ -746,6 +709,43 @@ enum game_diff_level {
     DIFF_TRANSCEND = 5,
 };
 
+enum faction_bonus_type {
+    FCB_FREETECH = 0,
+    FCB_FREEUNIT = 1,
+    FCB_FREEFAC = 2,
+    FCB_SOCIAL = 3,
+    FCB_IMMUNITY = 4,
+    FCB_IMPUNITY = 5,
+    FCB_PENALTY = 6,
+    FCB_FUNGNUTRIENT = 7,
+    FCB_FUNGMINERALS = 8,
+    FCB_FUNGENERGY = 9,
+    FCB_ROBUST = 10,
+    FCB_VOTES = 11,
+    FCB_FREEFAC_PREQ = 12,
+    FCB_REVOLT = 13,
+    FCB_NODRONE = 14,
+    FCB_FREEABIL_PREQ = 15,
+    FCB_PROBECOST = 16,
+    FCB_DEFENSE = 17,
+    FCB_OFFENSE = 18,
+};
+
+enum faction_rule_flags {
+    RFLAG_TECHSTEAL = 0x10,
+    RFLAG_TECHSHARE = 0x20,
+    RFLAG_WORMPOLICE = 0x40,
+    RFLAG_ALIEN = 0x80,
+    RFLAG_AQUATIC = 0x100,
+    RFLAG_FREEPROTO = 0x200,
+    RFLAG_FANATIC = 0x400,
+    RFLAG_MINDCONTROL = 0x800,
+    RFLAG_COMMFREQ = 0x1000,
+    RFLAG_TERRAFORM = 0x2000,
+    RFLAG_INTEREST = 0x4000,
+    RFLAG_MORALE = 0x8000,
+};
+
 enum diplo_status {
     DIPLO_PACT = 0x1,
     DIPLO_TREATY = 0x2,
@@ -782,16 +782,30 @@ enum diplo_status {
 };
 
 enum diplo_agenda {
-    DIPLO_AGENDA_UNK_1 = 0x1,
-    DIPLO_AGENDA_UNK_4 = 0x4,
-    DIPLO_FIGHT_TO_DEATH = 0x8,
-    DIPLO_AGENDA_UNK_80 = 0x80,
-    DIPLO_AGENDA_UNK_200 = 0x200,
-    DIPLO_PERMANENT = 0x2000,
+    AGENDA_UNK_1 = 0x1,
+    AGENDA_UNK_2 = 0x2,
+    AGENDA_UNK_4 = 0x4,
+    AGENDA_FIGHT_TO_DEATH = 0x8,
+    AGENDA_UNK_10 = 0x10,
+    AGENDA_UNK_20 = 0x20,
+    AGENDA_UNK_40 = 0x40,
+    AGENDA_UNK_80 = 0x80,
+    AGENDA_UNK_100 = 0x100,
+    AGENDA_UNK_200 = 0x200,
+    AGENDA_UNK_400 = 0x400,
+    AGENDA_UNK_800 = 0x800,
+    AGENDA_UNK_1000 = 0x1000,
+    AGENDA_PERMANENT = 0x2000,
+    AGENDA_UNK_4000 = 0x4000,
+    AGENDA_UNK_8000 = 0x8000,
 };
 
 enum player_flags {
+    PLR_SELF_AWARE_COLONY_LOST_MAINT = 0x20, // used to even out lossy integer division
     PLR_MAP_REVEALED = 0x200,
+    PLR_GENETIC_PLAGUE_INTRO = 0x400, // +1 to defense against after 1st time faction experiences
+    PLR_BEEN_ELECTED_GOVERNOR = 0x8000, // used to determine whether #GOVERNOR has been displayed
+    PLR_UNK_20000 = 0x20000,
     PLR_STRAT_ATK_ENEMY_HQ = 0x200000,
     PLR_COOP_WITH_HUMAN = 0x400000,
     PLR_TEAM_UP_VS_HUMAN = 0x800000,

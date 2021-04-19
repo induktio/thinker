@@ -83,7 +83,8 @@ bool has_facility(int base_id, int id) {
 }
 
 bool can_build(int base_id, int id) {
-    assert(base_id >= 0 && id > 0 && id <= FAC_EMPTY_SP_64);
+    assert(base_id >= 0 && base_id < *total_num_bases);
+    assert(id > 0 && id <= FAC_EMPTY_SP_64);
     BASE* base = &Bases[base_id];
     int faction = base->faction_id;
     Faction* f = &Factions[faction];
@@ -93,19 +94,14 @@ bool can_build(int base_id, int id) {
             return false;
         }
     }
-    if ((id == FAC_ASCENT_TO_TRANSCENDENCE || id == FAC_VOICE_OF_PLANET) && is_alien(faction)) {
-        return false;
-    }
-    if (id == FAC_VOICE_OF_PLANET && ~*game_rules & RULES_VICTORY_TRANSCENDENCE) {
-        return false;
+    if (id == FAC_ASCENT_TO_TRANSCENDENCE || id == FAC_VOICE_OF_PLANET) {
+        if (is_alien(faction) || ~*game_rules & RULES_VICTORY_TRANSCENDENCE) {
+            return false;
+        }
     }
     if (id == FAC_ASCENT_TO_TRANSCENDENCE) {
         return has_project(-1, FAC_VOICE_OF_PLANET)
-            && !has_project(-1, FAC_ASCENT_TO_TRANSCENDENCE)
-            && *game_rules & RULES_VICTORY_TRANSCENDENCE;
-    }
-    if (!has_tech(faction, Facility[id].preq_tech) || has_facility(base_id, id)) {
-        return false;
+            && !has_project(-1, FAC_ASCENT_TO_TRANSCENDENCE);
     }
     if (id == FAC_HEADQUARTERS && find_hq(faction) >= 0) {
         return false;
@@ -159,7 +155,7 @@ bool can_build(int base_id, int id) {
         return false;
     }
     if (id == FAC_GEOSYNC_SURVEY_POD || id == FAC_FLECHETTE_DEFENSE_SYS) {
-        for (int i=0; i < *total_num_bases; i++) {
+        for (int i=0; i<*total_num_bases; i++) {
             BASE* b = &Bases[i];
             if (b->faction_id == faction && i != base_id
             && map_range(base->x, base->y, b->x, b->y) <= 3
@@ -175,7 +171,7 @@ bool can_build(int base_id, int id) {
     if (id == FAC_STOCKPILE_ENERGY) {
         return (*current_turn + base_id) % 4 > 0 || !can_build_unit(faction, -1);
     }
-    return true;
+    return has_tech(faction, Facility[id].preq_tech) && !has_facility(base_id, id);
 }
 
 bool can_build_unit(int faction, int id) {
@@ -193,7 +189,7 @@ bool is_human(int faction) {
 }
 
 bool is_alien(int faction) {
-    return MFactions[faction].rule_flags & FACT_ALIEN;
+    return MFactions[faction].rule_flags & RFLAG_ALIEN;
 }
 
 bool ai_enabled(int faction) {
@@ -560,9 +556,9 @@ bool has_defenders(int x, int y, int faction) {
     assert(valid_player(faction));
     for (int i=0; i<*total_num_vehicles; i++) {
         VEH* veh = &Vehicles[i];
-        UNIT* u = &Units[veh->unit_id];
         if (veh->faction_id == faction && veh->x == x && veh->y == y
-        && u->weapon_type <= WPN_PSI_ATTACK && veh->triad() == TRIAD_LAND) {
+        && (veh->is_combat_unit() || veh->is_armored())
+        && veh->triad() == TRIAD_LAND) {
             return true;
         }
     }

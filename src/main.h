@@ -292,6 +292,7 @@ typedef std::list<Point> PointList;
 #include "patch.h"
 #include "path.h"
 #include "gui.h"
+#include "base.h"
 #include "game.h"
 #include "move.h"
 #include "tech.h"
@@ -304,20 +305,10 @@ extern NodeSet mapnodes;
 extern AIPlans plans[MaxPlayerNum];
 
 DLL_EXPORT int ThinkerDecide();
-HOOK_API int mod_turn_upkeep();
-HOOK_API int mod_base_production(int id, int v1, int v2, int v3);
-HOOK_API int mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5);
-
-int plans_upkeep(int faction);
-int need_defense(int id);
-int need_psych(int id);
-int consider_hurry(int id);
-int find_project(int id);
-int find_facility(int id);
-int select_production(int id);
-int select_combat(int base_id, bool sea_base, bool build_ships);
-int find_proto(int base_id, int triad, int mode, bool defend);
 int opt_list_parse(int* ptr, char* buf, int len, int min_val);
+int plans_upkeep(int faction);
+int __cdecl mod_turn_upkeep();
+int __cdecl mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5);
 
 
 

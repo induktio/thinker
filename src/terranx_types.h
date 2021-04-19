@@ -370,8 +370,8 @@ struct Faction {
     byte facility_announced[4]; // bitfield - used to determine one time play of fac audio blurb
     int unk_32;
     int unk_33;
-    int clean_minerals_modifier; // Starts from zero and increases by one after each fungal pop.
-    int unk_36;
+    int clean_minerals_modifier; // Starts from zero and increases by one after each fungal pop
+    int base_id_attack_target; // Battle planning of base to attack, -1 if not set
     int unk_37;
     char saved_queue_name[8][24];
     int saved_queue_size[8];
@@ -437,15 +437,15 @@ struct Faction {
     /* End of block */
     Goal goals[75];
     Goal sites[25];
-    int unk_92;
     int unk_93;
     int unk_94;
     int unk_95;
     int unk_96;
     int unk_97;
-    int unk_98;
-    int unk_99;
-    int unk_100[8];
+    int tech_achieved; // count of technology faction has discovered/achieved
+    int time_bonus_count; // Net MP: Each is worth amount in seconds under Time Controls Extra
+    int unk_99; // unused?
+    uint32_t secret_project_intel[8]; // Bitfield; News of SPs other factions are working on
     int corner_market_turn;
     int corner_market_active;
     int unk_101;
@@ -815,6 +815,9 @@ struct VEH {
     }
     bool is_probe() {
         return Units[unit_id].weapon_type == WPN_PROBE_TEAM;
+    }
+    bool is_armored() {
+        return armor_type() != ARM_NO_ARMOR;
     }
     bool is_visible(int faction) {
         return visibility & (1 << faction);

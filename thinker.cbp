@@ -72,6 +72,8 @@
 		<ExtraCommands>
 			<Add after='cmd /c copy &quot;$(PROJECT_DIR)$(TARGET_OUTPUT_FILE)&quot; patch\' />
 		</ExtraCommands>
+		<Unit filename="src/base.cpp" />
+		<Unit filename="src/base.h" />
 		<Unit filename="src/engine.cpp" />
 		<Unit filename="src/engine.h" />
 		<Unit filename="src/game.cpp" />
