@@ -400,10 +400,14 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD *rec, PVOID *frame, CONTEXT *ct
     time_t rawtime = time(&rawtime);
     struct tm *now = localtime(&rawtime);
     char datetime[70];
-    char filepath[1024];
+    char savepath[512];
+    char filepath[512];
     strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", now);
+    strncpy(savepath, last_save_path, sizeof(savepath));
+    savepath[200] = '\0';
     HANDLE hProcess = GetCurrentProcess();
     int ret = GetMappedFileNameA(hProcess, (LPVOID)ctx->Eip, filepath, sizeof(filepath));
+    filepath[200] = '\0';
 
     fprintf(debug_log,
         "**************************************************\n"
@@ -419,7 +423,7 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD *rec, PVOID *frame, CONTEXT *ct
         MOD_VERSION,
         MOD_DATE,
         datetime,
-        last_save_path,
+        savepath,
         (ret != 0 ? filepath : ""),
         (int)rec->ExceptionCode,
         (int)rec->ExceptionFlags,
@@ -576,15 +580,15 @@ bool patch_setup(Config* cf) {
 
     if (cf->smooth_scrolling) {
         write_offset(0x50F3DC, (void*)blink_timer);
-        write_call(0x46AB81, (int)draw_map);
-        write_call(0x46ABD1, (int)draw_map);
-        write_call(0x46AC56, (int)draw_map);
-        write_call(0x46ACC5, (int)draw_map);
-        write_call(0x46A5A9, (int)zoom_process);
-        write_call(0x48B6C2, (int)zoom_process);
-        write_call(0x48B893, (int)zoom_process);
-        write_call(0x48B91F, (int)zoom_process);
-        write_call(0x48BA15, (int)zoom_process);
+        write_call(0x46AB81, (int)mod_gen_map);
+        write_call(0x46ABD1, (int)mod_gen_map);
+        write_call(0x46AC56, (int)mod_gen_map);
+        write_call(0x46ACC5, (int)mod_gen_map);
+        write_call(0x46A5A9, (int)mod_calc_dim);
+        write_call(0x48B6C2, (int)mod_calc_dim);
+        write_call(0x48B893, (int)mod_calc_dim);
+        write_call(0x48B91F, (int)mod_calc_dim);
+        write_call(0x48BA15, (int)mod_calc_dim);
     }
 
     if (DEBUG) {

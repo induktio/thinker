@@ -225,11 +225,21 @@ struct AIPlans {
     int keep_fungus = 0;
     int plant_fungus = 0;
     int satellites_goal = 0;
+    int mil_strength = 0;
+    int enemy_nukes = 0;
+    float enemy_mil_factor = 0;
     /*
     Number of our bases captured by another faction we're currently at war with.
     Important heuristic in threat calculation.
     */
     int enemy_bases = 0;
+};
+
+const int MaxEnemyRange = 50;
+
+enum region_flags {
+    PM_ENEMY = 1,
+    PM_PROBE = 2,
 };
 
 enum crawl_resource_types {

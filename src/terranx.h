@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 typedef uint8_t byte;
+typedef struct char256 { char str[256]; } char256;
 
 #include "terranx_enums.h"
 #include "terranx_types.h"
@@ -94,18 +95,23 @@ extern int* un_charter_repeals;
 extern int* un_charter_reinstates;
 extern int* gender_default;
 extern int* plurality_default;
-extern int* current_player_faction;
 extern int* multiplayer_active;
 extern int* pbem_active;
 extern int* sunspot_duration;
-extern int* diplo_active_faction;
+extern int* current_player_faction;
+extern int* diplo_second_faction;
+extern int* diplo_third_faction;
 extern int* diplo_current_friction;
-extern int* diplo_opponent_faction;
+extern int* reportwin_opponent_faction;
 extern int* base_find_dist;
 extern int* veh_attack_flags;
 extern int* game_not_started;
 extern int* screen_width;
 extern int* screen_height;
+extern char256* ParseStrBuffer;
+extern int* ParseNumTable;
+extern int* ParseStrPlurality;
+extern int* ParseStrGender;
 
 // TODO: rename dwords
 extern int* dword_915620;
@@ -127,7 +133,6 @@ extern Landmark *Landmarks; // [64]
 extern uint8_t* TechOwners;
 extern int* SecretProjects;
 extern int* CostRatios;
-extern int* ParseNumTable;
 extern int16_t (*FactionRankings)[8]; // Per turn might ratings for each faction
 extern ThinkerData* ThinkerVars;
 
@@ -231,4 +236,5 @@ extern fp_1int veh_kill;
 extern fp_1int veh_wake;
 extern fp_1int stack_fix;
 extern fp_2int stack_veh;
+extern fp_1int draw_map;
 

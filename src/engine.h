@@ -10,4 +10,5 @@ int __cdecl mod_base_find3(int x, int y, int faction1, int region, int faction2,
 void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool water);
 int __cdecl mod_best_defender(int defenderVehicleId, int attackerVehicleId, int bombardment);
 int __cdecl battle_fight_parse_num(int index, int value);
+std::vector<std::string> read_txt_block(const char* filename, const char* section, unsigned max_len);
 

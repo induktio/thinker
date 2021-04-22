@@ -124,6 +124,12 @@ struct MAP {
     bool is_unowned() {
         return owner < 1;
     }
+    bool is_land_region() {
+        return region < 63; // Skip pole tiles
+    }
+    bool is_pole_tile() {
+        return region == 63 || region == 127;
+    }
     bool is_base() {
         return items & BIT_BASE_IN_TILE;
     }
@@ -160,11 +166,11 @@ struct Landmark {
 };
 
 struct Continent {
-    uint32_t tile_count; // count of tiles in region
-    uint32_t open_terrain; // count of non-rocky, non-fungus tiles (only 1 movement point to travel)
-    uint32_t unk_3; // highest world_site value (0-15)
-    uint32_t pods; // current count of supply and unity pods in region
-    uint32_t unk_5; // padding?
+    int32_t tile_count; // count of tiles in region
+    int32_t open_terrain; // count of non-rocky, non-fungus tiles (only 1 movement point to travel)
+    int32_t unk_3; // highest world_site value (0-15)
+    int32_t pods; // current count of supply and unity pods in region
+    int32_t unk_5; // padding?
     uint8_t sea_coasts[8]; // sea specific regions, connections to land regions? bitmask
 };
 
@@ -189,7 +195,6 @@ struct MFaction {
     Exponentially weighted moving average of distances to nearest enemy bases.
     This is updated while choosing base production, and it is used as a
     general heuristic to determine the level of threat from other factions.
-    When no enemies are present, the range is capped at 40.
     */
     float thinker_enemy_range;
     char pad_1[116];
@@ -724,30 +729,30 @@ struct CNatural {
 
 struct UNIT {
     char name[32];
-    int ability_flags;
-    char chassis_type;
-    char weapon_type;
-    char armor_type;
-    char reactor_type;
-    char carry_capacity;
-    char cost;
-    char unit_plan;
-    char unk_1; // some kind of internal prototype category?
-    char obsolete_factions;// faction bitfield of those who marked this prototype obsolete
-    char combat_factions; // faction bitfield for those that have seen this unit in combat (atk/def)
-    char icon_offset;
-    char pad_1; // unused
-    short unit_flags;
-    short preq_tech;
+    uint32_t ability_flags;
+    int8_t chassis_type;
+    int8_t weapon_type;
+    int8_t armor_type;
+    int8_t reactor_type;
+    int8_t carry_capacity;
+    int8_t cost;
+    int8_t plan;
+    int8_t unk_1; // some kind of internal prototype category?
+    uint8_t obsolete_factions;// faction bitfield of those who marked this prototype obsolete
+    uint8_t combat_factions; // faction bitfield for those that have seen this unit in combat (atk/def)
+    int8_t icon_offset;
+    int8_t pad_1; // unused
+    uint16_t unit_flags;
+    int16_t preq_tech;
 
     int triad() {
-        return Chassis[(int)chassis_type].triad;
+        return Chassis[chassis_type].triad;
     }
     int speed() {
-        return Chassis[(int)chassis_type].speed;
+        return Chassis[chassis_type].speed;
     }
     int std_offense_value() {
-        return Weapon[(int)weapon_type].offense_value * reactor_type;
+        return Weapon[weapon_type].offense_value * reactor_type;
     }
 };
 
@@ -790,7 +795,13 @@ struct VEH {
         return Units[unit_id].name;
     }
     int triad() {
-        return Chassis[(int)Units[unit_id].chassis_type].triad;
+        return Chassis[Units[unit_id].chassis_type].triad;
+    }
+    int speed() {
+        return Chassis[Units[unit_id].chassis_type].speed;
+    }
+    int cost() {
+        return Units[unit_id].cost;
     }
     int chassis_type() {
         return Units[unit_id].chassis_type;
@@ -805,10 +816,13 @@ struct VEH {
         return Units[unit_id].weapon_type;
     }
     int offense_value() {
-        return Weapon[(int)Units[unit_id].weapon_type].offense_value;
+        return Weapon[Units[unit_id].weapon_type].offense_value;
     }
     int defense_value() {
-        return Armor[(int)Units[unit_id].armor_type].defense_value;
+        return Armor[Units[unit_id].armor_type].defense_value;
+    }
+    bool is_armored() {
+        return armor_type() != ARM_NO_ARMOR;
     }
     bool is_combat_unit() {
         return Units[unit_id].weapon_type <= WPN_PSI_ATTACK && unit_id != BSC_FUNGAL_TOWER;
@@ -816,11 +830,24 @@ struct VEH {
     bool is_probe() {
         return Units[unit_id].weapon_type == WPN_PROBE_TEAM;
     }
-    bool is_armored() {
-        return armor_type() != ARM_NO_ARMOR;
+    bool is_colony() {
+        return Units[unit_id].weapon_type == WPN_COLONY_MODULE;
+    }
+    bool is_supply() {
+        return Units[unit_id].weapon_type == WPN_SUPPLY_TRANSPORT;
+    }
+    bool is_former() {
+        return Units[unit_id].weapon_type == WPN_TERRAFORMING_UNIT;
+    }
+    bool is_transport() {
+        return Units[unit_id].weapon_type == WPN_TROOP_TRANSPORT;
     }
     bool is_visible(int faction) {
         return visibility & (1 << faction);
+    }
+    bool at_target() {
+        return move_status == ORDER_NONE || (waypoint_1_x < 0 && waypoint_1_y < 0)
+            || (x == waypoint_1_x && y == waypoint_1_y);
     }
     bool mid_damage() {
         return damage_taken > 2*Units[unit_id].reactor_type;
@@ -831,6 +858,9 @@ struct VEH {
     bool need_heals() {
         return mid_damage() && unit_id != BSC_BATTLE_OGRE_MK1
             && unit_id != BSC_BATTLE_OGRE_MK2 && unit_id != BSC_BATTLE_OGRE_MK3;
+    }
+    bool need_monolith() {
+        return need_heals() || (morale < MORALE_ELITE && ~state & VSTATE_MONOLITH_UPGRADED);
     }
 };
 

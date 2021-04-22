@@ -52,16 +52,19 @@ int need_psych(int id) {
     BASE* b = &Bases[id];
     int faction = b->faction_id;
     Faction* f = &Factions[faction];
-    if (unit_in_tile(mapsq(b->x, b->y)) != faction || b->nerve_staple_turns_left > 0
-    || has_project(faction, FAC_TELEPATHIC_MATRIX)) {
+    if (unit_in_tile(mapsq(b->x, b->y)) != faction || !base_can_riot(id)) {
         return 0;
     }
     if (b->drone_total > b->talent_total) {
         if (b->nerve_staple_count < 3 && !un_charter() && f->SE_police >= 0 && b->pop_size >= 4
-        && b->faction_id_former == faction) {
+        && (b->faction_id_former == faction || Factions[faction].diplo_status[b->faction_id_former]
+        & (DIPLO_ATROCITY_VICTIM | DIPLO_WANT_REVENGE))) {
             action_staple(id);
             return 0;
         }
+        if (b->faction_id_former != faction && b->assimilation_turns_left > 5
+        && b->pop_size >= 6 && b->mineral_surplus >= 8 && can_build(id, FAC_PUNISHMENT_SPHERE))
+            return -FAC_PUNISHMENT_SPHERE;
         if (can_build(id, FAC_RECREATION_COMMONS))
             return -FAC_RECREATION_COMMONS;
         if (has_project(faction, FAC_VIRTUAL_WORLD) && can_build(id, FAC_NETWORK_NODE))
@@ -157,9 +160,9 @@ int find_project(int id) {
     int diplo = plans[faction].diplo_flags;
     int similar_limit = (base->minerals_accumulated > 80 ? 2 : 1);
     int nuke_score = (un_charter() ? 0 : 3) + 2*f->AI_power + f->AI_fight
+        + plans[faction].enemy_nukes - f->satellites_ODP/2
         + (diplo & DIPLO_ATROCITY_VICTIM ? 4 : 0)
-        + (diplo & DIPLO_WANT_REVENGE ? 3 : 0)
-        + (*game_rules & RULES_INTENSE_RIVALRY ? 1 : 0);
+        + (diplo & DIPLO_WANT_REVENGE ? 3 : 0);
     bool build_nukes = has_weapon(faction, WPN_PLANET_BUSTER) && nuke_score > 2;
     int nuke_limit = (build_nukes &&
         f->planet_busters < 2 + bases/40 + f->AI_fight ? 1 + bases/40 : 0);
@@ -497,7 +500,7 @@ int find_facility(int id) {
         if (item[1] & F_Energy && turns > 5 + f->AI_tech + f->AI_wealth - f->AI_power - f->AI_fight)
             continue;
         /* Avoid building combat-related facilities in peacetime. */
-        if (item[1] & F_Combat && m->thinker_enemy_range > 40 - min(16, 4*fc->maint))
+        if (item[1] & F_Combat && m->thinker_enemy_range > MaxEnemyRange - 5*min(5, fc->maint))
             continue;
         if (item[1] & F_Repair && (!conf.repair_base_facility || f->SE_morale < 0))
             continue;
@@ -621,7 +624,6 @@ int select_production(const int id) {
     bool has_supply = has_weapon(faction, WPN_SUPPLY_TRANSPORT);
     bool build_ships = can_build_ships(id);
     bool sea_base = is_ocean(base);
-    int might = faction_might(faction);
     int transports = 0;
     int landprobes = 0;
     int seaprobes = 0;
@@ -630,20 +632,8 @@ int select_production(const int id) {
     int formers = 0;
     int scouts = 0;
     int pods = 0;
-    int enemyrange = 40;
-    double enemymil = 0;
+    int enemy_range = MaxEnemyRange;
 
-    for (int i=1; i < MaxPlayerNum; i++) {
-        if (i == faction || ~f->diplo_status[i] & DIPLO_COMMLINK) {
-            continue;
-        }
-        double mil = min(5.0, (is_human(faction) ? 2.0 : 1.0) * faction_might(i) / might);
-        if (at_war(faction, i)) {
-            enemymil = max(enemymil, 1.0 * mil);
-        } else if (!has_pact(faction, i)) {
-            enemymil = max(enemymil, 0.3 * mil);
-        }
-    }
     for (int i=0; i < *total_num_bases; i++) {
         BASE* b = &Bases[i];
         if (at_war(faction, b->faction_id) && (sq = mapsq(b->x, b->y))) {
@@ -651,32 +641,31 @@ int select_production(const int id) {
             if (sq->region != base_region) {
                 range = range*3/2;
             }
-            enemyrange = min(enemyrange, range);
+            enemy_range = min(enemy_range, range);
         }
     }
     for (int i=0; i < *total_num_vehicles; i++) {
         VEH* veh = &Vehicles[i];
-        UNIT* u = &Units[veh->unit_id];
         if (veh->faction_id != faction) {
             continue;
         }
         if (veh->home_base_id == id) {
-            if (u->weapon_type == WPN_TERRAFORMING_UNIT) {
+            if (veh->is_former()) {
                 formers++;
-            } else if (u->weapon_type == WPN_COLONY_MODULE) {
+            } else if (veh->is_colony()) {
                 pods++;
-            } else if (u->weapon_type == WPN_PROBE_TEAM) {
+            } else if (veh->is_probe()) {
                 if (veh->triad() == TRIAD_LAND) {
                     landprobes++;
                 } else {
                     seaprobes++;
                 }
-            } else if (u->weapon_type == WPN_SUPPLY_TRANSPORT) {
+            } else if (veh->is_supply()) {
                 crawlers++;
                 if (veh->move_status != ORDER_CONVOY) {
                     has_supply = false;
                 }
-            } else if (u->weapon_type == WPN_TROOP_TRANSPORT) {
+            } else if (veh->is_transport()) {
                 transports++;
             }
         }
@@ -691,20 +680,20 @@ int select_production(const int id) {
     }
     bool build_pods = allow_expand(faction) && pods < 2
         && (base->pop_size > 1 || base->nutrient_surplus > 1);
-    m->thinker_enemy_range = (enemyrange + 9 * m->thinker_enemy_range)/10;
+    m->thinker_enemy_range = (enemy_range + 15 * m->thinker_enemy_range)/16;
 
-    double w1 = min(1.0, max(0.5, 1.0 * minerals / p->proj_limit))
-        * (base_region == p->target_land_region && p->main_region != p->target_land_region ? 3 : 1)
-        * min(1.0, max(0.3, (*current_turn/40.0)));
-    double w2 = 2.0 * enemymil / (m->thinker_enemy_range * 0.1 + 0.1) + 0.5 * p->enemy_bases
-        + min(1.0, f->current_num_bases / 24.0) * (f->AI_fight * 0.2 + 0.8);
+    double w1 = min(1.0, max(0.4, 1.0 * minerals / p->proj_limit))
+        * (base_region == p->target_land_region && p->main_region != p->target_land_region ? 3 : 1);
+    double w2 = 2.0 * p->enemy_mil_factor / (m->thinker_enemy_range * 0.1 + 0.1)
+        + 0.8 * p->enemy_bases + min(0.4, *current_turn/300.0)
+        + min(1.0, 2.0 * f->current_num_bases / *map_area_sq_root) * (f->AI_fight * 0.2 + 0.8);
     double threat = 1 - (1 / (1 + max(0.0, w1 * w2)));
 
     debug("select_prod %d %d %2d %2d def: %d frm: %d prb: %d crw: %d pods: %d expand: %d "\
         "scouts: %d min: %2d res: %2d limit: %2d range: %2d mil: %.4f threat: %.4f\n",
         *current_turn, faction, base->x, base->y,
         defenders, formers, landprobes+seaprobes, crawlers, pods, build_pods,
-        scouts, minerals, reserve, p->proj_limit, enemyrange, enemymil, threat);
+        scouts, minerals, reserve, p->proj_limit, enemy_range, p->enemy_mil_factor, threat);
 
     if (minerals > 2 && (defenders < 1 || need_scouts(base->x, base->y, faction, scouts))) {
         return find_proto(id, TRIAD_LAND, COMBAT, DEF);
@@ -719,22 +708,30 @@ int select_production(const int id) {
     if (minerals > reserve && random(100) < (int)(100 * threat)) {
         return select_combat(id, sea_base, build_ships);
     }
-    if (has_formers && formers < (base->pop_size < (sea_base ? 4 : 3) ? 1 : 2)
-    && (need_formers(base->x, base->y, faction))) {
-        if (has_chassis(faction, CHS_GRAVSHIP) && minerals >= Chassis[CHS_GRAVSHIP].cost) {
-            int unit = find_proto(id, TRIAD_AIR, WMODE_TERRAFORMER, DEF);
-            if (unit >= 0 && Units[unit].triad() == TRIAD_AIR) {
-                return unit;
+    if (has_formers && formers < (base->pop_size < (sea_base ? 4 : 3) ? 1 : 2)) {
+        int num = 0;
+        int sea = 0;
+        for (auto& t : iterate_tiles(base->x, base->y, 1, 21)) {
+            if (t.sq->owner == faction && select_item(t.x, t.y, faction, t.sq) >= 0) {
+                num++;
+                sea += is_ocean(t.sq);
             }
         }
-        if (sea_base || (build_ships && formers == 1 && !random(3))) {
-            return find_proto(id, TRIAD_SEA, WMODE_TERRAFORMER, DEF);
-        } else {
+        if (num > 3) {
+            if (has_chassis(faction, CHS_GRAVSHIP) && minerals >= Chassis[CHS_GRAVSHIP].cost) {
+                int unit = find_proto(id, TRIAD_AIR, WMODE_TERRAFORMER, DEF);
+                if (unit >= 0 && Units[unit].triad() == TRIAD_AIR) {
+                    return unit;
+                }
+            }
+            if (build_ships && sea*2 >= num) {
+                return find_proto(id, TRIAD_SEA, WMODE_TERRAFORMER, DEF);
+            }
             return find_proto(id, TRIAD_LAND, WMODE_TERRAFORMER, DEF);
         }
     }
     if (build_ships && has_weapon(faction, WPN_PROBE_TEAM)
-    && ocean_shoreline(base->x, base->y) && !random(seaprobes > 0 ? 6 : 3)
+    && ocean_coast_tiles(base->x, base->y) && !random(seaprobes > 0 ? 6 : 3)
     && p->unknown_factions > 1 && p->contacted_factions < 2) {
         return find_proto(id, TRIAD_SEA, WMODE_INFOWAR, DEF);
     }

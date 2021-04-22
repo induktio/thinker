@@ -54,7 +54,7 @@ bool has_terra(int faction, int act, bool ocean) {
 
 bool has_project(int faction, int id) {
     /* If faction_id is negative, check if anyone has built the project. */
-    assert(faction != 0 && id >= SP_ID_First);
+    assert(faction != 0 && id >= SP_ID_First && id <= FAC_EMPTY_SP_64);
     int i = SecretProjects[id - SP_ID_First];
     return i >= 0 && (faction < 0 || Bases[i].faction_id == faction);
 }
@@ -62,7 +62,7 @@ bool has_project(int faction, int id) {
 bool has_facility(int base_id, int id) {
     assert(base_id >= 0 && id > 0 && id <= FAC_EMPTY_SP_64);
     if (id >= SP_ID_First) {
-        return SecretProjects[id-SP_ID_First] == base_id;
+        return SecretProjects[id - SP_ID_First] == base_id;
     }
     int faction = Bases[base_id].faction_id;
     const int freebies[][2] = {
@@ -88,7 +88,7 @@ bool can_build(int base_id, int id) {
     BASE* base = &Bases[base_id];
     int faction = base->faction_id;
     Faction* f = &Factions[faction];
-    if (id >= SP_ID_First && id <= SP_ID_Last) {
+    if (id >= SP_ID_First && id <= FAC_EMPTY_SP_64) {
         if (SecretProjects[id-SP_ID_First] != SP_Unbuilt
         || *game_rules & RULES_SCN_NO_BUILDING_SP) {
             return false;
@@ -113,8 +113,8 @@ bool can_build(int base_id, int id) {
     || !has_facility(base_id, FAC_RECREATION_COMMONS))) {
         return false;
     }
-    if ((id == FAC_RECREATION_COMMONS || id == FAC_HOLOGRAM_THEATRE)
-    && has_project(faction, FAC_TELEPATHIC_MATRIX)) {
+    if ((id == FAC_RECREATION_COMMONS || id == FAC_HOLOGRAM_THEATRE || id == FAC_PUNISHMENT_SPHERE)
+    && !base_can_riot(base_id)) {
         return false;
     }
     if ((id == FAC_HAB_COMPLEX || id == FAC_HABITATION_DOME) && base->nutrient_surplus < 2) {
@@ -184,6 +184,13 @@ bool can_build_unit(int faction, int id) {
     return *total_num_vehicles < MaxVehNum * 15 / 16;
 }
 
+bool base_can_riot(int base_id) {
+    BASE* b = &Bases[base_id];
+    return !b->nerve_staple_turns_left
+        && !has_project(b->faction_id, FAC_TELEPATHIC_MATRIX)
+        && !has_facility(base_id, FAC_PUNISHMENT_SPHERE);
+}
+
 bool is_human(int faction) {
     return *human_players & (1 << faction);
 }
@@ -208,6 +215,11 @@ bool has_pact(int faction1, int faction2) {
         && Factions[faction1].diplo_status[faction2] & DIPLO_PACT;
 }
 
+bool has_treaty(int faction1, int faction2, int treaty) {
+    return faction1 > 0 && faction2 > 0
+        && Factions[faction1].diplo_status[faction2] & treaty;
+}
+
 bool un_charter() {
     return *un_charter_repeals <= *un_charter_reinstates;
 }
@@ -220,12 +232,14 @@ bool valid_triad(int triad) {
     return (triad == TRIAD_LAND || triad == TRIAD_SEA || triad == TRIAD_AIR);
 }
 
-int prod_count(int faction, int id, int skip) {
+int prod_count(int faction, int id, int base_skip_id) {
     assert(valid_player(faction));
     int n = 0;
     for (int i=0; i<*total_num_bases; i++) {
         BASE* base = &Bases[i];
-        if (base->faction_id == faction && base->queue_items[0] == id && i != skip) {
+        if (base->faction_id == faction
+        && base->queue_items[0] == id
+        && i != base_skip_id) {
             n++;
         }
     }
@@ -331,7 +345,7 @@ int defense_value(UNIT* u) {
 
 int faction_might(int faction) {
     Faction* f = &Factions[faction];
-    return max(1, f->mil_strength_1 + f->mil_strength_2 + f->pop_total);
+    return plans[faction].mil_strength + 4*f->pop_total;
 }
 
 bool allow_expand(int faction) {
@@ -516,7 +530,7 @@ int mod_veh_skip(int veh_id) {
     veh->waypoint_1_x = veh->x;
     veh->waypoint_1_y = veh->y;
     veh->status_icon = '-';
-    if (veh->damage_taken) {
+    if (veh->need_monolith()) {
         MAP* sq = mapsq(veh->x, veh->y);
         if (sq && sq->items & BIT_MONOLITH) {
             monolith(veh_id);
@@ -529,11 +543,6 @@ int mod_veh_kill(int veh_id) {
     VEH* veh = &Vehicles[veh_id];
     debug("disband %d %d %s\n", veh->x, veh->y, veh->name());
     return veh_kill(veh_id);
-}
-
-bool at_target(VEH* veh) {
-    return veh->move_status == ORDER_NONE || (veh->waypoint_1_x < 0 && veh->waypoint_1_y < 0)
-        || (veh->x == veh->waypoint_1_x && veh->y == veh->waypoint_1_y);
 }
 
 bool is_ocean(MAP* sq) {
@@ -586,18 +595,6 @@ int nearby_tiles(int x, int y, int type, int limit) {
     ts.init(x, y, type, 2);
     while (n < limit && (sq = ts.get_next()) != NULL) {
         n++;
-    }
-    return n;
-}
-
-int coast_tiles(int x, int y) {
-    MAP* sq;
-    int n = 0;
-    for (const int* t : NearbyTiles) {
-        sq = mapsq(wrap(x + t[0]), y + t[1]);
-        if (sq && is_ocean(sq)) {
-            n++;
-        }
     }
     return n;
 }
@@ -956,7 +953,7 @@ void TileSearch::init(const PointList& points, int tp, int skip) {
 void TileSearch::get_route(PointList& pp) {
     pp.clear();
     int i = 0;
-    int j = cur;
+    int j = current;
     while (j >= 0 && ++i < PathLimit) {
         auto& p = paths[j];
         j = p.prev;
@@ -968,15 +965,18 @@ void TileSearch::get_route(PointList& pp) {
 Traverse current search path and check for zones of control.
 */
 bool TileSearch::has_zoc(int faction_id) {
-    int zoc = 0;
+    bool prev_zoc = false;
     int i = 0;
-    int j = cur;
+    int j = current;
     while (j >= 0 && ++i < PathLimit) {
         auto& p = paths[j];
-        if (zoc_any(p.x, p.y, faction_id) && ++zoc > 1) {
-            return true;
-        }
         j = p.prev;
+        if (zoc_any(p.x, p.y, faction_id)) {
+            if (prev_zoc) return true;
+            prev_zoc = true;
+        } else {
+            prev_zoc = false;
+        }
     }
     return false;
 }
@@ -991,7 +991,7 @@ MAP* TileSearch::get_next() {
         rx = paths[head].x;
         ry = paths[head].y;
         dist = paths[head].dist;
-        cur = head;
+        current = head;
         head++;
         if (!(sq = mapsq(rx, ry))) {
             continue;
@@ -1012,7 +1012,7 @@ MAP* TileSearch::get_next() {
                     (type == TS_TERRITORY_BORDERS && (is_ocean(sq) || sq->owner != faction));
         if (!first && skip) {
             if (!((type == TS_NEAR_ROADS && is_ocean(sq))
-            || (type == TS_TERRITORY_LAND && is_ocean(sq))
+            || (type == TS_TERRITORY_LAND && (is_ocean(sq) || sq->owner != faction))
             || (type == TS_TRIAD_LAND && is_ocean(sq))
             || (type == TS_TRIAD_SEA && !is_ocean(sq)))) {
                 return sq;
@@ -1023,9 +1023,10 @@ MAP* TileSearch::get_next() {
             int x2 = wrap(rx + t[0]);
             int y2 = ry + t[1];
             if (y2 >= y_skip && y2 < *map_axis_y - y_skip
+            && (!*map_toggle_flat || (x2 >= 0 && x2 < *map_axis_x))
             && tail < QueueSize && dist < PathLimit
             && !oldtiles.count({x2, y2})) {
-                paths[tail] = {x2, y2, dist+1, cur};
+                paths[tail] = {x2, y2, dist+1, current};
                 tail++;
                 oldtiles.insert({x2, y2});
             }

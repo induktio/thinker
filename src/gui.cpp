@@ -6,8 +6,8 @@
 
 
 // Size in pixels of the bottom middle UI console
-#define CONSOLE_HEIGHT 219
-#define CONSOLE_WIDTH  1024
+const int ConsoleHeight = 219;
+const int ConsoleWidth = 1024;
 
 struct ConsoleState {
     const int ScrollMin = 1;
@@ -175,7 +175,7 @@ void mouse_over_tile(POINT* p) {
     if (CState.MouseOverTileInfo
     && !pMain->fUnitNotViewMode
     && p->x >= 0 && p->x < CState.ScreenSize.x
-    && p->y >= 0 && p->y < (CState.ScreenSize.y - CONSOLE_HEIGHT)
+    && p->y >= 0 && p->y < (CState.ScreenSize.y - ConsoleHeight)
     && MapWin_pixel_to_tile(pMain, p->x, p->y, &ptTile.x, &ptTile.y) == 0
     && memcmp(&ptTile, &ptLastTile, sizeof(POINT)) != 0) {
 
@@ -365,8 +365,8 @@ void check_scroll() {
 
             } else if (h - p.y <= iScrollArea && h >= p.y &&
             // These extra conditions will stop movement when the mouse is over the bottom middle console.
-            (p.x <= (CState.ScreenSize.x - CONSOLE_WIDTH) / 2 ||
-             p.x >= (CState.ScreenSize.x - CONSOLE_WIDTH) / 2 + CONSOLE_WIDTH ||
+            (p.x <= (CState.ScreenSize.x - ConsoleWidth) / 2 ||
+             p.x >= (CState.ScreenSize.x - ConsoleWidth) / 2 + ConsoleWidth ||
              h - p.y <= 8 * CState.ScreenSize.y / 768)) {
                 fScrolled = true;
                 dTPS = dMin + (dArea - (double)(h - p.y)) / dArea * (dMax - dMin);
@@ -593,9 +593,9 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         static int ts_type = 0;
         int i = 0;
         TileSearch ts;
-        ts_type = (ts_type+1) % MaxTileSearchType;
-        ts.init(pMain->oMap.iTileX, pMain->oMap.iTileY, ts_type, 2);
-        while (++i < 500 && ts.get_next() != NULL) {
+        ts_type = (ts_type+1) % (MaxTileSearchType+1);
+        ts.init(pMain->oMap.iTileX, pMain->oMap.iTileY, ts_type, 0);
+        while (++i < 5000 && ts.get_next() != NULL) {
             pm_overlay[ts.rx][ts.ry] = i;
         }
         MapWin_draw_map(pMain, 0);
@@ -744,10 +744,10 @@ ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass) {
     return RegisterClassA(pstWndClass);
 }
 
-int __thiscall draw_map(Console* This, int iOwner, int fUnitsOnly) {
+int __thiscall mod_gen_map(Console* This, int iOwner, int fUnitsOnly) {
 
     if (This == pMain) {
-        debug("draw_map %d %.4f %.4f\n", CState.Scrolling, CState.ScrollOffsetX, CState.ScrollOffsetY);
+        debug("mod_gen_map %d %.4f %.4f\n", CState.Scrolling, CState.ScrollOffsetX, CState.ScrollOffsetY);
 
         // Save these values to restore them later
         int iMapPixelLeft = This->oMap.iMapPixelLeft;
@@ -802,7 +802,7 @@ int __thiscall draw_map(Console* This, int iOwner, int fUnitsOnly) {
     return 0;
 }
 
-int __thiscall zoom_process(Console* This) {
+int __thiscall mod_calc_dim(Console* This) {
     static POINT ptOldTile = {-1, -1};
     POINT ptOldCenter;
     POINT ptNewCenter;
@@ -815,7 +815,7 @@ int __thiscall zoom_process(Console* This) {
 //    int h = -((CWinBuffed*)((int)This + (int)This->oMap.vtbl->iOffsetofoClass2))->oCanvas.stBitMapInfo.bmiHeader.biHeight;
 
     if (This == pMain) {
-        debug("zoom_process %d %.4f %.4f\n",  CState.Scrolling, CState.ScrollOffsetX, CState.ScrollOffsetY);
+        debug("mod_calc_dim %d %.4f %.4f\n",  CState.Scrolling, CState.ScrollOffsetX, CState.ScrollOffsetY);
         iOldZoom = This->oMap.iLastZoomFactor;
         ptNewTile.x = This->oMap.iTileX;
         ptNewTile.y = This->oMap.iTileY;

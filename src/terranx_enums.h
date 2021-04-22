@@ -473,7 +473,7 @@ enum veh_flags {
 enum veh_state {
     VSTATE_IN_TRANSPORT = 0x1,
     VSTATE_UNK_2 = 0x2,
-    VSTATE_UNK_4 = 0x4,
+    VSTATE_HAS_MOVED = 0x4, // set after first movement attempt (even if failed) on each turn
     VSTATE_UNK_8 = 0x8,
     VSTATE_REQUIRES_SUPPORT = 0x10,
     VSTATE_MADE_AIRDROP = 0x20,

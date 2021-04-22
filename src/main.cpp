@@ -248,6 +248,7 @@ int __cdecl mod_turn_upkeep() {
 }
 
 int plans_upkeep(int faction) {
+    const int i = faction;
     if (!faction || is_human(faction)) {
         return 0;
     }
@@ -274,7 +275,6 @@ int plans_upkeep(int faction) {
         }
     }
 
-    const int i = faction;
     if (!Factions[faction].current_num_bases) {
         return 0;
     }
@@ -342,9 +342,22 @@ int plans_upkeep(int faction) {
         plans[i].unknown_factions = 0;
         plans[i].contacted_factions = 0;
         plans[i].enemy_factions = 0;
-        plans[i].enemy_bases = 0;
         plans[i].diplo_flags = 0;
+        plans[i].enemy_nukes = 0;
+        plans[i].enemy_bases = 0;
+        plans[i].enemy_mil_factor = 0;
+        update_main_region(faction);
 
+        for (int j=1; j < MaxPlayerNum; j++) {
+            plans[j].mil_strength = 0;
+        }
+        for (int j=0; j < *total_num_vehicles; j++) {
+            VEH* veh = &Vehicles[j];
+            if (veh->faction_id > 0) {
+                plans[veh->faction_id].mil_strength += (abs(veh->offense_value())
+                    + abs(veh->defense_value())) * (veh->speed() > 1 ? 3 : 2);
+            }
+        }
         for (int j=1; j < MaxPlayerNum; j++) {
             if (i != j && Factions[j].current_num_bases > 0) {
                 int diplo = f->diplo_status[j];
@@ -354,8 +367,15 @@ int plans_upkeep(int faction) {
                 } else {
                     plans[i].unknown_factions++;
                 }
+                float factor = min(6.0f, (is_human(j) ? 2.0f : 1.0f)
+                    * (plans[i].main_region == plans[j].main_region ? 1.5f : 1.0f)
+                    * faction_might(j) / max(1, faction_might(i)));
                 if (at_war(i, j)) {
                     plans[i].enemy_factions++;
+                    plans[i].enemy_nukes += Factions[j].planet_busters;
+                    plans[i].enemy_mil_factor = max(plans[i].enemy_mil_factor, 1.0f*factor);
+                } else if (!has_pact(faction, i)) {
+                    plans[i].enemy_mil_factor = max(plans[i].enemy_mil_factor, 0.2f*factor);
                 }
             }
         }
@@ -366,7 +386,7 @@ int plans_upkeep(int faction) {
                 population[n] = base->pop_size;
                 minerals[n++] = base->mineral_surplus;
             } else if (base->faction_id_former == i && at_war(i, base->faction_id)) {
-                plans[i].enemy_bases += (is_human(base->faction_id) ? 4 : 1);
+                plans[i].enemy_bases += (is_human(base->faction_id) ? 2 : 1);
             }
         }
         std::sort(minerals, minerals+n);

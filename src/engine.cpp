@@ -26,8 +26,8 @@ void init_save_game(int faction) {
     } else {
         assert(f->old_thinker_header != THINKER_HEADER);
     }
-    if (m->thinker_enemy_range < 2 || m->thinker_enemy_range > 40) {
-        m->thinker_enemy_range = 20;
+    if (m->thinker_enemy_range < 2 || m->thinker_enemy_range > MaxEnemyRange) {
+        m->thinker_enemy_range = MaxEnemyRange/2;
     }
 }
 
@@ -40,7 +40,7 @@ bool victory_done() {
 bool has_colony_pods(int faction) {
     for (int i=0; i<*total_num_vehicles; i++) {
         VEH* veh = &Vehicles[i];
-        if (veh->faction_id == faction && Units[veh->unit_id].weapon_type == WPN_COLONY_MODULE) {
+        if (veh->faction_id == faction && veh->is_colony()) {
             return true;
         }
     }
@@ -207,7 +207,7 @@ std::vector<std::string> read_txt_block(const char* filename, const char* sectio
         line[strlen(line) - 1] = '\0';
         if (!start && stricmp(line, section) == 0) {
             start = true;
-        } else if (start && stricmp(line, "#END") == 0) {
+        } else if (start && line[0] == '#') {
             break;
         } else if (start) {
             char* p = strstrip(line);
