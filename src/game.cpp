@@ -419,7 +419,6 @@ double avg_range(const Points& S, int x, int y) {
 }
 
 MAP* mapsq(int x, int y) {
-    assert(!((x + y)&1));
     if (x >= 0 && y >= 0 && x < *map_axis_x && y < *map_axis_y && !((x + y)&1)) {
         return &((*MapPtr)[ x/2 + (*map_half_x) * y ]);
     } else {
@@ -471,6 +470,8 @@ int set_action(int veh_id, int act, char icon) {
         mapnodes.insert({veh->x, veh->y, NODE_BOREHOLE});
     } else if (act == ORDER_TERRAFORM_UP) {
         mapnodes.insert({veh->x, veh->y, NODE_RAISE_LAND});
+    } else if (act == ORDER_SENSOR_ARRAY) {
+        mapnodes.insert({veh->x, veh->y, NODE_SENSOR_ARRAY});
     }
     veh->move_status = act;
     veh->status_icon = icon;
@@ -704,7 +705,7 @@ void print_base(int id) {
         *current_turn, base->faction_id, id, base->x, base->y,
         base->pop_size, base->talent_total, base->drone_total,
         base->mineral_surplus, base->minerals_accumulated,
-        base->status_flags, prod, prod_name(prod), (char*)&(base->name));
+        base->state_flags, prod, prod_name(prod), (char*)&(base->name));
 }
 
 /*
@@ -1023,9 +1024,10 @@ MAP* TileSearch::get_next() {
             int x2 = wrap(rx + t[0]);
             int y2 = ry + t[1];
             if (y2 >= y_skip && y2 < *map_axis_y - y_skip
-            && (!*map_toggle_flat || (x2 >= 0 && x2 < *map_axis_x))
+            && x2 >= 0 && x2 < *map_axis_x
             && tail < QueueSize && dist < PathLimit
             && !oldtiles.count({x2, y2})) {
+                assert(!((x2 + y2)&1));
                 paths[tail] = {x2, y2, dist+1, current};
                 tail++;
                 oldtiles.insert({x2, y2});

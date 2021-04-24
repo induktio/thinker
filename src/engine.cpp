@@ -117,7 +117,7 @@ int __cdecl mod_faction_upkeep(int faction) {
     for (int i=0; i<*total_num_bases; i++) {
         BASE* base = &Bases[i];
         if (base->faction_id == faction) {
-            base->status_flags &= ~(BASE_UNK_1 | BASE_HURRY_PRODUCTION);
+            base->state_flags &= ~(BSTATE_UNK_1 | BSTATE_HURRY_PRODUCTION);
         }
     }
     f->energy_credits -= f->energy_cost;
@@ -143,7 +143,8 @@ int __cdecl mod_faction_upkeep(int faction) {
             call_council(faction);
         }
     }
-    if (!*multiplayer_active && *game_preferences & PREF_BSC_AUTOSAVE_EACH_TURN && faction == *current_player_faction) {
+    if (!*multiplayer_active && *game_preferences & PREF_BSC_AUTOSAVE_EACH_TURN
+    && faction == *current_player_faction) {
         auto_save();
     }
     fflush(debug_log);
@@ -167,7 +168,7 @@ int __cdecl mod_base_find3(int x, int y, int faction1, int region, int faction2,
             || (faction1 == base->faction_id)
             || (faction2 == -2 && Factions[faction1].diplo_status[base->faction_id] & DIPLO_PACT)
             || (faction2 >= 0 && faction2 == base->faction_id)) {
-                if (faction3 < 0 || base->faction_id == faction3 || base->factions_spotted_flags & (1 << faction3)) {
+                if (faction3 < 0 || base->faction_id == faction3 || base->visibility & (1 << faction3)) {
                     int val = vector_dist(x, y, base->x, base->y);
                     if (conf.territory_border_fix ? val < dist : val <= dist) {
                         dist = val;

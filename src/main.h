@@ -195,6 +195,8 @@ struct AIPlans {
     int target_land_region = 0;
     int prioritize_naval = 0;
     int naval_score = INT_MIN;
+    int naval_scout_x = -1;
+    int naval_scout_y = -1;
     int naval_airbase_x = -1;
     int naval_airbase_y = -1;
     int naval_start_x = -1;
@@ -260,6 +262,7 @@ enum nodeset_types {
     NODE_GOAL_NAVAL_END = 8,
     NODE_PATROL = 9,
     NODE_BASE_SITE = 10,
+    NODE_SENSOR_ARRAY = 11,
 };
 
 struct MapTile {

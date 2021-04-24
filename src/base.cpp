@@ -21,9 +21,9 @@ int __cdecl mod_base_prod_choices(int id, int v1, int v2, int v3) {
         base_compute(1);
         if ((choice = need_psych(id)) != 0 && choice != prod) {
             debug("BUILD PSYCH\n");
-        } else if (base->status_flags & BASE_PRODUCTION_DONE) {
+        } else if (base->state_flags & BSTATE_PRODUCTION_DONE) {
             choice = select_production(id);
-            base->status_flags &= ~BASE_PRODUCTION_DONE;
+            base->state_flags &= ~BSTATE_PRODUCTION_DONE;
         } else if (prod >= 0 && !can_build_unit(faction, prod)) {
             debug("BUILD FACILITY\n");
             choice = find_facility(id);
@@ -86,17 +86,21 @@ int need_defense(int id) {
 }
 
 bool need_scouts(int x, int y, int faction, int scouts) {
-    MAP* sq = mapsq(x, y);
     Faction* f = &Factions[faction];
+    MAP* sq = mapsq(x, y);
     if (is_ocean(sq)) {
         return false;
     }
+    int nearby_pods = Continents[sq->region].pods
+        * min(2*f->region_territory_tiles[sq->region], Continents[sq->region].tile_count)
+        / max(1, Continents[sq->region].tile_count);
     int score = max(-2, 5 - *current_turn/10)
         + 2*(*MapNativeLifeForms) - 3*scouts
-        + min(8, f->region_territory_goodies[sq->region] / 4);
+        + min(4, nearby_pods / 6);
+
     bool val = random(16) < score;
-    debug("need_scouts %2d %2d score: %2d value: %d goodies: %d native: %d\n",
-        x, y, score, val, f->region_territory_goodies[sq->region], *MapNativeLifeForms);
+    debug("need_scouts %2d %2d score: %2d value: %d scouts: %d goodies: %d native: %d\n",
+        x, y, score, val, scouts, Continents[sq->region].pods, *MapNativeLifeForms);
     return val;
 }
 
@@ -373,7 +377,7 @@ int hurry_item(BASE* b, int mins, int cost) {
     Faction* f = &Factions[b->faction_id];
     f->energy_credits -= cost;
     b->minerals_accumulated += mins;
-    b->status_flags |= BASE_HURRY_PRODUCTION;
+    b->state_flags |= BSTATE_HURRY_PRODUCTION;
     debug("hurry_item %d %d %d %d %d %s %s\n", *current_turn, b->faction_id,
         mins, cost, f->energy_credits, b->name, prod_name(b->queue_items[0]));
     return 1;
@@ -386,7 +390,7 @@ int consider_hurry(int id) {
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
 
-    if (!(conf.hurry_items && t >= -FAC_ORBITAL_DEFENSE_POD && ~b->status_flags & BASE_HURRY_PRODUCTION)) {
+    if (!(conf.hurry_items && t >= -FAC_ORBITAL_DEFENSE_POD && ~b->state_flags & BSTATE_HURRY_PRODUCTION)) {
         return 0;
     }
     bool cheap = b->minerals_accumulated >= Rules->retool_exemption;

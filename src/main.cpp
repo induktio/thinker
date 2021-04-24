@@ -244,6 +244,7 @@ int __cdecl mod_turn_upkeep() {
             *game_state &= ~STATE_DEBUG_MODE;
         }
     }
+    snprintf(ThinkerVars->build_date, 12, MOD_DATE);
     return 0;
 }
 
@@ -360,23 +361,23 @@ int plans_upkeep(int faction) {
         }
         for (int j=1; j < MaxPlayerNum; j++) {
             if (i != j && Factions[j].current_num_bases > 0) {
-                int diplo = f->diplo_status[j];
-                plans[i].diplo_flags |= diplo;
-                if (diplo & DIPLO_COMMLINK) {
+                if (has_treaty(i, j, DIPLO_COMMLINK)) {
                     plans[i].contacted_factions++;
                 } else {
                     plans[i].unknown_factions++;
                 }
-                float factor = min(6.0f, (is_human(j) ? 2.0f : 1.0f)
-                    * (plans[i].main_region == plans[j].main_region ? 1.5f : 1.0f)
-                    * faction_might(j) / max(1, faction_might(i)));
                 if (at_war(i, j)) {
                     plans[i].enemy_factions++;
                     plans[i].enemy_nukes += Factions[j].planet_busters;
-                    plans[i].enemy_mil_factor = max(plans[i].enemy_mil_factor, 1.0f*factor);
-                } else if (!has_pact(faction, i)) {
-                    plans[i].enemy_mil_factor = max(plans[i].enemy_mil_factor, 0.2f*factor);
                 }
+                float factor = min(8.0f, (is_human(j) ? 2.0f : 1.0f)
+                    * (has_treaty(i, j, DIPLO_COMMLINK) ? 1.0f : 0.5f)
+                    * (at_war(i, j) ? 1.0f : (has_pact(i, j) ? 0.1f : 0.25f))
+                    * (plans[i].main_region == plans[j].main_region ? 1.5f : 1.0f)
+                    * faction_might(j) / max(1, faction_might(i)));
+
+                plans[i].enemy_mil_factor = max(plans[i].enemy_mil_factor, factor);
+                plans[i].diplo_flags |= f->diplo_status[j];
             }
         }
         int n = 0;
@@ -425,20 +426,17 @@ int plans_upkeep(int faction) {
         int dn = manifold[p][0] + f->tech_fungus_nutrient - Resource->forest_sq_nutrient;
         int dm = manifold[p][1] + f->tech_fungus_mineral - Resource->forest_sq_mineral;
         int de = manifold[p][2] + f->tech_fungus_energy - Resource->forest_sq_energy;
-        bool terra_fungus = has_terra(i, FORMER_PLANT_FUNGUS, LAND)
+        bool former_fungus = has_terra(i, FORMER_PLANT_FUNGUS, LAND)
             && (has_tech(i, Rules->tech_preq_ease_fungus_mov) || has_project(i, FAC_XENOEMPATHY_DOME));
 
         plans[i].keep_fungus = (dn+dm+de > 0);
-        if (dn+dm+de > 0 && terra_fungus) {
-            plans[i].plant_fungus = dn+dm+de;
-        } else {
-            plans[i].plant_fungus = 0;
-        }
+        plans[i].plant_fungus = (dn+dm+de > 0 && former_fungus);
+
         debug("plans_upkeep %d %d proj_limit: %2d sat_goal: %2d psi: %2d keep_fungus: %d "\
-              "plant_fungus: %d enemy_bases: %d enemy_range: %.4f\n",
+              "plant_fungus: %d enemy_bases: %2d enemy_mil: %.4f enemy_range: %.4f\n",
               *current_turn, i, plans[i].proj_limit, plans[i].satellites_goal,
               psi, plans[i].keep_fungus, plans[i].plant_fungus,
-              plans[i].enemy_bases, m->thinker_enemy_range);
+              plans[i].enemy_bases, plans[i].enemy_mil_factor, m->thinker_enemy_range);
     }
     return 0;
 }

@@ -485,11 +485,9 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         return WinProc(hwnd, msg, wParam, lParam);
 
     } else if (msg == WM_CHAR && wParam == 'r' && GetAsyncKeyState(VK_MENU) < 0) {
-        debug("WM_CHAR alt+r\n");
         CState.MouseOverTileInfo = !CState.MouseOverTileInfo;
 
     } else if (msg == WM_CHAR && wParam == 't' && GetAsyncKeyState(VK_MENU) < 0) {
-        debug("WM_CHAR alt+t\n");
         parse_says(0, MOD_VERSION, -1, -1);
         parse_says(1, MOD_VERSION, -1, -1);
         parse_says(2, MOD_DATE, -1, -1);
@@ -558,7 +556,6 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         popp("modmenu", "STATS", 0, "markbm_sm.pcx", 0);
 
     } else if (tools && msg == WM_CHAR && wParam == 'd' && GetAsyncKeyState(VK_MENU) < 0) {
-        debug("WM_CHAR alt+d\n");
         conf.debug_mode = !conf.debug_mode;
         if (conf.debug_mode) {
             for (int i=1; i<8; i++) {
@@ -696,7 +693,7 @@ void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
                             buf[1] = 'f';
                             color = 250;
                             break;
-                        case AI_GOAL_LANDING_SITE:
+                        case AI_GOAL_UNK_4:
                             buf[1] = '^';
                             break;
                         case AI_GOAL_RAISE_LAND:

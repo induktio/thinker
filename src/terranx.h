@@ -38,7 +38,8 @@ pad_2 in MFaction[0] is reserved for global game state.
 struct ThinkerData {
     uint64_t reserved;
     uint64_t game_time_spent;
-    int8_t padding[160];
+    char build_date[12];
+    int8_t padding[148];
 };
 
 static_assert(sizeof(struct CRules) == 308, "");
@@ -101,6 +102,7 @@ extern int* sunspot_duration;
 extern int* current_player_faction;
 extern int* diplo_second_faction;
 extern int* diplo_third_faction;
+extern int* diplo_tech_faction;
 extern int* diplo_current_friction;
 extern int* reportwin_opponent_faction;
 extern int* base_find_dist;
@@ -179,6 +181,10 @@ extern fp_4int veh_init;
 extern fp_1int veh_skip;
 extern fp_2int veh_at;
 extern fp_2int veh_speed;
+extern fp_1int veh_kill;
+extern fp_1int veh_wake;
+extern fp_1int stack_fix;
+extern fp_2int stack_veh;
 extern fp_3int zoc_any;
 extern fp_1int monolith;
 extern fp_2int action_build;
@@ -206,6 +212,7 @@ extern fp_1int call_council;
 extern fp_3int setup_player;
 extern fp_2int eliminate_player;
 extern fp_2int can_call_council;
+extern fp_3int wants_to_attack;
 extern fp_void do_all_non_input;
 extern fp_void auto_save;
 extern fp_2int parse_num;
@@ -232,9 +239,6 @@ extern fp_5int battle_compute;
 extern fp_6int battle_kill;
 extern fp_7int battle_fight_2;
 extern fp_void draw_cursor;
-extern fp_1int veh_kill;
-extern fp_1int veh_wake;
-extern fp_1int stack_fix;
-extern fp_2int stack_veh;
 extern fp_1int draw_map;
+
 

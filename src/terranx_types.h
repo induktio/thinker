@@ -21,12 +21,12 @@ struct BASE {
     char assimilation_turns_left;
     char nerve_staple_turns_left;
     char ai_plan_status;
-    char factions_spotted_flags;
+    byte visibility;
     char factions_pop_size_intel[8];
     char name[25];
-    short unk_x_coord;
-    short unk_y_coord;
-    int status_flags;
+    short unk_x; // terraforming related
+    short unk_y; // terraforming related
+    int state_flags;
     int event_flags;
     int governor_flags;
     int nutrients_accumulated;
@@ -73,18 +73,18 @@ struct BASE {
     int economy_total;
     int psych_total;
     int labs_total;
-    int unk_2;
+    int pad_5;
     short autoforward_land_base_id;
     short autoforward_sea_base_id;
     short autoforward_air_base_id;
-    short pad_5;
+    short pad_6;
     int talent_total;
     int drone_total;
     int superdrone_total;
     int random_event_turns;
     int nerve_staple_count;
-    int pad_6;
     int pad_7;
+    int pad_8;
 };
 
 struct MAP {
@@ -426,6 +426,7 @@ struct Faction {
     /*
     AI planning variables that relate to faction units in specific disjoint land/water areas.
     All of these are indexed by the region value in MAP struct.
+    These are updated in enemy_strategy and mainly only used by the legacy vanilla AI.
     */
     short region_total_combat_units[128];
     byte region_total_bases[128];
@@ -437,7 +438,7 @@ struct Faction {
     short region_good_tiles[128];
     short region_unk_5[128]; // Unknown reset_territory/enemy_move counter
     byte region_unk_6[128]; // Unknown enemy_strategy state
-    byte region_territory_goodies[128];
+    byte region_territory_pods[128];
     byte region_base_plan[128]; // visible in map UI with omni view + debug mode under base name
     /* End of block */
     Goal goals[75];

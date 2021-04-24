@@ -49,7 +49,7 @@ int __cdecl mod_base_draw(int ptr, int base_id, int x, int y, int zoom, int v1) 
             color = 255;
             width = 2;
         }
-        if (b->status_flags & BASE_GOLDEN_AGE_ACTIVE) {
+        if (b->state_flags & BSTATE_GOLDEN_AGE_ACTIVE) {
             color = 251;
         }
         if (has_facility(base_id, FAC_GEOSYNC_SURVEY_POD)
@@ -171,6 +171,39 @@ int __cdecl render_ocean_fungus(int x, int y) {
         }
     }
     return k;
+}
+
+int __cdecl fix_dialog(int index, char* input, int gender, int plurality)
+{
+    // Add some bonus content dialog
+    if (!(*current_turn % 10)) {
+        ParseStrGender[index] = *gender_default;
+        ParseStrPlurality[index] = *plurality_default;
+        int tech = Terraform[FORMER_THERMAL_BORE].preq_tech;
+
+        if (index == 3 && ai_enabled(*diplo_third_faction)
+        && has_tech(*diplo_third_faction, tech)
+        && Factions[*diplo_third_faction].ranking == 7) {
+            snprintf(ParseStrBuffer[index].str, 256,
+                "obsessively min-maxing borehole tilings");
+            return 0;
+        }
+        if (index == 5 && ai_enabled(*diplo_tech_faction)
+        && has_tech(*diplo_tech_faction, tech)
+        && Factions[*diplo_tech_faction].ranking == 7) {
+            snprintf(ParseStrBuffer[index].str, 256,
+                "unhinged plans to blanket the landscape with endless borehole parks");
+            return 0;
+        }
+        if (index == 6 && ai_enabled(*diplo_second_faction)
+        && has_tech(*diplo_second_faction, tech)
+        && Factions[*diplo_second_faction].ranking == 7) {
+            snprintf(ParseStrBuffer[index].str, 256,
+                "to accumulate the rightful rewards of skillful borehole placement");
+            return 0;
+        }
+    }
+    return parse_says(index, input, gender, plurality);
 }
 
 void process_map(int k) {
@@ -305,7 +338,7 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
     return sc >= min_sc && (!need_bonus || nut > 1);
 }
 
-HOOK_API void find_start(int faction, int* tx, int* ty) {
+void __cdecl find_start(int faction, int* tx, int* ty) {
     Points spawns;
     bool aquatic = MFactions[faction].rule_flags & RFLAG_AQUATIC;
     int k = (*map_axis_y < 80 ? 4 : 8);
@@ -897,6 +930,9 @@ bool patch_setup(Config* cf) {
             0x83,0x45,0xFC,(byte)cf->repair_nano_factory,0x90,0x90,0x90,0x90,0x90,0x90,0x90};
         write_bytes(0x526540, old_bytes, new_bytes, sizeof(new_bytes));
     }
+    write_call(0x552102, (int)fix_dialog); // #INTRODUCEENEMY index=3
+    write_call(0x552D8C, (int)fix_dialog); // #METFRIEND index=5
+    write_call(0x53D70B, (int)fix_dialog); // #INTRONEW index=6
 
     if (!VirtualProtect(AC_IMAGE_BASE, AC_IMAGE_LEN, PAGE_EXECUTE_READ, &attrs)) {
         return false;
