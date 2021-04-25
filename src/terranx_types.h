@@ -861,7 +861,8 @@ struct VEH {
             && unit_id != BSC_BATTLE_OGRE_MK2 && unit_id != BSC_BATTLE_OGRE_MK3;
     }
     bool need_monolith() {
-        return need_heals() || (morale < MORALE_ELITE && ~state & VSTATE_MONOLITH_UPGRADED);
+        return need_heals() || (morale < MORALE_ELITE
+            && ~state & VSTATE_MONOLITH_UPGRADED && offense_value() != 0);
     }
 };
 

@@ -126,6 +126,7 @@ int __cdecl mod_bonus_at(int x, int y);
 int __cdecl mod_goody_at(int x, int y);
 bool __cdecl can_arty(int unit_id, bool allow_sea_arty);
 void __cdecl add_goal(int faction, int type, int priority, int x, int y, int base_id);
+void __cdecl add_site(int faction, int type, int priority, int x, int y);
 void __cdecl wipe_goals(int faction);
 int has_goal(int faction, int type, int x, int y);
 std::vector<MapTile> iterate_tiles(int x, int y, int start_index, int end_index);

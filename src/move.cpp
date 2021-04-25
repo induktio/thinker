@@ -266,7 +266,8 @@ int pick_scout_target(int faction) {
     }
     for (int i=1; i < MaxPlayerNum; i++) {
         if (i != faction && Factions[i].current_num_bases) {
-            int score = (map_hash(faction, *current_turn/8) & 31)
+            int score = (map_hash(faction + 8*i, *current_turn/8) & 31)
+                + Factions[faction].diplo_friction[i]
                 + min(16, 4*faction_might(faction) / max(1, faction_might(i)));
             if (score > best_score) {
                 target = i;
@@ -371,7 +372,7 @@ void invasion_plan(int faction) {
         if (p.naval_scout_x < 0 && sq->is_land_region() && sq->owner == scout_target
         && sq->region == plans[scout_target].main_region && sq->is_base_radius()) {
             sq = mapsq(prev.x, prev.y);
-            if (sq && sq->is_base_radius() && sq->owner == scout_target) {
+            if (sq && sq->is_base_radius() && sq->owner == scout_target && !random(4)) {
                 p.naval_scout_x = prev.x;
                 p.naval_scout_y = prev.y;
             }
@@ -1604,7 +1605,7 @@ int garrison_goal(int x, int y, int faction, int triad) {
                 return min(2, defend_goal[i]);
             }
             if (triad == TRIAD_SEA) {
-                return min((is_ocean(base) ? 2 : 1), defend_goal[i]);
+                return min((is_ocean(base) && base->pop_size > 5 ? 2 : 1), defend_goal[i]);
             }
             return defend_goal[i];
         }
@@ -2183,7 +2184,8 @@ int combat_move(const int id) {
             return set_move_to(id, ts.rx, ts.ry);
         } else if (faction2 > 0) { // Neutral unit in tile
             continue;
-        } else if (arty && arty_value(ts.rx, ts.ry) - ts.dist > best_score) {
+        } else if (arty && veh->iter_count < 2
+        && arty_value(ts.rx, ts.ry) - ts.dist > best_score) {
             tx = ts.rx;
             ty = ts.ry;
             best_score = arty_value(ts.rx, ts.ry) - ts.dist;
@@ -2261,9 +2263,7 @@ int combat_move(const int id) {
     if (veh->need_heals()) {
         return escape_move(id);
     }
-    if (!veh->at_target()) {
-        return SYNC;
-    } else if (veh->iter_count > 2 && at_base) {
+    if (!veh->at_target() && veh->iter_count > 2 && at_base) {
         return mod_veh_skip(id);
     }
     // Check if the unit should move to stackup point or board naval transport
@@ -2314,9 +2314,9 @@ int combat_move(const int id) {
     int tolerance = (ignore_zocs ? 3 : 1) + (triad == TRIAD_SEA ? 2 : 0)
         + (!pm_enemy_near[veh->x][veh->y] ? 2 : 0);
     if (defend) {
-        limit = 1024;
+        limit = (((*current_turn+id) % 4) + 1)*256;
     } else {
-        limit = (((*current_turn + id) % 4) + 1)*1024;
+        limit = (((*current_turn+id) % 4) + 1)*1024;
     }
     bool flank = false;
     bool check_zocs = !ignore_zocs && pm_enemy_near[veh->x][veh->y];

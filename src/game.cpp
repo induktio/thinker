@@ -809,7 +809,7 @@ bool ignore_goal(int type) {
 }
 
 /*
-Original Offset: 0x579A30
+Original Offset: 00579A30
 */
 void __cdecl add_goal(int faction, int type, int priority, int x, int y, int base_id) {
     if (!mapsq(x, y)) {
@@ -852,6 +852,55 @@ void __cdecl add_goal(int faction, int type, int priority, int x, int y, int bas
         goal.x = x;
         goal.y = y;
         goal.base_id = base_id;
+    }
+}
+
+/*
+Original Offset: 00579B70
+*/
+void __cdecl add_site(int faction, int type, int priority, int x, int y) {
+    if ((x ^ y) & 1 && *game_state & STATE_DEBUG_MODE) {
+        debug("Bad SITE %d %d %d\n", x, y, type);
+    }
+    if (ai_enabled(faction)) {
+        return;
+    }
+    debug("add_site %d type: %3d pr: %2d x: %3d y: %3d\n",
+        faction, type, priority, x, y);
+
+    for (int i = 0; i < MaxSitesNum; i++) {
+        Goal& sites = Factions[faction].sites[i];
+        if (sites.x == x && sites.y == y && sites.type == type) {
+            if (sites.priority <= priority) {
+                sites.priority = (int16_t)priority;
+            }
+            return;
+        }
+    }
+    int priority_search = 0;
+    int site_id = -1;
+    for (int i = 0; i < MaxSitesNum; i++) {
+        Goal& sites = Factions[faction].sites[i];
+        int type_cmp = sites.type;
+        int priroty_cmp = sites.priority;
+        if (type_cmp < 0 || priroty_cmp < priority) {
+            int cmp = type_cmp >= 0 ? 0 : 1000;
+            if (!cmp) {
+                cmp = 20 - priroty_cmp;
+            }
+            if (cmp > priority_search) {
+                priority_search = cmp;
+                site_id = i;
+            }
+        }
+    }
+    if (site_id >= 0) {
+        Goal &sites = Factions[faction].sites[site_id];
+        sites.type = (int16_t)type;
+        sites.priority = (int16_t)priority;
+        sites.x = x;
+        sites.y = y;
+        add_goal(faction, type, priority, x, y, -1);
     }
 }
 
@@ -915,6 +964,8 @@ void TileSearch::reset() {
 }
 
 void TileSearch::add_start(int x, int y) {
+    assert(!((x + y)&1));
+    assert(type >= TS_TRIAD_LAND && type <= MaxTileSearchType);
     if (tail < QueueSize/2 && (sq = mapsq(x, y)) && !oldtiles.count({x, y})) {
         paths[tail] = {x, y, 0, -1};
         oldtiles.insert({x, y});
@@ -931,7 +982,6 @@ void TileSearch::add_start(int x, int y) {
 }
 
 void TileSearch::init(int x, int y, int tp) {
-    assert(tp >= TS_TRIAD_LAND && tp <= MaxTileSearchType);
     reset();
     type = tp;
     add_start(x, y);
@@ -1027,7 +1077,6 @@ MAP* TileSearch::get_next() {
             && x2 >= 0 && x2 < *map_axis_x
             && tail < QueueSize && dist < PathLimit
             && !oldtiles.count({x2, y2})) {
-                assert(!((x2 + y2)&1));
                 paths[tail] = {x2, y2, dist+1, current};
                 tail++;
                 oldtiles.insert({x2, y2});

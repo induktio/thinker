@@ -164,9 +164,9 @@ int find_project(int id) {
     int diplo = plans[faction].diplo_flags;
     int similar_limit = (base->minerals_accumulated > 80 ? 2 : 1);
     int nuke_score = (un_charter() ? 0 : 3) + 2*f->AI_power + f->AI_fight
-        + plans[faction].enemy_nukes - f->satellites_ODP/2
-        + (diplo & DIPLO_ATROCITY_VICTIM ? 4 : 0)
-        + (diplo & DIPLO_WANT_REVENGE ? 3 : 0);
+        + max(-1, plans[faction].enemy_nukes - f->satellites_ODP)
+        + (diplo & DIPLO_ATROCITY_VICTIM ? 5 : 0)
+        + (diplo & DIPLO_WANT_REVENGE ? 4 : 0);
     bool build_nukes = has_weapon(faction, WPN_PLANET_BUSTER) && nuke_score > 2;
     int nuke_limit = (build_nukes &&
         f->planet_busters < 2 + bases/40 + f->AI_fight ? 1 + bases/40 : 0);
@@ -687,6 +687,7 @@ int select_production(const int id) {
     m->thinker_enemy_range = (enemy_range + 15 * m->thinker_enemy_range)/16;
 
     double w1 = min(1.0, max(0.4, 1.0 * minerals / p->proj_limit))
+        * (conf.conquer_priority / 100.0)
         * (base_region == p->target_land_region && p->main_region != p->target_land_region ? 3 : 1);
     double w2 = 2.0 * p->enemy_mil_factor / (m->thinker_enemy_range * 0.1 + 0.1)
         + 0.8 * p->enemy_bases + min(0.4, *current_turn/300.0)

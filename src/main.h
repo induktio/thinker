@@ -148,6 +148,7 @@ struct Config {
     int base_nearby_limit = -1;
     int expansion_limit = 100;
     int expansion_autoscale = 0;
+    int conquer_priority = 100;
     int limit_project_start = 3;
     int max_satellites = 20;
     int faction_placement = 1;
@@ -180,6 +181,8 @@ struct Config {
     int repair_base_native = 10;
     int repair_base_facility = 10;
     int repair_nano_factory = 10;
+    int skip_random_factions = 0;
+    int faction_file_count = 14;
     int debug_mode = DEBUG;
 };
 

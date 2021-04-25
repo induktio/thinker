@@ -129,6 +129,20 @@ int __cdecl content_pop() {
     return conf.content_pop_computer[*diff_level];
 }
 
+int __cdecl dummy_value() {
+    return 0;
+}
+
+int __cdecl config_game_rand() {
+    int iter = 0;
+    int val = 0;
+    while (!iter || (iter < 100 && (1 << (val)) & conf.skip_random_factions)) {
+        val = random(conf.faction_file_count);
+        iter++;
+    }
+    return val;
+}
+
 int __cdecl mod_setup_player(int faction, int v1, int v2) {
     setup_player(faction, v1, v2);
     if (faction > 0 && (!is_human(faction) || conf.player_free_units > 0)) {
@@ -550,10 +564,10 @@ bool patch_setup(Config* cf) {
     int lm = ~cf->landmarks;
     bool pracx = strcmp((const char*)0x668165, "prax") == 0;
 
-    if (conf.smooth_scrolling && pracx) {
+    if (cf->smooth_scrolling && pracx) {
         MessageBoxA(0, "Smooth scrolling feature will be disabled while PRACX is also running.",
             MOD_VERSION, MB_OK | MB_ICONWARNING);
-        conf.smooth_scrolling = 0;
+        cf->smooth_scrolling = 0;
     }
     if (!VirtualProtect(AC_IMPORT_BASE, AC_IMPORT_LEN, PAGE_EXECUTE_READWRITE, &oldattrs)) {
         return false;
@@ -580,6 +594,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x527290, (int)mod_faction_upkeep);
     write_jump(0x579D80, (int)wipe_goals);
     write_jump(0x579A30, (int)add_goal);
+    write_jump(0x579B70, (int)add_site);
     write_jump(0x4688E0, (int)MapWin_gen_overlays);
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
@@ -611,6 +626,18 @@ bool patch_setup(Config* cf) {
     write_offset(0x64D947, (void*)mod_except_handler3);
     write_offset(0x50F421, (void*)multi_timer);
 
+    if (cf->skip_random_factions) {
+        std::vector<std::string> lines = read_txt_block(
+            (cf->smac_only ? ac_alpha : "alphax"), "#CUSTOMFACTIONS", 100);
+        cf->faction_file_count = 14 + lines.size();
+        debug("faction_file_count: %d\n", cf->faction_file_count);
+
+        memset((void*)0x58B63C, 0x90, 10);
+        write_call(0x58B526, (int)dummy_value); // config_game
+        write_call(0x58B539, (int)dummy_value); // config_game
+        write_call(0x58B632, (int)config_game_rand); // config_game
+        write_call(0x587066, (int)config_game_rand); // read_factions
+    }
     if (cf->smooth_scrolling) {
         write_offset(0x50F3DC, (void*)blink_timer);
         write_call(0x46AB81, (int)mod_gen_map);
@@ -634,6 +661,15 @@ bool patch_setup(Config* cf) {
     */
     remove_call(0x468175);
     remove_call(0x468186);
+
+    /*
+    Hide "<other faction> have altered the rainfall patterns" messages from status display.
+    */
+    {
+        const byte old_bytes[] = {0x75,0x07};
+        const byte new_bytes[] = {0x75,0x16};
+        write_bytes(0x4CA44E, old_bytes, new_bytes, sizeof(new_bytes));
+    }
 
     /*
     Fix a bug that occurs after the player does an artillery attack on unoccupied

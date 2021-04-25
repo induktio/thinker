@@ -86,6 +86,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->expansion_limit = atoi(value);
     } else if (MATCH("thinker", "expansion_autoscale")) {
         cf->expansion_autoscale = atoi(value);
+    } else if (MATCH("thinker", "conquer_priority")) {
+        cf->conquer_priority = min(10000, max(1, atoi(value)));
     } else if (MATCH("thinker", "limit_project_start")) {
         cf->limit_project_start = atoi(value);
     } else if (MATCH("thinker", "max_satellites")) {
@@ -152,6 +154,10 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->repair_base_facility = min(10, max(0, atoi(value)));
     } else if (MATCH("thinker", "repair_nano_factory")) {
         cf->repair_nano_factory = min(10, max(0, atoi(value)));
+    } else if (MATCH("thinker", "skip_faction")) {
+        if (atoi(value) > 0) {
+            cf->skip_random_factions |= 1 << (atoi(value) - 1);
+        }
     } else {
         for (int i=0; i<16; i++) {
             if (MATCH("thinker", landmark_params[i])) {
