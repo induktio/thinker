@@ -56,6 +56,10 @@ int __cdecl mod_base_draw(int ptr, int base_id, int x, int y, int zoom, int v1) 
         || has_facility(base_id, FAC_FLECHETTE_DEFENSE_SYS)) {
             color = 254;
         }
+        if (b->faction_id == *current_player_faction && b->drone_total > b->talent_total
+        && base_can_riot(base_id)) {
+            color = 249;
+        }
         if (color < 0) {
             return 0;
         }
@@ -613,6 +617,7 @@ bool patch_setup(Config* cf) {
     write_call(0x5B3C03, (int)mod_setup_player);
     write_call(0x5B3C4C, (int)mod_setup_player);
     write_call(0x5C0908, (int)log_veh_kill);
+    write_call(0x498720, (int)SubIf_release_handler);
     write_offset(0x50F421, (void*)multi_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);
     write_offset(0x64576E, (void*)mod_except_handler3);

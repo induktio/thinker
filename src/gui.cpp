@@ -147,6 +147,7 @@ FWin_flip             Win_flip             = (FWin_flip            )0x5EFD20;
 FBuffer_set_text_color Buffer_set_text_color = (FBuffer_set_text_color)0x5DACB0;
 FBuffer_set_font       Buffer_set_font       = (FBuffer_set_font      )0x5DAC70;
 FBuffer_write_cent_l3  Buffer_write_cent_l3  = (FBuffer_write_cent_l3 )0x5DD130;
+tc_1int SubIf_release_iface_mode = (tc_1int)0x45D380;
 
 Console* MapWin    = (Console*)0x9156B0; // ConsoleParent len: 0x247A4 end: 0x939E54
 Win*     BaseWin   = (Win*)0x6A7628;
@@ -158,6 +159,11 @@ Win*     TutWin    = (Win*)0x8C6E68;
 Win*     WorldWin  = (Win*)0x8E9F60;
 Win*     Datalink  = (Win*)0x703EA0;
 
+
+int __thiscall SubIf_release_handler(int ptr) {
+    SubIf_release_iface_mode(ptr);
+    return draw_map(1);
+}
 
 bool map_is_visible() {
     return CState.TimersEnabled
