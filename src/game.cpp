@@ -350,7 +350,8 @@ int faction_might(int faction) {
 
 bool allow_expand(int faction) {
     int bases = 0;
-    if (*game_rules & RULES_SCN_NO_COLONY_PODS || *total_num_bases >= MaxBaseNum * 19 / 20) {
+    if (*game_rules & RULES_SCN_NO_COLONY_PODS || !has_weapon(faction, WPN_COLONY_MODULE)
+    || *total_num_bases >= MaxBaseNum * 19 / 20) {
         return false;
     }
     for (int i=1; i < MaxPlayerNum && conf.expansion_autoscale > 0; i++) {
@@ -936,6 +937,23 @@ int has_goal(int faction, int type, int x, int y) {
         }
     }
     return 0;
+}
+
+Goal* find_priority_goal(int faction, int type, int* px, int* py) {
+    int pp = 0;
+    *px = -1;
+    *py = -1;
+    Goal* value = NULL;
+    for (int i = 0; i < MaxGoalsNum; i++) {
+        Goal& goal = Factions[faction].goals[i];
+        if (goal.type == type && goal.priority > pp && mapsq(goal.x, goal.y)) {
+            value = &goal;
+            pp = goal.priority;
+            *px = goal.x;
+            *py = goal.y;
+        }
+    }
+    return value;
 }
 
 std::vector<MapTile> iterate_tiles(int x, int y, int start_index, int end_index) {

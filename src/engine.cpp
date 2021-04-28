@@ -55,6 +55,20 @@ int __cdecl game_year(int n) {
 }
 
 /*
+Original Offset: 005ABD20
+*/
+void __cdecl mod_auto_save() {
+    if ((!*pbem_active || *multiplayer_active)
+    && (!(*game_rules & RULES_IRONMAN) || *game_state & STATE_SCENARIO_EDITOR)) {
+        if (conf.autosave_interval > 0 && !(*current_turn % conf.autosave_interval)) {
+            char buf[256];
+            snprintf(buf, sizeof(buf), "saves/auto/Autosave_%d.sav", game_year(*current_turn));
+            save_daemon(buf);
+        }
+    }
+}
+
+/*
 Original Offset: 00527290
 */
 int __cdecl mod_faction_upkeep(int faction) {
@@ -145,7 +159,7 @@ int __cdecl mod_faction_upkeep(int faction) {
     }
     if (!*multiplayer_active && *game_preferences & PREF_BSC_AUTOSAVE_EACH_TURN
     && faction == *current_player_faction) {
-        auto_save();
+        mod_auto_save();
     }
     fflush(debug_log);
     return 0;

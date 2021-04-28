@@ -103,6 +103,7 @@ Fpopp popp = (Fpopp)0x48C0A0;
 Fhex_cost hex_cost = (Fhex_cost)0x593510;
 Fname_base name_base = (Fname_base)0x4E4090;
 Fveh_cost veh_cost = (Fveh_cost)0x5C1850;
+Fsave_daemon save_daemon = (Fsave_daemon)0x5A94F0;
 
 fp_4int veh_init = (fp_4int)0x5C03D0;
 fp_1int veh_skip = (fp_1int)0x5C1D20;
@@ -167,5 +168,6 @@ fp_6int battle_kill = (fp_6int)0x505D80;
 fp_7int battle_fight_2 = (fp_7int)0x506AF0;
 fp_void draw_cursor = (fp_void)0x46AE00;
 fp_1int draw_map = (fp_1int)0x46B190;
+fp_void base_hurry = (fp_void)0x4F3FE0;
 
 

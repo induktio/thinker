@@ -591,6 +591,8 @@ bool patch_setup(Config* cf) {
     }
     extra_setup(cf);
 
+    *(int16_t*)0x5ABD20 = 0x25FF;
+    write_jump(0x5ABD20, (int)mod_auto_save);
     write_jump(0x527290, (int)mod_faction_upkeep);
     write_jump(0x579D80, (int)wipe_goals);
     write_jump(0x579A30, (int)add_goal);
@@ -599,6 +601,7 @@ bool patch_setup(Config* cf) {
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
     write_call(0x4E61D0, (int)mod_base_prod_choices);
+    write_call(0x4F7A38, (int)consider_hurry);
     write_call(0x5BDC4C, (int)mod_tech_value);
     write_call(0x579362, (int)mod_enemy_move);
     write_call(0x4E888C, (int)mod_crop_yield);
@@ -610,6 +613,7 @@ bool patch_setup(Config* cf) {
     write_call(0x5B3C03, (int)mod_setup_player);
     write_call(0x5B3C4C, (int)mod_setup_player);
     write_call(0x5C0908, (int)log_veh_kill);
+    write_offset(0x50F421, (void*)multi_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);
     write_offset(0x64576E, (void*)mod_except_handler3);
     write_offset(0x6457CC, (void*)mod_except_handler3);
@@ -624,7 +628,6 @@ bool patch_setup(Config* cf) {
     write_offset(0x649335, (void*)mod_except_handler3);
     write_offset(0x64A3C0, (void*)mod_except_handler3);
     write_offset(0x64D947, (void*)mod_except_handler3);
-    write_offset(0x50F421, (void*)multi_timer);
 
     if (cf->skip_random_factions) {
         std::vector<std::string> lines = read_txt_block(

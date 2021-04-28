@@ -129,6 +129,7 @@ void __cdecl add_goal(int faction, int type, int priority, int x, int y, int bas
 void __cdecl add_site(int faction, int type, int priority, int x, int y);
 void __cdecl wipe_goals(int faction);
 int has_goal(int faction, int type, int x, int y);
+Goal* find_priority_goal(int faction, int type, int* px, int* py);
 std::vector<MapTile> iterate_tiles(int x, int y, int start_index, int end_index);
 
 const int PathLimit = 60;

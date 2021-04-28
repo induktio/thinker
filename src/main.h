@@ -124,6 +124,7 @@ struct Config {
     int directdraw = 0;
     int disable_opening_movie = 1;
     int cpu_idle_fix = 1;
+    int autosave_interval = 1;
     int smooth_scrolling = 0;
     int scroll_area = 40;
     int world_map_labels = 1;

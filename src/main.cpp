@@ -19,7 +19,6 @@
 #include "main.h"
 #include "lib/ini.h"
 
-bool unknown_option = false;
 FILE* debug_log = NULL;
 Config conf;
 NodeSet mapnodes;
@@ -27,8 +26,9 @@ AIPlans plans[MaxPlayerNum];
 
 
 int handler(void* user, const char* section, const char* name, const char* value) {
-    Config* cf = (Config*)user;
+    static bool unknown_option = false;
     char buf[INI_MAX_LINE+2] = {};
+    Config* cf = (Config*)user;
     strncpy(buf, value, INI_MAX_LINE);
     #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
 
@@ -38,6 +38,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->disable_opening_movie = atoi(value);
     } else if (MATCH("thinker", "cpu_idle_fix")) {
         cf->cpu_idle_fix = atoi(value);
+    } else if (MATCH("thinker", "autosave_interval")) {
+        cf->autosave_interval = atoi(value);
     } else if (MATCH("thinker", "smooth_scrolling")) {
         cf->smooth_scrolling = atoi(value);
     } else if (MATCH("thinker", "scroll_area")) {
@@ -165,6 +167,10 @@ int handler(void* user, const char* section, const char* name, const char* value
                 return 1;
             }
         }
+        if (!unknown_option) {
+            MessageBoxA(0, "Unknown configuration option detected in thinker.ini.\n"\
+                "Game might not work as intended.", MOD_VERSION, MB_OK | MB_ICONWARNING);
+        }
         unknown_option = true;
         return 0;  /* unknown section/name, error */
     }
@@ -208,10 +214,6 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             }
             if (!cmd_parse(&conf) || !patch_setup(&conf)) {
                 return FALSE;
-            }
-            if (unknown_option) {
-                MessageBoxA(0, "Unknown configuration option detected in thinker.ini.\n"\
-                    "Game might not work as intended.", MOD_VERSION, MB_OK | MB_ICONWARNING);
             }
             srand(time(0));
             *engine_version = MOD_VERSION;
@@ -391,7 +393,8 @@ int plans_upkeep(int faction) {
             BASE* base = &Bases[j];
             if (base->faction_id == i) {
                 population[n] = base->pop_size;
-                minerals[n++] = base->mineral_surplus;
+                minerals[n] = base->mineral_surplus;
+                n++;
             } else if (base->faction_id_former == i && at_war(i, base->faction_id)) {
                 plans[i].enemy_bases += (is_human(base->faction_id) ? 2 : 1);
             }

@@ -165,6 +165,7 @@ typedef int(__cdecl *Fpopp)(const char* file_name, const char* label, int v1,
 typedef int(__cdecl *Fhex_cost)(int unit_id, int faction, int x1, int y1, int x2, int y2, int a7);
 typedef void(__cdecl *Fname_base)(int faction, char* name, int flags, int water);
 typedef int(__cdecl *Fveh_cost)(int item_id, int base_id, int* ptr);
+typedef int (__cdecl *Fsave_daemon)(char* filename);
 
 extern Fbattle_fight_1 battle_fight_1;
 extern Fpropose_proto propose_proto;
@@ -176,6 +177,7 @@ extern Fpopp popp;
 extern Fhex_cost hex_cost;
 extern Fname_base name_base;
 extern Fveh_cost veh_cost;
+extern Fsave_daemon save_daemon;
 
 extern fp_4int veh_init;
 extern fp_1int veh_skip;
@@ -240,5 +242,6 @@ extern fp_6int battle_kill;
 extern fp_7int battle_fight_2;
 extern fp_void draw_cursor;
 extern fp_1int draw_map;
+extern fp_void base_hurry;
 
 

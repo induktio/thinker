@@ -38,7 +38,6 @@ int __cdecl mod_base_prod_choices(int id, int v1, int v2, int v3) {
             debug("BUILD DEFENSE\n");
             choice = find_proto(id, TRIAD_LAND, COMBAT, DEF);
         } else {
-            consider_hurry(id);
             debug("BUILD OLD\n");
             choice = prod;
         }
@@ -383,14 +382,20 @@ int hurry_item(BASE* b, int mins, int cost) {
     return 1;
 }
 
-int consider_hurry(int id) {
+int consider_hurry() {
+    const int id = *current_base_id;
     BASE* b = &Bases[id];
-    int faction = b->faction_id;
     int t = b->queue_items[0];
+    int faction = b->faction_id;
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
+    assert(b == *current_base_ptr);
 
-    if (!(conf.hurry_items && t >= -FAC_ORBITAL_DEFENSE_POD && ~b->state_flags & BSTATE_HURRY_PRODUCTION)) {
+    if (!ai_enabled(faction)) {
+        return base_hurry();
+    }
+    if (conf.hurry_items < 1 || t <= -FAC_STOCKPILE_ENERGY
+    || b->state_flags & (BSTATE_PRODUCTION_DONE | BSTATE_HURRY_PRODUCTION)) {
         return 0;
     }
     bool cheap = b->minerals_accumulated >= Rules->retool_exemption;
@@ -410,7 +415,7 @@ int consider_hurry(int id) {
     if (t < 0 && turns > 1) {
         if (t == -FAC_RECYCLING_TANKS || t == -FAC_PRESSURE_DOME
         || t == -FAC_RECREATION_COMMONS || t == -FAC_TREE_FARM
-        || t == -FAC_HEADQUARTERS)
+        || t == -FAC_PUNISHMENT_SPHERE || t == -FAC_HEADQUARTERS)
             return hurry_item(b, mins, cost);
         if (t == -FAC_CHILDREN_CRECHE && f->SE_growth >= 2)
             return hurry_item(b, mins, cost);
@@ -588,7 +593,7 @@ int select_combat(int base_id, bool sea_base, bool build_ships) {
         return find_proto(base_id, (build_ships ? TRIAD_SEA : TRIAD_LAND), WMODE_INFOWAR, DEF);
     }
     if (has_chassis(faction, CHS_NEEDLEJET)
-    && (f->SE_police >= -3 || has_project(faction, FAC_TELEPATHIC_MATRIX)) && !random(w1)) {
+    && (f->SE_police >= -3 || !base_can_riot(base_id)) && !random(w1)) {
         return find_proto(base_id, TRIAD_AIR, COMBAT, ATT);
     }
     if (build_ships) {
@@ -610,7 +615,7 @@ int select_combat(int base_id, bool sea_base, bool build_ships) {
             return find_proto(base_id, TRIAD_SEA, (!random(w2) ? WMODE_TRANSPORT : COMBAT), ATT);
         }
     }
-    return find_proto(base_id, TRIAD_LAND, COMBAT, (sea_base || !random(4) ? DEF : ATT));
+    return find_proto(base_id, TRIAD_LAND, COMBAT, (sea_base || !random(5) ? DEF : ATT));
 }
 
 int select_production(const int id) {
@@ -690,8 +695,8 @@ int select_production(const int id) {
         * (conf.conquer_priority / 100.0)
         * (base_region == p->target_land_region && p->main_region != p->target_land_region ? 3 : 1);
     double w2 = 2.0 * p->enemy_mil_factor / (m->thinker_enemy_range * 0.1 + 0.1)
-        + 0.8 * p->enemy_bases + min(0.4, *current_turn/300.0)
-        + min(1.0, 2.0 * f->current_num_bases / *map_area_sq_root) * (f->AI_fight * 0.2 + 0.8);
+        + 0.8 * p->enemy_bases + min(0.4, *current_turn/400.0)
+        + min(1.0, 1.5 * f->current_num_bases / *map_area_sq_root) * (f->AI_fight * 0.2 + 0.8);
     double threat = 1 - (1 / (1 + max(0.0, w1 * w2)));
 
     debug("select_prod %d %d %2d %2d def: %d frm: %d prb: %d crw: %d pods: %d expand: %d "\
