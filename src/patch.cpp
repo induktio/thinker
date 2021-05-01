@@ -157,10 +157,10 @@ int __cdecl mod_setup_player(int faction, int v1, int v2) {
                 int former = (is_ocean(sq) ? BSC_SEA_FORMERS : BSC_FORMERS);
                 int colony = (is_ocean(sq) ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
                 for (int j=0; j < conf.free_formers; j++) {
-                    spawn_veh(former, faction, veh->x, veh->y, -1);
+                    spawn_veh(former, faction, veh->x, veh->y);
                 }
                 for (int j=0; j < conf.free_colony_pods; j++) {
-                    spawn_veh(colony, faction, veh->x, veh->y, -1);
+                    spawn_veh(colony, faction, veh->x, veh->y);
                 }
                 break;
             }
@@ -595,8 +595,6 @@ bool patch_setup(Config* cf) {
     }
     extra_setup(cf);
 
-    *(int16_t*)0x5ABD20 = 0x25FF;
-    write_jump(0x5ABD20, (int)mod_auto_save);
     write_jump(0x527290, (int)mod_faction_upkeep);
     write_jump(0x579D80, (int)wipe_goals);
     write_jump(0x579A30, (int)add_goal);
@@ -634,6 +632,10 @@ bool patch_setup(Config* cf) {
     write_offset(0x64A3C0, (void*)mod_except_handler3);
     write_offset(0x64D947, (void*)mod_except_handler3);
 
+    if (cf->autosave_interval > 0) {
+        *(int16_t*)0x5ABD20 = 0x25FF;
+        write_jump(0x5ABD20, (int)mod_auto_save);
+    }
     if (cf->skip_random_factions) {
         std::vector<std::string> lines = read_txt_block(
             (cf->smac_only ? ac_alpha : "alphax"), "#CUSTOMFACTIONS", 100);
@@ -663,6 +665,7 @@ bool patch_setup(Config* cf) {
         remove_call(0x4E5F96); // #BEGINPROJECT
         remove_call(0x4E5E0D); // #CHANGEPROJECT
         remove_call(0x4F4817); // #DONEPROJECT
+        write_call(0x4DF19B, (int)spawn_veh); // Console_editor_veh
     }
     /*
     Hide unnecessary region_base_plan display next to base names in debug mode.

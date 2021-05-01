@@ -1662,6 +1662,7 @@ void __cdecl multi_timer();
 int __thiscall mod_calc_dim(Console* This);
 int __thiscall mod_gen_map(Console* This, int iOwner, int fUnitsOnly);
 void __thiscall MapWin_gen_overlays(Console* This, int x, int y);
+int show_mod_menu();
 
 #pragma GCC diagnostic pop
 

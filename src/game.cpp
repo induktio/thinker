@@ -611,10 +611,10 @@ int set_base_facility(int base_id, int facility_id, bool add) {
     return 0;
 }
 
-int spawn_veh(int unit_id, int faction, int x, int y, int base_id) {
+int __cdecl spawn_veh(int unit_id, int faction, int x, int y) {
     int id = veh_init(unit_id, faction, x, y);
     if (id >= 0) {
-        Vehicles[id].home_base_id = base_id;
+        Vehicles[id].home_base_id = -1;
         // Set these flags to disable any non-Thinker unit automation.
         Vehicles[id].state |= VSTATE_UNK_40000;
         Vehicles[id].state &= ~VSTATE_UNK_2000;

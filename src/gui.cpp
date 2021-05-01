@@ -420,10 +420,6 @@ void check_scroll() {
     fflush(debug_log);
 }
 
-void popup_homepage() {
-    ShellExecute(NULL, "open", "https://github.com/induktio/thinker", NULL, NULL, SW_SHOWNORMAL);
-}
-
 LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     static int iDeltaAccum = 0;
     bool fHasFocus = (GetFocus() == *phWnd);
@@ -494,72 +490,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         CState.MouseOverTileInfo = !CState.MouseOverTileInfo;
 
     } else if (msg == WM_CHAR && wParam == 't' && GetAsyncKeyState(VK_MENU) < 0) {
-        parse_says(0, MOD_VERSION, -1, -1);
-        parse_says(1, MOD_VERSION, -1, -1);
-        parse_says(2, MOD_DATE, -1, -1);
-
-        if (*game_not_started) {
-            int ret = popp("modmenu", "MAINMENU", 0, "stars_sm.pcx", 0);
-            if (ret == 1) {
-                popup_homepage();
-            }
-            return 0;
-        }
-        uint64_t seconds = ThinkerVars->game_time_spent / 1000;
-        ParseNumTable[0] = seconds / 3600;
-        ParseNumTable[1] = (seconds / 60) % 60;
-        ParseNumTable[2] = seconds % 60;
-        int ret = popp("modmenu", "GAMEMENU", 0, "stars_sm.pcx", 0);
-
-        if (ret == 2 && !*game_not_started) {
-            conf.world_map_labels = !conf.world_map_labels;
-            MapWin_draw_map(pMain, 0);
-            InvalidateRect(hwnd, NULL, false);
-            return 0;
-        } else if (ret == 3) {
-            popup_homepage();
-            return 0;
-        } else if (ret != 1 || *game_not_started || *pbem_active || *multiplayer_active) {
-            return 0;
-        }
-
-        int total_pop = 0,
-            total_minerals = 0,
-            total_energy = 0,
-            faction_pop = 0,
-            faction_units = 0,
-            faction_minerals = 0,
-            faction_energy = 0;
-
-        Faction* f = &Factions[*current_player_faction];
-        for (int i=0; i<*total_num_bases; ++i) {
-            BASE* b = &Bases[i];
-            if (b->faction_id == *current_player_faction) {
-                faction_pop += b->pop_size;
-                faction_minerals += b->mineral_intake_2;
-                faction_energy += b->energy_intake_2;
-            }
-            total_pop += b->pop_size;
-            total_minerals += b->mineral_intake_2;
-            total_energy += b->energy_intake_2;
-        }
-        for (int i=0; i<*total_num_vehicles; i++) {
-            VEH* v = &Vehicles[i];
-            if (v->faction_id == *current_player_faction) {
-                faction_units++;
-            }
-        }
-        ParseNumTable[0] = *total_num_bases;
-        ParseNumTable[1] = *total_num_vehicles;
-        ParseNumTable[2] = total_pop;
-        ParseNumTable[3] = total_minerals;
-        ParseNumTable[4] = total_energy;
-        ParseNumTable[5] = f->current_num_bases;
-        ParseNumTable[6] = faction_units;
-        ParseNumTable[7] = f->pop_total;
-        ParseNumTable[8] = faction_minerals;
-        ParseNumTable[9] = faction_energy;
-        popp("modmenu", "STATS", 0, "markbm_sm.pcx", 0);
+        show_mod_menu();
 
     } else if (tools && msg == WM_CHAR && wParam == 'd' && GetAsyncKeyState(VK_MENU) < 0) {
         conf.debug_mode = !conf.debug_mode;
@@ -904,6 +835,81 @@ void __cdecl multi_timer() {
         }
         prev_time = now;
     }
+}
+
+void popup_homepage() {
+    ShellExecute(NULL, "open", "https://github.com/induktio/thinker", NULL, NULL, SW_SHOWNORMAL);
+}
+
+void show_mod_stats() {
+    int total_pop = 0,
+        total_minerals = 0,
+        total_energy = 0,
+        faction_pop = 0,
+        faction_units = 0,
+        faction_minerals = 0,
+        faction_energy = 0;
+
+    Faction* f = &Factions[*current_player_faction];
+    for (int i=0; i<*total_num_bases; ++i) {
+        BASE* b = &Bases[i];
+        if (b->faction_id == *current_player_faction) {
+            faction_pop += b->pop_size;
+            faction_minerals += b->mineral_intake_2;
+            faction_energy += b->energy_intake_2;
+        }
+        total_pop += b->pop_size;
+        total_minerals += b->mineral_intake_2;
+        total_energy += b->energy_intake_2;
+    }
+    for (int i=0; i<*total_num_vehicles; i++) {
+        VEH* v = &Vehicles[i];
+        if (v->faction_id == *current_player_faction) {
+            faction_units++;
+        }
+    }
+    ParseNumTable[0] = *total_num_bases;
+    ParseNumTable[1] = *total_num_vehicles;
+    ParseNumTable[2] = total_pop;
+    ParseNumTable[3] = total_minerals;
+    ParseNumTable[4] = total_energy;
+    ParseNumTable[5] = f->current_num_bases;
+    ParseNumTable[6] = faction_units;
+    ParseNumTable[7] = f->pop_total;
+    ParseNumTable[8] = faction_minerals;
+    ParseNumTable[9] = faction_energy;
+    popp("modmenu", "STATS", 0, "markbm_sm.pcx", 0);
+}
+
+int show_mod_menu() {
+    parse_says(0, MOD_VERSION, -1, -1);
+    parse_says(1, MOD_VERSION, -1, -1);
+    parse_says(2, MOD_DATE, -1, -1);
+
+    if (*game_not_started) {
+        int ret = popp("modmenu", "MAINMENU", 0, "stars_sm.pcx", 0);
+        if (ret == 1) {
+            popup_homepage();
+        }
+        return 0;
+    }
+    uint64_t seconds = ThinkerVars->game_time_spent / 1000;
+    ParseNumTable[0] = seconds / 3600;
+    ParseNumTable[1] = (seconds / 60) % 60;
+    ParseNumTable[2] = seconds % 60;
+    int ret = popp("modmenu", "GAMEMENU", 0, "stars_sm.pcx", 0);
+
+    if (ret == 1 && !*game_not_started && !*pbem_active && !*multiplayer_active) {
+        show_mod_stats();
+    }
+    else if (ret == 2 && !*game_not_started) {
+        conf.world_map_labels = !conf.world_map_labels;
+        draw_map(1);
+    }
+    else if (ret == 3) {
+        popup_homepage();
+    }
+    return 0;
 }
 
 #pragma GCC diagnostic pop

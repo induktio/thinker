@@ -159,7 +159,7 @@ int __cdecl mod_faction_upkeep(int faction) {
     }
     if (!*multiplayer_active && *game_preferences & PREF_BSC_AUTOSAVE_EACH_TURN
     && faction == *current_player_faction) {
-        mod_auto_save();
+        auto_save();
     }
     fflush(debug_log);
     return 0;

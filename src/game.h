@@ -113,7 +113,7 @@ bool has_defenders(int x, int y, int faction);
 int nearby_items(int x, int y, int range, uint32_t item);
 int nearby_tiles(int x, int y, int type, int limit);
 int set_base_facility(int base_id, int facility_id, bool add);
-int spawn_veh(int unit_id, int faction, int x, int y, int base_id);
+int __cdecl spawn_veh(int unit_id, int faction, int x, int y);
 char* parse_str(char* buf, int len, const char* s1, const char* s2, const char* s3, const char* s4);
 char* strstrip(char* s);
 void check_zeros(int* ptr, int len);
