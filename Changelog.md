@@ -1,6 +1,25 @@
 
 # Thinker mod release changelog
 
+## Version 2.6 (2021-05-01)
+* New option: skip_faction will exclude some factions from random selection in the game setup.
+* New option: conquer_priority provides ability to tweak the AI affinity to build more military units.
+* Bases that are about to drone riot on the next turn are now highlighted with a red label on the world map.
+* Game now preserves autosave files for each turn in the saves folder. They are overwritten only when the turn is played again.
+* Release now contains German translation for alphax.txt provided by Pianoslum.
+* Add more checks for AI base production to avoid building too expensive facilities.
+* AI can now build additional mineral multiplier facilities in one base. However this can only happen if it doesn't push the base over eco damage threshold.
+* AI sometimes builds Punishment Spheres in captured bases.
+* AI formers will occasionally drill new rivers.
+* AI tries to determine better if it needs land or sea former units.
+* AI sometimes does naval landings on the same continent when the distance is shorter than land route.
+* More additional tweaks to AI unit movement and scouting priorities.
+* Fix game showing redundant "rainfall patterns have been altered" messages when these events are caused by other factions.
+* Fix AI not attacking certain aircraft in flight even when it had the chance to do so.
+* Fix AI building too many conventional missiles or obsolete planet busters under certain conditions.
+* Fix AI not starting to build Ascent to Transcendence when Voice of Planet is operational.
+
+
 ## Version 2.5 (2021-04-11)
 * Add new in game menu support for Thinker features (ALT+T shortcut). While a game is loaded, the menu will display elapsed time during that savegame.
 * Add menu option to toggle world_map_labels while in game.

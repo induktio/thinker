@@ -28,7 +28,7 @@ In addition to the binary patches listed separately in this file, items that are
 5. All expansion related content can be disabled by using the `smac_only` setting, see further below.
 6. AI mineral/nutrient production cost factors for each difficulty level can be changed from the `cost_factor` setting. Does not affect other difficulty related modifiers.
 7. Content (non-drone) base population for each difficulty level can be adjusted from `content_pop_player` and `content_pop_computer` variables. By default these have the same values than vanilla game mechanics.
-8. New `wold_map_labels` feature draws a white marker around the population label of HQ bases to identify them more easily. Bases in golden age are also highlighted with a yellow label. Bases that have Flechette Defense System or Geo Survey Pods are highlighted with a blue label.
+8. New `world_map_labels` feature draws a white marker around the population label of HQ bases to identify them more easily. Bases in golden age are also highlighted with a yellow label. Bases that have Flechette Defense System or Geo Survey Pods are highlighted with a blue label.
 9. New `auto_relocate_hq` feature imports a game mechanic from Civilization 3 where lost/captured headquarters are automatically moved to another suitable base.
 
 

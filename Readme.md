@@ -28,6 +28,7 @@ Download
 This is the only place to download binary releases. See also the [Changelog](Changelog.md) for useful release notes.
 
 * [Release versions](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAp6ioWxdo7vnG6Ity5W3o1a?dl=0&lst=)
+* [Develop builds](https://www.dropbox.com/sh/qsps5bhz8v020o9/AADv-0D0-bPq22pgoAIcDRC3a/develop?dl=0&lst=)
 
 
 Installation
