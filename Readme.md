@@ -53,7 +53,7 @@ Compiling
 Thinker can be compiled with GCC using the included CodeBlocks project. GCC version 8.1.0 or later is recommended.
 To avoid compiling issues, do not use the MinGW toolkit version bundled with CodeBlocks.
 Instead get the toolkit separately from the [MinGW-w64 project](https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/).
-See also more information about [patch loading](tools/Patching.md).
+See also more information about [patch loading](Technical.md).
 
 
 License

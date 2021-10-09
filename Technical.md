@@ -1,4 +1,25 @@
 
+Thinker keyboard shortcuts
+==========================
+
+These shortcuts are available always, whether debug build is available or not.
+
+    Alt-T   Show Thinker's version menu and options.
+    Alt-R   Toggle tile information update under cursor if smooth_scrolling is enabled.
+
+These developer mode shortcuts are only available if Thinker is using debug build. Some of these options require extended debug mode.
+
+    Alt-D   Toggle extended debug mode.
+    Alt-V   Iterate various TileSearch instances for the selected map tile.
+    Alt-F   Iterate various move_upkeep overlays.
+    Alt-Y   Toggle faction diplomacy treaty matrix display.
+    Alt-X   Run pathfinding between two previous map tiles.
+    Alt-Z   Print debug information for the selected map tile.
+    Shift-4 Toggle world site priority display for the legacy AI.
+    Shift-5 Toggle goals overlay display on the map.
+    Shift-* Toggle faction border display on the map.
+
+
 Patches included in the release version
 =======================================
 
@@ -13,7 +34,7 @@ In the diff listing, the vast majority of changes relate to Scient's patch with 
     00280A1E .. 00280A32
     002EF4FC .. 002EF516
 
-After acquiring the diff listing, it possible to use `idapatch.py` to convert it into PatchByte script commands that can used by IDA. When the unmodified GOG binary is loaded in IDA, entering all the PatchByte commands will transform it into `terranx_mod.exe`.
+After acquiring the diff listing, it is possible to use `idapatch.py` to convert it into PatchByte script commands that can used by IDA. When the unmodified GOG binary is loaded in IDA, entering all the PatchByte commands will transform it into `terranx_mod.exe`.
 
 At game startup, Windows will attempt to load thinker.dll from the same folder before the game starts. Note that Windows will terminate the process if any of the dll dependencies from the import table are not available. When thinker.dll is loading, it will attempt to patch the game binary image residing in the same address space before the actual game can start. 
 This way it is not required to write any of the actual patches to the exe file, instead they can be applied dynamically at runtime. Thinker also performs some sanity checks during patching, and it is designed to terminate the game process with an error message if any of the checks fail.
