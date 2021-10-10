@@ -128,6 +128,7 @@ struct Config {
     int smooth_scrolling = 0;
     int scroll_area = 40;
     int world_map_labels = 1;
+    int render_probe_labels = 1;
     int new_base_names = 0;
     int windowed = 0;
     int window_width = 1024;

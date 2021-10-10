@@ -221,6 +221,8 @@ extern fp_2int parse_num;
 extern fp_3int capture_base;
 extern fp_1int base_kill;
 extern fp_5int crop_yield;
+extern fp_5int mine_yield;
+extern fp_5int energy_yield;
 extern fp_6int base_draw;
 extern fp_6int base_find3;
 extern fp_3int draw_tile;

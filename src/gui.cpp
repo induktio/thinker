@@ -157,7 +157,7 @@ Win*     SocialWin = (Win*)0x8A6270;
 Win*     StatusWin = (Win*)0x8C5568;
 Win*     TutWin    = (Win*)0x8C6E68;
 Win*     WorldWin  = (Win*)0x8E9F60;
-Win*     Datalink  = (Win*)0x703EA0;
+Win*     DatalinkWin = (Win*)0x703EA0;
 
 
 int __thiscall SubIf_release_handler(int ptr) {
@@ -171,7 +171,7 @@ bool map_is_visible() {
         && !Win_is_visible(BaseWin)
         && !Win_is_visible(SocialWin)
         && !Win_is_visible(TutWin)
-        && !Win_is_visible(Datalink);
+        && !Win_is_visible(DatalinkWin);
 }
 
 void mouse_over_tile(POINT* p) {
@@ -427,7 +427,6 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     POINT p;
 
     if (msg == WM_MOUSEWHEEL && fHasFocus) {
-        debug("WM_MOUSEWHEEL %d\n", pMain->oMap.iZoomFactor);
         int iDelta = GET_WHEEL_DELTA_WPARAM(wParam) + iDeltaAccum;
         iDeltaAccum = iDelta % WHEEL_DELTA;
         iDelta /= WHEEL_DELTA;

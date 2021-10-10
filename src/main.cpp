@@ -46,6 +46,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->scroll_area = max(0, atoi(value));
     } else if (MATCH("thinker", "world_map_labels")) {
         cf->world_map_labels = atoi(value);
+    } else if (MATCH("thinker", "render_probe_labels")) {
+        cf->render_probe_labels = atoi(value);
     } else if (MATCH("thinker", "new_base_names")) {
         cf->new_base_names = atoi(value);
     } else if (MATCH("thinker", "windowed")) {
