@@ -132,8 +132,8 @@ int has_goal(int faction, int type, int x, int y);
 Goal* find_priority_goal(int faction, int type, int* px, int* py);
 std::vector<MapTile> iterate_tiles(int x, int y, int start_index, int end_index);
 
-const int PathLimit = 60;
-const int QueueSize = 4096;
+const int PathLimit = 80;
+const int QueueSize = 6400;
 const int MaxTileSearchType = 6;
 
 enum tilesearch_types {

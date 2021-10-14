@@ -121,8 +121,8 @@ struct MAP {
     bool is_visible(int faction) {
         return visibility & (1 << faction);
     }
-    bool is_unowned() {
-        return owner < 1;
+    bool is_owned() {
+        return owner > 0;
     }
     bool is_land_region() {
         return region < 63; // Skip pole tiles
@@ -842,6 +842,9 @@ struct VEH {
     }
     bool is_transport() {
         return Units[unit_id].weapon_type == WPN_TROOP_TRANSPORT;
+    }
+    bool is_artifact() {
+        return Units[unit_id].weapon_type == WPN_ALIEN_ARTIFACT;
     }
     bool is_visible(int faction) {
         return visibility & (1 << faction);

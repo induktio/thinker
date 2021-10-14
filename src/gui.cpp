@@ -528,8 +528,8 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         TileSearch ts;
         ts_type = (ts_type+1) % (MaxTileSearchType+1);
         ts.init(pMain->oMap.iTileX, pMain->oMap.iTileY, ts_type, 0);
-        while (++i < 5000 && ts.get_next() != NULL) {
-            pm_overlay[ts.rx][ts.ry] = i;
+        while (ts.get_next() != NULL) {
+            pm_overlay[ts.rx][ts.ry] = ++i;
         }
         MapWin_draw_map(pMain, 0);
         InvalidateRect(hwnd, NULL, false);

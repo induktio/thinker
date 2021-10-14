@@ -129,6 +129,7 @@ struct Config {
     int scroll_area = 40;
     int world_map_labels = 1;
     int render_probe_labels = 1;
+    int foreign_treaty_popup = 0;
     int new_base_names = 0;
     int windowed = 0;
     int window_width = 1024;
@@ -210,9 +211,11 @@ struct AIPlans {
     int naval_end_y = -1;
     int naval_beach_x = -1;
     int naval_beach_y = -1;
-    int combat_units = 0;
-    int aircraft = 0;
-    int transports = 0;
+    int defend_weights = 0;
+    int land_combat_units = 0;
+    int sea_combat_units = 0;
+    int air_combat_units = 0;
+    int transport_units = 0;
     int unknown_factions = 0;
     int contacted_factions = 0;
     int enemy_factions = 0;
@@ -257,17 +260,20 @@ enum crawl_resource_types {
 };
 
 enum nodeset_types {
-    NODE_CONVOY = 1,
-    NODE_BOREHOLE = 2,
-    NODE_NEED_FERRY = 3,
-    NODE_RAISE_LAND = 4,
-    NODE_GOAL_RAISE_LAND = 5,
-    NODE_GOAL_NAVAL_START = 6,
-    NODE_GOAL_NAVAL_BEACH = 7,
-    NODE_GOAL_NAVAL_END = 8,
-    NODE_PATROL = 9,
-    NODE_BASE_SITE = 10,
-    NODE_SENSOR_ARRAY = 11,
+    NODE_CONVOY, // Resource being crawled
+    NODE_BOREHOLE, // Borehole being built
+    NODE_RAISE_LAND, // Land raise action initiated
+    NODE_SENSOR_ARRAY,
+    NODE_NEED_FERRY,
+    NODE_BASE_SITE,
+    NODE_GOAL_RAISE_LAND,
+    NODE_GOAL_NAVAL_START,
+    NODE_GOAL_NAVAL_BEACH,
+    NODE_GOAL_NAVAL_END,
+    NODE_PATROL,
+    NODE_COMBAT_PATROL, // Only attack-capable units
+    NODE_NONALLY,
+    NODE_ARTIFACT,
 };
 
 struct MapTile {

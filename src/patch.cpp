@@ -768,6 +768,17 @@ bool patch_setup(Config* cf) {
         write_call(0x4E4CFC, (int)mod_name_base);
         write_call(0x4F7E18, (int)mod_name_base);
     }
+    if (cf->foreign_treaty_popup) {
+        const byte old_bytes[] = {0x68, 0x88, 0x13, 0x00, 0x00};
+        const byte new_bytes[] = {0x68, 0xFF, 0xFF, 0xFF, 0xFF};
+
+        write_bytes(0x55DACC, old_bytes, new_bytes, sizeof(new_bytes));
+        write_bytes(0x55DBF1, old_bytes, new_bytes, sizeof(new_bytes));
+        write_bytes(0x55DDD0, old_bytes, new_bytes, sizeof(new_bytes));
+        write_bytes(0x55DEF5, old_bytes, new_bytes, sizeof(new_bytes));
+        write_bytes(0x55E355, old_bytes, new_bytes, sizeof(new_bytes));
+        write_bytes(0x55CB24, old_bytes, new_bytes, sizeof(new_bytes));
+    }
     if (cf->faction_placement) {
         const byte asm_find_start[] = {
             0x8D,0x45,0xF8,0x50,0x8D,0x45,0xFC,0x50,0x8B,0x45,
@@ -981,6 +992,7 @@ bool patch_setup(Config* cf) {
             0x83,0x45,0xFC,(byte)cf->repair_nano_factory,0x90,0x90,0x90,0x90,0x90,0x90,0x90};
         write_bytes(0x526540, old_bytes, new_bytes, sizeof(new_bytes));
     }
+
     write_call(0x552102, (int)fix_dialog); // #INTRODUCEENEMY index=3
     write_call(0x552D8C, (int)fix_dialog); // #METFRIEND index=5
     write_call(0x53D70B, (int)fix_dialog); // #INTRONEW index=6

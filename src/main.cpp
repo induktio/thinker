@@ -48,6 +48,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->world_map_labels = atoi(value);
     } else if (MATCH("thinker", "render_probe_labels")) {
         cf->render_probe_labels = atoi(value);
+    } else if (MATCH("thinker", "foreign_treaty_popup")) {
+        cf->foreign_treaty_popup = atoi(value);
     } else if (MATCH("thinker", "new_base_names")) {
         cf->new_base_names = atoi(value);
     } else if (MATCH("thinker", "windowed")) {

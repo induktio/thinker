@@ -297,6 +297,10 @@ int unit_score(int id, int faction, int cfactor, int minerals, int accumulated, 
     }
     if (u->triad() != TRIAD_AIR) {
         v += (defend ? 12 : 32) * u->speed();
+        if (u->triad() == TRIAD_SEA && u->weapon_type <= WPN_PSI_ATTACK
+        && defense_value(u) > offense_value(u)) {
+            v -= 20;
+        }
     }
     if (u->ability_flags & ABL_POLICE_2X && plans[faction].need_police) {
         v += 20;
@@ -580,8 +584,8 @@ int select_combat(int base_id, bool sea_base, bool build_ships) {
     bool reserve = base->mineral_surplus >= base->mineral_intake_2/2;
     int probes = 0;
 
-    int w1 = 4*plans[faction].aircraft < f->current_num_bases ? 2 : 5;
-    int w2 = 4*plans[faction].transports < f->current_num_bases ? 2 : 5;
+    int w1 = 4*plans[faction].air_combat_units < f->current_num_bases ? 2 : 5;
+    int w2 = 4*plans[faction].transport_units < f->current_num_bases ? 2 : 5;
 
     for (int i=0; i < *total_num_vehicles; i++) {
         VEH* veh = &Vehicles[i];

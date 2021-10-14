@@ -443,6 +443,7 @@ int set_move_to(int veh_id, int x, int y) {
     veh->status_icon = 'G';
     veh->terraforming_turns = 0;
     mapnodes.erase({x, y, NODE_PATROL});
+    mapnodes.erase({x, y, NODE_COMBAT_PATROL});
     if (veh->x == x && veh->y == y) {
         return mod_veh_skip(veh_id);
     }

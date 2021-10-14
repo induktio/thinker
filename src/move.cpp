@@ -36,7 +36,6 @@ PMTable pm_enemy_near;
 PMTable pm_enemy_dist;
 PMTable pm_overlay;
 
-Points nonally;
 int last_faction = 0;
 int build_tubes = false;
 int defend_goal[MaxBaseNum] = {};
@@ -56,7 +55,7 @@ void adjust_value(PMTable tbl, int x, int y, int range, int value) {
 }
 
 bool non_ally_in_tile(int x, int y, int faction) {
-    return faction == last_faction && nonally.count({x, y}) > 0;
+    return faction == last_faction && mapnodes.count({x, y, NODE_NONALLY}) > 0;
 }
 
 // Any sea region or inland lakes
@@ -189,11 +188,11 @@ void land_raise_plan(int faction, bool visual) {
     i = 0;
     ts.init(path, TS_SEA_AND_SHORE, 4);
     while (++i < 2400 && (sq = ts.get_next()) != NULL && ts.dist <= 12) {
-        if (sq->region == p.main_region || !sq->is_land_region() || (sq->owner < 1 && !expand)) {
+        if (sq->region == p.main_region || !sq->is_land_region() || (!sq->is_owned() && !expand)) {
             continue;
         }
         // Check if we should bridge to hostile territory
-        if (sq->owner != faction && sq->owner > 0 && !has_pact(faction, sq->owner)
+        if (sq->owner != faction && sq->is_owned() && !has_pact(faction, sq->owner)
         && faction_might(faction) < faction_might(sq->owner)) {
             continue;
         }
@@ -227,7 +226,7 @@ int target_priority(int x, int y, int faction, MAP* sq) {
     AIPlans& p2 = plans[sq->owner];
     int score = 0;
 
-    if (sq->owner > 0) {
+    if (sq->is_owned()) {
         if (sq->region == p2.main_region) {
             score += 150;
         }
@@ -422,9 +421,9 @@ void update_main_region(int faction) {
             p.naval_end_y = -1;
             p.naval_beach_x = -1;
             p.naval_beach_y = -1;
-            p.combat_units = 0;
-            p.aircraft = 0;
-            p.transports = 0;
+            p.land_combat_units = 0;
+            p.air_combat_units = 0;
+            p.transport_units = 0;
         }
     }
 
@@ -472,13 +471,13 @@ void move_upkeep(int faction, bool visual) {
         return;
     }
     int tile_count[MaxRegionNum] = {};
-    p.combat_units = 0;
-    p.aircraft = 0;
-    p.transports = 0;
-    build_tubes = has_terra(faction, FORMER_MAGTUBE, LAND);
     last_faction = faction;
+    build_tubes = has_terra(faction, FORMER_MAGTUBE, LAND);
+    p.land_combat_units = 0;
+    p.sea_combat_units = 0;
+    p.air_combat_units = 0;
+    p.transport_units = 0;
     mapnodes.clear();
-    nonally.clear();
     memset(pm_former, 0, sizeof(pm_former));
     memset(pm_safety, 0, sizeof(pm_safety));
     memset(pm_roads, 0, sizeof(pm_roads));
@@ -487,6 +486,7 @@ void move_upkeep(int faction, bool visual) {
     memset(pm_unit_near, 0, sizeof(pm_unit_near));
     memset(pm_enemy_near, 0, sizeof(pm_enemy_near));
     memset(region_flags, 0, sizeof(region_flags));
+
     debug("move_upkeep %d region: %d x: %2d y: %2d naval: %d\n",
         faction, p.main_region, p.main_region_x, p.main_region_y, p.prioritize_naval);
 
@@ -529,6 +529,9 @@ void move_upkeep(int faction, bool visual) {
         VEH* veh = &Vehicles[i];
         int triad = veh->triad();
 
+        if (!(sq = mapsq(veh->x, veh->y))) {
+            continue;
+        }
         if (veh->move_status == ORDER_THERMAL_BOREHOLE) {
             mapnodes.insert({veh->x, veh->y, NODE_BOREHOLE});
         }
@@ -538,16 +541,22 @@ void move_upkeep(int faction, bool visual) {
         if (veh->move_status == ORDER_SENSOR_ARRAY) {
             mapnodes.insert({veh->x, veh->y, NODE_SENSOR_ARRAY});
         }
-        if (veh->faction_id == faction && (sq = mapsq(veh->x, veh->y))) {
+        if (veh->faction_id == faction) {
             if (veh->is_combat_unit()) {
                 adjust_value(pm_safety, veh->x, veh->y, 1, 40);
                 pm_safety[veh->x][veh->y] += 60;
-                if (triad == TRIAD_AIR) {
-                    p.aircraft++;
-                }
             }
             if (veh->is_combat_unit() || (veh->is_probe() && veh->is_armored())) {
-                p.combat_units++;
+                if (triad == TRIAD_AIR) {
+                    p.air_combat_units++;
+                } else if (triad == TRIAD_SEA) {
+                    p.sea_combat_units++;
+                } else {
+                    p.land_combat_units++;
+                }
+            }
+            if (veh->is_transport() && triad == TRIAD_SEA) {
+                p.transport_units++;
             }
             if (triad == TRIAD_LAND && !is_ocean(sq)) {
                 veh->state &= ~VSTATE_IN_TRANSPORT;
@@ -556,9 +565,6 @@ void move_upkeep(int faction, bool visual) {
                 if (is_ocean(sq) && sq->is_base() && coast_tiles(veh->x, veh->y) < 8) {
                     mapnodes.insert({veh->x, veh->y, NODE_NEED_FERRY});
                 }
-            }
-            if (veh->is_transport() && triad == TRIAD_SEA) {
-                p.transports++;
             }
             if (veh->waypoint_1_x >= 0) {
                 mapnodes.erase({veh->waypoint_1_x, veh->waypoint_1_y, NODE_PATROL});
@@ -576,17 +582,28 @@ void move_upkeep(int faction, bool visual) {
             if (veh->unit_id != BSC_FUNGAL_TOWER) {
                 adjust_value(pm_enemy_near, veh->x, veh->y, 2, 1);
             }
-            nonally.insert({veh->x, veh->y});
-        } else if (!has_pact(faction, veh->faction_id)) {
-            nonally.insert({veh->x, veh->y});
+        }
+        if (veh->faction_id != faction &&
+        (at_war(faction, veh->faction_id) || !has_pact(faction, veh->faction_id))) {
+            if (veh->is_artifact()) {
+                mapnodes.insert({veh->x, veh->y, NODE_ARTIFACT});
+            } else {
+                mapnodes.insert({veh->x, veh->y, NODE_NONALLY});
+            }
+        }
+    }
+    for (const MapNode& m : mapnodes) {
+        if (m.type == NODE_ARTIFACT && !mapnodes.count({m.x, m.y, NODE_NONALLY})) {
+            mapnodes.insert({m.x, m.y, NODE_COMBAT_PATROL});
+            debug("artifact %2d %2d\n", m.x, m.y);
         }
     }
     TileSearch ts;
     for (int i=0; i < *total_num_bases; i++) {
         BASE* base = &Bases[i];
-        sq = mapsq(base->x, base->y);
-        int region = (sq ? sq->region : 0);
-
+        if (!(sq = mapsq(base->x, base->y))) {
+            continue;
+        }
         if (base->faction_id == faction) {
             adjust_value(pm_former, base->x, base->y, 2, base->pop_size);
             pm_safety[base->x][base->y] += 10000;
@@ -594,7 +611,7 @@ void move_upkeep(int faction, bool visual) {
             if (unit_in_tile(sq) < 0) { // Undefended base
                 mapnodes.insert({base->x, base->y, NODE_PATROL});
             }
-            if (region < MaxRegionLandNum) {
+            if (sq->region < MaxRegionLandNum) {
                 int j = 0;
                 int k = 0;
                 ts.init(base->x, base->y, TS_TERRITORY_LAND);
@@ -610,10 +627,10 @@ void move_upkeep(int faction, bool visual) {
             }
         } else {
             if (at_war(faction, base->faction_id)) {
-                region_flags[region] |= PM_ENEMY;
+                region_flags[sq->region] |= PM_ENEMY;
             }
             if (allow_probe(faction, base->faction_id)) {
-                region_flags[region] |= PM_PROBE;
+                region_flags[sq->region] |= PM_PROBE;
             }
         }
     }
@@ -630,15 +647,17 @@ void move_upkeep(int faction, bool visual) {
         for (int i=0; i < *total_num_bases; i++) {
             BASE* base = &Bases[i];
             if (base->faction_id == faction && (sq = mapsq(base->x, base->y))) {
-                values[i] = INT_MIN;
+                values[i] = INT_MIN + base->pop_size;
                 int region = sq->region;
                 for (int k=0; k < *total_num_bases; k++) {
                     BASE* b = &Bases[k];
                     if (faction != b->faction_id
                     && !has_pact(faction, b->faction_id)
                     && (sq = mapsq(b->x, b->y))) {
-                        int value = base->pop_size + 10 * pm_enemy_near[base->x][base->y]
-                            - (sq->region == region && sq->region < 64 ? 1 : 2)
+                        int value = base->pop_size
+                            + (has_facility(i, FAC_HEADQUARTERS) ? 10 : 0)
+                            + 10 * pm_enemy_near[base->x][base->y]
+                            - (sq->region == region && sq->region < MaxRegionLandNum ? 1 : 2)
                             * (at_war(faction, b->faction_id) ? 1 : 3)
                             * map_range(base->x, base->y, b->x, b->y);
                         if (value > values[i]) {
@@ -648,34 +667,34 @@ void move_upkeep(int faction, bool visual) {
                 }
                 sorter[bases] = values[i];
                 bases++;
+                debug("defend_score %4d %s\n", values[i], base->name);
             }
         }
-        double factor = (p.contacted_factions ? 1.0 : 0.5)
-            * min(1.0, *current_turn/80.0) * max(0, p.combat_units - p.aircraft) / bases;
         std::sort(sorter, sorter+bases);
         int k1 = sorter[bases*1/2];
         int k2 = sorter[bases*3/4];
         int k3 = sorter[bases*7/8];
-        const int goals[4][4] = {
-            {1, 1, 1, 1},
-            {1, 1, 2, 2},
-            {1, 2, 2, 3},
-            {1, 2, 3, 4},
-        };
-        int level = (factor > 3.0 ? 3 : (factor > 2.4 ? 2 : (factor > 1.6 ? 1 : 0)));
-        debug("defend_upkeep %3d %d %8s bases: %3d units: %3d air: %3d level: %d factor: %.4f\n",
-            *current_turn, faction, MFactions[faction].filename, bases,
-            p.combat_units, p.aircraft, level, factor);
+        p.defend_weights = 0;
 
         for (int i=0; i < *total_num_bases; i++) {
             BASE* base = &Bases[i];
             if (base->faction_id == faction) {
-                defend_goal[i] = max((has_facility(i, FAC_HEADQUARTERS) ? 2 : 1),
-                    (values[i] >= k1 ? (values[i] >= k2 ? (values[i] >= k3 ?
-                    goals[level][3] : goals[level][2]) : goals[level][1]) : goals[level][0]));
+                if (values[i] >= k3) {
+                    defend_goal[i] = 4;
+                } else if (values[i] >= k2) {
+                    defend_goal[i] = 3;
+                } else if (values[i] >= k1) {
+                    defend_goal[i] = 2;
+                } else {
+                    defend_goal[i] = 1;
+                }
+                p.defend_weights += defend_goal[i];
                 debug("defend_goal %d %s\n", defend_goal[i], base->name);
             }
         }
+        debug("defend_upkeep %3d %d %8s bases: %3d land: %3d sea: %3d air: %3d\n",
+            *current_turn, faction, MFactions[faction].filename, bases,
+            p.land_combat_units, p.sea_combat_units, p.air_combat_units);
     }
     if (visual) {
         static int k = 0;
@@ -755,7 +774,7 @@ bool allow_move(int x, int y, int faction, int triad) {
     if (triad != TRIAD_AIR && is_ocean(sq) != (triad == TRIAD_SEA)) {
         return false;
     }
-    return sq->owner < 1 || sq->owner == faction
+    return !sq->is_owned() || sq->owner == faction
         || has_pact(faction, sq->owner)
         || (at_war(faction, sq->owner) && !sq->is_base());
 }
@@ -764,7 +783,7 @@ bool non_combat_move(int x, int y, int faction, int triad) {
     assert(valid_player(faction));
     assert(valid_triad(triad));
     MAP* sq = mapsq(x, y);
-    if (!sq || (sq->owner > 0 && sq->owner != faction)) {
+    if (!sq || (sq->is_owned() && sq->owner != faction)) {
         return false;
     }
     if (triad != TRIAD_AIR && !sq->is_base() && is_ocean(sq) != (triad == TRIAD_SEA)) {
@@ -969,7 +988,7 @@ bool safe_path(const TileSearch& ts, int faction) {
 //            debug("path_unsafe %d %d %d\n", faction, node->x, node->y);
             return false;
         }
-        if (sq && sq->owner > 0 && sq->owner != faction && !has_pact(faction, sq->owner)) {
+        if (sq && sq->is_owned() && sq->owner != faction && !has_pact(faction, sq->owner)) {
 //            debug("path_foreign %d %d %d\n", faction, node->x, node->y);
             return false;
         }
@@ -1006,7 +1025,7 @@ bool can_build_base(int x, int y, int faction, int triad) {
         return false;
     if ((sq->is_rocky() && !is_ocean(sq)) || (sq->items & (BASE_DISALLOWED | IMP_ADVANCED)))
         return false;
-    if (sq->owner > 0 && faction != sq->owner && !at_war(faction, sq->owner))
+    if (sq->is_owned() && faction != sq->owner && !at_war(faction, sq->owner))
         return false;
     if (non_ally_in_tile(x, y, faction))
         return false;
@@ -1062,7 +1081,7 @@ int base_tile_score(int x1, int y1, int range, int triad) {
             if (i <= 8) { // Only adjacent tiles
                 if (triad == TRIAD_SEA && sq->is_land_region()
                 && Continents[sq->region].tile_count >= 20 && ++land < 3) {
-                    score += (sq->owner < 1 ? 20 : 3);
+                    score += (!sq->is_owned() ? 20 : 3);
                 }
                 if (is_ocean_shelf(sq)) {
                     score += (triad == TRIAD_SEA ? 3 : 2);
@@ -1123,12 +1142,13 @@ int colony_move(const int id) {
         }
         return SYNC;
     }
+    bool full_search = (*current_turn + id) % 5 == 0;
+    int limit = full_search ? 800 : 200;
+    int best_score = INT_MIN;
     int i = 0;
     int k = 0;
-    int best_score = INT_MIN;
     int tx = -1;
     int ty = -1;
-    int limit = ((*current_turn + id) % 5 ? 200 : 500);
     TileSearch ts;
     if (triad == TRIAD_SEA && invasion_unit(id) && ocean_coast_tiles(veh->x, veh->y)) {
         ts.init(plans[faction].naval_end_x, plans[faction].naval_end_y, triad, 2);
@@ -1159,7 +1179,7 @@ int colony_move(const int id) {
         veh->state &= ~VSTATE_UNK_2000;
         return set_move_to(id, tx, ty);
 
-    } else if (limit == 500 && *current_turn > 20) {
+    } else if (full_search && *current_turn > 20) {
         AIPlans& p = plans[faction];
         if (p.naval_start_x >= 0 && veh_region == p.main_region
         && veh->x != p.naval_start_x && veh->y != p.naval_start_y) {
@@ -1193,7 +1213,7 @@ bool can_bridge(int x, int y, int faction, MAP* sq) {
         if (!is_ocean(m.sq) && m.y > 0 && m.y < *map_axis_y-1
         && !ts.oldtiles.count({m.x, m.y})) {
             n++;
-            if (m.sq->owner > 0 && m.sq->owner != faction
+            if (m.sq->is_owned() && m.sq->owner != faction
             && faction_might(faction) < faction_might(m.sq->owner)) {
                 return false;
             }
@@ -1517,7 +1537,8 @@ int former_move(const int id) {
     } else if (!safe) {
         return escape_move(id);
     }
-    int limit = ((*current_turn + id) % 5 ? 50 : 250);
+    bool full_search = (*current_turn + id) % 5 == 0;
+    int limit = full_search ? 250 : 50;
     int best_score = INT_MIN;
     int i = 0;
     int tx = -1;
@@ -1554,7 +1575,7 @@ int former_move(const int id) {
         return set_move_to(id, tx, ty);
     } else if (!random(4)) {
         return set_move_to(id, bx, by);
-    } else if (limit == 250 && *current_turn > 20) {
+    } else if (full_search && *current_turn > 20) {
         return mod_veh_kill(id);
     }
     debug("former_skip %2d %2d %s\n", veh->x, veh->y, veh->name());
@@ -1565,8 +1586,8 @@ bool allow_scout(int faction, MAP* sq) {
     return !sq->is_visible(faction)
         && sq->region != plans[faction].target_land_region
         && !sq->is_pole_tile()
-        && (((sq->owner < 1 || sq->owner == faction) && !random(8))
-        || (sq->owner > 0 && sq->owner != faction
+        && (((!sq->is_owned() || sq->owner == faction) && !random(8))
+        || (sq->is_owned() && sq->owner != faction
         && !has_treaty(faction, sq->owner, DIPLO_COMMLINK)));
 }
 
@@ -1616,12 +1637,18 @@ int garrison_goal(int x, int y, int faction, int triad) {
     for (int i=0; i < *total_num_bases; i++) {
         BASE* base = &Bases[i];
         if (base->x == x && base->y == y) {
-            if (triad == TRIAD_SEA) {
-                return min((is_ocean(base) && base->pop_size > 5 ? 2 : 1), defend_goal[i]);
-            }
-            return defend_goal[i];
+            int goal = max(1, min(5,
+                (p.land_combat_units + p.sea_combat_units) * defend_goal[i] / p.defend_weights)
+                - (triad == TRIAD_SEA ? 2 : 0)
+                - (*current_turn < 80 ? 1 : 0)
+                - (p.contacted_factions < 2 && p.unknown_factions > 1 ? 1 : 0)
+                - (!random(4) * (p.enemy_mil_factor < 1 ? 2 : 1)));
+
+            debug("garrison_goal %2d %2d %2d %s\n", x, y, goal, base->name);
+            return goal;
         }
     }
+    assert(false);
     return 0;
 }
 
@@ -1639,7 +1666,7 @@ int defender_count(int x, int y) {
             }
         }
     }
-    return num/2;
+    return (num > 2 ? (num+1)/2 : num/2);
 }
 
 /*
@@ -1680,7 +1707,7 @@ bool near_landing(int x, int y, int faction) {
         if (!allow_move(m.x, m.y, faction, TRIAD_LAND)) {
             continue;
         }
-        if (p.naval_end_x < 0 && m.sq->owner < 1) {
+        if (p.naval_end_x < 0 && !m.sq->is_owned()) {
             return !random(4);
         }
     }
@@ -1703,7 +1730,7 @@ int make_landing(int id) {
                 break;
             }
         }
-        if (p.naval_end_x < 0 && m.sq->owner < 1) {
+        if (p.naval_end_x < 0 && !m.sq->is_owned()) {
             x2 = m.x;
             y2 = m.y;
         }
@@ -1718,11 +1745,14 @@ int trans_move(const int id) {
     VEH* veh = &Vehicles[id];
     MAP* sq;
     AIPlans& p = plans[veh->faction_id];
-
+    static int iter = 0;
     if (!(sq = mapsq(veh->x, veh->y))
     || mapnodes.erase({veh->x, veh->y, NODE_NEED_FERRY}) > 0
     || (sq->is_base() && veh->need_heals())) {
         return mod_veh_skip(id);
+    }
+    if (++iter % 3) {
+        return SYNC;
     }
     int offset;
     int cargo = 0;
@@ -1966,7 +1996,7 @@ int aircraft_move(const int id) {
     int tx = -1;
     int ty = -1;
     int id2 = -1;
-    double best_odds = 1.2 - 0.005 * min(100, p.aircraft);
+    double best_odds = 1.2 - 0.005 * min(100, p.air_combat_units);
     TileSearch ts;
     ts.init(veh->x, veh->y, TRIAD_AIR);
 
@@ -1992,6 +2022,8 @@ int aircraft_move(const int id) {
             }
         } else if (non_ally_in_tile(ts.rx, ts.ry, faction)) {
             continue;
+        } else if (tx < 0 && mapnodes.count({ts.rx, ts.ry, NODE_COMBAT_PATROL})) {
+            return set_move_to(id, ts.rx, ts.ry);
         } else if (tx < 0 && allow_scout(faction, sq)) {
             return set_move_to(id, ts.rx, ts.ry);
         }
@@ -2015,7 +2047,7 @@ int aircraft_move(const int id) {
             veh->x, veh->y, p.naval_airbase_x, p.naval_airbase_y);
         return set_move_to(id, p.naval_airbase_x, p.naval_airbase_y);
     }
-    if (id % 4 == 0) {
+    if ((*current_turn + id) % 4 == 0) {
         int best_score = INT_MIN;
         for (i=0; i < *total_num_bases; i++) {
             BASE* base = &Bases[i];
@@ -2187,7 +2219,7 @@ int combat_move(const int id) {
     double best_odds = (at_base && defenders < 1 ? 1.4 : 1.2)
         - (at_enemy ? 0.15 : 0)
         - 0.008*min(50, pm_unit_near[veh->x][veh->y])
-        - 0.0005*min(500, p.combat_units);
+        - 0.0005*min(500, p.land_combat_units + p.sea_combat_units);
     int best_score = arty_value(veh->x, veh->y);
     TileSearch ts;
     ts.init(veh->x, veh->y, type);
@@ -2228,6 +2260,8 @@ int combat_move(const int id) {
             tx = ts.rx;
             ty = ts.ry;
             best_score = arty_value(ts.rx, ts.ry) - 4*ts.dist;
+        } else if (tx < 0 && attack && mapnodes.count({ts.rx, ts.ry, NODE_COMBAT_PATROL})) {
+            return set_move_to(id, ts.rx, ts.ry);
         } else if (tx < 0 && mapnodes.count({ts.rx, ts.ry, NODE_PATROL})) {
             return set_move_to(id, ts.rx, ts.ry);
         } else if (px < 0 && allow_scout(faction, sq)) {
@@ -2294,8 +2328,7 @@ int combat_move(const int id) {
     } else if (enemy_items & (BIT_SENSOR | BIT_AIRBASE | BIT_THERMAL_BORE)) {
         return action_destroy(id, 0, -1, -1);
     }
-    if (at_base && (!defenders
-    || defenders + random(2) < garrison_goal(veh->x, veh->y, faction, triad))) {
+    if (at_base && (!defenders || defenders < garrison_goal(veh->x, veh->y, faction, triad))) {
         debug("combat_defend %2d %2d %s\n", veh->x, veh->y, veh->name());
         return mod_veh_skip(id);
     }
@@ -2355,9 +2388,9 @@ int combat_move(const int id) {
     int tolerance = (ignore_zocs ? 3 : 1) + (triad == TRIAD_SEA ? 2 : 0)
         + (!pm_enemy_near[veh->x][veh->y] ? 2 : 0);
     if (defend) {
-        limit = (((*current_turn+id) % 4) + 1)*256;
+        limit = (((*current_turn+id) % 4) + 1) * QueueSize/32;
     } else {
-        limit = (((*current_turn+id) % 4) + 1)*1024;
+        limit = (((*current_turn+id) % 4) + 1) * QueueSize/4;
     }
     bool flank = false;
     bool check_zocs = !ignore_zocs && pm_enemy_near[veh->x][veh->y];
@@ -2367,7 +2400,7 @@ int combat_move(const int id) {
     i = 0;
     tx = -1;
     ty = -1;
-    if (triad == TRIAD_SEA && veh->is_probe()) {
+    if (triad == TRIAD_SEA && (veh->is_probe() || veh->unit_id == BSC_SEALURK)) {
         ts.init(veh->x, veh->y, TS_SEA_AND_SHORE);
     } else {
         ts.init(veh->x, veh->y, triad, (triad == TRIAD_LAND ? 1 : 0)); // Skip pole tiles
@@ -2379,8 +2412,7 @@ int combat_move(const int id) {
         }
         if (defend && sq->owner == faction) {
             if (garrison_goal(ts.rx, ts.ry, faction, triad) - defender_count(ts.rx, ts.ry)
-            >= pm_former[ts.rx][ts.ry] / 2) {
-                pm_former[ts.rx][ts.ry]++;
+            >= ++pm_former[ts.rx][ts.ry]/3) {
                 debug("combat_defend %2d %2d -> %2d %2d\n", veh->x, veh->y, ts.rx, ts.ry);
                 return set_move_to(id, ts.rx, ts.ry);
             }
@@ -2400,13 +2432,15 @@ int combat_move(const int id) {
                     && battle_priority(id, id2, ts.dist - 1, moves, sq) < 0.7;
                 if (flank) {
                     debug("combat_skip %2d %2d -> %2d %2d %s %s\n",
-                    veh->x, veh->y, ts.rx, ts.ry, veh->name(), Units[Vehicles[id2].unit_id].name);
+                    veh->x, veh->y, ts.rx, ts.ry, veh->name(), Vehicles[id2].name());
                 }
             }
         }
     }
     if (tx >= 0) {
         if (flank || (!defend && current.dist > 1 && min(9, ++pm_former[tx][ty]) >= random(12))) {
+            tx = -1;
+            ty = -1;
             best_score = flank_score(veh->x, veh->y, mapsq(veh->x, veh->y));
             ts.init(veh->x, veh->y, triad);
             while ((sq = ts.get_next()) != NULL && ts.dist <= 2) {
@@ -2419,7 +2453,7 @@ int combat_move(const int id) {
                     }
                 }
             }
-            if (best_score > 0) {
+            if (tx >= 0) {
                 debug("combat_flank %2d %2d -> %2d %2d %s\n", veh->x, veh->y, tx, ty, veh->name());
                 return set_move_to(id, tx, ty);
             }
