@@ -106,6 +106,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->rare_supply_pods = atoi(value);
     } else if (MATCH("thinker", "revised_tech_cost")) {
         cf->revised_tech_cost = atoi(value);
+    } else if (MATCH("thinker", "cheap_early_tech")) {
+        cf->cheap_early_tech = atoi(value);
     } else if (MATCH("thinker", "auto_relocate_hq")) {
         cf->auto_relocate_hq = atoi(value);
     } else if (MATCH("thinker", "ignore_reactor_power")) {

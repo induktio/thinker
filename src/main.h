@@ -159,6 +159,7 @@ struct Config {
     int rare_supply_pods = 0;
     int landmarks = 0xffff;
     int revised_tech_cost = 1;
+    int cheap_early_tech = 0;
     int auto_relocate_hq = 1;
     int ignore_reactor_power = 0;
     int territory_border_fix = 1;

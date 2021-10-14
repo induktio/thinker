@@ -54,6 +54,9 @@ int tech_cost(int faction, int tech) {
     if (!is_human(faction)) {
         diff_factor = TechCostRatios[*diff_level] / 100.0;
     }
+    if (conf.cheap_early_tech) {
+        diff_factor *= 0.4 + 0.6 * min(10, max(1, f->tech_ranking / 2)) / 10.0;
+    }
     double cost = (6 * pow(level, 3) + 74 * level - 20)
         * diff_factor
         * *map_area_sq_root / 56
