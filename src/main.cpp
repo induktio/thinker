@@ -112,6 +112,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->auto_relocate_hq = atoi(value);
     } else if (MATCH("thinker", "ignore_reactor_power")) {
         cf->ignore_reactor_power = atoi(value);
+    } else if (MATCH("thinker", "facility_capture_fix")) {
+        cf->facility_capture_fix = atoi(value);
     } else if (MATCH("thinker", "territory_border_fix")) {
         cf->territory_border_fix = atoi(value);
     } else if (MATCH("thinker", "eco_damage_fix")) {
@@ -174,8 +176,14 @@ int handler(void* user, const char* section, const char* name, const char* value
             }
         }
         if (!unknown_option) {
-            MessageBoxA(0, "Unknown configuration option detected in thinker.ini.\n"\
-                "Game might not work as intended.", MOD_VERSION, MB_OK | MB_ICONWARNING);
+            char msg[500] = {};
+            snprintf(msg, sizeof(msg),
+                "Unknown configuration option detected in thinker.ini.\n"
+                "Game might not work as intended.\n"
+                "Header: %s\n"
+                "Option: %s\n",
+                section, name);
+            MessageBoxA(0, msg, MOD_VERSION, MB_OK | MB_ICONWARNING);
         }
         unknown_option = true;
         return 0;  /* unknown section/name, error */

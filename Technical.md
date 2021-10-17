@@ -1,4 +1,11 @@
 
+Thinker command line options
+============================
+
+    -smac       Activate SMAC-in-SMACX mod. Implies smac_only=1 config option.
+    -windowed   Start the game in borderless windowed mode. Uses resolution set in the config.
+
+
 Thinker keyboard shortcuts
 ==========================
 

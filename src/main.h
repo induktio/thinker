@@ -162,6 +162,7 @@ struct Config {
     int cheap_early_tech = 0;
     int auto_relocate_hq = 1;
     int ignore_reactor_power = 0;
+    int facility_capture_fix = 1;
     int territory_border_fix = 1;
     int eco_damage_fix = 1;
     int clean_minerals = 16;
