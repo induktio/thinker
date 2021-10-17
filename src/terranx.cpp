@@ -97,6 +97,7 @@ Fbattle_fight_1 battle_fight_1 = (Fbattle_fight_1)0x506A60;
 Fpropose_proto propose_proto = (Fpropose_proto)0x580860;
 Faction_airdrop action_airdrop = (Faction_airdrop)0x4CC360;
 Faction_destroy action_destroy = (Faction_destroy)0x4CAA50;
+Faction_gate action_gate = (Faction_gate)0x4CF380;
 Fhas_abil has_abil = (Fhas_abil)0x5BF1F0;
 Fparse_says parse_says = (Fparse_says)0x625EC0;
 Fpopp popp = (Fpopp)0x48C0A0;
@@ -104,6 +105,7 @@ Fhex_cost hex_cost = (Fhex_cost)0x593510;
 Fname_base name_base = (Fname_base)0x4E4090;
 Fveh_cost veh_cost = (Fveh_cost)0x5C1850;
 Fsave_daemon save_daemon = (Fsave_daemon)0x5A94F0;
+Fbase_at base_at = (Fbase_at)0x4E3A50;
 
 fp_4int veh_init = (fp_4int)0x5C03D0;
 fp_1int veh_skip = (fp_1int)0x5C1D20;
@@ -171,5 +173,6 @@ fp_7int battle_fight_2 = (fp_7int)0x506AF0;
 fp_void draw_cursor = (fp_void)0x46AE00;
 fp_1int draw_map = (fp_1int)0x46B190;
 fp_void base_hurry = (fp_void)0x4F3FE0;
+fp_void turn_timer = (fp_void)0x4E3A50;
 
 

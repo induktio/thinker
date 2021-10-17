@@ -616,7 +616,7 @@ bool patch_setup(Config* cf) {
     write_call(0x5B3C4C, (int)mod_setup_player);
     write_call(0x5C0908, (int)log_veh_kill);
     write_call(0x498720, (int)SubIf_release_handler);
-    write_offset(0x50F421, (void*)multi_timer);
+    write_offset(0x50F421, (void*)mod_turn_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);
     write_offset(0x64576E, (void*)mod_except_handler3);
     write_offset(0x6457CC, (void*)mod_except_handler3);

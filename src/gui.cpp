@@ -157,8 +157,8 @@ Win*     SocialWin = (Win*)0x8A6270;
 Win*     StatusWin = (Win*)0x8C5568;
 Win*     TutWin    = (Win*)0x8C6E68;
 Win*     WorldWin  = (Win*)0x8E9F60;
+Win*     CouncilWin  = (Win*)0x6FEC80;
 Win*     DatalinkWin = (Win*)0x703EA0;
-
 
 int __thiscall SubIf_release_handler(int ptr) {
     SubIf_release_iface_mode(ptr);
@@ -538,7 +538,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         pMain->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
         memset(pm_overlay, 0, sizeof(pm_overlay));
         MAP* sq = mapsq(pMain->oMap.iTileX, pMain->oMap.iTileY);
-        if (sq && sq->owner > 0) {
+        if (sq && sq->is_owned()) {
             move_upkeep(sq->owner, true);
             MapWin_draw_map(pMain, 0);
             InvalidateRect(hwnd, NULL, false);
@@ -824,10 +824,12 @@ int __cdecl blink_timer() {
     return 0;
 }
 
-void __cdecl multi_timer() {
+void __cdecl mod_turn_timer() {
+    // Timer calls function every 500ms
     static uint32_t prev_time = 0;
     static uint32_t iter = 0;
-    if (!(++iter & 7)) {
+    turn_timer();
+    if (!(++iter & 3)) {
         uint32_t now = GetTickCount();
         if (prev_time && now - prev_time > 0) {
             ThinkerVars->game_time_spent += now - prev_time;

@@ -125,7 +125,7 @@ bool can_build(int base_id, int id) {
             return false;
         }
         int n = 0;
-        for (int i=0; i<*total_num_bases; i++) {
+        for (int i=0; i < *total_num_bases; i++) {
             BASE* b = &Bases[i];
             if (b->faction_id == faction && has_facility(i, FAC_SUBSPACE_GENERATOR)
             && b->pop_size >= Rules->base_size_subspace_gen
@@ -155,7 +155,7 @@ bool can_build(int base_id, int id) {
         return false;
     }
     if (id == FAC_GEOSYNC_SURVEY_POD || id == FAC_FLECHETTE_DEFENSE_SYS) {
-        for (int i=0; i<*total_num_bases; i++) {
+        for (int i=0; i < *total_num_bases; i++) {
             BASE* b = &Bases[i];
             if (b->faction_id == faction && i != base_id
             && map_range(base->x, base->y, b->x, b->y) <= 3
@@ -189,6 +189,11 @@ bool base_can_riot(int base_id) {
     return !b->nerve_staple_turns_left
         && !has_project(b->faction_id, FAC_TELEPATHIC_MATRIX)
         && !has_facility(base_id, FAC_PUNISHMENT_SPHERE);
+}
+
+bool can_use_teleport(int base_id) {
+    return has_facility(base_id, FAC_PSI_GATE)
+        && ~Bases[base_id].state_flags & BSTATE_PSI_GATE_USED;
 }
 
 bool is_human(int faction) {
@@ -232,13 +237,27 @@ bool valid_triad(int triad) {
     return (triad == TRIAD_LAND || triad == TRIAD_SEA || triad == TRIAD_AIR);
 }
 
-int prod_count(int faction, int id, int base_skip_id) {
+int unused_space(int base_id) {
+    BASE* base = &Bases[base_id];
+    int limit_mod = (has_project(base->faction_id, FAC_ASCETIC_VIRTUES) ? 2 : 0)
+        - MFactions[base->faction_id].rule_population;
+
+    if (!has_facility(base_id, FAC_HAB_COMPLEX)) {
+        return max(0, Rules->pop_limit_wo_hab_complex + limit_mod - base->pop_size);
+    }
+    if (!has_facility(base_id, FAC_HABITATION_DOME)) {
+        return max(0, Rules->pop_limit_wo_hab_dome + limit_mod - base->pop_size);
+    }
+    return max(0, 24 - base->pop_size);
+}
+
+int prod_count(int faction, int prod_id, int base_skip_id) {
     assert(valid_player(faction));
     int n = 0;
-    for (int i=0; i<*total_num_bases; i++) {
+    for (int i=0; i < *total_num_bases; i++) {
         BASE* base = &Bases[i];
         if (base->faction_id == faction
-        && base->queue_items[0] == id
+        && base->queue_items[0] == prod_id
         && i != base_skip_id) {
             n++;
         }
@@ -246,12 +265,12 @@ int prod_count(int faction, int id, int base_skip_id) {
     return n;
 }
 
-int facility_count(int faction, int facility) {
-    assert(valid_player(faction) && facility >= 0);
+int facility_count(int faction, int facility_id) {
+    assert(valid_player(faction) && facility_id >= 0);
     int n = 0;
-    for (int i=0; i<*total_num_bases; i++) {
+    for (int i=0; i < *total_num_bases; i++) {
         BASE* base = &Bases[i];
-        if (base->faction_id == faction && has_facility(i, facility)) {
+        if (base->faction_id == faction && has_facility(i, facility_id)) {
             n++;
         }
     }
@@ -259,7 +278,7 @@ int facility_count(int faction, int facility) {
 }
 
 int find_hq(int faction) {
-    for(int i=0; i<*total_num_bases; i++) {
+    for(int i=0; i < *total_num_bases; i++) {
         BASE* base = &Bases[i];
         if (base->faction_id == faction && has_facility(i, FAC_HEADQUARTERS)) {
             return i;
@@ -506,7 +525,7 @@ int set_board_to(int veh_id, int trans_veh_id) {
 
 int cargo_loaded(int veh_id) {
     int n=0;
-    for (int i=0; i<*total_num_vehicles; i++) {
+    for (int i=0; i < *total_num_vehicles; i++) {
         VEH* veh = &Vehicles[i];
         if (veh->move_status == ORDER_SENTRY_BOARD && veh->waypoint_1_x == veh_id) {
             n++;
@@ -566,7 +585,7 @@ bool is_shore_level(MAP* sq) {
 
 bool has_defenders(int x, int y, int faction) {
     assert(valid_player(faction));
-    for (int i=0; i<*total_num_vehicles; i++) {
+    for (int i=0; i < *total_num_vehicles; i++) {
         VEH* veh = &Vehicles[i];
         if (veh->faction_id == faction && veh->x == x && veh->y == y
         && (veh->is_combat_unit() || veh->is_armored())

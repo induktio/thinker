@@ -1658,7 +1658,7 @@ ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass);
 int WINAPI ModGetSystemMetrics(int nIndex);
 int __thiscall SubIf_release_handler(int ptr);
 int __cdecl blink_timer();
-void __cdecl multi_timer();
+void __cdecl mod_turn_timer();
 int __thiscall mod_calc_dim(Console* This);
 int __thiscall mod_gen_map(Console* This, int iOwner, int fUnitsOnly);
 void __thiscall MapWin_gen_overlays(Console* This, int x, int y);

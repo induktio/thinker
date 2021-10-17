@@ -755,6 +755,12 @@ struct UNIT {
     int std_offense_value() {
         return Weapon[weapon_type].offense_value * reactor_type;
     }
+    bool is_armored() {
+        return armor_type != ARM_NO_ARMOR;
+    }
+    bool is_combat_unit() {
+        return weapon_type <= WPN_PSI_ATTACK;
+    }
 };
 
 struct VEH {

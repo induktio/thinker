@@ -274,6 +274,7 @@ enum unit_basic_id {
 };
 
 enum unit_triad {
+    TRIAD_NONE = -1,
     TRIAD_LAND = 0,
     TRIAD_SEA = 1,
     TRIAD_AIR = 2,
@@ -837,6 +838,7 @@ enum base_state_flags {
     BSTATE_GENETIC_PLAGUE_INTRO = 0x20000,
     BSTATE_ENERGY_RESERVES_DRAINED = 0x400000,
     BSTATE_PRODUCTION_DONE = 0x800000,
+    BSTATE_PSI_GATE_USED = 0x20000000,
     BSTATE_HURRY_PRODUCTION = 0x40000000,
 };
 

@@ -158,6 +158,7 @@ typedef int(__cdecl *Fpropose_proto)(int faction, int chassis, int weapon, int a
     int abilities, int reactor, int ai_plan, const char* name);
 typedef int(__cdecl *Faction_airdrop)(int veh_id, int x, int y, int veh_attack_flags);
 typedef int(__cdecl *Faction_destroy)(int veh_id, int flags, int x, int y);
+typedef int(__cdecl *Faction_gate)(int veh_id, int base_id);
 typedef int(__cdecl *Fhas_abil)(int unit_id, int ability_flag);
 typedef int(__cdecl *Fparse_says)(int index, const char* text, int v1, int v2);
 typedef int(__cdecl *Fpopp)(const char* file_name, const char* label, int v1, 
@@ -166,11 +167,13 @@ typedef int(__cdecl *Fhex_cost)(int unit_id, int faction, int x1, int y1, int x2
 typedef void(__cdecl *Fname_base)(int faction, char* name, int flags, int water);
 typedef int(__cdecl *Fveh_cost)(int item_id, int base_id, int* ptr);
 typedef int (__cdecl *Fsave_daemon)(char* filename);
+typedef int(__cdecl *Fbase_at)(int x, int y);
 
 extern Fbattle_fight_1 battle_fight_1;
 extern Fpropose_proto propose_proto;
 extern Faction_airdrop action_airdrop;
 extern Faction_destroy action_destroy;
+extern Faction_gate action_gate;
 extern Fhas_abil has_abil;
 extern Fparse_says parse_says;
 extern Fpopp popp;
@@ -178,6 +181,7 @@ extern Fhex_cost hex_cost;
 extern Fname_base name_base;
 extern Fveh_cost veh_cost;
 extern Fsave_daemon save_daemon;
+extern Fbase_at base_at;
 
 extern fp_4int veh_init;
 extern fp_1int veh_skip;
@@ -245,5 +249,6 @@ extern fp_7int battle_fight_2;
 extern fp_void draw_cursor;
 extern fp_1int draw_map;
 extern fp_void base_hurry;
+extern fp_void turn_timer;
 
 
