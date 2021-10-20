@@ -197,7 +197,8 @@ struct MFaction {
     general heuristic to determine the level of threat from other factions.
     */
     float thinker_enemy_range;
-    char pad_1[116];
+    int thinker_probe_flags;
+    char pad_1[112];
     /*
     End of block
     */

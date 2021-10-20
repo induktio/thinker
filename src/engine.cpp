@@ -5,6 +5,8 @@ const char* ScriptTxtID = "SCRIPT";
 static int currentAttackerVehicleId = -1;
 static int currentDefenderVehicleId = -1;
 
+int probe_upkeep(int faction);
+
 
 void init_save_game(int faction) {
     Faction* f = &Factions[faction];
@@ -21,7 +23,7 @@ void init_save_game(int faction) {
         } else {
             m->thinker_tech_id = f->tech_research_id;
             m->thinker_tech_cost = f->tech_cost;
-            m->thinker_enemy_range = 20;
+            m->thinker_enemy_range = MaxEnemyRange/2;
         }
     } else {
         assert(f->old_thinker_header != THINKER_HEADER);
@@ -97,13 +99,12 @@ int __cdecl mod_faction_upkeep(int faction) {
         do_all_non_input();
         /*
         Thinker-specific AI planning routines.
-        If the new social_ai is disabled from the config old version gets called instead.
-        Player factions always skip the new social_ai function.
-        Note that move_upkeep is updated after all the production is done,
+        Note that move_upkeep is only updated after all the production is done,
         so that the movement code can utilize up-to-date priority maps.
         This means we mostly cannot use move_upkeep variables in production phase.
         */
         mod_social_ai(faction, -1, -1, -1, -1, 0);
+        probe_upkeep(faction);
         move_upkeep(faction, false);
         do_all_non_input();
 
@@ -378,4 +379,50 @@ int __cdecl battle_fight_parse_num(int index, int value)
     }
     return 0;
 }
+
+int probe_rating(int faction) {
+    return Factions[faction].SE_probe_pending
+        + has_project(faction, FAC_HUNTER_SEEKER_ALGO)
+        + has_project(faction, FAC_NETHACK_TERMINUS);
+}
+
+int probe_upkeep(int faction) {
+    if (faction > 0 && conf.counter_espionage) {
+        for (int i=1; i < MaxPlayerNum; i++) {
+            if (faction != i
+            && Factions[i].current_num_bases > 0
+            && has_treaty(i, faction, DIPLO_HAVE_INFILTRATOR)
+            && !has_treaty(i, faction, DIPLO_PACT)) {
+                int rnd = map_hash(faction + 127*i, *current_turn) % 1000;
+                int val = max(-7, min(7,
+                    (is_human(faction) ? 2 : 0) + probe_rating(faction) - probe_rating(i)));
+                debug("probe_upkeep %3d %d %d value: %d roll: %d\n",
+                    *current_turn, faction, i, val, rnd);
+
+                if (rnd < 12 + (val > 0 ? 3 : 1) * val) {
+                    set_treaty(i, faction, DIPLO_HAVE_INFILTRATOR, 0);
+                    MFactions[i].thinker_probe_flags |= (1 << faction);
+
+                    if (faction == *current_player_faction) {
+                        parse_says(0, MFactions[i].adj_name_faction, -1, -1);
+                        popp("modmenu", "SPYFOUND", 0, "infil_sm.pcx", 0);
+                    }
+                }
+            }
+        }
+        for (int i=1; i < MaxPlayerNum; i++) {
+            if (faction == *current_player_faction
+            && Factions[i].current_num_bases > 0
+            && MFactions[faction].thinker_probe_flags & (1 << i)) {
+                parse_says(0, MFactions[i].noun_faction, -1, -1);
+                popp("modmenu", "SPYLOST", 0, "capture_sm.pcx", 0);
+            }
+        }
+    }
+    if (faction > 0) {
+        MFactions[faction].thinker_probe_flags = 0;
+    }
+    return 0;
+}
+
 

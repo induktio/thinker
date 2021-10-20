@@ -642,6 +642,7 @@ int select_production(const int id) {
     bool has_supply = has_weapon(faction, WPN_SUPPLY_TRANSPORT);
     bool build_ships = can_build_ships(id);
     bool sea_base = is_ocean(base);
+    int need_ferry = 0;
     int transports = 0;
     int landprobes = 0;
     int seaprobes = 0;
@@ -693,6 +694,11 @@ int select_production(const int id) {
             }
             if (veh->home_base_id == id) {
                 scouts++;
+            }
+        }
+        if (sea_base && veh->x == base->x && veh->y == base->y && veh->triad() == TRIAD_LAND) {
+            if (veh->is_colony() || veh->is_former() || veh->is_supply()) {
+                need_ferry++;
             }
         }
     }
@@ -771,8 +777,12 @@ int select_production(const int id) {
     && Weapon[WPN_SUPPLY_TRANSPORT].cost/2 <= minerals) {
         return find_proto(id, TRIAD_LAND, WMODE_CONVOY, DEF);
     }
-    if (build_ships && !transports && mapnodes.count({base->x, base->y, NODE_NEED_FERRY})) {
-        return find_proto(id, TRIAD_SEA, WMODE_TRANSPORT, DEF);
+    if (build_ships && !transports && need_ferry) {
+        for (auto& t : iterate_tiles(base->x, base->y, 1, 9)) {
+            if (!is_ocean(t.sq) && (!t.sq->is_owned() || t.sq->owner == faction)) {
+                return find_proto(id, TRIAD_SEA, WMODE_TRANSPORT, DEF);
+            }
+        }
     }
     if (build_pods && !can_build(id, FAC_RECYCLING_TANKS)) {
         int type = select_colony(id, pods, build_ships);

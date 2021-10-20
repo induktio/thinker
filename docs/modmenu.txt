@@ -44,4 +44,14 @@ Open Project Homepage
 #caption $MSG0
 $MSG1
 
+#SPYLOST
+#xs 400
+#caption Intelligence Operations Director
+Our infiltration on {$MSG0} has been discovered! The spies have been lost.
+
+#SPYFOUND
+#xs 400
+#caption Intelligence Operations Director
+We have discovered and removed {$MSG0} infiltration on our networks!
+
 # ; This line must remain at end of file

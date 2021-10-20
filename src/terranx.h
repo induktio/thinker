@@ -99,7 +99,7 @@ extern int* plurality_default;
 extern int* multiplayer_active;
 extern int* pbem_active;
 extern int* sunspot_duration;
-extern int* current_player_faction;
+extern int* current_player_faction; // MapWin->cOwner
 extern int* diplo_second_faction;
 extern int* diplo_third_faction;
 extern int* diplo_tech_faction;

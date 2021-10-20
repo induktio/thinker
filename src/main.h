@@ -116,6 +116,8 @@ const int MaxSocialCatNum = 4;
 const int MaxSocialModelNum = 4;
 const int MaxSocialEffectNum = 11;
 
+const int MaxEnemyRange = 50;
+
 /*
 Config parsed from thinker.ini. Alpha Centauri.ini related options
 can be set negative values to use the defaults from Alpha Centauri.ini.
@@ -161,6 +163,7 @@ struct Config {
     int revised_tech_cost = 1;
     int cheap_early_tech = 0;
     int auto_relocate_hq = 1;
+    int counter_espionage = 0;
     int ignore_reactor_power = 0;
     int facility_capture_fix = 1;
     int territory_border_fix = 1;
@@ -246,8 +249,6 @@ struct AIPlans {
     */
     int enemy_bases = 0;
 };
-
-const int MaxEnemyRange = 50;
 
 enum region_flags {
     PM_ENEMY = 1,

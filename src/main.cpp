@@ -110,6 +110,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->cheap_early_tech = atoi(value);
     } else if (MATCH("thinker", "auto_relocate_hq")) {
         cf->auto_relocate_hq = atoi(value);
+    } else if (MATCH("thinker", "counter_espionage")) {
+        cf->counter_espionage = atoi(value);
     } else if (MATCH("thinker", "ignore_reactor_power")) {
         cf->ignore_reactor_power = atoi(value);
     } else if (MATCH("thinker", "facility_capture_fix")) {
@@ -224,7 +226,7 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             if (ini_parse("thinker.ini", handler, &conf) < 0) {
                 MessageBoxA(0, "Error while opening thinker.ini file.",
                     MOD_VERSION, MB_OK | MB_ICONSTOP);
-                exit(EXIT_FAILURE);
+                return FALSE;
             }
             if (!cmd_parse(&conf) || !patch_setup(&conf)) {
                 return FALSE;

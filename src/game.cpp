@@ -220,9 +220,33 @@ bool has_pact(int faction1, int faction2) {
         && Factions[faction1].diplo_status[faction2] & DIPLO_PACT;
 }
 
-bool has_treaty(int faction1, int faction2, int treaty) {
+bool has_treaty(int faction1, int faction2, uint32_t treaty) {
     return faction1 > 0 && faction2 > 0
         && Factions[faction1].diplo_status[faction2] & treaty;
+}
+
+bool has_agenda(int faction1, int faction2, uint32_t agenda) {
+    return faction1 > 0 && faction2 > 0
+        && Factions[faction1].diplo_agenda[faction2] & agenda;
+}
+
+void set_treaty(int faction1, int faction2, uint32_t treaty, bool add) {
+    if (add) {
+        Factions[faction1].diplo_status[faction2] |= treaty;
+        if (treaty & DIPLO_UNK_40) {
+            Factions[faction1].diplo_merc[faction2] = 50;
+        }
+    } else {
+        Factions[faction1].diplo_status[faction2] &= ~treaty;
+    }
+}
+
+void set_agenda(int faction1, int faction2, uint32_t agenda, bool add) {
+    if (add) {
+        Factions[faction1].diplo_agenda[faction2] |= agenda;
+    } else {
+        Factions[faction1].diplo_agenda[faction2] &= ~agenda;
+    }
 }
 
 bool un_charter() {
@@ -395,7 +419,7 @@ int random(int n) {
 }
 
 int wrap(int a) {
-    if (!*map_toggle_flat) {
+    if (!(*map_toggle_flat & 1)) {
         return (a < 0 ? a + *map_axis_x : a % *map_axis_x);
     } else {
         return a;
@@ -405,7 +429,7 @@ int wrap(int a) {
 int map_range(int x1, int y1, int x2, int y2) {
     int dx = abs(x1 - x2);
     int dy = abs(y1 - y2);
-    if (!*map_toggle_flat & 1 && dx > *map_half_x) {
+    if (!(*map_toggle_flat & 1) && dx > *map_half_x) {
         dx = *map_axis_x - dx;
     }
     return (dx + dy)/2;
@@ -414,7 +438,7 @@ int map_range(int x1, int y1, int x2, int y2) {
 int vector_dist(int x1, int y1, int x2, int y2) {
     int dx = abs(x1 - x2);
     int dy = abs(y1 - y2);
-    if (!*map_toggle_flat & 1 && dx > *map_half_x) {
+    if (!(*map_toggle_flat & 1) && dx > *map_half_x) {
         dx = *map_axis_x - dx;
     }
     return max(dx, dy) - ((((dx + dy) / 2) - min(dx, dy) + 1) / 2);
