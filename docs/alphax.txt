@@ -92,7 +92,7 @@ PlaEcon, ; Technology for economic victory
 50,      ; Maximum % damage inflicted by arty versus units in base/bunker
 99,      ; Maximum % damage inflicted by arty versus units in open
 100,     ; Maximum % damage inflicted by arty versus units at sea
-1, 3     ; Numerator/Denominator for frequency of global warming (1,2 would be "half" normal warming).
+1, 2     ; Numerator/Denominator for frequency of global warming (1,2 would be "half" normal warming).
 2100     ; Normal starting year
 2600     ; Normal ending year for lowest 3 difficulty levels
 2500     ; Normal ending year for highest 3 difficulty levels
@@ -195,12 +195,13 @@ Borehole Square,  0, 6, 6, 0,
 4    ; Islands          (Higher # increases island count)
 
 #WORLDSIZE
-5
-Tiny planet|(early conflict), 24, 48
-Small planet,                 32, 64
-Standard planet,              40, 80
-Large planet,                 50, 100
-Huge planet|(late conflict),  64, 128
+6
+Tiny Planet|(24x48),          24, 48
+Small Planet|(32x64),         32, 64
+Standard Planet|(40x80),      40, 80
+Large Planet|(50x100),        50, 100
+Huge Planet|(64x128),         64, 128
+Very Huge Planet|(80x160),    80, 160
 
 ;
 ; TIME CONTROLS (Multiplayer)

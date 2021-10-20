@@ -93,7 +93,7 @@ PlaEcon, ; Technologie für wirtschaftlichen Sieg
 50,      ; Max. von Artillerie verursachter Schaden in % geg. Einheiten in Basis/Bunker
 99,      ; Max. von Artillerie verursachter Schaden in % geg. Einheiten in offenem Gelände
 100,     ; Max. von Artillerie verursachter Schaden in % geg. Einheiten auf See
-1, 3     ; Zähler/Nenner für die Häufigkeit von globaler Erwärmung (1,2 wäre die "Hälfte" der sonst normalen Erwärmung).
+1, 2     ; Zähler/Nenner für die Häufigkeit von globaler Erwärmung (1,2 wäre die "Hälfte" der sonst normalen Erwärmung).
 2100     ; Normal beginnendes Jahr
 2600     ; Normal abschließendes Jahr für die 3 niedrigsten Schwierigkeitsstufen
 2500     ; Normal abschließendes Jahr für die 3 höchsten Schwierigkeitsstufen

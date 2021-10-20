@@ -90,6 +90,20 @@ After calculating the base cost, it is multiplied by all of the following factor
 The final cost calculated by this formula is visible in the F2 status screen after the label "TECH COST". Note that the social engineering RESEARCH rating does not affect this number. Instead it changes "TECH PER TURN" value displayed on the same screen.
 
 
+Expiring infiltration feature
+=============================
+Normally establishing infiltration with a probe team on another faction is permanent and cannot be removed in any way. In multiplayer games this can be especially unbalanced. Thinker mod provides a config option (`counter_espionage`) to make infiltration expire randomly based on a variety of factors.
+
+When enabled, for each turn for every infiltration active to the current faction, a score is calculated and rolled against a random chance. If the roll succeeds, both factions will get a message of removed infiltration on their turn and the infiltration stops immediately. While allied to another faction, infiltration will never expire. The score is based on these factors:
+
+* Calculate DefenderProbeRating - AttackerProbeRating.
+* Having Hunter Seeker Algorithm or Nethack Terminus will give +1 bonus each.
+* If a human player faction is defending, give extra +2 bonus.
+* Clamp the value to -7 to +7 range.
+
+The chance to discover infiltration is 0.5% at -7 score, 1.2% at +0 score, and 3.3% at +7 score (maximum possible). Thus having any kind of advantage over the other faction will give a lopsided bonus for the defender by design. In this mechanic, it is important to have a better Probe rating or at least parity to maintain the infiltration.
+
+
 SMAC in SMACX mod
 =================
 Thinker includes the files necessary to play a game similar to the original SMAC while disabling all expansion-related content. See the original release posts of SMAC in SMACX [here](https://github.com/DrazharLn/smac-in-smax/) and [here](https://alphacentauri2.info/index.php?topic=17869.0).

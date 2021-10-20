@@ -34,11 +34,11 @@ This is the only place to download binary releases. See also the [Changelog](Cha
 Installation
 ------------
 1. Extract the files to Alpha Centauri game folder. Alphax.txt changes are optional.
-2. Check the Changelog for release notes.
+2. Check Changelog.md for release notes.
 3. Change configuration from thinker.ini or just use the defaults.
 4. Start the game from terranx_mod.exe.
 5. Press ALT+T to open Thinker's options menu. Other option is to check that mod version/build date is visible in the game version menu (Ctrl+F4).
-6. If none of those options display mod version, Thinker is incorrectly installed.
+6. If none of those options display mod version, Thinker is incorrectly installed. If using the develop build, first install the latest release version and only after that extract the develop build files over it.
 
 
 Other mods
