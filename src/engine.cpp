@@ -393,7 +393,7 @@ int probe_upkeep(int faction) {
             && Factions[i].current_num_bases > 0
             && has_treaty(i, faction, DIPLO_HAVE_INFILTRATOR)
             && !has_treaty(i, faction, DIPLO_PACT)) {
-                int rnd = map_hash(faction + 127*i, *current_turn) % 1000;
+                int rnd = map_hash(faction + 8*i, *current_turn) % 1000;
                 int val = max(-7, min(7,
                     (is_human(faction) ? 2 : 0) + probe_rating(faction) - probe_rating(i)));
                 debug("probe_upkeep %3d %d %d value: %d roll: %d\n",

@@ -59,7 +59,7 @@ int tech_cost(int faction, int tech) {
     }
     double cost = (6 * pow(level, 3) + 74 * level - 20)
         * diff_factor
-        * *map_area_tiles / 3200.0
+        * *map_area_sq_root / 56.0
         * m->rule_techcost / 100.0
         * (*game_rules & RULES_TECH_STAGNATION ? 1.5 : 1.0)
         * 100.0 / max(1, Rules->rules_tech_discovery_rate)

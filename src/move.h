@@ -6,6 +6,7 @@ typedef int PMTable[MaxMapW][MaxMapH];
 
 const int BASE_DISALLOWED = (BIT_BASE_IN_TILE | BIT_MONOLITH | BIT_FUNGUS | BIT_THERMAL_BORE);
 
+extern PMTable pm_target;
 extern PMTable pm_overlay;
 
 int __cdecl mod_enemy_move(const int id);

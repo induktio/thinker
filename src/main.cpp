@@ -94,6 +94,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->expansion_autoscale = atoi(value);
     } else if (MATCH("thinker", "conquer_priority")) {
         cf->conquer_priority = min(10000, max(1, atoi(value)));
+    } else if (MATCH("thinker", "crawler_priority")) {
+        cf->crawler_priority = min(10000, max(1, atoi(value)));
     } else if (MATCH("thinker", "limit_project_start")) {
         cf->limit_project_start = atoi(value);
     } else if (MATCH("thinker", "max_satellites")) {
@@ -404,16 +406,34 @@ int plans_upkeep(int faction) {
                 plans[i].diplo_flags |= f->diplo_status[j];
             }
         }
+        float enemy_sum = 0;
         int n = 0;
         for (int j=0; j < *total_num_bases; j++) {
             BASE* base = &Bases[j];
+            MAP* sq = mapsq(base->x, base->y);
             if (base->faction_id == i) {
                 population[n] = base->pop_size;
                 minerals[n] = base->mineral_surplus;
                 n++;
+                // Update enemy base threat distances
+                int base_region = (sq ? sq->region : 0);
+                float enemy_range = MaxEnemyRange;
+                for (int k=0; k < *total_num_bases; k++) {
+                    BASE* b = &Bases[k];
+                    if (at_war(i, b->faction_id) && (sq = mapsq(b->x, b->y))) {
+                        float range = map_range(base->x, base->y, b->x, b->y)
+                            * (sq->region == base_region ? 1.0f : 1.5f);
+                        enemy_range = min(enemy_range, range);
+                    }
+                }
+                enemy_sum += enemy_range;
             } else if (base->faction_id_former == i && at_war(i, base->faction_id)) {
                 plans[i].enemy_bases += (is_human(base->faction_id) ? 2 : 1);
             }
+        }
+        // Exponentially weighted moving average of distances to nearest enemy bases.
+        if (n > 0) {
+            m->thinker_enemy_range = (enemy_sum/n + 3 * m->thinker_enemy_range)/4;
         }
         std::sort(minerals, minerals+n);
         std::sort(population, population+n);
@@ -560,6 +580,7 @@ int robust, int immunity, int impunity, int penalty) {
         * min(3, max(-4, vals[SUP]));
     sc += max(2, 4 - range/8 + 2*f->AI_power + 2*f->AI_fight)
         * min(4, max(-4, vals[MOR]));
+
     if (!has_project(faction, FAC_TELEPATHIC_MATRIX)) {
         sc += (vals[POL] < 0 ? 2 : 4) * min(3, max(-5, vals[POL]));
         if (vals[POL] < -2) {
@@ -585,8 +606,11 @@ int robust, int immunity, int impunity, int penalty) {
         + (has_project(faction, FAC_MANIFOLD_HARMONICS) ? 6 : 0)) * min(3, max(-3, vals[PLA]));
     sc += max(2, 4 - range/8 + 2*f->AI_power + 2*f->AI_fight) * min(3, max(-2, vals[PRO]));
     sc += 8 * min(8 - *diff_level, max(-3, vals[IND]));
-    sc += max(2, 3 + 4*f->AI_tech + 2*(f->AI_wealth - f->AI_fight))
-        * min(5, max(-5, vals[RES]));
+
+    if (~*game_rules & RULES_SCN_NO_TECH_ADVANCES) {
+        sc += max(2, 3 + 4*f->AI_tech + 2*(f->AI_wealth - f->AI_fight))
+            * min(5, max(-5, vals[RES]));
+    }
 
     debug("social_score %d %d %d %d %s\n", faction, sf, sm, sc, Social[sf].soc_name[sm]);
     return sc;

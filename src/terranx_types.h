@@ -85,6 +85,16 @@ struct BASE {
     int nerve_staple_count;
     int pad_7;
     int pad_8;
+
+    int item() {
+        return queue_items[0];
+    }
+    bool item_is_project() {
+        return queue_items[0] <= -SP_ID_First;
+    }
+    bool item_is_unit() {
+        return queue_items[0] >= 0;
+    }
 };
 
 struct MAP {
@@ -191,11 +201,6 @@ struct MFaction {
     char thinker_flags;
     char thinker_tech_id;
     int thinker_tech_cost;
-    /*
-    Exponentially weighted moving average of distances to nearest enemy bases.
-    This is updated while choosing base production, and it is used as a
-    general heuristic to determine the level of threat from other factions.
-    */
     float thinker_enemy_range;
     int thinker_probe_flags;
     char pad_1[112];
@@ -834,6 +839,11 @@ struct VEH {
     }
     bool is_combat_unit() {
         return Units[unit_id].weapon_type <= WPN_PSI_ATTACK && unit_id != BSC_FUNGAL_TOWER;
+    }
+    bool is_native_unit() {
+        return unit_id == BSC_MIND_WORMS || unit_id == BSC_ISLE_OF_THE_DEEP
+            || unit_id == BSC_LOCUSTS_OF_CHIRON || unit_id == BSC_SEALURK
+            || unit_id == BSC_SPORE_LAUNCHER || unit_id == BSC_FUNGAL_TOWER;
     }
     bool is_probe() {
         return Units[unit_id].weapon_type == WPN_PROBE_TEAM;

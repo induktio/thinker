@@ -154,6 +154,7 @@ struct Config {
     int expansion_limit = 100;
     int expansion_autoscale = 0;
     int conquer_priority = 100;
+    int crawler_priority = 100;
     int limit_project_start = 3;
     int max_satellites = 20;
     int faction_placement = 1;

@@ -28,6 +28,7 @@ to the square chosen by escape_move.
 
 PMTable pm_former;
 PMTable pm_safety;
+PMTable pm_target;
 PMTable pm_roads;
 PMTable pm_shore;
 PMTable pm_unit_near;
@@ -113,6 +114,9 @@ int __cdecl log_veh_kill(int UNUSED(ptr), int id, int UNUSED(owner), int UNUSED(
         if (veh->x >= 0 && veh->y >= 0) {
             adjust_value(pm_enemy_near, veh->x, veh->y, 2, -1);
             pm_enemy[veh->x][veh->y]--;
+            if (pm_target[veh->x][veh->y] > 0) {
+                pm_target[veh->x][veh->y]--;
+            }
         }
     }
     return 0;
@@ -422,6 +426,7 @@ void update_main_region(int faction) {
             p.naval_beach_x = -1;
             p.naval_beach_y = -1;
             p.land_combat_units = 0;
+            p.sea_combat_units = 0;
             p.air_combat_units = 0;
             p.transport_units = 0;
         }
@@ -473,19 +478,17 @@ void move_upkeep(int faction, bool visual) {
     int tile_count[MaxRegionNum] = {};
     last_faction = faction;
     build_tubes = has_terra(faction, FORMER_MAGTUBE, LAND);
-    p.land_combat_units = 0;
-    p.sea_combat_units = 0;
-    p.air_combat_units = 0;
-    p.transport_units = 0;
-    mapnodes.clear();
     memset(pm_former, 0, sizeof(pm_former));
     memset(pm_safety, 0, sizeof(pm_safety));
+    memset(pm_target, 0, sizeof(pm_target));
     memset(pm_roads, 0, sizeof(pm_roads));
     memset(pm_shore, 0, sizeof(pm_shore));
     memset(pm_enemy, 0, sizeof(pm_enemy));
     memset(pm_unit_near, 0, sizeof(pm_unit_near));
     memset(pm_enemy_near, 0, sizeof(pm_enemy_near));
     memset(region_flags, 0, sizeof(region_flags));
+    mapnodes.clear();
+    update_main_region(faction);
 
     debug("move_upkeep %d region: %d x: %2d y: %2d naval: %d\n",
         faction, p.main_region, p.main_region_x, p.main_region_y, p.prioritize_naval);
@@ -635,10 +638,6 @@ void move_upkeep(int faction, bool visual) {
                 region_flags[sq->region] |= PM_PROBE;
             }
         }
-    }
-    for (int i=0; i < *total_num_bases; i++) {
-        BASE* base = &Bases[i];
-        pm_former[base->x][base->y] = 0; // Special counter
     }
     if (f.current_num_bases > 0) {
         memset(defend_goal, 1, sizeof(defend_goal));
@@ -822,10 +821,13 @@ bool has_base_sites(int x, int y, int faction, int triad) {
 Determine if the unit should hold on the current tile and skip the turn.
 */
 bool defend_tile(VEH* veh, MAP* sq) {
-    if (sq && sq->items & BIT_MONOLITH && veh->need_monolith()) {
+    if (!sq || sq->items & BIT_MONOLITH && veh->need_monolith()) {
         return true;
     }
-    if (sq && sq->items & (BIT_BASE_IN_TILE | BIT_BUNKER)) {
+    if (sq->items & BIT_FUNGUS && veh->is_native_unit() && veh->need_heals()) {
+        return true;
+    }
+    if (sq->items & (BIT_BASE_IN_TILE | BIT_BUNKER)) {
         if (veh->need_heals()) {
             return true;
         }
@@ -842,11 +844,11 @@ bool defend_tile(VEH* veh, MAP* sq) {
 }
 
 int escape_score(int x, int y, int range, VEH* veh, MAP* sq) {
-    return pm_safety[x][y] - range*120
+    return pm_safety[x][y] - 160*pm_target[x][y] - 120*range
         + (sq->items & BIT_MONOLITH && veh->need_monolith() ? 2000 : 0)
         + (sq->items & BIT_BUNKER ? 500 : 0)
-        + (sq->items & BIT_FOREST ? 100 : 0)
-        + (sq->is_rocky() ? 100 : 0);
+        + (sq->items & BIT_FOREST ? 200 : 0)
+        + (sq->is_rocky() ? 200 : 0);
 }
 
 int escape_move(const int id) {
@@ -871,12 +873,12 @@ int escape_move(const int id) {
             tx = ts.rx;
             ty = ts.ry;
             best_score = score;
-            debug("escape_score %2d %2d -> %2d %2d | %d %d\n",
+            debug("escape_score %2d %2d -> %2d %2d dist: %d score: %d\n",
                 veh->x, veh->y, ts.rx, ts.ry, ts.dist, score);
         }
     }
     if (tx >= 0) {
-        debug("escape_move  %2d %2d -> %2d %2d | %d %d %s\n",
+        debug("escape_move  %2d %2d -> %2d %2d safety: %d score: %d %s\n",
             veh->x, veh->y, tx, ty, pm_safety[veh->x][veh->y], best_score, veh->name());
         return set_move_to(id, tx, ty);
     }
@@ -920,9 +922,9 @@ int want_convoy(int base_id, int x, int y, int* score) {
         int M = mine_yield(base->faction_id, base_id, x, y, 0);
         int E = energy_yield(base->faction_id, base_id, x, y, 0);
 
-        int Nw = (base->nutrient_surplus < 0 ? 6 : (base->nutrient_surplus < 6 ? 4 : 2))
-            + min(4, 2*unused_space(base_id));
-        int Mw = max(3, (40 - base->mineral_intake_2) / 5);
+        int Nw = (base->nutrient_surplus < 0 ? 8 : min(8, 2 + unused_space(base_id)))
+            - max(0, base->nutrient_surplus - 14);
+        int Mw = max(3, (45 - base->mineral_intake_2) / 5);
 
         int Ns = Nw*N - (M+E)*(M+E)/2;
         int Ms = Mw*M - (N+E)*(N+E)/2;
@@ -1762,14 +1764,10 @@ int trans_move(const int id) {
     VEH* veh = &Vehicles[id];
     MAP* sq;
     AIPlans& p = plans[veh->faction_id];
-    static int iter = 0;
     if (!(sq = mapsq(veh->x, veh->y))
     || mapnodes.erase({veh->x, veh->y, NODE_NEED_FERRY}) > 0
     || (sq->is_base() && veh->need_heals())) {
         return mod_veh_skip(id);
-    }
-    if (++iter % 3) {
-        return SYNC;
     }
     int offset;
     int cargo = 0;
@@ -1932,6 +1930,7 @@ double battle_priority(int id1, int id2, int dist, int moves, MAP* sq) {
     UNIT* u2 = &Units[veh2->unit_id];
     bool non_psi = veh1->offense_value() >= 0 && veh2->defense_value() >= 0;
     bool stack_damage = !sq->is_base_or_bunker() && conf.collateral_damage_value > 0;
+    bool neutral_tile = has_treaty(veh1->faction_id, sq->owner, DIPLO_TREATY|DIPLO_TRUCE);
     int triad = veh1->triad();
     int cost = 0;
     int att_moves = 1;
@@ -1975,13 +1974,13 @@ double battle_priority(int id1, int id2, int dist, int moves, MAP* sq) {
         + (stack_damage ? 0.03 * (pm_enemy[veh2->x][veh2->y]) : 0.0)
         + min(12, abs(offense_value(u2))) * (u2->chassis_type == CHS_INFANTRY ? 0.01 : 0.02)
         + (triad == TRIAD_AIR ? 0.001 * min(400, arty_value(veh2->x, veh2->y)) : 0.0)
-        - (veh2->faction_id == 0 ? 2 : 1) * 0.01*dist;
+        - (neutral_tile ? 0.06 : 0.01)*dist;
     /*
     Fix: in rare cases the game engine might reject valid attack orders for unknown reason.
     In this case combat_move would repeat failed attack orders until iteration limit.
     */
     double v3 = min(!offense_value(u2) ? 1.3 : 1.6, v1) + min(0.5, max(-0.5, v2))
-        - (veh2->faction_id == 0 ? 0.08 : 0.04) * veh1->iter_count;
+        - 0.04*pm_target[veh2->x][veh2->y];
 
     debug("combat_odds %2d %2d -> %2d %2d dist: %2d moves: %2d cost: %2d "\
         "v1: %.4f v2: %.4f odds: %.4f | %d %d %s | %d %d %s\n",
@@ -2427,10 +2426,11 @@ int combat_move(const int id) {
         max_dist = max_dist + random(4);
         best_score = arty_value(veh->x, veh->y);
         while ((sq = ts.get_next()) != NULL && ts.dist <= max_dist) {
-            if (arty_value(ts.rx, ts.ry) - ts.dist > best_score
-            && allow_move(ts.rx, ts.ry, faction, triad)) {
+            int score = arty_value(ts.rx, ts.ry) - ts.dist;
+            if (score > best_score && allow_move(ts.rx, ts.ry, faction, triad)) {
                 tx = ts.rx;
                 ty = ts.ry;
+                best_score = score;
             }
         }
         if (tx >= 0) {
@@ -2439,14 +2439,12 @@ int combat_move(const int id) {
         }
     }
     // Find a base to attack or defend own base on the same region
-    int tolerance = (ignore_zocs ? 3 : 1) + (triad == TRIAD_SEA ? 2 : 0)
-        + (!pm_enemy_near[veh->x][veh->y] ? 2 : 0);
-    if (defend) {
-        limit = (((*current_turn+id) % 4) + 1) * QueueSize/32;
+    int tolerance = (ignore_zocs ? 4 : 2) + (triad == TRIAD_SEA ? 2 : 0);
+    if ((*current_turn + id) % 4) {
+        limit = QueueSize / (defend ? 20 : 4);
     } else {
-        limit = (((*current_turn+id) % 4) + 1) * QueueSize/4;
+        limit = QueueSize / (defend ? 5 : 1);
     }
-    bool flank = false;
     bool check_zocs = !ignore_zocs && pm_enemy_near[veh->x][veh->y];
     PathNode& path = ts.paths[0];
     max_dist = PathLimit;
@@ -2465,8 +2463,8 @@ int combat_move(const int id) {
             continue;
         }
         if (defend && sq->owner == faction) {
-            if (garrison_goal(ts.rx, ts.ry, faction, triad) - defender_count(ts.rx, ts.ry)
-            >= ++pm_former[ts.rx][ts.ry]/3) {
+            if (garrison_goal(ts.rx, ts.ry, faction, triad)
+            > defender_count(ts.rx, ts.ry) + pm_target[ts.rx][ts.ry]/2) {
                 debug("combat_defend %2d %2d -> %2d %2d\n", veh->x, veh->y, ts.rx, ts.ry);
                 return set_move_to(id, ts.rx, ts.ry);
             }
@@ -2481,18 +2479,19 @@ int combat_move(const int id) {
                 path = ts.paths[ts.current];
                 tx = ts.rx;
                 ty = ts.ry;
-                flank = !veh->is_probe() && ts.dist < 6
-                    && (id2 = choose_defender(ts.rx, ts.ry, id, sq)) >= 0
-                    && battle_priority(id, id2, ts.dist - 1, moves, sq) < 0.7;
-                if (flank) {
-                    debug("combat_skip %2d %2d -> %2d %2d %s %s\n",
-                    veh->x, veh->y, ts.rx, ts.ry, veh->name(), Vehicles[id2].name());
-                }
             }
         }
     }
     if (tx >= 0) {
-        if (flank || (!defend && path.dist > 1 && min(9, ++pm_former[tx][ty]) >= random(12))) {
+        bool flank = !defend && path.dist > 1 && random(12) < min(8, pm_target[tx][ty]);
+        bool skip  = !defend && path.dist < 6 && !veh->is_probe() && (sq = mapsq(tx, ty))
+            && (id2 = choose_defender(tx, ty, id, sq)) >= 0
+            && battle_priority(id, id2, path.dist - 1, moves, sq) < 0.7;
+        if (skip) {
+            debug("combat_skip %2d %2d -> %2d %2d %s %s\n",
+            veh->x, veh->y, ts.rx, ts.ry, veh->name(), Vehicles[id2].name());
+        }
+        if (flank || skip) {
             tx = -1;
             ty = -1;
             best_score = flank_score(veh->x, veh->y, mapsq(veh->x, veh->y));
@@ -2513,7 +2512,7 @@ int combat_move(const int id) {
             }
         } else if (!defend && !veh->is_probe()) {
             PathNode& prev = ts.paths[path.prev];
-            if (path.dist > 3 && pm_enemy_near[tx][ty] > 1 + random(8)) {
+            if (path.dist > 3 && random(12) < pm_enemy_near[tx][ty]) {
                 prev = ts.paths[prev.prev];
             }
             tx = prev.x;

@@ -161,8 +161,8 @@ bool can_build(int base_id, int id) {
             && map_range(base->x, base->y, b->x, b->y) <= 3
             && (has_facility(i, FAC_GEOSYNC_SURVEY_POD)
             || has_facility(i, FAC_FLECHETTE_DEFENSE_SYS)
-            || b->queue_items[0] == -FAC_GEOSYNC_SURVEY_POD
-            || b->queue_items[0] == -FAC_FLECHETTE_DEFENSE_SYS)) {
+            || b->item() == -FAC_GEOSYNC_SURVEY_POD
+            || b->item() == -FAC_FLECHETTE_DEFENSE_SYS)) {
                 return false;
             }
         }
@@ -281,7 +281,7 @@ int prod_count(int faction, int prod_id, int base_skip_id) {
     for (int i=0; i < *total_num_bases; i++) {
         BASE* base = &Bases[i];
         if (base->faction_id == faction
-        && base->queue_items[0] == prod_id
+        && base->item() == prod_id
         && i != base_skip_id) {
             n++;
         }
@@ -410,8 +410,8 @@ bool allow_expand(int faction) {
 }
 
 uint32_t map_hash(uint32_t a, uint32_t b) {
-    uint32_t h = (*map_random_seed ^ (a << 8) ^ (b << 16) ^ b) * 2654435761;
-    return (h ^ (h>>16)) & 0x7fffffff;
+    uint32_t h = (*map_random_seed ^ (a << 8) ^ (a << 24) ^ b ^ (b << 16)) * 2654435761;
+    return (h ^ (h>>16));
 }
 
 int random(int n) {
@@ -490,6 +490,7 @@ int set_move_to(int veh_id, int x, int y) {
     if (veh->x == x && veh->y == y) {
         return mod_veh_skip(veh_id);
     }
+    pm_target[x][y]++;
     return SYNC;
 }
 
@@ -744,7 +745,7 @@ void print_veh(int id) {
 
 void print_base(int id) {
     BASE* base = &Bases[id];
-    int prod = base->queue_items[0];
+    int prod = base->item();
     debug("[ turn: %d faction: %d base: %2d x: %2d y: %2d "\
         "pop: %d tal: %d dro: %d min: %2d acc: %2d | %08x | %3d %s | %s ]\n",
         *current_turn, base->faction_id, id, base->x, base->y,
