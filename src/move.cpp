@@ -460,8 +460,9 @@ void update_main_region(int faction) {
     }
     int min_dist = INT_MAX;
     for (i=1; i < MaxPlayerNum; i++) {
-        int dist = map_range(p.main_region_x, p.main_region_y,
-            plans[i].main_region_x, plans[i].main_region_y);
+        int dist = (plans[i].main_region_x < 0 ? MaxEnemyRange :
+            map_range(p.main_region_x, p.main_region_y,
+                plans[i].main_region_x, plans[i].main_region_y));
         if (at_war(faction, i) && dist < min_dist) {
             min_dist = dist;
             p.prioritize_naval = p.main_region != plans[i].main_region;
@@ -2110,22 +2111,21 @@ bool airdrop_move(const int id, MAP* sq) {
         int x2 = wrap(veh->x + TableOffsetX[i]);
         int y2 = veh->y + TableOffsetY[i];
         if ((sq = mapsq(x2, y2)) && sq->is_base() && !non_ally_in_tile(x2, y2, faction)) {
-            if (at_war(faction, sq->owner)) {
+            if (at_war(faction, sq->owner) && veh_at(x2, y2) < 0) {
                 tx = x2;
                 ty = y2;
                 break;
             } else if (sq->owner == faction) {
-                if (invade && sq->region == plans[faction].target_land_region) {
+                if (invade && sq->region == plans[faction].target_land_region && !random(4)) {
                     tx = x2;
                     ty = y2;
+                    break;
                 }
                 if (i > TableRange[2]
                 && pm_enemy_near[x2][y2] > 1 + pm_enemy_near[veh->x][veh->y]
-                && defender_count(x2, y2) < 4) {
+                && defender_count(x2, y2) < random(4)) {
                     tx = x2;
                     ty = y2;
-                }
-                if (tx >= 0 && !random(4)) {
                     break;
                 }
             }

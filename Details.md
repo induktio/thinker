@@ -3,12 +3,13 @@ Main features
 =============
 Thinker has several advanced planning routines that enhance the base game AI to manage the complexities of colony building in Alpha Centauri. In the original game, many of the AI aspects were left underdeveloped while the computer factions struggled to deal with various punitive penalties. This left the single player experience severely lacking, since the AI would have no counter to many simple strategies.
 
-As a general principle, Thinker uses the same production bonuses than what the vanilla difficulty levels would grant the AI normally. There should no extra resources received by the AI unless this is specified in the configuration file. Thinker also will not change the automated behaviour of units or governors in player-controlled factions.
+As a general principle, Thinker uses the same production bonuses than what the vanilla difficulty levels would grant the AI normally. There should no extra resources received by the AI unless this is specified in the configuration file. Thinker should not change the automated behaviour of units or governors in player-controlled factions. The mod also will not attempt to remake the lore, reorder the tech tree, or adjust most vanilla game design decisions, since the main goal is to make the AI play better given any game config options.
 
 Thinker does not have any special save game format, so it's possible to open an old save and have the factions switch to the new AI and vice-versa. None of the `thinker.ini` config options are preserved in the save game either, but the units or resources spawned at the game start will remain.
 
+Note that in `thinker.ini` config file, for binary settings only zero values are treated as disabled, any non-zero value usually enables the option. Regardless of options, Thinker also includes a custom crash handler that writes output to `debug.txt` in the game folder if the game happens to crash for any reason.
+
 For testing purposes it is also possible to run old/new AIs side-by-side by setting `factions_enabled=3` or similar. In that case, only the factions in the first 3 slots will use Thinker AI if they are not player-controlled. By default, `factions_enabled=7` setting enables Thinker AI for all computer factions.
-Regardless of options, Thinker also includes a custom crash handler that writes output to `debug.txt` in the game folder if the game happens to crash for any reason.
 
 **For a mostly exhaustive list of all features provided by this mod, refer to both this file and `thinker.ini`.** Enabling Thinker AI will affect many AI behaviors such as described in the list below.
 
@@ -21,22 +22,21 @@ Regardless of options, Thinker also includes a custom crash handler that writes 
 
 In addition to the binary patches listed separately in this file, items that are listed after "Game Engine Patches" in `thinker.ini` apply to all factions regardless of `factions_enabled` setting. Some patches such as ignore_reactor_power and unit repair rate changes are imported from [Will To Power Mod](https://github.com/tnevolin/thinker-doer/).
 
-1. Base governors of all factions will now prefer to work borehole tiles instead of always emphasizing food production. The patch makes governors assume borehole tiles produce 1 food but this will not affect the actual nutrient intake or anything else beyond tile selection.
-2. All landmarks that are placed on random maps can now be configured from `thinker.ini`. Nessus Canyon is also available but disabled by default.
-3. New `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on huge map sizes. It is also possible to add extra nutrient bonuses for each land-based faction by using the `nutrient_bonus` setting.
-4. New `design_units` feature will introduce custom probe teams, armored crawlers, gravship formers, and AAA garrison prototypes for the computer factions.
-5. All expansion related content can be disabled by using the `smac_only` setting, see further below.
-6. AI mineral/nutrient production cost factors for each difficulty level can be changed from the `cost_factor` setting. Does not affect other difficulty related modifiers.
-7. Content (non-drone) base population for each difficulty level can be adjusted from `content_pop_player` and `content_pop_computer` variables. By default these have the same values than vanilla game mechanics.
-8. New `world_map_labels` feature draws a white marker around the population label of HQ bases to identify them more easily. Bases in golden age are also highlighted with a yellow label. Bases that have Flechette Defense System or Geo Survey Pods are highlighted with a blue label.
-9. New `auto_relocate_hq` feature imports a game mechanic from Civilization 3 where lost/captured headquarters are automatically moved to another suitable base.
+1. All landmarks that are placed on random maps can now be configured from `thinker.ini`. Nessus Canyon is also available but disabled by default.
+2. New `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on huge map sizes. It is also possible to add extra nutrient bonuses for each land-based faction by using the `nutrient_bonus` setting.
+3. New `design_units` feature will introduce custom probe teams, armored crawlers, gravship formers, and AAA garrison prototypes for the computer factions.
+4. All expansion related content can be disabled by using the `smac_only` setting, see further below.
+5. AI mineral/nutrient production cost factors for each difficulty level can be changed from the `cost_factor` setting. Does not affect other difficulty related modifiers.
+6. Content (non-drone) base population for each difficulty level can be adjusted from `content_pop_player` and `content_pop_computer` variables. By default these have the same values than vanilla game mechanics.
+7. New `world_map_labels` feature draws a white marker around the population label of HQ bases to identify them more easily. Bases in golden age are also highlighted with a yellow label. Bases that have Flechette Defense System or Geo Survey Pods are highlighted with a blue label.
+8. New `auto_relocate_hq` feature imports a game mechanic from Civilization 3 where lost/captured headquarters are automatically moved to another suitable base.
 
 
 Improved unit movement
 ======================
 Since v2.3 Thinker also controls the movement of nearly all combat units, not just non-combat units like formers or colony pods. AI code for land, sea and air units has been almost entirely rewritten. The only major exception here are any units with the missile chassis which are still handled by the default AI. Note that the interceptor behaviour for AI air units is not implemented, so they will not activate needlejets to intercept enemy units during the other factions turn.
 
-Another novel addition has been naval invasions executed by the AI. This has been traditionally been a weak spot for many AIs since they lack the coordination between many units to pull off such strategies. Thinker however is capable of gathering an invasion fleet with many transports and using other warships as cover to move them to a landing zone. Warships will also use artillery attack on various targets much more than usual.
+Another novel addition has been naval invasions executed by the AI. This has been traditionally a weak spot for many AIs since they lack the coordination between many units to pull off such strategies. Thinker however is capable of gathering an invasion fleet with many transports and using other warships as cover to move them to a landing zone. Warships will also use artillery attack on various targets much more than usual.
 
 Thinker prioritizes naval invasions if the closest enemy is located on another continent. Otherwise, most of the focus is spent on building land and air units. At any given time, only one priority landing zone can be active for the AI. Maximum distance for invasions depends slightly on pathfinding but it should be possible on all Huge maps.
 
@@ -81,27 +81,29 @@ After calculating the base cost, it is multiplied by all of the following factor
 
 * For AI factions, `tech_cost_factor` scales the cost for each difficulty level, e.g. `tech_cost_factor=84` equals 84% of human cost.
 * Multiply by the square root of the map size divided by the square root of a standard map size (56).
-* Multiply by faction specific TECHCOST modifier (lower values means faster progress).
-* Divide by Technology discovery rate set in alphax.txt (lower values means slower progress).
+* Multiply by faction specific TECHCOST modifier (higher values means slower progress).
+* Divide by Technology discovery rate set in alphax.txt (higher values means faster progress).
 * If tech stagnation is enabled, multiply by 1.5.
 * If 2 or more factions with commlink to the current faction has the tech, multiply by 0.75.
 * If only 1 commlink faction has it, multiply by 0.85.
+* If `cheap_early_tech` is enabled, apply a decreasing discount from 55% to 5% until the first 10 techs are discovered.
 
 The final cost calculated by this formula is visible in the F2 status screen after the label "TECH COST". Note that the social engineering RESEARCH rating does not affect this number. Instead it changes "TECH PER TURN" value displayed on the same screen.
 
 
 Expiring infiltration feature
 =============================
-Normally establishing infiltration with a probe team on another faction is permanent and cannot be removed in any way. In multiplayer games this can be especially unbalanced. Thinker mod provides a config option (`counter_espionage`) to make infiltration expire randomly based on a variety of factors.
+Normally establishing infiltration with a probe team on another faction is permanent and cannot be removed in any way. In multiplayer games this can be especially unbalanced. Thinker provides a config option `counter_espionage` to make infiltration expire randomly based on a variety of factors.
 
-When enabled, for each turn for every infiltration active to the current faction, a score is calculated and rolled against a random chance. If the roll succeeds, both factions will get a message of removed infiltration on their turn and the infiltration stops immediately. While allied to another faction, infiltration will never expire. The score is based on these factors:
+When enabled, for each turn for every infiltration active to the current faction (defender), a score is calculated and rolled against a random chance. If the roll succeeds, both factions will get a message of removed infiltration on their turn and the infiltration stops immediately. While allied to another faction, infiltration will never expire. The score is based on these factors:
 
-* Calculate DefenderProbeRating - AttackerProbeRating.
+* Get the current social engineering PROBE rating for both factions.
 * Having Hunter Seeker Algorithm or Nethack Terminus will give +1 bonus each.
-* If a human player faction is defending, give extra +2 bonus.
+* If a human player faction is defending, give extra +2 bonus for the defender.
+* Calculate DefenderProbeScore - AttackerProbeScore.
 * Clamp the value to -7 to +7 range.
 
-The chance to discover infiltration is 0.5% at -7 score, 1.2% at +0 score, and 3.3% at +7 score (maximum possible). Thus having any kind of advantage over the other faction will give a lopsided bonus for the defender by design. In this mechanic, it is important to have a better Probe rating or at least parity to maintain the infiltration.
+The chance to discover infiltration is 0.5% at -7 score, 1.2% at +0 score, and 3.3% at +7 score (maximum possible). Thus having any kind of advantage over the other faction will give a lopsided bonus for the defender by design. In this mechanic, it is important to have a better PROBE rating or at least parity to maintain the infiltration.
 
 
 SMAC in SMACX mod
@@ -110,12 +112,12 @@ Thinker includes the files necessary to play a game similar to the original SMAC
 
 Thinker also adds support for custom factions that are not aliens while using this feature. Installing this mod doesn't require any extra steps since the files are bundled in the zip file.
 
-1. Download the latest version that includes `ac_mod` folder in the zip.
+1. Download the latest version that includes `smac_mod` folder in the zip.
 2. Extract all the files to Alpha Centauri game folder.
 3. Open `thinker.ini` and change the configuration to `smac_only=1` ***OR*** start the game with command line parameter `terranx_mod.exe -smac`
 4. When smac_only is started properly, the main menu will change color to blue as it was in the original SMAC, instead of the SMACX green color scheme.
-5. The game reads these files from `ac_mod` folder while smac_only is enabled: alphax.txt, helpx.txt, conceptsx.txt, tutor.txt. Therefore it is possible to keep the mod installed without overwriting any of the files from the base game.
-6. To install custom factions while using this mod, just edit `ac_mod/alphax.txt` instead of the normal `alphax.txt` file and add the faction names to `#CUSTOMFACTIONS` section. Note that you only have to extract the faction definitions to the main game folder because the same files are used in smac_only mode.
+5. The game reads these files from `smac_mod` folder while smac_only is enabled: alphax.txt, helpx.txt, conceptsx.txt, tutor.txt. Therefore it is possible to keep the mod installed without overwriting any of the files from the base game.
+6. To install custom factions while using this mod, just edit `smac_mod/alphax.txt` instead of the normal `alphax.txt` file and add the faction names to `#CUSTOMFACTIONS` section. Note that you only have to extract the faction definitions to the main game folder because the same files are used in smac_only mode.
 
 See below for some custom faction sets. The factions can be played in both game modes and they are also fairly balanced overall.
 
@@ -127,24 +129,25 @@ Recommended alphax.txt settings
 ===============================
 Proposed alphax.txt settings for Thinker can be found from [this file](docs/alphax.txt). The purpose of these edits is to cause minimal differences to the game defaults, and rather fix bugs and improve the random map generation. That means the tech tree or production cost values are not modified, for example. The changes are summarized below:
 
-1. The frequency of global warming effects is reduced. Thinker level AIs regularly achieve much higher mineral production and eco damage than the AIs in the base game. As a result, excessive sea level rise may occur early on unless this is modified.
-2. Large map size is increased to 50x100. Previous value was nearly the same as a standard map.
-3. WorldBuilder is modified to produce bigger continents, less tiny islands, more rivers and ocean shelf on random maps.
-4. Descriptions of various configuration values have been updated to reflect their actual meaning.
-5. [BUG] Enabled the "Antigrav Struts" special ability for air units as stated in the manual.
-6. [BUG] Disabled the "Clean Reactor" special ability for Probe Teams because they already don't require any support.
+1. Fix: Enabled the "Antigrav Struts" special ability for air units as stated in the manual.
+2. Fix: Disabled the "Clean Reactor" special ability for Probe Teams because they already don't require any support.
+3. The frequency of climate change effects is reduced. Thinker level AIs regularly achieve much higher mineral production and eco damage than the AIs in the base game. As a result, excessive sea level rise may occur early on unless this is modified.
+4. WorldBuilder is modified to produce bigger continents, less tiny islands, more rivers and ocean shelf on random maps.
+5. Large map size is increased to 50x100. Previous value was nearly the same as a standard map.
+6. Descriptions of various configuration values have been updated to reflect their actual meaning.
 7. Add new predefined units Trance Scout Patrol and Police Garrison.
 
 
 Compatibility with other mods
 =============================
-While it is possible to run both Thinker and PRACX at the same time, some optional features provided by Thinker will be disabled because they would patch conflicting areas of the game binary. As of v2.4, these disabled features include:
+While it is possible to run both Thinker and PRACX at the same time, this combination of patches will not receive the same testing than the normal configuration, so some issues are likely. Additionally some optional features provided by Thinker will be disabled while running PRACX because they would patch conflicting areas of the game binary. These disabled feature include:
 
 * Smooth scrolling config option.
 * Windowed mode config option.
 * Any keyboard/mouse shortcuts provided by Thinker.
+* ALT+T version menu will not be available in this case.
 
-Scient's patch is already included in the Thinker binary and does not need any additional installation steps from the user. Yitzi's patch or any other mod that uses a custom patched game binary is NOT supported while running Thinker. Note also that Yitzi's patch uses an incompatible version of alphax.txt that can't be used by the vanilla game binary or Thinker.
+Scient's patch is already included in the Thinker binary and does not need any additional installation steps from the user. In any case, it is possible to install modified txt files provided by Scient's patch. Yitzi's patch or any other mod that uses a custom patched game binary is NOT supported while running Thinker. Note also that Yitzi's patch uses an incompatible version of alphax.txt that can't be used by the vanilla game binary or Thinker.
 
 
 Features not supported
@@ -163,8 +166,22 @@ Known bugs
 3. Maximum supported map size by Thinker is 256x256. This is also the largest map that the game interface will allow selecting.
 
 
-Bugfix patches included
-=======================
+Other patches included
+======================
+Some notable game engine patches included may not have their separate config option, but they are listed here.
+
+1. Base governors of all factions will now prefer to work borehole tiles instead of always emphasizing food production. The patch makes governors assume borehole tiles produce 1 food but this will not affect the actual nutrient intake or anything else beyond tile selection.
+2. Make sure the game engine can read movie settings from "movlistx.txt" while using smac_only mode.
+3. Fix issue where attacking other satellites doesn't work in Orbital Attack View when smac_only is activated.
+4. Fix engine rendering issue where ocean fungus tiles displayed inconsistent graphics compared to the adjacent land fungus tiles.
+5. Fix game showing redundant "rainfall patterns have been altered" messages when these events are caused by other factions.
+6. Fix a bug that occurs after the player does an artillery attack on unoccupied tile and then selects another unit to view combat odds and cancels the attack. After this veh_attack_flags will not get properly cleared and the next bombardment on an unoccupied tile always results in the destruction of the bombarding unit.
+7. Patch AI vehicle home base reassignment bug. This change inverts the old condition where an apparent oversight made the engine to reassign vehicles to bases with mineral_surplus < 2.
+8. When capturing a base, Recycling Tanks and Recreation Commons are not always destroyed unlike previously. They are sometimes randomly destroyed like other facilities.
+
+
+Scient's patch
+==============
 Thinker includes the binary patches from both [Scient's patch v2.0 and v2.1](https://alphacentauri2.info/index.php?action=downloads;sa=view;down=365). The differences between these versions include only changes to the txt files to prevent the game from crashing when opening certain datalinks entries.
 Installing the modded txt files is purely optional, and Thinker does not include those files by default. The following fixes from Scient's binary patch are included in `terranx_mod.exe`.
 

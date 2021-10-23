@@ -1,10 +1,10 @@
 
 #include "patch.h"
 
-const char* ac_alpha = "ac_mod\\alphax";
-const char* ac_help = "ac_mod\\helpx";
-const char* ac_tutor = "ac_mod\\tutor";
-const char* ac_concepts = "ac_mod\\conceptsx";
+const char* ac_alpha = "smac_mod\\alphax";
+const char* ac_help = "smac_mod\\helpx";
+const char* ac_tutor = "smac_mod\\tutor";
+const char* ac_concepts = "smac_mod\\conceptsx";
 const char* ac_opening = "opening";
 const char* ac_movlist = "movlist";
 const char* ac_movlist_txt = "movlist.txt";
@@ -736,9 +736,11 @@ bool patch_setup(Config* cf) {
     }
 
     if (cf->smac_only) {
-        if (!FileExists("ac_mod/alphax.txt") || !FileExists("ac_mod/conceptsx.txt")
-        || !FileExists("ac_mod/tutor.txt") || !FileExists("ac_mod/helpx.txt")) {
-            MessageBoxA(0, "Error while opening ac_mod folder. Unable to start smac_only mode.",
+        if (!FileExists("smac_mod/alphax.txt")
+        || !FileExists("smac_mod/conceptsx.txt")
+        || !FileExists("smac_mod/helpx.txt")
+        || !FileExists("smac_mod/tutor.txt")) {
+            MessageBoxA(0, "Error while opening smac_mod folder. Unable to start smac_only mode.",
                 MOD_VERSION, MB_OK | MB_ICONSTOP);
             exit(EXIT_FAILURE);
         }
