@@ -1,6 +1,21 @@
 
 # Thinker mod release changelog
 
+## Version 2.7 (2021-10-23)
+* Add PSI gate support for AI. They are sometimes built in late stages of the game.
+* Add AI ability to steal unescorted artifacts from neutral factions.
+* Add AI support for special scenario rule "No technological advances".
+* Add new larger than Huge map size 80x160 to alphax.txt.
+* New option counter_espionage: provides a mechanic for randomly expiring infiltration on other factions.
+* New config options: cheap_early_tech, render_probe_labels, crawler_priority, foreign_treaty_popup.
+* When capturing a base, Recycling Tanks and Recreation Commons are not always destroyed unlike previously.
+* Many general improvements to AI combat movement code.
+* Update base garrisoning priorities to work better in many situations.
+* Improve crawler tile selection to better take into account the actual resource yield.
+* Rename ac_mod folder to smac_mod for SMAC in SMACX mod.
+* Fix rare issue where AI units sometimes freeze trying to attack other units.
+
+
 ## Version 2.6 (2021-05-01)
 * New option: skip_faction will exclude some factions from random selection in the game setup.
 * New option: conquer_priority provides ability to tweak the AI affinity to build more military units.
