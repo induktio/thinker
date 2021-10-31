@@ -4,7 +4,9 @@
 
 typedef int PMTable[MaxMapW][MaxMapH];
 
-const int BASE_DISALLOWED = (BIT_BASE_IN_TILE | BIT_MONOLITH | BIT_FUNGUS | BIT_THERMAL_BORE);
+const int BIT_SIMPLE = (BIT_FARM | BIT_MINE | BIT_FOREST);
+const int BIT_ADVANCED = (BIT_CONDENSER | BIT_THERMAL_BORE);
+const int BIT_BASE_DISALLOWED = (BIT_BASE_IN_TILE | BIT_MONOLITH | BIT_FUNGUS | BIT_THERMAL_BORE);
 
 extern PMTable pm_target;
 extern PMTable pm_overlay;

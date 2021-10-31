@@ -33,27 +33,23 @@ void init_save_game(int faction) {
     }
 }
 
-bool victory_done() {
-    // TODO: Check for scenario victory conditions
-    return *game_state & (STATE_VICTORY_CONQUER | STATE_VICTORY_DIPLOMATIC | STATE_VICTORY_ECONOMIC)
-        || has_project(-1, FAC_ASCENT_TO_TRANSCENDENCE);
-}
+int __cdecl mod_turn_upkeep() {
+    turn_upkeep();
+    debug("turn_upkeep %d bases: %d vehicles: %d\n",
+        *current_turn, *total_num_bases, *total_num_vehicles);
 
-bool has_colony_pods(int faction) {
-    for (int i=0; i<*total_num_vehicles; i++) {
-        VEH* veh = &Vehicles[i];
-        if (veh->faction_id == faction && veh->is_colony()) {
-            return true;
+    if (DEBUG) {
+        if (conf.debug_mode) {
+            *game_state |= STATE_DEBUG_MODE;
+            *game_preferences |= PREF_ADV_FAST_BATTLE_RESOLUTION;
+            *game_more_preferences |=
+                (MPREF_ADV_QUICK_MOVE_VEH_ORDERS | MPREF_ADV_QUICK_MOVE_ALL_VEH);
+        } else {
+            *game_state &= ~STATE_DEBUG_MODE;
         }
     }
-    return false;
-}
-
-/*
-Original Offset: 005C89A0
-*/
-int __cdecl game_year(int n) {
-    return Rules->normal_start_year + n;
+    snprintf(ThinkerVars->build_date, 12, MOD_DATE);
+    return 0;
 }
 
 /*

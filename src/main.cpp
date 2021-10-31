@@ -116,6 +116,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->counter_espionage = atoi(value);
     } else if (MATCH("thinker", "ignore_reactor_power")) {
         cf->ignore_reactor_power = atoi(value);
+    } else if (MATCH("thinker", "early_research_start")) {
+        cf->early_research_start = atoi(value);
     } else if (MATCH("thinker", "facility_capture_fix")) {
         cf->facility_capture_fix = atoi(value);
     } else if (MATCH("thinker", "territory_border_fix")) {
@@ -255,27 +257,7 @@ DLL_EXPORT int ThinkerDecide() {
     return 0;
 }
 
-int __cdecl mod_turn_upkeep() {
-    turn_upkeep();
-    debug("turn_upkeep %d bases: %d vehicles: %d\n",
-        *current_turn, *total_num_bases, *total_num_vehicles);
-
-    if (DEBUG) {
-        if (conf.debug_mode) {
-            *game_state |= STATE_DEBUG_MODE;
-            *game_preferences |= PREF_ADV_FAST_BATTLE_RESOLUTION;
-            *game_more_preferences |=
-                (MPREF_ADV_QUICK_MOVE_VEH_ORDERS | MPREF_ADV_QUICK_MOVE_ALL_VEH);
-        } else {
-            *game_state &= ~STATE_DEBUG_MODE;
-        }
-    }
-    snprintf(ThinkerVars->build_date, 12, MOD_DATE);
-    return 0;
-}
-
 int plans_upkeep(int faction) {
-    const int i = faction;
     if (!faction || is_human(faction)) {
         return 0;
     }
@@ -306,6 +288,7 @@ int plans_upkeep(int faction) {
         return 0;
     }
     if (conf.design_units) {
+        const int i = faction;
         int rec = best_reactor(i);
         int wpn = best_weapon(i);
         int arm = best_armor(i, false);
@@ -313,7 +296,7 @@ int plans_upkeep(int faction) {
         int chs = has_chassis(i, CHS_HOVERTANK) ? CHS_HOVERTANK : 
             (has_chassis(i, CHS_SPEEDER) ? CHS_SPEEDER : CHS_INFANTRY);
         bool twoabl = has_tech(i, Rules->tech_preq_allow_2_spec_abil);
-        char buf[200];
+        char buf[256];
 
         if (has_weapon(i, WPN_PROBE_TEAM)) {
             int algo = has_ability(i, ABL_ID_ALGO_ENHANCEMENT) ? ABL_ALGO_ENHANCEMENT : 0;
@@ -360,7 +343,8 @@ int plans_upkeep(int faction) {
         }
     }
 
-    if (ai_enabled(i)) {
+    if (ai_enabled(faction)) {
+        const int i = faction;
         int minerals[MaxBaseNum];
         int population[MaxBaseNum];
         Faction* f = &Factions[i];

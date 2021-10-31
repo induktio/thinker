@@ -38,6 +38,20 @@ int __cdecl governor_only_crop_yield(int faction, int base_id, int x, int y, int
     return value;
 }
 
+bool maybe_riot(int base_id) {
+    BASE* b = &Bases[base_id];
+
+    if (!base_can_riot(base_id)) {
+        return false;
+    }
+    if (unused_space(base_id) > 0 && b->drone_total <= b->talent_total) {
+        int cost = (b->pop_size + 1) * cost_factor(b->faction_id, 0, base_id);
+        return b->drone_total + 1 > b->talent_total && (base_pop_boom(base_id)
+            || (b->nutrients_accumulated + b->nutrient_surplus >= cost));
+    }
+    return b->drone_total > b->talent_total;
+}
+
 int __cdecl mod_base_draw(int ptr, int base_id, int x, int y, int zoom, int v1) {
     int color = -1;
     int width = 1;
@@ -56,8 +70,7 @@ int __cdecl mod_base_draw(int ptr, int base_id, int x, int y, int zoom, int v1) 
         || has_facility(base_id, FAC_FLECHETTE_DEFENSE_SYS)) {
             color = 254;
         }
-        if (b->faction_id == *current_player_faction && b->drone_total > b->talent_total
-        && base_can_riot(base_id)) {
+        if (b->faction_id == *current_player_faction && maybe_riot(base_id)) {
             color = 249;
         }
         if (color < 0) {
@@ -284,7 +297,7 @@ void process_map(int k) {
 bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
     Points pods;
     MAP* sq = mapsq(x, y);
-    if (!sq || sq->items & BASE_DISALLOWED || (sq->is_rocky() && !is_ocean(sq))) {
+    if (!sq || sq->items & BIT_BASE_DISALLOWED || (sq->is_rocky() && !is_ocean(sq))) {
         return false;
     }
     if (sq->landmarks & ~LM_FRESH) {
@@ -336,11 +349,11 @@ bool valid_start (int faction, int iter, int x, int y, bool aquatic) {
             }
         }
     }
-    int min_sc = (has_supply_pods ? 160 : 100) - iter/2;
+    int min_sc = (has_supply_pods ? 160 : 100) - iter/4;
     bool need_bonus = (has_supply_pods && !aquatic && conf.nutrient_bonus > is_human(faction));
     debug("find_score %d %d x: %3d y: %3d pods: %d nuts: %d min: %d score: %d\n",
         faction, iter, x, y, pods.size(), nut, min_sc, sc);
-    if (sc >= min_sc && need_bonus && (int)pods.size() > 1 - iter/50) {
+    if (sc >= min_sc && need_bonus && (int)pods.size() > 1 - iter/80) {
         int n = 0;
         while (!aquatic && pods.size() > 0 && nut + n < 2) {
             Points::const_iterator it(pods.begin());
@@ -361,6 +374,7 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
     bool aquatic = MFactions[faction].rule_flags & RFLAG_AQUATIC;
     int k = (*map_axis_y < 80 ? 4 : 8);
     process_map(k/2);
+
     for (int i=0; i<*total_num_vehicles; i++) {
         VEH* v = &Vehicles[i];
         if (v->faction_id != 0 && v->faction_id != faction) {
@@ -371,8 +385,8 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
     int x = 0;
     int y = 0;
     int i = 0;
-    while (++i < 150) {
-        if (!aquatic && goodtiles.size() > 0 && i < 120) {
+    while (++i <= 250) {
+        if (!aquatic && goodtiles.size() > 0 && i < 150) {
             Points::const_iterator it(goodtiles.begin());
             std::advance(it, random(goodtiles.size()));
             x = it->x;
@@ -381,7 +395,7 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
             y = (random(*map_axis_y - k*2) + k);
             x = (random(*map_axis_x) &~1) + (y&1);
         }
-        int limit = max(8, *map_area_sq_root/3 - i/6);
+        int limit = max(8, *map_area_sq_root/3 - i/8);
         z = min_range(spawns, x, y);
         debug("find_iter  %d %d x: %3d y: %3d limit: %2d range: %2d\n", faction, i, x, y, limit, z);
         if (z >= limit && valid_start(faction, i, x, y, aquatic)) {
@@ -417,7 +431,7 @@ BOOL WINAPI ModPeekMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsg
 DWORD WINAPI ModGetPrivateProfileStringA(LPCSTR lpAppName, LPCSTR lpKeyName,
 LPCSTR lpDefault, LPSTR lpReturnedString, DWORD nSize, LPCSTR lpFileName)
 {
-    debug("GET %s %s %s\n", lpAppName, lpKeyName, lpDefault);
+    debug("GET %s\t%s\t%s\n", lpAppName, lpKeyName, lpDefault);
     if (!strcmp(lpAppName, "Alpha Centauri")) {
         if (conf.directdraw >= 0 && !strcmp(lpKeyName, "DirectDraw")) {
             strncpy(lpReturnedString, (conf.directdraw ? "1" : "0"), 2);
@@ -577,6 +591,7 @@ bool patch_setup(Config* cf) {
         return false;
     }
     *(int*)GetPrivateProfileStringAImport = (int)ModGetPrivateProfileStringA;
+
     if (!pracx) {
         *(int*)RegisterClassImport = (int)ModRegisterClassA;
     }
@@ -595,11 +610,12 @@ bool patch_setup(Config* cf) {
     }
     extra_setup(cf);
 
-    write_jump(0x527290, (int)mod_faction_upkeep);
-    write_jump(0x579D80, (int)wipe_goals);
+    write_jump(0x4688E0, (int)MapWin_gen_overlays);
+    write_jump(0x4F6510, (int)fac_maint);
     write_jump(0x579A30, (int)add_goal);
     write_jump(0x579B70, (int)add_site);
-    write_jump(0x4688E0, (int)MapWin_gen_overlays);
+    write_jump(0x579D80, (int)wipe_goals);
+    write_jump(0x527290, (int)mod_faction_upkeep);
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
     write_call(0x4E61D0, (int)mod_base_prod_choices);
@@ -803,6 +819,12 @@ bool patch_setup(Config* cf) {
         write_call(0x5082AF, (int)battle_fight_parse_num);
         write_call(0x5082B7, (int)battle_fight_parse_num);
     }
+    if (cf->early_research_start) {
+        /* Remove labs start delay from factions with negative RESEARCH value. */
+        const byte old_bytes[] = {0x33, 0xFF};
+        const byte new_bytes[] = {0x90, 0x90};
+        write_bytes(0x4F4F17, old_bytes, new_bytes, sizeof(new_bytes));
+    }
     if (cf->facility_capture_fix) {
         remove_call(0x50D06A);
         remove_call(0x50D074);
@@ -825,11 +847,6 @@ bool patch_setup(Config* cf) {
         write_call(0x5BE5E1, (int)mod_tech_selection);
         write_call(0x5BE690, (int)mod_tech_selection);
         write_call(0x5BEB5D, (int)mod_tech_selection);
-
-        /* Remove start delay from factions with negative SOCIAL, RESEARCH value. */
-        const byte old_bytes[] = {0x33, 0xFF};
-        const byte new_bytes[] = {0x90, 0x90};
-        write_bytes(0x4F4F17, old_bytes, new_bytes, sizeof(new_bytes));
     }
     if (cf->auto_relocate_hq) {
         write_call(0x4CCF13, (int)mod_capture_base);

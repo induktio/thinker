@@ -4,6 +4,8 @@ const int SP_Unbuilt = -1;
 const int SP_Destroyed = -2;
 const int SP_ID_First = 70;
 const int SP_ID_Last = 106;
+const int Tech_ID_First = 0;
+const int Tech_ID_Last = 88;
 
 enum facility_id {
     FAC_HEADQUARTERS = 1,
@@ -1072,6 +1074,7 @@ enum ai_goal_types {
     AI_GOAL_NAVAL_END = 202,
     AI_GOAL_NAVAL_BEACH = 203,
     AI_GOAL_NAVAL_SCOUT = 204,
+    Thinker_Goal_ID_First = AI_GOAL_RAISE_LAND,
 };
 
 enum social_category_types {

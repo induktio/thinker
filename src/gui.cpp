@@ -502,6 +502,9 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 }
             }
             *game_state |= STATE_DEBUG_MODE;
+            *game_preferences |= PREF_ADV_FAST_BATTLE_RESOLUTION;
+            *game_more_preferences |=
+                (MPREF_ADV_QUICK_MOVE_VEH_ORDERS | MPREF_ADV_QUICK_MOVE_ALL_VEH);
         } else {
             *game_state &= ~STATE_DEBUG_MODE;
         }
@@ -826,15 +829,48 @@ int __cdecl blink_timer() {
 
 void __cdecl mod_turn_timer() {
     // Timer calls function every 500ms
-    static uint32_t prev_time = 0;
     static uint32_t iter = 0;
+    static uint32_t prev_time = 0;
+    static int32_t prev_seed = 0;
     turn_timer();
-    if (!(++iter & 3)) {
+    if (++iter & 1) {
+        return;
+    }
+    if (*game_not_started && !*map_random_seed) {
+        ThinkerVars->game_time_spent = 0;
+    } else {
         uint32_t now = GetTickCount();
         if (prev_time && now - prev_time > 0) {
             ThinkerVars->game_time_spent += now - prev_time;
         }
         prev_time = now;
+        /*
+        Fix faction graphics bug that appears when Alpha Centauri.ini
+        has a different set of faction filenames than the loaded scenario file.
+        If the game has an incorrect faction set, it requires loading the save once,
+        then quitting to main menu, and then loading the save again.
+        */
+        if (*game_state & STATE_IS_SCENARIO && *map_random_seed != prev_seed) {
+            char key[256];
+            char buf[256];
+            bool restart = false;
+            prev_seed = *map_random_seed;
+
+            for (int i=1; i < MaxPlayerNum; i++) {
+                snprintf(key, sizeof(key), "Faction %d", i);
+                int ret = GetPrivateProfileStringA(
+                    "Alpha Centauri", key, "", buf, sizeof(buf), ".\\Alpha Centauri.ini");
+                if (!ret || strcmp(MFactions[i].filename, buf)) {
+                    restart = true;
+                    WritePrivateProfileStringA(
+                        "Alpha Centauri", key, MFactions[i].filename, ".\\Alpha Centauri.ini");
+                }
+            }
+            if (restart) { // Return to main menu
+                *dword_9B2068 = 1;
+                *dword_93A948 = 1;
+            }
+        }
     }
 }
 

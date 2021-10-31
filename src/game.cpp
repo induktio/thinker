@@ -191,6 +191,18 @@ bool base_can_riot(int base_id) {
         && !has_facility(base_id, FAC_PUNISHMENT_SPHERE);
 }
 
+bool base_pop_boom(int base_id) {
+    BASE* b = &Bases[base_id];
+    Faction* f = &Factions[b->faction_id];
+    if (b->nutrient_surplus < Rules->nutrient_intake_req_citizen) {
+        return false;
+    }
+    return has_project(b->faction_id, FAC_CLONING_VATS)
+        || f->SE_growth_pending
+        + (has_facility(base_id, FAC_CHILDREN_CRECHE) ? 2 : 0)
+        + (b->state_flags & BSTATE_GOLDEN_AGE_ACTIVE ? 2 : 0) > 5;
+}
+
 bool can_use_teleport(int base_id) {
     return has_facility(base_id, FAC_PSI_GATE)
         && ~Bases[base_id].state_flags & BSTATE_PSI_GATE_USED;
@@ -251,6 +263,12 @@ void set_agenda(int faction1, int faction2, uint32_t agenda, bool add) {
 
 bool un_charter() {
     return *un_charter_repeals <= *un_charter_reinstates;
+}
+
+bool victory_done() {
+    // TODO: Check for scenario victory conditions
+    return *game_state & (STATE_VICTORY_CONQUER | STATE_VICTORY_DIPLOMATIC | STATE_VICTORY_ECONOMIC)
+        || has_project(-1, FAC_ASCENT_TO_TRANSCENDENCE);
 }
 
 bool valid_player(int faction) {
@@ -559,19 +577,6 @@ int cargo_loaded(int veh_id) {
     return n;
 }
 
-/*
-Original Offset: 005C1760
-*/
-int cargo_capacity(int veh_id) {
-    VEH* v = &Vehicles[veh_id];
-    UNIT* u = &Units[v->unit_id];
-    if (u->carry_capacity > 0 && veh_id < MaxProtoFactionNum 
-    && Weapon[u->weapon_type].offense_value < 0) {
-        return v->morale + 1;
-    }
-    return u->carry_capacity;
-}
-
 int mod_veh_skip(int veh_id) {
     VEH* veh = &Vehicles[veh_id];
     veh->waypoint_1_x = veh->x;
@@ -615,6 +620,16 @@ bool has_defenders(int x, int y, int faction) {
         if (veh->faction_id == faction && veh->x == x && veh->y == y
         && (veh->is_combat_unit() || veh->is_armored())
         && veh->triad() == TRIAD_LAND) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool has_colony_pods(int faction) {
+    for (int i=0; i<*total_num_vehicles; i++) {
+        VEH* veh = &Vehicles[i];
+        if (veh->faction_id == faction && veh->is_colony()) {
             return true;
         }
     }
@@ -755,6 +770,21 @@ void print_base(int id) {
 }
 
 /*
+Original Offset: 005C89A0
+*/
+int __cdecl game_year(int n) {
+    return Rules->normal_start_year + n;
+}
+
+/*
+Original Offset: 00422F00
+*/
+
+int __cdecl range(int value, int low, int high) {
+    return max(low, min(high, value));
+}
+
+/*
 Purpose: Calculate the offset and bitmask for the specified input.
 Original Offset: 0050BA00
 Return Value: n/a
@@ -762,6 +792,24 @@ Return Value: n/a
 void __cdecl bitmask(uint32_t input, uint32_t* offset, uint32_t* mask) {
     *offset = input / 8;
     *mask = 1 << (input & 7);
+}
+
+/*
+Original Offset: 004F6510
+*/
+int __cdecl fac_maint(int facility_id, int faction_id) {
+    CFacility& facility = Facility[facility_id];
+    MFaction& meta = MFactions[faction_id];
+    
+    for (int i=0; i < meta.faction_bonus_count; i++) {
+        if (meta.faction_bonus_val1[i] == facility_id
+        && (meta.faction_bonus_id[i] == FCB_FREEFAC
+        || (meta.faction_bonus_id[i] == FCB_FREEFAC_PREQ
+        && has_tech(faction_id, facility.preq_tech)))) {
+            return 0;
+        }
+    }
+    return facility.maint;
 }
 
 /*
@@ -829,6 +877,19 @@ int __cdecl mod_goody_at(int x, int y) {
 }
 
 /*
+Original Offset: 005C1760
+*/
+int __cdecl cargo_capacity(int veh_id) {
+    VEH* v = &Vehicles[veh_id];
+    UNIT* u = &Units[v->unit_id];
+    if (u->carry_capacity > 0 && veh_id < MaxProtoFactionNum
+    && Weapon[u->weapon_type].offense_value < 0) {
+        return v->morale + 1;
+    }
+    return u->carry_capacity;
+}
+
+/*
 Original Offset: 005C0DB0
 */
 bool __cdecl can_arty(int unit_id, bool allow_sea_arty) {
@@ -861,7 +922,7 @@ void __cdecl add_goal(int faction, int type, int priority, int x, int y, int bas
     if (!mapsq(x, y)) {
         return;
     }
-    if (ai_enabled(faction) && type < 200) { // Discard all non-Thinker goals
+    if (ai_enabled(faction) && type < Thinker_Goal_ID_First) {
         return;
     }
     debug("add_goal %d type: %3d pr: %2d x: %3d y: %3d base: %d\n",
@@ -1125,13 +1186,13 @@ MAP* TileSearch::get_next() {
                     (type == TS_TERRITORY_LAND && (is_ocean(sq) || sq->owner != faction)) ||
                     (type == TS_TERRITORY_BORDERS && (is_ocean(sq) || sq->owner != faction));
         if (!first && skip) {
-            if (!((type == TS_NEAR_ROADS && is_ocean(sq))
+            if ((type == TS_NEAR_ROADS && is_ocean(sq))
             || (type == TS_TERRITORY_LAND && (is_ocean(sq) || sq->owner != faction))
             || (type == TS_TRIAD_LAND && is_ocean(sq))
-            || (type == TS_TRIAD_SEA && !is_ocean(sq)))) {
-                return sq;
+            || (type == TS_TRIAD_SEA && !is_ocean(sq))) {
+                continue;
             }
-            continue;
+            return sq;
         }
         for (const int* t : NearbyTiles) {
             int x2 = wrap(rx + t[0]);

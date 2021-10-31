@@ -71,6 +71,8 @@ extern int* game_state;
 extern int* game_rules;
 extern int* diff_level;
 extern int* smacx_enabled;
+extern int* multiplayer_active;
+extern int* pbem_active;
 extern int* human_players;
 extern int* current_turn;
 extern int* active_faction;
@@ -96,8 +98,6 @@ extern int* un_charter_repeals;
 extern int* un_charter_reinstates;
 extern int* gender_default;
 extern int* plurality_default;
-extern int* multiplayer_active;
-extern int* pbem_active;
 extern int* sunspot_duration;
 extern int* current_player_faction; // MapWin->cOwner
 extern int* diplo_second_faction;
@@ -118,6 +118,7 @@ extern int* ParseStrGender;
 // TODO: rename dwords
 extern int* dword_915620;
 extern int* dword_9B2068;
+extern int* dword_93A948;
 extern int* dword_9B7AE4;
 extern int* dword_93A934;
 extern int* dword_945B18;

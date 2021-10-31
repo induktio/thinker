@@ -64,8 +64,7 @@
 
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 #define HOOK_API extern "C"
-#define min(x, y) std::min(x, y)
-#define max(x, y) std::max(x, y)
+#define THINKER_HEADER (short)0xACAC
 
 #ifdef BUILD_DEBUG
 #ifdef assert
@@ -125,7 +124,7 @@ can be set negative values to use the defaults from Alpha Centauri.ini.
 struct Config {
     int directdraw = 0;
     int disable_opening_movie = 1;
-    int cpu_idle_fix = 1;
+    int cpu_idle_fix = 1; // unlisted option
     int autosave_interval = 1;
     int smooth_scrolling = 0;
     int scroll_area = 40;
@@ -162,11 +161,12 @@ struct Config {
     int rare_supply_pods = 0;
     int landmarks = 0xffff;
     int revised_tech_cost = 1;
-    int cheap_early_tech = 0;
+    int cheap_early_tech = 1;
     int auto_relocate_hq = 1;
     int counter_espionage = 0;
     int ignore_reactor_power = 0;
-    int facility_capture_fix = 1;
+    int early_research_start = 1;
+    int facility_capture_fix = 1; // unlisted option
     int territory_border_fix = 1;
     int eco_damage_fix = 1;
     int clean_minerals = 16;
@@ -313,6 +313,16 @@ struct NodeComp {
     }
 };
 
+template <class T>
+T min (T a, T b) {
+    return std::min(a, b);
+}
+
+template <class T>
+T max (T a, T b) {
+    return std::max(a, b);
+}
+
 typedef std::set<MapNode,NodeComp> NodeSet;
 typedef std::set<Point,PointComp> Points;
 typedef std::list<Point> PointList;
@@ -335,7 +345,6 @@ extern AIPlans plans[MaxPlayerNum];
 DLL_EXPORT int ThinkerDecide();
 int opt_list_parse(int* ptr, char* buf, int len, int min_val);
 int plans_upkeep(int faction);
-int __cdecl mod_turn_upkeep();
 int __cdecl mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5);
 
 
