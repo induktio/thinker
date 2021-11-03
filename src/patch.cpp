@@ -146,6 +146,10 @@ int __cdecl content_pop() {
     return conf.content_pop_computer[*diff_level];
 }
 
+int __cdecl basewin_random_seed() {
+    return *current_base_id ^ *map_random_seed;
+}
+
 int __cdecl dummy_value() {
     return 0;
 }
@@ -678,9 +682,11 @@ bool patch_setup(Config* cf) {
     }
 
     if (DEBUG) {
-        remove_call(0x4E5F96); // #BEGINPROJECT
-        remove_call(0x4E5E0D); // #CHANGEPROJECT
-        remove_call(0x4F4817); // #DONEPROJECT
+        if (conf.minimal_popups) {
+            remove_call(0x4E5F96); // #BEGINPROJECT
+            remove_call(0x4E5E0D); // #CHANGEPROJECT
+            remove_call(0x4F4817); // #DONEPROJECT
+        }
         write_call(0x4DF19B, (int)spawn_veh); // Console_editor_veh
     }
     /*
@@ -749,6 +755,20 @@ bool patch_setup(Config* cf) {
     */
     if (FileExists(ac_movlist_txt) && !FileExists(ac_movlistx_txt)) {
         CopyFile(ac_movlist_txt, ac_movlistx_txt, TRUE);
+    }
+
+    /*
+    Patch base window bug where the population row would display superdrones
+    even though they would be suppressed by psych-related effects.
+    Also initialize Random::Random with base-specific constant instead of timeGetTime.
+    */
+    {
+        const byte old_bytes[] = {0xFF,0x15,0x68,0x93,0x66,0x00};
+        const byte new_bytes[] = {0xE8,0x00,0x00,0x00,0x00,0x90};
+        write_bytes(0x414B81, old_bytes, new_bytes, sizeof(new_bytes));
+        write_call(0x414B81, (int)basewin_random_seed); // BaseWin_draw_pop
+        memset((void*)0x414D52, 0x90, 5); // Superdrone icons, aliens
+        memset((void*)0x414EE2, 0x90, 7); // Superdrone icons, humans
     }
 
     if (cf->smac_only) {

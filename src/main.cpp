@@ -38,6 +38,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->disable_opening_movie = atoi(value);
     } else if (MATCH("thinker", "cpu_idle_fix")) {
         cf->cpu_idle_fix = atoi(value);
+    } else if (MATCH("thinker", "minimal_popups")) {
+        cf->minimal_popups = atoi(value);
     } else if (MATCH("thinker", "autosave_interval")) {
         cf->autosave_interval = atoi(value);
     } else if (MATCH("thinker", "smooth_scrolling")) {
@@ -110,6 +112,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->revised_tech_cost = atoi(value);
     } else if (MATCH("thinker", "cheap_early_tech")) {
         cf->cheap_early_tech = atoi(value);
+    } else if (MATCH("thinker", "tech_stagnate_rate")) {
+        cf->tech_stagnate_rate = max(1, atoi(value));
     } else if (MATCH("thinker", "auto_relocate_hq")) {
         cf->auto_relocate_hq = atoi(value);
     } else if (MATCH("thinker", "counter_espionage")) {

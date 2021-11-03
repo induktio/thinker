@@ -560,6 +560,10 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
     } else if (tools && msg == WM_CHAR && wParam == 'z' && GetAsyncKeyState(VK_MENU) < 0) {
         int x = pMain->oMap.iTileX, y = pMain->oMap.iTileY;
+        int base_id;
+        if ((base_id = base_at(x, y)) >= 0) {
+            print_base(base_id);
+        }
         print_map(x, y);
         for (int k=0; k < *total_num_vehicles; k++) {
             VEH* veh = &Vehicles[k];

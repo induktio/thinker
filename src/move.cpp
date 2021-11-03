@@ -1272,7 +1272,8 @@ bool can_farm(int x, int y, int faction, int bonus, bool has_nut, MAP* sq) {
         return false;
     if (sq->landmarks & LM_JUNGLE && !has_nut)
         return false;
-    if (nearby_items(x, y, 1, BIT_FOREST) < (sq->items & BIT_FOREST ? 4 : 1)
+    if (nearby_items(x, y, 1, BIT_FOREST)
+    < (sq->items & BIT_FOREST ? 4 : 2) + (sq->landmarks & LM_JUNGLE ? 1 : 0)
     && has_terra(faction, FORMER_FOREST, is_ocean(sq)))
         return false;
     if (!has_nut && nearby_items(x, y, 1, BIT_FARM | BIT_SOLAR) > 2)

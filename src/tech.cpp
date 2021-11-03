@@ -59,13 +59,13 @@ int tech_cost(int faction, int tech) {
         diff_factor = TechCostRatios[*diff_level] / 100.0;
     }
     if (conf.cheap_early_tech) {
-        diff_factor *= 0.4 + 0.6 * range(our_techs, 1, 16) / 16.0;
+        diff_factor *= 0.4 + 0.6 * clamp(our_techs, 1, 16) / 16.0;
     }
     double cost = (5 * pow(level, 3) + 75 * level)
         * diff_factor
         * *map_area_sq_root / 56.0
         * m->rule_techcost / 100.0
-        * (*game_rules & RULES_TECH_STAGNATION ? 1.5 : 1.0)
+        * (*game_rules & RULES_TECH_STAGNATION ? conf.tech_stagnate_rate / 100.0 : 1.0)
         * 100.0 / max(1, Rules->rules_tech_discovery_rate)
         * (1.0 - 0.05*min(6, owners));
 

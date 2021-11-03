@@ -49,44 +49,43 @@ In the original game, research costs were mainly decided by how many techs a fac
 
 The config option `revised_tech_cost` attempts to remake this mechanic so that the research cost for any particular tech is fixed and depends mainly on the level of the tech. This follows the game design choices that were also made in later Civilization games.
 
-As an additional feature, any faction with negative base RESEARCH rating will start accumulating labs on the first turn. This is unlike the vanilla rules where each negative point results in an additional 5 turn delay before the faction starts accumulating labs (e.g. Believers had a 10 turn delay).
-
 For example, in the default tech tree, Social Psych is level 1 and Transcendent Thought is level 16. Enabling this feature should notably delay the tech race in mid to late game. See also [a helpful chart](https://alphacentauri2.info/index.php?action=downloads;sa=view;down=355) of the standard tech tree. The base cost for any particular tech is determined by this formula:
 
-    6 * Level^3 + 74 * Level - 20
+    5 * Level^3 + 75 * Level
 
 Here are the base costs for standard maps:
 
-| Level | Labs   |
-|-------|--------|
-|     1 |     60 |
-|     2 |    176 |
-|     3 |    364 |
-|     4 |    660 |
-|     5 |   1100 |
-|     6 |   1720 |
-|     7 |   2556 |
-|     8 |   3644 |
-|     9 |   5020 |
-|    10 |   6720 |
-|    11 |   8780 |
-|    12 |  11236 |
-|    13 |  14124 |
-|    14 |  17480 |
-|    15 |  21340 |
-|    16 |  25740 |
+| Level | Labs  |
+|-------|-------|
+|     1 |    80 |
+|     2 |   190 |
+|     3 |   360 |
+|     4 |   620 |
+|     5 |  1000 |
+|     6 |  1530 |
+|     7 |  2240 |
+|     8 |  3160 |
+|     9 |  4320 |
+|    10 |  5750 |
+|    11 |  7480 |
+|    12 |  9540 |
+|    13 | 11960 |
+|    14 | 14770 |
+|    15 | 18000 |
+|    16 | 21680 |
 
 The idea here is that level 1-3 costs stay relatively modest and the big cost increases should begin from level 4 onwards.
+This feature is also designed to work with `counter_espionage` option. Keeping the infiltration active can provide notable discounts for researching new techs if they can't be acquired by using probe teams.
+
 After calculating the base cost, it is multiplied by all of the following factors.
 
 * For AI factions, `tech_cost_factor` scales the cost for each difficulty level, e.g. `tech_cost_factor=84` equals 84% of human cost.
 * Multiply by the square root of the map size divided by the square root of a standard map size (56).
 * Multiply by faction specific TECHCOST modifier (higher values means slower progress).
-* Divide by Technology discovery rate set in alphax.txt (higher values means faster progress).
-* If tech stagnation is enabled, multiply by 1.5.
-* If 2 or more factions with commlink to the current faction has the tech, multiply by 0.75.
-* If only 1 commlink faction has it, multiply by 0.85.
-* If `cheap_early_tech` is enabled, apply a decreasing discount from 55% to 5% until the first 10 techs are discovered.
+* Divide by Technology Discovery Rate set in alphax.txt (higher values means faster progress).
+* If Tech Stagnation is enabled, multiply by the amount set in `tech_stagnate_rate` option.
+* Count every other faction with commlink to the current faction who has the tech, while infiltrated factions count twice. Discount 5% for every point in this value. Maximum allowed discount from this step is 30%. Only infiltration gained using probe teams counts for the purposes of extra discount, the Empath Guild or Planetary Governor status is ignored in this step.
+* If `cheap_early_tech` is enabled, apply a decreasing discount from 60% to 0% until the first 16 techs are discovered.
 
 The final cost calculated by this formula is visible in the F2 status screen after the label "TECH COST". Note that the social engineering RESEARCH rating does not affect this number. Instead it changes "TECH PER TURN" value displayed on the same screen.
 
@@ -95,7 +94,7 @@ Expiring infiltration feature
 =============================
 Normally establishing infiltration with a probe team on another faction is permanent and cannot be removed in any way. In multiplayer games this can be especially unbalanced. Thinker provides a config option `counter_espionage` to make infiltration expire randomly based on a variety of factors.
 
-When enabled, for each turn for every infiltration active to the current faction (defender), a score is calculated and rolled against a random chance. If the roll succeeds, both factions will get a message of removed infiltration on their turn and the infiltration stops immediately. While allied to another faction, infiltration will never expire. The score is based on these factors:
+When enabled, for each turn for every infiltration active to the current faction (defender), a score is calculated and rolled against a random chance. If the roll succeeds, both factions will get a message of removed infiltration on their turn and the infiltration stops immediately. While allied to another faction or having the Empath Guild, infiltration will never expire. The score is based on these factors:
 
 * Get the current social engineering PROBE rating for both factions.
 * Having Hunter Seeker Algorithm or Nethack Terminus will give +1 bonus each.
@@ -156,7 +155,7 @@ Currently the features listed here are not supported while Thinker is enabled. T
 
 1. Network multiplayer (excluding PBEM) is not supported because of the large amounts of extra code required to synchronize the game state across computers.
 2. More factions/units/bases. These limits were hardcoded in the game binary at compilation time and are not feasible to change without a full open source port.
-3. Some custom scenario rules in "Edit Scenario Rules" menus are not supported fully. This will not affect randomly generated maps. However these rules are supported: No terraforming, No colony pods can be built and No secret projects can be built.
+3. Some custom scenario rules in "Edit Scenario Rules" menus are not supported fully. This will not affect randomly generated maps. However these rules are supported: `No terraforming`, `No colony pods can be built`, `No secret projects can be built` and `No technological advances`.
 
 
 Known bugs
@@ -168,7 +167,7 @@ Known bugs
 
 Other patches included
 ======================
-Some notable game engine patches included may not have their separate config option, but they are listed here.
+Some notable game engine patches included with Thinker may not have their separate config option, but they are listed here.
 
 1. Base governors of all factions will now prefer to work borehole tiles instead of always emphasizing food production. The patch makes governors assume borehole tiles produce 1 food but this will not affect the actual nutrient intake or anything else beyond tile selection.
 2. Make sure the game engine can read movie settings from "movlistx.txt" while using smac_only mode.
@@ -177,7 +176,12 @@ Some notable game engine patches included may not have their separate config opt
 5. Fix game showing redundant "rainfall patterns have been altered" messages when these events are caused by other factions.
 6. Fix a bug that occurs after the player does an artillery attack on unoccupied tile and then selects another unit to view combat odds and cancels the attack. After this veh_attack_flags will not get properly cleared and the next bombardment on an unoccupied tile always results in the destruction of the bombarding unit.
 7. Patch AI vehicle home base reassignment bug. This change inverts the old condition where an apparent oversight made the engine to reassign vehicles to bases with mineral_surplus < 2.
-8. When capturing a base, Recycling Tanks and Recreation Commons are not always destroyed unlike previously. They are sometimes randomly destroyed like other facilities.
+8. Patch the game engine to use significantly less CPU time when idling using a method similar to [smac-cpu-fix](https://github.com/vinceho/smac-cpu-fix/). Normally the game uses 100% of CPU time which can be be a problem on laptop devices.
+9. When capturing a base, Recycling Tanks and Recreation Commons are not always destroyed unlike previously. They are sometimes randomly destroyed like other facilities.
+10. Fix faction graphics bug that appears when Alpha Centauri.ini has a different set of faction filenames than the loaded scenario file. If the game has an incorrect faction set, the patch will quit to main menu so that the correct faction set will be available when the save is reloaded.
+11. Game now properly uses the Command Center maintenance cost that is set in alphax.txt. Normally the game would ignore this value and make the cost dependent on faction's best reactor value which is inconsistent with the other settings for facilities in alphax.txt.
+12. Sometimes base window population row would display superdrones even though they would be suppressed by psych-related effects. The patch removes superdrone icons from the main population row and uses regular worker/drone/talent icons if applicable. To check the superdrone status, open the psych sub window.
+13. Fix visual bug where population icons in base window would randomly switch their type when clicking on them.
 
 
 Scient's patch

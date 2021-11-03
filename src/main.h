@@ -125,6 +125,7 @@ struct Config {
     int directdraw = 0;
     int disable_opening_movie = 1;
     int cpu_idle_fix = 1; // unlisted option
+    int minimal_popups = 0; // unlisted option
     int autosave_interval = 1;
     int smooth_scrolling = 0;
     int scroll_area = 40;
@@ -162,6 +163,7 @@ struct Config {
     int landmarks = 0xffff;
     int revised_tech_cost = 1;
     int cheap_early_tech = 1;
+    int tech_stagnate_rate = 150;
     int auto_relocate_hq = 1;
     int counter_espionage = 0;
     int ignore_reactor_power = 0;
@@ -314,13 +316,18 @@ struct NodeComp {
 };
 
 template <class T>
-T min (T a, T b) {
+const T& min (const T& a, const T& b) {
     return std::min(a, b);
 }
 
 template <class T>
-T max (T a, T b) {
+const T& max (const T& a, const T& b) {
     return std::max(a, b);
+}
+
+template <class T>
+const T& clamp (const T& value, const T& low, const T& high) {
+    return (value < low ? low : (value > high ? high : value));
 }
 
 typedef std::set<MapNode,NodeComp> NodeSet;

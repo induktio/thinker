@@ -30,8 +30,8 @@ int __cdecl mod_base_prod_choices(int id, int v1, int v2, int v3) {
         } else if (!base->item_is_unit() && !can_build(id, abs(item))) {
             debug("BUILD CHANGE\n");
             choice = select_production(id);
-        } else if (!base->item_is_unit()
-        && (Rules->retool_strictness == 0 || !base->item_is_project())
+        } else if ((!base->item_is_unit() || !Units[item].is_defend_unit())
+        && (!base->item_is_project() || base->minerals_accumulated < 4*Rules->retool_exemption)
         && !has_defenders(base->x, base->y, faction)) {
             debug("BUILD DEFENSE\n");
             choice = find_proto(id, TRIAD_LAND, COMBAT, DEF);

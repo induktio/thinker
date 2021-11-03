@@ -767,6 +767,9 @@ struct UNIT {
     bool is_combat_unit() {
         return weapon_type <= WPN_PSI_ATTACK;
     }
+    bool is_defend_unit() {
+        return armor_type != ARM_NO_ARMOR || weapon_type <= WPN_PSI_ATTACK;
+    }
 };
 
 struct VEH {

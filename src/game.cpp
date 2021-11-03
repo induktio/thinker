@@ -795,6 +795,9 @@ void __cdecl bitmask(uint32_t input, uint32_t* offset, uint32_t* mask) {
 }
 
 /*
+Purpose: Calculate facility maintenance cost taking into account faction bonus facilities.
+Vanilla game calculates Command Center maintenance based on the current highest reactor level
+which is unnecessary to implement here.
 Original Offset: 004F6510
 */
 int __cdecl fac_maint(int facility_id, int faction_id) {
