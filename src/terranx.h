@@ -169,6 +169,7 @@ typedef void(__cdecl *Fname_base)(int faction, char* name, int flags, int water)
 typedef int(__cdecl *Fveh_cost)(int item_id, int base_id, int* ptr);
 typedef int (__cdecl *Fsave_daemon)(char* filename);
 typedef int(__cdecl *Fbase_at)(int x, int y);
+typedef int (__cdecl *FX_pop)(const char* filename, const char* label, int a3, int a4, int a5, int a6);
 
 extern Fbattle_fight_1 battle_fight_1;
 extern Fpropose_proto propose_proto;
@@ -183,6 +184,7 @@ extern Fname_base name_base;
 extern Fveh_cost veh_cost;
 extern Fsave_daemon save_daemon;
 extern Fbase_at base_at;
+extern FX_pop X_pop;
 
 extern fp_4int veh_init;
 extern fp_1int veh_skip;

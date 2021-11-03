@@ -145,6 +145,12 @@ int __cdecl content_pop() {
     }
     return conf.content_pop_computer[*diff_level];
 }
+int __cdecl mod_X_pop2(const char* label, int a2) {
+    if (!strcmp(label, "MIMIMI") && !conf.warn_on_former_replace) {
+        return 1;
+    }
+    return X_pop("SCRIPT", label, -1, 0, 0, a2);
+}
 
 int __cdecl basewin_random_seed() {
     return *current_base_id ^ *map_random_seed;
@@ -620,6 +626,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x579B70, (int)add_site);
     write_jump(0x579D80, (int)wipe_goals);
     write_jump(0x527290, (int)mod_faction_upkeep);
+    write_jump(0x5BF310, (int)mod_X_pop2);
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
     write_call(0x4E61D0, (int)mod_base_prod_choices);

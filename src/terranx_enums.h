@@ -766,7 +766,7 @@ enum diplo_status {
     DIPLO_WANT_TO_TALK = 0x2000,
     DIPLO_UNK_4000 = 0x4000,
     DIPLO_UNK_8000 = 0x8000,
-    DIPLO_UNK_10000 = 0x10000,
+    DIPLO_UNK_10000 = 0x10000, // "informal" truce status?
     DIPLO_UNK_20000 = 0x20000,
     DIPLO_ATROCITY_VICTIM = 0x40000,
     DIPLO_UNK_80000 = 0x80000,

@@ -130,6 +130,7 @@ struct Config {
     int smooth_scrolling = 0;
     int scroll_area = 40;
     int world_map_labels = 1;
+    int warn_on_former_replace = 1;
     int render_probe_labels = 1;
     int foreign_treaty_popup = 0;
     int new_base_names = 0;

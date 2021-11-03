@@ -922,6 +922,24 @@ void show_mod_stats() {
     popp("modmenu", "STATS", 0, "markbm_sm.pcx", 0);
 }
 
+int show_mod_config() {
+    int ret;
+    while (true) {
+        parse_says(0, (conf.world_map_labels ? "true" : "false"), -1, -1);
+        parse_says(1, (conf.warn_on_former_replace ? "true" : "false"), -1, -1);
+        ret = popp("modmenu", "OPTIONS", 0, "stars_sm.pcx", 0);
+        if (ret == 0) {
+            break;
+        } else if (ret == 1) {
+            conf.world_map_labels = !conf.world_map_labels;
+            draw_map(1);
+        } else if (ret == 2) {
+            conf.warn_on_former_replace = !conf.warn_on_former_replace;
+        }
+    }
+    return 0;
+}
+
 int show_mod_menu() {
     parse_says(0, MOD_VERSION, -1, -1);
     parse_says(1, MOD_VERSION, -1, -1);
@@ -944,8 +962,7 @@ int show_mod_menu() {
         show_mod_stats();
     }
     else if (ret == 2 && !*game_not_started) {
-        conf.world_map_labels = !conf.world_map_labels;
-        draw_map(1);
+        show_mod_config();
     }
     else if (ret == 3) {
         popup_homepage();

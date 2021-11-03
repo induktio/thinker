@@ -107,6 +107,7 @@ Fname_base name_base = (Fname_base)0x4E4090;
 Fveh_cost veh_cost = (Fveh_cost)0x5C1850;
 Fsave_daemon save_daemon = (Fsave_daemon)0x5A94F0;
 Fbase_at base_at = (Fbase_at)0x4E3A50;
+FX_pop X_pop = (FX_pop)0x5BF480;
 
 fp_4int veh_init = (fp_4int)0x5C03D0;
 fp_1int veh_skip = (fp_1int)0x5C1D20;

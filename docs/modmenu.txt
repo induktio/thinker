@@ -22,7 +22,7 @@ Open Project Homepage
 
 Close Dialog
 Show Statistics
-Toggle World Map Labels
+Show Options
 Open Project Homepage
 
 #STATS
@@ -38,6 +38,19 @@ Open Project Homepage
 ^^Faction population: $NUM7
 ^^Faction mineral production: $NUM8
 ^^Faction energy production: $NUM9
+
+#OPTIONS
+#xs 400
+#caption Thinker Mod Options
+^^
+World map labels: {$OPT0}
+^^
+Warn on former replacing existing improvements: {$OPT1}
+^^
+
+Close Dialog
+Toggle World Map Labels
+Toggle Former Warnings
 
 #GENERIC
 #xs 400

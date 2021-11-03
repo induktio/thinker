@@ -48,6 +48,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->scroll_area = max(0, atoi(value));
     } else if (MATCH("thinker", "world_map_labels")) {
         cf->world_map_labels = atoi(value);
+    } else if (MATCH("thinker", "warn_on_former_replace")) {
+        cf->warn_on_former_replace = atoi(value);
     } else if (MATCH("thinker", "render_probe_labels")) {
         cf->render_probe_labels = atoi(value);
     } else if (MATCH("thinker", "foreign_treaty_popup")) {
