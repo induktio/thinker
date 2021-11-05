@@ -123,6 +123,8 @@ extern int* dword_9B7AE4;
 extern int* dword_93A934;
 extern int* dword_945B18;
 extern int* dword_945B1C;
+extern int* diplo_value_93FA98;
+extern int* diplo_value_93FA24;
 
 extern MFaction* MFactions;
 extern Faction* Factions;

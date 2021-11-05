@@ -64,6 +64,8 @@ int* dword_9B7AE4 = (int*)0x9B7AE4;
 int* dword_93A934 = (int*)0x93A934;
 int* dword_945B18 = (int*)0x945B18;
 int* dword_945B1C = (int*)0x945B1C;
+int* diplo_value_93FA98 = (int*)0x93FA98;
+int* diplo_value_93FA24 = (int*)0x93FA24;
 
 MFaction* MFactions = (MFaction*)0x946A50;
 Faction* Factions = (Faction*)0x96C9E0;

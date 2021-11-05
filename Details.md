@@ -182,6 +182,7 @@ Some notable game engine patches included with Thinker may not have their separa
 11. Game now properly uses the Command Center maintenance cost that is set in alphax.txt. Normally the game would ignore this value and make the cost dependent on faction's best reactor value which is inconsistent with the other settings for facilities in alphax.txt.
 12. Sometimes base window population row would display superdrones even though they would be suppressed by psych-related effects. The patch removes superdrone icons from the main population row and uses regular worker/drone/talent icons if applicable. To check the superdrone status, open the psych sub window.
 13. Fix visual bug where population icons in base window would randomly switch their type when clicking on them.
+14. Patch AIs to initiate much less diplomacy dialogs when the player captures their bases. Previously this happened at least once for every turn the AI loses any bases and would repeat the same dialog every time if the player didn't agree to the peace terms. The patch makes the initiation of dialog more dependent on random chance unless the AI would finally accept surrender terms.
 
 
 Scient's patch

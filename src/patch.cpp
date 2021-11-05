@@ -126,9 +126,26 @@ void check_relocate_hq(int faction) {
 
 int __cdecl mod_capture_base(int base_id, int faction, int probe) {
     int old_faction = Bases[base_id].faction_id;
+    int vendetta = at_war(faction, old_faction);
+    int last_spoke = *current_turn - Factions[faction].diplo_spoke[old_faction];
     assert(valid_player(faction) && faction != old_faction);
     capture_base(base_id, faction, probe);
     check_relocate_hq(old_faction);
+    /*
+    Prevent AIs from initiating diplomacy once every turn after losing a base.
+    Allow dialog if surrender is possible given the diplomacy check values.
+    */
+    if (vendetta && is_human(faction) && !is_human(old_faction) && last_spoke < 10
+    && !*diplo_value_93FA98 && !*diplo_value_93FA24) {
+        int div = max(2, 6 - last_spoke/2) +
+            (has_treaty(old_faction, faction, DIPLO_ATROCITY_VICTIM | DIPLO_WANT_REVENGE) ? 4 : 0);
+        if ((Factions[old_faction].current_num_bases + *total_num_vehicles/8 + *current_turn) % div) {
+            set_treaty(faction, old_faction, DIPLO_WANT_TO_TALK, 0);
+            set_treaty(old_faction, faction, DIPLO_WANT_TO_TALK, 0);
+        }
+    }
+    debug("capture_base %3d %3d old_owner: %d new_owner: %d last_spoke: %d v1: %d v2: %d\n",
+        *current_turn, base_id, old_faction, faction, last_spoke, *diplo_value_93FA98, *diplo_value_93FA24);
     return 0;
 }
 
