@@ -197,12 +197,12 @@ struct MFaction {
     /*
     Thinker-specific save game variables.
     */
-    short thinker_header;
-    char thinker_flags;
-    char thinker_tech_id;
-    int thinker_tech_cost;
+    int16_t thinker_header;
+    int8_t thinker_flags;
+    int8_t thinker_tech_id;
+    int32_t thinker_tech_cost;
     float thinker_enemy_range;
-    int thinker_probe_flags;
+    int32_t thinker_probe_flags;
     char pad_1[112];
     /*
     End of block
@@ -210,7 +210,7 @@ struct MFaction {
     char noun_faction[24];
     int noun_gender;
     int is_noun_plural;
-    char adj_name_faction[128];
+    char adj_name_faction[128]; //  // drops 2nd entry on line (abbreviation value?)
     char formal_name_faction[40];
     char insult_leader[24];
     char desc_name_faction[24];

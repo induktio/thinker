@@ -1030,13 +1030,15 @@ bool can_build_base(int x, int y, int faction, int triad) {
     MAP* sq;
     if (!(sq = mapsq(x, y))) // Invalid map coordinates
         return false;
-    if (y < 3 || y >= *map_axis_y - 3)
+    if (y < 3 || y >= *map_axis_y - 3 && *MapSizePlanet > 0)
         return false;
-    if (*map_toggle_flat & 1 && (x < 2 || x >= *map_axis_x - 2))
+    if (*map_toggle_flat & 1 && (x < 2 || x >= *map_axis_x - 2) && *MapSizePlanet > 0)
         return false;
     if ((sq->is_rocky() && !is_ocean(sq)) || (sq->items & (BIT_BASE_DISALLOWED | BIT_ADVANCED)))
         return false;
-    if (sq->is_owned() && faction != sq->owner && !at_war(faction, sq->owner))
+    // Allow base building on smaller maps in owned territory if a new faction is spawning.
+    if (sq->is_owned() && faction != sq->owner && !at_war(faction, sq->owner)
+    && Factions[faction].current_num_bases > 0)
         return false;
     if (non_ally_in_tile(x, y, faction))
         return false;
@@ -1057,7 +1059,8 @@ bool can_build_base(int x, int y, int faction, int triad) {
     }
     if (triad != TRIAD_SEA && !is_ocean(sq)) {
         return true;
-    } else if ((triad == TRIAD_SEA || triad == TRIAD_AIR) && is_ocean_shelf(sq)) {
+    }
+    if ((triad == TRIAD_SEA || triad == TRIAD_AIR) && is_ocean_shelf(sq)) {
         return true;
     }
     return false;

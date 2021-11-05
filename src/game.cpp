@@ -803,7 +803,7 @@ Original Offset: 004F6510
 int __cdecl fac_maint(int facility_id, int faction_id) {
     CFacility& facility = Facility[facility_id];
     MFaction& meta = MFactions[faction_id];
-    
+
     for (int i=0; i < meta.faction_bonus_count; i++) {
         if (meta.faction_bonus_val1[i] == facility_id
         && (meta.faction_bonus_id[i] == FCB_FREEFAC
@@ -813,6 +813,69 @@ int __cdecl fac_maint(int facility_id, int faction_id) {
         }
     }
     return facility.maint;
+}
+
+/*
+Purpose: Calculate nutrient/mineral cost factors for base production.
+In vanilla game mechanics, if the player faction is ranked first, then the AIs will get
+an additional +1 growth/industry bonus. This modified version removes the bonus.
+Original Offset: 004E4430
+*/
+int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id) {
+    int value;
+    int multiplier = (is_mineral ? Rules->mineral_cost_multi : Rules->nutrient_cost_multi);
+
+    if (is_human(faction_id)) {
+        value = multiplier;
+    } else {
+        value = multiplier * CostRatios[*diff_level] / 10;
+    }
+
+    if (*MapSizePlanet == 0) {
+        value = 8 * value / 10;
+    } else if (*MapSizePlanet == 1) {
+        value = 9 * value / 10;
+    }
+    if (is_mineral) {
+        if (is_mineral == 1) {
+            switch (Factions[faction_id].SE_industry_pending) {
+                case -7:
+                case -6:
+                case -5:
+                case -4:
+                case -3:
+                    return (13 * value + 9) / 10;
+                case -2:
+                    return (6 * value + 4) / 5;
+                case -1:
+                    return (11 * value + 9) / 10;
+                case 0:
+                    break;
+                case 1:
+                    return (9 * value + 9) / 10;
+                case 2:
+                    return (4 * value + 4) / 5;
+                case 3:
+                    return (7 * value + 9) / 10;
+                case 4:
+                    return (3 * value + 4) / 5;
+                default:
+                    return (value + 1) / 2;
+            }
+        }
+        return value;
+    } else {
+        int growth = Factions[faction_id].SE_growth_pending;
+        if (base_id >= 0) {
+            if (has_facility(base_id, FAC_CHILDREN_CRECHE)) {
+                growth += 2;
+            }
+            if (Bases[base_id].state_flags & BSTATE_GOLDEN_AGE_ACTIVE) {
+                growth += 2;
+            }
+        }
+        return (value * (10 - clamp(growth, -2, 5)) + 9) / 10;
+    }
 }
 
 /*

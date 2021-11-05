@@ -64,7 +64,7 @@
 
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 #define HOOK_API extern "C"
-#define THINKER_HEADER (short)0xACAC
+#define THINKER_HEADER (int16_t)0xACAC
 
 #ifdef BUILD_DEBUG
 #ifdef assert
@@ -162,6 +162,7 @@ struct Config {
     int nutrient_bonus = 0;
     int rare_supply_pods = 0;
     int landmarks = 0xffff;
+    int simple_cost_factor = 1;
     int revised_tech_cost = 1;
     int cheap_early_tech = 1;
     int tech_stagnate_rate = 150;

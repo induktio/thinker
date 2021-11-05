@@ -48,6 +48,9 @@ int __cdecl mod_turn_upkeep() {
             *game_state &= ~STATE_DEBUG_MODE;
         }
     }
+    if (*current_turn == 1 && conf.ignore_reactor_power) {
+        *game_preferences &= ~PREF_BSC_AUTO_DESIGN_VEH;
+    }
     snprintf(ThinkerVars->build_date, 12, MOD_DATE);
     return 0;
 }

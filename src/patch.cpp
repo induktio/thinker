@@ -39,6 +39,9 @@ int __cdecl governor_only_crop_yield(int faction, int base_id, int x, int y, int
 }
 
 bool maybe_riot(int base_id) {
+    /*
+    Check if the base might riot on next turn, usually after a population increase.
+    */
     BASE* b = &Bases[base_id];
 
     if (!base_can_riot(base_id)) {
@@ -145,6 +148,7 @@ int __cdecl content_pop() {
     }
     return conf.content_pop_computer[*diff_level];
 }
+
 int __cdecl mod_X_pop2(const char* label, int a2) {
     if (!strcmp(label, "MIMIMI") && !conf.warn_on_former_replace) {
         return 1;
@@ -845,6 +849,9 @@ bool patch_setup(Config* cf) {
         write_call(0x506D07, (int)mod_best_defender);
         write_call(0x5082AF, (int)battle_fight_parse_num);
         write_call(0x5082B7, (int)battle_fight_parse_num);
+    }
+    if (cf->simple_cost_factor) {
+        write_jump(0x4E4430, (int)mod_cost_factor);
     }
     if (cf->early_research_start) {
         /* Remove labs start delay from factions with negative RESEARCH value. */

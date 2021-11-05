@@ -22,7 +22,7 @@ Open Project Homepage
 
 Close Dialog
 Show Statistics
-Show Options
+Change Mod Options
 Open Project Homepage
 
 #STATS
@@ -42,11 +42,8 @@ Open Project Homepage
 #OPTIONS
 #xs 400
 #caption Thinker Mod Options
-^^
-World map labels: {$OPT0}
-^^
-Warn on former replacing existing improvements: {$OPT1}
-^^
+^World map labels: {$OPT0}
+^Warn on former replacing tile improvements: {$OPT1}
 
 Close Dialog
 Toggle World Map Labels
