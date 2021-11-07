@@ -84,7 +84,7 @@ int __cdecl mod_enemy_move(const int id) {
     VEH* veh = &Vehicles[id];
     debug("enemy_move %2d %2d %s\n", veh->x, veh->y, veh->name());
 
-    if (ai_enabled(veh->faction_id)) {
+    if (thinker_enabled(veh->faction_id)) {
         int triad = veh->triad();
         if (!mapsq(veh->x, veh->y)) {
             return SYNC;
@@ -108,7 +108,7 @@ int __cdecl mod_enemy_move(const int id) {
 int __cdecl log_veh_kill(int UNUSED(ptr), int id, int UNUSED(owner), int UNUSED(unit_id)) {
     /* This logging function is called whenever a vehicle is removed/killed for any reason. */
     VEH* veh = &Vehicles[id];
-    if (ai_enabled(*active_faction) && at_war(*active_faction, veh->faction_id)) {
+    if (thinker_enabled(*active_faction) && at_war(*active_faction, veh->faction_id)) {
         if (veh->x >= 0 && veh->y >= 0) {
             adjust_value(pm_enemy_near, veh->x, veh->y, 2, -1);
             pm_enemy[veh->x][veh->y]--;
@@ -471,7 +471,7 @@ void update_main_region(int faction) {
 void move_upkeep(int faction, bool visual) {
     Faction& f = Factions[faction];
     AIPlans& p = plans[faction];
-    if (!ai_enabled(faction)) {
+    if (!thinker_enabled(faction)) {
         return;
     }
     int tile_count[MaxRegionNum] = {};

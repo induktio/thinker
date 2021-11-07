@@ -229,6 +229,14 @@ int cmd_parse(Config* cf) {
     return 1;
 }
 
+int game_ini_parse(Config* cf) {
+    cf->world_map_labels = GetPrivateProfileIntA(
+        ModAppName, "world_map_labels", cf->world_map_labels, GameIniFile);
+    cf->warn_on_former_replace = GetPrivateProfileIntA(
+        ModAppName, "warn_on_former_replace", cf->warn_on_former_replace, GameIniFile);
+    return 1;
+}
+
 DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LPVOID UNUSED(lpvReserved)) {
     switch (fdwReason) {
         case DLL_PROCESS_ATTACH:
@@ -240,7 +248,7 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
                     MOD_VERSION, MB_OK | MB_ICONSTOP);
                 return FALSE;
             }
-            if (!cmd_parse(&conf) || !patch_setup(&conf)) {
+            if (!game_ini_parse(&conf) || !cmd_parse(&conf) || !patch_setup(&conf)) {
                 return FALSE;
             }
             srand(time(0));
@@ -351,7 +359,7 @@ int plans_upkeep(int faction) {
         }
     }
 
-    if (ai_enabled(faction)) {
+    if (thinker_enabled(faction)) {
         const int i = faction;
         int minerals[MaxBaseNum];
         int population[MaxBaseNum];
@@ -619,7 +627,7 @@ int __cdecl mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5) {
     int impunity = 0;
     int penalty = 0;
 
-    if (!conf.social_ai || !ai_enabled(faction)) {
+    if (!conf.social_ai || !thinker_enabled(faction)) {
         return social_ai(faction, v1, v2, v3, v4, v5);
     }
     if (f->SE_upheaval_cost_paid > 0) {

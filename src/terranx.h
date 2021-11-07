@@ -70,7 +70,7 @@ extern int* game_warnings;
 extern int* game_state;
 extern int* game_rules;
 extern int* diff_level;
-extern int* smacx_enabled;
+extern int* expansion_enabled;
 extern int* multiplayer_active;
 extern int* pbem_active;
 extern int* human_players;
@@ -87,10 +87,10 @@ extern int* map_axis_y;
 extern int* map_half_x;
 extern int* MapSizePlanet;
 extern int* MapOceanCoverage;
-extern int* MapLandCoverage; // 2 - MapOceanCoverage
+extern int* MapLandCoverage;
 extern int* MapErosiveForces;
-extern int* MapPlanetaryOrbit; // affects temp
-extern int* MapCloudCover; // affects rainfall, rivers
+extern int* MapPlanetaryOrbit;
+extern int* MapCloudCover;
 extern int* MapNativeLifeForms;
 extern int* MapLandmarkCount;
 extern int* climate_future_change;
@@ -99,11 +99,10 @@ extern int* un_charter_reinstates;
 extern int* gender_default;
 extern int* plurality_default;
 extern int* sunspot_duration;
-extern int* current_player_faction; // MapWin->cOwner
+extern int* current_player_faction;
 extern int* diplo_second_faction;
 extern int* diplo_third_faction;
 extern int* diplo_tech_faction;
-extern int* diplo_current_friction;
 extern int* reportwin_opponent_faction;
 extern int* base_find_dist;
 extern int* veh_attack_flags;
@@ -126,6 +125,19 @@ extern int* dword_945B1C;
 extern int* diplo_value_93FA98;
 extern int* diplo_value_93FA24;
 
+extern uint8_t* TechOwners;
+extern int* SecretProjects;
+extern int* CostRatios;
+extern uint8_t* FactionStatus;
+extern int16_t (*FactionTurnMight)[8];
+extern int* FactionRankings;
+extern int* RankingFactionIDUnk1;
+extern int* RankingFactionIDUnk2;
+extern int* FactionRankingsUnk;
+extern int* DiploFriction;
+extern int* DiploFrictionFactionIDWith;
+extern int* DiploFrictionFactionID;
+
 extern MFaction* MFactions;
 extern Faction* Factions;
 extern BASE* Bases;
@@ -133,12 +145,8 @@ extern UNIT* Units;
 extern VEH* Vehicles;
 extern VEH* Vehs;
 extern MAP** MapPtr;
-extern Continent* Continents; // [128]
-extern Landmark *Landmarks; // [64]
-extern uint8_t* TechOwners;
-extern int* SecretProjects;
-extern int* CostRatios;
-extern int16_t (*FactionRankings)[8]; // Per turn might ratings for each faction
+extern Continent* Continents;
+extern Landmark* Landmarks;
 extern ThinkerData* ThinkerVars;
 
 // Rules parsed from alphax.txt

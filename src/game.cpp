@@ -208,18 +208,30 @@ bool can_use_teleport(int base_id) {
         && ~Bases[base_id].state_flags & BSTATE_PSI_GATE_USED;
 }
 
+/*
+Determine if the specified faction is controlled by a human player or computer AI.
+*/
 bool is_human(int faction) {
-    return *human_players & (1 << faction);
+    return FactionStatus[0] & (1 << faction);
 }
 
+/*
+Determine if the specified faction is alive or whether they've been eliminated.
+*/
+bool is_alive(int faction) {
+    return FactionStatus[1] & (1 << faction);
+}
+
+/*
+Determine if the specified faction is a Progenitor faction (Caretakers / Usurpers).
+*/
 bool is_alien(int faction) {
-    return MFactions[faction].rule_flags & RFLAG_ALIEN;
+    return *expansion_enabled && MFactions[faction].rule_flags & RFLAG_ALIEN;
 }
 
-bool ai_enabled(int faction) {
+bool thinker_enabled(int faction) {
     /* Exclude native life since Thinker AI routines don't apply to them. */
-    return faction > 0 && !(*human_players & (1 << faction))
-        && faction <= conf.factions_enabled;
+    return faction > 0 && !is_human(faction) && faction <= conf.factions_enabled;
 }
 
 bool at_war(int faction1, int faction2) {
@@ -988,7 +1000,7 @@ void __cdecl add_goal(int faction, int type, int priority, int x, int y, int bas
     if (!mapsq(x, y)) {
         return;
     }
-    if (ai_enabled(faction) && type < Thinker_Goal_ID_First) {
+    if (thinker_enabled(faction) && type < Thinker_Goal_ID_First) {
         return;
     }
     debug("add_goal %d type: %3d pr: %2d x: %3d y: %3d base: %d\n",
@@ -1035,7 +1047,7 @@ void __cdecl add_site(int faction, int type, int priority, int x, int y) {
     if ((x ^ y) & 1 && *game_state & STATE_DEBUG_MODE) {
         debug("Bad SITE %d %d %d\n", x, y, type);
     }
-    if (ai_enabled(faction)) {
+    if (thinker_enabled(faction)) {
         return;
     }
     debug("add_site %d type: %3d pr: %2d x: %3d y: %3d\n",

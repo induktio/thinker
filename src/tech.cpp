@@ -6,7 +6,7 @@ int TechCostRatios[MaxDiffNum] = {124,116,108,100,84,76};
 
 int __cdecl mod_tech_value(int tech, int faction, int flag) {
     int value = tech_val(tech, faction, flag);
-    if (conf.tech_balance && ai_enabled(faction)) {
+    if (conf.tech_balance && thinker_enabled(faction)) {
         if (tech == Weapon[WPN_TERRAFORMING_UNIT].preq_tech
         || tech == Weapon[WPN_SUPPLY_TRANSPORT].preq_tech
         || tech == Weapon[WPN_PROBE_TEAM].preq_tech

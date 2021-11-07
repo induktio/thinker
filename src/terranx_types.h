@@ -210,7 +210,7 @@ struct MFaction {
     char noun_faction[24];
     int noun_gender;
     int is_noun_plural;
-    char adj_name_faction[128]; //  // drops 2nd entry on line (abbreviation value?)
+    char adj_name_faction[128]; // drops 2nd entry on line (abbreviation value?)
     char formal_name_faction[40];
     char insult_leader[24];
     char desc_name_faction[24];

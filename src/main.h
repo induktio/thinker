@@ -65,6 +65,9 @@
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 #define HOOK_API extern "C"
 #define THINKER_HEADER (int16_t)0xACAC
+#define ModAppName "ThinkerMod"
+#define GameAppName "Alpha Centauri"
+#define GameIniFile ".\\Alpha Centauri.ini"
 
 #ifdef BUILD_DEBUG
 #ifdef assert
@@ -162,10 +165,10 @@ struct Config {
     int nutrient_bonus = 0;
     int rare_supply_pods = 0;
     int landmarks = 0xffff;
-    int simple_cost_factor = 1;
+    int simple_cost_factor = 0;
     int revised_tech_cost = 1;
     int cheap_early_tech = 1;
-    int tech_stagnate_rate = 150;
+    int tech_stagnate_rate = 200;
     int auto_relocate_hq = 1;
     int counter_espionage = 0;
     int ignore_reactor_power = 0;

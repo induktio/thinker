@@ -863,11 +863,11 @@ void __cdecl mod_turn_timer() {
             for (int i=1; i < MaxPlayerNum; i++) {
                 snprintf(key, sizeof(key), "Faction %d", i);
                 int ret = GetPrivateProfileStringA(
-                    "Alpha Centauri", key, "", buf, sizeof(buf), ".\\Alpha Centauri.ini");
+                    GameAppName, key, "", buf, sizeof(buf), GameIniFile);
                 if (!ret || strcmp(MFactions[i].filename, buf)) {
                     restart = true;
                     WritePrivateProfileStringA(
-                        "Alpha Centauri", key, MFactions[i].filename, ".\\Alpha Centauri.ini");
+                        GameAppName, key, MFactions[i].filename, GameIniFile);
                 }
             }
             if (restart) { // Return to main menu
@@ -930,11 +930,17 @@ int show_mod_config() {
         ret = popp("modmenu", "OPTIONS", 0, "stars_sm.pcx", 0);
         if (ret == 0) {
             break;
-        } else if (ret == 1) {
+        }
+        else if (ret == 1) {
             conf.world_map_labels = !conf.world_map_labels;
+            WritePrivateProfileStringA(ModAppName, "world_map_labels",
+                (conf.world_map_labels ? "1" : "0"), GameIniFile);
             draw_map(1);
-        } else if (ret == 2) {
+        }
+        else if (ret == 2) {
             conf.warn_on_former_replace = !conf.warn_on_former_replace;
+            WritePrivateProfileStringA(ModAppName, "warn_on_former_replace",
+                (conf.warn_on_former_replace ? "1" : "0"), GameIniFile);
         }
     }
     return 0;

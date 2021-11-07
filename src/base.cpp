@@ -13,7 +13,7 @@ int __cdecl mod_base_prod_choices(int id, int v1, int v2, int v3) {
     if (is_human(faction)) {
         debug("skipping human base\n");
         choice = base_prod_choices(id, v1, v2, v3);
-    } else if (!ai_enabled(faction)) {
+    } else if (!thinker_enabled(faction)) {
         debug("skipping computer base\n");
         choice = base_prod_choices(id, v1, v2, v3);
     } else {
@@ -43,6 +43,23 @@ int __cdecl mod_base_prod_choices(int id, int v1, int v2, int v3) {
     }
     fflush(debug_log);
     return choice;
+}
+
+void __cdecl base_first(int base_id) {
+    BASE& base = Bases[base_id];
+    Faction& f = Factions[base.faction_id];
+    base.queue_items[0] = find_proto(base_id, TRIAD_LAND, COMBAT, DEF);
+
+    if (is_human(base.faction_id)) {
+        int num = f.saved_queue_size[0];
+        if (num > 0 && num < 10) {
+            for (int i = 0; i < num; i++) {
+                // Get only the lower 16 bits *with* sign extension
+                base.queue_items[i] = (int16_t)f.saved_queue_items[0][i];
+            }
+            base.queue_size = num - 1;
+        }
+    }
 }
 
 int consider_staple(int id) {
@@ -353,7 +370,8 @@ int find_proto(int base_id, int triad, int mode, bool defend) {
             if ((mode && Weapon[u->weapon_type].mode != mode)
             || (!mode && Weapon[u->weapon_type].offense_value == 0)
             || (!mode && defend && u->chassis_type != CHS_INFANTRY)
-            || (u->weapon_type == WPN_PSI_ATTACK && plans[faction].psi_score < 1)
+            || (u->weapon_type == WPN_PSI_ATTACK && plans[faction].psi_score < 1 && !is_human(faction))
+            || (u->obsolete_factions & (1 << faction) && is_human(faction))
             || u->weapon_type == WPN_PLANET_BUSTER
             || !(mode != COMBAT || best == basic || (defend == (offense_value(u) < defense_value(u))))) {
                 continue;
@@ -389,7 +407,7 @@ int consider_hurry() {
     MFaction* m = &MFactions[faction];
     assert(b == *current_base_ptr);
 
-    if (!ai_enabled(faction)) {
+    if (!thinker_enabled(faction)) {
         return base_hurry();
     }
     if (conf.hurry_items < 1 || t <= -FAC_STOCKPILE_ENERGY

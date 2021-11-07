@@ -243,21 +243,21 @@ int __cdecl fix_dialog(int index, char* input, int gender, int plurality)
         ParseStrPlurality[index] = *plurality_default;
         int tech = Terraform[FORMER_THERMAL_BORE].preq_tech;
 
-        if (index == 3 && ai_enabled(*diplo_third_faction)
+        if (index == 3 && thinker_enabled(*diplo_third_faction)
         && has_tech(*diplo_third_faction, tech)
         && Factions[*diplo_third_faction].ranking == 7) {
             snprintf(ParseStrBuffer[index].str, 256,
                 "obsessively min-maxing borehole tilings");
             return 0;
         }
-        if (index == 5 && ai_enabled(*diplo_tech_faction)
+        if (index == 5 && thinker_enabled(*diplo_tech_faction)
         && has_tech(*diplo_tech_faction, tech)
         && Factions[*diplo_tech_faction].ranking == 7) {
             snprintf(ParseStrBuffer[index].str, 256,
                 "unhinged plans to blanket the landscape with endless borehole parks");
             return 0;
         }
-        if (index == 6 && ai_enabled(*diplo_second_faction)
+        if (index == 6 && thinker_enabled(*diplo_second_faction)
         && has_tech(*diplo_second_faction, tech)
         && Factions[*diplo_second_faction].ranking == 7) {
             snprintf(ParseStrBuffer[index].str, 256,
@@ -463,7 +463,7 @@ DWORD WINAPI ModGetPrivateProfileStringA(LPCSTR lpAppName, LPCSTR lpKeyName,
 LPCSTR lpDefault, LPSTR lpReturnedString, DWORD nSize, LPCSTR lpFileName)
 {
     debug("GET %s\t%s\t%s\n", lpAppName, lpKeyName, lpDefault);
-    if (!strcmp(lpAppName, "Alpha Centauri")) {
+    if (!strcmp(lpAppName, GameAppName)) {
         if (conf.directdraw >= 0 && !strcmp(lpKeyName, "DirectDraw")) {
             strncpy(lpReturnedString, (conf.directdraw ? "1" : "0"), 2);
             return 1;
@@ -648,6 +648,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x579D80, (int)wipe_goals);
     write_jump(0x527290, (int)mod_faction_upkeep);
     write_jump(0x5BF310, (int)mod_X_pop2);
+    write_jump(0x4E4AA0, (int)base_first);
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
     write_call(0x4E61D0, (int)mod_base_prod_choices);

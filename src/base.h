@@ -3,6 +3,7 @@
 #include "main.h"
 
 int __cdecl mod_base_prod_choices(int id, int v1, int v2, int v3);
+void __cdecl base_first(int base_id);
 int consider_staple(int id);
 int consider_hurry();
 int need_psych(int id);
