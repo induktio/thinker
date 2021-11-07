@@ -11,6 +11,8 @@ Note that in `thinker.ini` config file, for binary settings only zero values are
 
 For testing purposes it is also possible to run old/new AIs side-by-side by setting `factions_enabled=3` or similar. In that case, only the factions in the first 3 slots will use Thinker AI if they are not player-controlled. By default, `factions_enabled=7` setting enables Thinker AI for all computer factions.
 
+In addition to the binary patches listed separately in this file, items that are listed after "Game Engine Patches" in `thinker.ini` apply to all factions regardless of `factions_enabled` setting. Some patches such as `ignore_reactor_power` and unit repair rate changes are imported from [Will To Power Mod](https://github.com/tnevolin/thinker-doer/).
+
 **For a mostly exhaustive list of all features provided by this mod, refer to both this file and `thinker.ini`.** Enabling Thinker AI will affect many AI behaviors such as described in the list below.
 
 1. Thinker fully controls the movement of most units, combat and non-combat alike, to manage the base placement and production much more effectively than usual.
@@ -19,17 +21,29 @@ For testing purposes it is also possible to run old/new AIs side-by-side by sett
 4. Social AI feature will decide the social engineering models the AI factions will choose. It will attempt to take into account the various cumulative/non-linear effects of the society models and any bonuses provided by the secret projects. The AI is now capable of pop-booming if enough growth is attainable, and it will also try to avoid pacifist drones by switching out of SE models with too many police penalties. All the SE model effects are moddable because the AI is not hardcoded in any particular choices. This feature is also capable of managing all the custom factions.
 5. Tech balance will assign extra importance on some specific techs when selecting what to research: requirements for formers, crawlers, recycling tanks, children's creches, and the 3 technologies to allow the production of more than 2 resources per square. If these items don't have any requirements, or the techs are not available to research, the tech progression is unaffacted by this feature. It will also not affect player faction research in any way.
 6. Hurry items feature is able to use AI energy reserves to occasionally hurry base production. Items that can be hurried include most basic facilities, formers, and (only rarely) combat units. The AI will never rush secret projects in this way, but sometimes they can be completed quickly with overflow minerals.
+7. `design_units` feature will introduce custom probe teams, armored crawlers, gravship formers, and AAA garrison prototypes for the computer factions.
+8. `auto_relocate_hq` feature imports a game mechanic from Civilization 3 where lost/captured headquarters are automatically moved to another suitable base. This ensures the AI factions will not struggle without active headquarters.
+9. AI mineral/nutrient production cost factors for each difficulty level can be changed from the `cost_factor` setting. Does not affect other difficulty related modifiers.
+10. Content (non-drone) base population for each difficulty level can be adjusted from `content_pop_player` and `content_pop_computer` variables. By default these have the same values than vanilla game mechanics.
 
-In addition to the binary patches listed separately in this file, items that are listed after "Game Engine Patches" in `thinker.ini` apply to all factions regardless of `factions_enabled` setting. Some patches such as ignore_reactor_power and unit repair rate changes are imported from [Will To Power Mod](https://github.com/tnevolin/thinker-doer/).
 
-1. All landmarks that are placed on random maps can now be configured from `thinker.ini`. Nessus Canyon is also available but disabled by default.
-2. New `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on huge map sizes. It is also possible to add extra nutrient bonuses for each land-based faction by using the `nutrient_bonus` setting.
-3. New `design_units` feature will introduce custom probe teams, armored crawlers, gravship formers, and AAA garrison prototypes for the computer factions.
-4. All expansion related content can be disabled by using the `smac_only` setting, see further below.
-5. AI mineral/nutrient production cost factors for each difficulty level can be changed from the `cost_factor` setting. Does not affect other difficulty related modifiers.
-6. Content (non-drone) base population for each difficulty level can be adjusted from `content_pop_player` and `content_pop_computer` variables. By default these have the same values than vanilla game mechanics.
-7. New `world_map_labels` feature draws a white marker around the population label of HQ bases to identify them more easily. Bases in golden age are also highlighted with a yellow label. Bases that have Flechette Defense System or Geo Survey Pods are highlighted with a blue label.
-8. New `auto_relocate_hq` feature imports a game mechanic from Civilization 3 where lost/captured headquarters are automatically moved to another suitable base.
+User interface additions
+========================
+Thinker's in-game menu can be opened by pressing `ALT+T`. It shows the current version and build date, and provides statistics about the factions if a game is loaded. In addition, some Thinker config options can be adjusted from its sub menu.
+
+* World map labels feature draws a white marker around the population label of HQ bases to identify them more easily. Bases in golden age are also highlighted with a yellow label. Bases that have Flechette Defense System or Geo Survey Pods are highlighted with a blue label. If a base might riot on the next turn due to population increase or already has too many drones, it will be highlighted with a red label.
+* Whenever the player instructs a former build an improvement that replaces any other item in the tile, the game will display a warning dialog. This dialog can be skipped by toggling the Former Warnings option here.
+* When building or capturing a new base, the mod will automatically copy the saved build queue from **Template 1** to the new base. To save the current queue to template, open a base and **right click** on the queue and select **Save current list to template**. At maximum 8 items can be saved to the template, and the first item from the template will be automatically moved to current production choice when a new base is built or captured. Only the template saved to the first slot is checked, any other saved templates are ignored.
+* Technical details: whenever Thinker options are changed in the GUI, they are saved to Alpha Centauri.ini. While the same settings can be set in thinker.ini, the values in Alpha Centauri.ini take priority.
+
+
+Map generator options
+=====================
+Using the default settings, the game's random map generator produces bland-looking maps that also have way too many small islands that make the navigation much harder for the AI. Thinker's alphax.txt modifies the WorldBuilder to produce bigger continents, less tiny islands, more rivers and ocean shelf on random maps.
+
+All landmarks that are placed on random maps can now be configured from `thinker.ini`. Nessus Canyon is also available but disabled by default.
+New `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on Huge map sizes.
+It is also possible to add extra nutrient bonus resources for each land-based faction by using the `nutrient_bonus` setting.
 
 
 Improved unit movement
@@ -83,7 +97,7 @@ After calculating the base cost, it is multiplied by all of the following factor
 * Multiply by the square root of the map size divided by the square root of a standard map size (56).
 * Multiply by faction specific TECHCOST modifier (higher values means slower progress).
 * Divide by Technology Discovery Rate set in alphax.txt (higher values means faster progress).
-* If Tech Stagnation is enabled, multiply by the amount set in `tech_stagnate_rate` option.
+* If Tech Stagnation is enabled, the cost is doubled unless a different rate is set in the options.
 * Count every other faction with commlink to the current faction who has the tech, while infiltrated factions count twice. Discount 5% for every point in this value. Maximum allowed discount from this step is 30%. Only infiltration gained using probe teams counts for the purposes of extra discount, the Empath Guild or Planetary Governor status is ignored in this step.
 * If `cheap_early_tech` is enabled, apply a decreasing discount from 60% to 0% until the first 16 techs are discovered.
 
