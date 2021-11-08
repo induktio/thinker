@@ -421,7 +421,7 @@ struct Faction {
     byte units_queue[512];
     short units_lost[512];
     int total_combat_units;
-    int current_num_bases;
+    int base_count;
     int mil_strength_1;
     int mil_strength_2;
     int pop_total;

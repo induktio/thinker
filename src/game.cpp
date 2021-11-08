@@ -429,12 +429,12 @@ bool allow_expand(int faction) {
     }
     for (int i=1; i < MaxPlayerNum && conf.expansion_autoscale > 0; i++) {
         if (is_human(i)) {
-            bases = Factions[i].current_num_bases;
+            bases = Factions[i].base_count;
             break;
         }
     }
     if (conf.expansion_limit > 0) {
-        return Factions[faction].current_num_bases < max(bases, conf.expansion_limit);
+        return Factions[faction].base_count < max(bases, conf.expansion_limit);
     }
     return true;
 }

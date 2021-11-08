@@ -496,7 +496,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         if (conf.debug_mode) {
             for (int i=1; i<8; i++) {
                 Faction& f = Factions[i];
-                if (!f.current_num_bases) {
+                if (!f.base_count) {
                     memset(f.goals, 0, sizeof(f.goals));
                     memset(f.sites, 0, sizeof(f.sites));
                 }
@@ -602,7 +602,7 @@ void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
         for (int faction = 1; faction < MaxPlayerNum && !found; faction++) {
             Faction& f = Factions[faction];
             MFaction& m = MFactions[faction];
-            if (!f.current_num_bases) {
+            if (!f.base_count) {
                 continue;
             }
             for (int i = 0; i < MaxGoalsNum && !found; i++) {
@@ -914,7 +914,7 @@ void show_mod_stats() {
     ParseNumTable[2] = total_pop;
     ParseNumTable[3] = total_minerals;
     ParseNumTable[4] = total_energy;
-    ParseNumTable[5] = f->current_num_bases;
+    ParseNumTable[5] = f->base_count;
     ParseNumTable[6] = faction_units;
     ParseNumTable[7] = f->pop_total;
     ParseNumTable[8] = faction_minerals;

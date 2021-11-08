@@ -266,7 +266,7 @@ int pick_scout_target(int faction) {
         return 0;
     }
     for (int i=1; i < MaxPlayerNum; i++) {
-        if (i != faction && Factions[i].current_num_bases) {
+        if (i != faction && Factions[i].base_count) {
             int score = random(16)
                 + (has_treaty(faction, i, DIPLO_PACT|DIPLO_TREATY) ? -10 : 0)
                 + Factions[faction].diplo_friction[i]
@@ -638,7 +638,7 @@ void move_upkeep(int faction, bool visual) {
             }
         }
     }
-    if (f.current_num_bases > 0) {
+    if (f.base_count > 0) {
         memset(defend_goal, 1, sizeof(defend_goal));
         int values[MaxBaseNum] = {};
         int sorter[MaxBaseNum] = {};
@@ -1038,7 +1038,7 @@ bool can_build_base(int x, int y, int faction, int triad) {
         return false;
     // Allow base building on smaller maps in owned territory if a new faction is spawning.
     if (sq->is_owned() && faction != sq->owner && !at_war(faction, sq->owner)
-    && Factions[faction].current_num_bases > 0)
+    && Factions[faction].base_count > 0)
         return false;
     if (non_ally_in_tile(x, y, faction))
         return false;

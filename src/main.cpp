@@ -99,7 +99,7 @@ int handler(void* user, const char* section, const char* name, const char* value
     } else if (MATCH("thinker", "conquer_priority")) {
         cf->conquer_priority = min(10000, max(1, atoi(value)));
     } else if (MATCH("thinker", "crawler_priority")) {
-        cf->crawler_priority = min(10000, max(1, atoi(value)));
+        cf->crawler_priority = atoi(value);
     } else if (MATCH("thinker", "limit_project_start")) {
         cf->limit_project_start = atoi(value);
     } else if (MATCH("thinker", "max_satellites")) {
@@ -118,8 +118,6 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->cheap_early_tech = atoi(value);
     } else if (MATCH("thinker", "tech_stagnate_rate")) {
         cf->tech_stagnate_rate = max(1, atoi(value));
-    } else if (MATCH("thinker", "auto_relocate_hq")) {
-        cf->auto_relocate_hq = atoi(value);
     } else if (MATCH("thinker", "counter_espionage")) {
         cf->counter_espionage = atoi(value);
     } else if (MATCH("thinker", "ignore_reactor_power")) {
@@ -130,6 +128,10 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->facility_capture_fix = atoi(value);
     } else if (MATCH("thinker", "territory_border_fix")) {
         cf->territory_border_fix = atoi(value);
+    } else if (MATCH("thinker", "auto_relocate_hq")) {
+        cf->auto_relocate_hq = atoi(value);
+    } else if (MATCH("thinker", "simple_hurry_cost")) {
+        cf->simple_hurry_cost = atoi(value);
     } else if (MATCH("thinker", "eco_damage_fix")) {
         cf->eco_damage_fix = atoi(value);
     } else if (MATCH("thinker", "clean_minerals")) {
@@ -144,12 +146,12 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->spawn_battle_ogres = atoi(value);
     } else if (MATCH("thinker", "collateral_damage_value")) {
         cf->collateral_damage_value = min(127, max(0, atoi(value)));
-    } else if (MATCH("thinker", "disable_planetpearls")) {
-        cf->disable_planetpearls = atoi(value);
-    } else if (MATCH("thinker", "disable_aquatic_bonus_minerals")) {
-        cf->disable_aquatic_bonus_minerals = atoi(value);
-    } else if (MATCH("thinker", "disable_alien_guaranteed_techs")) {
-        cf->disable_alien_guaranteed_techs = atoi(value);
+    } else if (MATCH("thinker", "planetpearls")) {
+        cf->planetpearls = atoi(value);
+    } else if (MATCH("thinker", "aquatic_bonus_minerals")) {
+        cf->aquatic_bonus_minerals = atoi(value);
+    } else if (MATCH("thinker", "alien_guaranteed_techs")) {
+        cf->alien_guaranteed_techs = atoi(value);
     } else if (MATCH("thinker", "cost_factor")) {
         opt_list_parse(CostRatios, buf, MaxDiffNum, 1);
     } else if (MATCH("thinker", "tech_cost_factor")) {
@@ -300,7 +302,7 @@ int plans_upkeep(int faction) {
         }
     }
 
-    if (!Factions[faction].current_num_bases) {
+    if (!Factions[faction].base_count) {
         return 0;
     }
     if (conf.design_units) {
@@ -386,7 +388,7 @@ int plans_upkeep(int faction) {
             }
         }
         for (int j=1; j < MaxPlayerNum; j++) {
-            if (i != j && Factions[j].current_num_bases > 0) {
+            if (i != j && Factions[j].base_count > 0) {
                 if (has_treaty(i, j, DIPLO_COMMLINK)) {
                     plans[i].contacted_factions++;
                 } else {
@@ -437,7 +439,7 @@ int plans_upkeep(int faction) {
         }
         std::sort(minerals, minerals+n);
         std::sort(population, population+n);
-        if (f->current_num_bases >= 32) {
+        if (f->base_count >= 32) {
             plans[i].proj_limit = max(5, minerals[n*3/4]);
         } else {
             plans[i].proj_limit = max(5, minerals[n*2/3]);
@@ -494,7 +496,7 @@ int robust, int immunity, int impunity, int penalty) {
     enum {ECO, EFF, SUP, TAL, MOR, POL, GRW, PLA, PRO, IND, RES};
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
-    double base_ratio = min(1.0, f->current_num_bases / min(40.0, *map_area_sq_root * 0.5));
+    double base_ratio = min(1.0, f->base_count / min(40.0, *map_area_sq_root * 0.5));
     int morale = (has_project(faction, FAC_COMMAND_NEXUS) ? 2 : 0)
         + (has_project(faction, FAC_CYBORG_FACTORY) ? 2 : 0);
     int sc = 0;

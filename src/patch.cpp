@@ -137,9 +137,16 @@ int __cdecl mod_capture_base(int base_id, int faction, int probe) {
     */
     if (vendetta && is_human(faction) && !is_human(old_faction) && last_spoke < 10
     && !*diplo_value_93FA98 && !*diplo_value_93FA24) {
-        int div = max(2, 6 - last_spoke/2) +
-            (has_treaty(old_faction, faction, DIPLO_ATROCITY_VICTIM | DIPLO_WANT_REVENGE) ? 4 : 0);
-        if ((Factions[old_faction].current_num_bases + *total_num_vehicles/8 + *current_turn) % div) {
+        int lost = 0;
+        for(int i=0; i<*total_num_bases; i++) {
+            BASE* b = &Bases[i];
+            if (b->faction_id == faction && b->faction_id_former == old_faction) {
+                lost++;
+            }
+        }
+        int div = max(2, 6 - last_spoke/2) + max(0, 4 - lost/2)
+            + (has_treaty(old_faction, faction, DIPLO_ATROCITY_VICTIM | DIPLO_WANT_REVENGE) ? 4 : 0);
+        if ((Factions[old_faction].base_count + *total_num_vehicles/8 + *current_turn*17) % div) {
             set_treaty(faction, old_faction, DIPLO_WANT_TO_TALK, 0);
             set_treaty(old_faction, faction, DIPLO_WANT_TO_TALK, 0);
         }
@@ -155,6 +162,22 @@ int __cdecl mod_base_kill(int base_id) {
     base_kill(base_id);
     check_relocate_hq(old_faction);
     return 0;
+}
+
+/*
+Calculate current vehicle health only for the purposes of
+possible damage from genetic warfare probe team action.
+*/
+int __cdecl veh_health(int veh_id) {
+    VEH* veh = &Vehs[veh_id];
+    int level = clamp(veh->reactor_type(), 1, 100);
+    if (veh->is_artifact()) {
+        return 1;
+    }
+    if (veh->damage_taken > 5*level) {
+        return 1;
+    }
+    return clamp(min(5*level, 10*level - veh->damage_taken), 0, 9999);
 }
 
 int __cdecl content_pop() {
@@ -665,6 +688,8 @@ bool patch_setup(Config* cf) {
     write_call(0x5B3C4C, (int)mod_setup_player);
     write_call(0x5C0908, (int)log_veh_kill);
     write_call(0x498720, (int)SubIf_release_handler);
+    write_call(0x5A3F7D, (int)veh_health);
+    write_call(0x5A3F98, (int)veh_health);
     write_offset(0x50F421, (void*)mod_turn_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);
     write_offset(0x64576E, (void*)mod_except_handler3);
@@ -915,6 +940,9 @@ bool patch_setup(Config* cf) {
         write_call(0x5915A6, (int)mod_base_kill); // alt_set
         write_call(0x598673, (int)mod_base_kill); // order_veh
     }
+    if (cf->simple_hurry_cost) {
+        memset((void*)0x41900F, 0x90, 2);
+    }
     if (cf->eco_damage_fix) {
         const byte old_bytes[] = {0x84,0x05,0xE8,0x64,0x9A,0x00,0x74,0x24};
         write_bytes(0x4EA0B9, old_bytes, NULL, sizeof(old_bytes));
@@ -957,12 +985,12 @@ bool patch_setup(Config* cf) {
         const byte new_bytes[] = {0xB2, (byte)cf->collateral_damage_value};
         write_bytes(0x50AAA5, old_bytes, new_bytes, sizeof(new_bytes));
     }
-    if (cf->disable_aquatic_bonus_minerals) {
+    if (!cf->aquatic_bonus_minerals) {
         const byte old_bytes[] = {0x46};
         const byte new_bytes[] = {0x90};
         write_bytes(0x4E7604, old_bytes, new_bytes, sizeof(new_bytes));
     }
-    if (cf->disable_planetpearls) {
+    if (!cf->planetpearls) {
         const byte old_bytes[] = {
             0x8B,0x45,0x08,0x6A,0x00,0x6A,0x01,0x50,0xE8,0x46,
             0xAD,0x0B,0x00,0x83,0xC4,0x0C,0x40,0x8D,0x0C,0x80,
@@ -970,7 +998,7 @@ bool patch_setup(Config* cf) {
         };
         write_bytes(0x5060ED, old_bytes, NULL, sizeof(old_bytes));
     }
-    if (cf->disable_alien_guaranteed_techs) {
+    if (!cf->alien_guaranteed_techs) {
         byte old_bytes[] = {0x74};
         byte new_bytes[] = {0xEB};
         write_bytes(0x5B29F8, old_bytes, new_bytes, sizeof(new_bytes));

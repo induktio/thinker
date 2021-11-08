@@ -139,7 +139,7 @@ int __cdecl mod_faction_upkeep(int faction) {
     if (f->energy_credits < 0) {
         f->energy_credits = 0;
     }
-    if (!f->current_num_bases && !has_colony_pods(faction)) {
+    if (!f->base_count && !has_colony_pods(faction)) {
         eliminate_player(faction, 0);
     }
     *dword_93A934 = 0;
@@ -389,7 +389,7 @@ int probe_upkeep(int faction) {
     if (faction > 0 && conf.counter_espionage) {
         for (int i=1; i < MaxPlayerNum; i++) {
             if (faction != i
-            && Factions[i].current_num_bases > 0
+            && Factions[i].base_count > 0
             && has_treaty(i, faction, DIPLO_HAVE_INFILTRATOR)
             && !has_treaty(i, faction, DIPLO_PACT)
             && !has_project(i, FAC_EMPATH_GUILD)) {
@@ -412,7 +412,7 @@ int probe_upkeep(int faction) {
         }
         for (int i=1; i < MaxPlayerNum; i++) {
             if (faction == *current_player_faction
-            && Factions[i].current_num_bases > 0
+            && Factions[i].base_count > 0
             && MFactions[faction].thinker_probe_flags & (1 << i)) {
                 parse_says(0, MFactions[i].noun_faction, -1, -1);
                 popp("modmenu", "SPYLOST", 0, "capture_sm.pcx", 0);
