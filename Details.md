@@ -41,16 +41,22 @@ Thinker's in-game menu can be opened by pressing `ALT+T`. It shows the current v
 
 Map generator options
 =====================
-Using the default settings, the game's random map generator produces bland-looking maps that also have way too many small islands that make the navigation much harder for the AI. Thinker's alphax.txt modifies the WorldBuilder to produce bigger continents, less tiny islands, more rivers and ocean shelf on random maps.
+Using the default settings, the game's random map generator produces bland-looking maps that also have way too many small islands that make the navigation much harder for the AI. Thinker's alphax.txt modifies the WorldBuilder to produce bigger continents, less tiny islands, more rivers and ocean shelf on random maps. All landmarks that are placed on random maps can now be configured from `thinker.ini`. Nessus Canyon is also available but disabled by default.
 
-All landmarks that are placed on random maps can now be configured from `thinker.ini`. Nessus Canyon is also available but disabled by default.
-New `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on Huge map sizes.
-It is also possible to add extra nutrient bonus resources for each land-based faction by using the `nutrient_bonus` setting.
+Thinker's `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on Huge map sizes.
+
+When `nutrient_bonus` setting is enabled, the placement algorithm tries to ensure each spawn location has at least two nutrient bonus resources for land-based factions. The placement also strongly favors spawns on river tiles for easier movement in the early game.
+
+Another optional setting `rare_supply_pods` is not dependent on faction placement, instead it affects the whole map by reducing the frequency of random supply pods significantly. Thematically it never made much sense that the supply pods would be excessively abundant across the whole planet surface, while the Unity spaceship would supposedly only have limited space for extra supplies.
 
 
-Improved unit movement
-======================
-Since v2.3 Thinker also controls the movement of nearly all combat units, not just non-combat units like formers or colony pods. AI code for land, sea and air units has been almost entirely rewritten. The only major exception here are any units with the missile chassis which are still handled by the default AI. Note that the interceptor behaviour for AI air units is not implemented, so they will not activate needlejets to intercept enemy units during the other factions turn.
+Improved combat mechanics
+=========================
+In Alpha Centauri, Fusion reactor technology was extremely important for military purposes as it cheapens the reactor cost almost by half and doubles the unit's combat strength. This made the tech extremely unbalanced for most purposes, and there's no good way around this if the tech tree is to have any advanced reactors at all. By default Thinker's `ignore_reactor_power` option keeps all reactors available, but ignores their power for combat calculation purposes. More advanced reactors still provide their usual cost discounts and also planet busters are unaffacted by this feature.
+
+Another notable change is the introduction of reduced unit healing rates. In the vanilla game, units were often able to fully heal in a single turn inside a base but this is no longer the case. Prolonged offensives are no longer trivially easy against opponents since units may have to stop healing for multiple turns. The healing rate can be significantly increased by building Command Centers and similar facilities though.
+
+Since v2.3 Thinker also controls the movement of nearly all AI combat units, not just non-combat units like formers or colony pods. AI code for land, sea and air units has been almost entirely rewritten. The only major exception here are any units with the missile chassis which are still handled by the default AI. Note that the interceptor behaviour for AI air units is not implemented, so they will not activate needlejets to intercept enemy units during the other factions turn.
 
 Another novel addition has been naval invasions executed by the AI. This has been traditionally a weak spot for many AIs since they lack the coordination between many units to pull off such strategies. Thinker however is capable of gathering an invasion fleet with many transports and using other warships as cover to move them to a landing zone. Warships will also use artillery attack on various targets much more than usual.
 
@@ -195,8 +201,8 @@ Some notable game engine patches included with Thinker may not have their separa
 8. Patch the game engine to use significantly less CPU time when idling using a method similar to [smac-cpu-fix](https://github.com/vinceho/smac-cpu-fix/). Normally the game uses 100% of CPU time which can be be a problem on laptop devices.
 9. When capturing a base, Recycling Tanks and Recreation Commons are not always destroyed unlike previously. They are sometimes randomly destroyed like other facilities.
 10. Fix faction graphics bug that appears when Alpha Centauri.ini has a different set of faction filenames than the loaded scenario file. If the game has an incorrect faction set, the patch will quit to main menu so that the correct faction set will be available when the save is reloaded. This bug only occurs with scenario files, while regular save games are unaffected.
-11. Game now properly uses the Command Center maintenance cost that is set in alphax.txt. Normally the game would ignore this value and make the cost dependent on faction's best reactor value which is inconsistent with the other settings for facilities in alphax.txt.
-12. Sometimes base window population row would display superdrones even though they would be suppressed by psych-related effects. The patch removes superdrone icons from the main population row and uses regular worker/drone/talent icons if applicable. To check the superdrone status, open the psych sub window.
+11. Patch the game to use the Command Center maintenance cost that is set in alphax.txt. Normally the game would ignore this value and make the cost dependent on faction's best reactor value which is inconsistent with the other settings for facilities in alphax.txt.
+12. Sometimes the base window population row would display superdrones even though they would be suppressed by psych-related effects. The patch removes superdrone icons from the main population row and uses regular worker/drone/talent icons if applicable, so drones should not be displayed there if they are suppressed by psych effects. To check the superdrone status, open the psych sub window.
 13. Fix visual bug where population icons in base window would randomly switch their type when clicking on them.
 14. Patch AIs to initiate much less diplomacy dialogs when the player captures their bases. Previously this happened at least once for every turn the AI loses any bases and would repeat the same dialog every time if the player didn't agree to the peace terms. The patch makes the initiation of dialog more dependent on random chance unless the AI would finally accept surrender terms.
 15. Patch any faction with negative research rating to start accumulating labs on the first turn. In vanilla rules each negative point results in an additional 5 turn delay before the faction starts accumulating labs (e.g. Believers had a 10 turn delay).
