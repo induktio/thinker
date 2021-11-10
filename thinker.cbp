@@ -86,6 +86,8 @@
 		<Unit filename="src/lib/ini.h" />
 		<Unit filename="src/main.cpp" />
 		<Unit filename="src/main.h" />
+		<Unit filename="src/map.cpp" />
+		<Unit filename="src/map.h" />
 		<Unit filename="src/move.cpp" />
 		<Unit filename="src/move.h" />
 		<Unit filename="src/patch.cpp" />

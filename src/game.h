@@ -130,7 +130,6 @@ void print_veh(int id);
 void print_base(int id);
 
 int __cdecl game_year(int n);
-int __cdecl range(int value, int low, int high);
 void __cdecl bitmask(uint32_t input, uint32_t* offset, uint32_t* mask);
 int __cdecl fac_maint(int facility_id, int faction_id);
 int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id);

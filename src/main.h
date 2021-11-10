@@ -343,6 +343,7 @@ typedef std::list<Point> PointList;
 #include "patch.h"
 #include "path.h"
 #include "gui.h"
+#include "map.h"
 #include "base.h"
 #include "game.h"
 #include "move.h"

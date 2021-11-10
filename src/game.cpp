@@ -789,14 +789,6 @@ int __cdecl game_year(int n) {
 }
 
 /*
-Original Offset: 00422F00
-*/
-
-int __cdecl range(int value, int low, int high) {
-    return max(low, min(high, value));
-}
-
-/*
 Purpose: Calculate the offset and bitmask for the specified input.
 Original Offset: 0050BA00
 Return Value: n/a
@@ -830,7 +822,7 @@ int __cdecl fac_maint(int facility_id, int faction_id) {
 /*
 Purpose: Calculate nutrient/mineral cost factors for base production.
 In vanilla game mechanics, if the player faction is ranked first, then the AIs will get
-an additional +1 growth/industry bonus. This modified version removes the bonus.
+additional growth/industry bonuses. This modified version removes them.
 Original Offset: 004E4430
 */
 int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id) {
