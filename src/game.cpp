@@ -32,11 +32,21 @@ bool has_ability(int faction, int abl) {
 }
 
 bool has_chassis(int faction, int chs) {
+    assert(chs >= 0 && chs <= CHS_MISSILE);
     return has_tech(faction, Chassis[chs].preq_tech);
 }
 
 bool has_weapon(int faction, int wpn) {
     return has_tech(faction, Weapon[wpn].preq_tech);
+}
+
+bool has_aircraft(int faction) {
+    return has_chassis(faction, CHS_NEEDLEJET) || has_chassis(faction, CHS_COPTER)
+        || has_chassis(faction, CHS_GRAVSHIP);
+}
+
+bool has_ships(int faction) {
+    return has_chassis(faction, CHS_FOIL) || has_chassis(faction, CHS_CRUISER);
 }
 
 bool has_terra(int faction, int act, bool ocean) {
@@ -273,6 +283,10 @@ void set_agenda(int faction1, int faction2, uint32_t agenda, bool add) {
     }
 }
 
+bool want_revenge(int faction1, int faction2) {
+    return Factions[faction1].diplo_status[faction2] & (DIPLO_ATROCITY_VICTIM | DIPLO_WANT_REVENGE);
+}
+
 bool un_charter() {
     return *un_charter_repeals <= *un_charter_reinstates;
 }
@@ -505,6 +519,11 @@ int unit_in_tile(MAP* sq) {
         return -1;
     }
     return sq->val2 & 0xf;
+}
+
+int region_at(int x, int y) {
+    MAP* sq = mapsq(x, y);
+    return sq ? sq->region : 0;
 }
 
 int set_move_to(int veh_id, int x, int y) {

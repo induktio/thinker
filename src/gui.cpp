@@ -923,10 +923,14 @@ void show_mod_stats() {
 }
 
 int show_mod_config() {
+    char buf[256];
     int ret;
     while (true) {
         parse_says(0, (conf.world_map_labels ? "true" : "false"), -1, -1);
         parse_says(1, (conf.warn_on_former_replace ? "true" : "false"), -1, -1);
+        parse_says(2, (conf.player_free_units ? "true" : "false"), -1, -1);
+        ParseNumTable[0] = conf.free_formers;
+        ParseNumTable[1] = conf.free_colony_pods;
         ret = popp("modmenu", "OPTIONS", 0, "stars_sm.pcx", 0);
         if (ret == 0) {
             break;
@@ -941,6 +945,25 @@ int show_mod_config() {
             conf.warn_on_former_replace = !conf.warn_on_former_replace;
             WritePrivateProfileStringA(ModAppName, "warn_on_former_replace",
                 (conf.warn_on_former_replace ? "1" : "0"), GameIniFile);
+        }
+        else if (ret == 3) {
+            conf.player_free_units = !conf.player_free_units;
+            WritePrivateProfileStringA(ModAppName, "player_free_units",
+                (conf.player_free_units ? "1" : "0"), GameIniFile);
+        }
+        else if (ret == 4) {
+            parse_says(0, "free_formers", -1, -1);
+            pop_ask_number("modmenu", "ASKNUMBER", conf.free_formers, 0);
+            conf.free_formers = max(0, ParseNumTable[0]);
+            sprintf(buf, "%d", conf.free_formers);
+            WritePrivateProfileStringA(ModAppName, "free_formers", buf, GameIniFile);
+        }
+        else if (ret == 5) {
+            parse_says(0, "free_colony_pods", -1, -1);
+            pop_ask_number("modmenu", "ASKNUMBER", conf.free_colony_pods, 0);
+            conf.free_colony_pods = max(0, ParseNumTable[0]);
+            sprintf(buf, "%d", conf.free_colony_pods);
+            WritePrivateProfileStringA(ModAppName, "free_colony_pods", buf, GameIniFile);
         }
     }
     return 0;

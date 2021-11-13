@@ -761,6 +761,12 @@ struct UNIT {
     int std_offense_value() {
         return Weapon[weapon_type].offense_value * reactor_type;
     }
+    bool is_active() {
+        return unit_flags & UNIT_ACTIVE;
+    }
+    bool is_prototyped() {
+        return unit_flags & UNIT_PROTOTYPED;
+    }
     bool is_armored() {
         return armor_type != ARM_NO_ARMOR;
     }

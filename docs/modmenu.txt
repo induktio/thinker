@@ -44,10 +44,23 @@ Open Project Homepage
 #caption Thinker Mod Options
 ^World map labels: {$OPT0}
 ^Warn on former replacing tile improvements: {$OPT1}
+^Spawn player free units: {$OPT2}
+^Free formers: {$NUM0}
+^Free colony pods: {$NUM1}
 
 Close Dialog
 Toggle World Map Labels
 Toggle Former Warnings
+Toggle Player Free Units
+Set Free Formers
+Set Free Colony Pods
+
+#ASKNUMBER
+#xs 400
+#caption Thinker Mod Options
+Enter a new value for {$MSG0}.
+
+Value:
 
 #GENERIC
 #xs 400

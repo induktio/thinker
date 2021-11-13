@@ -236,6 +236,12 @@ int game_ini_parse(Config* cf) {
         ModAppName, "world_map_labels", cf->world_map_labels, GameIniFile);
     cf->warn_on_former_replace = GetPrivateProfileIntA(
         ModAppName, "warn_on_former_replace", cf->warn_on_former_replace, GameIniFile);
+    cf->player_free_units = GetPrivateProfileIntA(
+        ModAppName, "player_free_units", cf->player_free_units, GameIniFile);
+    cf->free_formers = GetPrivateProfileIntA(
+        ModAppName, "free_formers", cf->free_formers, GameIniFile);
+    cf->free_colony_pods = GetPrivateProfileIntA(
+        ModAppName, "free_colony_pods", cf->free_colony_pods, GameIniFile);
     return 1;
 }
 
@@ -445,28 +451,7 @@ int plans_upkeep(int faction) {
             plans[i].proj_limit = max(5, minerals[n*2/3]);
         }
         plans[i].satellites_goal = min(conf.max_satellites, population[n*3/4]);
-        plans[i].need_police = (f->SE_police > -2 && f->SE_police < 3
-            && !has_project(i, FAC_TELEPATHIC_MATRIX));
-
-        int psi = max(-4, 2 - f->best_weapon_value);
-        if (has_project(i, FAC_NEURAL_AMPLIFIER)) {
-            psi += 2;
-        }
-        if (has_project(i, FAC_DREAM_TWISTER)) {
-            psi += 2;
-        }
-        if (has_project(i, FAC_PHOLUS_MUTAGEN)) {
-            psi++;
-        }
-        if (has_project(i, FAC_XENOEMPATHY_DOME)) {
-            psi++;
-        }
-        if (MFactions[i].rule_flags & RFLAG_WORMPOLICE && plans[i].need_police) {
-            psi += 2;
-        }
-        psi += min(2, max(-2, (f->enemy_best_weapon_value - f->best_weapon_value)/2));
-        psi += MFactions[i].rule_psi/10 + 2*f->SE_planet;
-        plans[i].psi_score = psi;
+        plans[i].psi_score = psi_score(i);
 
         const int manifold[][3] = {{0,0,0}, {0,1,0}, {1,1,0}, {1,1,1}, {1,2,1}};
         int p = (has_project(i, FAC_MANIFOLD_HARMONICS) ? min(4, max(0, f->SE_planet + 1)) : 0);
@@ -482,7 +467,7 @@ int plans_upkeep(int faction) {
         debug("plans_upkeep %d %d proj_limit: %2d sat_goal: %2d psi: %2d keep_fungus: %d "\
               "plant_fungus: %d enemy_bases: %2d enemy_mil: %.4f enemy_range: %.4f\n",
               *current_turn, i, plans[i].proj_limit, plans[i].satellites_goal,
-              psi, plans[i].keep_fungus, plans[i].plant_fungus,
+              plans[i].psi_score, plans[i].keep_fungus, plans[i].plant_fungus,
               plans[i].enemy_bases, plans[i].enemy_mil_factor, m->thinker_enemy_range);
     }
     return 0;
@@ -587,7 +572,7 @@ int robust, int immunity, int impunity, int penalty) {
         sc += (vals[POL] < 0 ? 2 : 4) * min(3, max(-5, vals[POL]));
         if (vals[POL] < -2) {
             sc -= (vals[POL] < -3 ? 4 : 2) * max(0, 4 - range/8)
-                * (has_chassis(faction, CHS_NEEDLEJET) ? 2 : 1);
+                * (has_aircraft(faction) ? 2 : 1);
         }
         if (has_project(faction, FAC_LONGEVITY_VACCINE) && sf == SOCIAL_C_ECONOMICS) {
             sc += (sm == SOCIAL_M_PLANNED ? 10 : 0);

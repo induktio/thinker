@@ -324,7 +324,7 @@ void invasion_plan(int faction) {
     if (p.naval_scout_x < 0) {
         scout_target = pick_scout_target(faction);
     }
-    if (!has_chassis(faction, CHS_FOIL) && !has_chassis(faction, CHS_CRUISER)) {
+    if (!has_ships(faction)) {
         return;
     }
     if (!p.enemy_factions && !scout_target) {

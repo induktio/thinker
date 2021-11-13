@@ -172,14 +172,15 @@ typedef int(__cdecl *Faction_destroy)(int veh_id, int flags, int x, int y);
 typedef int(__cdecl *Faction_gate)(int veh_id, int base_id);
 typedef int(__cdecl *Fhas_abil)(int unit_id, int ability_flag);
 typedef int(__cdecl *Fparse_says)(int index, const char* text, int v1, int v2);
-typedef int(__cdecl *Fpopp)(const char* file_name, const char* label, int v1, 
-    const char* pcx_file_name, int v2);
 typedef int(__cdecl *Fhex_cost)(int unit_id, int faction, int x1, int y1, int x2, int y2, int a7);
 typedef void(__cdecl *Fname_base)(int faction, char* name, int flags, int water);
 typedef int(__cdecl *Fveh_cost)(int item_id, int base_id, int* ptr);
 typedef int (__cdecl *Fsave_daemon)(char* filename);
 typedef int(__cdecl *Fbase_at)(int x, int y);
+typedef int(__cdecl *Fpopp)(const char* file_name, const char* label, int v1,
+    const char* pcx_file_name, int v2);
 typedef int (__cdecl *FX_pop)(const char* filename, const char* label, int a3, int a4, int a5, int a6);
+typedef int(__cdecl *Fpop_ask_number)(const char *filename, const char* label, int value, int a4);
 
 extern Fbattle_fight_1 battle_fight_1;
 extern Fpropose_proto propose_proto;
@@ -195,6 +196,7 @@ extern Fveh_cost veh_cost;
 extern Fsave_daemon save_daemon;
 extern Fbase_at base_at;
 extern FX_pop X_pop;
+extern Fpop_ask_number pop_ask_number;
 
 extern fp_4int veh_init;
 extern fp_1int veh_skip;

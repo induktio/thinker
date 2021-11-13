@@ -19,7 +19,7 @@ void process_map(int faction, int k) {
     considered sufficiently large to be a faction starting location.
     Map area square root values: Tiny = 33, Standard = 56, Huge = 90
     */
-    int limit = *map_area_sq_root * (*map_area_sq_root < 70 ? 1 : 2);
+    int limit = clamp(*map_area_tiles, 1024, 8192) / 40;
 
     for (int y = 0; y < *map_axis_y; y++) {
         for (int x = y&1; x < *map_axis_x; x+=2) {
@@ -42,7 +42,7 @@ void process_map(int faction, int k) {
             }
         }
     }
-    for (int i=0; i < *total_num_vehicles; i++) {
+    for (int i = 0; i < *total_num_vehicles; i++) {
         VEH* v = &Vehicles[i];
         if (v->faction_id == 0) {
             natives.insert({v->x, v->y});
@@ -54,14 +54,14 @@ void process_map(int faction, int k) {
     if ((int)goodtiles.size() < *map_area_sq_root * 8) {
         goodtiles.clear();
     }
-    debug("process_map x: %d y: %d sqrt: %d count: %d good: %d\n",
+    debug("process_map x: %d y: %d sqrt: %d tiles: %d good: %d\n",
         *map_axis_x, *map_axis_y, *map_area_sq_root, *map_area_tiles, goodtiles.size());
 }
 
 bool valid_start(int faction, int iter, int x, int y, bool aquatic, bool need_bonus) {
     MAP* sq = mapsq(x, y);
     int limit = (*map_area_sq_root < 40 ? max(5, 8 - iter/50) : 8);
-    int min_sc = 160 - iter/2;
+    int min_sc = 80 - iter/4;
     int pods = 0;
     int sea = 0;
     int sc = 0;
@@ -72,16 +72,16 @@ bool valid_start(int faction, int iter, int x, int y, bool aquatic, bool need_bo
         return false;
     }
     // LM_FRESH landmark is incorrectly used on some maps
-    if (aquatic != is_ocean(sq) || sq->landmarks & ~LM_FRESH) {
+    if (aquatic != is_ocean(sq) || (sq->landmarks & ~LM_FRESH && iter < 250)) {
         return false;
     }
-    if (goody_at(x, y) > 0 || (bonus_at(x, y) > 0 && iter < 200)) {
+    if ((goody_at(x, y) > 0 || bonus_at(x, y) > 0) && iter < 200) {
         return false;
     }
     if (min_range(natives, x, y) < max(4, 8 - iter/32)) {
         return false;
     }
-    if (min_range(spawns, x, y) < max(limit, *map_area_sq_root/4 + 4 - iter/8)) {
+    if (min_range(spawns, x, y) < max(limit, *map_area_sq_root/4 + 8 - iter/8)) {
         return false;
     }
     if (!aquatic) {
@@ -98,7 +98,7 @@ bool valid_start(int faction, int iter, int x, int y, bool aquatic, bool need_bo
             yd++;
         }
     }
-    for (int i = 1; i <= 45; i++) {
+    for (int i = 0; i < 45; i++) {
         int x2 = wrap(x + TableOffsetX[i]);
         int y2 = y + TableOffsetY[i];
         if ((sq = mapsq(x2, y2))) {
@@ -113,7 +113,10 @@ bool valid_start(int faction, int iter, int x, int y, bool aquatic, bool need_bo
             } else {
                 sc += (sq->is_rainy_or_moist() ? 3 : 1);
                 if (sq->items & BIT_RIVER) {
-                    sc += (i <= 20 ? 5 : 3);
+                    sc += 5;
+                }
+                if (sq->items & BIT_FOREST) {
+                    sc += 4;
                 }
                 if (sq->is_rolling()) {
                     sc += 1;
@@ -142,7 +145,7 @@ bool valid_start(int faction, int iter, int x, int y, bool aquatic, bool need_bo
     debug("find_score %d %d x: %3d y: %3d xd: %d yd: %d pods: %d min: %d score: %d\n",
         faction, iter, x, y, xd, yd, pods, min_sc, sc);
 
-    if (need_bonus && pods < 2 && iter < 150) {
+    if (need_bonus && pods < 2 && iter < 150 && ~*game_rules & RULES_NO_UNITY_SCATTERING) {
         return false;
     }
     if (!aquatic && iter < 100) { // Avoid spawns without sufficient land nearby
@@ -164,29 +167,30 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
     int nutrient = 0;
     int num = 0;
 
-    for (int i = 0; i <= 45; i++) {
+    for (int i = 0; i < 45; i++) {
         int x2 = wrap(*x + TableOffsetX[i]);
         int y2 = *y + TableOffsetY[i];
         if ((sq = mapsq(x2, y2)) && !is_ocean(sq) && (i <= 20 || pods.size() < 2)) {
             int bonus = bonus_at(x2, y2);
             if (goody_at(x2, y2) > 0) {
                 pods.insert({x2, y2});
-            } else if (i > 20 && nutrient + pods.size() < 2
-            && (bonus == RES_MINERAL || bonus == RES_ENERGY)) {
-                pods.insert({x2, y2});
+            } else if (bonus == RES_MINERAL || bonus == RES_ENERGY) {
+                if (nutrient + pods.size() < 2) {
+                    pods.insert({x2, y2});
+                }
             } else if (bonus == RES_NUTRIENT) {
                 nutrient++;
             } else if (sq->items & BIT_RIVER) {
                 if (i == 0) {
                     adjust = false;
                 }
-                if (adjust && i <= 20 && can_build_base(x2, y2, faction, TRIAD_LAND)) {
+                if (adjust && i <= 20 && sq->region == region_at(*x, *y)
+                && can_build_base(x2, y2, faction, TRIAD_LAND)) {
                     rivers.insert({x2, y2});
                 }
             }
         }
     }
-
     while (pods.size() > 0 && nutrient + num < 2) {
         Points::const_iterator it(pods.begin());
         std::advance(it, random(pods.size()));
@@ -214,7 +218,7 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
     process_map(faction, k/2);
 
     while (++i <= 300) {
-        if (!aquatic && goodtiles.size() > 0 && i <= 150) {
+        if (!aquatic && goodtiles.size() > 0 && i <= 200) {
             Points::const_iterator it(goodtiles.begin());
             std::advance(it, random(goodtiles.size()));
             x = it->x;

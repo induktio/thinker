@@ -113,13 +113,14 @@ Faction_destroy action_destroy = (Faction_destroy)0x4CAA50;
 Faction_gate action_gate = (Faction_gate)0x4CF380;
 Fhas_abil has_abil = (Fhas_abil)0x5BF1F0;
 Fparse_says parse_says = (Fparse_says)0x625EC0;
-Fpopp popp = (Fpopp)0x48C0A0;
 Fhex_cost hex_cost = (Fhex_cost)0x593510;
 Fname_base name_base = (Fname_base)0x4E4090;
 Fveh_cost veh_cost = (Fveh_cost)0x5C1850;
 Fsave_daemon save_daemon = (Fsave_daemon)0x5A94F0;
 Fbase_at base_at = (Fbase_at)0x4E3A50;
+Fpopp popp = (Fpopp)0x48C0A0;
 FX_pop X_pop = (FX_pop)0x5BF480;
+Fpop_ask_number pop_ask_number = (Fpop_ask_number)0x627C30;
 
 fp_4int veh_init = (fp_4int)0x5C03D0;
 fp_1int veh_skip = (fp_1int)0x5C1D20;

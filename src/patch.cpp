@@ -141,8 +141,8 @@ int __cdecl mod_capture_base(int base_id, int faction, int probe) {
             }
         }
         int div = max(2, 6 - last_spoke/2) + max(0, 4 - lost/2)
-            + (has_treaty(old_faction, faction, DIPLO_ATROCITY_VICTIM | DIPLO_WANT_REVENGE) ? 4 : 0);
-        if ((Factions[old_faction].base_count + *total_num_vehicles/8 + *current_turn*17) % div) {
+            + (want_revenge(old_faction, faction) ? 4 : 0);
+        if (random(div) > 0) {
             set_treaty(faction, old_faction, DIPLO_WANT_TO_TALK, 0);
             set_treaty(old_faction, faction, DIPLO_WANT_TO_TALK, 0);
         }

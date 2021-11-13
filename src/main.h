@@ -245,7 +245,6 @@ struct AIPlans {
     Higher values will make the prototype picker choose these units more often.
     */
     int psi_score = 0;
-    int need_police = 1;
     int keep_fungus = 0;
     int plant_fungus = 0;
     int satellites_goal = 0;
