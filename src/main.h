@@ -161,6 +161,8 @@ struct Config {
     int crawler_priority = 100;
     int limit_project_start = 3;
     int max_satellites = 20;
+    int new_world_builder = 1;
+    int world_sea_levels[3] = {40,55,70};
     int faction_placement = 1;
     int nutrient_bonus = 0;
     int rare_supply_pods = 0;

@@ -4,6 +4,9 @@ static Points spawns;
 static Points natives;
 static Points goodtiles;
 
+int* dword_9B22E8 = (int*)0x9B22E8;
+int* dword_9B22EC = (int*)0x9B22EC;
+
 
 void process_map(int faction, int k) {
     spawns.clear();
@@ -239,6 +242,161 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
     }
     site_set(*tx, *ty, world_site(*tx, *ty, 0));
     debug("find_start %d %d x: %3d y: %3d range: %d\n", faction, i, *tx, *ty, min_range(spawns, *tx, *ty));
+    fflush(debug_log);
+}
+
+float map_fractal(FastNoiseLite& noise, int x, int y) {
+    float val = 1.0f * noise.GetNoise(2.0f*x, 1.5f*y)
+        + 0.4f * (2 + *MapErosiveForces) * noise.GetNoise(-6.0f*x, -4.0f*y);
+    if (x < 8 && *map_axis_x >= 32 && !(*map_toggle_flat & 1)) {
+        val = x/8.0f * val + (1.0f - x/8.0f) * map_fractal(noise, *map_axis_x - x, y);
+    }
+    return val;
+}
+
+void __cdecl mod_world_build() {
+    if (!conf.new_world_builder) {
+        world_build();
+        return;
+    }
+    if (DEBUG) {
+        memset(pm_overlay, 0, sizeof(pm_overlay));
+        *game_state |= STATE_DEBUG_MODE;
+    }
+    memcpy(AltNatural, AltNaturalDefault, 0x2Cu);
+    *dword_9B22E8 = 1;
+    *dword_9B22EC = 1;
+    for (int i = 0; i < 7; i++) {
+        if (MapSizePlanet[i] < 0) {
+            MapSizePlanet[i] = random(3);
+        }
+    }
+    map_wipe();
+    if (*game_state & STATE_OMNISCIENT_VIEW) {
+        MapWin_clear_terrain(MapWin);
+        draw_map(1);
+    }
+    assert(*MapOceanCoverage >= 0 && *MapOceanCoverage < 3);
+    MAP* sq;
+    int x = 0, y = 0;
+    int levels[256] = {};
+    uint32_t seed = GetTickCount();
+    FastNoiseLite noise;
+    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
+    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+    noise.SetSeed(seed);
+    srand(seed);
+    *map_random_seed = (seed % 0x7fff) + 1; // Must be non-zero
+
+    const float L = AltNatural[ALT_SHORE_LINE]; // Default shoreline altitude = 45
+    const float S = 0.8f + 0.04f*clamp(WorldBuilder->deep_water - WorldBuilder->shelf, -16, 16);
+
+    for (y = 0; y < *map_axis_y; y++) {
+        float E = 1.0f - min(1.0f, (min(y, *map_axis_y - y) / (*map_axis_y * 0.2f)));
+
+        for (x = y&1; x < *map_axis_x; x+=2) {
+            sq = mapsq(x, y);
+            float value = map_fractal(noise, x, y) - 0.7f*E;
+            if (value > 0) {
+                value = value * (0.5f + 0.25f * (*MapErosiveForces));
+            } else {
+                value = value * S;
+            }
+            sq->contour = clamp((int)(L + L*value), 0, 255);
+            levels[sq->contour]++;
+        }
+    }
+    int level_sum = 0;
+    int level_mod = 0;
+    for (int i = 0; i < 256; i++) {
+        level_sum += levels[i];
+        debug("world_level %d %d\n", i, levels[i]);
+        if (level_sum >= *map_area_tiles * conf.world_sea_levels[*MapOceanCoverage] / 100) {
+            level_mod = AltNatural[ALT_SHORE_LINE] - i;
+            break;
+        }
+    }
+    for (y = 0; y < *map_axis_y; y++) {
+        for (x = y&1; x < *map_axis_x; x+=2) {
+            sq = mapsq(x, y);
+            sq->contour = clamp(sq->contour + level_mod, 0, 255);
+        }
+    }
+    debug("world_build seed: %d size: %d ocean: %d erosion: %d sea_level: %d level_mod: %d\n",
+    seed, *MapSizePlanet, *MapOceanCoverage, *MapErosiveForces,
+    conf.world_sea_levels[*MapOceanCoverage], level_mod);
+
+    world_polar_caps();
+    world_linearize_contours();
+    world_shorelines();
+    world_validate(); // Run Path::continents
+    Points bridges;
+
+    for (y = 3; y < *map_axis_y - 3; y++) {
+        for (x = y&1; x < *map_axis_x; x+=2) {
+            sq = mapsq(x, y);
+            if (is_ocean(sq)) {
+                continue;
+            }
+            uint64_t sea = 0;
+            int land_count = Continents[sq->region].tile_count;
+            if (land_count <= 4 || (land_count <= max(16, *map_area_tiles/256)
+            && (int)((seed ^ sq->region) % 41) > WorldBuilder->islands)) {
+                bridges.insert({x, y});
+                if (DEBUG) pm_overlay[x][y] = -1;
+                continue;
+            }
+            for (auto& m : iterate_tiles(x, y, 1, 13)) {
+                if (is_ocean(m.sq)) {
+                    if (Continents[m.sq->region].tile_count > 40) {
+                        sea |= 1 << (m.sq->region - MaxRegionLandNum);
+                    }
+                }
+            }
+            if (__builtin_popcount(sea) > 1
+            && (land_count > *map_area_tiles/8 || (seed * x ^ y) & 1)) {
+                bridges.insert({x, y});
+                if (DEBUG) pm_overlay[x][y] = -2;
+            }
+        }
+    }
+    for (auto& p : bridges) {
+        world_alt_set(p.x, p.y, ALT_OCEAN, 1);
+        world_alt_set(p.x, p.y, ALT_OCEAN_SHELF, 1);
+    }
+    world_temperature();
+    world_riverbeds();
+    world_fungus();
+
+    int lm = conf.landmarks;
+    if (lm & LM_JUNGLE) world_monsoon(-1, -1);
+    if (lm & LM_CRATER) world_crater(-1, -1);
+    if (lm & LM_VOLCANO) world_volcano(-1, -1, 0);
+    if (lm & LM_MESA) world_mesa(-1, -1);
+    if (lm & LM_RIDGE) world_ridge(-1, -1);
+    if (lm & LM_URANIUM) world_diamond(-1, -1);
+    if (lm & LM_RUINS) world_ruin(-1, -1);
+    if (*expansion_enabled) {
+        if (lm & LM_UNITY) world_unity(-1, -1);
+        if (lm & LM_NEXUS) world_temple(-1, -1);
+    }
+    if (lm & LM_FOSSIL) world_fossil(-1, -1);
+    if (lm & LM_CANYON) world_canyon_nessus(-1, -1);
+    if (lm & LM_BOREHOLE) world_borehole(-1, -1);
+    if (lm & LM_SARGASSO) world_sargasso(-1, -1);
+    if (lm & LM_DUNES) world_dune(-1, -1);
+    if (lm & LM_FRESH) world_fresh(-1, -1);
+    if (lm & LM_GEOTHERMAL) world_geothermal(-1, -1);
+
+    fixup_landmarks();
+    *dword_9B22E8 = 0;
+    world_climate();
+    world_rocky();
+    *dword_9B22EC = 0;
+
+    if (!*game_not_started) {
+        MapWin_clear_terrain(MapWin);
+    }
     fflush(debug_log);
 }
 

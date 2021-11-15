@@ -42,13 +42,15 @@ Open Project Homepage
 #OPTIONS
 #xs 400
 #caption Thinker Mod Options
-^World map labels: {$OPT0}
-^Warn on former replacing tile improvements: {$OPT1}
-^Spawn player free units: {$OPT2}
+^New map generator: {$OPT0}
+^World map labels: {$OPT1}
+^Warn on former replacing tile improvements: {$OPT2}
+^Spawn player free units: {$OPT3}
 ^Free formers: {$NUM0}
 ^Free colony pods: {$NUM1}
 
 Close Dialog
+Toggle New Map Generator
 Toggle World Map Labels
 Toggle Former Warnings
 Toggle Player Free Units

@@ -80,6 +80,7 @@
 		<Unit filename="src/game.h" />
 		<Unit filename="src/gui.cpp" />
 		<Unit filename="src/gui.h" />
+		<Unit filename="src/lib/FastNoiseLite.h" />
 		<Unit filename="src/lib/ini.c">
 			<Option compilerVar="CPP" />
 		</Unit>

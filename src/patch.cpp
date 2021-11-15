@@ -320,12 +320,12 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD *rec, PVOID *frame, CONTEXT *ct
     filepath[200] = '\0';
 
     fprintf(debug_log,
-        "**************************************************\n"
+        "************************************************************\n"
         "ModVersion %s (%s)\n"
         "CrashTime  %s\n"
         "SavedGame  %s\n"
         "ModuleName %s\n"
-        "**************************************************\n"
+        "************************************************************\n"
         "ExceptionCode    %08x\n"
         "ExceptionFlags   %08x\n"
         "ExceptionRecord  %08x\n"
@@ -481,6 +481,10 @@ bool patch_setup(Config* cf) {
     write_call(0x498720, (int)SubIf_release_handler);
     write_call(0x5A3F7D, (int)veh_health);
     write_call(0x5A3F98, (int)veh_health);
+    write_call(0x4E1061, (int)mod_world_build);
+    write_call(0x4E113B, (int)mod_world_build);
+    write_call(0x58B9BF, (int)mod_world_build);
+    write_call(0x58DDD8, (int)mod_world_build);
     write_offset(0x50F421, (void*)mod_turn_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);
     write_offset(0x64576E, (void*)mod_except_handler3);

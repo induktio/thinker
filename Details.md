@@ -7,9 +7,9 @@ As a general principle, Thinker uses the same production bonuses than what the v
 
 Thinker does not have any special save game format, so it's possible to open an old save and have the factions switch to the new AI and vice-versa. None of the `thinker.ini` config options are preserved in the save game either, but the units or resources spawned at the game start will remain.
 
-Note that in `thinker.ini` config file, for binary settings only zero values are treated as disabled, any non-zero value usually enables the option. Regardless of options, Thinker also includes a custom crash handler that writes output to `debug.txt` in the game folder if the game happens to crash for any reason.
+Note that in `thinker.ini` config file, for binary settings **only zero values are treated as disabled**, any non-zero value usually enables the option. Whenever Thinker options are changed in the GUI, they are saved to `Alpha Centauri.ini`. While the same settings can be set in thinker.ini, **the values in Alpha Centauri.ini take priority**.
 
-For testing purposes it is also possible to run old/new AIs side-by-side by setting `factions_enabled=3` or similar. In that case, only the factions in the first 3 slots will use Thinker AI if they are not player-controlled. By default, `factions_enabled=7` setting enables Thinker AI for all computer factions.
+For testing purposes it is also possible to run old/new AIs side-by-side by setting `factions_enabled=3` or similar. In that case, only the factions in the first 3 slots will use Thinker AI if they are not player-controlled. By default, `factions_enabled=7` setting enables Thinker AI for all computer factions. Regardless of options, Thinker also includes a custom crash handler that writes output to `debug.txt` in the game folder if the game happens to crash for any reason.
 
 In addition to the binary patches listed separately in this file, items that are listed after "Game Engine Patches" in `thinker.ini` apply to all factions regardless of `factions_enabled` setting. Some patches such as `ignore_reactor_power` and unit repair rate changes are imported from [Will To Power Mod](https://github.com/tnevolin/thinker-doer/).
 
@@ -36,12 +36,17 @@ Thinker's in-game menu can be opened by pressing `ALT+T`. It shows the current v
 * When building or capturing a new base, the mod will automatically copy the saved build queue from **Template 1** to the new base. At maximum 8 items can be saved to the template, and the first item from the template will be automatically moved to current production choice when a new base is built or captured. Only the template saved to the first slot is checked, any other saved templates are ignored.
 * To save the current queue to template, open a base and **right click** on the queue and select **Save current list to template**.
 * This feature works in conjunction with the simple hurry cost option so that it's easy to start hurrying base production on the first turn without worrying about double cost mineral thresholds.
-* Technical details: whenever Thinker options are changed in the GUI, they are saved to Alpha Centauri.ini. While the same settings can be set in thinker.ini, the values in Alpha Centauri.ini take priority.
 
 
 Map generator options
 =====================
 Using the default settings, the game's random map generator produces bland-looking maps that also have way too many small islands that make the navigation much harder for the AI. Thinker's alphax.txt modifies the WorldBuilder to produce bigger continents, less tiny islands, more rivers and ocean shelf on random maps. All landmarks that are placed on random maps can now be configured from `thinker.ini`. Nessus Canyon is also available but disabled by default.
+
+As an optional feature, Thinker includes a rewritten map generator that replaces the old WorldBuilder. This can be toggled with `new_world_builder` config option or from Thinker's menu option. This feature supports all the world settings chosen from the game menus such as map size, ocean coverage, erosion, natives and rainfall level.
+
+Ocean coverage as a percentage for each menu option is provided as a separate option `world_sea_levels`. Changing this variable has a huge impact on the generated maps. Lower numbers are almost always pangaea maps while higher numbers tend towards archipelago layouts.
+
+This new generator algorithm is entirely different from the game vanilla version, so it does not parse some of the variables specified in `alphax.txt`. Any WorldBuilder variable names starting with Land, Continent, Hills or Plateau are not currently used by the generator. The other options listed below in this document are supported regardless if the `new_world_builder` is enabled or not.
 
 Thinker's `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on Huge map sizes.
 
