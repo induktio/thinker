@@ -1630,7 +1630,7 @@ static_assert(sizeof(CMain) == 149412, "");
 typedef int(__thiscall *FMapWin_pixel_to_tile)(Console* This, int x, int y, long* px, long* py);
 typedef int(__thiscall *FMapWin_tile_to_pixel)(Console* This, int x, int y, long* px, long* py);
 typedef int(__thiscall *FMapWin_set_center)(Console* This, int x, int y, int v1);
-typedef int(__thiscall *FMapWin_calculate_dim)(Console* This);
+typedef int(__thiscall *FMapWin)(Console* This);
 typedef int(__thiscall *FWin_is_visible)(Win* This);
 typedef int(__thiscall *FTutWin_draw_arrow)(Win* This);
 typedef int(__thiscall *FPlanWin_blink)(Win* This);
@@ -1647,6 +1647,8 @@ typedef int(__thiscall *FBuffer_set_font)(Buffer* This, Font* font, int a3, int 
 typedef int(__thiscall *FBuffer_write_cent_l3)(Buffer* This, LPCSTR lpString, RECT* rt, int len);
 
 extern Console* pMain;
+extern Console* MapWin;
+extern FMapWin MapWin_clear_terrain;
 extern FMapWin_pixel_to_tile MapWin_pixel_to_tile;
 extern FMapWin_tile_to_pixel MapWin_tile_to_pixel;
 extern FBuffer_set_text_color Buffer_set_text_color;

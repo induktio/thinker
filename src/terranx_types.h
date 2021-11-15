@@ -734,6 +734,72 @@ struct CNatural {
     char* name_short;
 };
 
+struct CWorldbuilder {
+    // Seeded land size of a standard world (allowed: 50 to 4000, default: 384)
+    int land_base;
+    // Additional land from LAND selection: x0, x1, x2 (allowed: 0 to 2000, default: 256)
+    int land_mod;
+    // Base size of a land mass seed (allowed: 5 to 1000, default: 12)
+    int continent_base;
+    // Increased size from LAND selection: x0, x1, x2 (allowed: 5 to 1000, default: 24)
+    int continent_mod;
+    // Base # of extra hills (allowed: 0 to 100, default: 1)
+    int hills_base;
+    // Additional hills from TIDAL selection: x0, x1, x2 (allowed: 0 to 100, default: 2)
+    int hills_mod;
+    // Basic plateau size (allowed: 0 to 500, default: 4)
+    int plateau_base;
+    // Plateau modifier based on LAND selection: x0, x1, x2 (allowed: 0 to 500, default: 8)
+    int plateau_mod;
+    // Basic # of rivers (allowed: 0 to 100, default: 8)
+    int rivers_base;
+    // Additional rivers based on RAIN selection (allowed: 0 to 100, default: 12)
+    int rivers_rain_mod;
+    // Latitude DIVISOR for temperature based on HEAT
+    // Smaller # increases effect of HEAT selection (allowed: 1 to 64, default: 14)
+    int solar_energy;
+    // Latitude DIVISOR for thermal banding; Smaller # widens hot bands (allowed: 1 to 64, default: 14)
+    int thermal_band;
+    // Latitude DIVISOR for thermal deviance; Smaller # increases randomness (allowed: 1 to 64, default: 8)
+    int thermal_deviance;
+    // Latitude DIVISOR for global warming; Smaller # increases effect of warming (allowed: 1 to 64, default: 8)
+    int global_warming;
+    // Magnitude of sea level changes from ice cap melting/freezing (allowed: 1 to 100, default: 5)
+    int sea_level_rises;
+    // Size of cloud mass trapped by peaks (allowed: 0 to 20, default: 5)
+    int cloudmass_peaks;
+    // Size of cloud mass trapped by hills (allowed: 0 to 20, default: 3)
+    int cloudmass_hills;
+    // Multiplier for rainfall belts (allowed: 0 to 8, default: 1)
+    int rainfall_coeff;
+    // Encourages fractal to grow deep water (allowed: -100 to 100, default: 15)
+    int deep_water;
+    // Encourages fractal to grow shelf (allowed: -100 to 100, default: 10)
+    int shelf;
+    // Encourages highland plains (allowed: -100 to 100, default: 15)
+    int plains;
+    // Encourages wider beaches (allowed: -100 to 100, default: 10)
+    int beach;
+    // Encourages hills x TIDAL selection (allowed: 0 to 100, default: 10)
+    int hills;
+    // Encourages peaks (allowed: -100 to 100, default: 25)
+    int peaks;
+    // Fungus coefficient based on LIFE selection (allowed: 0 to 5, default: 1)
+    int fungus;
+    // Continent size ratios #1 (allowed: n/a, default: 3)
+    int cont_size_ratio1;
+    // Continent size ratios #2 (allowed: n/a, default: 6)
+    int cont_size_ratio2;
+    // Continent size ratios #3 (allowed: n/a, default: 12)
+    int cont_size_ratio3;
+    // Continent size ratios #4 (allowed: n/a, default: 18)
+    int cont_size_ratio4;
+    // Continent size ratios #5 (allowed: n/a, default: 24)
+    int cont_size_ratio5;
+    // Higher # increases island count (allowed: 1 to 500, default: 36)
+    int islands;
+};
+
 struct UNIT {
     char name[32];
     uint32_t ability_flags;
