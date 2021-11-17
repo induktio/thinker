@@ -2123,7 +2123,7 @@ bool airdrop_move(const int id, MAP* sq) {
     for (int i = 9; i < TableRange[Rules->max_airdrop_rng_wo_orbital_insert]; i++) {
         int x2 = wrap(veh->x + TableOffsetX[i]);
         int y2 = veh->y + TableOffsetY[i];
-        if ((sq = mapsq(x2, y2)) && sq->is_base() && !non_ally_in_tile(x2, y2, faction)) {
+        if ((sq = mapsq(x2, y2)) && sq->is_base() && !is_ocean(sq)) {
             if (at_war(faction, sq->owner) && veh_at(x2, y2) < 0) {
                 tx = x2;
                 ty = y2;

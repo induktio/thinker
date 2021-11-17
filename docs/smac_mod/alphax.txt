@@ -1,14 +1,14 @@
 ;
+; *************************************************************
+; *  SMAC-in-SMACX Mod / includes changes for Thinker Mod     *
+; *  https://github.com/induktio/thinker                      *
+; *************************************************************
+;
 ; Sid Meier's ALPHA CENTAURI
 ;
 ; Alpha Centauri User-Configurable Rules
 ;
 ; Copyright (c) 1997, 1998 by Firaxis Games, Inc.
-;
-; *************************************************************
-; *  SMAC-in-SMACX Mod / includes changes for Thinker Mod     *
-; *  https://github.com/induktio/thinker                      *
-; *************************************************************
 ;
 ; ALPHA CENTAURI reads the rules of the game from this file at
 ; startup. Feel free, at your own risk, to experiment with editing
@@ -175,7 +175,7 @@ Borehole Square,  0, 6, 6, 0,
 8,   ; Plateau base     (Basic plateau size)
 12,  ; Plateau modifier (Plateau modifier based on LAND selection: x0, x1, x2)
 16,  ; Rivers base      (Basic # of rivers)
-16,  ; Rivers rain mod. (Additional rivers based on RAIN selection)
+20,  ; Rivers rain mod. (Additional rivers based on RAIN selection)
 14,  ; Solar Energy     (Latitude DIVISOR for temperature based on HEAT) Smaller # increases effect of HEAT selection
 14,  ; Thermal band     (Latitude DIVISOR for thermal banding)  Smaller # widens hot bands
 8,   ; Thermal deviance (Latitude DIVISOR for thermal deviance) Smaller # increases randomness
@@ -184,7 +184,7 @@ Borehole Square,  0, 6, 6, 0,
 5,   ; Cloudmass peaks  (Size of cloud mass trapped by peaks)
 3,   ; Cloudmass hills  (Size of cloud mass trapped by hills)
 1,   ; Rainfall coeff.  (Multiplier for rainfall belts)
-8,   ; Deep water       (Encourages fractal to grow deep water)
+4,   ; Deep water       (Encourages fractal to grow deep water)
 10,  ; Shelf            (Encourages fractal to grow shelf)
 15,  ; Plains           (Encourages highland plains)
 40,  ; Beach            (Encourages wider beaches)

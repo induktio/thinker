@@ -924,14 +924,15 @@ void show_mod_stats() {
 }
 
 int show_mod_config() {
-    enum {Close, MapGen, MapLabels, FormerReplace, FreeUnits, FreeFormers, FreeColonies};
+    enum {Close, MapGen, MapStyle, MapLabels, FormerReplace, FreeUnits, FreeFormers, FreeColonies};
     char buf[256];
     int ret;
     while (true) {
         parse_says(0, (conf.new_world_builder ? "true" : "false"), -1, -1);
-        parse_says(1, (conf.world_map_labels ? "true" : "false"), -1, -1);
-        parse_says(2, (conf.warn_on_former_replace ? "true" : "false"), -1, -1);
-        parse_says(3, (conf.player_free_units ? "true" : "false"), -1, -1);
+        parse_says(1, (conf.world_continents ? "large islands" : "small islands"), -1, -1);
+        parse_says(2, (conf.world_map_labels ? "true" : "false"), -1, -1);
+        parse_says(3, (conf.warn_on_former_replace ? "true" : "false"), -1, -1);
+        parse_says(4, (conf.player_free_units ? "true" : "false"), -1, -1);
         ParseNumTable[0] = conf.free_formers;
         ParseNumTable[1] = conf.free_colony_pods;
         ret = popp("modmenu", "OPTIONS", 0, "stars_sm.pcx", 0);
@@ -942,6 +943,11 @@ int show_mod_config() {
             conf.new_world_builder = !conf.new_world_builder;
             WritePrivateProfileStringA(ModAppName, "new_world_builder",
                 (conf.new_world_builder ? "1" : "0"), GameIniFile);
+        }
+        else if (ret == MapStyle) {
+            conf.world_continents = !conf.world_continents;
+            WritePrivateProfileStringA(ModAppName, "world_continents",
+                (conf.world_continents ? "1" : "0"), GameIniFile);
         }
         else if (ret == MapLabels) {
             conf.world_map_labels = !conf.world_map_labels;

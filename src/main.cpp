@@ -106,6 +106,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->max_satellites = atoi(value);
     } else if (MATCH("thinker", "new_world_builder")) {
         cf->new_world_builder = atoi(value);
+    } else if (MATCH("thinker", "world_continents")) {
+        cf->world_continents = atoi(value);
     } else if (MATCH("thinker", "world_sea_levels")) {
         opt_list_parse(conf.world_sea_levels, buf, 3, 0);
     } else if (MATCH("thinker", "faction_placement")) {
@@ -238,6 +240,8 @@ int cmd_parse(Config* cf) {
 int game_ini_parse(Config* cf) {
     cf->new_world_builder = GetPrivateProfileIntA(
         ModAppName, "new_world_builder", cf->new_world_builder, GameIniFile);
+    cf->world_continents = GetPrivateProfileIntA(
+        ModAppName, "world_continents", cf->world_continents, GameIniFile);
     cf->world_map_labels = GetPrivateProfileIntA(
         ModAppName, "world_map_labels", cf->world_map_labels, GameIniFile);
     cf->warn_on_former_replace = GetPrivateProfileIntA(

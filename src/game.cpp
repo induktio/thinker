@@ -458,6 +458,11 @@ uint32_t map_hash(uint32_t a, uint32_t b) {
     return (h ^ (h>>16));
 }
 
+uint32_t pair_hash(uint32_t a, uint32_t b) {
+    uint32_t h = (a ^ b ^ (b << 16)) * 2654435761;
+    return (h ^ (h>>16));
+}
+
 int random(int n) {
     return (n > 0 ? rand() % n : 0);
 }
@@ -492,6 +497,14 @@ int min_range(const Points& S, int x, int y) {
     int z = MaxMapW;
     for (auto& p : S) {
         z = min(z, map_range(x, y, p.x, p.y));
+    }
+    return z;
+}
+
+int min_vector(const Points& S, int x, int y) {
+    int z = MaxMapW;
+    for (auto& p : S) {
+        z = min(z, vector_dist(x, y, p.x, p.y));
     }
     return z;
 }

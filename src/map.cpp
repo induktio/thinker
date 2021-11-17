@@ -1,5 +1,6 @@
 #include "map.h"
 
+
 static Points spawns;
 static Points natives;
 static Points goodtiles;
@@ -278,8 +279,6 @@ void __cdecl mod_world_build() {
     }
     assert(*MapOceanCoverage >= 0 && *MapOceanCoverage < 3);
     MAP* sq;
-    int x = 0, y = 0;
-    int levels[256] = {};
     uint32_t seed = GetTickCount();
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
@@ -288,29 +287,54 @@ void __cdecl mod_world_build() {
     srand(seed);
     *map_random_seed = (seed % 0x7fff) + 1; // Must be non-zero
 
+    Points conts;
+    int levels[256] = {};
+    int x = 0, y = 0, i = 0;
+
+    if (conf.world_continents && *map_axis_y >= 32) {
+        while (++i < 50 && (int)conts.size() < 8) {
+            y = (random(*map_axis_y - 16) + 8);
+            x = (random(*map_axis_x) &~1) + (y&1);
+            if (i & 1 && min_vector(conts, x, y) < *map_area_sq_root/5) {
+                conts.insert({x, y});
+            }
+            if (~i & 1 && min_vector(conts, x, y) >= *map_area_sq_root/3) {
+                conts.insert({x, y});
+            }
+        }
+    }
+
     const float L = AltNatural[ALT_SHORE_LINE]; // Default shoreline altitude = 45
-    const float S = 0.8f + 0.04f*clamp(WorldBuilder->deep_water - WorldBuilder->shelf, -16, 16);
+    const float Wmid = (50 - conf.world_sea_levels[*MapOceanCoverage])*0.01f;
+    const float Wsea = 0.8f + 0.04f * clamp(WorldBuilder->deep_water - WorldBuilder->shelf, -16, 16);
+    const float Wland = 0.5f + 0.25f * (*MapErosiveForces);
+    const float Wdist = 1.0f / max(1.0f, *map_area_sq_root * 0.1f);
 
     for (y = 0; y < *map_axis_y; y++) {
-        float E = 1.0f - min(1.0f, (min(y, *map_axis_y - y) / (*map_axis_y * 0.2f)));
+        float Wcaps = 1.0f - min(1.0f, (min(y, *map_axis_y - y) / (max(1.0f, *map_axis_y * 0.2f))));
 
         for (x = y&1; x < *map_axis_x; x+=2) {
-            sq = mapsq(x, y);
-            float value = map_fractal(noise, x, y) - 0.7f*E;
+            float Wcont = 1.5f - clamp(min_vector(conts, x, y) * Wdist, 0.75f, 1.5f);
+            float value = map_fractal(noise, x, y) + Wmid - 0.5f*Wcaps;
             if (value > 0) {
-                value = value * (0.5f + 0.25f * (*MapErosiveForces));
+                value = value * Wland;
             } else {
-                value = value * S;
+                value = value * Wsea;
             }
+            if (conf.world_continents && value < 0.2f) {
+                value += Wcont * Wland;
+                if (DEBUG) pm_overlay[x][y] = (int)(10*Wcont);
+            }
+            sq = mapsq(x, y);
             sq->contour = clamp((int)(L + L*value), 0, 255);
             levels[sq->contour]++;
         }
     }
+
     int level_sum = 0;
     int level_mod = 0;
-    for (int i = 0; i < 256; i++) {
+    for (i = 0; i < 256; i++) {
         level_sum += levels[i];
-        debug("world_level %d %d\n", i, levels[i]);
         if (level_sum >= *map_area_tiles * conf.world_sea_levels[*MapOceanCoverage] / 100) {
             level_mod = AltNatural[ALT_SHORE_LINE] - i;
             break;
@@ -322,9 +346,9 @@ void __cdecl mod_world_build() {
             sq->contour = clamp(sq->contour + level_mod, 0, 255);
         }
     }
-    debug("world_build seed: %d size: %d ocean: %d erosion: %d sea_level: %d level_mod: %d\n",
+    debug("world_build seed: %10u size: %d ocean: %d erosion: %d deep: %d sea_level: %d level_mod: %d\n",
     seed, *MapSizePlanet, *MapOceanCoverage, *MapErosiveForces,
-    conf.world_sea_levels[*MapOceanCoverage], level_mod);
+    WorldBuilder->deep_water - WorldBuilder->shelf, conf.world_sea_levels[*MapOceanCoverage], level_mod);
 
     world_polar_caps();
     world_linearize_contours();
@@ -340,23 +364,24 @@ void __cdecl mod_world_build() {
             }
             uint64_t sea = 0;
             int land_count = Continents[sq->region].tile_count;
-            if (land_count <= 4 || (land_count <= max(16, *map_area_tiles/256)
-            && (int)((seed ^ sq->region) % 41) > WorldBuilder->islands)) {
+            if (land_count <= 4 || (land_count <= 24
+            && pair_hash(seed, sq->region) & 0x3f > WorldBuilder->islands)) {
                 bridges.insert({x, y});
                 if (DEBUG) pm_overlay[x][y] = -1;
                 continue;
             }
             for (auto& m : iterate_tiles(x, y, 1, 13)) {
                 if (is_ocean(m.sq)) {
-                    if (Continents[m.sq->region].tile_count > 40) {
-                        sea |= 1 << (m.sq->region - MaxRegionLandNum);
+                    if (Continents[m.sq->region].tile_count >= 30) {
+                        sea |= 1 << (m.sq->region & 0x3f);
                     }
                 }
             }
-            if (__builtin_popcount(sea) > 1
-            && (land_count > *map_area_tiles/8 || (seed * x ^ y) & 1)) {
-                bridges.insert({x, y});
-                if (DEBUG) pm_overlay[x][y] = -2;
+            if (__builtin_popcount(sea) > 1) {
+                if (land_count > *map_area_tiles/8 || pair_hash(seed^(x/8), y/8) & 1) {
+                    bridges.insert({x, y});
+                    if (DEBUG) pm_overlay[x][y] = -2;
+                }
             }
         }
     }
