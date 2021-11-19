@@ -5,8 +5,8 @@ static Points spawns;
 static Points natives;
 static Points goodtiles;
 
-int* dword_9B22E8 = (int*)0x9B22E8;
-int* dword_9B22EC = (int*)0x9B22EC;
+int* WorldAddTemperature = (int*)0x9B22E8;
+int* WorldSkipTerritory = (int*)0x9B22EC;
 
 
 void process_map(int faction, int k) {
@@ -76,7 +76,7 @@ bool valid_start(int faction, int iter, int x, int y, bool aquatic, bool need_bo
         return false;
     }
     // LM_FRESH landmark is incorrectly used on some maps
-    if (aquatic != is_ocean(sq) || (sq->landmarks & ~LM_FRESH && iter < 250)) {
+    if (aquatic != is_ocean(sq) || (sq->landmarks & ~LM_FRESH && iter < 150)) {
         return false;
     }
     if ((goody_at(x, y) > 0 || bonus_at(x, y) > 0) && iter < 200) {
@@ -255,6 +255,81 @@ float map_fractal(FastNoiseLite& noise, int x, int y) {
     return val;
 }
 
+void __cdecl mod_world_monsoon() {
+    typedef struct {
+        uint8_t valid;
+        uint8_t valid_near;
+        uint8_t sea;
+        uint8_t sea_near;
+    } TileInfo;
+    static TileInfo tiles[1024][512];
+    memset(tiles, 0, sizeof(tiles));
+    world_rainfall();
+
+    MAP* sq;
+    int i = 0, j = 0, x = 0, y = 0, x2 = 0, y2 = 0, num = 0;
+    const int y_a = *map_axis_y*3/8;
+    const int y_b = *map_axis_y*5/8;
+    const int limit = max(1024, *map_area_tiles) * (2 + *MapCloudCover) / 100;
+
+    for (y = 0; y < *map_axis_y; y++) {
+        for (x = y&1; x < *map_axis_x; x+=2) {
+            if (!(sq = mapsq(x, y))) {
+                continue;
+            }
+            if (is_ocean(sq)) {
+                tiles[x][y].sea = Continents[sq->region].tile_count > 15;
+                continue;
+            }
+            if (sq->alt_level() == ALT_SHORE_LINE || sq->alt_level() == ALT_ONE_ABOVE_SEA) {
+                tiles[x][y].valid = !sq->landmarks;
+            }
+        }
+    }
+    for (y = 0; y < *map_axis_y; y++) {
+        for (x = y&1; x < *map_axis_x; x+=2) {
+            if (tiles[x][y].valid) {
+                for (auto& p : iterate_tiles(x, y, 0, 45)) {
+                    if (tiles[p.x][p.y].valid) {
+                        tiles[x][y].valid_near++;
+                    }
+                    if (tiles[p.x][p.y].sea) {
+                        tiles[x][y].sea_near++;
+                    }
+                }
+            }
+        }
+    }
+    for (i = 0; i < 256; i++) {
+        y = (random(y_b - y_a) + y_a);
+        x = wrap((random(*map_axis_x) &~1) + (y&1));
+        if (!tiles[x][y].valid || tiles[x][y].sea_near < 8 - i/16 || tiles[x][y].valid_near < 16 - i/32) {
+            continue;
+        }
+        int goal = num + max(21, limit/4);
+        for (j = 0; j < 32 && num < goal; j++) {
+            if (j % 4 == 0) {
+                y2 = y;
+                x2 = x;
+            }
+            y2 = y2 + random(8);
+            x2 = wrap(((x2 + random(8)) &~1) + (y2&1));
+            if (y2 >= y_a && y2 <= y_b && tiles[x2][y2].valid && tiles[x2][y2].valid_near > 8 - i/32) {
+                for (auto& p : iterate_tiles(x2, y2, 0, 21)) {
+                    if (tiles[p.x][p.y].valid && ~p.sq->landmarks & LM_JUNGLE) {
+                        bit2_set(p.x, p.y, LM_JUNGLE, 1);
+                        code_set(p.x, p.y, num % 121);
+                        num++;
+                    }
+                }
+            }
+            if (num >= limit) {
+                return;
+            }
+        }
+    }
+}
+
 void __cdecl mod_world_build() {
     if (!conf.new_world_builder) {
         world_build();
@@ -265,8 +340,8 @@ void __cdecl mod_world_build() {
         *game_state |= STATE_DEBUG_MODE;
     }
     memcpy(AltNatural, AltNaturalDefault, 0x2Cu);
-    *dword_9B22E8 = 1;
-    *dword_9B22EC = 1;
+    *WorldAddTemperature = 1;
+    *WorldSkipTerritory = 1;
     for (int i = 0; i < 7; i++) {
         if (MapSizePlanet[i] < 0) {
             MapSizePlanet[i] = random(3);
@@ -346,8 +421,8 @@ void __cdecl mod_world_build() {
             sq->contour = clamp(sq->contour + level_mod, 0, 255);
         }
     }
-    debug("world_build seed: %10u size: %d ocean: %d erosion: %d deep: %d sea_level: %d level_mod: %d\n",
-    seed, *MapSizePlanet, *MapOceanCoverage, *MapErosiveForces,
+    debug("world_build seed: %10u size: %d ocean: %d erosion: %d cloud: %d deep: %d sea_level: %d level_mod: %d\n",
+    seed, *MapSizePlanet, *MapOceanCoverage, *MapErosiveForces, *MapCloudCover,
     WorldBuilder->deep_water - WorldBuilder->shelf, conf.world_sea_levels[*MapOceanCoverage], level_mod);
 
     world_polar_caps();
@@ -392,9 +467,16 @@ void __cdecl mod_world_build() {
     world_temperature();
     world_riverbeds();
     world_fungus();
+    world_validate();
 
     int lm = conf.landmarks;
-    if (lm & LM_JUNGLE) world_monsoon(-1, -1);
+    if (lm & LM_JUNGLE) {
+        if (conf.world_landmarks) {
+            mod_world_monsoon();
+        } else {
+            world_monsoon(-1, -1);
+        }
+    }
     if (lm & LM_CRATER) world_crater(-1, -1);
     if (lm & LM_VOLCANO) world_volcano(-1, -1, 0);
     if (lm & LM_MESA) world_mesa(-1, -1);
@@ -414,10 +496,10 @@ void __cdecl mod_world_build() {
     if (lm & LM_GEOTHERMAL) world_geothermal(-1, -1);
 
     fixup_landmarks();
-    *dword_9B22E8 = 0;
-    world_climate();
+    *WorldAddTemperature = 0;
+    *WorldSkipTerritory = 0; // If this flag is false, reset_territory is run in world_climate
+    world_climate(); // Run Path::continents
     world_rocky();
-    *dword_9B22EC = 0;
 
     if (!*game_not_started) {
         MapWin_clear_terrain(MapWin);

@@ -620,6 +620,37 @@ bool patch_setup(Config* cf) {
         memset((void*)0x414EE2, 0x90, 7); // Superdrone icons, humans
     }
 
+    /*
+    Patch map window to render more detailed tiles when zoomed out.
+    83 7D 10 F8      cmp     [ebp+zoom], 0FFFFFFF8h
+    */
+    if (!conf.smooth_scrolling && !pracx) {
+        int locations[] = {
+            0x4636AE,
+            0x465050,
+            0x465345,
+            0x465DB8,
+            0x465E08,
+            0x465E91,
+            0x465EBF,
+            0x465EEF,
+            0x465F2E,
+            0x465FB1,
+            0x466005,
+            0x46605C,
+            0x466085,
+            0x4660AE,
+            0x466113,
+            0x466444,
+        };
+        for (int p : locations) {
+            if (*(uint32_t*)p == 0xF8107D83 || *(uint32_t*)p == 0xF6107D83) {
+                *(uint32_t*)p = 0xF2107D83;
+            } else {
+                assert(0);
+            }
+        }
+    }
     if (cf->smac_only) {
         if (!FileExists("smac_mod/alphax.txt")
         || !FileExists("smac_mod/conceptsx.txt")
