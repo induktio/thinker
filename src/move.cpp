@@ -18,7 +18,7 @@ work on a given square to prevent too many of them converging on the same spot.
 It is also used as a shortcut to prioritize improving tiles that are reachable
 by the most friendly base workers, usually tiles in between bases.
 
-Non-combat units controlled by Thinker (formers, colony pods, land-based crawlers)
+Non-combat units controlled by Thinker (formers, colony pods, crawlers)
 use pm_safety table to decide if there are enemy units too close to them.
 PM_SAFE defines the threshold below which the units will attempt to flee
 to the square chosen by escape_move.
@@ -35,10 +35,10 @@ PMTable pm_enemy_near;
 PMTable pm_enemy_dist;
 PMTable pm_overlay;
 
-int last_faction = 0;
-int build_tubes = false;
-int defend_goal[MaxBaseNum] = {};
-int region_flags[MaxRegionNum] = {};
+static int last_faction = 0;
+static int build_tubes = false;
+static int defend_goal[MaxBaseNum] = {};
+static int region_flags[MaxRegionNum] = {};
 
 int arty_value(int x, int y);
 int garrison_goal(int x, int y, int faction, int triad);
@@ -48,26 +48,34 @@ bool allow_probe(int faction1, int faction2);
 
 
 void adjust_value(PMTable tbl, int x, int y, int range, int value) {
+    assert(mapsq(x, y) && range > 0);
     for (const auto& m : iterate_tiles(x, y, 0, TableRange[range])) {
-        tbl[m.x][m.y] += value;
+        int sum = tbl[m.x][m.y] + value;
+        if (sum >= SHRT_MIN && sum <= SHRT_MAX) {
+            tbl[m.x][m.y] = sum;
+        }
     }
 }
 
 bool non_ally_in_tile(int x, int y, int faction) {
+    assert(mapsq(x, y));
     return faction == last_faction && mapnodes.count({x, y, NODE_NONALLY}) > 0;
 }
 
 // Any sea region or inland lakes
 int coast_tiles(int x, int y) {
+    assert(mapsq(x, y));
     return pm_shore[x][y] & ShoreTilesMask;
 }
 
 // Ocean refers only to main_sea_region
 int ocean_coast_tiles(int x, int y) {
+    assert(mapsq(x, y));
     return pm_shore[x][y] / ShoreLine;
 }
 
 bool near_ocean_coast(int x, int y) {
+    assert(mapsq(x, y));
     if (pm_shore[x][y] >= ShoreLine) {
         return false;
     }
@@ -180,16 +188,15 @@ void land_raise_plan(int faction, bool visual) {
     while (++i < 1000 && (sq = ts.get_next()) != NULL) {
         assert(!is_ocean(sq));
         assert(sq->owner == faction);
-        if (pm_shore[ts.rx][ts.ry] > 0 && !sq->is_base()) {
+        if (coast_tiles(ts.rx, ts.ry) > 0 && !sq->is_base()) {
             path.push_back({ts.rx, ts.ry});
         }
     }
     debug("raise_plan %d region: %d tiles: %d\n",
         faction, p.main_region, Continents[p.main_region].tile_count);
 
-    i = 0;
     ts.init(path, TS_SEA_AND_SHORE, 4);
-    while (++i < 3200 && (sq = ts.get_next()) != NULL && ts.dist <= 12) {
+    while ((sq = ts.get_next()) != NULL && ts.dist <= 12) {
         if (sq->region == p.main_region || !sq->is_land_region() || (!sq->is_owned() && !expand)) {
             continue;
         }
@@ -1112,7 +1119,7 @@ int base_tile_score(int x1, int y1, int range, int triad) {
             for (const int* p : priority) if (sq->items & p[0]) score += p[1];
         }
     }
-    return score - 2*range + min(0, pm_safety[x1][y1]);
+    return score - 2*range + min(0, (int)pm_safety[x1][y1]);
 }
 
 int colony_move(const int id) {
@@ -1508,7 +1515,7 @@ int former_tile_score(int x1, int y1, int x2, int y2, int faction, MAP* sq) {
     if (is_shore_level(sq) && mapnodes.count({x2, y2, NODE_GOAL_RAISE_LAND})) {
         score += 20;
     }
-    return score - range/2 + min(8, pm_former[x2][y2]) + min(0, pm_safety[x2][y2]);
+    return score - range/2 + min(8, (int)pm_former[x2][y2]) + min(0, (int)pm_safety[x2][y2]);
 }
 
 int former_move(const int id) {
@@ -2032,7 +2039,7 @@ int aircraft_move(const int id) {
     int tx = -1;
     int ty = -1;
     int id2 = -1;
-    double best_odds = 1.2 - 0.005 * min(100, p.air_combat_units);
+    double best_odds = 1.2 - 0.004 * min(100, p.air_combat_units);
     TileSearch ts;
     ts.init(veh->x, veh->y, TRIAD_AIR);
 
@@ -2250,7 +2257,7 @@ int combat_move(const int id) {
     */
     double best_odds = (at_base && defenders < 1 ? 1.4 : 1.2)
         - (at_enemy ? 0.15 : 0)
-        - 0.008*min(50, pm_unit_near[veh->x][veh->y])
+        - 0.008*min(50, (int)pm_unit_near[veh->x][veh->y])
         - 0.0005*min(500, p.land_combat_units + p.sea_combat_units);
     int best_score = arty_value(veh->x, veh->y);
     TileSearch ts;
@@ -2496,7 +2503,7 @@ int combat_move(const int id) {
         }
     }
     if (tx >= 0) {
-        bool flank = !defend && path.dist > 1 && random(12) < min(8, pm_target[tx][ty]);
+        bool flank = !defend && path.dist > 1 && random(12) < min(8, (int)pm_target[tx][ty]);
         bool skip  = !defend && path.dist < 6 && !veh->is_probe() && (sq = mapsq(tx, ty))
             && (id2 = choose_defender(tx, ty, id, sq)) >= 0
             && battle_priority(id, id2, path.dist - 1, moves, sq) < 0.7;

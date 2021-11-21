@@ -44,20 +44,16 @@ Open Project Homepage
 #caption Thinker Mod Options
 ^New map generator: {$OPT0}
 ^Random map style: {$OPT1}
-^World map labels: {$OPT2}
-^Warn on formers replacing tile items: {$OPT3}
-^Spawn player free units: {$OPT4}
-^Free formers: {$NUM0}
-^Free colony pods: {$NUM1}
+^Modified landmarks: {$OPT2}
+^World map labels: {$OPT3}
+^Warn on formers replacing tile items: {$OPT4}
 
 Close Dialog
 Toggle New Map Generator
 Toggle Random Map Style
+Toggle Modified Landmarks
 Toggle World Map Labels
 Toggle Former Warnings
-Toggle Player Free Units
-Set Free Formers
-Set Free Colony Pods
 
 #ASKNUMBER
 #xs 400

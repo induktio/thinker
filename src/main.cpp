@@ -108,8 +108,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->new_world_builder = atoi(value);
     } else if (MATCH("thinker", "world_continents")) {
         cf->world_continents = atoi(value);
-    } else if (MATCH("thinker", "world_landmarks")) {
-        cf->world_landmarks = atoi(value);
+    } else if (MATCH("thinker", "modified_landmarks")) {
+        cf->modified_landmarks = atoi(value);
     } else if (MATCH("thinker", "world_sea_levels")) {
         opt_list_parse(conf.world_sea_levels, buf, 3, 0);
     } else if (MATCH("thinker", "faction_placement")) {
@@ -244,16 +244,12 @@ int game_ini_parse(Config* cf) {
         ModAppName, "new_world_builder", cf->new_world_builder, GameIniFile);
     cf->world_continents = GetPrivateProfileIntA(
         ModAppName, "world_continents", cf->world_continents, GameIniFile);
+    cf->modified_landmarks = GetPrivateProfileIntA(
+        ModAppName, "modified_landmarks", cf->modified_landmarks, GameIniFile);
     cf->world_map_labels = GetPrivateProfileIntA(
         ModAppName, "world_map_labels", cf->world_map_labels, GameIniFile);
     cf->warn_on_former_replace = GetPrivateProfileIntA(
         ModAppName, "warn_on_former_replace", cf->warn_on_former_replace, GameIniFile);
-    cf->player_free_units = GetPrivateProfileIntA(
-        ModAppName, "player_free_units", cf->player_free_units, GameIniFile);
-    cf->free_formers = GetPrivateProfileIntA(
-        ModAppName, "free_formers", cf->free_formers, GameIniFile);
-    cf->free_colony_pods = GetPrivateProfileIntA(
-        ModAppName, "free_colony_pods", cf->free_colony_pods, GameIniFile);
     return 1;
 }
 
@@ -320,7 +316,7 @@ int plans_upkeep(int faction) {
         }
     }
 
-    if (!Factions[faction].base_count) {
+    if (!is_alive(faction)) {
         return 0;
     }
     if (conf.design_units) {
@@ -628,6 +624,9 @@ int __cdecl mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5) {
 
     if (!conf.social_ai || !thinker_enabled(faction)) {
         return social_ai(faction, v1, v2, v3, v4, v5);
+    }
+    if (!is_alive(faction)) {
+        return 0;
     }
     if (f->SE_upheaval_cost_paid > 0) {
         social_set(faction);

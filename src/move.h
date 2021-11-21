@@ -2,7 +2,7 @@
 
 #include "main.h"
 
-typedef int PMTable[MaxMapW][MaxMapH];
+typedef int16_t PMTable[MaxMapW][MaxMapH];
 
 const int BIT_SIMPLE = (BIT_FARM | BIT_MINE | BIT_FOREST);
 const int BIT_ADVANCED = (BIT_CONDENSER | BIT_THERMAL_BORE);

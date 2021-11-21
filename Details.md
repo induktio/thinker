@@ -46,9 +46,10 @@ Using the default settings, the game's random map generator produces bland-looki
 
 This feature supports all the world settings chosen from the game menus such as map size, ocean coverage, erosion, natives and rainfall level. With Thinker's version, it is possible to set the average ocean coverage level with `world_sea_levels` option, and this will provide a consistent way of setting the ocean amounts for any random maps. Changing this variable has a very high impact on the generated maps. Lower numbers are almost always pangaea maps while higher numbers tend towards archipelago layouts. There is no simple way of accurately doing this with the default map generator.
 
-From the menu options it is also possible to choose the random map style from larger or smaller continents. Note that this has only impact if the ocean coverage is at least average, since at low levels all generated maps will tend towards pangaea layouts.
+From the menu options it is also possible to choose the random map style from larger or smaller continents. Note that this has only significant impact if the ocean coverage is at least average, since at low levels all generated maps will tend towards pangaea layouts.
 
-All landmarks that are placed on random maps can also be configured from `thinker.ini`. Nessus Canyon is available but disabled by default. When new map generator is enabled, `world_landmarks` option replaces the default Monsoon Jungle landmark with multiple smaller jungles dispersed across the equator area. Planet rainfall level will determine how many jungle tiles are placed. When playing on smaller maps, it might make more sense to disable some additional landmarks, as otherwise the maps might appear cluttered.
+All landmarks that are placed on random maps can also be configured from `thinker.ini`. Nessus Canyon is available but disabled by default. When new map generator is enabled, `modified_landmarks` option replaces the default Monsoon Jungle landmark with multiple smaller jungles dispersed across the equator area. 
+Planet rainfall level will determine how many jungle tiles are placed. When playing on smaller maps, it might make more sense to disable some additional landmarks, as otherwise the maps might appear cluttered.
 
 The new map generator is entirely different from the game vanilla version, so it does not parse some of the variables specified in `alphax.txt`. Any WorldBuilder variable names starting with Land, Continent, Hills or Plateau are not currently used by the generator. The other options listed below in the file are mostly supported regardless if the `new_world_builder` is enabled or not.
 
@@ -80,7 +81,7 @@ In the original game, research costs were mainly decided by how many techs a fac
 
 The config option `revised_tech_cost` attempts to remake this mechanic so that the research cost for any particular tech is fixed and depends mainly on the level of the tech. This follows the game design choices that were also made in later Civilization games.
 
-For example, in the default tech tree, Social Psych is level 1 and Transcendent Thought is level 16. Enabling this feature should notably delay the tech race in mid to late game. See also [a helpful chart](https://alphacentauri2.info/index.php?action=downloads;sa=view;down=355) of the standard tech tree. The base cost for any particular tech is determined by this formula:
+For example, in the default tech tree, Social Psych is level 1 and Transcendent Thought is level 16. Enabling this feature should delay the tech race in mid to late game. See also [a helpful chart](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAkyzALX76aWAOc363a7mgpa/resources?dl=0&lst=) of the standard tech tree. The base cost for any particular tech is determined by this formula:
 
     5 * Level^3 + 75 * Level
 

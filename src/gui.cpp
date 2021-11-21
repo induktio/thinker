@@ -168,7 +168,7 @@ int __thiscall SubIf_release_handler(int ptr) {
 
 bool map_is_visible() {
     return CState.TimersEnabled
-        && !*game_not_started
+        && !*GameHalted
         && !Win_is_visible(BaseWin)
         && !Win_is_visible(SocialWin)
         && !Win_is_visible(TutWin)
@@ -424,7 +424,7 @@ void check_scroll() {
 LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     static int iDeltaAccum = 0;
     bool fHasFocus = (GetFocus() == *phWnd);
-    bool tools = DEBUG && !*game_not_started;
+    bool tools = DEBUG && !*GameHalted;
     POINT p;
 
     if (msg == WM_MOUSEWHEEL && fHasFocus) {
@@ -793,37 +793,35 @@ int __thiscall mod_calc_dim(Console* This) {
 Original Offset: 0050EA40
 */
 int __cdecl blink_timer() {
-    if (!*game_not_started) {
-        if (!*dword_915620) {
-            if (Win_is_visible(BaseWin)) {
-                return TutWin_draw_arrow(TutWin);
-            }
-            if (Win_is_visible(SocialWin)) {
-                return TutWin_draw_arrow(TutWin);
-            }
-            PlanWin_blink(PlanWin);
-            StringBox_clip_ids(StringBox, 150);
+    if (!*GameHalted && !*ControlRedraw) {
+        if (Win_is_visible(BaseWin)) {
+            return TutWin_draw_arrow(TutWin);
+        }
+        if (Win_is_visible(SocialWin)) {
+            return TutWin_draw_arrow(TutWin);
+        }
+        PlanWin_blink(PlanWin);
+        StringBox_clip_ids(StringBox, 150);
 
-            if ((!MapWin->field_23BE8 && (!*multiplayer_active || !(*game_state & STATE_UNK_2))) || *dword_9B2068) {
-                MapWin->field_23BFC = 0;
-                return 0;
-            }
-            if (MapWin->field_23BE4 || (*multiplayer_active && *game_state & STATE_UNK_2)) {
-                MapWin->field_23BF8 = !MapWin->field_23BF8;
-                draw_cursor();
-                bool mouse_btn_down = GetAsyncKeyState(VK_LBUTTON) < 0;
+        if ((!MapWin->field_23BE8 && (!*multiplayer_active || !(*game_state & STATE_UNK_2))) || *ControlTurnA) {
+            MapWin->field_23BFC = 0;
+            return 0;
+        }
+        if (MapWin->field_23BE4 || (*multiplayer_active && *game_state & STATE_UNK_2)) {
+            MapWin->field_23BF8 = !MapWin->field_23BF8;
+            draw_cursor();
+            bool mouse_btn_down = GetAsyncKeyState(VK_LBUTTON) < 0;
 
-                if ((int)*phInstance == GetWindowLongA(GetFocus(), GWL_HINSTANCE) && !Win_is_visible(TutWin)) {
-                    if (MapWin->field_23D80 != -1
-                    && MapWin->field_23D84 != -1
-                    && MapWin->field_23D88 != -1
-                    && MapWin->field_23D8C != -1) {
-                        if (*game_preferences & PREF_BSC_MOUSE_EDGE_SCROLL_VIEW || mouse_btn_down || *dword_9B7AE4 != 0) {
-                            CState.ScreenSize.x = *screen_width;
-                            CState.ScreenSize.y = *screen_height;
-                            CState.TimersEnabled = true;
-                            check_scroll();
-                        }
+            if ((int)*phInstance == GetWindowLongA(GetFocus(), GWL_HINSTANCE) && !Win_is_visible(TutWin)) {
+                if (MapWin->field_23D80 != -1
+                && MapWin->field_23D84 != -1
+                && MapWin->field_23D88 != -1
+                && MapWin->field_23D8C != -1) {
+                    if (*game_preferences & PREF_BSC_MOUSE_EDGE_SCROLL_VIEW || mouse_btn_down || *dword_9B7AE4 != 0) {
+                        CState.ScreenSize.x = *screen_width;
+                        CState.ScreenSize.y = *screen_height;
+                        CState.TimersEnabled = true;
+                        check_scroll();
                     }
                 }
             }
@@ -841,8 +839,9 @@ void __cdecl mod_turn_timer() {
     if (++iter & 1) {
         return;
     }
-    if (*game_not_started && !*map_random_seed) {
+    if (*GameHalted && !*map_random_seed) {
         ThinkerVars->game_time_spent = 0;
+        prev_time = 0;
     } else {
         uint32_t now = GetTickCount();
         if (prev_time && now - prev_time > 0) {
@@ -872,8 +871,8 @@ void __cdecl mod_turn_timer() {
                 }
             }
             if (restart) { // Return to main menu
-                *dword_9B2068 = 1;
-                *dword_93A948 = 1;
+                *ControlTurnA = 1;
+                *ControlTurnB = 1;
             }
         }
     }
@@ -924,17 +923,14 @@ void show_mod_stats() {
 }
 
 int show_mod_config() {
-    enum {Close, MapGen, MapStyle, MapLabels, FormerReplace, FreeUnits, FreeFormers, FreeColonies};
-    char buf[256];
+    enum {Close, MapGen, MapStyle, MapLandmarks, MapLabels, FormerReplace};
     int ret;
     while (true) {
         parse_says(0, (conf.new_world_builder ? "true" : "false"), -1, -1);
         parse_says(1, (conf.world_continents ? "large islands" : "small islands"), -1, -1);
-        parse_says(2, (conf.world_map_labels ? "true" : "false"), -1, -1);
-        parse_says(3, (conf.warn_on_former_replace ? "true" : "false"), -1, -1);
-        parse_says(4, (conf.player_free_units ? "true" : "false"), -1, -1);
-        ParseNumTable[0] = conf.free_formers;
-        ParseNumTable[1] = conf.free_colony_pods;
+        parse_says(2, (conf.modified_landmarks ? "true" : "false"), -1, -1);
+        parse_says(3, (conf.world_map_labels ? "true" : "false"), -1, -1);
+        parse_says(4, (conf.warn_on_former_replace ? "true" : "false"), -1, -1);
         ret = popp("modmenu", "OPTIONS", 0, "stars_sm.pcx", 0);
         if (ret == Close) {
             break;
@@ -949,6 +945,11 @@ int show_mod_config() {
             WritePrivateProfileStringA(ModAppName, "world_continents",
                 (conf.world_continents ? "1" : "0"), GameIniFile);
         }
+        else if (ret == MapLandmarks) {
+            conf.modified_landmarks = !conf.modified_landmarks;
+            WritePrivateProfileStringA(ModAppName, "modified_landmarks",
+                (conf.modified_landmarks ? "1" : "0"), GameIniFile);
+        }
         else if (ret == MapLabels) {
             conf.world_map_labels = !conf.world_map_labels;
             WritePrivateProfileStringA(ModAppName, "world_map_labels",
@@ -960,25 +961,6 @@ int show_mod_config() {
             WritePrivateProfileStringA(ModAppName, "warn_on_former_replace",
                 (conf.warn_on_former_replace ? "1" : "0"), GameIniFile);
         }
-        else if (ret == FreeUnits) {
-            conf.player_free_units = !conf.player_free_units;
-            WritePrivateProfileStringA(ModAppName, "player_free_units",
-                (conf.player_free_units ? "1" : "0"), GameIniFile);
-        }
-        else if (ret == FreeFormers) {
-            parse_says(0, "free_formers", -1, -1);
-            pop_ask_number("modmenu", "ASKNUMBER", conf.free_formers, 0);
-            conf.free_formers = max(0, ParseNumTable[0]);
-            sprintf(buf, "%d", conf.free_formers);
-            WritePrivateProfileStringA(ModAppName, "free_formers", buf, GameIniFile);
-        }
-        else if (ret == FreeColonies) {
-            parse_says(0, "free_colony_pods", -1, -1);
-            pop_ask_number("modmenu", "ASKNUMBER", conf.free_colony_pods, 0);
-            conf.free_colony_pods = max(0, ParseNumTable[0]);
-            sprintf(buf, "%d", conf.free_colony_pods);
-            WritePrivateProfileStringA(ModAppName, "free_colony_pods", buf, GameIniFile);
-        }
     }
     return 0;
 }
@@ -988,7 +970,7 @@ int show_mod_menu() {
     parse_says(1, MOD_VERSION, -1, -1);
     parse_says(2, MOD_DATE, -1, -1);
 
-    if (*game_not_started) {
+    if (*GameHalted) {
         int ret = popp("modmenu", "MAINMENU", 0, "stars_sm.pcx", 0);
         if (ret == 1) {
             popup_homepage();
@@ -1001,10 +983,10 @@ int show_mod_menu() {
     ParseNumTable[2] = seconds % 60;
     int ret = popp("modmenu", "GAMEMENU", 0, "stars_sm.pcx", 0);
 
-    if (ret == 1 && !*game_not_started && !*pbem_active && !*multiplayer_active) {
+    if (ret == 1 && !*GameHalted && !*pbem_active && !*multiplayer_active) {
         show_mod_stats();
     }
-    else if (ret == 2 && !*game_not_started) {
+    else if (ret == 2 && !*GameHalted) {
         show_mod_config();
     }
     else if (ret == 3) {

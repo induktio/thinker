@@ -75,8 +75,18 @@ Original Offset: 00527290
 int __cdecl mod_faction_upkeep(int faction) {
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
-
     debug("faction_upkeep %d %d\n", *current_turn, faction);
+
+    if (conf.factions_enabled > 0 && (*map_axis_x > MaxMapW || *map_axis_y > MaxMapH)) {
+        parse_says(0, MOD_VERSION, -1, -1);
+        parse_says(1, "This map exceeds Thinker's maximum supported map size.", -1, -1);
+        popp("modmenu", "GENERIC", 0, 0, 0);
+        *ControlTurnA = 1; // Return to main menu
+        *ControlTurnB = 1;
+    }
+    if (faction == 0 && *current_turn == 1) {
+        ThinkerVars->game_time_spent = 0;
+    }
     if (faction > 0) {
         init_save_game(faction);
         plans_upkeep(faction);
@@ -103,8 +113,10 @@ int __cdecl mod_faction_upkeep(int faction) {
         This means we mostly cannot use move_upkeep variables in production phase.
         */
         mod_social_ai(faction, -1, -1, -1, -1, 0);
-        probe_upkeep(faction);
-        move_upkeep(faction, false);
+        if (is_alive(faction)) {
+            probe_upkeep(faction);
+            move_upkeep(faction, false);
+        }
         do_all_non_input();
 
         if (!is_human(faction)) {
@@ -226,7 +238,7 @@ std::vector<std::string> read_txt_block(const char* filename, const char* sectio
             break;
         } else if (start) {
             char* p = strstrip(line);
-            if (strlen(p) > 0 && strlen(p) < max_len) {
+            if (strlen(p) > 0 && strlen(p) < max_len && line[0] != ';') {
                 lines.push_back(p);
             }
         }

@@ -109,18 +109,18 @@ extern int* diplo_tech_faction;
 extern int* reportwin_opponent_faction;
 extern int* base_find_dist;
 extern int* veh_attack_flags;
-extern int* game_not_started;
 extern int* screen_width;
 extern int* screen_height;
 extern char256* ParseStrBuffer;
 extern int* ParseNumTable;
 extern int* ParseStrPlurality;
 extern int* ParseStrGender;
+extern int* GameHalted;
+extern int* ControlTurnA;
+extern int* ControlTurnB;
+extern int* ControlRedraw;
 
 // TODO: rename dwords
-extern int* dword_915620;
-extern int* dword_9B2068;
-extern int* dword_93A948;
 extern int* dword_9B7AE4;
 extern int* dword_93A934;
 extern int* dword_945B18;

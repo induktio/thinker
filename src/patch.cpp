@@ -189,6 +189,13 @@ int __cdecl mod_X_pop2(const char* label, int a2) {
     if (!strcmp(label, "MIMIMI") && !conf.warn_on_former_replace) {
         return 1;
     }
+    /*
+    Disable unnecessary warning if the map is larger than 128x128.
+    In any case the dialog will limit all map sizes to 256x256.
+    */
+    if (!strcmp(label, "VERYLARGEMAP")) {
+        return 0;
+    }
     return X_pop("SCRIPT", label, -1, 0, 0, a2);
 }
 
@@ -535,6 +542,7 @@ bool patch_setup(Config* cf) {
             remove_call(0x4E5F96); // #BEGINPROJECT
             remove_call(0x4E5E0D); // #CHANGEPROJECT
             remove_call(0x4F4817); // #DONEPROJECT
+            remove_call(0x4F2A4C); // #PRODUCE (project/satellite)
         }
         write_call(0x4DF19B, (int)spawn_veh); // Console_editor_veh
     }

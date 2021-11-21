@@ -262,12 +262,12 @@ void __cdecl mod_world_monsoon() {
         uint8_t sea;
         uint8_t sea_near;
     } TileInfo;
-    static TileInfo tiles[1024][512];
-    memset(tiles, 0, sizeof(tiles));
+    TileInfo* tiles = new TileInfo[*map_axis_x * *map_axis_y]{};
     world_rainfall();
 
     MAP* sq;
     int i = 0, j = 0, x = 0, y = 0, x2 = 0, y2 = 0, num = 0;
+    const int w = *map_axis_x;
     const int y_a = *map_axis_y*3/8;
     const int y_b = *map_axis_y*5/8;
     const int limit = max(1024, *map_area_tiles) * (2 + *MapCloudCover) / 100;
@@ -278,56 +278,58 @@ void __cdecl mod_world_monsoon() {
                 continue;
             }
             if (is_ocean(sq)) {
-                tiles[x][y].sea = Continents[sq->region].tile_count > 15;
+                tiles[w*y + x].sea = Continents[sq->region].tile_count > 15;
                 continue;
             }
             if (sq->alt_level() == ALT_SHORE_LINE || sq->alt_level() == ALT_ONE_ABOVE_SEA) {
-                tiles[x][y].valid = !sq->landmarks;
+                tiles[w*y + x].valid = !sq->landmarks;
             }
         }
     }
     for (y = 0; y < *map_axis_y; y++) {
         for (x = y&1; x < *map_axis_x; x+=2) {
-            if (tiles[x][y].valid) {
+            if (tiles[w*y + x].valid) {
                 for (auto& p : iterate_tiles(x, y, 0, 45)) {
-                    if (tiles[p.x][p.y].valid) {
-                        tiles[x][y].valid_near++;
+                    if (tiles[w*p.y + p.x].valid) {
+                        tiles[w*y + x].valid_near++;
                     }
-                    if (tiles[p.x][p.y].sea) {
-                        tiles[x][y].sea_near++;
+                    if (tiles[w*p.y + p.x].sea) {
+                        tiles[w*y + x].sea_near++;
                     }
                 }
             }
         }
     }
-    for (i = 0; i < 256; i++) {
+    for (i = 0; i < 256 && num < limit; i++) {
         y = (random(y_b - y_a) + y_a);
         x = wrap((random(*map_axis_x) &~1) + (y&1));
-        if (!tiles[x][y].valid || tiles[x][y].sea_near < 8 - i/16 || tiles[x][y].valid_near < 16 - i/32) {
+        if (!tiles[w*y + x].valid
+        || tiles[w*y + x].sea_near < 8 - i/16
+        || tiles[w*y + x].valid_near < 16 - i/32) {
             continue;
         }
         int goal = num + max(21, limit/4);
-        for (j = 0; j < 32 && num < goal; j++) {
+        for (j = 0; j < 32 && num < goal && num < limit; j++) {
             if (j % 4 == 0) {
                 y2 = y;
                 x2 = x;
             }
             y2 = y2 + random(8);
             x2 = wrap(((x2 + random(8)) &~1) + (y2&1));
-            if (y2 >= y_a && y2 <= y_b && tiles[x2][y2].valid && tiles[x2][y2].valid_near > 8 - i/32) {
+            if (y2 >= y_a && y2 <= y_b && tiles[w*y2 + x2].valid
+            && tiles[w*y2 + x2].valid_near > 8 - i/32) {
                 for (auto& p : iterate_tiles(x2, y2, 0, 21)) {
-                    if (tiles[p.x][p.y].valid && ~p.sq->landmarks & LM_JUNGLE) {
+                    if (tiles[w*p.y + p.x].valid && ~p.sq->landmarks & LM_JUNGLE) {
+                        assert(!is_ocean(p.sq));
                         bit2_set(p.x, p.y, LM_JUNGLE, 1);
                         code_set(p.x, p.y, num % 121);
                         num++;
                     }
                 }
             }
-            if (num >= limit) {
-                return;
-            }
         }
     }
+    delete[] tiles;
 }
 
 void __cdecl mod_world_build() {
@@ -363,11 +365,12 @@ void __cdecl mod_world_build() {
     *map_random_seed = (seed % 0x7fff) + 1; // Must be non-zero
 
     Points conts;
+    size_t continents = clamp(*map_area_sq_root / 12, 4, 20);
     int levels[256] = {};
     int x = 0, y = 0, i = 0;
 
     if (conf.world_continents && *map_axis_y >= 32) {
-        while (++i < 50 && (int)conts.size() < 8) {
+        while (++i < 100 && conts.size() < continents) {
             y = (random(*map_axis_y - 16) + 8);
             x = (random(*map_axis_x) &~1) + (y&1);
             if (i & 1 && min_vector(conts, x, y) < *map_area_sq_root/5) {
@@ -383,7 +386,7 @@ void __cdecl mod_world_build() {
     const float Wmid = (50 - conf.world_sea_levels[*MapOceanCoverage])*0.01f;
     const float Wsea = 0.8f + 0.04f * clamp(WorldBuilder->deep_water - WorldBuilder->shelf, -16, 16);
     const float Wland = 0.5f + 0.25f * (*MapErosiveForces);
-    const float Wdist = 1.0f / max(1.0f, *map_area_sq_root * 0.1f);
+    const float Wdist = 1.0f / clamp(*map_area_sq_root * 0.1f, 1.0f, 15.0f);
 
     for (y = 0; y < *map_axis_y; y++) {
         float Wcaps = 1.0f - min(1.0f, (min(y, *map_axis_y - y) / (max(1.0f, *map_axis_y * 0.2f))));
@@ -421,8 +424,9 @@ void __cdecl mod_world_build() {
             sq->contour = clamp(sq->contour + level_mod, 0, 255);
         }
     }
-    debug("world_build seed: %10u size: %d ocean: %d erosion: %d cloud: %d deep: %d sea_level: %d level_mod: %d\n",
-    seed, *MapSizePlanet, *MapOceanCoverage, *MapErosiveForces, *MapCloudCover,
+    debug("world_build seed: %10u size: %d x: %d y: %d "\
+    "ocean: %d erosion: %d cloud: %d deep: %d sea_level: %d level_mod: %d\n",
+    seed, *MapSizePlanet, *map_axis_x, *map_axis_y, *MapOceanCoverage, *MapErosiveForces, *MapCloudCover,
     WorldBuilder->deep_water - WorldBuilder->shelf, conf.world_sea_levels[*MapOceanCoverage], level_mod);
 
     world_polar_caps();
@@ -440,7 +444,8 @@ void __cdecl mod_world_build() {
             uint64_t sea = 0;
             int land_count = Continents[sq->region].tile_count;
             if (land_count <= 4 || (land_count <= 24
-            && pair_hash(seed, sq->region) & 0x3f > WorldBuilder->islands)) {
+            && pair_hash(seed, sq->region) & 0x3f > WorldBuilder->islands - 2)) {
+                // islands=1 removes all continents under size 25
                 bridges.insert({x, y});
                 if (DEBUG) pm_overlay[x][y] = -1;
                 continue;
@@ -471,7 +476,7 @@ void __cdecl mod_world_build() {
 
     int lm = conf.landmarks;
     if (lm & LM_JUNGLE) {
-        if (conf.world_landmarks) {
+        if (conf.modified_landmarks) {
             mod_world_monsoon();
         } else {
             world_monsoon(-1, -1);
@@ -501,7 +506,7 @@ void __cdecl mod_world_build() {
     world_climate(); // Run Path::continents
     world_rocky();
 
-    if (!*game_not_started) {
+    if (!*GameHalted) {
         MapWin_clear_terrain(MapWin);
     }
     fflush(debug_log);
