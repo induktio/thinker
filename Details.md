@@ -158,7 +158,7 @@ See below for some custom faction sets. The factions can be played in both game 
 
 Recommended alphax.txt settings
 ===============================
-Proposed alphax.txt settings for Thinker can be found from [this file](docs/alphax.txt). The purpose of these edits is to cause minimal differences to the game defaults, and rather fix bugs and improve the random map generation. That means the tech tree or production cost values are not modified, for example. The changes are summarized below:
+Modified alphax.txt settings for Thinker can be found from [this file](docs/alphax.txt). The purpose of these edits is to cause fairly minimal differences to the default game mechanics, instead they will mostly fix bugs and improve the random map generation. That means the tech tree or production cost values are not modified, for example. The changes are summarized below:
 
 1. Fix: Enabled the "Antigrav Struts" special ability for air units as stated in the manual.
 2. Fix: Disabled the "Clean Reactor" special ability for Probe Teams because they already don't require any support.
@@ -185,7 +185,7 @@ Features not supported
 ======================
 Currently the features listed here are not supported while Thinker is enabled. The list may be subject to change in future releases. Some requested features are not feasible to implement due to the limitations of patching a game binary.
 
-1. Network multiplayer (excluding PBEM) is not supported because of the large amounts of extra code required to synchronize the game state across computers.
+1. Network multiplayer (TCP/IP) and PBEM should be supported, however this receives less testing than the singleplayer configuration, so some issues might occur. In case of network problems, refer to other manuals on how to configure firewalls and open the necessary ports for multiplayer.
 2. More factions/units/bases. These limits were hardcoded in the game binary at compilation time and are not feasible to change without a full open source port.
 3. Some custom scenario rules in "Edit Scenario Rules" menus are not supported fully. This will not affect randomly generated maps. However these rules are supported: `No terraforming`, `No colony pods can be built`, `No secret projects can be built` and `No technological advances`.
 
@@ -218,6 +218,7 @@ Some notable game engine patches included with Thinker may not have their separa
 15. Patch AIs to initiate much less diplomacy dialogs when the player captures their bases. Previously this happened at least once for every turn the AI loses any bases and would repeat the same dialog every time if the player didn't agree to the peace terms. The patch makes the initiation of dialog more dependent on random chance unless the AI would finally accept surrender terms.
 16. Patch genetic warfare probe team action to cause much less damage for any units defending the base. In vanilla game mechanics even one attack instantly inflicted almost 80% damage. In the patched version population loss mechanic is unaffected, but even multiple attacks should do substantially less damage for defender units.
 17. Patch terrain drawing engine to render more detailed tiles when zooming out from the default level. Previously the tiles were replaced with blocky, less detailed versions on almost every zoom out level.
+18. Modify multiplayer setup screen to use average values for each of the random map generator settings, instead of the highest possible like previously.
 
 
 Scient's patch

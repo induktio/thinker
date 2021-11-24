@@ -19,7 +19,7 @@
 #pragma once
 
 #ifdef BUILD_REL
-    #define MOD_VERSION "Thinker Mod v2.7"
+    #define MOD_VERSION "Thinker Mod v2.8"
 #else
     #define MOD_VERSION "Thinker Mod develop build"
 #endif

@@ -1,6 +1,27 @@
 
 # Thinker mod release changelog
 
+## Version 2.8 (2021-11-24)
+* Add new rewritten random map generator to the game. It also adds options to set the ocean coverage levels and continent types in a more consistent way.
+* Map generator options: new_world_builder, world_sea_levels, world_continents, modified_landmarks.
+* Other added options: warn_on_former_replace, simple_hurry_cost, simple_cost_factor, tech_stagnate_rate.
+* Renamed options: planetpearls, aquatic_bonus_minerals, alien_guaranteed_techs.
+* Faction placement is modified to make spawns on river tiles much more likely.
+* It is possible to change more options from Thinker's ALT+T menu. In this case the changes are saved to Alpha Centauri.ini.
+* When building or capturing a new base, the mod will automatically copy the saved build queue from Template 1 to the new base.
+* Change cheap_early_tech to be enabled by default and the effect is now extended to the first 16 techs.
+* AI formers will build slightly less condensers and more forests.
+* AI tries to hurry combat unit production more often than previously.
+* Modify design_units feature to ensure the AIs will have a ship prototype with the highest rated weapon available.
+* Fix faction graphics bug that appears when Alpha Centauri.ini has a different set of faction filenames than the loaded scenario file.
+* Patch the game to use the Command Center maintenance cost that is set in alphax.txt.
+* Patch the base window population row to remove superdrone icons if they would be suppressed by psych-related effects.
+* Fix visual bug where population icons in base window would randomly switch their type when clicking on them.
+* Patch AIs to initiate much less diplomacy dialogs when the player captures their bases if they would repeat the same dialog every time.
+* Patch genetic warfare probe team action to cause much less damage for any units defending the base.
+* Patch terrain drawing engine to render more detailed tiles when zooming out from the default level. Previously the tiles were replaced with blocky, less detailed versions on almost every zoom out level.
+
+
 ## Version 2.7 (2021-10-23)
 * Add PSI gate support for AI. They are sometimes built in late stages of the game.
 * Add AI ability to steal unescorted artifacts from neutral factions.
