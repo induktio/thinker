@@ -24,22 +24,25 @@ void process_map(int faction, int k) {
     Map area square root values: Tiny = 33, Standard = 56, Huge = 90
     */
     int limit = clamp(*map_area_tiles, 1024, 8192) / 40;
+    size_t land_area = 0;
+    MAP* sq;
 
     for (int y = 0; y < *map_axis_y; y++) {
         for (int x = y&1; x < *map_axis_x; x+=2) {
-            MAP* sq = mapsq(x, y);
-            if (sq) {
+            if ((sq = mapsq(x, y))) {
                 assert(sq->region >= 0 && sq->region < MaxRegionNum);
                 region_count[sq->region]++;
+                if (sq->is_land_region()) {
+                    land_area++;
+                }
             }
         }
     }
     for (int y = 0; y < *map_axis_y; y++) {
         for (int x = y&1; x < *map_axis_x; x+=2) {
-            if (y < k || y >= *map_axis_y - k) {
+            if (y < k || y >= *map_axis_y - k || !(sq = mapsq(x, y))) {
                 continue;
             }
-            MAP* sq = mapsq(x, y);
             if (!is_ocean(sq) && !sq->is_rocky() && ~sq->items & BIT_FUNGUS
             && !(sq->landmarks & ~LM_FRESH) && region_count[sq->region] >= limit) {
                 goodtiles.insert({x, y});
@@ -55,15 +58,16 @@ void process_map(int faction, int k) {
             spawns.insert({v->x, v->y});
         }
     }
-    if ((int)goodtiles.size() < *map_area_sq_root * 8) {
+    if (goodtiles.size() * 3 < land_area) {
         goodtiles.clear();
     }
     debug("process_map x: %d y: %d sqrt: %d tiles: %d good: %d\n",
         *map_axis_x, *map_axis_y, *map_area_sq_root, *map_area_tiles, goodtiles.size());
 }
 
-bool valid_start(int faction, int iter, int x, int y, bool aquatic, bool need_bonus) {
+bool valid_start(int faction, int iter, int x, int y, bool need_bonus) {
     MAP* sq = mapsq(x, y);
+    bool aquatic = MFactions[faction].is_aquatic();
     int limit = (*map_area_sq_root < 40 ? max(5, 8 - iter/50) : 8);
     int min_sc = 80 - iter/4;
     int pods = 0;
@@ -213,7 +217,7 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
 }
 
 void __cdecl find_start(int faction, int* tx, int* ty) {
-    bool aquatic = MFactions[faction].rule_flags & RFLAG_AQUATIC;
+    bool aquatic = MFactions[faction].is_aquatic();
     bool need_bonus = !aquatic && conf.nutrient_bonus > is_human(faction);
     int x = 0;
     int y = 0;
@@ -232,7 +236,7 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
             x = (random(*map_axis_x) &~1) + (y&1);
         }
         debug("find_iter  %d %d x: %3d y: %3d\n", faction, i, x, y);
-        if (valid_start(faction, i, x, y, aquatic, need_bonus)) {
+        if (valid_start(faction, i, x, y, need_bonus)) {
             if (need_bonus) {
                 apply_nutrient_bonus(faction, &x, &y);
             }
@@ -250,7 +254,7 @@ float map_fractal(FastNoiseLite& noise, int x, int y) {
     float val = 1.0f * noise.GetNoise(2.0f*x, 1.5f*y)
         + 0.4f * (2 + *MapErosiveForces) * noise.GetNoise(-6.0f*x, -4.0f*y);
     if (x < 8 && *map_axis_x >= 32 && !(*map_toggle_flat & 1)) {
-        val = x/8.0f * val + (1.0f - x/8.0f) * map_fractal(noise, *map_axis_x - x, y);
+        val = x/8.0f * val + (1.0f - x/8.0f) * map_fractal(noise, *map_axis_x + x, y);
     }
     return val;
 }
@@ -270,7 +274,7 @@ void __cdecl mod_world_monsoon() {
     const int w = *map_axis_x;
     const int y_a = *map_axis_y*3/8;
     const int y_b = *map_axis_y*5/8;
-    const int limit = max(1024, *map_area_tiles) * (2 + *MapCloudCover) / 100;
+    const int limit = max(1024, *map_area_tiles) * (3 + *MapCloudCover) / 120;
 
     for (y = 0; y < *map_axis_y; y++) {
         for (x = y&1; x < *map_axis_x; x+=2) {

@@ -37,7 +37,6 @@ PMTable pm_overlay;
 
 static int last_faction = 0;
 static int build_tubes = false;
-static int defend_goal[MaxBaseNum] = {};
 static int region_flags[MaxRegionNum] = {};
 
 int arty_value(int x, int y);
@@ -478,7 +477,7 @@ void update_main_region(int faction) {
 void move_upkeep(int faction, bool visual) {
     Faction& f = Factions[faction];
     AIPlans& p = plans[faction];
-    if (!thinker_enabled(faction)) {
+    if (!is_alive(faction) || !thinker_enabled(faction)) {
         return;
     }
     int tile_count[MaxRegionNum] = {};
@@ -646,7 +645,6 @@ void move_upkeep(int faction, bool visual) {
         }
     }
     if (f.base_count > 0) {
-        memset(defend_goal, 1, sizeof(defend_goal));
         int values[MaxBaseNum] = {};
         int sorter[MaxBaseNum] = {};
         int bases = 0;
@@ -687,16 +685,16 @@ void move_upkeep(int faction, bool visual) {
             BASE* base = &Bases[i];
             if (base->faction_id == faction) {
                 if (values[i] >= k3) {
-                    defend_goal[i] = 4;
+                    base->defend_goal = 4;
                 } else if (values[i] >= k2) {
-                    defend_goal[i] = 3;
+                    base->defend_goal = 3;
                 } else if (values[i] >= k1) {
-                    defend_goal[i] = 2;
+                    base->defend_goal = 2;
                 } else {
-                    defend_goal[i] = 1;
+                    base->defend_goal = 1;
                 }
-                p.defend_weights += defend_goal[i];
-                debug("defend_goal %d %s\n", defend_goal[i], base->name);
+                p.defend_weights += base->defend_goal;
+                debug("defend_goal %d %s\n", base->defend_goal, base->name);
             }
         }
         debug("defend_upkeep %3d %d %8s bases: %3d land: %3d sea: %3d air: %3d\n",
@@ -1673,7 +1671,7 @@ int garrison_goal(int x, int y, int faction, int triad) {
         if (base->x == x && base->y == y) {
             int goal = max(1,
                 min(5, (p.land_combat_units + p.sea_combat_units)
-                * defend_goal[i] / max(1, p.defend_weights))
+                * max(1, (int)base->defend_goal) / max(1, p.defend_weights))
                 - (triad == TRIAD_SEA ? 2 : 0)
                 - (p.contacted_factions < 2 && p.unknown_factions > 1 ? 1 : 0)
                 - (!random(4) * (p.enemy_mil_factor < 1 ? 2 : 1)));
@@ -2095,8 +2093,8 @@ int aircraft_move(const int id) {
         int best_score = INT_MIN;
         for (i=0; i < *total_num_bases; i++) {
             BASE* base = &Bases[i];
-            if (base->faction_id == faction && defend_goal[i] >= 3) {
-                int score = defend_goal[i]*20 + random(8)
+            if (base->faction_id == faction && base->defend_goal >= 3) {
+                int score = base->defend_goal*20 + random(8)
                     - map_range(veh->x, veh->y, base->x, base->y);
                 if (score > best_score) {
                     tx = base->x;
@@ -2389,14 +2387,14 @@ int combat_move(const int id) {
             if (b->faction_id == veh->faction_id && b->x == veh->x && b->y == veh->y) {
                 if (can_use_teleport(i)) {
                     source = i;
-                    best_score = 80*defend_goal[i] - pm_safety[b->x][b->y];
+                    best_score = 80*b->defend_goal - pm_safety[b->x][b->y];
                 }
             }
         }
         for (i=0; source >= 0 && i < *total_num_bases; i++) {
             BASE* b = &Bases[i];
             if (b->faction_id == veh->faction_id && source != i && can_use_teleport(i)) {
-                int score = 80*defend_goal[i] - pm_safety[b->x][b->y];
+                int score = 80*b->defend_goal - pm_safety[b->x][b->y];
                 if (triad == TRIAD_SEA && !coast_tiles(b->x, b->y)) {
                     continue;
                 }

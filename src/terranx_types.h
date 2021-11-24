@@ -73,11 +73,11 @@ struct BASE {
     int economy_total;
     int psych_total;
     int labs_total;
-    int pad_5;
+    int unk_5;
     short autoforward_land_base_id;
     short autoforward_sea_base_id;
     short autoforward_air_base_id;
-    short pad_6;
+    short defend_goal; // Thinker variable
     int talent_total;
     int drone_total;
     int superdrone_total;
@@ -247,6 +247,10 @@ struct MFaction {
     int soc_opposition_model;
     int soc_priority_effect;
     int soc_opposition_effect;
+
+    bool is_aquatic() {
+        return rule_flags & RFLAG_AQUATIC;
+    }
 };
 
 struct Goal {

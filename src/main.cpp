@@ -39,7 +39,10 @@ int handler(void* user, const char* section, const char* name, const char* value
     } else if (MATCH("thinker", "cpu_idle_fix")) {
         cf->cpu_idle_fix = atoi(value);
     } else if (MATCH("thinker", "minimal_popups")) {
-        cf->minimal_popups = atoi(value);
+        if (DEBUG) {
+            cf->minimal_popups = atoi(value);
+            cf->debug_verbose = !atoi(value);
+        }
     } else if (MATCH("thinker", "autosave_interval")) {
         cf->autosave_interval = atoi(value);
     } else if (MATCH("thinker", "smooth_scrolling")) {
@@ -83,13 +86,13 @@ int handler(void* user, const char* section, const char* name, const char* value
     } else if (MATCH("thinker", "social_ai")) {
         cf->social_ai = atoi(value);
     } else if (MATCH("thinker", "social_ai_bias")) {
-        cf->social_ai = min(1000, max(0, atoi(value)));
+        cf->social_ai = clamp(atoi(value), 0, 1000);
     } else if (MATCH("thinker", "tech_balance")) {
         cf->tech_balance = atoi(value);
     } else if (MATCH("thinker", "hurry_items")) {
         cf->hurry_items = atoi(value);
     } else if (MATCH("thinker", "base_spacing")) {
-        cf->base_spacing = min(8, max(2, atoi(value)));
+        cf->base_spacing = clamp(atoi(value), 2, 8);
     } else if (MATCH("thinker", "base_nearby_limit")) {
         cf->base_nearby_limit = atoi(value);
     } else if (MATCH("thinker", "expansion_limit")) {
@@ -97,7 +100,7 @@ int handler(void* user, const char* section, const char* name, const char* value
     } else if (MATCH("thinker", "expansion_autoscale")) {
         cf->expansion_autoscale = atoi(value);
     } else if (MATCH("thinker", "conquer_priority")) {
-        cf->conquer_priority = min(10000, max(1, atoi(value)));
+        cf->conquer_priority = clamp(atoi(value), 1, 10000);
     } else if (MATCH("thinker", "crawler_priority")) {
         cf->crawler_priority = atoi(value);
     } else if (MATCH("thinker", "limit_project_start")) {
@@ -143,7 +146,7 @@ int handler(void* user, const char* section, const char* name, const char* value
     } else if (MATCH("thinker", "eco_damage_fix")) {
         cf->eco_damage_fix = atoi(value);
     } else if (MATCH("thinker", "clean_minerals")) {
-        cf->clean_minerals = min(127, max(0, atoi(value)));
+        cf->clean_minerals = clamp(atoi(value), 0, 127);
     } else if (MATCH("thinker", "spawn_fungal_towers")) {
         cf->spawn_fungal_towers = atoi(value);
     } else if (MATCH("thinker", "spawn_spore_launchers")) {
@@ -153,7 +156,7 @@ int handler(void* user, const char* section, const char* name, const char* value
     } else if (MATCH("thinker", "spawn_battle_ogres")) {
         cf->spawn_battle_ogres = atoi(value);
     } else if (MATCH("thinker", "collateral_damage_value")) {
-        cf->collateral_damage_value = min(127, max(0, atoi(value)));
+        cf->collateral_damage_value = clamp(atoi(value), 0, 127);
     } else if (MATCH("thinker", "planetpearls")) {
         cf->planetpearls = atoi(value);
     } else if (MATCH("thinker", "aquatic_bonus_minerals")) {
@@ -171,9 +174,9 @@ int handler(void* user, const char* section, const char* name, const char* value
         opt_list_parse(cf->content_pop_computer, buf, MaxDiffNum, 0);
         cf->patch_content_pop = 1;
     } else if (MATCH("thinker", "repair_minimal")) {
-        cf->repair_minimal = min(10, max(0, atoi(value)));
+        cf->repair_minimal = clamp(atoi(value), 0, 10);
     } else if (MATCH("thinker", "repair_fungus")) {
-        cf->repair_fungus = min(10, max(0, atoi(value)));
+        cf->repair_fungus = clamp(atoi(value), 0, 10);
     } else if (MATCH("thinker", "repair_friendly")) {
         cf->repair_friendly = atoi(value);
     } else if (MATCH("thinker", "repair_airbase")) {
@@ -181,13 +184,13 @@ int handler(void* user, const char* section, const char* name, const char* value
     } else if (MATCH("thinker", "repair_bunker")) {
         cf->repair_bunker = atoi(value);
     } else if (MATCH("thinker", "repair_base")) {
-        cf->repair_base = min(10, max(0, atoi(value)));
+        cf->repair_base = clamp(atoi(value), 0, 10);
     } else if (MATCH("thinker", "repair_base_native")) {
-        cf->repair_base_native = min(10, max(0, atoi(value)));
+        cf->repair_base_native = clamp(atoi(value), 0, 10);
     } else if (MATCH("thinker", "repair_base_facility")) {
-        cf->repair_base_facility = min(10, max(0, atoi(value)));
+        cf->repair_base_facility = clamp(atoi(value), 0, 10);
     } else if (MATCH("thinker", "repair_nano_factory")) {
-        cf->repair_nano_factory = min(10, max(0, atoi(value)));
+        cf->repair_nano_factory = clamp(atoi(value), 0, 10);
     } else if (MATCH("thinker", "skip_faction")) {
         if (atoi(value) > 0) {
             cf->skip_random_factions |= 1 << (atoi(value) - 1);
@@ -296,7 +299,7 @@ int plans_upkeep(int faction) {
     /*
     Remove bugged prototypes from the savegame.
     */
-    for (int j=0; j < MaxProtoFactionNum; j++) {
+    for (int j = 0; j < MaxProtoFactionNum; j++) {
         int id = faction*MaxProtoFactionNum + j;
         UNIT* u = &Units[id];
         if (strlen(u->name) >= MaxProtoNameLen
@@ -324,16 +327,18 @@ int plans_upkeep(int faction) {
         int rec = best_reactor(i);
         int wpn = best_weapon(i);
         int arm = best_armor(i, false);
-        int arm2 = best_armor(i, true);
-        int chs = has_chassis(i, CHS_HOVERTANK) ? CHS_HOVERTANK : 
+        int arm_cheap = best_armor(i, true);
+        int chs_land = has_chassis(i, CHS_HOVERTANK) ? CHS_HOVERTANK : 
             (has_chassis(i, CHS_SPEEDER) ? CHS_SPEEDER : CHS_INFANTRY);
+        int chs_ship = has_chassis(i, CHS_CRUISER) ? CHS_CRUISER :
+            (has_chassis(i, CHS_FOIL) ? CHS_FOIL : -1);
         bool twoabl = has_tech(i, Rules->tech_preq_allow_2_spec_abil);
         char buf[256];
 
         if (has_weapon(i, WPN_PROBE_TEAM)) {
             int algo = has_ability(i, ABL_ID_ALGO_ENHANCEMENT) ? ABL_ALGO_ENHANCEMENT : 0;
-            if (has_chassis(i, CHS_FOIL)) {
-                int ship = (rec >= REC_FUSION && has_chassis(i, CHS_CRUISER) ? CHS_CRUISER : CHS_FOIL);
+            if (chs_ship >= 0) {
+                int ship = (rec >= REC_FUSION && has_chassis(i, CHS_CRUISER) ? CHS_CRUISER : chs_ship);
                 char* name = parse_str(buf, MaxProtoNameLen,
                     Armor[(rec >= REC_FUSION ? arm : ARM_NO_ARMOR)].name_short,
                     Chassis[ship].offsv1_name, "Probe", NULL);
@@ -342,9 +347,13 @@ int plans_upkeep(int faction) {
             }
             if (arm != ARM_NO_ARMOR && rec >= REC_FUSION) {
                 char* name = parse_str(buf, MaxProtoNameLen, Armor[arm].name_short,
-                    Chassis[chs].offsv1_name, "Probe", NULL);
-                propose_proto(i, chs, WPN_PROBE_TEAM, arm, algo, rec, PLAN_INFO_WARFARE, name);
+                    Chassis[chs_land].offsv1_name, "Probe", NULL);
+                propose_proto(i, chs_land, WPN_PROBE_TEAM, arm, algo, rec, PLAN_INFO_WARFARE, name);
             }
+        }
+        if (chs_ship >= 0 && Weapon[wpn].offense_value >= 4) {
+            int arm_ship = Weapon[wpn].offense_value >= 10 || rec >= REC_FUSION ? arm_cheap : ARM_NO_ARMOR;
+            propose_proto(i, chs_ship, wpn, arm_ship, 0, rec, PLAN_OFFENSIVE, NULL);
         }
         if (has_ability(i, ABL_ID_AAA) && arm != ARM_NO_ARMOR) {
             int abls = ABL_AAA;
@@ -358,20 +367,20 @@ int plans_upkeep(int faction) {
             propose_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, ABL_TRANCE, rec, PLAN_DEFENSIVE, NULL);
         }
         if (has_chassis(i, CHS_NEEDLEJET) && has_ability(i, ABL_ID_AIR_SUPERIORITY)) {
-            propose_proto(i, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, ABL_AIR_SUPERIORITY | ABL_DEEP_RADAR,
-                rec, PLAN_AIR_SUPERIORITY, NULL);
+            int abls = ABL_AIR_SUPERIORITY | (twoabl && has_ability(i, ABL_ID_DEEP_RADAR) ? ABL_DEEP_RADAR : 0);
+            propose_proto(i, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, abls, rec, PLAN_AIR_SUPERIORITY, NULL);
         }
         if (has_weapon(i, WPN_TERRAFORMING_UNIT) && rec >= REC_FUSION) {
             bool grav = has_chassis(i, CHS_GRAVSHIP);
             int abls = has_ability(i, ABL_ID_SUPER_TERRAFORMER ? ABL_SUPER_TERRAFORMER : 0) |
                 (twoabl && !grav && has_ability(i, ABL_ID_FUNGICIDAL) ? ABL_FUNGICIDAL : 0);
-            propose_proto(i, (grav ? CHS_GRAVSHIP : chs), WPN_TERRAFORMING_UNIT, ARM_NO_ARMOR, abls,
+            propose_proto(i, (grav ? CHS_GRAVSHIP : chs_land), WPN_TERRAFORMING_UNIT, ARM_NO_ARMOR, abls,
                 REC_FUSION, PLAN_TERRAFORMING, NULL);
         }
-        if (has_weapon(i, WPN_SUPPLY_TRANSPORT) && rec >= REC_FUSION && arm2 != ARM_NO_ARMOR) {
+        if (has_weapon(i, WPN_SUPPLY_TRANSPORT) && rec >= REC_FUSION && arm_cheap != ARM_NO_ARMOR) {
             char* name = parse_str(buf, MaxProtoNameLen, Reactor[REC_FUSION-1].name_short,
-                Armor[arm2].name_short, "Supply", NULL);
-            propose_proto(i, CHS_INFANTRY, WPN_SUPPLY_TRANSPORT, arm2, 0, REC_FUSION, PLAN_DEFENSIVE, name);
+                Armor[arm_cheap].name_short, "Supply", NULL);
+            propose_proto(i, CHS_INFANTRY, WPN_SUPPLY_TRANSPORT, arm_cheap, 0, REC_FUSION, PLAN_DEFENSIVE, name);
         }
     }
 
@@ -622,11 +631,11 @@ int __cdecl mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5) {
     int impunity = 0;
     int penalty = 0;
 
-    if (!conf.social_ai || !thinker_enabled(faction)) {
-        return social_ai(faction, v1, v2, v3, v4, v5);
-    }
-    if (!is_alive(faction)) {
+    if (is_human(faction) || !is_alive(faction)) {
         return 0;
+    }
+    if (!thinker_enabled(faction)) {
+        return social_ai(faction, v1, v2, v3, v4, v5);
     }
     if (f->SE_upheaval_cost_paid > 0) {
         social_set(faction);

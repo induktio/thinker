@@ -4,35 +4,36 @@
 
 int __cdecl mod_base_prod_choices(int base_id, int v1, int v2, int v3) {
     assert(base_id >= 0 && base_id < *total_num_bases);
-    BASE* base = &Bases[base_id];
-    int item = base->item();
-    int faction = base->faction_id;
+    BASE& base = Bases[base_id];
+    int item = base.item();
     int choice = 0;
     print_base(base_id);
 
-    if (is_human(faction)) {
+    assert(base.defend_goal >= 0 && base.defend_goal <= 4);
+
+    if (is_human(base.faction_id)) {
         debug("skipping human base\n");
         choice = base_prod_choices(base_id, v1, v2, v3);
-    } else if (!thinker_enabled(faction)) {
+    } else if (!thinker_enabled(base.faction_id)) {
         debug("skipping computer base\n");
         choice = base_prod_choices(base_id, v1, v2, v3);
     } else {
         set_base(base_id);
         base_compute(1);
         consider_staple(base_id);
-        if (base->state_flags & BSTATE_PRODUCTION_DONE) {
+        if (base.state_flags & BSTATE_PRODUCTION_DONE) {
             debug("BUILD NEW\n");
             choice = select_production(base_id);
-            base->state_flags &= ~BSTATE_PRODUCTION_DONE;
-        } else if (base->item_is_unit() && !can_build_unit(faction, item)) {
+            base.state_flags &= ~BSTATE_PRODUCTION_DONE;
+        } else if (base.item_is_unit() && !can_build_unit(base.faction_id, item)) {
             debug("BUILD FACILITY\n");
             choice = select_production(base_id);
-        } else if (!base->item_is_unit() && !can_build(base_id, abs(item))) {
+        } else if (!base.item_is_unit() && !can_build(base_id, abs(item))) {
             debug("BUILD CHANGE\n");
             choice = select_production(base_id);
-        } else if ((!base->item_is_unit() || !Units[item].is_defend_unit())
-        && (!base->item_is_project() || base->minerals_accumulated < 4*Rules->retool_exemption)
-        && !has_defenders(base->x, base->y, faction)) {
+        } else if ((!base.item_is_unit() || !Units[item].is_defend_unit())
+        && (!base.item_is_project() || base.minerals_accumulated < 4*Rules->retool_exemption)
+        && !has_defenders(base.x, base.y, base.faction_id)) {
             debug("BUILD DEFENSE\n");
             choice = find_proto(base_id, TRIAD_LAND, COMBAT, DEF);
         } else {
@@ -427,7 +428,7 @@ int hurry_item(BASE* b, int mins, int cost) {
     f->energy_credits -= cost;
     b->minerals_accumulated += mins;
     b->state_flags |= BSTATE_HURRY_PRODUCTION;
-    debug("hurry_item %d %d mins: %d cost: %d credits: %d %s %s\n", *current_turn, b->faction_id,
+    debug("hurry_item %d %d mins: %2d cost: %2d credits: %d %s %s\n", *current_turn, b->faction_id,
         mins, cost, f->energy_credits, b->name, prod_name(b->item()));
     return 1;
 }
@@ -439,12 +440,13 @@ int consider_hurry() {
     const int faction = b->faction_id;
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
+    AIPlans* p = &plans[faction];
     assert(b == *current_base_ptr);
 
     if (!thinker_enabled(faction)) {
         return base_hurry();
     }
-    if (!conf.hurry_items || t <= -FAC_STOCKPILE_ENERGY
+    if (!conf.hurry_items || t == -FAC_STOCKPILE_ENERGY || b->item_is_project()
     || b->state_flags & (BSTATE_PRODUCTION_DONE | BSTATE_HURRY_PRODUCTION)) {
         return 0;
     }
@@ -458,7 +460,8 @@ int consider_hurry() {
         * m->rule_hurry / 100;
     int turns = (int)ceil(mins / max(0.01, 1.0 * b->mineral_surplus));
     int reserve = clamp(*current_turn * f->base_count / 5, 20, 800)
-        / (has_facility(id, FAC_HEADQUARTERS) ? 4 : 1);
+        * (has_facility(id, FAC_HEADQUARTERS) ? 1 : 2)
+        * (b->defend_goal > 3 && p->enemy_factions > 0 ? 1 : 2) / 4;
 
     if (!cheap || mins < 1 || cost < 1 || f->energy_credits - cost < reserve) {
         return 0;
@@ -466,7 +469,7 @@ int consider_hurry() {
     if (b->drone_total > b->talent_total && t < 0 && t == need_psych(id)) {
         return hurry_item(b, mins, cost);
     }
-    if (t < 0 && turns > 1) {
+    if (t < 0 && turns > 1 && cost < f->energy_credits/8) {
         if (t == -FAC_RECYCLING_TANKS || t == -FAC_PRESSURE_DOME
         || t == -FAC_RECREATION_COMMONS || t == -FAC_TREE_FARM
         || t == -FAC_PUNISHMENT_SPHERE || t == -FAC_HEADQUARTERS)
@@ -475,18 +478,25 @@ int consider_hurry() {
             return hurry_item(b, mins, cost);
         if (t == -FAC_HAB_COMPLEX && unused_space(id) == 0)
             return hurry_item(b, mins, cost);
-        if (t == -FAC_PERIMETER_DEFENSE && m->thinker_enemy_range < 20)
+        if (t == -FAC_PERIMETER_DEFENSE && b->defend_goal > 2 && p->enemy_factions > 0)
             return hurry_item(b, mins, cost);
         if (t == -FAC_AEROSPACE_COMPLEX && has_tech(faction, TECH_Orbital))
             return hurry_item(b, mins, cost);
     }
-    if (t >= 0 && turns > 1) {
-        if (m->thinker_enemy_range < 20 && Units[t].is_combat_unit()
-        && !has_defenders(b->x, b->y, b->faction_id)) {
-            return hurry_item(b, mins, cost);
+    if (t >= 0 && turns > 1 && cost < f->energy_credits/4) {
+        if (Units[t].is_combat_unit()) {
+            int val = (b->defend_goal > 3)
+                + (p->enemy_bases > 0)
+                + (p->enemy_factions > 0)
+                + (cost < f->energy_credits/16)
+                + (region_at(b->x, b->y) == p->target_land_region)
+                + 2*(!has_defenders(b->x, b->y, b->faction_id));
+            if (val > 3) {
+                return hurry_item(b, mins, cost);
+            }
         }
         if (Units[t].weapon_type == WPN_TERRAFORMING_UNIT
-        && (is_ocean(b) || *current_turn < 80) && b->mineral_surplus < 8) {
+        && b->mineral_surplus < p->proj_limit/2 && cost < f->energy_credits/16) {
             return hurry_item(b, mins, cost);
         }
     }

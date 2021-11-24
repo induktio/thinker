@@ -1,7 +1,6 @@
 
 #include "engine.h"
 
-const char* ScriptTxtID = "SCRIPT";
 static int currentAttackerVehicleId = -1;
 static int currentDefenderVehicleId = -1;
 
@@ -51,6 +50,9 @@ int __cdecl mod_turn_upkeep() {
     if (*current_turn == 1 && conf.ignore_reactor_power) {
         *game_preferences &= ~PREF_BSC_AUTO_DESIGN_VEH;
     }
+    if (*current_turn == 1) {
+        ThinkerVars->game_time_spent = 0;
+    }
     snprintf(ThinkerVars->build_date, 12, MOD_DATE);
     return 0;
 }
@@ -84,15 +86,11 @@ int __cdecl mod_faction_upkeep(int faction) {
         *ControlTurnA = 1; // Return to main menu
         *ControlTurnB = 1;
     }
-    if (faction == 0 && *current_turn == 1) {
-        ThinkerVars->game_time_spent = 0;
-    }
     if (faction > 0) {
         init_save_game(faction);
         plans_upkeep(faction);
     }
-
-    *dword_93A934 = 1;
+    *ControlUpkeepA = 1;
     social_upkeep(faction);
     do_all_non_input();
     repair_phase(faction);
@@ -113,10 +111,8 @@ int __cdecl mod_faction_upkeep(int faction) {
         This means we mostly cannot use move_upkeep variables in production phase.
         */
         mod_social_ai(faction, -1, -1, -1, -1, 0);
-        if (is_alive(faction)) {
-            probe_upkeep(faction);
-            move_upkeep(faction, false);
-        }
+        probe_upkeep(faction);
+        move_upkeep(faction, false);
         do_all_non_input();
 
         if (!is_human(faction)) {
@@ -136,7 +132,7 @@ int __cdecl mod_faction_upkeep(int faction) {
                 parse_says(2, m->noun_faction, -1, -1);
                 parse_says(3, m->adj_name_faction, -1, -1);
                 parse_num(0, game_year(f->corner_market_turn));
-                popp(ScriptTxtID, "CORNERWARNING", 0, "econwin_sm.pcx", 0);
+                popp("SCRIPT", "CORNERWARNING", 0, "econwin_sm.pcx", 0);
             }
         }
     }
@@ -154,16 +150,16 @@ int __cdecl mod_faction_upkeep(int faction) {
     if (!f->base_count && !has_colony_pods(faction)) {
         eliminate_player(faction, 0);
     }
-    *dword_93A934 = 0;
-    *dword_945B18 = -1;
-    *dword_945B1C = -1;
+    *ControlUpkeepA = 0;
+    Path->xDst = -1;
+    Path->yDst = -1;
 
     if (!(*game_state & STATE_GAME_DONE) || *game_state & STATE_FINAL_SCORE_DONE) {
         if (faction == *current_player_faction
         && !(*game_state & (STATE_COUNCIL_HAS_CONVENED | STATE_DISPLAYED_COUNCIL_AVAIL_MSG))
         && can_call_council(faction, 0) && !(*game_state & STATE_GAME_DONE)) {
             *game_state |= STATE_DISPLAYED_COUNCIL_AVAIL_MSG;
-            popp(ScriptTxtID, "COUNCILOPEN", 0, "council_sm.pcx", 0);
+            popp("SCRIPT", "COUNCILOPEN", 0, "council_sm.pcx", 0);
         }
         if (!is_human(faction)) {
             call_council(faction);
@@ -398,7 +394,7 @@ int probe_rating(int faction) {
 }
 
 int probe_upkeep(int faction) {
-    if (faction > 0 && conf.counter_espionage) {
+    if (faction > 0 && is_alive(faction) && conf.counter_espionage) {
         for (int i=1; i < MaxPlayerNum; i++) {
             if (faction != i
             && Factions[i].base_count > 0

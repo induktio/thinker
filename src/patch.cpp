@@ -9,6 +9,7 @@ const char* ac_opening = "opening";
 const char* ac_movlist = "movlist";
 const char* ac_movlist_txt = "movlist.txt";
 const char* ac_movlistx_txt = "movlistx.txt";
+const int8_t NetVersion = (DEBUG ? 64 : 10);
 
 const char* landmark_params[] = {
     "crater", "volcano", "jungle", "uranium",
@@ -81,7 +82,7 @@ int __cdecl mod_base_draw(int ptr, int base_id, int x, int y, int zoom, int v1) 
         int w = font_width(*(int*)0x93FC24, (int)(b->pop_size >= 10 ? s2 : s1)) + 5;
         int h = *(int*)((*(int*)0x93FC24)+16) + 4;
 
-        for (int i=1; i <= width; i++) {
+        for (int i = 1; i <= width; i++) {
             RECT rr = {x-i, y-i, x+w+i, y+h+i};
             buffer_box(ptr, (int)(&rr), color, color);
         }
@@ -94,13 +95,13 @@ void check_relocate_hq(int faction) {
         int best_score = INT_MIN;
         int best_id = -1;
         Points bases;
-        for (int i=0; i<*total_num_bases; i++) {
+        for (int i = 0; i < *total_num_bases; i++) {
             BASE* b = &Bases[i];
             if (b->faction_id == faction) {
                 bases.insert({b->x, b->y});
             }
         }
-        for (int i=0; i<*total_num_bases; i++) {
+        for (int i = 0; i < *total_num_bases; i++) {
             BASE* b = &Bases[i];
             if (b->faction_id == faction) {
                 int score = b->pop_size - (int)(10 * avg_range(bases, b->x, b->y))
@@ -125,6 +126,7 @@ int __cdecl mod_capture_base(int base_id, int faction, int probe) {
     int vendetta = at_war(faction, old_faction);
     int last_spoke = *current_turn - Factions[faction].diplo_spoke[old_faction];
     assert(valid_player(faction) && faction != old_faction);
+    Bases[base_id].defend_goal = 0;
     capture_base(base_id, faction, probe);
     check_relocate_hq(old_faction);
     /*
@@ -134,7 +136,7 @@ int __cdecl mod_capture_base(int base_id, int faction, int probe) {
     if (vendetta && is_human(faction) && !is_human(old_faction) && last_spoke < 10
     && !*diplo_value_93FA98 && !*diplo_value_93FA24) {
         int lost = 0;
-        for(int i=0; i<*total_num_bases; i++) {
+        for (int i = 0; i < *total_num_bases; i++) {
             BASE* b = &Bases[i];
             if (b->faction_id == faction && b->faction_id_former == old_faction) {
                 lost++;
@@ -283,7 +285,7 @@ BOOL WINAPI ModPeekMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsg
 DWORD WINAPI ModGetPrivateProfileStringA(LPCSTR lpAppName, LPCSTR lpKeyName,
 LPCSTR lpDefault, LPSTR lpReturnedString, DWORD nSize, LPCSTR lpFileName)
 {
-    debug("GET %s\t%s\t%s\n", lpAppName, lpKeyName, lpDefault);
+//    debug("GET %s\t%s\t%s\n", lpAppName, lpKeyName, lpDefault);
     if (!strcmp(lpAppName, GameAppName)) {
         if (conf.directdraw >= 0 && !strcmp(lpKeyName, "DirectDraw")) {
             strncpy(lpReturnedString, (conf.directdraw ? "1" : "0"), 2);
@@ -373,6 +375,37 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD *rec, PVOID *frame, CONTEXT *ct
 }
 
 /*
+Original (legacy) game engine logging functions.
+*/
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
+void __cdecl log_say(const char* a1, int a2, int a3, int a4) {
+    if (conf.debug_verbose) {
+        debug("**** %s %d %d %d\n", a1, a2, a3, a4);
+    }
+}
+
+void __cdecl log_say2(const char* a1, const char* a2, int a3, int a4, int a5) {
+    if (conf.debug_verbose) {
+        debug("**** %s %s %d %d %d\n", a1, a2, a3, a4, a5);
+    }
+}
+
+void __cdecl log_say_hex(const char* a1, int a2, int a3, int a4) {
+    if (conf.debug_verbose) {
+        debug("**** %s %04x %04x %04x\n", a1, a2, a3, a4);
+    }
+}
+
+void __cdecl log_say_hex2(const char* a1, const char* a2, int a3, int a4, int a5) {
+    if (conf.debug_verbose) {
+        debug("**** %s %s %04x %04x %04x\n", a1, a2, a3, a4, a5);
+    }
+}
+#pragma GCC diagnostic pop
+
+/*
 Replaces old byte sequence with a new byte sequence at address.
 Verifies that address contains old values before replacing.
 If new_bytes is a null pointer, replace old_bytes with NOP code instead.
@@ -383,7 +416,7 @@ void write_bytes(int addr, const byte* old_bytes, const byte* new_bytes, int len
     }
     for (int i=0; i<len; i++) {
         if (*((byte*)addr + i) != old_bytes[i]) {
-            debug("write_bytes: old byte doesn't match at address: %08x, value: %02x, expected: %02x",
+            debug("write_bytes: address: %08X actual value: %02X expected value: %02X\n",
                 addr + i, *((byte*)addr + i), old_bytes[i]);
             exit_fail();
         }
@@ -400,7 +433,8 @@ Verify that the location contains a standard function prologue (55 8B EC)
 or a near call with absolute indirect address (FF 25) before patching.
 */
 void write_jump(int addr, int func) {
-    if ((*(int*)addr & 0xFFFFFF) != 0xEC8B55 && *(int16_t*)addr != 0x25FF) {
+    if ((*(uint32_t*)addr & 0xFFFFFF) != 0xEC8B55 && *(uint16_t*)addr != 0x25FF
+    && *(uint16_t*)(addr-1) != 0xA190) {
         exit_fail();
     }
     *(byte*)addr = 0xE9;
@@ -507,6 +541,10 @@ bool patch_setup(Config* cf) {
     write_offset(0x649335, (void*)mod_except_handler3);
     write_offset(0x64A3C0, (void*)mod_except_handler3);
     write_offset(0x64D947, (void*)mod_except_handler3);
+    write_jump(0x6262F0, (int)log_say);
+    write_jump(0x626250, (int)log_say2);
+    write_jump(0x6263F0, (int)log_say_hex);
+    write_jump(0x626350, (int)log_say_hex2);
 
     if (cf->autosave_interval > 0) {
         *(int16_t*)0x5ABD20 = 0x25FF;
@@ -536,7 +574,6 @@ bool patch_setup(Config* cf) {
         write_call(0x48B91F, (int)mod_calc_dim);
         write_call(0x48BA15, (int)mod_calc_dim);
     }
-
     if (DEBUG) {
         if (conf.minimal_popups) {
             remove_call(0x4E5F96); // #BEGINPROJECT
@@ -546,6 +583,16 @@ bool patch_setup(Config* cf) {
         }
         write_call(0x4DF19B, (int)spawn_veh); // Console_editor_veh
     }
+    *(int8_t*)0x4E3222 = NetVersion; // AlphaNet::setup
+    *(int8_t*)0x52AA5C = NetVersion; // control_game
+    /*
+    Provide better defaults for multiplayer settings.
+    */
+    *(int8_t*)0x481EE0 = 1; // MapOceanCoverage
+    *(int8_t*)0x481EE7 = 1; // MapErosiveForces
+    *(int8_t*)0x481EEE = 1; // MapNativeLifeForms
+    *(int8_t*)0x481EF5 = 1; // MapCloudCover
+
     /*
     Hide unnecessary region_base_plan display next to base names in debug mode.
     */

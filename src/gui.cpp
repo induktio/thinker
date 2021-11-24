@@ -492,10 +492,10 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     } else if (msg == WM_CHAR && wParam == 't' && GetAsyncKeyState(VK_MENU) < 0) {
         show_mod_menu();
 
-    } else if (tools && msg == WM_CHAR && wParam == 'd' && GetAsyncKeyState(VK_MENU) < 0) {
+    } else if (DEBUG && msg == WM_CHAR && wParam == 'd' && GetAsyncKeyState(VK_MENU) < 0) {
         conf.debug_mode = !conf.debug_mode;
         if (conf.debug_mode) {
-            for (int i=1; i<8; i++) {
+            for (int i = 1; i < MaxPlayerNum; i++) {
                 Faction& f = Factions[i];
                 if (!f.base_count) {
                     memset(f.goals, 0, sizeof(f.goals));
@@ -509,8 +509,17 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         } else {
             *game_state &= ~STATE_DEBUG_MODE;
         }
-        MapWin_draw_map(pMain, 0);
-        InvalidateRect(hwnd, NULL, false);
+        if (!*GameHalted) {
+            MapWin_draw_map(pMain, 0);
+            InvalidateRect(hwnd, NULL, false);
+        }
+
+    } else if (DEBUG && msg == WM_CHAR && wParam == 'm' && GetAsyncKeyState(VK_MENU) < 0) {
+        conf.debug_verbose = !conf.debug_verbose;
+        parse_says(0, MOD_VERSION, -1, -1);
+        parse_says(1, (conf.debug_verbose ?
+            "Verbose mode enabled." : "Verbose mode disabled."), -1, -1);
+        popp("modmenu", "GENERIC", 0, 0, 0);
 
     } else if (tools && msg == WM_CHAR && wParam == 'y' && GetAsyncKeyState(VK_MENU) < 0) {
         static int draw_diplo = 0;

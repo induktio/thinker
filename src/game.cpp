@@ -239,8 +239,10 @@ bool is_alien(int faction) {
     return *expansion_enabled && MFactions[faction].rule_flags & RFLAG_ALIEN;
 }
 
+/*
+Exclude native life since Thinker AI routines don't apply to them.
+*/
 bool thinker_enabled(int faction) {
-    /* Exclude native life since Thinker AI routines don't apply to them. */
     return faction > 0 && !is_human(faction) && faction <= conf.factions_enabled;
 }
 
@@ -783,10 +785,10 @@ void check_zeros(int* ptr, int len) {
 
 void print_map(int x, int y) {
     MAP* m = mapsq(x, y);
-    debug("MAP %2d %2d owner: %2d bonus: %d clim: %02x cont: %02x val3: %02x "\
-          "val2: %02x reg: %02x vis: %02x unk1: %02x unk2: %02x art: %02x items: %08x lm: %08x\n",
-        x, y, m->owner, bonus_at(x, y), m->climate, m->contour, m->val3,
-        m->val2, m->region, m->visibility, m->unk_1, m->unk_2, m->art_ref_id,
+    debug("MAP %3d %3d owner: %2d bonus: %d reg: %3d cont: %3d clim: %02x val2: %02x val3: %02x "\
+        "vis: %02x unk1: %02x unk2: %02x art: %02x items: %08x lm: %04x\n",
+        x, y, m->owner, bonus_at(x, y), m->region, m->contour, m->climate, m->val2, m->val3,
+        m->visibility, m->unk_1, m->unk_2, m->art_ref_id,
         m->items, m->landmarks);
 }
 
@@ -794,7 +796,7 @@ void print_veh(int id) {
     VEH* v = &Vehicles[id];
     int speed = veh_speed(id, 0);
     debug("VEH %24s %3d %3d %d order: %2d %c %3d %3d -> %3d %3d moves: %2d speed: %2d damage: %d "
-          "state: %08x flags: %04x vis: %02x mor: %d iter: %d angle: %d\n",
+        "state: %08x flags: %04x vis: %02x mor: %d iter: %d angle: %d\n",
         Units[v->unit_id].name, v->unit_id, id, v->faction_id,
         v->move_status, (v->status_icon ? v->status_icon : ' '),
         v->x, v->y, v->waypoint_1_x, v->waypoint_1_y, speed - v->road_moves_spent, speed,

@@ -205,6 +205,7 @@ struct Config {
     int skip_random_factions = 0;
     int faction_file_count = 14;
     int debug_mode = DEBUG;
+    int debug_verbose = DEBUG;
 };
 
 /*
