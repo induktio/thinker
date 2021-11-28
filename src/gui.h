@@ -1645,6 +1645,8 @@ typedef int(__cdecl *FWin_flip)(RECT* pRect);
 typedef int(__thiscall *FBuffer_set_text_color)(Buffer* This, int a2, int a3, int a4, int a5);
 typedef int(__thiscall *FBuffer_set_font)(Buffer* This, Font* font, int a3, int a4, int a5);
 typedef int(__thiscall *FBuffer_write_cent_l3)(Buffer* This, LPCSTR lpString, RECT* rt, int len);
+typedef int(__thiscall *Fpopup_start)(
+    Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
 
 extern Console* pMain;
 extern Console* MapWin;
@@ -1665,6 +1667,9 @@ int __thiscall mod_calc_dim(Console* This);
 int __thiscall mod_gen_map(Console* This, int iOwner, int fUnitsOnly);
 void __thiscall MapWin_gen_overlays(Console* This, int x, int y);
 int show_mod_menu();
+int __thiscall basewin_popup_start(
+    Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
+int __cdecl basewin_ask_number(const char* label, int value, int a3);
 
 #pragma GCC diagnostic pop
 

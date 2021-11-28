@@ -5,10 +5,8 @@
 int __cdecl mod_base_prod_choices(int base_id, int v1, int v2, int v3) {
     assert(base_id >= 0 && base_id < *total_num_bases);
     BASE& base = Bases[base_id];
-    int item = base.item();
     int choice = 0;
     print_base(base_id);
-
     assert(base.defend_goal >= 0 && base.defend_goal <= 4);
 
     if (is_human(base.faction_id)) {
@@ -25,20 +23,19 @@ int __cdecl mod_base_prod_choices(int base_id, int v1, int v2, int v3) {
             debug("BUILD NEW\n");
             choice = select_production(base_id);
             base.state_flags &= ~BSTATE_PRODUCTION_DONE;
-        } else if (base.item_is_unit() && !can_build_unit(base.faction_id, item)) {
+        } else if (base.item_is_unit() && !can_build_unit(base.faction_id, base.item())) {
             debug("BUILD FACILITY\n");
             choice = select_production(base_id);
-        } else if (!base.item_is_unit() && !can_build(base_id, abs(item))) {
+        } else if (!base.item_is_unit() && !can_build(base_id, abs(base.item()))) {
             debug("BUILD CHANGE\n");
             choice = select_production(base_id);
-        } else if ((!base.item_is_unit() || !Units[item].is_defend_unit())
-        && (!base.item_is_project() || base.minerals_accumulated < 4*Rules->retool_exemption)
+        } else if ((!base.item_is_unit() || !Units[base.item()].is_defend_unit())
         && !has_defenders(base.x, base.y, base.faction_id)) {
             debug("BUILD DEFENSE\n");
             choice = find_proto(base_id, TRIAD_LAND, COMBAT, DEF);
         } else {
             debug("BUILD OLD\n");
-            choice = item;
+            choice = base.item();
         }
         debug("choice: %d %s\n", choice, prod_name(choice));
     }
@@ -66,7 +63,7 @@ void __cdecl base_first(int base_id) {
 int consider_staple(int base_id) {
     BASE* b = &Bases[base_id];
     Faction* f = &Factions[b->faction_id];
-    if (b->nerve_staple_count < 3 && !un_charter() && base_can_riot(base_id) && f->SE_police >= 0
+    if (b->nerve_staple_count < 3 && !un_charter() && base_can_riot(base_id, true) && f->SE_police >= 0
     && (b->drone_total > b->talent_total || b->state_flags & BSTATE_DRONE_RIOTS_ACTIVE)
     && b->pop_size / 4 >= b->nerve_staple_count
     && (b->faction_id == b->faction_id_former || want_revenge(b->faction_id, b->faction_id_former))) {
@@ -77,13 +74,13 @@ int consider_staple(int base_id) {
 
 int need_psych(int base_id) {
     BASE* b = &Bases[base_id];
-    if (!base_can_riot(base_id)) {
+    if (!base_can_riot(base_id, false)) {
         return 0;
     }
     if (b->drone_total > b->talent_total) {
         if (((b->faction_id_former != b->faction_id && b->assimilation_turns_left > 5)
         || (b->drone_total > 2 + b->talent_total && 2*b->energy_inefficiency > b->energy_surplus))
-        && b->mineral_surplus >= 8 && can_build(base_id, FAC_PUNISHMENT_SPHERE)) {
+        && prod_turns(base_id, FAC_PUNISHMENT_SPHERE) < 12 && can_build(base_id, FAC_PUNISHMENT_SPHERE)) {
             return -FAC_PUNISHMENT_SPHERE;
         }
         if (can_build(base_id, FAC_RECREATION_COMMONS)) {
@@ -92,9 +89,7 @@ int need_psych(int base_id) {
         if (has_project(b->faction_id, FAC_VIRTUAL_WORLD) && can_build(base_id, FAC_NETWORK_NODE)) {
             return -FAC_NETWORK_NODE;
         }
-        if (!b->assimilation_turns_left && b->pop_size >= 6
-        && b->energy_surplus >= 4*Facility[FAC_HOLOGRAM_THEATRE].maint
-        && can_build(base_id, FAC_HOLOGRAM_THEATRE)) {
+        if (b->pop_size >= 4 && can_build(base_id, FAC_HOLOGRAM_THEATRE)) {
             return -FAC_HOLOGRAM_THEATRE;
         }
     }
@@ -120,10 +115,82 @@ bool need_scouts(int x, int y, int faction, int scouts) {
     return val;
 }
 
-bool can_build_ships(int base_id) {
+int hurry_item(BASE* b, int mins, int cost) {
+    Faction* f = &Factions[b->faction_id];
+    f->energy_credits -= cost;
+    b->minerals_accumulated += mins;
+    b->state_flags |= BSTATE_HURRY_PRODUCTION;
+    debug("hurry_item %d %d mins: %2d cost: %2d credits: %d %s %s\n",
+        *current_turn, b->faction_id, mins, cost, f->energy_credits, b->name, prod_name(b->item()));
+    return 1;
+}
+
+int consider_hurry() {
+    const int base_id = *current_base_id;
     BASE* b = &Bases[base_id];
-    int k = *map_area_sq_root + 20;
-    return has_ships(b->faction_id) && nearby_tiles(b->x, b->y, TRIAD_SEA, k) >= k;
+    const int t = b->item();
+    Faction* f = &Factions[b->faction_id];
+    AIPlans* p = &plans[b->faction_id];
+    assert(b == *current_base_ptr);
+
+    if (!thinker_enabled(b->faction_id)) {
+        return base_hurry();
+    }
+    if (!conf.hurry_items || t == -FAC_STOCKPILE_ENERGY || b->item_is_project()
+    || b->state_flags & (BSTATE_PRODUCTION_DONE | BSTATE_HURRY_PRODUCTION)) {
+        return 0;
+    }
+    bool cheap = conf.simple_hurry_cost || b->minerals_accumulated >= Rules->retool_exemption;
+    int mins = mineral_cost(base_id, t) - b->minerals_accumulated;
+    int cost = hurry_cost(base_id, t, mins);
+    int turns = prod_turns(base_id, t);
+    int reserve = clamp(*current_turn * f->base_count / 5, 20, 800)
+        * (has_facility(base_id, FAC_HEADQUARTERS) ? 1 : 2)
+        * (b->defend_goal > 3 && p->enemy_factions > 0 ? 1 : 2) / 4;
+
+    if (!cheap || mins < 1 || cost < 1 || f->energy_credits - cost < reserve) {
+        return 0;
+    }
+    if (b->drone_total > b->talent_total && t < 0 && t == need_psych(base_id)) {
+        return hurry_item(b, mins, cost);
+    }
+    if (t < 0 && turns > 1 && cost < f->energy_credits/8) {
+        if (t == -FAC_RECYCLING_TANKS || t == -FAC_PRESSURE_DOME
+        || t == -FAC_RECREATION_COMMONS || t == -FAC_TREE_FARM
+        || t == -FAC_PUNISHMENT_SPHERE || t == -FAC_HEADQUARTERS)
+            return hurry_item(b, mins, cost);
+        if (t == -FAC_CHILDREN_CRECHE && unused_space(base_id) > 2)
+            return hurry_item(b, mins, cost);
+        if (t == -FAC_HAB_COMPLEX && unused_space(base_id) == 0)
+            return hurry_item(b, mins, cost);
+        if (t == -FAC_PERIMETER_DEFENSE && b->defend_goal > 2 && p->enemy_factions > 0)
+            return hurry_item(b, mins, cost);
+        if (t == -FAC_AEROSPACE_COMPLEX && has_tech(b->faction_id, TECH_Orbital))
+            return hurry_item(b, mins, cost);
+    }
+    if (t >= 0 && turns > 1 && cost < f->energy_credits/4) {
+        if (Units[t].is_combat_unit()) {
+            int val = (b->defend_goal > 3)
+                + (p->enemy_bases > 0)
+                + (p->enemy_bases > 2 && b->defend_goal > 2)
+                + (p->enemy_factions > 0)
+                + (at_war(b->faction_id, MapWin->cOwner) > 0)
+                + (cost < f->energy_credits/16)
+                + 2*(!has_defenders(b->x, b->y, b->faction_id));
+            if (val > 3) {
+                return hurry_item(b, mins, cost);
+            }
+        }
+        if (Units[t].is_former() && b->mineral_surplus < p->proj_limit/2
+        && cost < f->energy_credits/16) {
+            return hurry_item(b, mins, cost);
+        }
+        if (Units[t].is_colony() && b->state_flags & BSTATE_DRONE_RIOTS_ACTIVE
+        && cost < f->energy_credits/16) {
+            return hurry_item(b, mins, cost);
+        }
+    }
+    return 0;
 }
 
 int project_score(int faction, int proj) {
@@ -357,7 +424,7 @@ int unit_score(int id, int faction, int cfactor, int minerals, int accumulated, 
         }
     }
     int turns = max(0, u->cost * cfactor - accumulated) / max(2, minerals);
-    int score = v - turns * (u->weapon_type == WPN_COLONY_MODULE ? 6 : 3)
+    int score = v - turns * (u->is_colony() ? 6 : 3)
         * (max(3, 9 - *current_turn/10) + (minerals < 6 ? 2 : 0));
     debug("unit_score %s cfactor: %d minerals: %d cost: %d turns: %d score: %d\n",
         u->name, cfactor, minerals, u->cost, turns, score);
@@ -423,86 +490,6 @@ int find_proto(int base_id, int triad, int mode, bool defend) {
     return best_id;
 }
 
-int hurry_item(BASE* b, int mins, int cost) {
-    Faction* f = &Factions[b->faction_id];
-    f->energy_credits -= cost;
-    b->minerals_accumulated += mins;
-    b->state_flags |= BSTATE_HURRY_PRODUCTION;
-    debug("hurry_item %d %d mins: %2d cost: %2d credits: %d %s %s\n", *current_turn, b->faction_id,
-        mins, cost, f->energy_credits, b->name, prod_name(b->item()));
-    return 1;
-}
-
-int consider_hurry() {
-    const int id = *current_base_id;
-    BASE* b = &Bases[id];
-    const int t = b->item();
-    const int faction = b->faction_id;
-    Faction* f = &Factions[faction];
-    MFaction* m = &MFactions[faction];
-    AIPlans* p = &plans[faction];
-    assert(b == *current_base_ptr);
-
-    if (!thinker_enabled(faction)) {
-        return base_hurry();
-    }
-    if (!conf.hurry_items || t == -FAC_STOCKPILE_ENERGY || b->item_is_project()
-    || b->state_flags & (BSTATE_PRODUCTION_DONE | BSTATE_HURRY_PRODUCTION)) {
-        return 0;
-    }
-    bool cheap = conf.simple_hurry_cost || b->minerals_accumulated >= Rules->retool_exemption;
-    // Fix: veh_cost takes possible prototype costs into account.
-    int mins = (t >= 0 ? (veh_cost(t, id, 0) * cost_factor(faction, 1, -1)) : mineral_cost(faction, t))
-        - b->minerals_accumulated;
-    int cost = (t < 0 ? 2*mins : mins*mins/20 + 2*mins)
-        * (has_project(-1, FAC_VOICE_OF_PLANET) ? 2 : 1)
-        * (cheap ? 1 : 2)
-        * m->rule_hurry / 100;
-    int turns = (int)ceil(mins / max(0.01, 1.0 * b->mineral_surplus));
-    int reserve = clamp(*current_turn * f->base_count / 5, 20, 800)
-        * (has_facility(id, FAC_HEADQUARTERS) ? 1 : 2)
-        * (b->defend_goal > 3 && p->enemy_factions > 0 ? 1 : 2) / 4;
-
-    if (!cheap || mins < 1 || cost < 1 || f->energy_credits - cost < reserve) {
-        return 0;
-    }
-    if (b->drone_total > b->talent_total && t < 0 && t == need_psych(id)) {
-        return hurry_item(b, mins, cost);
-    }
-    if (t < 0 && turns > 1 && cost < f->energy_credits/8) {
-        if (t == -FAC_RECYCLING_TANKS || t == -FAC_PRESSURE_DOME
-        || t == -FAC_RECREATION_COMMONS || t == -FAC_TREE_FARM
-        || t == -FAC_PUNISHMENT_SPHERE || t == -FAC_HEADQUARTERS)
-            return hurry_item(b, mins, cost);
-        if (t == -FAC_CHILDREN_CRECHE && unused_space(id) > 2)
-            return hurry_item(b, mins, cost);
-        if (t == -FAC_HAB_COMPLEX && unused_space(id) == 0)
-            return hurry_item(b, mins, cost);
-        if (t == -FAC_PERIMETER_DEFENSE && b->defend_goal > 2 && p->enemy_factions > 0)
-            return hurry_item(b, mins, cost);
-        if (t == -FAC_AEROSPACE_COMPLEX && has_tech(faction, TECH_Orbital))
-            return hurry_item(b, mins, cost);
-    }
-    if (t >= 0 && turns > 1 && cost < f->energy_credits/4) {
-        if (Units[t].is_combat_unit()) {
-            int val = (b->defend_goal > 3)
-                + (p->enemy_bases > 0)
-                + (p->enemy_factions > 0)
-                + (cost < f->energy_credits/16)
-                + (region_at(b->x, b->y) == p->target_land_region)
-                + 2*(!has_defenders(b->x, b->y, b->faction_id));
-            if (val > 3) {
-                return hurry_item(b, mins, cost);
-            }
-        }
-        if (Units[t].weapon_type == WPN_TERRAFORMING_UNIT
-        && b->mineral_surplus < p->proj_limit/2 && cost < f->energy_credits/16) {
-            return hurry_item(b, mins, cost);
-        }
-    }
-    return 0;
-}
-
 int select_colony(int base_id, int pods, bool build_ships) {
     BASE* base = &Bases[base_id];
     int faction = base->faction_id;
@@ -547,7 +534,7 @@ int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships) 
     if (probes && (!random(num_probes*2 + 4) || !reserve)) {
         return find_proto(base_id, (build_ships ? TRIAD_SEA : TRIAD_LAND), WMODE_INFOWAR, DEF);
     }
-    if (aircraft && (f->SE_police >= -3 || !base_can_riot(base_id)) && !random(w1)) {
+    if (aircraft && (f->SE_police >= -3 || !base_can_riot(base_id, true)) && !random(w1)) {
         return find_proto(base_id, TRIAD_AIR, COMBAT, ATT);
     }
     if (build_ships) {
@@ -694,6 +681,7 @@ int select_production(int base_id) {
         {SecretProject,             0},
         {FAC_CHILDREN_CRECHE,       0},
         {FAC_HAB_COMPLEX,           0},
+        {FAC_HOLOGRAM_THEATRE,      0},
         {FAC_ORBITAL_DEFENSE_POD,   F_Space},
         {FAC_NESSUS_MINING_STATION, F_Space},
         {FAC_ORBITAL_POWER_TRANS,   F_Space},
@@ -840,6 +828,8 @@ int select_production(int base_id) {
         if (t == FAC_HAB_COMPLEX && unused_space(id) > 0)
             continue;
         if (t == FAC_HABITATION_DOME && unused_space(id) > 0)
+            continue;
+        if (t == FAC_HOLOGRAM_THEATRE && (base->pop_size < 6 || turns > 5))
             continue;
         if (t == FAC_PSI_GATE && facility_count(faction, FAC_PSI_GATE) > f->base_count / 3)
             continue;

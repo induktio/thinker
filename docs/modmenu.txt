@@ -55,6 +55,13 @@ Toggle Modified Landmarks
 Toggle World Map Labels
 Toggle Former Warnings
 
+#HURRY
+#xs 400
+#caption Operations Director
+^$BASENAME0 can hurry $ITEM1 completely with {$NUM0} credits.
+^Minimum cost to hurry for next turn completion is {$NUM1} credits.
+^We have {$NUM2} energy credits in reserve.
+
 #ASKNUMBER
 #xs 400
 #caption Thinker Mod Options

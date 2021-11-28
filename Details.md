@@ -36,6 +36,7 @@ Thinker's in-game menu can be opened by pressing `ALT+T`. It shows the current v
 * When building or capturing a new base, the mod will automatically copy the saved build queue from **Template 1** to the new base. At maximum 8 items can be saved to the template, and the first item from the template will be automatically moved to current production choice when a new base is built or captured. Only the template saved to the first slot is checked, any other saved templates are ignored.
 * To save the current queue to template, open a base and **right click** on the queue and select **Save current list to template**.
 * This feature works in conjunction with the simple hurry cost option so that it's easy to start hurrying base production on the first turn without worrying about double cost mineral thresholds.
+* To ease calculations, base hurry dialog will now display the minimum required hurry cost to complete the item on the next turn. This assumes the mineral surplus does not decrease, so take it into account if adjusting the workers. When entering a partial payment, this minimal amount will be the default choice in the dialog, instead of the full hurry cost like previously.
 
 
 Map generator options

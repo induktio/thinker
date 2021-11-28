@@ -54,7 +54,9 @@ const int TableOffsetY[] = {
 };
 
 char* prod_name(int item_id);
-int mineral_cost(int faction, int item_id);
+int prod_turns(int base_id, int item_id);
+int mineral_cost(int base_id, int item_id);
+int hurry_cost(int base_id, int item_id, int hurry_mins);
 bool has_tech(int faction, int tech);
 bool has_ability(int faction, int abl);
 bool has_chassis(int faction, int chs);
@@ -66,7 +68,8 @@ bool has_project(int faction, int id);
 bool has_facility(int base_id, int id);
 bool can_build(int base_id, int id);
 bool can_build_unit(int faction, int id);
-bool base_can_riot(int base_id);
+bool can_build_ships(int base_id);
+bool base_can_riot(int base_id, bool allow_staple);
 bool base_pop_boom(int base_id);
 bool can_use_teleport(int base_id);
 bool is_human(int faction);

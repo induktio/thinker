@@ -10,12 +10,42 @@ char* prod_name(int item_id) {
     }
 }
 
-int mineral_cost(int faction, int item_id) {
+int prod_turns(int base_id, int item_id) {
+    BASE* b = &Bases[base_id];
+    assert(base_id >= 0 && base_id < *total_num_bases);
+    int minerals = max(0, mineral_cost(base_id, item_id) - b->minerals_accumulated);
+    int surplus = max(1, 10 * b->mineral_surplus);
+    return 10 * minerals / surplus + ((10 * minerals) % surplus != 0);
+}
+
+int mineral_cost(int base_id, int item_id) {
+    assert(base_id >= 0 && base_id < *total_num_bases);
+    // Take possible prototype costs into account in veh_cost
     if (item_id >= 0) {
-        return Units[item_id].cost * cost_factor(faction, 1, -1);
+        return veh_cost(item_id, base_id, 0) * cost_factor(Bases[base_id].faction_id, 1, -1);
     } else {
-        return Facility[-item_id].cost * cost_factor(faction, 1, -1);
+        return Facility[-item_id].cost * cost_factor(Bases[base_id].faction_id, 1, -1);
     }
+}
+
+int hurry_cost(int base_id, int item_id, int hurry_mins) {
+    BASE* b = &Bases[base_id];
+    MFaction* m = &MFactions[b->faction_id];
+    assert(base_id >= 0 && base_id < *total_num_bases);
+
+    bool cheap = conf.simple_hurry_cost || b->minerals_accumulated >= Rules->retool_exemption;
+    int project_factor = (item_id > -SP_ID_First ? 1 :
+        2 * (b->minerals_accumulated < 4*cost_factor(b->faction_id, 1, -1) ? 2 : 1));
+    int mins = max(0, mineral_cost(base_id, item_id) - b->minerals_accumulated);
+    int cost = (item_id < 0 ? 2*mins : mins*mins/20 + 2*mins)
+        * project_factor
+        * (cheap ? 1 : 2)
+        * (has_project(-1, FAC_VOICE_OF_PLANET) ? 2 : 1)
+        * m->rule_hurry / 100;
+    if (hurry_mins > 0 && mins > 0) {
+        return hurry_mins * cost / mins + (((hurry_mins * cost) % mins) != 0);
+    }
+    return 0;
 }
 
 bool has_tech(int faction, int tech) {
@@ -124,7 +154,11 @@ bool can_build(int base_id, int id) {
         return false;
     }
     if ((id == FAC_RECREATION_COMMONS || id == FAC_HOLOGRAM_THEATRE || id == FAC_PUNISHMENT_SPHERE)
-    && !base_can_riot(base_id)) {
+    && !base_can_riot(base_id, false)) {
+        return false;
+    }
+    if (id == FAC_GENEJACK_FACTORY && Rules->drones_induced_genejack_factory > 3
+    && base_can_riot(base_id, false)) {
         return false;
     }
     if ((id == FAC_HAB_COMPLEX || id == FAC_HABITATION_DOME) && base->nutrient_surplus < 2) {
@@ -194,9 +228,15 @@ bool can_build_unit(int faction, int id) {
     return *total_num_vehicles < MaxVehNum * 15 / 16;
 }
 
-bool base_can_riot(int base_id) {
+bool can_build_ships(int base_id) {
     BASE* b = &Bases[base_id];
-    return !b->nerve_staple_turns_left
+    int k = *map_area_sq_root + 20;
+    return has_ships(b->faction_id) && nearby_tiles(b->x, b->y, TRIAD_SEA, k) >= k;
+}
+
+bool base_can_riot(int base_id, bool allow_staple) {
+    BASE* b = &Bases[base_id];
+    return (!allow_staple || !b->nerve_staple_turns_left)
         && !has_project(b->faction_id, FAC_TELEPATHIC_MATRIX)
         && !has_facility(base_id, FAC_PUNISHMENT_SPHERE);
 }

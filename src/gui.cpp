@@ -148,6 +148,8 @@ FWin_flip             Win_flip             = (FWin_flip            )0x5EFD20;
 FBuffer_set_text_color Buffer_set_text_color = (FBuffer_set_text_color)0x5DACB0;
 FBuffer_set_font       Buffer_set_font       = (FBuffer_set_font      )0x5DAC70;
 FBuffer_write_cent_l3  Buffer_write_cent_l3  = (FBuffer_write_cent_l3 )0x5DD130;
+Fpopup_start           popup_start           = (Fpopup_start          )0x406380;
+
 tc_1int SubIf_release_iface_mode = (tc_1int)0x45D380;
 
 Console* MapWin    = (Console*)0x9156B0; // ConsoleParent len: 0x247A4 end: 0x939E54
@@ -1002,6 +1004,27 @@ int show_mod_menu() {
         popup_homepage();
     }
     return 0;
+}
+
+static int minimal_cost = 0;
+
+int __thiscall basewin_popup_start(Win* This,
+const char* UNUSED(filename), const char* UNUSED(label), int a4, int a5, int a6, int a7)
+{
+    BASE* base = *current_base_ptr;
+    Faction* f = &Factions[base->faction_id];
+    int mins = mineral_cost(*current_base_id, base->queue_items[0])
+        - base->minerals_accumulated - base->mineral_surplus;
+    minimal_cost = hurry_cost(*current_base_id, base->queue_items[0], mins);
+    ParseNumTable[1] = minimal_cost;
+    ParseNumTable[2] = f->energy_credits - f->energy_cost;
+    return popup_start(This, "modmenu", "HURRY", a4, a5, a6, a7);
+}
+
+int __cdecl basewin_ask_number(const char* label, int value, int a3)
+{
+    ParseNumTable[0] = value;
+    return pop_ask_number("SCRIPT", label, minimal_cost, a3);
 }
 
 #pragma GCC diagnostic pop

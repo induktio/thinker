@@ -41,7 +41,7 @@ bool maybe_riot(int base_id) {
     */
     BASE* b = &Bases[base_id];
 
-    if (!base_can_riot(base_id)) {
+    if (!base_can_riot(base_id, true)) {
         return false;
     }
     if (unused_space(base_id) > 0 && b->drone_total <= b->talent_total) {
@@ -526,6 +526,8 @@ bool patch_setup(Config* cf) {
     write_call(0x4E113B, (int)mod_world_build);
     write_call(0x58B9BF, (int)mod_world_build);
     write_call(0x58DDD8, (int)mod_world_build);
+    write_call(0x41916B, (int)basewin_popup_start);
+    write_call(0x4195A6, (int)basewin_ask_number);
     write_offset(0x50F421, (void*)mod_turn_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);
     write_offset(0x64576E, (void*)mod_except_handler3);
