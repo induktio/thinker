@@ -157,8 +157,8 @@ bool can_build(int base_id, int id) {
     && !base_can_riot(base_id, false)) {
         return false;
     }
-    if (id == FAC_GENEJACK_FACTORY && Rules->drones_induced_genejack_factory > 3
-    && base_can_riot(base_id, false)) {
+    if (id == FAC_GENEJACK_FACTORY && base_can_riot(base_id, false)
+    && base->talent_total + 1 < base->drone_total + Rules->drones_induced_genejack_factory) {
         return false;
     }
     if ((id == FAC_HAB_COMPLEX || id == FAC_HABITATION_DOME) && base->nutrient_surplus < 2) {
@@ -699,6 +699,18 @@ bool is_shore_level(MAP* sq) {
     return (sq && (sq->climate >> 5) == ALT_SHORE_LINE);
 }
 
+bool has_transport(int x, int y, int faction) {
+    assert(valid_player(faction));
+    for (int i=0; i < *total_num_vehicles; i++) {
+        VEH* veh = &Vehicles[i];
+        if (veh->faction_id == faction && veh->x == x && veh->y == y
+        && veh->weapon_type() == WPN_TROOP_TRANSPORT) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool has_defenders(int x, int y, int faction) {
     assert(valid_player(faction));
     for (int i=0; i < *total_num_vehicles; i++) {
@@ -722,15 +734,29 @@ bool has_colony_pods(int faction) {
     return false;
 }
 
+int borehole_yield() {
+    return Resource->borehole_sq_nutrient + Resource->borehole_sq_mineral + Resource->borehole_sq_energy;
+}
+
+int forest_yield() {
+    return Resource->forest_sq_nutrient + Resource->forest_sq_mineral + Resource->forest_sq_energy;
+}
+
+int total_yield(int x, int y, int faction) {
+    return crop_yield(faction, -1, x, y, 0)
+        + mine_yield(faction, -1, x, y, 0)
+        + energy_yield(faction, -1, x, y, 0);
+}
+
 int nearby_items(int x, int y, int range, uint32_t item) {
+    assert(range >= 0 && range <= MaxTableRange);
     MAP* sq;
     int n = 0;
-    for (int i=-range*2; i<=range*2; i++) {
-        for (int j=-range*2 + abs(i); j<=range*2 - abs(i); j+=2) {
-            sq = mapsq(wrap(x + i), y + j);
-            if (sq && sq->items & item) {
-                n++;
-            }
+    for (int i = 0; i < TableRange[range]; i++) {
+        int x2 = wrap(x + TableOffsetX[i]);
+        int y2 = y + TableOffsetY[i];
+        if ((sq = mapsq(x2, y2)) && sq->items & item) {
+            n++;
         }
     }
     return n;
@@ -755,17 +781,6 @@ int set_base_facility(int base_id, int facility_id, bool add) {
         Bases[base_id].facilities_built[facility_id/8] &= ~(1 << (facility_id % 8));
     }
     return 0;
-}
-
-int __cdecl spawn_veh(int unit_id, int faction, int x, int y) {
-    int id = veh_init(unit_id, faction, x, y);
-    if (id >= 0) {
-        Vehicles[id].home_base_id = -1;
-        // Set these flags to disable any non-Thinker unit automation.
-        Vehicles[id].state |= VSTATE_UNK_40000;
-        Vehicles[id].state &= ~VSTATE_UNK_2000;
-    }
-    return id;
 }
 
 char* parse_str(char* buf, int len, const char* s1, const char* s2, const char* s3, const char* s4) {
@@ -848,11 +863,22 @@ void print_base(int id) {
     BASE* base = &Bases[id];
     int prod = base->item();
     debug("[ turn: %d faction: %d base: %2d x: %2d y: %2d "\
-        "pop: %d tal: %d dro: %d min: %2d acc: %2d | %08x | %3d %s | %s ]\n",
+        "pop: %d tal: %d dro: %d spe: %d min: %2d acc: %2d | %08x | %3d %s | %s ]\n",
         *current_turn, base->faction_id, id, base->x, base->y,
-        base->pop_size, base->talent_total, base->drone_total,
+        base->pop_size, base->talent_total, base->drone_total, base->specialist_total,
         base->mineral_surplus, base->minerals_accumulated,
         base->state_flags, prod, prod_name(prod), (char*)&(base->name));
+}
+
+int __cdecl spawn_veh(int unit_id, int faction, int x, int y) {
+    int id = veh_init(unit_id, faction, x, y);
+    if (id >= 0) {
+        Vehicles[id].home_base_id = -1;
+        // Set these flags to disable any non-Thinker unit automation.
+        Vehicles[id].state |= VSTATE_UNK_40000;
+        Vehicles[id].state &= ~VSTATE_UNK_2000;
+    }
+    return id;
 }
 
 /*

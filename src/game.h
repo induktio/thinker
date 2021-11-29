@@ -12,11 +12,10 @@ Generic "id" is used to denote any parameter for base, unit, or vehicle IDs.
 It is assumed the meaning of the parameter is clear from the function context.
 */
 
-const int NearbyTiles[][2] = {
-    {1,-1},{2,0},{1,1},{0,2},{-1,1},{-2,0},{-1,-1},{0,-2}
-};
-const int BaseOffsetX[] = { 1, 2, 1, 0, -1, -2, -1,  0, 0};
-const int BaseOffsetY[] = {-1, 0, 1, 2,  1,  0, -1, -2, 0};
+const int NearbyTiles[][2] = {{1,-1}, {2,0}, {1,1}, {0,2}, {-1,1}, {-2,0}, {-1,-1}, {0,-2}};
+const int BaseOffsetX[] = { 1, 2, 1, 0, -1, -2, -1,  0, 0}; // Path::find offset
+const int BaseOffsetY[] = {-1, 0, 1, 2,  1,  0, -1, -2, 0}; // Path::find offset
+const int MaxTableRange = 8;
 const int TableRange[] = {1, 9, 25, 49, 81, 121, 169, 225, 289};
 const int TableOffsetX[] = {
      0,  1,  2,  1,  0, -1, -2,  -1,   0,   2,   2,  -2,  -2,   1,   3,   3,   1,  -1,  -3,  -3,
@@ -125,12 +124,15 @@ bool is_ocean(MAP* sq);
 bool is_ocean(BASE* base);
 bool is_ocean_shelf(MAP* sq);
 bool is_shore_level(MAP* sq);
+bool has_transport(int x, int y, int faction);
 bool has_defenders(int x, int y, int faction);
 bool has_colony_pods(int faction);
+int borehole_yield();
+int forest_yield();
+int total_yield(int x, int y, int faction);
 int nearby_items(int x, int y, int range, uint32_t item);
 int nearby_tiles(int x, int y, int type, int limit);
 int set_base_facility(int base_id, int facility_id, bool add);
-int __cdecl spawn_veh(int unit_id, int faction, int x, int y);
 char* parse_str(char* buf, int len, const char* s1, const char* s2, const char* s3, const char* s4);
 char* strstrip(char* s);
 void check_zeros(int* ptr, int len);
@@ -138,6 +140,7 @@ void print_map(int x, int y);
 void print_veh(int id);
 void print_base(int id);
 
+int __cdecl spawn_veh(int unit_id, int faction, int x, int y);
 int __cdecl game_year(int n);
 void __cdecl bitmask(uint32_t input, uint32_t* offset, uint32_t* mask);
 int __cdecl fac_maint(int facility_id, int faction_id);

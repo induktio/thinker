@@ -77,7 +77,7 @@ int need_psych(int base_id) {
     if (!base_can_riot(base_id, false)) {
         return 0;
     }
-    if (b->drone_total > b->talent_total) {
+    if (b->drone_total > b->talent_total || b->state_flags & BSTATE_DRONE_RIOTS_ACTIVE) {
         if (((b->faction_id_former != b->faction_id && b->assimilation_turns_left > 5)
         || (b->drone_total > 2 + b->talent_total && 2*b->energy_inefficiency > b->energy_surplus))
         && prod_turns(base_id, FAC_PUNISHMENT_SPHERE) < 12 && can_build(base_id, FAC_PUNISHMENT_SPHERE)) {
@@ -89,7 +89,7 @@ int need_psych(int base_id) {
         if (has_project(b->faction_id, FAC_VIRTUAL_WORLD) && can_build(base_id, FAC_NETWORK_NODE)) {
             return -FAC_NETWORK_NODE;
         }
-        if (b->pop_size >= 4 && can_build(base_id, FAC_HOLOGRAM_THEATRE)) {
+        if (can_build(base_id, FAC_HOLOGRAM_THEATRE)) {
             return -FAC_HOLOGRAM_THEATRE;
         }
     }
@@ -457,11 +457,10 @@ int find_proto(int base_id, int triad, int mode, bool defend) {
     }
     int best_id = basic;
     int cfactor = cost_factor(faction, 1, -1);
-    int best_val = unit_score(
-        best_id, faction, cfactor, b->mineral_surplus, b->minerals_accumulated, defend);
-    if (Units[best_id].triad() != triad) {
-        best_val -= 40;
-    }
+    int best_val = (Units[best_id].is_active() ? 0 : -40)
+        + (Units[best_id].triad() == triad ? 0 : -40)
+        + unit_score(best_id, faction, cfactor, b->mineral_surplus, b->minerals_accumulated, defend);
+
     for (int i=0; i < 2*MaxProtoFactionNum; i++) {
         int id = (i < MaxProtoFactionNum ? i : (faction-1)*MaxProtoFactionNum + i);
         UNIT* u = &Units[id];
@@ -565,13 +564,11 @@ int select_production(int base_id) {
     BASE* base = &Bases[id];
     int faction = base->faction_id;
     Faction* f = &Factions[faction];
-    MFaction* m = &MFactions[faction];
     AIPlans* p = &plans[faction];
 
     int minerals = base->mineral_surplus + base->minerals_accumulated/10;
     int cfactor = cost_factor(faction, 1, -1);
     int reserve = max(2, base->mineral_intake_2 / 2);
-    int forest = nearby_items(base->x, base->y, 1, BIT_FOREST);
     bool sea_base = is_ocean(base);
     bool core_base = minerals >= plans[faction].proj_limit;
     bool project_change = base->item_is_project()
@@ -635,7 +632,7 @@ int select_production(int base_id) {
         * (conf.conquer_priority / 100.0)
         * (region_at(base->x, base->y) == p->target_land_region
         && p->main_region != p->target_land_region ? 4 : 1);
-    double w2 = 2.0 * p->enemy_mil_factor / (m->thinker_enemy_range * 0.1 + 0.1)
+    double w2 = 2.0 * p->enemy_mil_factor / (p->enemy_base_range * 0.1 + 0.1)
         + 0.8 * p->enemy_bases + min(0.4, *current_turn/400.0)
         + min(1.0, 1.5 * f->base_count / *map_area_sq_root) * (f->AI_fight * 0.2 + 0.8);
     double threat = 1 - (1 / (1 + max(0.0, w1 * w2)));
@@ -801,7 +798,7 @@ int select_production(int base_id) {
         if (flag & F_Energy && turns > 5 + f->AI_tech + f->AI_wealth - f->AI_power - f->AI_fight)
             continue;
         /* Avoid building combat-related facilities in peacetime. */
-        if (flag & F_Combat && m->thinker_enemy_range > MaxEnemyRange - 5*min(5, facility.maint))
+        if (flag & F_Combat && p->enemy_base_range > MaxEnemyRange - 5*min(5, facility.maint))
             continue;
         if (flag & F_Repair && (!conf.repair_base_facility || f->SE_morale < 0))
             continue;
@@ -813,7 +810,8 @@ int select_production(int base_id) {
             continue;
         if (flag & F_Space && (!core_base || !has_facility(id, FAC_AEROSPACE_COMPLEX)))
             continue;
-        if (flag & F_Trees && ((!base->eco_damage && forest < 4) || base->eco_damage < random(16)))
+        if (flag & F_Trees && (base->eco_damage < random(16)
+        || (!base->eco_damage && nearby_items(base->x, base->y, 1, BIT_FOREST) < 4)))
             continue;
         if (t == FAC_RECYCLING_TANKS && base->drone_total > 0 && can_build(id, FAC_RECREATION_COMMONS))
             continue;
@@ -829,7 +827,8 @@ int select_production(int base_id) {
             continue;
         if (t == FAC_HABITATION_DOME && unused_space(id) > 0)
             continue;
-        if (t == FAC_HOLOGRAM_THEATRE && (base->pop_size < 6 || turns > 5))
+        if ((t == FAC_RECREATION_COMMONS || t == FAC_HOLOGRAM_THEATRE)
+        && base->pop_size < 8 && base->drone_total + base->specialist_total < 2)
             continue;
         if (t == FAC_PSI_GATE && facility_count(faction, FAC_PSI_GATE) > f->base_count / 3)
             continue;

@@ -29,7 +29,8 @@ bool FileExists(const char* path) {
 int __cdecl governor_only_crop_yield(int faction, int base_id, int x, int y, int flags) {
     int value = crop_yield(faction, base_id, x, y, flags);
     MAP* sq = mapsq(x, y);
-    if (sq && sq->items & BIT_THERMAL_BORE) {
+    if (sq && sq->items & BIT_THERMAL_BORE && value + mine_yield(faction, base_id, x, y, 0)
+    + energy_yield(faction, base_id, x, y, 0) >= 6) {
         value++;
     }
     return value;
@@ -70,7 +71,7 @@ int __cdecl mod_base_draw(int ptr, int base_id, int x, int y, int zoom, int v1) 
         || has_facility(base_id, FAC_FLECHETTE_DEFENSE_SYS)) {
             color = 254;
         }
-        if (b->faction_id == *current_player_faction && maybe_riot(base_id)) {
+        if (b->faction_id == MapWin->cOwner && maybe_riot(base_id)) {
             color = 249;
         }
         if (color < 0) {
@@ -549,7 +550,6 @@ bool patch_setup(Config* cf) {
     write_jump(0x626350, (int)log_say_hex2);
 
     if (cf->autosave_interval > 0) {
-        *(int16_t*)0x5ABD20 = 0x25FF;
         write_jump(0x5ABD20, (int)mod_auto_save);
     }
     if (cf->skip_random_factions) {

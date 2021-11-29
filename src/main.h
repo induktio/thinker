@@ -187,9 +187,9 @@ struct Config {
     int spawn_sealurks = 1;
     int spawn_battle_ogres = 1;
     int collateral_damage_value = 3;
-    int planetpearls = 0;
-    int aquatic_bonus_minerals = 0;
-    int alien_guaranteed_techs = 0;
+    int planetpearls = 1;
+    int aquatic_bonus_minerals = 1;
+    int alien_guaranteed_techs = 1;
     int patch_content_pop = 0;
     int content_pop_player[MaxDiffNum] = {6,5,4,3,2,1};
     int content_pop_computer[MaxDiffNum] = {3,3,3,3,3,3};
@@ -234,6 +234,7 @@ struct AIPlans {
     int land_combat_units = 0;
     int sea_combat_units = 0;
     int air_combat_units = 0;
+    int probe_units = 0;
     int transport_units = 0;
     int unknown_factions = 0;
     int contacted_factions = 0;
@@ -255,6 +256,7 @@ struct AIPlans {
     int satellites_goal = 0;
     int mil_strength = 0;
     int enemy_nukes = 0;
+    float enemy_base_range = 0;
     float enemy_mil_factor = 0;
     /*
     Number of our bases captured by another faction we're currently at war with.

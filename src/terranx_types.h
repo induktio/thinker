@@ -153,7 +153,7 @@ struct MAP {
         return climate >> 5;
     }
     bool is_rocky() {
-        return val3 & TILE_ROCKY;
+        return val3 & TILE_ROCKY && alt_level() >= ALT_SHORE_LINE;
     }
     bool is_rolling() {
         return val3 & TILE_ROLLING;

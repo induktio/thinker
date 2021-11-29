@@ -389,7 +389,6 @@ int plans_upkeep(int faction) {
         int minerals[MaxBaseNum];
         int population[MaxBaseNum];
         Faction* f = &Factions[i];
-        MFaction* m = &MFactions[i];
 
         plans[i].unknown_factions = 0;
         plans[i].contacted_factions = 0;
@@ -398,6 +397,11 @@ int plans_upkeep(int faction) {
         plans[i].enemy_nukes = 0;
         plans[i].enemy_bases = 0;
         plans[i].enemy_mil_factor = 0;
+        plans[i].land_combat_units = 0;
+        plans[i].sea_combat_units = 0;
+        plans[i].air_combat_units = 0;
+        plans[i].probe_units = 0;
+        plans[i].transport_units = 0;
         update_main_region(faction);
 
         for (int j=1; j < MaxPlayerNum; j++) {
@@ -405,11 +409,34 @@ int plans_upkeep(int faction) {
         }
         for (int j=0; j < *total_num_vehicles; j++) {
             VEH* veh = &Vehicles[j];
+            int triad = veh->triad();
             if (veh->faction_id > 0) {
-                plans[veh->faction_id].mil_strength += (abs(veh->offense_value())
-                    + abs(veh->defense_value())) * (veh->speed() > 1 ? 3 : 2);
+                int offense = (veh->offense_value() < 0 ? 2 : 1) * abs(veh->offense_value());
+                plans[veh->faction_id].mil_strength += 
+                    (offense + abs(veh->defense_value())) * (veh->speed() > 1 ? 3 : 2);
+            }
+            if (veh->faction_id == faction) {
+                if (veh->is_combat_unit() || veh->is_probe() || veh->is_transport()) {
+                    if (triad == TRIAD_LAND) {
+                        plans[i].land_combat_units++;
+                    } else if (triad == TRIAD_SEA) {
+                        plans[i].sea_combat_units++;
+                    } else {
+                        plans[i].air_combat_units++;
+                    }
+                    if (veh->is_probe()) {
+                        plans[i].probe_units++;
+                    }
+                    if (veh->is_transport() && triad == TRIAD_SEA) {
+                        plans[i].transport_units++;
+                    }
+                }
             }
         }
+        debug("plans_totals %d %d bases: %3d land: %3d sea: %3d air: %3d probe: %3d transport: %3d\n",
+            *current_turn, i, f->base_count, plans[i].land_combat_units, plans[i].sea_combat_units,
+            plans[i].air_combat_units, plans[i].probe_units, plans[i].transport_units);
+
         for (int j=1; j < MaxPlayerNum; j++) {
             if (i != j && Factions[j].base_count > 0) {
                 if (has_treaty(i, j, DIPLO_COMMLINK)) {
@@ -431,35 +458,40 @@ int plans_upkeep(int faction) {
                 plans[i].diplo_flags |= f->diplo_status[j];
             }
         }
+        memset(base_defend_range, 0, sizeof(base_defend_range));
         float enemy_sum = 0;
         int n = 0;
         for (int j=0; j < *total_num_bases; j++) {
             BASE* base = &Bases[j];
             MAP* sq = mapsq(base->x, base->y);
-            if (base->faction_id == i) {
+            if (base->faction_id == faction) {
                 population[n] = base->pop_size;
                 minerals[n] = base->mineral_surplus;
                 n++;
                 // Update enemy base threat distances
                 int base_region = (sq ? sq->region : 0);
-                float enemy_range = MaxEnemyRange;
+                float enemy_range = 10*MaxEnemyRange;
                 for (int k=0; k < *total_num_bases; k++) {
                     BASE* b = &Bases[k];
-                    if (at_war(i, b->faction_id) && (sq = mapsq(b->x, b->y))) {
+                    if (faction != b->faction_id
+                    && !has_pact(faction, b->faction_id)
+                    && (sq = mapsq(b->x, b->y))) {
                         float range = map_range(base->x, base->y, b->x, b->y)
-                            * (sq->region == base_region ? 1.0f : 1.5f);
+                            * (sq->region == base_region ? 1.0f : 1.5f)
+                            * (at_war(faction, b->faction_id) ? 1.0f : 5.0f)
+                            * (is_human(b->faction_id) ? 0.75f : 1.0f);
                         enemy_range = min(enemy_range, range);
                     }
                 }
-                enemy_sum += enemy_range;
-            } else if (base->faction_id_former == i && at_war(i, base->faction_id)) {
+                base_defend_range[j] = (int)enemy_range;
+                enemy_sum += min((float)MaxEnemyRange, enemy_range);
+
+            } else if (base->faction_id_former == faction && at_war(faction, base->faction_id)) {
                 plans[i].enemy_bases += (is_human(base->faction_id) ? 2 : 1);
             }
         }
-        // Exponentially weighted moving average of distances to nearest enemy bases.
-        if (n > 0) {
-            m->thinker_enemy_range = (enemy_sum/n + 3 * m->thinker_enemy_range)/4;
-        }
+        plans[i].enemy_base_range = (n > 0 ? enemy_sum/n : MaxEnemyRange);
+
         std::sort(minerals, minerals+n);
         std::sort(population, population+n);
         if (f->base_count >= 32) {
@@ -485,7 +517,7 @@ int plans_upkeep(int faction) {
               "plant_fungus: %d enemy_bases: %2d enemy_mil: %.4f enemy_range: %.4f\n",
               *current_turn, i, plans[i].proj_limit, plans[i].satellites_goal,
               plans[i].psi_score, plans[i].keep_fungus, plans[i].plant_fungus,
-              plans[i].enemy_bases, plans[i].enemy_mil_factor, m->thinker_enemy_range);
+              plans[i].enemy_bases, plans[i].enemy_mil_factor, plans[i].enemy_base_range);
     }
     return 0;
 }
@@ -641,7 +673,7 @@ int __cdecl mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5) {
         social_set(faction);
         return 0;
     }
-    int range = (int)(m->thinker_enemy_range / (1.0 + 0.1 * min(4, plans[faction].enemy_bases)));
+    int range = (int)(plans[faction].enemy_base_range / (1.0 + 0.1 * min(4, plans[faction].enemy_bases)));
     bool has_nexus = (manifold_nexus_owner() == faction);
     assert(!memcmp(&f->SE_Politics, &f->SE_Politics_pending, 16));
 

@@ -10,6 +10,7 @@ const int BIT_BASE_DISALLOWED = (BIT_BASE_IN_TILE | BIT_MONOLITH | BIT_FUNGUS | 
 
 extern PMTable pm_target;
 extern PMTable pm_overlay;
+extern int base_defend_range[MaxBaseNum];
 
 int __cdecl mod_enemy_move(const int id);
 int __cdecl log_veh_kill(int a, int b, int c, int d);
@@ -17,7 +18,6 @@ int ocean_coast_tiles(int x, int y);
 void update_main_region(int faction);
 void move_upkeep(int faction, bool visual);
 void land_raise_plan(int faction, bool visual);
-bool has_transport(int x, int y, int faction);
 bool allow_move(int x, int y, int faction, int triad);
 bool non_combat_move(int x, int y, int faction, int triad);
 bool can_build_base(int x, int y, int faction, int triad);

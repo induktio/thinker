@@ -17,18 +17,14 @@ void init_save_game(int faction) {
         if (f->old_thinker_header == THINKER_HEADER) {
             m->thinker_tech_id = f->old_thinker_tech_id;
             m->thinker_tech_cost = f->old_thinker_tech_cost;
-            m->thinker_enemy_range = f->old_thinker_enemy_range;
             memset(&f->old_thinker_header, 0, 12);
         } else {
             m->thinker_tech_id = f->tech_research_id;
             m->thinker_tech_cost = f->tech_cost;
-            m->thinker_enemy_range = MaxEnemyRange/2;
         }
     } else {
+        m->thinker_enemy_range = 0;
         assert(f->old_thinker_header != THINKER_HEADER);
-    }
-    if (m->thinker_enemy_range < 2 || m->thinker_enemy_range > MaxEnemyRange) {
-        m->thinker_enemy_range = MaxEnemyRange/2;
     }
 }
 
