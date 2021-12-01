@@ -60,8 +60,11 @@ int* ParseStrGender = (int*)0x9BB5C0;
 int* GameHalted = (int*)0x68F21C;
 int* ControlTurnA = (int*)0x9B2068;
 int* ControlTurnB = (int*)0x93A948;
+int* ControlTurnC = (int*)0x93A938;
 int* ControlRedraw = (int*)0x915620;
 int* ControlUpkeepA = (int*)0x93A934;
+int* WorldAddTemperature = (int*)0x9B22E8;
+int* WorldSkipTerritory = (int*)0x9B22EC;
 
 int* dword_9B7AE4 = (int*)0x9B7AE4;
 int* diplo_value_93FA98 = (int*)0x93FA98;

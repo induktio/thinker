@@ -151,7 +151,8 @@ int consider_hurry() {
     if (!cheap || mins < 1 || cost < 1 || f->energy_credits - cost < reserve) {
         return 0;
     }
-    if (b->drone_total > b->talent_total && t < 0 && t == need_psych(base_id)) {
+    if (b->drone_total + b->specialist_total > b->talent_total
+    && t < 0 && t == need_psych(base_id)) {
         return hurry_item(b, mins, cost);
     }
     if (t < 0 && turns > 1 && cost < f->energy_credits/8) {

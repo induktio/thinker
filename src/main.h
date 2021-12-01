@@ -190,6 +190,7 @@ struct Config {
     int planetpearls = 1;
     int aquatic_bonus_minerals = 1;
     int alien_guaranteed_techs = 1;
+    int natives_weak_until_turn = -1;
     int patch_content_pop = 0;
     int content_pop_player[MaxDiffNum] = {6,5,4,3,2,1};
     int content_pop_computer[MaxDiffNum] = {3,3,3,3,3,3};

@@ -5,9 +5,105 @@ static Points spawns;
 static Points natives;
 static Points goodtiles;
 
-int* WorldAddTemperature = (int*)0x9B22E8;
-int* WorldSkipTerritory = (int*)0x9B22EC;
 
+int total_yield(int x, int y, int faction) {
+    return crop_yield(faction, -1, x, y, 0)
+        + mine_yield(faction, -1, x, y, 0)
+        + energy_yield(faction, -1, x, y, 0);
+}
+
+int fungus_yield(int faction, int res_type) {
+    const int manifold[][3] = {{0,0,0}, {0,1,0}, {1,1,0}, {1,1,1}, {1,2,1}};
+    Faction* f = &Factions[faction];
+    int p = clamp(f->SE_planet_pending, -3, 0);
+    int N = clamp(f->tech_fungus_nutrient + p, 0, 99);
+    int M = clamp(f->tech_fungus_mineral + p, 0, 99);
+    int E = clamp(f->tech_fungus_energy + p + (f->SE_economy_pending >= 2), 0, 99);
+
+    if (has_project(faction, FAC_MANIFOLD_HARMONICS)) {
+        int m = clamp(f->SE_planet_pending + 1, 0, 4);
+        N += manifold[m][0];
+        M += manifold[m][1];
+        E += manifold[m][2];
+    }
+    if (res_type == RES_NUTRIENT) {
+        return N;
+    }
+    if (res_type == RES_MINERAL) {
+        return M;
+    }
+    if (res_type == RES_ENERGY) {
+        return E;
+    }
+    return N+M+E;
+}
+
+int item_yield(int x, int y, int faction, int bonus, MAP* sq, uint32_t item) {
+    int N = 0, M = 0, E = 0;
+    if (item != BIT_FUNGUS) {
+        if (bonus == RES_NUTRIENT) {
+            N += Resource->bonus_sq_nutrient;
+        }
+        if (bonus == RES_MINERAL) {
+            M += Resource->bonus_sq_mineral;
+        }
+        if (bonus == RES_ENERGY) {
+            E += Resource->bonus_sq_energy;
+        }
+        if (sq->items & BIT_RIVER && !is_ocean(sq)) {
+            E++;
+        }
+        if (sq->landmarks & LM_CRATER && sq->art_ref_id < 9) { M++; }
+        if (sq->landmarks & LM_VOLCANO && sq->art_ref_id < 9) { M++; E++; }
+        if (sq->landmarks & LM_JUNGLE) { N++; }
+        if (sq->landmarks & LM_URANIUM) { E++; }
+        if (sq->landmarks & LM_FRESH && is_ocean(sq)) { N++; }
+        if (sq->landmarks & LM_GEOTHERMAL) { E++; }
+        if (sq->landmarks & LM_RIDGE) { E++; }
+        if (sq->landmarks & LM_CANYON) { M++; }
+        if (sq->landmarks & LM_FOSSIL && sq->art_ref_id < 6) { M++; }
+        if (Factions[faction].SE_economy_pending >= 2) {
+            E++;
+        }
+    }
+    if (item == BIT_FOREST) {
+        N += Resource->forest_sq_nutrient;
+        M += Resource->forest_sq_mineral;
+        E += Resource->forest_sq_energy;
+    }
+    else if (item == BIT_THERMAL_BORE) {
+        N += Resource->borehole_sq_nutrient;
+        M += Resource->borehole_sq_mineral;
+        E += Resource->borehole_sq_energy;
+        if (N > 0) {
+            N--;
+        }
+    }
+    else if (item == BIT_FUNGUS) {
+        N = fungus_yield(faction, RES_NUTRIENT);
+        M = fungus_yield(faction, RES_MINERAL);
+        E = fungus_yield(faction, RES_ENERGY);
+    }
+    else {
+        assert(false);
+    }
+    if (N > 2 && bonus != RES_NUTRIENT
+    && !has_tech(faction, Rules->tech_preq_allow_3_nutrients_sq)) {
+        N = 2;
+    }
+    if (M > 2 && bonus != RES_MINERAL
+    && !has_tech(faction, Rules->tech_preq_allow_3_minerals_sq)) {
+        M = 2;
+    }
+    if (E > 2 && bonus != RES_ENERGY
+    && !has_tech(faction, Rules->tech_preq_allow_3_energy_sq)) {
+        E = 2;
+    }
+    debug("item_yield %2d %2d %08X faction: %d bonus: %d planet: %d N: %d M: %d E: %d prev: %d\n",
+        x, y, item, faction, bonus, Factions[faction].SE_planet_pending,
+        N, M, E, total_yield(x, y, faction));
+    return N+M+E;
+}
 
 void process_map(int faction, int k) {
     spawns.clear();

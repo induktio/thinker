@@ -43,6 +43,7 @@ int base_defend_range[MaxBaseNum] = {};
 int arty_value(int x, int y);
 int garrison_goal(int x, int y, int faction, int triad);
 int base_tile_score(int x1, int y1, int range, int triad);
+bool can_forest(int x, int y, int faction, int bonus, MAP* sq);
 bool invasion_unit(int id);
 bool allow_probe(int faction1, int faction2);
 
@@ -1197,28 +1198,21 @@ bool can_bridge(int x, int y, int faction, MAP* sq) {
 bool can_borehole(int x, int y, int faction, int bonus, MAP* sq) {
     if (!has_terra(faction, FORMER_THERMAL_BORE, is_ocean(sq)))
         return false;
-    if (bonus == RES_NONE && !has_tech(faction, Rules->tech_preq_allow_3_minerals_sq))
-        return false;
-    if (sq->items & (BIT_BASE_DISALLOWED | BIT_ADVANCED) || bonus == RES_NUTRIENT)
+    if (sq->items & (BIT_BASE_IN_TILE | BIT_MONOLITH | BIT_THERMAL_BORE) || bonus == RES_NUTRIENT)
         return false;
     // Planet factions should build boreholes only in reduced numbers.
     if (Factions[faction].SE_planet_base > 0 && (map_hash(x, y) & 0xff > 30))
         return false;
-    if (bonus == RES_NONE && sq->is_rolling())
+    if (bonus == RES_NONE && sq->is_rolling() && sq->items & BIT_CONDENSER)
         return false;
     if (pm_former[x][y] < 4 && !mapnodes.count({x, y, NODE_BOREHOLE}))
         return false;
-    if (borehole_yield() < total_yield(x, y, faction))
-        return false;
     int level = sq->alt_level();
-    for (const int* t : NearbyTiles) {
-        int x2 = wrap(x + t[0]);
-        int y2 = y + t[1];
-        sq = mapsq(x2, y2);
-        if (!sq || sq->items & BIT_THERMAL_BORE || mapnodes.count({x2, y2, NODE_BOREHOLE})) {
+    for (auto& m : iterate_tiles(x, y, 1, 9)) {
+        if (m.sq->items & BIT_THERMAL_BORE || mapnodes.count({m.x, m.y, NODE_BOREHOLE})) {
             return false;
         }
-        int level2 = sq->alt_level();
+        int level2 = m.sq->alt_level();
         if (level2 < level && level2 > ALT_OCEAN_SHELF) {
             return false;
         }
@@ -1231,38 +1225,39 @@ bool can_farm(int x, int y, int faction, int bonus, MAP* sq) {
     bool sea = is_ocean(sq);
     if (!has_terra(faction, FORMER_FARM, sea) || sq->is_rocky() || sq->items & BIT_THERMAL_BORE)
         return false;
-    if (bonus == RES_NUTRIENT && (sea || sq->is_rainy_or_moist() || sq->is_rolling()))
+    if (bonus == RES_NUTRIENT && ~sq->items & BIT_FOREST
+    && (sea || sq->is_rainy_or_moist() || sq->is_rolling()))
         return true;
     if (bonus == RES_ENERGY || bonus == RES_MINERAL || sq->landmarks & LM_VOLCANO)
         return false;
-    if (sq->landmarks & LM_JUNGLE && !has_nut)
-        return false;
     if (!has_nut && bonus != RES_NUTRIENT && crop_yield(faction, -1, x, y, 0) >= 2)
         return false;
-    if (!has_nut && nearby_items(x, y, 1, BIT_FARM | BIT_SOLAR) > 2)
-        return false;
-    if (has_terra(faction, FORMER_FOREST, sea) && forest_yield() > 2
-    && nearby_items(x, y, 1, BIT_FOREST) < (sq->items & BIT_FOREST ? 4 : 2)
-    + (sq->landmarks & LM_JUNGLE ? 1 : 0))
-        return false;
-    return !has_terra(faction, FORMER_FOREST, sea) ||
-        nearby_items(x, y, 1, BIT_FARM | BIT_CONDENSER)
-        < (sq->items & BIT_FARM ? 2 : 1) + (sq->is_rolling() ? 1 : 0)
-        + (sq->landmarks & LM_JUNGLE ? 0 : 1);
+    return (sq->is_rolling()
+        + sq->is_rainy_or_moist()
+        + (nearby_items(x, y, 1, BIT_FARM | BIT_CONDENSER) < 2)
+        + (sq->items & (BIT_FARM | BIT_CONDENSER) ? 1 : 0)
+        + (sq->items & (BIT_FOREST) ? 0 : 2)
+        + (sq->landmarks & LM_JUNGLE ? 0 : 1) > 4);
 }
 
 bool can_solar(int x, int y, int faction, int bonus, MAP* sq) {
     bool has_ene = has_tech(faction, Rules->tech_preq_allow_3_energy_sq);
     bool sea = is_ocean(sq);
-    if (!has_terra(faction, FORMER_SOLAR, sea) || sq->is_rocky() || bonus == RES_MINERAL)
+    if (!has_terra(faction, FORMER_SOLAR, sea) || bonus == RES_MINERAL)
+        return false;
+    if (sq->is_rocky() && bonus != RES_ENERGY)
         return false;
     if (!has_ene && bonus != RES_ENERGY && energy_yield(faction, -1, x, y, 0) >= 2)
         return false;
     if (!sea && has_terra(faction, FORMER_FOREST, sea) && Resource->forest_sq_energy > 0
-    && (sq->landmarks & LM_JUNGLE || (sq->is_rainy() + sq->is_rolling()
-    + sq->is_rainy_or_moist() + (sq->items & BIT_FARM ? 1 : 0) < 3)))
+    && !(sq->is_rocky() && bonus == RES_ENERGY && sq->alt_level() > ALT_TWO_ABOVE_SEA)
+    && (sq->landmarks & LM_JUNGLE
+    || (sq->is_rainy() + sq->is_rolling() + sq->is_rainy_or_moist()
+    + (sq->items & BIT_FARM ? 1 : 0) < 3)))
         return false;
-    return !(sq->items & (BIT_MINE | BIT_FOREST | BIT_SOLAR | BIT_SENSOR | BIT_ADVANCED));
+    if (sq->items & BIT_SENSOR && nearby_items(x, y, 1, BIT_SENSOR) < 2)
+        return false;
+    return !(sq->items & (BIT_MINE | BIT_FOREST | BIT_SOLAR | BIT_ADVANCED));
 }
 
 bool can_mine(int x, int y, int faction, int bonus, MAP* sq) {
@@ -1270,11 +1265,13 @@ bool can_mine(int x, int y, int faction, int bonus, MAP* sq) {
     bool sea = is_ocean(sq);
     if (!has_terra(faction, FORMER_MINE, sea) || bonus == RES_NUTRIENT)
         return false;
+    if (!sea && !sq->is_rocky())
+        return false;
     if (!has_min && bonus != RES_MINERAL && mine_yield(faction, -1, x, y, 0) >= 2)
         return false;
-    if (!sea && (!sq->is_rocky() || sq->items & BIT_FARM))
+    if (sq->items & BIT_SENSOR && nearby_items(x, y, 1, BIT_SENSOR) < 2)
         return false;
-    return !(sq->items & (BIT_MINE | BIT_FOREST | BIT_SOLAR | BIT_SENSOR | BIT_ADVANCED));
+    return !(sq->items & (BIT_MINE | BIT_FOREST | BIT_SOLAR | BIT_ADVANCED));
 }
 
 bool can_forest(int x, int y, int faction, MAP* sq) {
@@ -1283,17 +1280,16 @@ bool can_forest(int x, int y, int faction, MAP* sq) {
         return false;
     if (sq->is_rocky() || sq->landmarks & LM_VOLCANO)
         return false;
-    if (!has_nut && sq->is_rolling() && crop_yield(faction, -1, x, y, 0) >= 2)
+    if (!has_nut && (sq->is_rolling() || sq->items & BIT_SOLAR)
+    && crop_yield(faction, -1, x, y, 0) >= 2)
         return false;
-    if (forest_yield() < total_yield(x, y, faction))
-        return false;
-    return !(sq->items & (BIT_MINE | BIT_FOREST | BIT_ADVANCED));
+    return !(sq->items & BIT_FOREST);
 }
 
 bool can_sensor(int x, int y, int faction, MAP* sq) {
     if (!has_terra(faction, FORMER_SENSOR, is_ocean(sq)))
         return false;
-    if (sq->items & (BIT_MINE | BIT_SENSOR | BIT_ADVANCED))
+    if (sq->items & (BIT_MINE | BIT_SOLAR | BIT_SENSOR | BIT_ADVANCED))
         return false;
     if (sq->items & BIT_FUNGUS && !has_tech(faction, Rules->tech_preq_improv_fungus))
         return false;
@@ -1308,16 +1304,24 @@ bool can_sensor(int x, int y, int faction, MAP* sq) {
     return true;
 }
 
-bool can_fungus(int x, int y, int faction, int bonus, MAP* sq) {
-    if (sq->items & (BIT_BASE_IN_TILE | BIT_MONOLITH | BIT_ADVANCED))
-        return false;
-    return !can_borehole(x, y, faction, bonus, sq) && nearby_items(x, y, 1, BIT_FUNGUS) < 5;
+bool keep_fungus(int x, int y, int faction, MAP* sq) {
+    return plans[faction].keep_fungus
+        && !(sq->items & (BIT_BASE_IN_TILE | BIT_MONOLITH | BIT_ADVANCED))
+        && nearby_items(x, y, 1, BIT_FUNGUS) < 6;
+}
+
+bool plant_fungus(int x, int y, int faction, MAP* sq) {
+    return plans[faction].plant_fungus
+        && keep_fungus(x, y, faction, sq)
+        && has_terra(faction, FORMER_PLANT_FUNGUS, is_ocean(sq));
 }
 
 bool can_level(int x, int y, int faction, int bonus, MAP* sq) {
     return sq->is_rocky() && has_terra(faction, FORMER_LEVEL_TERRAIN, is_ocean(sq))
         && (bonus == RES_NUTRIENT || (bonus == RES_NONE
-        && nearby_items(x, y, 1, BIT_FARM|BIT_FOREST) < ((sq->items & BIT_MINE) ? 1 : 3)));
+        && !(sq->items & (BIT_MINE|BIT_THERMAL_BORE))
+        && sq->items & BIT_RIVER
+        && nearby_items(x, y, 1, BIT_FARM|BIT_FOREST) < 2));
 }
 
 bool can_river(int x, int y, int faction, MAP* sq) {
@@ -1328,11 +1332,12 @@ bool can_river(int x, int y, int faction, MAP* sq) {
     return !(((*current_turn / 4 * x) ^ y) & 15)
         && !coast_tiles(x, y)
         && nearby_items(x, y, 1, BIT_RIVER) < 2
+        && nearby_items(x, y, 2, BIT_RIVER) < 6
         && nearby_items(x, y, 1, BIT_THERMAL_BORE) < 2;
 }
 
 bool can_road(int x, int y, int faction, MAP* sq) {
-    if (is_ocean(sq) || !has_terra(faction, FORMER_ROAD, LAND)
+    if (!has_terra(faction, FORMER_ROAD, is_ocean(sq))
     || sq->items & (BIT_ROAD | BIT_BASE_IN_TILE))
         return false;
     if (~sq->items & BIT_BASE_RADIUS && pm_roads[x][y] < 1)
@@ -1366,10 +1371,11 @@ bool can_road(int x, int y, int faction, MAP* sq) {
 }
 
 bool can_magtube(int x, int y, int faction, MAP* sq) {
-    if (is_ocean(sq) || pm_roads[x][y] < 1 || sq->items & (BIT_MAGTUBE | BIT_BASE_IN_TILE)) {
+    if (!has_terra(faction, FORMER_MAGTUBE, is_ocean(sq))
+    || pm_roads[x][y] < 1 || sq->items & (BIT_MAGTUBE | BIT_BASE_IN_TILE)) {
         return false;
     }
-    return has_terra(faction, FORMER_MAGTUBE, 0) && sq->items & BIT_ROAD
+    return sq->items & BIT_ROAD
         && (~sq->items & BIT_FUNGUS || has_tech(faction, Rules->tech_preq_build_road_fungus));
 }
 
@@ -1384,21 +1390,10 @@ int select_item(int x, int y, int faction, MAP* sq) {
     }
     int bonus = bonus_at(x, y);
     bool road = can_road(x, y, faction, sq);
+    bool rem_fungus = has_terra(faction, FORMER_REMOVE_FUNGUS, sea);
 
     if (can_magtube(x, y, faction, sq)) {
         return FORMER_MAGTUBE;
-    }
-    if (items & BIT_FUNGUS) {
-        if (plans[faction].keep_fungus && can_fungus(x, y, faction, bonus, sq)) {
-            if (road) {
-                return FORMER_ROAD;
-            }
-            if (can_sensor(x, y, faction, sq)) {
-                return FORMER_SENSOR;
-            }
-            return -1;
-        }
-        return FORMER_REMOVE_FUNGUS;
     }
     if (can_bridge(x, y, faction, sq)) {
         if (mapnodes.count({x, y, NODE_RAISE_LAND})
@@ -1406,56 +1401,113 @@ int select_item(int x, int y, int faction, MAP* sq) {
             return (road ? FORMER_ROAD : FORMER_RAISE_LAND);
         }
     }
-    if (~items & BIT_BASE_RADIUS || items & (BIT_MONOLITH | BIT_FUNGUS | BIT_THERMAL_BORE)) {
+    if (~items & BIT_BASE_RADIUS || items & BIT_MONOLITH || road) {
         return (road ? FORMER_ROAD : -1);
-    }
-    if (road) {
-        return FORMER_ROAD;
-    }
-    if (plans[faction].plant_fungus && can_fungus(x, y, faction, bonus, sq)) {
-        return FORMER_PLANT_FUNGUS;
-    }
-    if (can_borehole(x, y, faction, bonus, sq)) {
-        return FORMER_THERMAL_BORE;
     }
     if (can_river(x, y, faction, sq)) {
         return FORMER_AQUIFER;
     }
+    bool farm = can_farm(x, y, faction, bonus, sq);
+    bool forest = has_terra(faction, FORMER_FOREST, sea) && Resource->forest_sq_energy > 0;
+    bool borehole = has_terra(faction, FORMER_THERMAL_BORE, sea) && Resource->borehole_sq_energy > 2;
+    bool condenser = has_terra(faction, FORMER_CONDENSER, sea);
+    bool use_sensor = items & BIT_SENSOR && nearby_items(x, y, 1, BIT_SENSOR) < 2;
+    bool improved = sq->items & (BIT_SIMPLE | BIT_ADVANCED);
+
+    int current = total_yield(x, y, faction);
+    int forest_val = (has_terra(faction, FORMER_FOREST, sea) ?
+        item_yield(x, y, faction, bonus, sq, BIT_FOREST) : 0);
+    int fungus_val = (has_terra(faction, FORMER_PLANT_FUNGUS, sea) ?
+        item_yield(x, y, faction, bonus, sq, BIT_FUNGUS) : 0);
+    int borehole_val = (has_terra(faction, FORMER_THERMAL_BORE, sea) ?
+        item_yield(x, y, faction, bonus, sq, BIT_THERMAL_BORE) : 0);
+    int max_val = max(max(forest_val, fungus_val), borehole_val);
+    int bonus_val = (bonus == RES_NUTRIENT)
+        + (sq->items & BIT_CONDENSER ? 0 : (sq->is_rainy_or_moist() && sq->is_rolling()));
+
+    if (forest_val == max_val) {
+        if (items & BIT_FOREST) {
+            return (can_sensor(x, y, faction, sq) ? FORMER_SENSOR : -1);
+        }
+        if (items & BIT_FUNGUS) {
+            return (rem_fungus ? FORMER_REMOVE_FUNGUS : -1);
+        }
+        if (forest_val > current + bonus_val && can_forest(x, y, faction, sq)) {
+            return FORMER_FOREST;
+        }
+    }
+    if (fungus_val == max_val) {
+        if (items & BIT_FUNGUS) {
+            return -1;
+        }
+        if (fungus_val > current && plant_fungus(x, y, faction, sq)) {
+            return FORMER_PLANT_FUNGUS;
+        }
+    }
+    if (borehole_val == max_val) {
+        if (items & BIT_THERMAL_BORE) {
+            return -1;
+        }
+        if (items & BIT_FUNGUS) {
+            return (rem_fungus ? FORMER_REMOVE_FUNGUS : -1);
+        }
+        if (borehole_val > current && can_borehole(x, y, faction, bonus, sq)) {
+            return FORMER_THERMAL_BORE;
+        }
+    }
+    if (items & BIT_FUNGUS) {
+        if (keep_fungus(x, y, faction, sq)) {
+            if (can_sensor(x, y, faction, sq)) {
+                return FORMER_SENSOR;
+            }
+            return -1;
+        }
+        return (rem_fungus ? FORMER_REMOVE_FUNGUS : -1);
+    }
     if (can_level(x, y, faction, bonus, sq)) {
         return FORMER_LEVEL_TERRAIN;
     }
-    bool farm = can_farm(x, y, faction, bonus, sq);
-    int solar_need = min((has_terra(faction, FORMER_CONDENSER, sea) ? 0 : 1)
-        + (has_terra(faction, FORMER_FOREST, sea) && Resource->forest_sq_energy > 0 ? 0 : 2)
-        + (has_terra(faction, FORMER_THERMAL_BORE, sea) && Resource->borehole_sq_energy > 3 ? 0 : 3),
-        (sea && has_terra(faction, FORMER_MINE, sea) ? nearby_items(x, y, 2, BIT_MINE) : 8));
 
-    if (can_solar(x, y, faction, bonus, sq) && nearby_items(x, y, 2, BIT_SOLAR) < solar_need) {
-        return (farm && ~items & BIT_FARM ? FORMER_FARM : FORMER_SOLAR);
+    int solar_need = (condenser ? 0 : 1) + (forest ? 0 : 2) + (borehole ? 0 : 3)
+        + 2*max(0, sq->alt_level()-ALT_ONE_ABOVE_SEA) - nearby_items(x, y, 2, BIT_SOLAR);
+    if (sea) {
+        solar_need = (has_terra(faction, FORMER_MINE, sea) ?
+            (Resource->improved_sea_energy - Resource->improved_sea_mineral)
+            - has_tech(faction, Rules->tech_preq_mining_platform_bonus): 6)
+            + nearby_items(x, y, 2, BIT_MINE) - nearby_items(x, y, 2, BIT_SOLAR);
     }
-    if (can_mine(x, y, faction, bonus, sq)) {
-        return (farm && ~items & BIT_FARM ? FORMER_FARM : FORMER_MINE);
-    }
-    if (items & BIT_SOLAR && nearby_items(x, y, 2, BIT_SOLAR) < 1 + solar_need) {
-        return -1;
-    }
-    if (farm) {
-        if (~items & BIT_FARM) {
+
+    if (can_solar(x, y, faction, bonus, sq) && solar_need > 0) {
+        if (farm && ~items & BIT_FARM) {
             return FORMER_FARM;
         }
-        if (~items & BIT_CONDENSER && has_terra(faction, FORMER_CONDENSER, sea)) {
-            return FORMER_CONDENSER;
+        return FORMER_SOLAR;
+    }
+    if (can_mine(x, y, faction, bonus, sq)) {
+        if (sea && farm && ~items & BIT_FARM) {
+            return FORMER_FARM;
         }
-        if (~items & BIT_SOIL_ENRICHER && has_terra(faction, FORMER_SOIL_ENR, sea)) {
-            return FORMER_SOIL_ENR;
-        }
-    } else { // Replace farms/solar on tile if there's any
-        if (can_sensor(x, y, faction, sq)) {
-            return FORMER_SENSOR;
-        }
-        if (can_forest(x, y, faction, sq)) {
-            return FORMER_FOREST;
-        }
+        return FORMER_MINE;
+    }
+    if (items & BIT_SOLAR && solar_need >= 0) {
+        return -1;
+    }
+    if (farm && ~items & BIT_FARM) {
+        return FORMER_FARM;
+    }
+    if (!use_sensor && items & BIT_FARM && ~items & BIT_CONDENSER
+    && has_terra(faction, FORMER_CONDENSER, sea)) {
+        return FORMER_CONDENSER;
+    }
+    if (!use_sensor && items & BIT_FARM && ~items & BIT_SOIL_ENRICHER
+    && has_terra(faction, FORMER_SOIL_ENR, sea)) {
+        return FORMER_SOIL_ENR;
+    }
+    if (can_sensor(x, y, faction, sq)) {
+        return FORMER_SENSOR;
+    }
+    if (forest_val > improved + current && can_forest(x, y, faction, sq)) {
+        return FORMER_FOREST;
     }
     return -1;
 }
@@ -1477,7 +1529,8 @@ int former_tile_score(int x1, int y1, int x2, int y2, int faction, MAP* sq) {
     int score = (sq->landmarks ? 3 : 0);
 
     if (bonus && !(items & BIT_ADVANCED)) {
-        bool bh = (bonus == RES_MINERAL || bonus == RES_ENERGY) && can_borehole(x2, y2, faction, bonus, sq);
+        bool bh = (bonus == RES_MINERAL || bonus == RES_ENERGY)
+            && can_borehole(x2, y2, faction, bonus, sq);
         int w = (bh || !(items & BIT_SIMPLE) ? 5 : 1);
         score += w * (bonus == RES_NUTRIENT ? 3 : 2);
     }
@@ -1533,7 +1586,8 @@ int former_move(const int id) {
         Terraform[veh->move_status - 4].rate : 0);
 
     if (safe || turns >= 12) {
-        if (turns > 0) {
+        if (turns > 0 && !(veh->move_status == ORDER_DRILL_AQUIFER
+        && nearby_items(veh->x, veh->y, 1, BIT_RIVER) >= 4)) {
             return SYNC;
         }
         if (!veh->at_target() && !can_road(veh->x, veh->y, faction, sq)
@@ -1542,8 +1596,6 @@ int former_move(const int id) {
         }
         item = select_item(veh->x, veh->y, faction, sq);
         if (item >= 0) {
-            // Never replace boreholes on the tile
-            assert(!(sq->items & BIT_THERMAL_BORE & TerraformingBits[item][1]));
             int cost = 0;
             pm_former[veh->x][veh->y] -= 2;
             if (item == FORMER_RAISE_LAND && !mapnodes.count({veh->x, veh->y, NODE_RAISE_LAND})) {

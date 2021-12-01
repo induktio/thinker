@@ -882,9 +882,15 @@ bool patch_setup(Config* cf) {
         write_bytes(0x5060ED, old_bytes, NULL, sizeof(old_bytes));
     }
     if (!cf->alien_guaranteed_techs) {
-        byte old_bytes[] = {0x74};
-        byte new_bytes[] = {0xEB};
+        const byte old_bytes[] = {0x74};
+        const byte new_bytes[] = {0xEB};
         write_bytes(0x5B29F8, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+    if (cf->natives_weak_until_turn >= 0) {
+        const byte old_bytes[] = {0x83, 0x3D, 0xD4, 0x64, 0x9A, 0x00, 0x0F};
+        const byte new_bytes[] = {0x83, 0x3D, 0xD4, 0x64, 0x9A, 0x00,
+            (byte)cf->natives_weak_until_turn};
+        write_bytes(0x507C22, old_bytes, new_bytes, sizeof(new_bytes));
     }
     if (cf->patch_content_pop) {
         const byte old_bytes[] = {

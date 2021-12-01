@@ -118,8 +118,11 @@ extern int* ParseStrGender;
 extern int* GameHalted;
 extern int* ControlTurnA;
 extern int* ControlTurnB;
+extern int* ControlTurnC;
 extern int* ControlRedraw;
 extern int* ControlUpkeepA;
+extern int* WorldAddTemperature;
+extern int* WorldSkipTerritory;
 
 // TODO: rename dwords
 extern int* dword_9B7AE4;

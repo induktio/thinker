@@ -997,7 +997,7 @@ enum veh_orders {
     ORDER_CONDENSER = 16,        // (N)
     ORDER_ECHELON_MIRROR = 17,   // (E)
     ORDER_THERMAL_BOREHOLE = 18, // (B)
-    ORDER_DRILL_AQUIFIER = 19,   // (Q)
+    ORDER_DRILL_AQUIFER = 19,    // (Q)
     ORDER_TERRAFORM_UP = 20,     // (])
     ORDER_TERRAFORM_DOWN = 21,   // ([)
     ORDER_TERRAFORM_LEVEL = 22,  // (_)

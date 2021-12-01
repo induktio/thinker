@@ -734,19 +734,6 @@ bool has_colony_pods(int faction) {
     return false;
 }
 
-int borehole_yield() {
-    return Resource->borehole_sq_nutrient + Resource->borehole_sq_mineral + Resource->borehole_sq_energy;
-}
-
-int forest_yield() {
-    return Resource->forest_sq_nutrient + Resource->forest_sq_mineral + Resource->forest_sq_energy;
-}
-
-int total_yield(int x, int y, int faction) {
-    return crop_yield(faction, -1, x, y, 0)
-        + mine_yield(faction, -1, x, y, 0)
-        + energy_yield(faction, -1, x, y, 0);
-}
 
 int nearby_items(int x, int y, int range, uint32_t item) {
     assert(range >= 0 && range <= MaxTableRange);

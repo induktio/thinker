@@ -163,6 +163,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->aquatic_bonus_minerals = atoi(value);
     } else if (MATCH("thinker", "alien_guaranteed_techs")) {
         cf->alien_guaranteed_techs = atoi(value);
+    } else if (MATCH("thinker", "natives_weak_until_turn")) {
+        cf->natives_weak_until_turn = clamp(atoi(value), 0, 127);
     } else if (MATCH("thinker", "cost_factor")) {
         opt_list_parse(CostRatios, buf, MaxDiffNum, 1);
     } else if (MATCH("thinker", "tech_cost_factor")) {
@@ -502,16 +504,14 @@ int plans_upkeep(int faction) {
         plans[i].satellites_goal = min(conf.max_satellites, population[n*3/4]);
         plans[i].psi_score = psi_score(i);
 
-        const int manifold[][3] = {{0,0,0}, {0,1,0}, {1,1,0}, {1,1,1}, {1,2,1}};
-        int p = (has_project(i, FAC_MANIFOLD_HARMONICS) ? min(4, max(0, f->SE_planet + 1)) : 0);
-        int dn = manifold[p][0] + f->tech_fungus_nutrient - Resource->forest_sq_nutrient;
-        int dm = manifold[p][1] + f->tech_fungus_mineral - Resource->forest_sq_mineral;
-        int de = manifold[p][2] + f->tech_fungus_energy - Resource->forest_sq_energy;
-        bool former_fungus = has_terra(i, FORMER_PLANT_FUNGUS, LAND)
-            && (has_tech(i, Rules->tech_preq_ease_fungus_mov) || has_project(i, FAC_XENOEMPATHY_DOME));
-
-        plans[i].keep_fungus = (dn+dm+de > 0);
-        plans[i].plant_fungus = (dn+dm+de > 0 && former_fungus);
+        bool former_fungus = (has_terra(i, FORMER_PLANT_FUNGUS, LAND)
+            || has_terra(i, FORMER_PLANT_FUNGUS, SEA))
+            && (has_tech(i, Rules->tech_preq_ease_fungus_mov)
+            || has_project(i, FAC_XENOEMPATHY_DOME));
+        int value = fungus_yield(i, RES_NONE) - Resource->forest_sq_nutrient
+            - Resource->forest_sq_mineral - Resource->forest_sq_energy;
+        plans[i].keep_fungus = (value > 0);
+        plans[i].plant_fungus = (value > 0 && former_fungus);
 
         debug("plans_upkeep %d %d proj_limit: %2d sat_goal: %2d psi: %2d keep_fungus: %d "\
               "plant_fungus: %d enemy_bases: %2d enemy_mil: %.4f enemy_range: %.4f\n",
