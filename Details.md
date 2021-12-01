@@ -159,7 +159,9 @@ See below for some custom faction sets. The factions can be played in both game 
 
 Recommended alphax.txt settings
 ===============================
-Modified alphax.txt settings for Thinker can be found from [this file](docs/alphax.txt). The purpose of these edits is to cause fairly minimal differences to the default game mechanics, instead they will mostly fix bugs and improve the random map generation. That means the tech tree or production cost values are not modified, for example. The changes are summarized below:
+Modified alphax.txt settings for Thinker can be found from [this file](docs/alphax.txt).
+These edits will introduce fairly minimal differences to the vanilla game mechanics, instead they will mostly fix bugs and improve the gameplay experience.
+That means the tech tree or production cost values are not modified, for example. The changes are summarized below:
 
 1. Fix: Enabled the "Antigrav Struts" special ability for air units as stated in the manual.
 2. Fix: Disabled the "Clean Reactor" special ability for Probe Teams because they already don't require any support.
@@ -168,6 +170,7 @@ Modified alphax.txt settings for Thinker can be found from [this file](docs/alph
 5. Large map size is increased to 50x100. Previous value was nearly the same as a standard map.
 6. Descriptions of various configuration values have been updated to reflect their actual meaning.
 7. Add new predefined units Trance Scout Patrol and Police Garrison.
+8. Retool exemption is increased to 20 minerals. This removes the need for bean counting to avoid wasting surplus production.
 
 
 Compatibility with other mods

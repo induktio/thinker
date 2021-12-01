@@ -72,7 +72,7 @@
 10,      ; Kampf % -> PSI-Angriffsbonus/-malus pro +PLANET
 50,      ; Umrüstungsmalus (%) für Produktionsänderungen
 2,       ; Umrüstungsregel (0 = Immer umsonst, 1 = Umsonst in Kategorie, 2 = Gratis, falls in Projekt, 3 = Nie umsonst)
-10,      ; Umrüstungsausnahme (erste X Mineralien nicht von Malus betroffen)
+20,      ; Umrüstungsausnahme (erste X Mineralien nicht von Malus betroffen)
 20,      ; Mindestzahl der Runden zwischen Ratsversammlungen
 5,       ; Mineralien für Waldbewirtschaftung
 8,       ; Territorium: max. Distanz zur Basis
