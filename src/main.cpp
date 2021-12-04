@@ -165,6 +165,12 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->alien_guaranteed_techs = atoi(value);
     } else if (MATCH("thinker", "natives_weak_until_turn")) {
         cf->natives_weak_until_turn = clamp(atoi(value), 0, 127);
+    } else if (MATCH("thinker", "neural_amplifier_bonus")) {
+        cf->neural_amplifier_bonus = clamp(atoi(value), 0, 1000);
+    } else if (MATCH("thinker", "dream_twister_bonus")) {
+        cf->dream_twister_bonus = clamp(atoi(value), 0, 1000);
+    } else if (MATCH("thinker", "fungal_tower_bonus")) {
+        cf->fungal_tower_bonus = clamp(atoi(value), 0, 1000);
     } else if (MATCH("thinker", "cost_factor")) {
         opt_list_parse(CostRatios, buf, MaxDiffNum, 1);
     } else if (MATCH("thinker", "tech_cost_factor")) {
@@ -272,7 +278,7 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             if (!game_ini_parse(&conf) || !cmd_parse(&conf) || !patch_setup(&conf)) {
                 return FALSE;
             }
-            srand(time(0));
+            random_seed(GetTickCount());
             *engine_version = MOD_VERSION;
             *engine_date = MOD_DATE;
             break;
@@ -365,8 +371,14 @@ int plans_upkeep(int faction) {
             }
             propose_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, abls, rec, PLAN_DEFENSIVE, NULL);
         }
-        if (has_ability(i, ABL_ID_TRANCE) && !has_ability(i, ABL_ID_AAA)) {
-            propose_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, ABL_TRANCE, rec, PLAN_DEFENSIVE, NULL);
+        if (!has_ability(i, ABL_ID_AAA) && (has_ability(i, ABL_ID_TRANCE) || has_ability(i, ABL_ID_POLICE_2X))) {
+            int abls = (has_ability(i, ABL_ID_TRANCE) ? ABL_TRANCE : 0);
+            if ((twoabl || !abls) && has_ability(i, ABL_ID_POLICE_2X) && need_police(i)) {
+                abls |= ABL_POLICE_2X;
+            }
+            if (abls) {
+                propose_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, abls, rec, PLAN_DEFENSIVE, NULL);
+            }
         }
         if (has_chassis(i, CHS_NEEDLEJET) && has_ability(i, ABL_ID_AIR_SUPERIORITY)) {
             int abls = ABL_AIR_SUPERIORITY | (twoabl && has_ability(i, ABL_ID_DEEP_RADAR) ? ABL_DEEP_RADAR : 0);

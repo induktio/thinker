@@ -417,7 +417,7 @@ int unit_score(int id, int faction, int cfactor, int minerals, int accumulated, 
         }
     }
     if (u->ability_flags & ABL_POLICE_2X && need_police(faction)) {
-        v += 20;
+        v += (u->speed() > 1 ? 16 : 32);
     }
     for (const int* s : specials) {
         if (u->ability_flags & s[0]) {

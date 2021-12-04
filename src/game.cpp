@@ -1,6 +1,7 @@
 
 #include "game.h"
 
+static uint32_t random_state = 0;
 
 char* prod_name(int item_id) {
     if (item_id >= 0) {
@@ -94,7 +95,7 @@ bool has_terra(int faction, int act, bool ocean) {
 
 bool has_project(int faction, int id) {
     /* If faction_id is negative, check if anyone has built the project. */
-    assert(faction != 0 && id >= SP_ID_First && id <= FAC_EMPTY_SP_64);
+    assert(faction < MaxPlayerNum && id >= SP_ID_First && id <= FAC_EMPTY_SP_64);
     int i = SecretProjects[id - SP_ID_First];
     return i >= 0 && (faction < 0 || Bases[i].faction_id == faction);
 }
@@ -505,8 +506,16 @@ uint32_t pair_hash(uint32_t a, uint32_t b) {
     return (h ^ (h>>16));
 }
 
+void random_seed(uint32_t value) {
+    random_state = value;
+}
+
 int random(int n) {
-    return (n > 0 ? rand() % n : 0);
+    if (n > 0) {
+        random_state = 1664525 * random_state + 1013904223;
+        return ((uint32_t)(uint16_t)random_state * (n)) >> 16;
+    }
+    return 0;
 }
 
 int wrap(int a) {
@@ -883,6 +892,42 @@ Return Value: n/a
 void __cdecl bitmask(uint32_t input, uint32_t* offset, uint32_t* mask) {
     *offset = input / 8;
     *mask = 1 << (input & 7);
+}
+
+int __cdecl neural_amplifier_bonus(int value) {
+    return value * conf.neural_amplifier_bonus / 100;
+}
+
+int __cdecl dream_twister_bonus(int value) {
+    return value * conf.dream_twister_bonus / 100;
+}
+
+int __cdecl fungal_tower_bonus(int value) {
+    return value * conf.fungal_tower_bonus / 100;
+}
+
+/*
+Purpose: Calculate the psi combat factor for an attacking or defending unit.
+Original Offset: 00501500
+*/
+int __cdecl psi_factor(int value, int faction_id, bool is_attack, bool is_fungal_twr) {
+    int rule_psi = MFactions[faction_id].rule_psi;
+    if (rule_psi) {
+        value = ((rule_psi + 100) * value) / 100;
+    }
+    if (is_attack) {
+        if (has_project(faction_id, FAC_DREAM_TWISTER)) {
+            value += value * conf.dream_twister_bonus / 100;
+        }
+    } else {
+        if (has_project(faction_id, FAC_NEURAL_AMPLIFIER)) {
+            value += value * conf.neural_amplifier_bonus / 100;
+        }
+        if (is_fungal_twr) {
+            value += value * conf.fungal_tower_bonus / 100;
+        }
+    }
+    return value;
 }
 
 /*

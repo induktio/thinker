@@ -465,7 +465,7 @@ void __cdecl mod_world_build() {
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
     noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     noise.SetSeed(seed);
-    srand(seed);
+    random_seed(seed);
     *map_random_seed = (seed % 0x7fff) + 1; // Must be non-zero
 
     Points conts;

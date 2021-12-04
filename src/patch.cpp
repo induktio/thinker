@@ -708,6 +708,23 @@ bool patch_setup(Config* cf) {
             }
         }
     }
+    {
+        const byte old_bytes[] = {0x8B,0xC7,0x99,0x2B,0xC2,0xD1,0xF8};
+        const byte new_bytes[] = {0x57,0xE8,0x00,0x00,0x00,0x00,0x5F};
+        write_jump(0x501500, (int)psi_factor);
+
+        write_bytes(0x501CFB, old_bytes, new_bytes, sizeof(new_bytes));
+        write_call(0x501CFC, (int)neural_amplifier_bonus); // get_basic_defense
+        *(int*)0x50209F = conf.neural_amplifier_bonus; // battle_compute
+        
+        write_bytes(0x501D11, old_bytes, new_bytes, sizeof(new_bytes));
+        write_call(0x501D12, (int)fungal_tower_bonus); // get_basic_defense
+        *(int*)0x5020EC = conf.fungal_tower_bonus; // battle_compute
+        
+        write_bytes(0x501914, old_bytes, new_bytes, sizeof(new_bytes));
+        write_call(0x501915, (int)dream_twister_bonus); // get_basic_offense
+        *(int*)0x501F9C = conf.dream_twister_bonus; // battle_compute
+    }
     if (cf->smac_only) {
         if (!FileExists("smac_mod/alphax.txt")
         || !FileExists("smac_mod/conceptsx.txt")

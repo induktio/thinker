@@ -9,6 +9,7 @@ int consider_staple(int base_id);
 int consider_hurry();
 int need_psych(int base_id);
 int find_project(int base_id);
+bool need_police(int faction);
 int psi_score(int faction);
 int select_production(int base_id);
 int find_proto(int base_id, int triad, int mode, bool defend);
