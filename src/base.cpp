@@ -578,12 +578,12 @@ int select_production(int base_id) {
         && base->minerals_accumulated > Rules->retool_exemption;
     bool allow_units = can_build_unit(faction, -1) && !project_change;
     bool allow_supply = !sea_base;
+    int all_crawlers = 0;
     int need_ferry = 0;
     int transports = 0;
     int landprobes = 0;
     int seaprobes = 0;
     int defenders = 0;
-    int crawlers = 0;
     int formers = 0;
     int scouts = 0;
     int pods = 0;
@@ -618,7 +618,7 @@ int select_production(int base_id) {
                 scouts++;
             }
         } else if (veh->is_supply()) {
-            crawlers++;
+            all_crawlers++;
         }
         if (sea_base && veh->x == base->x && veh->y == base->y && veh->triad() == TRIAD_LAND) {
             if (veh->is_colony() || veh->is_former() || veh->is_supply()) {
@@ -641,7 +641,7 @@ int select_production(int base_id) {
     debug("select_prod %d %d %2d %2d def: %d frm: %d prb: %d crw: %d pods: %d expand: %d "\
         "scouts: %d min: %2d res: %2d limit: %2d mil: %.4f threat: %.4f\n",
         *current_turn, faction, base->x, base->y,
-        defenders, formers, landprobes+seaprobes, crawlers, pods, build_pods,
+        defenders, formers, landprobes+seaprobes, all_crawlers, pods, build_pods,
         scouts, minerals, reserve, p->proj_limit, p->enemy_mil_factor, threat);
 
     const int SecretProject = -1;
@@ -742,10 +742,10 @@ int select_production(int base_id) {
             && formers < (base->pop_size < (sea_base ? 4 : 3) ? 1 : 2)) {
                 int num = 0;
                 int sea = 0;
-                for (auto& mp : iterate_tiles(base->x, base->y, 1, 21)) {
-                    if (mp.sq->owner == faction && select_item(mp.x, mp.y, faction, mp.sq) >= 0) {
+                for (auto& m : iterate_tiles(base->x, base->y, 1, 21)) {
+                    if (m.sq->owner == faction && select_item(m.x, m.y, faction, m.sq) >= 0) {
                         num++;
-                        sea += is_ocean(mp.sq);
+                        sea += is_ocean(m.sq);
                     }
                 }
                 if (num > 3) {
@@ -766,8 +766,8 @@ int select_production(int base_id) {
         }
         if (t == FerryUnit) {
             if (build_ships && !transports && need_ferry) {
-                for (auto& mp : iterate_tiles(base->x, base->y, 1, 9)) {
-                    if (!is_ocean(mp.sq) && (!mp.sq->is_owned() || mp.sq->owner == faction)) {
+                for (auto& m : iterate_tiles(base->x, base->y, 1, 9)) {
+                    if (!is_ocean(m.sq) && (!m.sq->is_owned() || m.sq->owner == faction)) {
                         return find_proto(id, TRIAD_SEA, WMODE_TRANSPORT, DEF);
                     }
                 }
@@ -783,7 +783,7 @@ int select_production(int base_id) {
         }
         if (t == CrawlerUnit) {
             if (allow_supply && has_weapon(faction, WPN_SUPPLY_TRANSPORT)
-            && 100 * crawlers < conf.crawler_priority * f->base_count
+            && 100 * all_crawlers < conf.crawler_priority * f->base_count
             && Weapon[WPN_SUPPLY_TRANSPORT].cost < 4*minerals && !random(2)) {
                 return find_proto(id, TRIAD_LAND, WMODE_CONVOY, DEF);
             }

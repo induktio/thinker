@@ -114,7 +114,7 @@ int handler(void* user, const char* section, const char* name, const char* value
     } else if (MATCH("thinker", "modified_landmarks")) {
         cf->modified_landmarks = atoi(value);
     } else if (MATCH("thinker", "world_sea_levels")) {
-        opt_list_parse(conf.world_sea_levels, buf, 3, 0);
+        opt_list_parse(cf->world_sea_levels, buf, 3, 0);
     } else if (MATCH("thinker", "faction_placement")) {
         cf->faction_placement = atoi(value);
     } else if (MATCH("thinker", "nutrient_bonus")) {
@@ -168,7 +168,7 @@ int handler(void* user, const char* section, const char* name, const char* value
     } else if (MATCH("thinker", "cost_factor")) {
         opt_list_parse(CostRatios, buf, MaxDiffNum, 1);
     } else if (MATCH("thinker", "tech_cost_factor")) {
-        opt_list_parse(TechCostRatios, buf, MaxDiffNum, 1);
+        opt_list_parse(cf->tech_cost_factor, buf, MaxDiffNum, 1);
     } else if (MATCH("thinker", "content_pop_player")) {
         opt_list_parse(cf->content_pop_player, buf, MaxDiffNum, 0);
         cf->patch_content_pop = 1;
@@ -505,13 +505,17 @@ int plans_upkeep(int faction) {
         plans[i].psi_score = psi_score(i);
 
         bool former_fungus = (has_terra(i, FORMER_PLANT_FUNGUS, LAND)
-            || has_terra(i, FORMER_PLANT_FUNGUS, SEA))
-            && (has_tech(i, Rules->tech_preq_ease_fungus_mov)
+            || has_terra(i, FORMER_PLANT_FUNGUS, SEA));
+        bool improv_fungus = (has_tech(i, Rules->tech_preq_ease_fungus_mov)
+            || has_tech(i, Rules->tech_preq_improv_fungus)
             || has_project(i, FAC_XENOEMPATHY_DOME));
-        int value = fungus_yield(i, RES_NONE) - Resource->forest_sq_nutrient
-            - Resource->forest_sq_mineral - Resource->forest_sq_energy;
-        plans[i].keep_fungus = (value > 0);
-        plans[i].plant_fungus = (value > 0 && former_fungus);
+        int value = fungus_yield(i, RES_NONE)
+            - (has_terra(i, FORMER_FOREST, LAND)
+            ? Resource->forest_sq_nutrient
+            + Resource->forest_sq_mineral
+            + Resource->forest_sq_energy : 2);
+        plans[i].keep_fungus = (value > 0 ? min((improv_fungus ? 8 : 4), 2*value) : 0);
+        plans[i].plant_fungus = value > 0 && former_fungus && (improv_fungus || value > 2);
 
         debug("plans_upkeep %d %d proj_limit: %2d sat_goal: %2d psi: %2d keep_fungus: %d "\
               "plant_fungus: %d enemy_bases: %2d enemy_mil: %.4f enemy_range: %.4f\n",

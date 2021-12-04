@@ -249,6 +249,13 @@ enum tech_flags {
     TECH_FLAGS_INC_NUTRIENT_FUNGUS = 0x100,
 };
 
+enum Triad {
+    TRIAD_NONE = -1,
+    TRIAD_LAND = 0,
+    TRIAD_SEA = 1,
+    TRIAD_AIR = 2,
+};
+
 enum unit_basic_id {
     BSC_COLONY_POD = 0,
     BSC_FORMERS = 1,
@@ -273,13 +280,6 @@ enum unit_basic_id {
     BSC_UNITY_MINING_LASER = 20,
     BSC_SEA_ESCAPE_POD = 21,
     BSC_UNITY_GUNSHIP = 22,
-};
-
-enum unit_triad {
-    TRIAD_NONE = -1,
-    TRIAD_LAND = 0,
-    TRIAD_SEA = 1,
-    TRIAD_AIR = 2,
 };
 
 enum unit_chassis_type {
@@ -890,7 +890,7 @@ enum base_governor_flags {
     GOV_ACTIVE = 0x80000000,
 };
 
-enum terrain_items {
+enum MapItem {
     BIT_BASE_IN_TILE = 0x1,
     BIT_UNIT_IN_TILE = 0x2,
     BIT_ROAD = 0x4,
@@ -958,7 +958,7 @@ const uint32_t TerraformingBits[20][2] = { // terrain enhancement, incompatible 
     BIT_MONOLITH,      BIT_SUPPLY_POD | BIT_NUTRIENT_RES | BIT_BONUS_RES, // monolith
 };
 
-enum terrain_landmarks {
+enum MapLandmark {
     LM_CRATER = 0x1,
     LM_VOLCANO = 0x2,
     LM_JUNGLE = 0x4,

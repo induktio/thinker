@@ -38,7 +38,11 @@ int fungus_yield(int faction, int res_type) {
     return N+M+E;
 }
 
-int item_yield(int x, int y, int faction, int bonus, MAP* sq, uint32_t item) {
+int item_yield(int x, int y, int faction, int bonus, MapItem item) {
+    MAP* sq = mapsq(x, y);
+    if (!sq) {
+        return 0;
+    }
     int N = 0, M = 0, E = 0;
     if (item != BIT_FUNGUS) {
         if (bonus == RES_NUTRIENT) {

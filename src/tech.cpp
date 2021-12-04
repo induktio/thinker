@@ -1,8 +1,6 @@
 
 #include "tech.h"
 
-int TechCostRatios[MaxDiffNum] = {124,116,108,100,84,76};
-
 
 int __cdecl mod_tech_value(int tech, int faction, int flag) {
     int value = tech_val(tech, faction, flag);
@@ -56,7 +54,7 @@ int tech_cost(int faction, int tech) {
     }
     double diff_factor = 1.0;
     if (!is_human(faction)) {
-        diff_factor = TechCostRatios[*diff_level] / 100.0;
+        diff_factor = conf.tech_cost_factor[*diff_level] / 100.0;
     }
     if (conf.cheap_early_tech) {
         diff_factor *= 0.4 + 0.6 * clamp(our_techs, 1, 16) / 16.0;

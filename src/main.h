@@ -171,6 +171,7 @@ struct Config {
     int landmarks = 0xffff;
     int simple_cost_factor = 0;
     int revised_tech_cost = 1;
+    int tech_cost_factor[MaxDiffNum] = {116,108,100,94,84,76};
     int cheap_early_tech = 1;
     int tech_stagnate_rate = 200;
     int counter_espionage = 0;
@@ -266,30 +267,30 @@ struct AIPlans {
     int enemy_bases = 0;
 };
 
-enum region_flags {
+enum RegionFlag {
     PM_ENEMY = 1,
     PM_PROBE = 2,
 };
 
-enum crawl_resource_types {
+enum ResType {
     RES_NONE = 0,
     RES_NUTRIENT = 1,
     RES_MINERAL = 2,
     RES_ENERGY = 3,
 };
 
-enum nodeset_types {
+enum NodesetType {
     NODE_CONVOY, // Resource being crawled
     NODE_BOREHOLE, // Borehole being built
     NODE_RAISE_LAND, // Land raise action initiated
-    NODE_SENSOR_ARRAY,
+    NODE_SENSOR_ARRAY, // Sensor being built
     NODE_NEED_FERRY,
     NODE_BASE_SITE,
-    NODE_GOAL_RAISE_LAND,
+    NODE_GOAL_RAISE_LAND, // Former priority only
     NODE_GOAL_NAVAL_START,
     NODE_GOAL_NAVAL_BEACH,
     NODE_GOAL_NAVAL_END,
-    NODE_PATROL,
+    NODE_PATROL, // Includes probes/transports
     NODE_COMBAT_PATROL, // Only attack-capable units
     NODE_NONALLY,
     NODE_ARTIFACT,
