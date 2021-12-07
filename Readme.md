@@ -18,7 +18,8 @@ By patching the game to use an additional DLL, new functionality can be develope
 * Game binary includes [Scient's patches](Details.md)
 
 This mod is tested to work with the [GOG version](https://www.gog.com/game/sid_meiers_alpha_centauri) of Alpha Centauri.
-[More information](Details.md) about the features and recommended settings.
+[See more information](Details.md) about the features and recommended settings.
+It's strongly recommended to read Details.md as many features provided by the mod are not present in the vanilla game.
 [Discuss here](https://github.com/induktio/thinker/discussions) about anything related to Thinker development.
 Remember also to star and watch the repository to receive notifications about new updates.
 
@@ -34,7 +35,7 @@ This is the only place to download binary releases. See also the [Changelog](Cha
 Installation
 ------------
 1. Extract the files to Alpha Centauri game folder. Alphax.txt changes are optional.
-2. Check Changelog.md for release notes.
+2. Check Changelog.md and Details.md for useful information.
 3. Change configuration from thinker.ini or just use the defaults.
 4. Start the game from terranx_mod.exe.
 5. Press ALT+T to open Thinker's options menu. Other option is to check that mod version/build date is visible in the game version menu (Ctrl+F4).

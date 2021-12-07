@@ -3,13 +3,13 @@ Main features
 =============
 Thinker has several advanced planning routines that enhance the base game AI to manage the complexities of colony building in Alpha Centauri. In the original game, many of the AI aspects were left underdeveloped while the computer factions struggled to deal with various punitive penalties. This left the single player experience severely lacking, since the AI would have no counter to many simple strategies.
 
-As a general principle, Thinker uses the same production bonuses than what the vanilla difficulty levels would grant the AI normally. There should no extra resources received by the AI unless this is specified in the configuration file. Thinker should not change the automated behaviour of units or governors in player-controlled factions. The mod also will not attempt to remake the lore, reorder the tech tree, or adjust most vanilla game design decisions, since the main goal is to make the AI play better given any game config options.
+As a general principle, Thinker uses the same production bonuses than what the vanilla difficulty levels would grant the AI normally. There should no extra resources received by the AI unless this is specified in the configuration file. Thinker should not change the automated behaviour of units or governors in player-controlled factions unless this is set in the options. The mod also will not attempt to remake the lore, reorder the tech tree, or adjust most vanilla game design decisions, since the main goal is to make the AI play better given any game config options.
 
 Thinker does not have any special save game format, so it's possible to open an old save and have the factions switch to the new AI and vice-versa. None of the `thinker.ini` config options are preserved in the save game either, but the units or resources spawned at the game start will remain.
 
 Note that in `thinker.ini` config file, for binary settings **only zero values are treated as disabled**, any non-zero value usually enables the option. Whenever Thinker options are changed in the GUI, they are saved to `Alpha Centauri.ini`. While the same settings can be set in thinker.ini, **the values in Alpha Centauri.ini take priority**.
 
-For testing purposes it is also possible to run old/new AIs side-by-side by setting `factions_enabled=3` or similar. In that case, only the factions in the first 3 slots will use Thinker AI if they are not player-controlled. By default, `factions_enabled=7` setting enables Thinker AI for all computer factions. Regardless of options, Thinker also includes a custom crash handler that writes output to `debug.txt` in the game folder if the game happens to crash for any reason.
+For testing purposes it is also possible to run old/new AIs side-by-side by setting `factions_enabled=3` or similar. In that case, only the factions in the first 3 slots will use Thinker AI if they are not player-controlled. By default, `factions_enabled=7` setting enables Thinker AI for all computer factions.
 
 In addition to the binary patches listed separately in this file, items that are listed after "Game Engine Patches" in `thinker.ini` apply to all factions regardless of `factions_enabled` setting. Some patches such as `ignore_reactor_power` and unit repair rate changes are imported from [Will To Power Mod](https://github.com/tnevolin/thinker-doer/).
 
@@ -37,6 +37,15 @@ Thinker's in-game menu can be opened by pressing `ALT+T`. It shows the current v
 * To save the current queue to template, open a base and **right click** on the queue and select **Save current list to template**.
 * This feature works in conjunction with the simple hurry cost option so that it's easy to start hurrying base production on the first turn without worrying about double cost mineral thresholds.
 * To ease calculations, base hurry dialog will now display the minimum required hurry cost to complete the item on the next turn. This assumes the mineral surplus does not decrease, so take it into account if adjusting the workers. When entering a partial payment, this minimal amount will be the default choice in the dialog, instead of the full hurry cost like previously.
+
+
+Player unit automation
+======================
+It is also possible to instruct Thinker to automate player-owned colony pods and formers from `ALT+T` menu options. This automation feature is not enabled by default, and it will also not affect governors in player-owned bases. Normally player unit automation would be handled by the default AI.
+
+When enabled, use `Shift+A` shortcut to automate any specific unit and it will follow the same colonization or terraforming strategy than the AI factions. Colony pods will attempt to travel to a suitable location autonomously and deploy a base there. If this is not required, the units can be moved manually as well.
+
+Beware formers automated in this way **can replace any existing improvements** on the territory if Thinker calculates the replacement would increase tile production. A notable difference compared to the AI factions is that player-automated formers will never raise/lower terrain. To prevent the formers from ever replacing some specific improvements, such as bunkers, they need to be placed outside the workable base radius from any friendly base. Thinker does not parse any more detailed settings in Automation Preferences, so this automation feature is an all-or-nothing approach.
 
 
 Map generator options
