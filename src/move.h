@@ -4,6 +4,8 @@
 
 typedef int16_t PMTable[MaxMapW][MaxMapH];
 
+enum UpdateMode {M_Full, M_Visual, M_Player};
+
 const int BIT_SIMPLE = (BIT_FARM | BIT_MINE | BIT_SOLAR | BIT_FOREST);
 const int BIT_ADVANCED = (BIT_CONDENSER | BIT_THERMAL_BORE);
 const int BIT_BASE_DISALLOWED = (BIT_BASE_IN_TILE | BIT_MONOLITH | BIT_FUNGUS | BIT_THERMAL_BORE);
@@ -16,7 +18,7 @@ int __cdecl mod_enemy_move(const int id);
 int __cdecl log_veh_kill(int a, int b, int c, int d);
 int ocean_coast_tiles(int x, int y);
 void update_main_region(int faction);
-void move_upkeep(int faction, bool visual);
+void move_upkeep(int faction, UpdateMode mode);
 bool allow_move(int x, int y, int faction, int triad);
 bool allow_civ_move(int x, int y, int faction, int triad);
 bool can_build_base(int x, int y, int faction, int triad);

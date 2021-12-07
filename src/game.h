@@ -2,15 +2,6 @@
 
 #include "main.h"
 
-/*
-Function parameter naming conventions
-
-Faction ID is always written as "faction". It is also written with a number suffix
-(faction1, faction2, ...) if there are multiple factions handled in the same function.
-
-Generic "id" is used to denote any parameter for base, unit, or vehicle IDs.
-It is assumed the meaning of the parameter is clear from the function context.
-*/
 
 const int NearbyTiles[][2] = {{1,-1}, {2,0}, {1,1}, {0,2}, {-1,1}, {-2,0}, {-1,-1}, {0,-2}};
 const int BaseOffsetX[] = { 1, 2, 1, 0, -1, -2, -1,  0, 0}; // Path::find offset
@@ -57,9 +48,10 @@ int prod_turns(int base_id, int item_id);
 int mineral_cost(int base_id, int item_id);
 int hurry_cost(int base_id, int item_id, int hurry_mins);
 bool has_tech(int faction, int tech);
-bool has_ability(int faction, int abl);
-bool has_chassis(int faction, int chs);
-bool has_weapon(int faction, int wpn);
+bool has_ability(int faction, VehAbility abl);
+bool has_ability(int faction, VehAbility abl, VehChassis chs, VehWeapon wpn);
+bool has_chassis(int faction, VehChassis chs);
+bool has_weapon(int faction, VehWeapon wpn);
 bool has_aircraft(int faction);
 bool has_ships(int faction);
 bool has_terra(int faction, int act, bool ocean);
@@ -92,9 +84,9 @@ int facility_count(int faction, int facility_id);
 int find_hq(int faction);
 int manifold_nexus_owner();
 int mod_veh_speed(int veh_id);
-int best_armor(int faction, bool cheap);
-int best_weapon(int faction);
-int best_reactor(int faction);
+VehArmor best_armor(int faction, bool cheap);
+VehWeapon best_weapon(int faction);
+VehReactor best_reactor(int faction);
 int offense_value(UNIT* u);
 int defense_value(UNIT* u);
 int faction_might(int faction);
@@ -163,7 +155,7 @@ const int PathLimit = 80;
 const int QueueSize = 6400;
 const int MaxTileSearchType = 6;
 
-enum tilesearch_types {
+enum TSType {
     TS_TRIAD_LAND = 0,
     TS_TRIAD_SEA = 1,
     TS_TRIAD_AIR = 2,
@@ -194,7 +186,7 @@ class TileSearch {
     Points oldtiles;
     void init(int x, int y, int tp);
     void init(int x, int y, int tp, int skip);
-    void init(const PointList& points, int tp, int skip);
+    void init(const PointList& points, TSType tp, int skip);
     bool has_zoc(int faction);
     void get_route(PointList& pp);
     MAP* get_next();

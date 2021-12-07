@@ -108,7 +108,7 @@ int __cdecl mod_faction_upkeep(int faction) {
         */
         mod_social_ai(faction, -1, -1, -1, -1, 0);
         probe_upkeep(faction);
-        move_upkeep(faction, false);
+        move_upkeep(faction, M_Full);
         do_all_non_input();
 
         if (!is_human(faction)) {
@@ -165,7 +165,7 @@ int __cdecl mod_faction_upkeep(int faction) {
     && faction == *current_player_faction) {
         auto_save();
     }
-    fflush(debug_log);
+    flushlog();
     return 0;
 }
 

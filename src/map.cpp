@@ -79,14 +79,25 @@ int item_yield(int x, int y, int faction, int bonus, MapItem item) {
         N += Resource->borehole_sq_nutrient;
         M += Resource->borehole_sq_mineral;
         E += Resource->borehole_sq_energy;
-        if (N > 0) {
-            N--;
-        }
+        N -= (N > 0);
     }
     else if (item == BIT_FUNGUS) {
         N = fungus_yield(faction, RES_NUTRIENT);
         M = fungus_yield(faction, RES_MINERAL);
         E = fungus_yield(faction, RES_ENERGY);
+    }
+    else if (item == BIT_FARM && is_ocean(sq)) {
+        N += Resource->ocean_sq_nutrient + Resource->improved_sea_nutrient;
+        M += Resource->ocean_sq_mineral;
+        E += Resource->ocean_sq_energy;
+        if (sq->items & BIT_MINE) {
+            M += Resource->improved_sea_mineral
+                + has_tech(faction, Rules->tech_preq_mining_platform_bonus);
+            N -= (N > 0);
+        }
+        if (sq->items & BIT_SOLAR) {
+            E += Resource->improved_sea_energy;
+        }
     }
     else {
         assert(false);
@@ -347,7 +358,7 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
     }
     site_set(*tx, *ty, world_site(*tx, *ty, 0));
     debug("find_start %d %d x: %3d y: %3d range: %d\n", faction, i, *tx, *ty, min_range(spawns, *tx, *ty));
-    fflush(debug_log);
+    flushlog();
 }
 
 float map_fractal(FastNoiseLite& noise, int x, int y) {
@@ -613,6 +624,6 @@ void __cdecl mod_world_build() {
     if (!*GameHalted) {
         MapWin_clear_terrain(MapWin);
     }
-    fflush(debug_log);
+    flushlog();
 }
 

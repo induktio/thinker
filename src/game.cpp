@@ -57,17 +57,47 @@ bool has_tech(int faction, int tech) {
     return tech >= 0 && TechOwners[tech] & (1 << faction);
 }
 
-bool has_ability(int faction, int abl) {
-    assert(abl >= 0 && abl <= ABL_ID_ALGO_ENHANCEMENT);
+bool has_ability(int faction, VehAbility abl) {
     return has_tech(faction, Ability[abl].preq_tech);
 }
 
-bool has_chassis(int faction, int chs) {
-    assert(chs >= 0 && chs <= CHS_MISSILE);
+bool has_ability(int faction, VehAbility abl, VehChassis chs, VehWeapon wpn) {
+    int F = Ability[abl].flags;
+    int triad = Chassis[chs].triad;
+
+    if ((triad == TRIAD_LAND && ~F & AFLAG_ALLOWED_LAND_UNIT)
+    || (triad == TRIAD_SEA && ~F & AFLAG_ALLOWED_SEA_UNIT)
+    || (triad == TRIAD_AIR && ~F & AFLAG_ALLOWED_AIR_UNIT)) {
+        return false;
+    }
+    if ((~F & AFLAG_ALLOWED_COMBAT_UNIT && wpn <= WPN_PSI_ATTACK)
+    || (~F & AFLAG_ALLOWED_TERRAFORM_UNIT && wpn == WPN_TERRAFORMING_UNIT)
+    || (~F & AFLAG_ALLOWED_NONCOMBAT_UNIT
+    && wpn > WPN_PSI_ATTACK && wpn != WPN_TERRAFORMING_UNIT)) {
+        return false;
+    }
+    if ((F & AFLAG_NOT_ALLOWED_PROBE_TEAM && wpn == WPN_PROBE_TEAM)
+    || (F & AFLAG_ONLY_PROBE_TEAM && wpn != WPN_PROBE_TEAM)) {
+        return false;
+    }
+    if (F & AFLAG_TRANSPORT_ONLY_UNIT && wpn != WPN_TROOP_TRANSPORT) {
+        return false;
+    }
+    if (F & AFLAG_NOT_ALLOWED_FAST_UNIT && Chassis[chs].speed > 1) {
+        return false;
+    }
+    if (F & AFLAG_NOT_ALLOWED_PSI_UNIT && wpn == WPN_PSI_ATTACK) {
+        return false;
+    }
+    return has_tech(faction, Ability[abl].preq_tech);
+}
+
+
+bool has_chassis(int faction, VehChassis chs) {
     return has_tech(faction, Chassis[chs].preq_tech);
 }
 
-bool has_weapon(int faction, int wpn) {
+bool has_weapon(int faction, VehWeapon wpn) {
     return has_tech(faction, Weapon[wpn].preq_tech);
 }
 
@@ -154,7 +184,8 @@ bool can_build(int base_id, int id) {
     || !has_facility(base_id, FAC_RECREATION_COMMONS))) {
         return false;
     }
-    if ((id == FAC_RECREATION_COMMONS || id == FAC_HOLOGRAM_THEATRE || id == FAC_PUNISHMENT_SPHERE)
+    if ((id == FAC_RECREATION_COMMONS || id == FAC_HOLOGRAM_THEATRE
+    || id == FAC_PUNISHMENT_SPHERE || id == FAC_PARADISE_GARDEN)
     && !base_can_riot(base_id, false)) {
         return false;
     }
@@ -415,7 +446,7 @@ int mod_veh_speed(int veh_id) {
     return veh_speed(veh_id, 0);
 }
 
-int best_armor(int faction, bool cheap) {
+VehArmor best_armor(int faction, bool cheap) {
     int ci = ARM_NO_ARMOR;
     int cv = 4;
     for (int i=ARM_SYNTHMETAL_ARMOR; i<=ARM_RESONANCE_8_ARMOR; i++) {
@@ -431,10 +462,10 @@ int best_armor(int faction, bool cheap) {
             }
         }
     }
-    return ci;
+    return (VehArmor)ci;
 }
 
-int best_weapon(int faction) {
+VehWeapon best_weapon(int faction) {
     int ci = WPN_HAND_WEAPONS;
     int cv = 4;
     for (int i=WPN_LASER; i<=WPN_STRING_DISRUPTOR; i++) {
@@ -447,11 +478,11 @@ int best_weapon(int faction) {
             }
         }
     }
-    return ci;
+    return (VehWeapon)ci;
 }
 
-int best_reactor(int faction) {
-    for (const int r : {REC_SINGULARITY, REC_QUANTUM, REC_FUSION}) {
+VehReactor best_reactor(int faction) {
+    for (VehReactor r : {REC_SINGULARITY, REC_QUANTUM, REC_FUSION}) {
         if (has_tech(faction, Reactor[r - 1].preq_tech)) {
             return r;
         }
@@ -511,11 +542,9 @@ void random_seed(uint32_t value) {
 }
 
 int random(int n) {
-    if (n > 0) {
-        random_state = 1664525 * random_state + 1013904223;
-        return ((uint32_t)(uint16_t)random_state * (n)) >> 16;
-    }
-    return 0;
+    // Produces same values than the game engine function random(0, n)
+    random_state = 1664525 * random_state + 1013904223;
+    return ((random_state & 0xffff) * n) >> 16;
 }
 
 int wrap(int a) {
@@ -710,7 +739,7 @@ bool is_shore_level(MAP* sq) {
 
 bool has_transport(int x, int y, int faction) {
     assert(valid_player(faction));
-    for (int i=0; i < *total_num_vehicles; i++) {
+    for (int i = 0; i < *total_num_vehicles; i++) {
         VEH* veh = &Vehicles[i];
         if (veh->faction_id == faction && veh->x == x && veh->y == y
         && veh->weapon_type() == WPN_TROOP_TRANSPORT) {
@@ -722,7 +751,7 @@ bool has_transport(int x, int y, int faction) {
 
 bool has_defenders(int x, int y, int faction) {
     assert(valid_player(faction));
-    for (int i=0; i < *total_num_vehicles; i++) {
+    for (int i = 0; i < *total_num_vehicles; i++) {
         VEH* veh = &Vehicles[i];
         if (veh->faction_id == faction && veh->x == x && veh->y == y
         && (veh->is_combat_unit() || veh->is_armored())
@@ -734,7 +763,7 @@ bool has_defenders(int x, int y, int faction) {
 }
 
 bool has_colony_pods(int faction) {
-    for (int i=0; i<*total_num_vehicles; i++) {
+    for (int i = 0; i < *total_num_vehicles; i++) {
         VEH* veh = &Vehicles[i];
         if (veh->faction_id == faction && veh->is_colony()) {
             return true;
@@ -1127,9 +1156,10 @@ void __cdecl add_goal(int faction, int type, int priority, int x, int y, int bas
     if (thinker_enabled(faction) && type < Thinker_Goal_ID_First) {
         return;
     }
-    debug("add_goal %d type: %3d pr: %2d x: %3d y: %3d base: %d\n",
-        faction, type, priority, x, y, base_id);
-
+    if (conf.debug_verbose) {
+        debug("add_goal %d type: %3d pr: %2d x: %3d y: %3d base: %d\n",
+            faction, type, priority, x, y, base_id);
+    }
     for (int i = 0; i < MaxGoalsNum; i++) {
         Goal& goal = Factions[faction].goals[i];
         if (goal.x == x && goal.y == y && goal.type == type) {
@@ -1174,9 +1204,10 @@ void __cdecl add_site(int faction, int type, int priority, int x, int y) {
     if (thinker_enabled(faction)) {
         return;
     }
-    debug("add_site %d type: %3d pr: %2d x: %3d y: %3d\n",
-        faction, type, priority, x, y);
-
+    if (conf.debug_verbose) {
+        debug("add_site %d type: %3d pr: %2d x: %3d y: %3d\n",
+            faction, type, priority, x, y);
+    }
     for (int i = 0; i < MaxSitesNum; i++) {
         Goal& sites = Factions[faction].sites[i];
         if (sites.x == x && sites.y == y && sites.type == type) {
@@ -1266,7 +1297,7 @@ Goal* find_priority_goal(int faction, int type, int* px, int* py) {
 
 std::vector<MapTile> iterate_tiles(int x, int y, int start_index, int end_index) {
     std::vector<MapTile> tiles;
-    assert(start_index < end_index && (unsigned)end_index <= sizeof(TableOffsetX)/sizeof(int));
+    assert(start_index < end_index && (size_t)end_index <= sizeof(TableOffsetX)/sizeof(int));
 
     for (int i = start_index; i < end_index; i++) {
         int x2 = wrap(x + TableOffsetX[i]);
@@ -1314,11 +1345,13 @@ void TileSearch::init(int x, int y, int tp) {
 }
 
 void TileSearch::init(int x, int y, int tp, int skip) {
-    init(x, y, tp);
+    reset();
+    type = tp;
     y_skip = skip;
+    add_start(x, y);
 }
 
-void TileSearch::init(const PointList& points, int tp, int skip) {
+void TileSearch::init(const PointList& points, TSType tp, int skip) {
     reset();
     type = tp;
     y_skip = skip;
@@ -1387,7 +1420,7 @@ MAP* TileSearch::get_next() {
                     (type == TS_NEAR_ROADS && (is_ocean(sq) || !(sq->items & roads))) ||
                     (type == TS_TERRITORY_LAND && (is_ocean(sq) || sq->owner != faction)) ||
                     (type == TS_TERRITORY_BORDERS && (is_ocean(sq) || sq->owner != faction));
-        if (!first && skip) {
+        if (dist > 0 && skip) {
             if ((type == TS_NEAR_ROADS && is_ocean(sq))
             || (type == TS_TERRITORY_LAND && (is_ocean(sq) || sq->owner != faction))
             || (type == TS_TRIAD_LAND && is_ocean(sq))
@@ -1408,7 +1441,7 @@ MAP* TileSearch::get_next() {
                 oldtiles.insert({x2, y2});
             }
         }
-        if (!first) {
+        if (dist > 0) {
             return sq;
         }
     }

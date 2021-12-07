@@ -46,13 +46,15 @@ Open Project Homepage
 ^Random map style: {$OPT1}
 ^Modified landmarks: {$OPT2}
 ^World map labels: {$OPT3}
-^Warn on formers replacing tile items: {$OPT4}
+^Thinker manages player colony pods/formers: {$OPT4}
+^Warn when manually replacing tile improvements: {$OPT5}
 
 Close Dialog
 Toggle New Map Generator
 Toggle Random Map Style
 Toggle Modified Landmarks
 Toggle World Map Labels
+Toggle Thinker Automation
 Toggle Former Warnings
 
 #HURRY

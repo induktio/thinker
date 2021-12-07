@@ -29,7 +29,7 @@ int path_distance(int x1, int y1, int x2, int y2, int unit_id, int faction) {
         dist++;
         debug("path %2d %2d -> %2d %2d / %2d %2d / %2d\n", x1,y1,x2,y2,px,py,dist);
     }
-    fflush(debug_log);
+    flushlog();
     return -1;
 }
 

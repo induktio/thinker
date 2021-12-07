@@ -28,11 +28,13 @@
     #define MOD_DATE __DATE__ " " __TIME__
     #define DEBUG 1
     #define debug(...) fprintf(debug_log, __VA_ARGS__);
+    #define flushlog() fflush(debug_log);
 #else
     #define MOD_DATE __DATE__
     #define DEBUG 0
     #define NDEBUG /* Disable assertions */
     #define debug(...) /* Nothing */
+    #define flushlog()
     #ifdef __GNUC__
     #pragma GCC diagnostic ignored "-Wunused-variable"
     #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
@@ -134,6 +136,7 @@ struct Config {
     int scroll_area = 40;
     int world_map_labels = 1;
     int warn_on_former_replace = 1;
+    int manage_player_units = 0;
     int render_probe_labels = 1;
     int foreign_treaty_popup = 0;
     int new_base_names = 0;
@@ -353,6 +356,7 @@ typedef std::list<Point> PointList;
 
 #include "patch.h"
 #include "path.h"
+#include "plan.h"
 #include "gui.h"
 #include "map.h"
 #include "base.h"
@@ -369,7 +373,6 @@ extern AIPlans plans[MaxPlayerNum];
 
 DLL_EXPORT int ThinkerDecide();
 int opt_list_parse(int* ptr, char* buf, int len, int min_val);
-int plans_upkeep(int faction);
 int __cdecl mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5);
 
 

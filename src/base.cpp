@@ -39,7 +39,7 @@ int __cdecl mod_base_prod_choices(int base_id, int v1, int v2, int v3) {
         }
         debug("choice: %d %s\n", choice, prod_name(choice));
     }
-    fflush(debug_log);
+    flushlog();
     return choice;
 }
 
@@ -63,7 +63,9 @@ void __cdecl base_first(int base_id) {
 int consider_staple(int base_id) {
     BASE* b = &Bases[base_id];
     Faction* f = &Factions[b->faction_id];
-    if (b->nerve_staple_count < 3 && !un_charter() && base_can_riot(base_id, true) && f->SE_police >= 0
+    if (b->nerve_staple_count < 3
+    && (!un_charter() || (*SunspotDuration > 1 && *diff_level >= DIFF_LIBRARIAN))
+    && base_can_riot(base_id, true) && f->SE_police >= 0
     && (b->drone_total > b->talent_total || b->state_flags & BSTATE_DRONE_RIOTS_ACTIVE)
     && b->pop_size / 4 >= b->nerve_staple_count
     && (b->faction_id == b->faction_id_former || want_revenge(b->faction_id, b->faction_id_former))) {
@@ -91,6 +93,9 @@ int need_psych(int base_id) {
         }
         if (can_build(base_id, FAC_HOLOGRAM_THEATRE)) {
             return -FAC_HOLOGRAM_THEATRE;
+        }
+        if (can_build(base_id, FAC_PARADISE_GARDEN) && prod_turns(base_id, FAC_PARADISE_GARDEN) < 8) {
+            return -FAC_PARADISE_GARDEN;
         }
     }
     return 0;
@@ -335,34 +340,6 @@ bool relocate_hq(int base_id) {
     return new_id == base_id;
 }
 
-bool need_police(int faction) {
-    Faction* f = &Factions[faction];
-    return f->SE_police > -2 && f->SE_police < 3 && !has_project(faction, FAC_TELEPATHIC_MATRIX);
-}
-
-int psi_score(int faction) {
-    Faction* f = &Factions[faction];
-    int psi = max(-4, 2 - f->best_weapon_value);
-    if (has_project(faction, FAC_NEURAL_AMPLIFIER)) {
-        psi += 2;
-    }
-    if (has_project(faction, FAC_DREAM_TWISTER)) {
-        psi += 2;
-    }
-    if (has_project(faction, FAC_PHOLUS_MUTAGEN)) {
-        psi++;
-    }
-    if (has_project(faction, FAC_XENOEMPATHY_DOME)) {
-        psi++;
-    }
-    if (MFactions[faction].rule_flags & RFLAG_WORMPOLICE && need_police(faction)) {
-        psi += 2;
-    }
-    psi += min(2, max(-2, (f->enemy_best_weapon_value - f->best_weapon_value)/2));
-    psi += MFactions[faction].rule_psi/10 + 2*f->SE_planet;
-    return psi;
-}
-
 /*
 Return true if unit2 is strictly better than unit1 in all circumstances (non PSI).
 Disable random chance in prototype choices in these instances.
@@ -426,7 +403,7 @@ int unit_score(int id, int faction, int cfactor, int minerals, int accumulated, 
     }
     int turns = max(0, u->cost * cfactor - accumulated) / max(2, minerals);
     int score = v - turns * (u->is_colony() ? 6 : 3)
-        * (max(3, 9 - *current_turn/10) + (minerals < 6 ? 2 : 0));
+        * (max(3, 8 - *current_turn/10) + (minerals < 6 ? 2 : 0));
     debug("unit_score %s cfactor: %d minerals: %d cost: %d turns: %d score: %d\n",
         u->name, cfactor, minerals, u->cost, turns, score);
     return score;
@@ -497,6 +474,12 @@ int select_colony(int base_id, int pods, bool build_ships) {
     bool sea = has_base_sites(base->x, base->y, faction, TRIAD_SEA);
     int limit = (*current_turn < 60 || (!random(3) && (land || (build_ships && sea))) ? 2 : 1);
 
+    if (Factions[faction].base_count >= 8
+    && base_id < *total_num_bases/4
+    && base->mineral_surplus >= plans[faction].proj_limit
+    && find_project(base_id) != 0) {
+        limit = (base_id > *total_num_bases/8);
+    }
     if (pods >= limit) {
         return TRIAD_NONE;
     }
@@ -812,7 +795,7 @@ int select_production(int base_id) {
         if (flag & F_Space && (!core_base || !has_facility(id, FAC_AEROSPACE_COMPLEX)))
             continue;
         if (flag & F_Trees && (base->eco_damage < random(16)
-        || (!base->eco_damage && nearby_items(base->x, base->y, 1, BIT_FOREST) < 4)))
+        || (!base->eco_damage && nearby_items(base->x, base->y, 1, BIT_FOREST) < 3)))
             continue;
         if (t == FAC_RECYCLING_TANKS && base->drone_total > 0 && can_build(id, FAC_RECREATION_COMMONS))
             continue;
@@ -829,7 +812,8 @@ int select_production(int base_id) {
         if (t == FAC_HABITATION_DOME && unused_space(id) > 0)
             continue;
         if ((t == FAC_RECREATION_COMMONS || t == FAC_HOLOGRAM_THEATRE)
-        && base->pop_size < 8 && base->drone_total + base->specialist_total < 2)
+        && base->pop_size < conf.content_pop_computer[*diff_level] + 2
+        && base->drone_total + base->specialist_total < 2)
             continue;
         if (t == FAC_PSI_GATE && facility_count(faction, FAC_PSI_GATE) > f->base_count / 3)
             continue;

@@ -51,6 +51,8 @@ int handler(void* user, const char* section, const char* name, const char* value
         cf->scroll_area = max(0, atoi(value));
     } else if (MATCH("thinker", "world_map_labels")) {
         cf->world_map_labels = atoi(value);
+    } else if (MATCH("thinker", "manage_player_units")) {
+        cf->manage_player_units = atoi(value);
     } else if (MATCH("thinker", "warn_on_former_replace")) {
         cf->warn_on_former_replace = atoi(value);
     } else if (MATCH("thinker", "render_probe_labels")) {
@@ -259,6 +261,8 @@ int game_ini_parse(Config* cf) {
         ModAppName, "modified_landmarks", cf->modified_landmarks, GameIniFile);
     cf->world_map_labels = GetPrivateProfileIntA(
         ModAppName, "world_map_labels", cf->world_map_labels, GameIniFile);
+    cf->manage_player_units = GetPrivateProfileIntA(
+        ModAppName, "manage_player_units", cf->manage_player_units, GameIniFile);
     cf->warn_on_former_replace = GetPrivateProfileIntA(
         ModAppName, "warn_on_former_replace", cf->warn_on_former_replace, GameIniFile);
     return 1;
@@ -297,244 +301,6 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
 }
 
 DLL_EXPORT int ThinkerDecide() {
-    return 0;
-}
-
-int plans_upkeep(int faction) {
-    if (!faction || is_human(faction)) {
-        return 0;
-    }
-    /*
-    Remove bugged prototypes from the savegame.
-    */
-    for (int j = 0; j < MaxProtoFactionNum; j++) {
-        int id = faction*MaxProtoFactionNum + j;
-        UNIT* u = &Units[id];
-        if (strlen(u->name) >= MaxProtoNameLen
-        || u->chassis_type < CHS_INFANTRY
-        || u->chassis_type > CHS_MISSILE) {
-            for (int k = *total_num_vehicles-1; k >= 0; k--) {
-                if (Vehicles[k].unit_id == id) {
-                    veh_kill(k);
-                }
-            }
-            for (int k=0; k < *total_num_bases; k++) {
-                if (Bases[k].queue_items[0] == id) {
-                    Bases[k].queue_items[0] = -FAC_STOCKPILE_ENERGY;
-                }
-            }
-            memset(u, 0, sizeof(UNIT));
-        }
-    }
-
-    if (!is_alive(faction)) {
-        return 0;
-    }
-    if (conf.design_units) {
-        const int i = faction;
-        int rec = best_reactor(i);
-        int wpn = best_weapon(i);
-        int arm = best_armor(i, false);
-        int arm_cheap = best_armor(i, true);
-        int chs_land = has_chassis(i, CHS_HOVERTANK) ? CHS_HOVERTANK : 
-            (has_chassis(i, CHS_SPEEDER) ? CHS_SPEEDER : CHS_INFANTRY);
-        int chs_ship = has_chassis(i, CHS_CRUISER) ? CHS_CRUISER :
-            (has_chassis(i, CHS_FOIL) ? CHS_FOIL : -1);
-        bool twoabl = has_tech(i, Rules->tech_preq_allow_2_spec_abil);
-        char buf[256];
-
-        if (has_weapon(i, WPN_PROBE_TEAM)) {
-            int algo = has_ability(i, ABL_ID_ALGO_ENHANCEMENT) ? ABL_ALGO_ENHANCEMENT : 0;
-            if (chs_ship >= 0) {
-                int ship = (rec >= REC_FUSION && has_chassis(i, CHS_CRUISER) ? CHS_CRUISER : chs_ship);
-                char* name = parse_str(buf, MaxProtoNameLen,
-                    Armor[(rec >= REC_FUSION ? arm : ARM_NO_ARMOR)].name_short,
-                    Chassis[ship].offsv1_name, "Probe", NULL);
-                propose_proto(i, ship, WPN_PROBE_TEAM,
-                    (rec >= REC_FUSION ? arm : ARM_NO_ARMOR), algo, rec, PLAN_INFO_WARFARE, name);
-            }
-            if (arm != ARM_NO_ARMOR && rec >= REC_FUSION) {
-                char* name = parse_str(buf, MaxProtoNameLen, Armor[arm].name_short,
-                    Chassis[chs_land].offsv1_name, "Probe", NULL);
-                propose_proto(i, chs_land, WPN_PROBE_TEAM, arm, algo, rec, PLAN_INFO_WARFARE, name);
-            }
-        }
-        if (chs_ship >= 0 && Weapon[wpn].offense_value >= 4) {
-            int arm_ship = Weapon[wpn].offense_value >= 10 || rec >= REC_FUSION ? arm_cheap : ARM_NO_ARMOR;
-            propose_proto(i, chs_ship, wpn, arm_ship, 0, rec, PLAN_OFFENSIVE, NULL);
-        }
-        if (has_ability(i, ABL_ID_AAA) && arm != ARM_NO_ARMOR) {
-            int abls = ABL_AAA;
-            if (twoabl) {
-                abls |= (has_ability(i, ABL_ID_COMM_JAMMER) ? ABL_COMM_JAMMER :
-                    (has_ability(i, ABL_ID_TRANCE) ? ABL_TRANCE : 0));
-            }
-            propose_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, abls, rec, PLAN_DEFENSIVE, NULL);
-        }
-        if (!has_ability(i, ABL_ID_AAA) && (has_ability(i, ABL_ID_TRANCE) || has_ability(i, ABL_ID_POLICE_2X))) {
-            int abls = (has_ability(i, ABL_ID_TRANCE) ? ABL_TRANCE : 0);
-            if ((twoabl || !abls) && has_ability(i, ABL_ID_POLICE_2X) && need_police(i)) {
-                abls |= ABL_POLICE_2X;
-            }
-            if (abls) {
-                propose_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, abls, rec, PLAN_DEFENSIVE, NULL);
-            }
-        }
-        if (has_chassis(i, CHS_NEEDLEJET) && has_ability(i, ABL_ID_AIR_SUPERIORITY)) {
-            int abls = ABL_AIR_SUPERIORITY | (twoabl && has_ability(i, ABL_ID_DEEP_RADAR) ? ABL_DEEP_RADAR : 0);
-            propose_proto(i, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, abls, rec, PLAN_AIR_SUPERIORITY, NULL);
-        }
-        if (has_weapon(i, WPN_TERRAFORMING_UNIT) && rec >= REC_FUSION) {
-            bool grav = has_chassis(i, CHS_GRAVSHIP);
-            int abls = has_ability(i, ABL_ID_SUPER_TERRAFORMER ? ABL_SUPER_TERRAFORMER : 0) |
-                (twoabl && !grav && has_ability(i, ABL_ID_FUNGICIDAL) ? ABL_FUNGICIDAL : 0);
-            propose_proto(i, (grav ? CHS_GRAVSHIP : chs_land), WPN_TERRAFORMING_UNIT, ARM_NO_ARMOR, abls,
-                REC_FUSION, PLAN_TERRAFORMING, NULL);
-        }
-        if (has_weapon(i, WPN_SUPPLY_TRANSPORT) && rec >= REC_FUSION && arm_cheap != ARM_NO_ARMOR) {
-            char* name = parse_str(buf, MaxProtoNameLen, Reactor[REC_FUSION-1].name_short,
-                Armor[arm_cheap].name_short, "Supply", NULL);
-            propose_proto(i, CHS_INFANTRY, WPN_SUPPLY_TRANSPORT, arm_cheap, 0, REC_FUSION, PLAN_DEFENSIVE, name);
-        }
-    }
-
-    if (thinker_enabled(faction)) {
-        const int i = faction;
-        int minerals[MaxBaseNum];
-        int population[MaxBaseNum];
-        Faction* f = &Factions[i];
-
-        plans[i].unknown_factions = 0;
-        plans[i].contacted_factions = 0;
-        plans[i].enemy_factions = 0;
-        plans[i].diplo_flags = 0;
-        plans[i].enemy_nukes = 0;
-        plans[i].enemy_bases = 0;
-        plans[i].enemy_mil_factor = 0;
-        plans[i].land_combat_units = 0;
-        plans[i].sea_combat_units = 0;
-        plans[i].air_combat_units = 0;
-        plans[i].probe_units = 0;
-        plans[i].transport_units = 0;
-        update_main_region(faction);
-
-        for (int j=1; j < MaxPlayerNum; j++) {
-            plans[j].mil_strength = 0;
-        }
-        for (int j=0; j < *total_num_vehicles; j++) {
-            VEH* veh = &Vehicles[j];
-            int triad = veh->triad();
-            if (veh->faction_id > 0) {
-                int offense = (veh->offense_value() < 0 ? 2 : 1) * abs(veh->offense_value());
-                plans[veh->faction_id].mil_strength += 
-                    (offense + abs(veh->defense_value())) * (veh->speed() > 1 ? 3 : 2);
-            }
-            if (veh->faction_id == faction) {
-                if (veh->is_combat_unit() || veh->is_probe() || veh->is_transport()) {
-                    if (triad == TRIAD_LAND) {
-                        plans[i].land_combat_units++;
-                    } else if (triad == TRIAD_SEA) {
-                        plans[i].sea_combat_units++;
-                    } else {
-                        plans[i].air_combat_units++;
-                    }
-                    if (veh->is_probe()) {
-                        plans[i].probe_units++;
-                    }
-                    if (veh->is_transport() && triad == TRIAD_SEA) {
-                        plans[i].transport_units++;
-                    }
-                }
-            }
-        }
-        debug("plans_totals %d %d bases: %3d land: %3d sea: %3d air: %3d probe: %3d transport: %3d\n",
-            *current_turn, i, f->base_count, plans[i].land_combat_units, plans[i].sea_combat_units,
-            plans[i].air_combat_units, plans[i].probe_units, plans[i].transport_units);
-
-        for (int j=1; j < MaxPlayerNum; j++) {
-            if (i != j && Factions[j].base_count > 0) {
-                if (has_treaty(i, j, DIPLO_COMMLINK)) {
-                    plans[i].contacted_factions++;
-                } else {
-                    plans[i].unknown_factions++;
-                }
-                if (at_war(i, j)) {
-                    plans[i].enemy_factions++;
-                    plans[i].enemy_nukes += Factions[j].planet_busters;
-                }
-                float factor = min(8.0f, (is_human(j) ? 2.0f : 1.0f)
-                    * (has_treaty(i, j, DIPLO_COMMLINK) ? 1.0f : 0.5f)
-                    * (at_war(i, j) ? 1.0f : (has_pact(i, j) ? 0.1f : 0.25f))
-                    * (plans[i].main_region == plans[j].main_region ? 1.5f : 1.0f)
-                    * faction_might(j) / max(1, faction_might(i)));
-
-                plans[i].enemy_mil_factor = max(plans[i].enemy_mil_factor, factor);
-                plans[i].diplo_flags |= f->diplo_status[j];
-            }
-        }
-        memset(base_defend_range, 0, sizeof(base_defend_range));
-        float enemy_sum = 0;
-        int n = 0;
-        for (int j=0; j < *total_num_bases; j++) {
-            BASE* base = &Bases[j];
-            MAP* sq = mapsq(base->x, base->y);
-            if (base->faction_id == faction) {
-                population[n] = base->pop_size;
-                minerals[n] = base->mineral_surplus;
-                n++;
-                // Update enemy base threat distances
-                int base_region = (sq ? sq->region : 0);
-                float enemy_range = 10*MaxEnemyRange;
-                for (int k=0; k < *total_num_bases; k++) {
-                    BASE* b = &Bases[k];
-                    if (faction != b->faction_id
-                    && !has_pact(faction, b->faction_id)
-                    && (sq = mapsq(b->x, b->y))) {
-                        float range = map_range(base->x, base->y, b->x, b->y)
-                            * (sq->region == base_region ? 1.0f : 1.5f)
-                            * (at_war(faction, b->faction_id) ? 1.0f : 5.0f)
-                            * (is_human(b->faction_id) ? 0.75f : 1.0f);
-                        enemy_range = min(enemy_range, range);
-                    }
-                }
-                base_defend_range[j] = (int)enemy_range;
-                enemy_sum += min((float)MaxEnemyRange, enemy_range);
-
-            } else if (base->faction_id_former == faction && at_war(faction, base->faction_id)) {
-                plans[i].enemy_bases += (is_human(base->faction_id) ? 2 : 1);
-            }
-        }
-        plans[i].enemy_base_range = (n > 0 ? enemy_sum/n : MaxEnemyRange);
-
-        std::sort(minerals, minerals+n);
-        std::sort(population, population+n);
-        if (f->base_count >= 32) {
-            plans[i].proj_limit = max(5, minerals[n*3/4]);
-        } else {
-            plans[i].proj_limit = max(5, minerals[n*2/3]);
-        }
-        plans[i].satellites_goal = min(conf.max_satellites, population[n*3/4]);
-        plans[i].psi_score = psi_score(i);
-
-        bool former_fungus = (has_terra(i, FORMER_PLANT_FUNGUS, LAND)
-            || has_terra(i, FORMER_PLANT_FUNGUS, SEA));
-        bool improv_fungus = (has_tech(i, Rules->tech_preq_ease_fungus_mov)
-            || has_tech(i, Rules->tech_preq_improv_fungus)
-            || has_project(i, FAC_XENOEMPATHY_DOME));
-        int value = fungus_yield(i, RES_NONE)
-            - (has_terra(i, FORMER_FOREST, LAND)
-            ? Resource->forest_sq_nutrient
-            + Resource->forest_sq_mineral
-            + Resource->forest_sq_energy : 2);
-        plans[i].keep_fungus = (value > 0 ? min((improv_fungus ? 8 : 4), 2*value) : 0);
-        plans[i].plant_fungus = value > 0 && former_fungus && (improv_fungus || value > 2);
-
-        debug("plans_upkeep %d %d proj_limit: %2d sat_goal: %2d psi: %2d keep_fungus: %d "\
-              "plant_fungus: %d enemy_bases: %2d enemy_mil: %.4f enemy_range: %.4f\n",
-              *current_turn, i, plans[i].proj_limit, plans[i].satellites_goal,
-              plans[i].psi_score, plans[i].keep_fungus, plans[i].plant_fungus,
-              plans[i].enemy_bases, plans[i].enemy_mil_factor, plans[i].enemy_base_range);
-    }
     return 0;
 }
 
@@ -625,16 +391,16 @@ int robust, int immunity, int impunity, int penalty) {
         sc += 4 * max(0, 4 - range/8);
     }
     sc += max(2, 2 + 4*f->AI_wealth + 3*f->AI_tech - f->AI_fight)
-        * min(5, max(-3, vals[ECO]));
+        * clamp(vals[ECO], -3, 5);
     sc += max(2, 2*(f->AI_wealth + f->AI_tech) - f->AI_fight + (int)(4*base_ratio))
         * (min(6, vals[EFF]) + (vals[EFF] >= 3 ? 2 : 0));
     sc += max(3, 3 + 2*f->AI_power + 2*f->AI_fight)
-        * min(3, max(-4, vals[SUP]));
+        * clamp(vals[SUP], -4, 3);
     sc += max(2, 4 - range/8 + 2*f->AI_power + 2*f->AI_fight)
-        * min(4, max(-4, vals[MOR]));
+        * clamp(vals[MOR], -4, 4);
 
     if (!has_project(faction, FAC_TELEPATHIC_MATRIX)) {
-        sc += (vals[POL] < 0 ? 2 : 4) * min(3, max(-5, vals[POL]));
+        sc += (vals[POL] < 0 ? 2 : 4) * clamp(vals[POL], -5, 3);
         if (vals[POL] < -2) {
             sc -= (vals[POL] < -3 ? 4 : 2) * max(0, 4 - range/8)
                 * (has_aircraft(faction) ? 2 : 1);
@@ -643,7 +409,17 @@ int robust, int immunity, int impunity, int penalty) {
             sc += (sm == SOCIAL_M_PLANNED ? 10 : 0);
             sc += (sm == SOCIAL_M_SIMPLE || sm == SOCIAL_M_GREEN ? 5 : 0);
         }
-        sc += min(5, max(-5, vals[TAL])) * 3;
+        sc += 3*clamp(vals[TAL], -5, 5);
+
+        int drone_score = 3 + (m->rule_drone > 0) - (m->rule_talent > 0)
+            - (has_tech(faction, Facility[FAC_PUNISHMENT_SPHERE].preq_tech) ? 1 : 0);
+        if (*SunspotDuration > 5 && *diff_level >= DIFF_LIBRARIAN
+        && un_charter() && vals[POL] >= 0) {
+            sc += 3*drone_score;
+        }
+        if (!un_charter() && vals[POL] >= 0) {
+            sc += 2*drone_score;
+        }
     }
     if (!has_project(faction, FAC_CLONING_VATS)) {
         if (pop_boom && vals[GRW] >= 4) {
@@ -652,16 +428,20 @@ int robust, int immunity, int impunity, int penalty) {
         if (vals[GRW] < -2) {
             sc -= 10;
         }
-        sc += (pop_boom ? 6 : 3) * min(6, max(-3, vals[GRW]));
+        sc += (pop_boom ? 6 : 3) * clamp(vals[GRW], -3, 6);
+    }
+    // Negative planet values reduce fungus yield
+    if (plans[faction].keep_fungus) {
+        sc += 3*clamp(vals[PLA], -3, 0);
     }
     sc += max(2, (f->SE_planet_base > 0 ? 5 : 2) + m->rule_psi/10
-        + (has_project(faction, FAC_MANIFOLD_HARMONICS) ? 6 : 0)) * min(3, max(-3, vals[PLA]));
-    sc += max(2, 4 - range/8 + 2*f->AI_power + 2*f->AI_fight) * min(3, max(-2, vals[PRO]));
-    sc += 8 * min(8 - *diff_level, max(-3, vals[IND]));
+        + (has_project(faction, FAC_MANIFOLD_HARMONICS) ? 6 : 0)) * clamp(vals[PLA], -3, 3);
+    sc += max(2, 4 - range/8 + 2*f->AI_power + 2*f->AI_fight) * clamp(vals[PRO], -2, 3);
+    sc += 8 * clamp(vals[IND], -3, 8 - *diff_level);
 
     if (~*game_rules & RULES_SCN_NO_TECH_ADVANCES) {
         sc += max(2, 3 + 4*f->AI_tech + 2*(f->AI_wealth - f->AI_fight))
-            * min(5, max(-5, vals[RES]));
+            * clamp(vals[RES], -5, 5);
     }
 
     debug("social_score %d %d %d %d %s\n", faction, sf, sm, sc, Social[sf].soc_name[sm]);

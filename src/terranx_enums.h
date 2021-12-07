@@ -256,7 +256,7 @@ enum Triad {
     TRIAD_AIR = 2,
 };
 
-enum unit_basic_id {
+enum VehBasicUnit {
     BSC_COLONY_POD = 0,
     BSC_FORMERS = 1,
     BSC_SCOUT_PATROL = 2,
@@ -282,7 +282,7 @@ enum unit_basic_id {
     BSC_UNITY_GUNSHIP = 22,
 };
 
-enum unit_chassis_type {
+enum VehChassis {
     CHS_INFANTRY = 0,
     CHS_SPEEDER = 1,
     CHS_HOVERTANK = 2,
@@ -294,14 +294,14 @@ enum unit_chassis_type {
     CHS_MISSILE = 8,
 };
 
-enum unit_reactor {
+enum VehReactor {
     REC_FISSION = 1,
     REC_FUSION = 2,
     REC_QUANTUM = 3,
     REC_SINGULARITY = 4,
 };
 
-enum unit_armor_id {
+enum VehArmor {
     ARM_NO_ARMOR = 0,
     ARM_SYNTHMETAL_ARMOR = 1,
     ARM_PLASMA_STEEL_ARMOR = 2,
@@ -318,7 +318,7 @@ enum unit_armor_id {
     ARM_RESONANCE_8_ARMOR = 13,
 };
 
-enum unit_weapon_id {
+enum VehWeapon {
     WPN_HAND_WEAPONS = 0,
     WPN_LASER = 1,
     WPN_PARTICLE_IMPACTOR = 2,
@@ -347,7 +347,7 @@ enum unit_weapon_id {
     WPN_FUNGAL_PAYLOAD = 25,
 };
 
-enum unit_weapon_mode {
+enum VehWeaponMode {
     WMODE_PROJECTILE = 0,
     WMODE_ENERGY = 1,
     WMODE_MISSILE = 2,
@@ -359,7 +359,7 @@ enum unit_weapon_mode {
     WMODE_ARTIFACT = 12,
 };
 
-enum unit_plan {
+enum VehPlan {
     PLAN_OFFENSIVE = 0,
     PLAN_COMBAT = 1,
     PLAN_DEFENSIVE = 2,
@@ -378,7 +378,7 @@ enum unit_plan {
     PLAN_AUTO_CALCULATE = -1,
 };
 
-enum unit_ability_id {
+enum VehAbility {
     ABL_ID_SUPER_TERRAFORMER = 0,
     ABL_ID_DEEP_RADAR = 1,
     ABL_ID_CLOAKED = 2,
@@ -410,7 +410,8 @@ enum unit_ability_id {
     ABL_ID_ALGO_ENHANCEMENT = 28,
 };
 
-enum unit_ability_flags {
+enum VehAbilityFlag {
+    ABL_NONE = 0,
     ABL_SUPER_TERRAFORMER = 0x1,
     ABL_DEEP_RADAR = 0x2,
     ABL_CLOAKED = 0x4,
@@ -442,7 +443,7 @@ enum unit_ability_flags {
     ABL_ALGO_ENHANCEMENT = 0x10000000,
 };
 
-enum unit_ability_rules_flags {
+enum VehAbilityRules {
     AFLAG_ALLOWED_LAND_UNIT = 0x1,
     AFLAG_ALLOWED_SEA_UNIT = 0x2,
     AFLAG_ALLOWED_AIR_UNIT = 0x4,
@@ -1051,7 +1052,7 @@ enum terrain_basic_flags {
     TILE_ROCKY = 0x80,
 };
 
-enum ai_goal_types {
+enum AIGoal {
     AI_GOAL_UNUSED = -1,
     AI_GOAL_ATTACK = 0, // 'a', red
     AI_GOAL_DEFEND = 2, // 'd', yellow

@@ -96,6 +96,7 @@ extern int* MapLandmarkCount;
 extern int* AltNaturalDefault;
 extern int* AltNatural;
 extern char* MapFilePath;
+extern int *SunspotDuration;
 extern int* climate_future_change;
 extern int* un_charter_repeals;
 extern int* un_charter_reinstates;
@@ -170,8 +171,8 @@ extern CNatural* Natural;
 extern CWorldbuilder *WorldBuilder;
 
 typedef int(__cdecl *Fbattle_fight_1)(int veh_id, int offset, bool use_table_offset, int v1, int v2);
-typedef int(__cdecl *Fpropose_proto)(int faction, int chassis, int weapon, int armor, 
-    int abilities, int reactor, int ai_plan, const char* name);
+typedef int(__cdecl *Fpropose_proto)(int faction, VehChassis chassis, VehWeapon weapon, VehArmor armor, 
+    int abilities, VehReactor reactor, VehPlan ai_plan, const char* name);
 typedef int(__cdecl *Faction_airdrop)(int veh_id, int x, int y, int veh_attack_flags);
 typedef int(__cdecl *Faction_destroy)(int veh_id, int flags, int x, int y);
 typedef int(__cdecl *Faction_gate)(int veh_id, int base_id);
@@ -264,8 +265,9 @@ extern fp_6int battle_kill;
 extern fp_7int battle_fight_2;
 extern fp_void draw_cursor;
 extern fp_1int draw_map;
-extern fp_void base_hurry;
 extern fp_void turn_timer;
+extern fp_void base_production;
+extern fp_void base_hurry;
 
 extern fp_void map_wipe;
 extern fp_3int alt_put_detail;

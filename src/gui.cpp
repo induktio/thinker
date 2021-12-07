@@ -420,7 +420,7 @@ void check_scroll() {
     }
     mouse_over_tile(&p);
     CState.Scrolling = false;
-    fflush(debug_log);
+    flushlog();
 }
 
 LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -546,6 +546,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         while (ts.get_next() != NULL) {
             pm_overlay[ts.rx][ts.ry] = ++i;
         }
+        pm_overlay[pMain->oMap.iTileX][pMain->oMap.iTileY] = ts_type;
         MapWin_draw_map(pMain, 0);
         InvalidateRect(hwnd, NULL, false);
 
@@ -554,7 +555,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         memset(pm_overlay, 0, sizeof(pm_overlay));
         MAP* sq = mapsq(pMain->oMap.iTileX, pMain->oMap.iTileY);
         if (sq && sq->is_owned()) {
-            move_upkeep(sq->owner, true);
+            move_upkeep(sq->owner, M_Visual);
             MapWin_draw_map(pMain, 0);
             InvalidateRect(hwnd, NULL, false);
         }
@@ -585,7 +586,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 print_veh(k);
             }
         }
-        fflush(debug_log);
+        flushlog();
 
     } else {
         return WinProc(hwnd, msg, wParam, lParam);
@@ -934,14 +935,15 @@ void show_mod_stats() {
 }
 
 int show_mod_config() {
-    enum {Close, MapGen, MapStyle, MapLandmarks, MapLabels, FormerReplace};
+    enum {Close, MapGen, MapStyle, MapLandmarks, MapLabels, AutoUnits, FormerReplace};
     int ret;
     while (true) {
         parse_says(0, (conf.new_world_builder ? "true" : "false"), -1, -1);
         parse_says(1, (conf.world_continents ? "large islands" : "small islands"), -1, -1);
         parse_says(2, (conf.modified_landmarks ? "true" : "false"), -1, -1);
         parse_says(3, (conf.world_map_labels ? "true" : "false"), -1, -1);
-        parse_says(4, (conf.warn_on_former_replace ? "true" : "false"), -1, -1);
+        parse_says(4, (conf.manage_player_units ? "true" : "false"), -1, -1);
+        parse_says(5, (conf.warn_on_former_replace ? "true" : "false"), -1, -1);
         ret = popp("modmenu", "OPTIONS", 0, "stars_sm.pcx", 0);
         if (ret == Close) {
             break;
@@ -966,6 +968,11 @@ int show_mod_config() {
             WritePrivateProfileStringA(ModAppName, "world_map_labels",
                 (conf.world_map_labels ? "1" : "0"), GameIniFile);
             draw_map(1);
+        }
+        else if (ret == AutoUnits) {
+            conf.manage_player_units = !conf.manage_player_units;
+            WritePrivateProfileStringA(ModAppName, "manage_player_units",
+                (conf.manage_player_units ? "1" : "0"), GameIniFile);
         }
         else if (ret == FormerReplace) {
             conf.warn_on_former_replace = !conf.warn_on_former_replace;
