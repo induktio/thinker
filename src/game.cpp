@@ -1222,11 +1222,11 @@ void __cdecl add_site(int faction, int type, int priority, int x, int y) {
     for (int i = 0; i < MaxSitesNum; i++) {
         Goal& sites = Factions[faction].sites[i];
         int type_cmp = sites.type;
-        int priroty_cmp = sites.priority;
-        if (type_cmp < 0 || priroty_cmp < priority) {
+        int priority_cmp = sites.priority;
+        if (type_cmp < 0 || priority_cmp < priority) {
             int cmp = type_cmp >= 0 ? 0 : 1000;
             if (!cmp) {
-                cmp = 20 - priroty_cmp;
+                cmp = 20 - priority_cmp;
             }
             if (cmp > priority_search) {
                 priority_search = cmp;

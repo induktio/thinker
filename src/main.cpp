@@ -25,7 +25,7 @@ NodeSet mapnodes;
 AIPlans plans[MaxPlayerNum];
 
 
-int handler(void* user, const char* section, const char* name, const char* value) {
+int option_handler(void* user, const char* section, const char* name, const char* value) {
     static bool unknown_option = false;
     char buf[INI_MAX_LINE+2] = {};
     Config* cf = (Config*)user;
@@ -272,15 +272,17 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
     switch (fdwReason) {
         case DLL_PROCESS_ATTACH:
             if (DEBUG && !(debug_log = fopen("debug.txt", "w"))) {
-                return FALSE;
+                exit(EXIT_FAILURE);
             }
-            if (ini_parse("thinker.ini", handler, &conf) < 0) {
+            if (ini_parse("thinker.ini", option_handler, &conf) < 0) {
                 MessageBoxA(0, "Error while opening thinker.ini file.",
                     MOD_VERSION, MB_OK | MB_ICONSTOP);
-                return FALSE;
+                exit(EXIT_FAILURE);
             }
             if (!game_ini_parse(&conf) || !cmd_parse(&conf) || !patch_setup(&conf)) {
-                return FALSE;
+                MessageBoxA(0, "Error while loading the game.",
+                    MOD_VERSION, MB_OK | MB_ICONSTOP);
+                exit(EXIT_FAILURE);
             }
             random_seed(GetTickCount());
             *engine_version = MOD_VERSION;

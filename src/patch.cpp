@@ -1,5 +1,6 @@
 
 #include "patch.h"
+#include "binary.h"
 
 const char* ac_alpha = "smac_mod\\alphax";
 const char* ac_help = "smac_mod\\helpx";
@@ -301,9 +302,12 @@ LPCSTR lpDefault, LPSTR lpReturnedString, DWORD nSize, LPCSTR lpFileName)
         lpDefault, lpReturnedString, nSize, lpFileName);
 }
 
-void exit_fail() {
-    MessageBoxA(0, "Error while patching game binary. Game will now exit.",
-        MOD_VERSION, MB_OK | MB_ICONSTOP);
+void exit_fail(int addr) {
+    char buf[512];
+    snprintf(buf, sizeof(buf),
+        "Error while patching address %08X in the game binary.\n"
+        "The mod is unable to start with an incompatible game version.", addr);
+    MessageBoxA(0, buf, MOD_VERSION, MB_OK | MB_ICONSTOP);
     exit(EXIT_FAILURE);
 }
 
@@ -413,13 +417,13 @@ If new_bytes is a null pointer, replace old_bytes with NOP code instead.
 */
 void write_bytes(int addr, const byte* old_bytes, const byte* new_bytes, int len) {
     if ((int*)addr < (int*)AC_IMAGE_BASE || (int*)addr + len > (int*)AC_IMAGE_BASE + AC_IMAGE_LEN) {
-        exit_fail();
+        exit_fail(addr);
     }
     for (int i=0; i<len; i++) {
         if (*((byte*)addr + i) != old_bytes[i]) {
             debug("write_bytes: address: %08X actual value: %02X expected value: %02X\n",
                 addr + i, *((byte*)addr + i), old_bytes[i]);
-            exit_fail();
+            exit_fail(addr + i);
         }
         if (new_bytes != NULL) {
             *((byte*)addr + i) = new_bytes[i];
@@ -436,7 +440,7 @@ or a near call with absolute indirect address (FF 25) before patching.
 void write_jump(int addr, int func) {
     if ((*(uint32_t*)addr & 0xFFFFFF) != 0xEC8B55 && *(uint16_t*)addr != 0x25FF
     && *(uint16_t*)(addr-1) != 0xA190) {
-        exit_fail();
+        exit_fail(addr);
     }
     *(byte*)addr = 0xE9;
     *(int*)(addr + 1) = func - addr - 5;
@@ -444,21 +448,21 @@ void write_jump(int addr, int func) {
 
 void write_call(int addr, int func) {
     if (*(byte*)addr != 0xE8 || abs(*(int*)(addr+1)) > (int)AC_IMAGE_LEN) {
-        exit_fail();
+        exit_fail(addr);
     }
     *(int*)(addr+1) = func - addr - 5;
 }
 
 void write_offset(int addr, const void* ofs) {
     if (*(byte*)addr != 0x68 || *(int*)(addr+1) < (int)AC_IMAGE_BASE) {
-        exit_fail();
+        exit_fail(addr);
     }
     *(int*)(addr+1) = (int)ofs;
 }
 
 void remove_call(int addr) {
     if (*(byte*)addr != 0xE8 || *(int*)(addr+1) + addr < (int)AC_IMAGE_BASE) {
-        exit_fail();
+        exit_fail(addr);
     }
     memset((void*)addr, 0x90, 5);
 }
@@ -494,6 +498,15 @@ bool patch_setup(Config* cf) {
 
     if (!VirtualProtect(AC_IMAGE_BASE, AC_IMAGE_LEN, PAGE_EXECUTE_READWRITE, &attrs)) {
         return false;
+    }
+    // Apply Scient's Patch changes first
+    for(auto& item : AXPatchData) {
+        uint8_t* addr = (uint8_t*)(item.address);
+        if(*addr != item.old_byte && *addr != item.new_byte
+        && (addr < AXSkipVerifyStart || addr > AXSkipVerifyEnd)) {
+            exit_fail((int)addr);
+        }
+        *addr = item.new_byte;
     }
     extra_setup(cf);
 

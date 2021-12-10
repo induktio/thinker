@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="thinkerlaunch" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="build/bin/debug/thinker" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="patch" />
+				<Option object_output="build/obj/debug/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g -Og" />
+					<Add option="-DBUILD_DEBUG" />
+				</Compiler>
+				<Linker>
+					<Add library="user32" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="build/bin/release/thinker" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="patch" />
+				<Option object_output="build/obj/release/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2 -flto -fno-rtti -fno-strict-aliasing -fno-delete-null-pointer-checks" />
+					<Add option="-DBUILD_REL" />
+				</Compiler>
+				<Linker>
+					<Add option="-s -static" />
+					<Add library="user32" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-std=c++11 -pedantic -Wall -Wextra -Wshadow -Wundef -Wuseless-cast -Wpointer-arith -Wfloat-conversion" />
+		</Compiler>
+		<ExtraCommands>
+			<Add after='cmd /c copy &quot;$(PROJECT_DIR)$(TARGET_OUTPUT_FILE)&quot; patch\' />
+		</ExtraCommands>
+		<Unit filename="src/launch.cpp" />
+		<Unit filename="src/launch.h" />
+		<Unit filename="src/launch.manifest" />
+		<Unit filename="src/launch.rc">
+			<Option compilerVar="CPP" />
+		</Unit>
+		<Extensions>
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
