@@ -74,6 +74,7 @@
 		</ExtraCommands>
 		<Unit filename="src/base.cpp" />
 		<Unit filename="src/base.h" />
+		<Unit filename="src/binary.h" />
 		<Unit filename="src/engine.cpp" />
 		<Unit filename="src/engine.h" />
 		<Unit filename="src/game.cpp" />
