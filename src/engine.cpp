@@ -1,8 +1,8 @@
 
 #include "engine.h"
 
-static int currentAttackerVehicleId = -1;
-static int currentDefenderVehicleId = -1;
+static int current_attacker_veh_id = -1;
+static int current_defender_veh_id = -1;
 
 int probe_upkeep(int faction);
 
@@ -213,7 +213,7 @@ int __cdecl mod_base_find3(int x, int y, int faction1, int region, int faction2,
 std::vector<std::string> read_txt_block(const char* filename, const char* section, unsigned max_len) {
     std::vector<std::string> lines;
     FILE* file;
-    const int buf_size = 256;
+    const int buf_size = 1024;
     char filename_txt[buf_size];
     char line[buf_size];
     bool start = false;
@@ -230,7 +230,11 @@ std::vector<std::string> read_txt_block(const char* filename, const char* sectio
             break;
         } else if (start) {
             char* p = strstrip(line);
-            if (strlen(p) > 0 && strlen(p) < max_len && line[0] != ';') {
+            // Truncate long lines to max_len (including null)
+            if (strlen(p) > 0 && line[0] != ';') {
+                if (strlen(p) >= max_len) {
+                    p[max_len - 1] = '\0';
+                }
                 lines.push_back(p);
             }
         }
@@ -242,9 +246,11 @@ std::vector<std::string> read_txt_block(const char* filename, const char* sectio
 /*
 Generate a base name. If all base names from faction definition are used, the name
 generated will be unique across all bases on the map, e.g. Alpha Beta Sector.
+First land/sea base always uses the first available name from land/sea names list.
+Vanilla version chooses sea base names in a sequential non-random order.
 Original Offset: 004E4090
 */
-void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool water) {
+void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool sea_base) {
     const int MaxWordsNum = 24;
     const char* words[MaxWordsNum] = {
         "Alpha",
@@ -273,69 +279,92 @@ void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool water
         "Omega"
     };
     Faction& f = Factions[faction];
+    uint32_t offset = f.base_name_offset;
+    uint32_t offset_sea = f.base_sea_name_offset;
 
-    std::vector<std::string> faction_names = read_txt_block(
-        MFactions[faction].filename, (water ? "#WATERBASES" : "#BASES"), MaxBaseNameLen);
-    std::set<std::string> all_names;
-    uint32_t offset = (water ? f.base_sea_name_offset : f.base_name_offset);
-    uint32_t total = faction_names.size();
-
-    if (offset > 0 && offset < total) {
-        uint32_t seed = ((*map_random_seed + faction) & 0xFE) | 1;
-        uint32_t loop = 0;
-        do {
-            if (seed & 1) {
-                seed ^= 0x170;
+    if (sea_base) {
+        std::vector<std::string> sea_names = read_txt_block(
+            MFactions[faction].filename, "#WATERBASES", MaxBaseNameLen);
+        if (sea_names.size() > 0) {
+            if (offset_sea > 0 && offset_sea < sea_names.size()) {
+                uint32_t seed = ((*map_random_seed + faction) & 0xFE) | 1;
+                uint32_t loop = 0;
+                do {
+                    if (seed & 1) {
+                        seed ^= 0x170;
+                    }
+                    seed >>= 1;
+                } while (seed >= sea_names.size() || ++loop != offset_sea);
+                offset_sea = seed;
             }
-            seed >>= 1;
-        } while (seed >= total || ++loop != offset);
-        offset = seed;
-    }
-    if (offset < total) {
-        std::vector<std::string>::const_iterator it(faction_names.begin());
-        std::advance(it, offset);
-        strncpy(name, it->c_str(), MaxBaseNameLen);
-        name[MaxBaseNameLen - 1] = '\0';
-
-    } else {
-        for (int i=0; i < *total_num_bases; i++) {
-            all_names.insert(Bases[i].name);
-        }
-        int i = 0;
-        uint32_t x = 0;
-        uint32_t a = 0;
-        uint32_t b = 0;
-
-        while (i < 1024) {
-            x = map_hash(faction + 8*offset, ++i);
-            a = x % MaxWordsNum;
-            b = (x / 256) % MaxWordsNum;
-            name[0] = '\0';
-            snprintf(name, MaxBaseNameLen, "%s %s Sector", words[a], words[b]);
-            if (a != b && strlen(name) >= 14 && !all_names.count(name)) {
-                break;
+            if (offset_sea < sea_names.size()) {
+                std::vector<std::string>::const_iterator it(sea_names.begin());
+                std::advance(it, offset_sea);
+                strncpy(name, it->c_str(), MaxBaseNameLen);
+                name[MaxBaseNameLen - 1] = '\0';
+                if (save_offset) {
+                    f.base_sea_name_offset++;
+                }
+                return;
             }
         }
     }
+    std::vector<std::string> land_names = read_txt_block(
+        MFactions[faction].filename, "#BASES", MaxBaseNameLen);
     if (save_offset) {
-        if (water) {
-            f.base_sea_name_offset++;
-        } else {
-            f.base_name_offset++;
+        f.base_name_offset++;
+    }
+    if (land_names.size() > 0) {
+        if (offset > 0 && offset < land_names.size()) {
+            uint32_t seed = ((*map_random_seed + faction) & 0xFE) | 1;
+            uint32_t loop = 0;
+            do {
+                if (seed & 1) {
+                    seed ^= 0x170;
+                }
+                seed >>= 1;
+            } while (seed >= land_names.size() || ++loop != offset);
+            offset = seed;
+        }
+        if (offset < land_names.size()) {
+            std::vector<std::string>::const_iterator it(land_names.begin());
+            std::advance(it, offset);
+            strncpy(name, it->c_str(), MaxBaseNameLen);
+            name[MaxBaseNameLen - 1] = '\0';
+            return;
+        }
+    }
+    std::set<std::string> all_names;
+    for (int i = 0; i < *total_num_bases; i++) {
+        all_names.insert(Bases[i].name);
+    }
+    int i = 0;
+    uint32_t x = 0;
+    uint32_t a = 0;
+    uint32_t b = 0;
+
+    while (i < 1024) {
+        x = map_hash(faction + 8*f.base_name_offset, ++i);
+        a = x % MaxWordsNum;
+        b = (x / 256) % MaxWordsNum;
+        name[0] = '\0';
+        snprintf(name, MaxBaseNameLen, "%s %s Sector", words[a], words[b]);
+        if (a != b && strlen(name) >= 14 && !all_names.count(name)) {
+            return;
         }
     }
 }
 
-int __cdecl mod_best_defender(int defenderVehicleId, int attackerVehicleId, int bombardment)
+int __cdecl mod_best_defender(int defender_veh_id, int attacker_veh_id, int bombardment)
 {
     // store variables for modified odds dialog unless bombardment
-    int best_id = best_defender(defenderVehicleId, attackerVehicleId, bombardment);
+    int best_id = best_defender(defender_veh_id, attacker_veh_id, bombardment);
     if (bombardment) {
-        currentAttackerVehicleId = -1;
-        currentDefenderVehicleId = -1;
+        current_attacker_veh_id = -1;
+        current_defender_veh_id = -1;
     } else {
-        currentAttackerVehicleId = attackerVehicleId;
-        currentDefenderVehicleId = best_id;
+        current_attacker_veh_id = attacker_veh_id;
+        current_defender_veh_id = best_id;
     }
     return best_id;
 }
@@ -348,9 +377,9 @@ int __cdecl battle_fight_parse_num(int index, int value)
     ParseNumTable[index] = value;
 
     if (conf.ignore_reactor_power && index == 1
-    && currentAttackerVehicleId >= 0 && currentDefenderVehicleId >= 0) {
-        VEH* veh1 = &Vehicles[currentAttackerVehicleId];
-        VEH* veh2 = &Vehicles[currentDefenderVehicleId];
+    && current_attacker_veh_id >= 0 && current_defender_veh_id >= 0) {
+        VEH* veh1 = &Vehicles[current_attacker_veh_id];
+        VEH* veh2 = &Vehicles[current_defender_veh_id];
         UNIT* u1 = &Units[veh1->unit_id];
         UNIT* u2 = &Units[veh2->unit_id];
         // calculate attacker and defender power

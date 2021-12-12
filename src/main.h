@@ -174,7 +174,7 @@ struct Config {
     int landmarks = 0xffff;
     int simple_cost_factor = 0;
     int revised_tech_cost = 1;
-    int tech_cost_factor[MaxDiffNum] = {116,108,100,94,84,76};
+    int tech_cost_factor[MaxDiffNum] = {116,108,100,92,84,76};
     int cheap_early_tech = 1;
     int tech_stagnate_rate = 200;
     int counter_espionage = 0;
