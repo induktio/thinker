@@ -1647,6 +1647,7 @@ typedef int(__thiscall *FBuffer_set_font)(Buffer* This, Font* font, int a3, int 
 typedef int(__thiscall *FBuffer_write_cent_l3)(Buffer* This, LPCSTR lpString, RECT* rt, int len);
 typedef int(__thiscall *Fpopup_start)(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
+typedef int(__thiscall *FBaseWin_on_redraw)(Win* This);
 
 extern Console* pMain;
 extern Console* MapWin;
@@ -1656,6 +1657,7 @@ extern FMapWin_tile_to_pixel MapWin_tile_to_pixel;
 extern FBuffer_set_text_color Buffer_set_text_color;
 extern FBuffer_set_font Buffer_set_font;
 extern FBuffer_write_cent_l3 Buffer_write_cent_l3;
+extern FBaseWin_on_redraw BaseWin_on_redraw;
 
 
 ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass);
@@ -1670,6 +1672,8 @@ int show_mod_menu();
 int __thiscall basewin_popup_start(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
 int __cdecl basewin_ask_number(const char* label, int value, int a3);
+void __cdecl basewin_draw_name(char* dest, char* name);
+void __cdecl basewin_action_staple(int base_id);
 
 #pragma GCC diagnostic pop
 

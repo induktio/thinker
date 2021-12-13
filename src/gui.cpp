@@ -149,6 +149,7 @@ FBuffer_set_text_color Buffer_set_text_color = (FBuffer_set_text_color)0x5DACB0;
 FBuffer_set_font       Buffer_set_font       = (FBuffer_set_font      )0x5DAC70;
 FBuffer_write_cent_l3  Buffer_write_cent_l3  = (FBuffer_write_cent_l3 )0x5DD130;
 Fpopup_start           popup_start           = (Fpopup_start          )0x406380;
+FBaseWin_on_redraw     BaseWin_on_redraw     = (FBaseWin_on_redraw    )0x41E790;
 
 tc_1int SubIf_release_iface_mode = (tc_1int)0x45D380;
 
@@ -935,51 +936,63 @@ void show_mod_stats() {
 }
 
 int show_mod_config() {
-    enum {Close, MapGen, MapStyle, MapLandmarks, MapLabels, AutoUnits, FormerReplace};
-    int ret;
-    while (true) {
-        parse_says(0, (conf.new_world_builder ? "true" : "false"), -1, -1);
-        parse_says(1, (conf.world_continents ? "large islands" : "small islands"), -1, -1);
-        parse_says(2, (conf.modified_landmarks ? "true" : "false"), -1, -1);
-        parse_says(3, (conf.world_map_labels ? "true" : "false"), -1, -1);
-        parse_says(4, (conf.manage_player_units ? "true" : "false"), -1, -1);
-        parse_says(5, (conf.warn_on_former_replace ? "true" : "false"), -1, -1);
-        ret = popp("modmenu", "OPTIONS", 0, "stars_sm.pcx", 0);
-        if (ret == Close) {
-            break;
-        }
-        else if (ret == MapGen) {
-            conf.new_world_builder = !conf.new_world_builder;
-            WritePrivateProfileStringA(ModAppName, "new_world_builder",
-                (conf.new_world_builder ? "1" : "0"), GameIniFile);
-        }
-        else if (ret == MapStyle) {
-            conf.world_continents = !conf.world_continents;
-            WritePrivateProfileStringA(ModAppName, "world_continents",
-                (conf.world_continents ? "1" : "0"), GameIniFile);
-        }
-        else if (ret == MapLandmarks) {
-            conf.modified_landmarks = !conf.modified_landmarks;
-            WritePrivateProfileStringA(ModAppName, "modified_landmarks",
-                (conf.modified_landmarks ? "1" : "0"), GameIniFile);
-        }
-        else if (ret == MapLabels) {
-            conf.world_map_labels = !conf.world_map_labels;
-            WritePrivateProfileStringA(ModAppName, "world_map_labels",
-                (conf.world_map_labels ? "1" : "0"), GameIniFile);
-            draw_map(1);
-        }
-        else if (ret == AutoUnits) {
-            conf.manage_player_units = !conf.manage_player_units;
-            WritePrivateProfileStringA(ModAppName, "manage_player_units",
-                (conf.manage_player_units ? "1" : "0"), GameIniFile);
-        }
-        else if (ret == FormerReplace) {
-            conf.warn_on_former_replace = !conf.warn_on_former_replace;
-            WritePrivateProfileStringA(ModAppName, "warn_on_former_replace",
-                (conf.warn_on_former_replace ? "1" : "0"), GameIniFile);
-        }
+    enum {
+        MapGen = 1,
+        MapContinents = 2,
+        MapLandmarks = 4,
+        MapLabels = 8,
+        AutoBases = 16,
+        AutoUnits = 32,
+        FormerReplace = 64,
+    };
+    enum {
+        DialogCheckbox = 1,
+        DialogBtnCancel = 64,
+    };
+    *DialogChoices = 0
+        | (conf.new_world_builder ? MapGen : 0)
+        | (conf.world_continents ? MapContinents : 0)
+        | (conf.modified_landmarks ? MapLandmarks : 0)
+        | (conf.world_map_labels ? MapLabels : 0)
+        | (conf.manage_player_bases ? AutoBases : 0)
+        | (conf.manage_player_units ? AutoUnits : 0)
+        | (conf.warn_on_former_replace ? FormerReplace : 0);
+
+    // Return value is equal to choices bitfield if OK pressed, -1 otherwise.
+    // TODO: find other dialog feature flags
+    int value = X_pop("modmenu", "OPTIONS", -1, 0, DialogCheckbox|DialogBtnCancel, 0);
+    if (value < 0) {
+        return 0;
     }
+    conf.new_world_builder = !!(value & MapGen);
+    WritePrivateProfileStringA(ModAppName, "new_world_builder",
+        (conf.new_world_builder ? "1" : "0"), GameIniFile);
+
+    conf.world_continents = !!(value & MapContinents);
+    WritePrivateProfileStringA(ModAppName, "world_continents",
+        (conf.world_continents ? "1" : "0"), GameIniFile);
+
+    conf.modified_landmarks = !!(value & MapLandmarks);
+    WritePrivateProfileStringA(ModAppName, "modified_landmarks",
+        (conf.modified_landmarks ? "1" : "0"), GameIniFile);
+
+    conf.world_map_labels = !!(value & MapLabels);
+    WritePrivateProfileStringA(ModAppName, "world_map_labels",
+        (conf.world_map_labels ? "1" : "0"), GameIniFile);
+
+    conf.manage_player_bases = !!(value & AutoBases);
+    WritePrivateProfileStringA(ModAppName, "manage_player_bases",
+        (conf.manage_player_bases ? "1" : "0"), GameIniFile);
+
+    conf.manage_player_units = !!(value & AutoUnits);
+    WritePrivateProfileStringA(ModAppName, "manage_player_units",
+        (conf.manage_player_units ? "1" : "0"), GameIniFile);
+
+    conf.warn_on_former_replace = !!(value & FormerReplace);
+    WritePrivateProfileStringA(ModAppName, "warn_on_former_replace",
+        (conf.warn_on_former_replace ? "1" : "0"), GameIniFile);
+
+    draw_map(1);
     return 0;
 }
 
@@ -1032,6 +1045,23 @@ int __cdecl basewin_ask_number(const char* label, int value, int a3)
 {
     ParseNumTable[0] = value;
     return pop_ask_number("SCRIPT", label, minimal_cost, a3);
+}
+
+void __cdecl basewin_draw_name(char* dest, char* name) {
+    BASE& base = Bases[*current_base_id];
+    if ((base.faction_id == MapWin->cOwner || *game_state & STATE_OMNISCIENT_VIEW)
+    && base.nerve_staple_turns_left > 0) {
+        snprintf(dest, 256, "%s / %d", name, base.nerve_staple_turns_left);
+    } else {
+        snprintf(dest, 256, name);
+    }
+}
+
+void __cdecl basewin_action_staple(int base_id) {
+    // Refresh base window properly after staple action
+    action_staple(base_id);
+    base_compute(base_id);
+    BaseWin_on_redraw(BaseWin);
 }
 
 #pragma GCC diagnostic pop

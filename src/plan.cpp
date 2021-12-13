@@ -147,39 +147,45 @@ void former_plans(int faction) {
 }
 
 void plans_upkeep(int faction) {
-    if (!faction || is_human(faction)) {
+    bool governor = is_human(faction) && conf.manage_player_bases;
+    if (!faction || !is_alive(faction)) {
         return;
     }
-    /*
-    Remove bugged prototypes from the savegame.
-    */
-    for (int j = 0; j < MaxProtoFactionNum; j++) {
-        int id = faction*MaxProtoFactionNum + j;
-        UNIT* u = &Units[id];
-        if (strlen(u->name) >= MaxProtoNameLen
-        || u->chassis_type < CHS_INFANTRY
-        || u->chassis_type > CHS_MISSILE) {
-            for (int k = *total_num_vehicles-1; k >= 0; k--) {
-                if (Vehicles[k].unit_id == id) {
-                    veh_kill(k);
+    if (!is_human(faction)) {
+        /*
+        Remove bugged prototypes from the savegame.
+        */
+        for (int j = 0; j < MaxProtoFactionNum; j++) {
+            int id = faction*MaxProtoFactionNum + j;
+            UNIT* u = &Units[id];
+            if (strlen(u->name) >= MaxProtoNameLen
+            || u->chassis_type < CHS_INFANTRY
+            || u->chassis_type > CHS_MISSILE) {
+                for (int k = *total_num_vehicles-1; k >= 0; k--) {
+                    if (Vehicles[k].unit_id == id) {
+                        veh_kill(k);
+                    }
                 }
-            }
-            for (int k=0; k < *total_num_bases; k++) {
-                if (Bases[k].queue_items[0] == id) {
-                    Bases[k].queue_items[0] = -FAC_STOCKPILE_ENERGY;
+                for (int k=0; k < *total_num_bases; k++) {
+                    if (Bases[k].queue_items[0] == id) {
+                        Bases[k].queue_items[0] = -FAC_STOCKPILE_ENERGY;
+                    }
                 }
+                memset(u, 0, sizeof(UNIT));
             }
-            memset(u, 0, sizeof(UNIT));
+        }
+        if (conf.design_units) {
+            design_units(faction);
         }
     }
-
-    if (!is_alive(faction)) {
-        return;
+    if (governor) {
+        static int last_turn = 0;
+        if (last_turn == *current_turn) {
+            return;
+        }
+        last_turn = *current_turn;
     }
-    if (conf.design_units) {
-        design_units(faction);
-    }
-    if (thinker_enabled(faction)) {
+    if (thinker_enabled(faction) || governor) {
         const int i = faction;
         int minerals[MaxBaseNum];
         int population[MaxBaseNum];

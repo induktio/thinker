@@ -40,22 +40,16 @@ Open Project Homepage
 ^^Faction energy production: $NUM9
 
 #OPTIONS
-#xs 400
+#xs 480
 #caption Thinker Mod Options
-^New map generator: {$OPT0}
-^Random map style: {$OPT1}
-^Modified landmarks: {$OPT2}
-^World map labels: {$OPT3}
-^Thinker manages player colony pods/formers: {$OPT4}
-^Warn when manually replacing tile improvements: {$OPT5}
-
-Close Dialog
-Toggle New Map Generator
-Toggle Random Map Style
-Toggle Modified Landmarks
-Toggle World Map Labels
-Toggle Thinker Automation
-Toggle Former Warnings
+#itemlist
+Use new random map generator
+Create random maps with larger islands
+Add modified landmarks on random maps
+Show world map labels
+Thinker manages player base governors
+Thinker manages player colony pods/formers
+Warn when manually replacing tile improvements
 
 #HURRY
 #xs 400

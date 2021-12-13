@@ -37,15 +37,20 @@ Thinker's in-game menu can be opened by pressing `ALT+T`. It shows the current v
 * To save the current queue to template, open a base and **right click** on the queue and select **Save current list to template**.
 * This feature works in conjunction with the simple hurry cost option so that it's easy to start hurrying base production on the first turn without worrying about double cost mineral thresholds.
 * To ease calculations, base hurry dialog will now display the minimum required hurry cost to complete the item on the next turn. This assumes the mineral surplus does not decrease, so take it into account if adjusting the workers. When entering a partial payment, this minimal amount will be the default choice in the dialog, instead of the full hurry cost like previously.
+* When a base has been nerve stapled, the remaining turns for the staple effect are shown after the base name separated by a slash in the main base window. This is only shown for player-owned bases. Previously this value was not shown in the user interface.
 
 
-Player unit automation
-======================
-It is also possible to instruct Thinker to automate player-owned colony pods and formers from `ALT+T` menu options. This automation feature is not enabled by default, and it will also not affect governors in player-owned bases. Normally player unit automation would be handled by the default AI.
+Player automation features
+==========================
+It is possible to instruct Thinker to automate player-owned colony pods and formers from `ALT+T` menu options. There's also a separate option to set Thinker manage governors in player-owned bases. This automation feature is not enabled by default. Normally player base governors and unit automation would be handled by the vanilla AI.
 
-When enabled, use `Shift+A` shortcut to automate any specific unit and it will follow the same colonization or terraforming strategy than the AI factions. Colony pods will attempt to travel to a suitable location autonomously and deploy a base there. If this is not required, the units can be moved manually as well.
+When enabled, use `Shift+A` shortcut to automate any specific unit and it will follow the same colonization or terraforming strategy as the AI factions. Colony pods will attempt to travel to a suitable location autonomously and deploy a base there. If this is not required, the units can be moved manually as well.
 
-Beware formers automated in this way **can replace any existing improvements** on the territory if Thinker calculates the replacement would increase tile production. A notable difference compared to the AI factions is that player-automated formers will never raise/lower terrain. To prevent the formers from ever replacing some specific improvements, such as bunkers, they need to be placed outside the workable base radius from any friendly base. Thinker does not parse any more detailed settings in Automation Preferences, so this automation feature is an all-or-nothing approach.
+Beware formers automated in this way **can replace any existing improvements** on the territory if Thinker calculates the replacement would increase tile production. A notable difference compared to the AI factions is that player-automated formers will never raise/lower terrain.
+To prevent the formers from ever replacing some specific improvements, such as bunkers, they need to be placed outside the workable base radius from any friendly base. Thinker does not parse any more detailed settings in Automation Preferences, so this automation feature is an all-or-nothing approach.
+
+Bases managed by Thinker governors will mostly follow the same options as provided in the base governor settings, with a few exceptions. Normal explore/build/discover/conquer priorities will have no effect on production choices and they are automatically deselected in the interface.
+Thinker governors will also never attempt to start secret projects, hurry production with energy reservers, or nerve staple drones in the base. These choices are left for the player to manage.
 
 
 Map generator options

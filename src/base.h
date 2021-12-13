@@ -2,7 +2,11 @@
 
 #include "main.h"
 
-int __cdecl mod_base_prod_choices(int base_id, int v1, int v2, int v3);
+const int GOV_ALLOW_COMBAT =
+    (GOV_MAY_PROD_LAND_COMBAT | GOV_MAY_PROD_NAVAL_COMBAT | GOV_MAY_PROD_AIR_COMBAT);
+
+void __cdecl mod_base_reset(int base_id, bool has_gov);
+int __cdecl mod_base_build(int base_id, bool has_gov);
 void __cdecl base_first(int base_id);
 bool can_build_ships(int base_id);
 int consider_staple(int base_id);

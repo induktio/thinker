@@ -136,6 +136,7 @@ struct Config {
     int scroll_area = 40;
     int world_map_labels = 1;
     int warn_on_former_replace = 1;
+    int manage_player_bases = 0;
     int manage_player_units = 0;
     int render_probe_labels = 1;
     int foreign_treaty_popup = 0;

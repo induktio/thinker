@@ -51,6 +51,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->scroll_area = max(0, atoi(value));
     } else if (MATCH("thinker", "world_map_labels")) {
         cf->world_map_labels = atoi(value);
+    } else if (MATCH("thinker", "manage_player_bases")) {
+        cf->manage_player_bases = atoi(value);
     } else if (MATCH("thinker", "manage_player_units")) {
         cf->manage_player_units = atoi(value);
     } else if (MATCH("thinker", "warn_on_former_replace")) {
@@ -261,6 +263,8 @@ int game_ini_parse(Config* cf) {
         ModAppName, "modified_landmarks", cf->modified_landmarks, GameIniFile);
     cf->world_map_labels = GetPrivateProfileIntA(
         ModAppName, "world_map_labels", cf->world_map_labels, GameIniFile);
+    cf->manage_player_bases = GetPrivateProfileIntA(
+        ModAppName, "manage_player_bases", cf->manage_player_bases, GameIniFile);
     cf->manage_player_units = GetPrivateProfileIntA(
         ModAppName, "manage_player_units", cf->manage_player_units, GameIniFile);
     cf->warn_on_former_replace = GetPrivateProfileIntA(
