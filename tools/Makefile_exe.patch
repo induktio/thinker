@@ -1,0 +1,76 @@
+--- Makefile_exe.orig	2021-12-13 23:25:48.662730302 +0100
++++ Makefile_exe	2021-12-13 02:01:27.737305779 +0100
+@@ -5,10 +5,12 @@
+ 
+ WORKDIR = `pwd`
+ 
+-CC = gcc
+-CXX = g++
+-AR = ar
+-LD = g++
++COMPILER_PREFIX = i686-w64-mingw32-
++
++CC = $(COMPILER_PREFIX)gcc
++CXX = $(COMPILER_PREFIX)g++
++AR = $(COMPILER_PREFIX)ar
++LD = $(COMPILER_PREFIX)g++
+ WINDRES = 
+ 
+ INC = 
+@@ -16,7 +18,7 @@
+ RESINC = 
+ LIBDIR = 
+ LIB = 
+-LDFLAGS = 
++LDFLAGS = -static-libgcc -static-libstdc++ -static
+ 
+ INC_DEBUG = $(INC)
+ CFLAGS_DEBUG = $(CFLAGS) -g -Og -DBUILD_DEBUG
+@@ -27,7 +29,7 @@
+ LDFLAGS_DEBUG = $(LDFLAGS)
+ OBJDIR_DEBUG = build/obj/debug
+ DEP_DEBUG = 
+-OUT_DEBUG = build/bin/debug/thinker
++OUT_DEBUG = build/bin/debug/thinker.exe
+ 
+ INC_RELEASE = $(INC)
+ CFLAGS_RELEASE = $(CFLAGS) -O2 -flto -fno-rtti -fno-strict-aliasing -fno-delete-null-pointer-checks -DBUILD_REL
+@@ -38,11 +40,11 @@
+ LDFLAGS_RELEASE = $(LDFLAGS) -s -static
+ OBJDIR_RELEASE = build/obj/release
+ DEP_RELEASE = 
+-OUT_RELEASE = build/bin/release/thinker
++OUT_RELEASE = build/bin/release/thinker.exe
+ 
+-OBJ_DEBUG = $(OBJDIR_DEBUG)/src/launch.o $(OBJDIR_DEBUG)/src/launch.o
++OBJ_DEBUG = $(OBJDIR_DEBUG)/src/launch.o
+ 
+-OBJ_RELEASE = $(OBJDIR_RELEASE)/src/launch.o $(OBJDIR_RELEASE)/src/launch.o
++OBJ_RELEASE = $(OBJDIR_RELEASE)/src/launch.o
+ 
+ all: before_build build_debug build_release after_build
+ 
+@@ -51,7 +53,6 @@
+ before_build: 
+ 
+ after_build: 
+-	cmd /c copy "$(PROJECT_DIR)$(TARGET_OUTPUT_FILE)" patch\
+ 
+ before_debug: 
+ 	test -d build/bin/debug || mkdir -p build/bin/debug
+@@ -68,7 +69,6 @@
+ 
+ $(OBJDIR_DEBUG)/src/launch.o: src/launch.cpp src/launch.rc
+ 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/launch.cpp -o $(OBJDIR_DEBUG)/src/launch.o
+-	gcc -x c -c -o $(OBJDIR_DEBUG)/src/launch.o /dev/null
+ 
+ clean_debug: 
+ 	rm -f $(OBJ_DEBUG) $(OUT_DEBUG)
+@@ -90,7 +90,6 @@
+ 
+ $(OBJDIR_RELEASE)/src/launch.o: src/launch.cpp src/launch.rc
+ 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/launch.cpp -o $(OBJDIR_RELEASE)/src/launch.o
+-	gcc -x c -c -o $(OBJDIR_RELEASE)/src/launch.o /dev/null
+ 
+ clean_release: 
+ 	rm -f $(OBJ_RELEASE) $(OUT_RELEASE)
