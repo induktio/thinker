@@ -29,21 +29,35 @@ These developer mode shortcuts are only available if Thinker is using debug buil
 As a general troubleshooting feature, all Thinker builds also include a custom crash handler that writes output to `debug.txt` in the game folder if the game happens to crash for any reason.
 
 
+Compiling Thinker
+=================
+The preferred and actively supported way to compile Thinker on Windows is to use [CodeBlocks](https://www.codeblocks.org/downloads/) and GCC with the included project file. GCC version 8.1.0 or later is recommended.
+
+To avoid compiling issues, do not use the MinGW toolkit version bundled with CodeBlocks. Instead get the toolkit separately from the [MinGW-w64 project](https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/).
+
+Another way to build Thinker on Linux platforms is to convert the CodeBlocks project files into actual Makefiles and then compile them using g++-mingw-w64. A build script that does all these steps is provided in `tools/compile` folder.
+
+1. First install dependencies: `apt install build-essential g++-mingw-w64`
+2. Clone [cbp2make](https://github.com/dmpas/cbp2make) and compile it from sources.
+3. Install `cbp2make` binary on environment path.
+4. Build Thinker: `./tools/compile/mingw-compile.sh`
+5. Get compiled binaries from: `build/bin/`
+
+
 Patches included in the release version
 =======================================
+Thinker's launcher program thinker.exe requires the original, unmodified terranx.exe provided by the GOG version in the same folder, (3 084 288 bytes, GOG version SHA-1: 4b19c1fe3266b5ebc4305cd182ed6e864e3a1c4a). Using other official game binaries of the same version may also work. If an incompatible, modified binary is found, the mod will display an error message and close the game.
 
-Thinker's release version is currently based on the GOG version of the game binary (3 084 288 bytes, GOG version SHA-1: 4b19c1fe3266b5ebc4305cd182ed6e864e3a1c4a). This file already contains official patches but Thinker also includes Scient's patch v2.0 in the release.
+Thinker will not modify terranx.exe file on disk, so it can still be used to start an unpatched version of the game. The mod will apply all of the changes at startup by patching the binary in memory. Also Scient's patch v2.0 changes are automatically loaded at startup.
 
-This repo contains the binary diff between GOG binary and Thinker's release. It is possible to regenerate the diff file `terranx.dif` using the tools provided here:
-
-    ./binarydiff.py terranx.exe terranx_mod.exe
+This repo also contains an equivalent binary diff `terranx.dif` between the GOG binary and Thinker's version after all of the changes are patched in memory.
 
 In the diff listing, the vast majority of changes relate to Scient's patch with the exception of these address ranges (38 lines total) that add thinker.dll to the dll import table. They will replace an existing unused entry that was left in the binary for unknown reason.
 
     00280A1E .. 00280A32
     002EF4FC .. 002EF516
 
-After acquiring the diff listing, it is possible to use `idapatch.py` to convert it into PatchByte script commands that can used by IDA. When the unmodified GOG binary is loaded in IDA, entering all the PatchByte commands will transform it into `terranx_mod.exe`.
+After acquiring the diff listing, it is possible to use `idapatch.py` to convert it into PatchByte script commands that can used by IDA. When the unmodified GOG binary is loaded in IDA, entering all the PatchByte commands will transform it into a version that will also load thinker.dll at startup.
 
 At game startup, Windows will attempt to load thinker.dll from the same folder before the game starts. Note that Windows will terminate the process if any of the dll dependencies from the import table are not available. When thinker.dll is loading, it will attempt to patch the game binary image residing in the same address space before the actual game can start. 
 
@@ -52,7 +66,6 @@ This way it is not required to write any of the actual patches to the exe file, 
 
 Patching OpenSMACX to work with Thinker
 =======================================
-
 Due to the simplicity of Thinker's loading method, [OpenSMACX](https://github.com/b-casey/OpenSMACX/) can be patched manually in a hex editor to also load Thinker at startup.
 
 Note that this combination of patches is not fully tested and some glitches may appear in the game that are not present in the standard game binary. After patching, OpenSMACX binary will not start unless thinker.dll can also be loaded from the same folder by Windows.

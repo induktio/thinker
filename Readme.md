@@ -37,9 +37,10 @@ Installation
 1. Extract the files to Alpha Centauri game folder. Alphax.txt changes are optional.
 2. Check Changelog.md and Details.md for useful information.
 3. Change configuration from thinker.ini or just use the defaults.
-4. Start the game from terranx_mod.exe.
-5. Press ALT+T to open Thinker's options menu. Other option is to check that mod version/build date is visible in the game version menu (Ctrl+F4).
-6. If none of those options display mod version, Thinker is incorrectly installed. If using the develop build, first install the latest [release version](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAp6ioWxdo7vnG6Ity5W3o1a?dl=0&lst=) and only after that extract the develop build files over it.
+4. Start the game from thinker.exe.
+5. The launcher requires unpatched terranx.exe in the same folder but this file is not modified on disk. All the changes are applied at runtime.
+6. Press ALT+T to open Thinker's options menu. Other option is to check that mod version/build date is visible in the game version menu (Ctrl+F4).
+7. If none of those options display mod version, Thinker is incorrectly installed and not loaded.
 
 
 Other mods
@@ -51,10 +52,7 @@ Other mods
 
 Compiling
 ---------
-Thinker can be compiled with GCC using the included CodeBlocks project. GCC version 8.1.0 or later is recommended.
-To avoid compiling issues, do not use the MinGW toolkit version bundled with CodeBlocks.
-Instead get the toolkit separately from the [MinGW-w64 project](https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/).
-See also more information about [patch loading](Technical.md).
+For information on how to compile Thinker, see [Technical.md](Technical.md).
 
 
 License

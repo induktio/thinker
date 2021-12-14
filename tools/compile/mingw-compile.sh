@@ -1,10 +1,10 @@
-#!/bin/sh
+#!/bin/bash -eu
 
-# get cbp2make from here:
+# Get cbp2make from here:
 # https://github.com/dmpas/cbp2make
 
 SCRIPT_DIR=`dirname $0`
-ROOT_DIR="${SCRIPT_DIR}/.."
+ROOT_DIR="${SCRIPT_DIR}/../.."
 
 cbp2make -in ${ROOT_DIR}/thinker.cbp -out ${ROOT_DIR}/Makefile_dll
 patch -u ${ROOT_DIR}/Makefile_dll -i ${SCRIPT_DIR}/Makefile_dll.patch
@@ -15,10 +15,9 @@ patch -u ${ROOT_DIR}/Makefile_exe -i ${SCRIPT_DIR}/Makefile_exe.patch
 
 pushd "${ROOT_DIR}"
 echo "=============================================="
-make -j`nproc` -f Makefile_dll
+make -j`nproc` -f Makefile_dll develop
 
 echo "=============================================="
-make -j`nproc` -f Makefile_exe
+make -j`nproc` -f Makefile_exe release
 
-rm Makefile_exe Makefile_dll
 popd
