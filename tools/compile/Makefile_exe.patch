@@ -1,6 +1,6 @@
---- Makefile_exe.orig	2021-12-13 23:25:48.662730302 +0100
-+++ Makefile_exe	2021-12-13 02:01:27.737305779 +0100
-@@ -5,10 +5,12 @@
+--- Makefile_exe.orig	2021-12-15 01:11:16.902662069 +0100
++++ Makefile_exe	2021-12-15 01:13:00.400756592 +0100
+@@ -5,18 +5,20 @@
  
  WORKDIR = `pwd`
  
@@ -8,16 +8,17 @@
 -CXX = g++
 -AR = ar
 -LD = g++
+-WINDRES = 
 +COMPILER_PREFIX = i686-w64-mingw32-
 +
 +CC = $(COMPILER_PREFIX)gcc
 +CXX = $(COMPILER_PREFIX)g++
 +AR = $(COMPILER_PREFIX)ar
 +LD = $(COMPILER_PREFIX)g++
- WINDRES = 
++WINDRES = $(COMPILER_PREFIX)windres
  
  INC = 
-@@ -16,7 +18,7 @@
+ CFLAGS = -std=c++11 -pedantic -Wall -Wextra -Wshadow -Wundef -Wuseless-cast -Wpointer-arith -Wfloat-conversion
  RESINC = 
  LIBDIR = 
  LIB = 
@@ -35,7 +36,7 @@
  
  INC_RELEASE = $(INC)
  CFLAGS_RELEASE = $(CFLAGS) -O2 -flto -fno-rtti -fno-strict-aliasing -fno-delete-null-pointer-checks -DBUILD_REL
-@@ -38,11 +40,11 @@
+@@ -38,11 +40,13 @@
  LDFLAGS_RELEASE = $(LDFLAGS) -s -static
  OBJDIR_RELEASE = build/obj/release
  DEP_RELEASE = 
@@ -44,13 +45,15 @@
  
 -OBJ_DEBUG = $(OBJDIR_DEBUG)/src/launch.o $(OBJDIR_DEBUG)/src/launch.o
 +OBJ_DEBUG = $(OBJDIR_DEBUG)/src/launch.o
++OBJ_RELEASE = $(OBJDIR_RELEASE)/src/launch.o
  
 -OBJ_RELEASE = $(OBJDIR_RELEASE)/src/launch.o $(OBJDIR_RELEASE)/src/launch.o
-+OBJ_RELEASE = $(OBJDIR_RELEASE)/src/launch.o
++RES_DEBUG = $(OBJDIR_DEBUG)/src/launch.res
++RES_RELEASE = $(OBJDIR_RELEASE)/src/launch.res
  
  all: before_build build_debug build_release after_build
  
-@@ -51,7 +53,6 @@
+@@ -51,7 +55,6 @@
  before_build: 
  
  after_build: 
@@ -58,19 +61,39 @@
  
  before_debug: 
  	test -d build/bin/debug || mkdir -p build/bin/debug
-@@ -68,7 +69,6 @@
+@@ -63,12 +66,14 @@
+ 
+ debug: before_build build_debug after_build
+ 
+-out_debug: before_debug $(OBJ_DEBUG) $(DEP_DEBUG)
+-	$(LD) $(LIBDIR_DEBUG) -o $(OUT_DEBUG) $(OBJ_DEBUG)  $(LDFLAGS_DEBUG) $(LIB_DEBUG)
++out_debug: before_debug $(OBJ_DEBUG) $(RES_DEBUG) $(DEP_DEBUG)
++	$(LD) $(LIBDIR_DEBUG) -o $(OUT_DEBUG) $(OBJ_DEBUG) $(RES_DEBUG)  $(LDFLAGS_DEBUG) $(LIB_DEBUG)
  
  $(OBJDIR_DEBUG)/src/launch.o: src/launch.cpp src/launch.rc
  	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/launch.cpp -o $(OBJDIR_DEBUG)/src/launch.o
 -	gcc -x c -c -o $(OBJDIR_DEBUG)/src/launch.o /dev/null
++
++$(OBJDIR_DEBUG)/src/launch.res: src/launch.rc
++	$(WINDRES) src/launch.rc -O coff -o $(OBJDIR_DEBUG)/src/launch.res
  
  clean_debug: 
  	rm -f $(OBJ_DEBUG) $(OUT_DEBUG)
-@@ -90,7 +90,6 @@
+@@ -85,12 +90,14 @@
+ 
+ release: before_build build_release after_build
+ 
+-out_release: before_release $(OBJ_RELEASE) $(DEP_RELEASE)
+-	$(LD) $(LIBDIR_RELEASE) -o $(OUT_RELEASE) $(OBJ_RELEASE)  $(LDFLAGS_RELEASE) $(LIB_RELEASE)
++out_release: before_release $(OBJ_RELEASE) $(RES_RELEASE) $(DEP_RELEASE)
++	$(LD) $(LIBDIR_RELEASE) -o $(OUT_RELEASE) $(OBJ_RELEASE) $(RES_RELEASE)  $(LDFLAGS_RELEASE) $(LIB_RELEASE)
  
  $(OBJDIR_RELEASE)/src/launch.o: src/launch.cpp src/launch.rc
  	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/launch.cpp -o $(OBJDIR_RELEASE)/src/launch.o
 -	gcc -x c -c -o $(OBJDIR_RELEASE)/src/launch.o /dev/null
++
++$(OBJDIR_RELEASE)/src/launch.res: src/launch.rc
++	$(WINDRES) src/launch.rc -O coff -o $(OBJDIR_RELEASE)/src/launch.res
  
  clean_release: 
  	rm -f $(OBJ_RELEASE) $(OUT_RELEASE)
