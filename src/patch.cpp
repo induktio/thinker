@@ -189,20 +189,6 @@ int __cdecl content_pop() {
     return conf.content_pop_computer[*diff_level];
 }
 
-int __cdecl mod_X_pop2(const char* label, int a2) {
-    if (!strcmp(label, "MIMIMI") && !conf.warn_on_former_replace) {
-        return 1;
-    }
-    /*
-    Disable unnecessary warning if the map is larger than 128x128.
-    In any case the dialog will limit all map sizes to 256x256.
-    */
-    if (!strcmp(label, "VERYLARGEMAP")) {
-        return 0;
-    }
-    return X_pop("SCRIPT", label, -1, 0, 0, a2);
-}
-
 int __cdecl basewin_random_seed() {
     return *current_base_id ^ *map_random_seed;
 }
@@ -327,7 +313,7 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD *rec, PVOID *frame, CONTEXT *ct
     char savepath[512];
     char filepath[512];
     strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", now);
-    strncpy(savepath, last_save_path, sizeof(savepath));
+    strncpy(savepath, LastSavePath, sizeof(savepath));
     savepath[200] = '\0';
     HANDLE hProcess = GetCurrentProcess();
     int ret = GetMappedFileNameA(hProcess, (LPVOID)ctx->Eip, filepath, sizeof(filepath));
@@ -481,11 +467,9 @@ bool patch_setup(Config* cf) {
     if (!VirtualProtect(AC_IMPORT_BASE, AC_IMPORT_LEN, PAGE_EXECUTE_READWRITE, &oldattrs)) {
         return false;
     }
+    *(int*)RegisterClassImport = (int)ModRegisterClassA;
     *(int*)GetPrivateProfileStringAImport = (int)ModGetPrivateProfileStringA;
 
-    if (!pracx) {
-        *(int*)RegisterClassImport = (int)ModRegisterClassA;
-    }
     if (cf->windowed && !pracx) {
         *(int*)GetSystemMetricsImport = (int)ModGetSystemMetrics;
     }
@@ -516,8 +500,9 @@ bool patch_setup(Config* cf) {
     write_jump(0x579B70, (int)add_site);
     write_jump(0x579D80, (int)wipe_goals);
     write_jump(0x527290, (int)mod_faction_upkeep);
-    write_jump(0x5BF310, (int)mod_X_pop2);
+    write_jump(0x5BF310, (int)X_pop2);
     write_jump(0x4E4AA0, (int)base_first);
+    write_jump(0x592250, (int)mod_say_loc);
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
     write_call(0x415F35, (int)mod_base_reset);
@@ -552,7 +537,7 @@ bool patch_setup(Config* cf) {
     write_call(0x5B3C03, (int)mod_setup_player);
     write_call(0x5B3C4C, (int)mod_setup_player);
     write_call(0x5C0908, (int)log_veh_kill);
-    write_call(0x498720, (int)SubIf_release_handler);
+    write_call(0x498720, (int)ReportWin_close_handler);
     write_call(0x5A3F7D, (int)veh_health);
     write_call(0x5A3F98, (int)veh_health);
     write_call(0x4E1061, (int)mod_world_build);
@@ -563,6 +548,12 @@ bool patch_setup(Config* cf) {
     write_call(0x41B771, (int)basewin_action_staple);
     write_call(0x41916B, (int)basewin_popup_start);
     write_call(0x4195A6, (int)basewin_ask_number);
+    write_call(0x51D1C2, (int)Console_editor_fungus);
+    write_call(0x54814D, (int)mod_diplomacy_caption);
+    write_jump(0x6262F0, (int)log_say);
+    write_jump(0x626250, (int)log_say2);
+    write_jump(0x6263F0, (int)log_say_hex);
+    write_jump(0x626350, (int)log_say_hex2);
     write_offset(0x50F421, (void*)mod_turn_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);
     write_offset(0x64576E, (void*)mod_except_handler3);
@@ -578,10 +569,6 @@ bool patch_setup(Config* cf) {
     write_offset(0x649335, (void*)mod_except_handler3);
     write_offset(0x64A3C0, (void*)mod_except_handler3);
     write_offset(0x64D947, (void*)mod_except_handler3);
-    write_jump(0x6262F0, (int)log_say);
-    write_jump(0x626250, (int)log_say2);
-    write_jump(0x6263F0, (int)log_say_hex);
-    write_jump(0x626350, (int)log_say_hex2);
 
     if (cf->autosave_interval > 0) {
         write_jump(0x5ABD20, (int)mod_auto_save);
@@ -709,6 +696,17 @@ bool patch_setup(Config* cf) {
         write_call(0x414B81, (int)basewin_random_seed); // BaseWin_draw_pop
         memset((void*)0x414D52, 0x90, 5); // Superdrone icons, aliens
         memset((void*)0x414EE2, 0x90, 7); // Superdrone icons, humans
+    }
+
+    /*
+    Fix faction graphics bug that appears when Alpha Centauri.ini
+    has a different set of faction filenames than the loaded scenario file.
+    Normally when a scenario file is being loaded, it would skip load_faction_art calls
+    which could result in an incorrect faction graphics set being displayed.
+    */
+    {
+        const byte old_bytes[] = {0x0F,0x85,0x99,0x04,0x00,0x00};
+        write_bytes(0x5AAEE0, old_bytes, NULL, sizeof(old_bytes));
     }
 
     /*

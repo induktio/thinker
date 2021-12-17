@@ -250,7 +250,7 @@ enum tech_flags {
 };
 
 enum Triad {
-    TRIAD_NONE = -1,
+    TRIAD_NONE = -1, // Thinker variable
     TRIAD_LAND = 0,
     TRIAD_SEA = 1,
     TRIAD_AIR = 2,
@@ -348,6 +348,7 @@ enum VehWeapon {
 };
 
 enum VehWeaponMode {
+    WMODE_COMBAT = 0, // Thinker variable
     WMODE_PROJECTILE = 0,
     WMODE_ENERGY = 1,
     WMODE_MISSILE = 2,

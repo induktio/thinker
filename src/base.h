@@ -14,5 +14,5 @@ int consider_hurry();
 int need_psych(int base_id);
 int find_project(int base_id);
 int select_production(int base_id);
-int find_proto(int base_id, int triad, int mode, bool defend);
+int find_proto(int base_id, Triad triad, VehWeaponMode mode, bool defend);
 int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships);

@@ -5,7 +5,7 @@
  * Thinker is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * (at your option) version 3 of the GPL.
  * 
  * Thinker is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -45,6 +45,7 @@
     #define UNUSED(x) UNUSED_ ## x __attribute__((__unused__))
     #pragma GCC diagnostic ignored "-Wchar-subscripts"
     #pragma GCC diagnostic ignored "-Wparentheses"
+    #pragma GCC diagnostic ignored "-Wattributes"
 #else
     #define UNUSED(x) UNUSED_ ## x
 #endif
@@ -81,7 +82,6 @@
 #endif
 #endif
 
-const int COMBAT = 0;
 const int SYNC = 0;
 const bool DEF = true;
 const bool ATT = false;

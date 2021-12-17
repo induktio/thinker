@@ -43,7 +43,7 @@ int tech_cost(int faction, int tech) {
         for (int i=1; i < MaxPlayerNum; i++) {
             if (i != faction && has_tech(i, tech)
             && has_treaty(faction, i, DIPLO_COMMLINK)) {
-                owners += (has_treaty(faction, i, DIPLO_HAVE_INFILTRATOR) ? 2 : 1);
+                owners += (has_treaty(faction, i, DIPLO_PACT|DIPLO_HAVE_INFILTRATOR) ? 2 : 1);
             }
         }
     }

@@ -1,9 +1,6 @@
 
 #include "gui.h"
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wattributes"
-
 
 // Size in pixels of the bottom middle UI console
 const int ConsoleHeight = 219;
@@ -150,8 +147,8 @@ FBuffer_set_font       Buffer_set_font       = (FBuffer_set_font      )0x5DAC70;
 FBuffer_write_cent_l3  Buffer_write_cent_l3  = (FBuffer_write_cent_l3 )0x5DD130;
 Fpopup_start           popup_start           = (Fpopup_start          )0x406380;
 FBaseWin_on_redraw     BaseWin_on_redraw     = (FBaseWin_on_redraw    )0x41E790;
+FGeneric SubInterface_release_iface_mode     = (FGeneric              )0x45D380;
 
-tc_1int SubIf_release_iface_mode = (tc_1int)0x45D380;
 
 Console* MapWin    = (Console*)0x9156B0; // ConsoleParent len: 0x247A4 end: 0x939E54
 Win*     BaseWin   = (Win*)0x6A7628;
@@ -164,10 +161,6 @@ Win*     WorldWin  = (Win*)0x8E9F60;
 Win*     CouncilWin  = (Win*)0x6FEC80;
 Win*     DatalinkWin = (Win*)0x703EA0;
 
-int __thiscall SubIf_release_handler(int ptr) {
-    SubIf_release_iface_mode(ptr);
-    return draw_map(1);
-}
 
 bool map_is_visible() {
     return CState.TimersEnabled
@@ -515,6 +508,10 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         if (!*GameHalted) {
             MapWin_draw_map(pMain, 0);
             InvalidateRect(hwnd, NULL, false);
+            parse_says(0, MOD_VERSION, -1, -1);
+            parse_says(1, (conf.debug_mode ?
+                "Debug mode enabled." : "Debug mode disabled."), -1, -1);
+            popp("modmenu", "GENERIC", 0, 0, 0);
         }
 
     } else if (DEBUG && msg == WM_CHAR && wParam == 'm' && GetAsyncKeyState(VK_MENU) < 0) {
@@ -847,7 +844,6 @@ void __cdecl mod_turn_timer() {
     // Timer calls function every 500ms
     static uint32_t iter = 0;
     static uint32_t prev_time = 0;
-    static int32_t prev_seed = 0;
     turn_timer();
     if (++iter & 1) {
         return;
@@ -861,34 +857,25 @@ void __cdecl mod_turn_timer() {
             ThinkerVars->game_time_spent += now - prev_time;
         }
         prev_time = now;
-        /*
-        Fix faction graphics bug that appears when Alpha Centauri.ini
-        has a different set of faction filenames than the loaded scenario file.
-        If the game has an incorrect faction set, it requires loading the save once,
-        then quitting to main menu, and then loading the save again.
-        */
-        if (*game_state & STATE_IS_SCENARIO && *map_random_seed != prev_seed) {
-            char key[256];
-            char buf[256];
-            bool restart = false;
-            prev_seed = *map_random_seed;
-
-            for (int i=1; i < MaxPlayerNum; i++) {
-                snprintf(key, sizeof(key), "Faction %d", i);
-                int ret = GetPrivateProfileStringA(
-                    GameAppName, key, "", buf, sizeof(buf), GameIniFile);
-                if (!ret || strcmp(MFactions[i].filename, buf)) {
-                    restart = true;
-                    WritePrivateProfileStringA(
-                        GameAppName, key, MFactions[i].filename, GameIniFile);
-                }
-            }
-            if (restart) { // Return to main menu
-                *ControlTurnA = 1;
-                *ControlTurnB = 1;
-            }
-        }
     }
+}
+
+int __cdecl X_pop2(const char* label, int a2) {
+    if (!strcmp(label, "MIMIMI") && !conf.warn_on_former_replace) {
+        return 1;
+    }
+    /*
+    Disable unnecessary warning if the map is larger than 128x128.
+    In any case the dialog will limit all map sizes to 256x256.
+    */
+    if (!strcmp(label, "VERYLARGEMAP")) {
+        return 0;
+    }
+    return X_pop("SCRIPT", label, -1, 0, 0, a2);
+}
+
+int __cdecl X_pop7(const char* label, int a2, int a3) {
+    return X_pop(ScriptFile, label, -1, 0, a2, a3);
 }
 
 void popup_homepage() {
@@ -945,10 +932,6 @@ int show_mod_config() {
         AutoUnits = 32,
         FormerReplace = 64,
     };
-    enum {
-        DialogCheckbox = 1,
-        DialogBtnCancel = 64,
-    };
     *DialogChoices = 0
         | (conf.new_world_builder ? MapGen : 0)
         | (conf.world_continents ? MapContinents : 0)
@@ -959,8 +942,7 @@ int show_mod_config() {
         | (conf.warn_on_former_replace ? FormerReplace : 0);
 
     // Return value is equal to choices bitfield if OK pressed, -1 otherwise.
-    // TODO: find other dialog feature flags
-    int value = X_pop("modmenu", "OPTIONS", -1, 0, DialogCheckbox|DialogBtnCancel, 0);
+    int value = X_pop("modmenu", "OPTIONS", -1, 0, PopDialogCheckbox|PopDialogBtnCancel, 0);
     if (value < 0) {
         return 0;
     }
@@ -1047,7 +1029,8 @@ int __cdecl basewin_ask_number(const char* label, int value, int a3)
     return pop_ask_number("SCRIPT", label, minimal_cost, a3);
 }
 
-void __cdecl basewin_draw_name(char* dest, char* name) {
+void __cdecl basewin_draw_name(char* dest, char* name)
+{
     BASE& base = Bases[*current_base_id];
     if ((base.faction_id == MapWin->cOwner || *game_state & STATE_OMNISCIENT_VIEW)
     && base.nerve_staple_turns_left > 0) {
@@ -1057,12 +1040,104 @@ void __cdecl basewin_draw_name(char* dest, char* name) {
     }
 }
 
+/*
+Refresh base window workers properly after nerve staple is done.
+*/
 void __cdecl basewin_action_staple(int base_id) {
-    // Refresh base window properly after staple action
     action_staple(base_id);
     base_compute(base_id);
     BaseWin_on_redraw(BaseWin);
 }
 
-#pragma GCC diagnostic pop
+/*
+This is called when ReportWin is closing and it is to refresh world_map_labels
+on any bases where workers have been adjusted from the base list window.
+*/
+int __thiscall ReportWin_close_handler(void* This) {
+    SubInterface_release_iface_mode(This);
+    return draw_map(1);
+}
+
+/*
+Fix potential crash when a game is loaded after using Edit Map > Generate/Remove Fungus > No Fungus.
+Vanilla version changed MapWin->cOwner variable for unknown reason.
+*/
+void __thiscall Console_editor_fungus(Console* UNUSED(This))
+{
+    auto_undo();
+    int v1 = X_pop7("FUNGOSITY", PopDialogBtnCancel, 0);
+    if (v1 >= 0) {
+        int v2 = 0;
+        if (!v1 || (v2 = X_pop7("FUNGMOTIZE", PopDialogBtnCancel, 0)) > 0) {
+            MAP* sq = *MapPtr;
+            for (int i = 0; i < *map_area_tiles; ++i, ++sq) {
+                sq->items &= ~BIT_FUNGUS;
+                // Update visible tile items
+                for (int j = 1; j < 8; ++j) {
+                    *((uint32_t*)&sq->landmarks + j) = sq->items;
+                }
+            }
+        }
+        if (v2 < 0) {
+            return;
+        }
+        if (v1 > 0) {
+            int v3 = *MapNativeLifeForms;
+            *MapNativeLifeForms = v1 - 1;
+            world_fungus();
+            *MapNativeLifeForms = v3;
+        }
+        draw_map(1);
+    }
+}
+
+/*
+Fix foreign base names being visible in unexplored tiles when issuing move to or patrol
+orders to the tiles. This version adds visibility checks for all base tiles.
+*/
+void __cdecl mod_say_loc(char* dest, int x, int y, int a4, int a5, int a6)
+{
+    int base_id = -1;
+    MAP* sq;
+
+    if ((sq = mapsq(x, y)) && sq->is_base()
+    && (*game_state & STATE_SCENARIO_EDITOR || sq->is_visible(MapWin->cOwner))) {
+        base_id = base_at(x, y);
+    }
+    if (a4 != 0 && base_id < 0) {
+        a6 = 0;
+        base_id = base_find3(x, y, -1, -1, -1, MapWin->cOwner);
+        if (base_id >= 0) {
+            strncat(dest, (*TextLabels)[62], 32); // near
+            strncat(dest, " ", 2);
+        }
+    }
+    if (base_id >= 0) {
+        if (a6) {
+            strncat(dest, (*TextLabels)[8], 32); // at
+            strncat(dest, " ", 2);
+        }
+        strncat(dest, Bases[base_id].name, MaxBaseNameLen);
+        if (a5) {
+            strncat(dest, " ", 2);
+        }
+    }
+    if (a5 == 1 || (a5 == 2 && base_id < 0)) {
+        snprintf(dest + strlen(dest), 32, "(%d, %d)", x, y);
+    }
+}
+
+/*
+Fix diplomacy dialog to show the missing response messages (GAVEENERGY) when gifting
+energy credits to another faction. The error happens when the label is written to
+StrBuffer in make_gift but diplomacy_caption overwrites it with other data.
+*/
+void __cdecl mod_diplomacy_caption(int faction1, int faction2)
+{
+    char buf[256];
+    strncpy(buf, StrBuffer, 256);
+    diplomacy_caption(faction1, faction2);
+    strncpy(StrBuffer, buf, 256);
+}
+
 

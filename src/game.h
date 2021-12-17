@@ -151,6 +151,13 @@ int has_goal(int faction, int type, int x, int y);
 Goal* find_priority_goal(int faction, int type, int* px, int* py);
 std::vector<MapTile> iterate_tiles(int x, int y, int start_index, int end_index);
 
+template <class T, class C>
+const T& pick_random(const std::set<T,C>& s) {
+    auto it = std::begin(s);
+    std::advance(it, random(s.size()));
+    return *it;
+}
+
 const int PathLimit = 80;
 const int QueueSize = 6400;
 const int MaxTileSearchType = 6;

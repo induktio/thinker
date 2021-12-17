@@ -72,7 +72,7 @@
 10,      ; Kampf % -> PSI-Angriffsbonus/-malus pro +PLANET
 50,      ; Umrüstungsmalus (%) für Produktionsänderungen
 2,       ; Umrüstungsregel (0 = Immer umsonst, 1 = Umsonst in Kategorie, 2 = Gratis, falls in Projekt, 3 = Nie umsonst)
-20,      ; Umrüstungsausnahme (erste X Mineralien nicht von Malus betroffen)
+10,      ; Umrüstungsausnahme (erste X Mineralien nicht von Malus betroffen)
 20,      ; Mindestzahl der Runden zwischen Ratsversammlungen
 5,       ; Mineralien für Waldbewirtschaftung
 8,       ; Territorium: max. Distanz zur Basis
@@ -413,7 +413,7 @@ Raketenwerfer,          Raketen,       6,  2,  6,  -1, Fossil,
 Chaoskanone,            Chaos,         8,  0,  8,  -1, String,  
 Fusionslaser,           Fusions,       10, 1,  10, -1, SupLube, 
 Tachyonenstrahl,        Tachyonen,     12, 1,  12, -1, Unified, 
-Plasmalanze,            Kampf,         13, 2,  13, -1, Space,   
+Plasmalanze,            Kampf,         14, 2,  14, -1, Space,   
 Quantenlaser,           Quanten,       16, 1,  16, -1, QuanMac, 
 Gravitongewehr,         Graviton,      20, 0,  20, -1, AGrav,   
 Singular.-Laser,        Singularitäts, 24, 1,  24, -1, ConSing, 

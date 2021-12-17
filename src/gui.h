@@ -1623,9 +1623,11 @@ static_assert(sizeof(CWinBuffed) == 2580, "");
 static_assert(sizeof(CMap) == 137832, "");
 static_assert(sizeof(CMain) == 149412, "");
 
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wattributes"
+// TODO: find other dialog feature flags
+enum {
+    PopDialogCheckbox = 1,
+    PopDialogBtnCancel = 64,
+};
 
 typedef int(__thiscall *FMapWin_pixel_to_tile)(Console* This, int x, int y, long* px, long* py);
 typedef int(__thiscall *FMapWin_tile_to_pixel)(Console* This, int x, int y, long* px, long* py);
@@ -1648,8 +1650,8 @@ typedef int(__thiscall *FBuffer_write_cent_l3)(Buffer* This, LPCSTR lpString, RE
 typedef int(__thiscall *Fpopup_start)(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
 typedef int(__thiscall *FBaseWin_on_redraw)(Win* This);
+typedef int(__thiscall *FGeneric)(void* This);
 
-extern Console* pMain;
 extern Console* MapWin;
 extern FMapWin MapWin_clear_terrain;
 extern FMapWin_pixel_to_tile MapWin_pixel_to_tile;
@@ -1658,24 +1660,28 @@ extern FBuffer_set_text_color Buffer_set_text_color;
 extern FBuffer_set_font Buffer_set_font;
 extern FBuffer_write_cent_l3 Buffer_write_cent_l3;
 extern FBaseWin_on_redraw BaseWin_on_redraw;
-
+extern FGeneric SubInterface_release_iface_mode;
 
 ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass);
 int WINAPI ModGetSystemMetrics(int nIndex);
-int __thiscall SubIf_release_handler(int ptr);
+int show_mod_menu();
+int __cdecl X_pop2(const char* label, int a2);
+int __cdecl X_pop7(const char* label, int a2, int a3);
 int __cdecl blink_timer();
 void __cdecl mod_turn_timer();
 int __thiscall mod_calc_dim(Console* This);
 int __thiscall mod_gen_map(Console* This, int iOwner, int fUnitsOnly);
 void __thiscall MapWin_gen_overlays(Console* This, int x, int y);
-int show_mod_menu();
 int __thiscall basewin_popup_start(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
 int __cdecl basewin_ask_number(const char* label, int value, int a3);
 void __cdecl basewin_draw_name(char* dest, char* name);
 void __cdecl basewin_action_staple(int base_id);
+int __thiscall ReportWin_close_handler(void* This);
+void __thiscall Console_editor_fungus(Console* UNUSED(This));
+void __cdecl mod_say_loc(char* dest, int x, int y, int a4, int a5, int a6);
+void __cdecl mod_diplomacy_caption(int faction1, int faction2);
 
-#pragma GCC diagnostic pop
 
 
 

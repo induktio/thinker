@@ -1,6 +1,8 @@
 #!/bin/sh
 
-ZIP="rel/Thinker-rel-$(date '+%Y%m%d').zip"
+VER=`grep -E 'MOD_VERSION.*[0-9]' src/main.h | grep -Eio 'v[0-9.]+'`
+ZIP="rel/Thinker_$VER.zip"
+
 if [ -e "patch/thinker.dll" ]; then
   if ! [ -e $ZIP ]; then
     mkdir -p build/tmp

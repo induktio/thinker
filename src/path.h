@@ -2,13 +2,8 @@
 
 #include "main.h"
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wattributes"
-
 typedef int(__thiscall *FPath_find)(
     void* This, int x1, int y1, int x2, int y2, int unit_id, int faction, int flags, int unk1);
-
-#pragma GCC diagnostic pop
 
 
 class CPath {

@@ -71,7 +71,7 @@
 10,      ; Combat % -> Psi attack bonus/penalty per +PLANET
 50,      ; Retool percent penalty for production change
 2,       ; Retool strictness (0 = Always Free, 1 = Free in Category, 2 = Free if Project, 3 = Never Free)
-20,      ; Retool exemption (first X minerals not affected by penalty)
+10,      ; Retool exemption (first X minerals not affected by penalty)
 20,      ; Minimum # of turns between councils
 5,       ; Minerals for harvesting forest
 8,       ; Territory: max distance from base
@@ -415,7 +415,7 @@ Missile Launcher,     Missile,        6, 2, 6, -1, Fossil,
 Chaos Gun,            Chaos,          8, 0, 8, -1, String,
 Fusion Laser,         Fusion,        10, 1,10, -1, SupLube,
 Tachyon Bolt,         Tachyon,       12, 1,12, -1, Unified,
-Plasma Shard,         Shard,         13, 2,13, -1, Space,
+Plasma Shard,         Shard,         14, 2,14, -1, Space,
 Quantum Laser,        Quantum,       16, 1,16, -1, QuanMac,
 Graviton Gun,         Graviton,      20, 0,20, -1, AGrav,
 Singularity Laser,    Singularity,   24, 1,24, -1, ConSing,

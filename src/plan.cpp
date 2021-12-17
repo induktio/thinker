@@ -281,7 +281,8 @@ void plans_upkeep(int faction) {
                         float range = map_range(base->x, base->y, b->x, b->y)
                             * (sq->region == base_region ? 1.0f : 1.5f)
                             * (at_war(faction, b->faction_id) ? 1.0f : 5.0f)
-                            * (is_human(b->faction_id) ? 0.75f : 1.0f);
+                            * (b->faction_id_former == faction ? 1.0f : 2.0f)
+                            * (is_human(b->faction_id) ? 1.0f : 1.5f);
                         enemy_range = min(enemy_range, range);
                     }
                 }
