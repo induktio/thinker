@@ -131,8 +131,8 @@ After calculating the base cost, it is multiplied by all of the following factor
 * Multiply by faction specific TECHCOST modifier (higher values means slower progress).
 * Divide by Technology Discovery Rate set in alphax.txt (higher values means faster progress).
 * If Tech Stagnation is enabled, the cost is doubled unless a different rate is set in the options.
-* Count every other faction with commlink to the current faction who has the tech, while infiltrated factions count twice. Discount 5% for every point in this value. Maximum allowed discount from this step is 30%. Only infiltration gained using probe teams counts for the purposes of extra discount, the Empath Guild or Planetary Governor status is ignored in this step.
-* If `cheap_early_tech` is enabled, apply a decreasing discount from 60% to 0% until the first 16 techs are discovered.
+* Count every other faction with commlink to the current faction who has the tech, while allied or infiltrated factions count twice. Discount 5% for every point in this value. Maximum allowed discount from this step is 30%. Only infiltration gained using probe teams counts for the purposes of extra discount, the Empath Guild or Planetary Governor status is ignored in this step.
+* If `cheap_early_tech` is enabled, apply a decreasing discount from 60% to 0% until the first 16 techs are discovered. Any starting techs count against this limit.
 
 The final cost calculated by this formula is visible in the F2 status screen after the label "TECH COST". Note that the social engineering RESEARCH rating does not affect this number. Instead it changes "TECH PER TURN" value displayed on the same screen.
 
@@ -160,7 +160,7 @@ Thinker also adds support for custom factions that are not aliens while using th
 
 1. Download the latest version that includes `smac_mod` folder in the zip.
 2. Extract all the files to Alpha Centauri game folder.
-3. Open `thinker.ini` and change the configuration to `smac_only=1` ***OR*** start the game with command line parameter `terranx_mod.exe -smac`
+3. Open `thinker.ini` and change the configuration to `smac_only=1` ***OR*** start the game with command line parameter `thinker.exe -smac`
 4. When smac_only is started properly, the main menu will change color to blue as it was in the original SMAC, instead of the SMACX green color scheme.
 5. The game reads these files from `smac_mod` folder while smac_only is enabled: alphax.txt, helpx.txt, conceptsx.txt, tutor.txt. Therefore it is possible to keep the mod installed without overwriting any of the files from the base game.
 6. To install custom factions while using this mod, just edit `smac_mod/alphax.txt` instead of the normal `alphax.txt` file and add the faction names to `#CUSTOMFACTIONS` section. Note that you only have to extract the faction definitions to the main game folder because the same files are used in smac_only mode.
@@ -184,7 +184,7 @@ That means the tech tree or production cost values are not modified, for example
 5. Large map size is increased to 50x100. Previous value was nearly the same as a standard map.
 6. Descriptions of various configuration values have been updated to reflect their actual meaning.
 7. Add new predefined units Trance Scout Patrol and Police Garrison.
-8. Retool exemption is increased to 20 minerals. This removes the need for bean counting to avoid wasting surplus production.
+8. Plasma Shard weapon strength is raised to 14.
 
 
 Compatibility with other mods
@@ -193,8 +193,7 @@ While it is possible to run both Thinker and PRACX at the same time, this combin
 
 * Smooth scrolling config option.
 * Windowed mode config option.
-* Any keyboard/mouse shortcuts provided by Thinker.
-* ALT+T version menu will not be available in this case.
+* Map rendering patch that draws more detailed tiles when zoomed out.
 
 Scient's patch is already included in the Thinker binary and does not need any additional installation steps from the user. In any case, it is possible to install modified txt files provided by Scient's patch. Yitzi's patch or any other mod that uses a custom patched game binary is NOT supported while running Thinker. Note also that Yitzi's patch uses an incompatible version of alphax.txt that can't be used by the vanilla game binary or Thinker.
 
@@ -229,7 +228,7 @@ Some notable game engine patches included with Thinker may not have their separa
 8. Patch the game engine to use significantly less CPU time when idling using a method similar to [smac-cpu-fix](https://github.com/vinceho/smac-cpu-fix/). Normally the game uses 100% of CPU time which can be be a problem on laptop devices.
 9. When capturing a base, Recycling Tanks and Recreation Commons are not always destroyed unlike previously. They are sometimes randomly destroyed like other facilities.
 10. Patch any faction with negative research rating to start accumulating labs on the first turn. In vanilla rules each negative point results in an additional 5 turn delay before the faction starts accumulating labs (e.g. Believers had a 10 turn delay).
-11. Fix faction graphics bug that appears when Alpha Centauri.ini has a different set of faction filenames than the loaded scenario file. If the game has an incorrect faction set, the patch will quit to main menu so that the correct faction set will be available when the save is reloaded. This bug only occurs with scenario files, while regular save games are unaffected.
+11. Fix faction graphics bug that appears when Alpha Centauri.ini has a different set of faction filenames than the loaded scenario file. The patch will make sure the correct graphics set is loaded when opening the scenario. This bug only happened with scenario files, while regular save games were unaffected.
 12. Patch the game to use the Command Center maintenance cost that is set in alphax.txt. Normally the game would ignore this value and make the cost dependent on faction's best reactor value which is inconsistent with the other settings for facilities in alphax.txt.
 13. Sometimes the base window population row would display superdrones even though they would be suppressed by psych-related effects. The patch removes superdrone icons from the main population row and uses regular worker/drone/talent icons if applicable, so any drones should not be displayed there if they are suppressed by psych effects. To check the superdrone status, open the psych sub window.
 14. Fix visual bug where population icons in base window would randomly switch their type when clicking on them.
@@ -237,12 +236,15 @@ Some notable game engine patches included with Thinker may not have their separa
 16. Patch genetic warfare probe team action to cause much less damage for any units defending the base. In vanilla game mechanics even one attack instantly inflicted almost 80% damage. In the patched version population loss mechanic is unaffected, but even multiple attacks should do substantially less damage for defender units.
 17. Patch terrain drawing engine to render more detailed tiles when zooming out from the default level. Previously the tiles were replaced with blocky, less detailed versions on almost every zoom out level.
 18. Modify multiplayer setup screen to use average values for each of the random map generator settings, instead of the highest possible like previously.
+19. Fix potential crash when a game is loaded after using Edit Map > Generate/Remove Fungus > No Fungus.
+20. Fix foreign base names being visible in unexplored tiles when issuing move to or patrol orders to the tiles.
+21. Fix diplomacy dialog to show the missing response messages (GAVEENERGY) when gifting energy credits to another faction.
 
 
 Scient's patch
 ==============
 Thinker includes the binary patches from both [Scient's patch v2.0 and v2.1](https://alphacentauri2.info/index.php?action=downloads;sa=view;down=365). The differences between these versions include only changes to the txt files to prevent the game from crashing when opening certain datalinks entries.
-Installing the modded txt files is purely optional, and Thinker does not include those files by default. The following fixes from Scient's binary patch are included in `terranx_mod.exe`.
+Installing the modded txt files is purely optional, and Thinker does not include those files by default. The following fixes from Scient's patch are automatically applied at game startup.
 
 1.  [BUG] If a faction's cumulative PROBE value is greater than 3 (SE morale, covert ops center) it is possible to "mind control" their bases when they should be immune. If the University uses SE Knowledge putting PROBE value down to -4, it would act as if it were 0 erroneously increasing "mind control" costs. After patch, PROBE values greater than 3 will always be immune to regular probes and values less than -2 will be treated as if they were -2.
 2.  [CRASH] It is possible usually on larger maps that scrambling air interceptors would cause the game to crash. Even when the game didn't crash incorrect altitude values were being used in checks. Both of these have been fixed.

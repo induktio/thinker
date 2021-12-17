@@ -1,6 +1,25 @@
 
 # Thinker mod release changelog
 
+## Version 2.9 (2021-12-17)
+* Thinker now uses a new launcher program called thinker.exe to start the mod. It requires having the original terranx.exe version in the game folder.
+* Base hurry dialog is overhauled to display the minimal required hurry cost to complete the current production on the next turn.
+* Minimal hurry cost is now the default choice when a partial cost is entered instead of the full cost like previously.
+* Player bases, formers and colony pods can now be automated by Thinker from ALT+T options menu.
+* AI former priorities have been updated to do more cost-benefit calculations between various improvement types such as forest, fungus or boreholes.
+* New config options: natives_weak_until_turn, neural_amplifier_bonus, dream_twister_bonus, fungal_tower_bonus.
+* AI builds Crawlers, Hologram Threatres and Tree Farms more often.
+* AI sometimes nerve staples bases when sunspots are disrupting communications.
+* AI tries to fit garrison unit prototypes special abilities in this order: AAA, Comm Jammer, Double Police, Trance, High Morale.
+* Update design_units feature to check all possible special abilities rules from alphax.txt for particular weapon/chassis combinations.
+* Update new_base_names to also use land names list for sea bases if the other one runs out. Long base names are automatically truncated to 24 characters.
+* Default AI cost factor is changed to 12,11,10,9,8,7. The top two levels are the same than previously.
+* Revised tech cost also counts allied factions twice when determining the discount for techs known to other factions.
+* Fix potential crash when a game is loaded after using Edit Map > Generate/Remove Fungus > No Fungus.
+* Fix foreign base names being visible in unexplored tiles when issuing move to or patrol orders to the tiles.
+* Fix diplomacy dialog to show the missing response messages (GAVEENERGY) when gifting energy credits to another faction.
+
+
 ## Version 2.8 (2021-11-24)
 * Add new rewritten random map generator to the game. It also adds options to set the ocean coverage levels and continent types in a more consistent way.
 * Map generator options: new_world_builder, world_sea_levels, world_continents, modified_landmarks.

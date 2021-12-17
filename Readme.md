@@ -38,7 +38,7 @@ Installation
 2. Check Changelog.md and Details.md for useful information.
 3. Change configuration from thinker.ini or just use the defaults.
 4. Start the game from thinker.exe.
-5. The launcher requires unpatched terranx.exe in the same folder but this file is not modified on disk. All the changes are applied at runtime.
+5. The launcher requires original terranx.exe in the same folder but this file is not modified on disk. All the changes are applied at runtime.
 6. Press ALT+T to open Thinker's options menu. Other option is to check that mod version/build date is visible in the game version menu (Ctrl+F4).
 7. If none of those options display mod version, Thinker is incorrectly installed and not loaded.
 
@@ -46,7 +46,7 @@ Installation
 Other mods
 ----------
 * [SMAC-in-SMACX mod](Details.md#smac-in-smacx-mod) can be installed to play a game similar to original SMAC from the SMACX game binary while Thinker is enabled.
-* [PRACX](https://github.com/DrazharLn/pracx) graphics enhancement patch can be used together with Thinker. For possible issues before installing see [compatibility with other mods](Details.md#compatibility-with-other-mods). For easiest installation, download [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). If you already use older Pracx 1.10 you can just rename terranx_mod.exe to terranx.exe and run pracxpatch.exe so that the installer patches the right binary.
+* [PRACX](https://github.com/DrazharLn/pracx) graphics enhancement patch can be used together with Thinker. For possible issues before installing see [compatibility with other mods](Details.md#compatibility-with-other-mods). For easiest installation, download [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/).
 * [OpenSMACX](https://github.com/b-casey/OpenSMACX) is a long-term project to decompile and create a full open source clone of SMACX.
 
 
