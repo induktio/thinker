@@ -123,13 +123,13 @@ void check_relocate_hq(int faction) {
     }
 }
 
-int __cdecl mod_capture_base(int base_id, int faction, int probe) {
+int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
     int old_faction = Bases[base_id].faction_id;
     int vendetta = at_war(faction, old_faction);
     int last_spoke = *current_turn - Factions[faction].diplo_spoke[old_faction];
     assert(valid_player(faction) && faction != old_faction);
     Bases[base_id].defend_goal = 0;
-    capture_base(base_id, faction, probe);
+    capture_base(base_id, faction, is_probe);
     check_relocate_hq(old_faction);
     /*
     Prevent AIs from initiating diplomacy once every turn after losing a base.
@@ -164,11 +164,42 @@ int __cdecl mod_base_kill(int base_id) {
     return 0;
 }
 
+int __cdecl find_return_base(int veh_id) {
+    VEH* veh = &Vehs[veh_id];
+    MAP* sq;
+    debug("find_return_base %2d %2d %s\n", veh->x, veh->y, veh->name());
+    TileSearch ts;
+    ts.init(veh->x, veh->y, veh->triad() == TRIAD_SEA ? TS_SEA_AND_SHORE : veh->triad());
+    while ((sq = ts.get_next()) != NULL) {
+        if (sq->is_base() && sq->owner == veh->faction_id) {
+            return base_at(ts.rx, ts.ry);
+        }
+    }
+    int region = region_at(veh->x, veh->y);
+    int min_dist = INT_MAX;
+    int base_id = -1;
+    bool sea = region > MaxRegionLandNum;
+    for (int i = 0; i < *total_num_bases; i++) {
+        BASE* base = &Bases[i];
+        if (base->faction_id == veh->faction_id) {
+            int base_region = region_at(base->x, base->y);
+            int dist = map_range(base->x, base->y, veh->x, veh->y)
+                * ((base_region > MaxRegionLandNum) == sea ? 1 : 4)
+                * (base_region == region ? 1 : 8);
+            if (dist < min_dist) {
+                base_id = i;
+                min_dist = dist;
+            }
+        }
+    }
+    return base_id;
+}
+
 /*
 Calculate current vehicle health only for the purposes of
 possible damage from genetic warfare probe team action.
 */
-int __cdecl veh_health(int veh_id) {
+int __cdecl mod_veh_health(int veh_id) {
     VEH* veh = &Vehs[veh_id];
     int level = clamp(veh->reactor_type(), 1, 100);
     if (veh->is_artifact()) {
@@ -538,8 +569,8 @@ bool patch_setup(Config* cf) {
     write_call(0x5B3C4C, (int)mod_setup_player);
     write_call(0x5C0908, (int)log_veh_kill);
     write_call(0x498720, (int)ReportWin_close_handler);
-    write_call(0x5A3F7D, (int)veh_health);
-    write_call(0x5A3F98, (int)veh_health);
+    write_call(0x5A3F7D, (int)mod_veh_health);
+    write_call(0x5A3F98, (int)mod_veh_health);
     write_call(0x4E1061, (int)mod_world_build);
     write_call(0x4E113B, (int)mod_world_build);
     write_call(0x58B9BF, (int)mod_world_build);
@@ -550,6 +581,10 @@ bool patch_setup(Config* cf) {
     write_call(0x4195A6, (int)basewin_ask_number);
     write_call(0x51D1C2, (int)Console_editor_fungus);
     write_call(0x54814D, (int)mod_diplomacy_caption);
+    write_call(0x4D0ECF, (int)mod_upgrade_cost);
+    write_call(0x4D16D9, (int)mod_upgrade_cost);
+    write_call(0x4EFB76, (int)mod_upgrade_cost);
+    write_call(0x4EFEB9, (int)mod_upgrade_cost);
     write_jump(0x6262F0, (int)log_say);
     write_jump(0x626250, (int)log_say2);
     write_jump(0x6263F0, (int)log_say_hex);
@@ -740,6 +775,25 @@ bool patch_setup(Config* cf) {
             }
         }
     }
+    /*
+    Find nearest base for returned probes in order_veh / GOTMYPROBE.
+    */
+    {
+        const byte old_bytes[] = {
+            0xBA,0x46,0xD0,0x97,0x00,0x33,0xC9,0x8A,0x4A,0xFE,
+            0x3B,0x4D,0xE4,0x75,0x0B,0x0F,0xBE,0x0A,0x3B,0xCF,
+            0x7E,0x04,0x8B,0xF9,0x8B,0xF0,0x40,0x81,0xC2,0x34,
+            0x01,0x00,0x00,0x3B,0xC3,0x7C,0xE0
+        };
+        const byte new_bytes[] = {
+            0x8B,0x7D,0xE0,0x57,0xE8,0x00,0x00,0x00,0x00,0x8B,
+            0xF0,0x83,0xC4,0x04,0x90,0x90,0x90,0x90,0x90,0x90,
+            0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,
+            0x90,0x90,0x90,0x90,0x90,0x90,0x90
+        };
+        write_bytes(0x597021, old_bytes, new_bytes, sizeof(new_bytes));
+        write_call(0x597025, (int)find_return_base);
+    }
     {
         const byte old_bytes[] = {0x8B,0xC7,0x99,0x2B,0xC2,0xD1,0xF8};
         const byte new_bytes[] = {0x57,0xE8,0x00,0x00,0x00,0x00,0x5F};
@@ -796,12 +850,13 @@ bool patch_setup(Config* cf) {
         const byte old_bytes[] = {0x68, 0x88, 0x13, 0x00, 0x00};
         const byte new_bytes[] = {0x68, 0xFF, 0xFF, 0xFF, 0xFF};
 
-        write_bytes(0x55DACC, old_bytes, new_bytes, sizeof(new_bytes));
-        write_bytes(0x55DBF1, old_bytes, new_bytes, sizeof(new_bytes));
-        write_bytes(0x55DDD0, old_bytes, new_bytes, sizeof(new_bytes));
-        write_bytes(0x55DEF5, old_bytes, new_bytes, sizeof(new_bytes));
-        write_bytes(0x55E355, old_bytes, new_bytes, sizeof(new_bytes));
-        write_bytes(0x55CB24, old_bytes, new_bytes, sizeof(new_bytes));
+        write_bytes(0x55DACC, old_bytes, new_bytes, sizeof(new_bytes)); // enemies_treaty
+        write_bytes(0x55DBF1, old_bytes, new_bytes, sizeof(new_bytes)); // enemies_treaty
+        write_bytes(0x55DDD0, old_bytes, new_bytes, sizeof(new_bytes)); // enemies_treaty
+        write_bytes(0x55DEF5, old_bytes, new_bytes, sizeof(new_bytes)); // enemies_treaty
+        write_bytes(0x55E355, old_bytes, new_bytes, sizeof(new_bytes)); // enemies_treaty
+        write_bytes(0x55CB24, old_bytes, new_bytes, sizeof(new_bytes)); // enemies_war
+        write_bytes(0x597137, old_bytes, new_bytes, sizeof(new_bytes)); // order_veh
     }
     if (cf->faction_placement) {
         const byte asm_find_start[] = {

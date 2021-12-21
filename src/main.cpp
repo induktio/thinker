@@ -107,8 +107,6 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->conquer_priority = clamp(atoi(value), 1, 10000);
     } else if (MATCH("thinker", "crawler_priority")) {
         cf->crawler_priority = atoi(value);
-    } else if (MATCH("thinker", "limit_project_start")) {
-        cf->limit_project_start = atoi(value);
     } else if (MATCH("thinker", "max_satellites")) {
         cf->max_satellites = atoi(value);
     } else if (MATCH("thinker", "new_world_builder")) {

@@ -139,6 +139,7 @@ int __cdecl fungal_tower_bonus(int value);
 int __cdecl psi_factor(int value, int faction_id, bool is_attack, bool is_fungal_twr);
 int __cdecl fac_maint(int facility_id, int faction_id);
 int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id);
+int __cdecl mod_upgrade_cost(int faction, int new_unit_id, int old_unit_id);
 int __cdecl mod_bonus_at(int x, int y);
 int __cdecl mod_goody_at(int x, int y);
 int __cdecl cargo_capacity(int veh_id);

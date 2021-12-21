@@ -82,7 +82,6 @@
 #endif
 #endif
 
-const int SYNC = 0;
 const bool DEF = true;
 const bool ATT = false;
 const bool SEA = true;
@@ -163,7 +162,6 @@ struct Config {
     int expansion_autoscale = 0;
     int conquer_priority = 100;
     int crawler_priority = 100;
-    int limit_project_start = 3;
     int max_satellites = 20;
     int new_world_builder = 1;
     int world_continents = 0;
@@ -272,6 +270,11 @@ struct AIPlans {
     Important heuristic in threat calculation.
     */
     int enemy_bases = 0;
+};
+
+enum EnemyVehMove { // Return codes for enemy_veh processing
+    SYNC = 0,
+    NO_SYNC = 1,
 };
 
 enum RegionFlag {

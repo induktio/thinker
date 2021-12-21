@@ -1044,6 +1044,31 @@ int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id) {
 }
 
 /*
+Calculate unit upgrade cost in mineral rows. This version modifies crawler upgrade costs.
+*/
+int __cdecl mod_upgrade_cost(int faction, int new_unit_id, int old_unit_id) {
+    UNIT* old_unit = &Units[old_unit_id];
+    UNIT* new_unit = &Units[new_unit_id];
+    int modifier = new_unit->cost;
+
+    if (old_unit->is_supply()) {
+        return 4*max(1, new_unit->cost - old_unit->cost);
+    }
+    if (new_unit_id >= MaxProtoFactionNum && !new_unit->is_prototyped()) {
+        modifier = ((new_unit->cost + 1) / 2 + new_unit->cost)
+            * ((new_unit->cost + 1) / 2 + new_unit->cost + 1);
+    }
+    int cost = max(0, new_unit->speed() - old_unit->speed())
+        + max(0, new_unit->armor_cost() - old_unit->armor_cost())
+        + max(0, new_unit->weapon_cost() - old_unit->weapon_cost())
+        + modifier;
+    if (has_project(faction, FAC_NANO_FACTORY)) {
+        cost /= 2;
+    }
+    return cost;
+}
+
+/*
 Purpose: Determine if the tile has a resource bonus.
 Original Offset: 00592030
 Return Value: 0 (no bonus), 1 (nutrient), 2 (mineral), 3 (energy)

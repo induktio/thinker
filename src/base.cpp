@@ -105,7 +105,7 @@ int need_psych(int base_id) {
     if (b->drone_total > b->talent_total || b->state_flags & BSTATE_DRONE_RIOTS_ACTIVE) {
         if (((b->faction_id_former != b->faction_id && b->assimilation_turns_left > 5)
         || (b->drone_total > 2 + b->talent_total && 2*b->energy_inefficiency > b->energy_surplus))
-        && prod_turns(base_id, FAC_PUNISHMENT_SPHERE) < 12 && can_build(base_id, FAC_PUNISHMENT_SPHERE)) {
+        && can_build(base_id, FAC_PUNISHMENT_SPHERE) && prod_turns(base_id, FAC_PUNISHMENT_SPHERE) < 12) {
             return -FAC_PUNISHMENT_SPHERE;
         }
         if (can_build(base_id, FAC_RECREATION_COMMONS)) {
@@ -138,9 +138,17 @@ bool need_scouts(int x, int y, int faction, int scouts) {
         + min(4, nearby_pods / 6);
 
     bool val = random(16) < score;
-    debug("need_scouts %2d %2d score: %2d value: %d scouts: %d goodies: %d native: %d\n",
-        x, y, score, val, scouts, Continents[sq->region].pods, *MapNativeLifeForms);
+    debug("need_scouts %2d %2d value: %d score: %d scouts: %d goodies: %d native: %d\n",
+        x, y, val, score, scouts, Continents[sq->region].pods, *MapNativeLifeForms);
     return val;
+}
+
+int project_score(int faction, int proj) {
+    CFacility* p = &Facility[proj];
+    Faction* f = &Factions[faction];
+    return random(5) + f->AI_fight * p->AI_fight
+        + (f->AI_growth+1) * p->AI_growth + (f->AI_power+1) * p->AI_power
+        + (f->AI_tech+1) * p->AI_tech + (f->AI_wealth+1) * p->AI_wealth;
 }
 
 int hurry_item(BASE* b, int mins, int cost) {
@@ -164,19 +172,71 @@ int consider_hurry() {
     if (!thinker_enabled(b->faction_id)) {
         return base_hurry();
     }
-    if (!conf.hurry_items || t == -FAC_STOCKPILE_ENERGY || b->item_is_project()
+    if (!conf.hurry_items || t == -FAC_STOCKPILE_ENERGY || t < -SP_ID_Last
     || b->state_flags & (BSTATE_PRODUCTION_DONE | BSTATE_HURRY_PRODUCTION)) {
         return 0;
     }
-    bool cheap = conf.simple_hurry_cost || b->minerals_accumulated >= Rules->retool_exemption;
+    bool is_cheap = conf.simple_hurry_cost || b->minerals_accumulated >= Rules->retool_exemption;
+    bool is_project = t <= -SP_ID_First && t >= -SP_ID_Last;
     int mins = mineral_cost(base_id, t) - b->minerals_accumulated;
     int cost = hurry_cost(base_id, t, mins);
     int turns = prod_turns(base_id, t);
     int reserve = clamp(*current_turn * f->base_count / 5, 20, 800)
+        * (is_project ? 1 : 2)
         * (has_facility(base_id, FAC_HEADQUARTERS) ? 1 : 2)
-        * (b->defend_goal > 3 && p->enemy_factions > 0 ? 1 : 2) / 4;
+        * (b->defend_goal > 3 && p->enemy_factions > 0 ? 1 : 2) / 8;
 
-    if (!cheap || mins < 1 || cost < 1 || f->energy_credits - cost < reserve) {
+    if (!is_cheap || mins < 1 || cost < 1 || f->energy_credits - cost < reserve) {
+        return 0;
+    }
+    if (is_project) {
+        int delay = clamp(DIFF_TRANSCEND - *diff_level + (f->ranking > 5 + random(4)), 0, 3);
+        int threshold = max(Facility[-t].cost/8, 4*cost_factor(b->faction_id, 1, -1));
+
+        if (has_project(-1, -t) || turns < 2+delay
+        || b->mineral_surplus < 5 || b->defend_goal > 3
+        || b->minerals_accumulated < threshold) {
+            return 0;
+        }
+        for (int i = 0; i < *total_num_bases; i++) {
+            if (Bases[i].faction_id == b->faction_id
+            && Bases[i].item() == t
+            && Bases[i].minerals_accumulated > b->minerals_accumulated) {
+                return 0;
+            }
+        }
+        int num = 0;
+        int proj_score = 0;
+        int values[256];
+        for (int i = SP_ID_First; i <= SP_ID_Last; i++) {
+            if (Facility[i].preq_tech != TECH_Disable) {
+                values[num] = project_score(b->faction_id, i);
+                if (i == -t) {
+                    proj_score = values[num];
+                }
+                num++;
+            }
+        }
+        std::sort(values, values+num);
+        debug("hurry_proj %d %d score: %d limit: %d %s\n",
+            *current_turn, b->faction_id, proj_score, values[num/2], Facility[-t].name);
+        if (proj_score < max(4, values[num/2])) {
+            return 0;
+        }
+        mins = mineral_cost(base_id, t) - b->minerals_accumulated
+            - b->mineral_surplus/2 - delay*b->mineral_surplus;
+        cost = hurry_cost(base_id, t, mins);
+
+        if (cost > 0 && mins > b->mineral_surplus) {
+            hurry_item(b, mins, cost);
+            if (*SunspotDuration <= 0 && !(*game_state & STATE_GAME_DONE)
+            && has_treaty(b->faction_id, MapWin->cOwner, DIPLO_COMMLINK)) {
+                parse_says(0, MFactions[b->faction_id].adj_name_faction, -1, -1);
+                parse_says(1, Facility[-t].name, -1, -1);
+                popp(ScriptFile, "DONEPROJECT", 0, "secproj_sm.pcx", 0);
+            }
+            return 1;
+        }
         return 0;
     }
     if (b->drone_total + b->specialist_total > b->talent_total
@@ -220,14 +280,6 @@ int consider_hurry() {
         }
     }
     return 0;
-}
-
-int project_score(int faction, int proj) {
-    CFacility* p = &Facility[proj];
-    Faction* f = &Factions[faction];
-    return random(5) + f->AI_fight * p->AI_fight
-        + (f->AI_growth+1) * p->AI_growth + (f->AI_power+1) * p->AI_power
-        + (f->AI_tech+1) * p->AI_tech + (f->AI_wealth+1) * p->AI_wealth;
 }
 
 bool redundant_project(int faction, int proj) {
@@ -323,11 +375,6 @@ int find_project(int base_id) {
         int score = INT_MIN;
         int choice = 0;
         for (int i = SP_ID_First; i <= SP_ID_Last; i++) {
-            int tech = Facility[i].preq_tech;
-            if (conf.limit_project_start > *diff_level && i != FAC_ASCENT_TO_TRANSCENDENCE
-            && tech >= 0 && !(TechOwners[tech] & *human_players)) {
-                continue;
-            }
             if (can_build(base_id, i) && prod_count(faction, -i, base_id) < similar_limit
             && (similar_limit > 1 || !redundant_project(faction, i))) {
                 int sc = project_score(faction, i);
@@ -829,9 +876,7 @@ int select_production(int base_id) {
         int turns = max(0, facility.cost * min(12, cfactor) - base->minerals_accumulated)
             / max(2, base->mineral_surplus);
         /* Check if we have sufficient base energy for multiplier facilities. */
-        if (flag & F_Energy && base->energy_surplus < 2*facility.maint + facility.cost)
-            continue;
-        if (flag & F_Energy && turns > 6 + f->AI_tech + f->AI_wealth - f->AI_power - f->AI_fight)
+        if (flag & F_Energy && (turns > 10 || base->energy_surplus < 4*max(2, facility.maint)))
             continue;
         /* Avoid building combat-related facilities in peacetime. */
         if (flag & F_Combat && p->enemy_base_range > MaxEnemyRange - 5*min(5, facility.maint))
