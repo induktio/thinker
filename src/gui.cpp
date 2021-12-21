@@ -126,29 +126,30 @@ CMAP_GETCORNERYOFFSET_F        pfncMapGetCornerYOffset =        (CMAP_GETCORNERY
 
 // End of PRACX definitions
 
-FMapWin_pixel_to_tile MapWin_pixel_to_tile = (FMapWin_pixel_to_tile)0x463040;
-FMapWin_tile_to_pixel MapWin_tile_to_pixel = (FMapWin_tile_to_pixel)0x462F00;
-FMapWin_set_center    MapWin_set_center    = (FMapWin_set_center   )0x46B1F0;
-FMapWin               MapWin_calculate_dim = (FMapWin              )0x462980;
-FMapWin               MapWin_clear_terrain = (FMapWin              )0x46FD90;
-FWin_is_visible       Win_is_visible       = (FWin_is_visible      )0x5F7E90;
-FTutWin_draw_arrow    TutWin_draw_arrow    = (FTutWin_draw_arrow   )0x4BDEA0;
-FPlanWin_blink        PlanWin_blink        = (FPlanWin_blink       )0x48BC20;
-FStringBox_clip_ids   StringBox_clip_ids   = (FStringBox_clip_ids  )0x629A70;
-FStatusWin_on_redraw  StatusWin_on_redraw  = (FStatusWin_on_redraw )0x4B8890;
-FMapWin_gen_map       MapWin_gen_map       = (FMapWin_gen_map      )0x469CA0;
-FMapWin_draw_map      MapWin_draw_map      = (FMapWin_draw_map     )0x46A550;
-FWinProc              WinProc              = (FWinProc             )0x5F0650;
-FConsole_zoom         Console_zoom         = (FConsole_zoom        )0x5150D0;
-FWin_update_screen    Win_update_screen    = (FWin_update_screen   )0x5F7320;
-FWin_flip             Win_flip             = (FWin_flip            )0x5EFD20;
-FBuffer_set_text_color Buffer_set_text_color = (FBuffer_set_text_color)0x5DACB0;
-FBuffer_set_font       Buffer_set_font       = (FBuffer_set_font      )0x5DAC70;
-FBuffer_write_cent_l3  Buffer_write_cent_l3  = (FBuffer_write_cent_l3 )0x5DD130;
-Fpopup_start           popup_start           = (Fpopup_start          )0x406380;
-FBaseWin_on_redraw     BaseWin_on_redraw     = (FBaseWin_on_redraw    )0x41E790;
-FGeneric SubInterface_release_iface_mode     = (FGeneric              )0x45D380;
-
+FMapWin_pixel_to_tile  MapWin_pixel_to_tile            = (FMapWin_pixel_to_tile )0x463040;
+FMapWin_tile_to_pixel  MapWin_tile_to_pixel            = (FMapWin_tile_to_pixel )0x462F00;
+FMapWin_set_center     MapWin_set_center               = (FMapWin_set_center    )0x46B1F0;
+FMapWin                MapWin_calculate_dim            = (FMapWin               )0x462980;
+FMapWin                MapWin_clear_terrain            = (FMapWin               )0x46FD90;
+FWin_is_visible        Win_is_visible                  = (FWin_is_visible       )0x5F7E90;
+FTutWin_draw_arrow     TutWin_draw_arrow               = (FTutWin_draw_arrow    )0x4BDEA0;
+FPlanWin_blink         PlanWin_blink                   = (FPlanWin_blink        )0x48BC20;
+FStringBox_clip_ids    StringBox_clip_ids              = (FStringBox_clip_ids   )0x629A70;
+FStatusWin_on_redraw   StatusWin_on_redraw             = (FStatusWin_on_redraw  )0x4B8890;
+FMapWin_gen_map        MapWin_gen_map                  = (FMapWin_gen_map       )0x469CA0;
+FMapWin_draw_map       MapWin_draw_map                 = (FMapWin_draw_map      )0x46A550;
+FWinProc               WinProc                         = (FWinProc              )0x5F0650;
+FConsole_zoom          Console_zoom                    = (FConsole_zoom         )0x5150D0;
+FWin_update_screen     Win_update_screen               = (FWin_update_screen    )0x5F7320;
+FWin_flip              Win_flip                        = (FWin_flip             )0x5EFD20;
+FBuffer_set_text_color Buffer_set_text_color           = (FBuffer_set_text_color)0x5DACB0;
+FBuffer_set_font       Buffer_set_font                 = (FBuffer_set_font      )0x5DAC70;
+FBuffer_write_cent_l3  Buffer_write_cent_l3            = (FBuffer_write_cent_l3 )0x5DD130;
+Fpopup_start           popup_start                     = (Fpopup_start          )0x406380;
+FBaseWin_on_redraw     BaseWin_on_redraw               = (FBaseWin_on_redraw    )0x41E790;
+FGeneric               SubInterface_release_iface_mode = (FGeneric              )0x45D380;
+fp_void                MapWin_main_caption             = (fp_void               )0x46FB10;
+FGeneric               StatusWin_redraw                = (FGeneric              )0x4B9EA0;
 
 Console* MapWin    = (Console*)0x9156B0; // ConsoleParent len: 0x247A4 end: 0x939E54
 Win*     BaseWin   = (Win*)0x6A7628;
@@ -160,6 +161,7 @@ Win*     TutWin    = (Win*)0x8C6E68;
 Win*     WorldWin  = (Win*)0x8E9F60;
 Win*     CouncilWin  = (Win*)0x6FEC80;
 Win*     DatalinkWin = (Win*)0x703EA0;
+Sprite** FactionPortraits = (Sprite**)0x6846D8;
 
 
 bool map_is_visible() {
@@ -878,6 +880,11 @@ int __cdecl X_pop7(const char* label, int a2, int a3) {
     return X_pop(ScriptFile, label, -1, 0, a2, a3);
 }
 
+int __cdecl X_pops4(const char* label, int a2, Sprite* a3, int a4)
+{
+    return X_pops(ScriptFile, label, -1, 0, a2, (int)a3, 1, 1, a4);
+}
+
 void popup_homepage() {
     ShellExecute(NULL, "open", "https://github.com/induktio/thinker", NULL, NULL, SW_SHOWNORMAL);
 }
@@ -1026,7 +1033,7 @@ const char* UNUSED(filename), const char* UNUSED(label), int a4, int a5, int a6,
 int __cdecl basewin_ask_number(const char* label, int value, int a3)
 {
     ParseNumTable[0] = value;
-    return pop_ask_number("SCRIPT", label, minimal_cost, a3);
+    return pop_ask_number(ScriptFile, label, minimal_cost, a3);
 }
 
 void __cdecl basewin_draw_name(char* dest, char* name)
@@ -1139,5 +1146,75 @@ void __cdecl mod_diplomacy_caption(int faction1, int faction2)
     diplomacy_caption(faction1, faction2);
     strncpy(StrBuffer, buf, 256);
 }
+
+int __cdecl mod_energy_trade(int faction1, int faction2)
+{
+    Faction& f_plr = Factions[faction1];
+    Faction& f_cmp = Factions[faction2];
+
+    if (*multiplayer_active || *diplo_current_proposal_id != DiploProposalNeedEnergy
+    || *diplo_counter_proposal_id != DiploCounterLoanPayment) {
+        return energy_trade(faction1, faction2);
+    }
+    int friction = clamp(f_plr.diplo_friction[faction2], 0, 20);
+    int score = -friction/2
+        - 8*f_plr.integrity_blemishes
+        - 2*f_plr.atrocities
+        + min(10, 2*f_plr.diplo_gifts[faction2])
+        + (want_revenge(faction2, faction1) ? -20 : 0)
+        + (f_plr.diplo_status[faction2] & DIPLO_PACT ? 12 : 0)
+        + (f_plr.diplo_status[faction2] & DIPLO_TREATY ? 5 : 0)
+        + (f_plr.pop_total > f_cmp.pop_total ? -5 : 0)
+        + (2*f_plr.pop_total > 3*f_cmp.pop_total ? -10 : 0)
+        + (3*f_plr.pop_total < 2*f_cmp.pop_total ? 5 : 0);
+
+    int reserve = clamp(*current_turn * f_cmp.base_count / 8, 80, 500);
+    int amount = (clamp(f_cmp.energy_credits - reserve - 10*friction,
+        0, *current_turn * 3 + random(40))/20)*20;
+    int turns = clamp(40 - *diff_level*5 + score/4, 10, 50);
+    int payment = ((18 + 2 * *diff_level + 4*(f_plr.ranking == 7))*amount + 15) / (16*turns);
+
+    for (int i=1; i < MaxPlayerNum; i++) {
+        if (Factions[i].base_count && i != faction1 && i != faction2) {
+            if (at_war(i, faction1) && has_pact(i, faction2)) {
+                score -= 5;
+            }
+            if (at_war(i, faction2) && has_pact(i, faction1)) {
+                score -= 5;
+            }
+            if (at_war(i, faction1) && at_war(i, faction2)) {
+                score += 5;
+            }
+        }
+    }
+    if (f_plr.loan_balance[faction2] > 0 || f_plr.loan_payment[faction2] > 0) {
+        X_pops("modmenu", "REJECTLOAN", -1, 0,
+            PopDialogUnk100000, (int)FactionPortraits[faction2], 1, 1, (int)sub_5398E0);
+        return 0;
+    }
+    if (amount < 10 || score < 0) {
+        X_pops4(random(2) ? "REJENERGY0" : "REJENERGY1",
+            PopDialogUnk100000, FactionPortraits[faction2], (int)sub_5398E0);
+        return 0;
+    }
+
+    parse_says(0, MFactions[faction1].title_leader, -1, -1);
+    parse_says(1, MFactions[faction1].name_leader, -1, -1);
+    ParseNumTable[0] = amount;
+    ParseNumTable[1] = payment;
+    ParseNumTable[2] = turns;
+    int choice = X_pops4(random(2) ? "ENERGYLOAN1" : "ENERGYLOAN2",
+        PopDialogUnk100000, FactionPortraits[faction2], (int)sub_5398E0);
+
+    if (choice == 1) {
+        f_plr.loan_balance[faction2] = turns * payment;
+        f_plr.loan_payment[faction2] = payment;
+        f_plr.energy_credits += amount;
+        f_cmp.energy_credits -= amount;
+        StatusWin_redraw(StatusWin);
+    }
+    return 0;
+}
+
 
 

@@ -20,7 +20,7 @@ In addition to the binary patches listed separately in this file, items that are
 3. Thinker base production AI will decide every item that is produced in a base. The build order can differ substantially from anything the normal AIs might decide to produce, and the difference can be easily noted in the vastly increased quantity of formers and crawlers the AIs might have.
 4. Social AI feature will decide the social engineering models the AI factions will choose. It will attempt to take into account the various cumulative/non-linear effects of the society models and any bonuses provided by the secret projects. The AI is now capable of pop-booming if enough growth is attainable, and it will also try to avoid pacifist drones by switching out of SE models with too many police penalties. All the SE model effects are moddable because the AI is not hardcoded in any particular choices. This feature is also capable of managing all the custom factions.
 5. Tech balance will assign extra importance on some specific techs when selecting what to research: requirements for formers, crawlers, recycling tanks, children's creches, and the 3 technologies to allow the production of more than 2 resources per square. If these items don't have any requirements, or the techs are not available to research, the tech progression is unaffacted by this feature. It will also not affect player faction research in any way.
-6. Hurry items feature is able to use AI energy reserves to occasionally hurry base production. Items that can be hurried include most basic facilities, formers, and (only rarely) combat units. The AI will never rush secret projects in this way, but sometimes they can be completed quickly with overflow minerals.
+6. `hurry_items` feature is able to use AI energy reserves to occasionally hurry base production. Items that can be hurried include most basic facilities, formers, combat units, and sometimes secret projects. The amount of credits spent on rushing projects depends on difficulty level. When a project has been rushed, it will be displayed in a popup if there's no sunspots active and the player has a commlink to the other faction.
 7. `design_units` feature will introduce custom probe teams, armored crawlers, gravship formers, and AAA garrison prototypes for the computer factions.
 8. `auto_relocate_hq` feature imports a game mechanic from Civilization 3 where lost/captured headquarters are automatically moved to another suitable base. This ensures the AI factions will not struggle without active headquarters.
 9. AI mineral/nutrient production cost factors for each difficulty level can be changed from the `cost_factor` setting. Does not affect other difficulty related modifiers.
@@ -88,6 +88,16 @@ Another novel addition has been naval invasions executed by the AI. This has bee
 Thinker prioritizes naval invasions if the closest enemy is located on another continent. Otherwise, most of the focus is spent on building land and air units. At any given time, only one priority landing zone can be active for the AI. Maximum distance for invasions depends slightly on pathfinding but it should be possible on all Huge maps.
 
 Base garrisoning priorities are also handled entirely by the new logic which tries prioritize vulnerable border bases much more than usual. Air units also utilize the same priorities when deciding where to rebase. You might notice there's less massive AI stacks being rebased around for no meaningful reason. Instead Thinker tries to rebase the aircraft in much smaller stacks to more bases so that they can cover a larger area.
+
+
+Hurry and upgrade formulas
+==========================
+To ease calculations, `simple_hurry_cost` option removes the double cost penalty from production hurrying when the accumulated minerals are less than the Retool penalty set in alphax.txt. Otherwise the hurry cost formula is equal to the vanilla game mechanics.
+
+In both cases, rushing facilities cost 2 credits per mineral and secret projects cost 4 credits per mineral. In addition secret projects have a second double cost penalty if the accumulated minerals are less than 40.
+
+All crawler units have a special ability that enables them to disband their full mineral cost towards secret projects. Thinker patches the upgrade cost for crawlers such that it is always equal to the mineral row cost difference between two prototypes multiplied by 40.
+Nano Factory does not lower crawler upgrade costs anymore. This means crawlers can be used to rush projects like previously, but it will confer no advantage beyond bypassing the initial 40 mineral double cost threshold.
 
 
 Revised tech costs
@@ -239,6 +249,8 @@ Some notable game engine patches included with Thinker may not have their separa
 19. Fix potential crash when a game is loaded after using Edit Map > Generate/Remove Fungus > No Fungus.
 20. Fix foreign base names being visible in unexplored tiles when issuing move to or patrol orders to the tiles.
 21. Fix diplomacy dialog to show the missing response messages (GAVEENERGY) when gifting energy credits to another faction.
+22. Fix issue that caused sea-based probe teams to be returned to landlocked bases. Probes are now returned to the closest base as determined by the actual pathfinding distance.
+23. Patch crawler upgrade cost so that it depends only the mineral row cost difference between the new and old prototypes multiplied by 40.
 
 
 Scient's patch

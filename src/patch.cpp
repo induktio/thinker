@@ -585,6 +585,7 @@ bool patch_setup(Config* cf) {
     write_call(0x4D16D9, (int)mod_upgrade_cost);
     write_call(0x4EFB76, (int)mod_upgrade_cost);
     write_call(0x4EFEB9, (int)mod_upgrade_cost);
+    write_call(0x54F7D7, (int)mod_energy_trade);
     write_jump(0x6262F0, (int)log_say);
     write_jump(0x626250, (int)log_say2);
     write_jump(0x6263F0, (int)log_say_hex);

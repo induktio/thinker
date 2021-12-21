@@ -5,6 +5,7 @@
 typedef int16_t PMTable[MaxMapW][MaxMapH];
 
 enum UpdateMode {M_Full, M_Visual, M_Player};
+enum StackType {S_NeutralOnly, S_NonPactOnly, S_EnemyOnly, S_EnemyOneUnit};
 
 const int BIT_SIMPLE = (BIT_FARM | BIT_MINE | BIT_SOLAR | BIT_FOREST);
 const int BIT_ADVANCED = (BIT_CONDENSER | BIT_THERMAL_BORE);
