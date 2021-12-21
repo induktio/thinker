@@ -810,6 +810,7 @@ enum player_flags {
     PLR_MAP_REVEALED = 0x200,
     PLR_GENETIC_PLAGUE_INTRO = 0x400, // +1 to defense against after 1st time faction experiences
     PLR_BEEN_ELECTED_GOVERNOR = 0x8000, // used to determine whether #GOVERNOR has been displayed
+    PLR_UNK_10000 = 0x10000,
     PLR_UNK_20000 = 0x20000,
     PLR_STRAT_ATK_ENEMY_HQ = 0x200000,
     PLR_COOP_WITH_HUMAN = 0x400000,

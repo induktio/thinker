@@ -812,7 +812,7 @@ struct UNIT {
     int8_t armor_type;
     int8_t reactor_type;
     int8_t carry_capacity;
-    int8_t cost;
+    uint8_t cost;
     int8_t plan;
     int8_t unk_1; // some kind of internal prototype category?
     uint8_t obsolete_factions;// faction bitfield of those who marked this prototype obsolete
@@ -825,8 +825,14 @@ struct UNIT {
     int triad() {
         return Chassis[chassis_type].triad;
     }
-    int speed() {
+    uint8_t speed() {
         return Chassis[chassis_type].speed;
+    }
+    uint8_t armor_cost() {
+        return Armor[armor_type].cost;
+    }
+    uint8_t weapon_cost() {
+        return Weapon[weapon_type].cost;
     }
     int std_offense_value() {
         return Weapon[weapon_type].offense_value * reactor_type;
@@ -851,6 +857,9 @@ struct UNIT {
     }
     bool is_former() {
         return weapon_type == WPN_TERRAFORMING_UNIT;
+    }
+    bool is_supply() {
+        return weapon_type == WPN_SUPPLY_TRANSPORT;
     }
 };
 
@@ -912,6 +921,9 @@ struct VEH {
     }
     int weapon_type() {
         return Units[unit_id].weapon_type;
+    }
+    int weapon_mode() {
+        return Weapon[Units[unit_id].weapon_type].mode;
     }
     int offense_value() {
         return Weapon[Units[unit_id].weapon_type].offense_value;
