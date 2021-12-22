@@ -58,6 +58,11 @@ Warn when manually replacing tile improvements
 ^Minimum cost to hurry for next turn completion is {$NUM1} credits.
 ^We have {$NUM2} energy credits in reserve.
 
+#REJECTIDEA
+#xs 440
+#caption $CAPTION7
+"$TITLE0 $NAME1, I can hardly even imagine agreeing to such a request."
+
 #REJECTLOAN
 #xs 440
 #caption $CAPTION7

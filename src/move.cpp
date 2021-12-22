@@ -35,6 +35,7 @@ PMTable pm_enemy_near;
 PMTable pm_enemy_dist;
 PMTable pm_overlay;
 
+static Points nonally;
 static int upkeep_faction = 0;
 static int build_tubes = false;
 static int region_flags[MaxRegionNum] = {};
@@ -63,22 +64,18 @@ bool non_ally_in_tile(int x, int y, int faction) {
     static int prev_veh_num = 0;
     static int prev_faction = 0;
     if (prev_veh_num != *total_num_vehicles || prev_faction != faction) {
-        for (auto& p : mapnodes) {
-            if (p.type == NODE_NONALLY) {
-                mapnodes.erase(p);
-            }
-        }
+        nonally.clear();
         for (int i = 0; i < *total_num_vehicles; i++) {
             VEH* veh = &Vehicles[i];
             if (veh->faction_id != faction && !has_pact(faction, veh->faction_id)) {
-                mapnodes.insert({veh->x, veh->y, NODE_NONALLY});
+                nonally.insert({veh->x, veh->y});
             }
         }
         debug("refresh %d %d %d\n", *current_turn, faction, *total_num_vehicles);
         prev_veh_num = *total_num_vehicles;
         prev_faction = faction;
     }
-    return mapnodes.count({x, y, NODE_NONALLY}) > 0;
+    return nonally.count({x, y}) > 0;
 }
 
 bool both_neutral(int faction1, int faction2) {

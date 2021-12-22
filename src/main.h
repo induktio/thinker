@@ -302,8 +302,6 @@ enum NodesetType {
     NODE_GOAL_NAVAL_END,
     NODE_PATROL, // Includes probes/transports
     NODE_COMBAT_PATROL, // Only attack-capable units
-    NODE_NONALLY,
-    NODE_ARTIFACT,
 };
 
 struct MapTile {

@@ -202,7 +202,8 @@ struct MFaction {
     int8_t thinker_tech_id;
     int32_t thinker_tech_cost;
     float thinker_enemy_range;
-    int32_t thinker_probe_flags;
+    int16_t thinker_probe_flags;
+    int16_t thinker_last_mc_turn;
     char pad_1[112];
     /*
     End of block
@@ -279,7 +280,7 @@ struct Faction {
     int loan_payment[8]; // The per turn payment amount this faction owes another faction
     int unk_1[8]; // unused
     int integrity_blemishes;
-    int global_reputation;
+    int diplo_reputation;
     int diplo_gifts[8]; // ? Gifts and bribes we have received
     int diplo_wrongs[8]; // Number of times we double crossed this faction
     int diplo_betrayed[8]; // Number of times double crossed by this faction
@@ -347,8 +348,8 @@ struct Faction {
     int SE_probe_base;
     int SE_industry_base;
     int SE_research_base;
-    int unk_13;
-    int unk_14;
+    int energy_surplus_total;
+    int facility_maint_total;
     int tech_commerce_bonus; // Increases commerce income
     int turn_commerce_income;
     int unk_17;
@@ -378,7 +379,7 @@ struct Faction {
     int AI_power;
     int target_x;
     int target_y;
-    int unk_28;
+    int best_mineral_output; // For faction bases highest mineral_intake_2 + 2 * mineral_surplus
     int council_call_turn;
     int unk_29[11]; // Council related
     int unk_30[11]; // Council related
@@ -479,8 +480,7 @@ struct Faction {
     char old_thinker_flags;
     char old_thinker_tech_id;
     int old_thinker_tech_cost;
-    float old_thinker_enemy_range;
-    int padding[7];
+    int padding[8];
 };
 
 struct CRules {

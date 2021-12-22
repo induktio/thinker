@@ -317,8 +317,9 @@ int robust, int immunity, int impunity, int penalty) {
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
     double base_ratio = min(1.0, f->base_count / min(40.0, *map_area_sq_root * 0.5));
-    int morale = (has_project(faction, FAC_COMMAND_NEXUS) ? 2 : 0)
+    int w_morale = (has_project(faction, FAC_COMMAND_NEXUS) ? 2 : 0)
         + (has_project(faction, FAC_CYBORG_FACTORY) ? 2 : 0);
+    int w_probe = (range < 25 && *current_turn - m->thinker_last_mc_turn < 7 ? 5 : 0);
     int sc = 0;
     int vals[11];
 
@@ -388,7 +389,7 @@ int robust, int immunity, int impunity, int penalty) {
     if (vals[SUP] < 0) {
         sc -= (int)((1.0 - base_ratio) * 10.0);
     }
-    if (vals[MOR] >= 1 && vals[MOR] + morale >= 4) {
+    if (vals[MOR] >= 1 && vals[MOR] + w_morale >= 4) {
         sc += 10;
     }
     if (vals[PRO] >= 3 && !has_project(faction, FAC_HUNTER_SEEKER_ALGO)) {
@@ -440,7 +441,8 @@ int robust, int immunity, int impunity, int penalty) {
     }
     sc += max(2, (f->SE_planet_base > 0 ? 5 : 2) + m->rule_psi/10
         + (has_project(faction, FAC_MANIFOLD_HARMONICS) ? 6 : 0)) * clamp(vals[PLA], -3, 3);
-    sc += max(2, 4 - range/8 + 2*f->AI_power + 2*f->AI_fight) * clamp(vals[PRO], -2, 3);
+    sc += max(2, 5 - range/8 + w_probe + 2*f->AI_power + 2*f->AI_fight)
+        * clamp(vals[PRO], -2, 3);
     sc += 8 * clamp(vals[IND], -3, 8 - *diff_level);
 
     if (~*game_rules & RULES_SCN_NO_TECH_ADVANCES) {

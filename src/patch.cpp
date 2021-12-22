@@ -128,6 +128,9 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
     int vendetta = at_war(faction, old_faction);
     int last_spoke = *current_turn - Factions[faction].diplo_spoke[old_faction];
     assert(valid_player(faction) && faction != old_faction);
+    if (is_probe) {
+        MFactions[old_faction].thinker_last_mc_turn = *current_turn;
+    }
     Bases[base_id].defend_goal = 0;
     capture_base(base_id, faction, is_probe);
     check_relocate_hq(old_faction);

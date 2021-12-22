@@ -1143,6 +1143,7 @@ void __cdecl mod_diplomacy_caption(int faction1, int faction2)
 {
     char buf[256];
     strncpy(buf, StrBuffer, 256);
+    buf[255] = '\0';
     diplomacy_caption(faction1, faction2);
     strncpy(StrBuffer, buf, 256);
 }
@@ -1156,23 +1157,19 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
     || *diplo_counter_proposal_id != DiploCounterLoanPayment) {
         return energy_trade(faction1, faction2);
     }
-    int friction = clamp(f_plr.diplo_friction[faction2], 0, 20);
-    int score = -friction/2
+    int friction = clamp(*DiploFriction, 0, 20);
+    int score = 5 - friction
+        - 16*f_cmp.diplo_betrayed[faction1]
         - 8*f_plr.integrity_blemishes
-        - 2*f_plr.atrocities
-        + min(10, 2*f_plr.diplo_gifts[faction2])
-        + (want_revenge(faction2, faction1) ? -20 : 0)
-        + (f_plr.diplo_status[faction2] & DIPLO_PACT ? 12 : 0)
+        - 4*f_plr.atrocities
+        + 2*f_plr.diplo_gifts[faction2]
+        + (f_plr.diplo_status[faction2] & DIPLO_PACT ? 10 : 0)
         + (f_plr.diplo_status[faction2] & DIPLO_TREATY ? 5 : 0)
+        + (want_revenge(faction2, faction1) ? -50 : 0)
         + (f_plr.pop_total > f_cmp.pop_total ? -5 : 0)
+        + (f_plr.labs_total > 2*f_cmp.labs_total ? -5 : 0)
         + (2*f_plr.pop_total > 3*f_cmp.pop_total ? -10 : 0)
         + (3*f_plr.pop_total < 2*f_cmp.pop_total ? 5 : 0);
-
-    int reserve = clamp(*current_turn * f_cmp.base_count / 8, 80, 500);
-    int amount = (clamp(f_cmp.energy_credits - reserve - 10*friction,
-        0, *current_turn * 3 + random(40))/20)*20;
-    int turns = clamp(40 - *diff_level*5 + score/4, 10, 50);
-    int payment = ((18 + 2 * *diff_level + 4*(f_plr.ranking == 7))*amount + 15) / (16*turns);
 
     for (int i=1; i < MaxPlayerNum; i++) {
         if (Factions[i].base_count && i != faction1 && i != faction2) {
@@ -1187,12 +1184,29 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
             }
         }
     }
-    if (f_plr.loan_balance[faction2] > 0 || f_plr.loan_payment[faction2] > 0) {
+    int reserve = clamp(*current_turn * f_cmp.base_count / 8, 50, 400);
+    int amount = clamp(f_cmp.energy_credits - reserve - 10*friction, 0, *current_turn * 4)
+        * clamp(32 + score - 16*f_cmp.AI_fight - 24*(f_plr.ranking > 5), 16, 64) / (64 * 20) * 20;
+    int turns = clamp(50 - *diff_level*5 - friction + min(20, score), 10, 50);
+    int payment = ((18 + friction/4 + *diff_level*2)*amount + 15) / (16*turns);
+
+    debug("energy_trade %s score: %d friction: %d credits: %d reserve: %d amount: %d turns: %d payment: %d\n",
+    MFactions[faction2].filename, score, friction, f_cmp.energy_credits, reserve, amount, turns, payment);
+    flushlog();
+
+    if (f_plr.sanction_turns > 0 || score < -10) {
+        parse_says(0, MFactions[faction1].title_leader, -1, -1);
+        parse_says(1, MFactions[faction1].name_leader, -1, -1);
+        X_pops("modmenu", "REJECTIDEA", -1, 0,
+            PopDialogUnk100000, (int)FactionPortraits[faction2], 1, 1, (int)sub_5398E0);
+        return 0;
+    }
+    if (f_plr.loan_balance[faction2] > 0) {
         X_pops("modmenu", "REJECTLOAN", -1, 0,
             PopDialogUnk100000, (int)FactionPortraits[faction2], 1, 1, (int)sub_5398E0);
         return 0;
     }
-    if (amount < 10 || score < 0) {
+    if (amount < 10 || payment < 1 || score < 0) {
         X_pops4(random(2) ? "REJENERGY0" : "REJENERGY1",
             PopDialogUnk100000, FactionPortraits[faction2], (int)sub_5398E0);
         return 0;

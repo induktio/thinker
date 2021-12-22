@@ -250,7 +250,7 @@ Some notable game engine patches included with Thinker may not have their separa
 20. Fix foreign base names being visible in unexplored tiles when issuing move to or patrol orders to the tiles.
 21. Fix diplomacy dialog to show the missing response messages (GAVEENERGY) when gifting energy credits to another faction.
 22. Fix issue that caused sea-based probe teams to be returned to landlocked bases. Probes are now returned to the closest base as determined by the actual pathfinding distance.
-23. Patch crawler upgrade cost so that it depends only the mineral row cost difference between the new and old prototypes multiplied by 40.
+23. Patch crawler upgrade cost so that it depends only on the mineral row cost difference between the prototypes multiplied by 40. Nano Factory does not affect crawler upgrades anymore.
 
 
 Scient's patch
