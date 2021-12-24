@@ -930,7 +930,7 @@ enum MapItem {
     BIT_SENSOR = 0x80000000,
 };
 
-const uint32_t TerraformingBits[20][2] = { // terrain enhancement, incompatible on same tile
+const uint32_t TerraformRules[20][2] = { // terrain enhancement, incompatible on same tile
     BIT_FARM,          BIT_FOREST, // farm
     BIT_SOIL_ENRICHER, BIT_FOREST, // soil enricher
     BIT_MINE,          BIT_MINE | BIT_SOLAR | BIT_FOREST | BIT_CONDENSER | BIT_ECH_MIRROR
@@ -980,7 +980,7 @@ enum MapLandmark {
     LM_FOSSIL = 0x8000,
 };
 
-enum veh_orders {
+enum VehOrder {
     ORDER_NONE = 0,              //  -
     ORDER_SENTRY_BOARD = 1,      // (L)
     ORDER_HOLD = 2,              // (H); Hold (set 1st waypoint (-1, 0)), Hold 10 (-1, 10), On Alert
@@ -1013,7 +1013,8 @@ enum veh_orders {
     ORDER_AI_GO_TO = 88,         //  - ; ORDER_GO_TO (0x18) | 0x40 > 0x58 ? only used by AI funcs
 };
 
-enum former_action {
+enum FormerItem {
+    FORMER_NONE = -1, // Thinker variable
     FORMER_FARM = 0,
     FORMER_SOIL_ENR = 1,
     FORMER_MINE = 2,

@@ -104,6 +104,7 @@
 		<Unit filename="src/terranx.h" />
 		<Unit filename="src/terranx_enums.h" />
 		<Unit filename="src/terranx_types.h" />
+		<Unit filename="src/terranx_win.h" />
 		<Unit filename="src/test.cpp" />
 		<Unit filename="src/test.h" />
 		<Extensions>

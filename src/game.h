@@ -54,7 +54,7 @@ bool has_chassis(int faction, VehChassis chs);
 bool has_weapon(int faction, VehWeapon wpn);
 bool has_aircraft(int faction);
 bool has_ships(int faction);
-bool has_terra(int faction, int act, bool ocean);
+bool has_terra(int faction, FormerItem act, bool ocean);
 bool has_project(int faction, int id);
 bool has_facility(int base_id, int id);
 bool can_build(int base_id, int id);
@@ -150,7 +150,7 @@ void __cdecl wipe_goals(int faction);
 
 int has_goal(int faction, int type, int x, int y);
 Goal* find_priority_goal(int faction, int type, int* px, int* py);
-std::vector<MapTile> iterate_tiles(int x, int y, int start_index, int end_index);
+std::vector<MapTile> iterate_tiles(int x, int y, size_t start_index, size_t end_index);
 
 template <class T, class C>
 const T& pick_random(const std::set<T,C>& s) {

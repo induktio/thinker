@@ -37,7 +37,7 @@ typedef int(__thiscall *CMAIN_MOVEMAP_F)(Console *pthis, int iXPos, int iYPos, i
 typedef int(__thiscall *CMAIN_REDRAWMAP_F)(Console *pthis, int a2);
 typedef int(__thiscall *CMAIN_DRAWMAP_F)(Console* This, int iOwner, int fUnitsOnly);
 typedef int(__thiscall *CMAIN_PTTOTILE_F)(Console* This, POINT p, long* piTileX, long* piTileY);
-typedef int(__thiscall *CINFOWIN_DRAWTILEINFO_F)(StatusWin* This);
+typedef int(__thiscall *CINFOWIN_DRAWTILEINFO_F)(CInfoWin* This);
 typedef int(__cdecl *PAINTHANDLER_F)(RECT *prRect, int a2);
 typedef int(__cdecl *PAINTMAIN_F)(RECT *pRect);
 typedef int(__thiscall *CSPRITE_FROMCANVASRECTTRANS_F)(Sprite *This, Buffer *poCanvas,
@@ -84,7 +84,7 @@ CMAIN_MOVEMAP_F                pfncMoveMap =                    (CMAIN_MOVEMAP_F
 CMAIN_REDRAWMAP_F              pfncRedrawMap =                  (CMAIN_REDRAWMAP_F             )0x46A550;
 CMAIN_DRAWMAP_F                pfncDrawMap =                    (CMAIN_DRAWMAP_F               )0x469CA0;
 CMAIN_PTTOTILE_F               pfncPtToTile =                   (CMAIN_PTTOTILE_F              )0x463040;
-StatusWin*                     pInfoWin =                       (StatusWin*                    )0x8C5568;
+CInfoWin*                      pInfoWin =                       (CInfoWin*                     )0x8C5568;
 CINFOWIN_DRAWTILEINFO_F        pfncDrawTileInfo =               (CINFOWIN_DRAWTILEINFO_F       )0x4B8890; // Fixed
 Console**                      ppMain =                         (Console**                     )0x7D3C3C;
 PAINTHANDLER_F                 pfncPaintHandler =               (PAINTHANDLER_F                )0x5F7320;
@@ -125,43 +125,6 @@ CMAINMENU_RENAMEMENUITEM_F     pfncMainMenuRenameMenuItem =     (CMAINMENU_RENAM
 CMAP_GETCORNERYOFFSET_F        pfncMapGetCornerYOffset =        (CMAP_GETCORNERYOFFSET_F       )0x46FE70;
 
 // End of PRACX definitions
-
-FMapWin_pixel_to_tile  MapWin_pixel_to_tile            = (FMapWin_pixel_to_tile )0x463040;
-FMapWin_tile_to_pixel  MapWin_tile_to_pixel            = (FMapWin_tile_to_pixel )0x462F00;
-FMapWin_set_center     MapWin_set_center               = (FMapWin_set_center    )0x46B1F0;
-FMapWin                MapWin_calculate_dim            = (FMapWin               )0x462980;
-FMapWin                MapWin_clear_terrain            = (FMapWin               )0x46FD90;
-FWin_is_visible        Win_is_visible                  = (FWin_is_visible       )0x5F7E90;
-FTutWin_draw_arrow     TutWin_draw_arrow               = (FTutWin_draw_arrow    )0x4BDEA0;
-FPlanWin_blink         PlanWin_blink                   = (FPlanWin_blink        )0x48BC20;
-FStringBox_clip_ids    StringBox_clip_ids              = (FStringBox_clip_ids   )0x629A70;
-FStatusWin_on_redraw   StatusWin_on_redraw             = (FStatusWin_on_redraw  )0x4B8890;
-FMapWin_gen_map        MapWin_gen_map                  = (FMapWin_gen_map       )0x469CA0;
-FMapWin_draw_map       MapWin_draw_map                 = (FMapWin_draw_map      )0x46A550;
-FWinProc               WinProc                         = (FWinProc              )0x5F0650;
-FConsole_zoom          Console_zoom                    = (FConsole_zoom         )0x5150D0;
-FWin_update_screen     Win_update_screen               = (FWin_update_screen    )0x5F7320;
-FWin_flip              Win_flip                        = (FWin_flip             )0x5EFD20;
-FBuffer_set_text_color Buffer_set_text_color           = (FBuffer_set_text_color)0x5DACB0;
-FBuffer_set_font       Buffer_set_font                 = (FBuffer_set_font      )0x5DAC70;
-FBuffer_write_cent_l3  Buffer_write_cent_l3            = (FBuffer_write_cent_l3 )0x5DD130;
-Fpopup_start           popup_start                     = (Fpopup_start          )0x406380;
-FBaseWin_on_redraw     BaseWin_on_redraw               = (FBaseWin_on_redraw    )0x41E790;
-FGeneric               SubInterface_release_iface_mode = (FGeneric              )0x45D380;
-fp_void                MapWin_main_caption             = (fp_void               )0x46FB10;
-FGeneric               StatusWin_redraw                = (FGeneric              )0x4B9EA0;
-
-Console* MapWin    = (Console*)0x9156B0; // ConsoleParent len: 0x247A4 end: 0x939E54
-Win*     BaseWin   = (Win*)0x6A7628;
-Win*     StringBox = (Win*)0x7CD2EC;
-Win*     PlanWin   = (Win*)0x834D70;
-Win*     SocialWin = (Win*)0x8A6270;
-Win*     StatusWin = (Win*)0x8C5568;
-Win*     TutWin    = (Win*)0x8C6E68;
-Win*     WorldWin  = (Win*)0x8E9F60;
-Win*     CouncilWin  = (Win*)0x6FEC80;
-Win*     DatalinkWin = (Win*)0x703EA0;
-Sprite** FactionPortraits = (Sprite**)0x6846D8;
 
 
 bool map_is_visible() {
@@ -419,284 +382,6 @@ void check_scroll() {
     flushlog();
 }
 
-LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    static int iDeltaAccum = 0;
-    bool fHasFocus = (GetFocus() == *phWnd);
-    bool tools = DEBUG && !*GameHalted;
-    POINT p;
-
-    if (msg == WM_MOUSEWHEEL && fHasFocus) {
-        int iDelta = GET_WHEEL_DELTA_WPARAM(wParam) + iDeltaAccum;
-        iDeltaAccum = iDelta % WHEEL_DELTA;
-        iDelta /= WHEEL_DELTA;
-        bool zoom_in = (iDelta >= 0);
-        iDelta = labs(iDelta);
-
-        if (map_is_visible() && *map_axis_x) {
-            int iZoomType = (zoom_in ? 515 : 516);
-            for (int i = 0; i < iDelta; i++) {
-                if (pMain->oMap.iZoomFactor > -8 || zoom_in) {
-                    Console_zoom(iZoomType, 0);
-                }
-            }
-        } else {
-            int iKey = (zoom_in ? VK_UP : VK_DOWN);
-            iDelta *= CState.ListScrollDelta;
-            for (int i = 0; i < iDelta; i++) {
-                PostMessage(hwnd, WM_KEYDOWN, iKey, 0);
-                PostMessage(hwnd, WM_KEYUP, iKey, 0);
-            }
-            return 0;
-        }
-
-    } else if (msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) {
-        if (!map_is_visible() || !fHasFocus) {
-            CState.RightButtonDown = false;
-            CState.ScrollDragging = false;
-            return WinProc(hwnd, msg, wParam, lParam);
-
-        } else if (msg == WM_RBUTTONDOWN) {
-            CState.RightButtonDown = true;
-            GetCursorPos(&p);
-            memcpy(&CState.ScrollDragPos, &p, sizeof(POINT));
-
-        } else if (msg == WM_RBUTTONUP) {
-            CState.RightButtonDown = false;
-            if (CState.ScrollDragging) {
-                CState.ScrollDragging = false;
-                SetCursor(LoadCursor(0, IDC_ARROW));
-            } else {
-                WinProc(hwnd, WM_RBUTTONDOWN, wParam | MK_RBUTTON, lParam);
-                return WinProc(hwnd, WM_RBUTTONUP, wParam, lParam);
-            }
-        } else if (CState.RightButtonDown) {
-            check_scroll();
-        } else {
-            return WinProc(hwnd, msg, wParam, lParam);
-        }
-    } else if (msg == WM_ACTIVATEAPP) {
-        // If window has just become inactive e.g. ALT+TAB
-        if (LOWORD(wParam)) {
-            ShowWindow(*phWnd, SW_RESTORE);
-        } else {
-            //wParam is 0 if the window has become inactive.
-            //ShowWindow(*phWnd, SW_MINIMIZE);
-        }
-        return WinProc(hwnd, msg, wParam, lParam);
-
-    } else if (msg == WM_CHAR && wParam == 'r' && GetAsyncKeyState(VK_MENU) < 0) {
-        CState.MouseOverTileInfo = !CState.MouseOverTileInfo;
-
-    } else if (msg == WM_CHAR && wParam == 't' && GetAsyncKeyState(VK_MENU) < 0) {
-        show_mod_menu();
-
-    } else if (DEBUG && msg == WM_CHAR && wParam == 'd' && GetAsyncKeyState(VK_MENU) < 0) {
-        conf.debug_mode = !conf.debug_mode;
-        if (conf.debug_mode) {
-            for (int i = 1; i < MaxPlayerNum; i++) {
-                Faction& f = Factions[i];
-                if (!f.base_count) {
-                    memset(f.goals, 0, sizeof(f.goals));
-                    memset(f.sites, 0, sizeof(f.sites));
-                }
-            }
-            *game_state |= STATE_DEBUG_MODE;
-            *game_preferences |= PREF_ADV_FAST_BATTLE_RESOLUTION;
-            *game_more_preferences |=
-                (MPREF_ADV_QUICK_MOVE_VEH_ORDERS | MPREF_ADV_QUICK_MOVE_ALL_VEH);
-        } else {
-            *game_state &= ~STATE_DEBUG_MODE;
-        }
-        if (!*GameHalted) {
-            MapWin_draw_map(pMain, 0);
-            InvalidateRect(hwnd, NULL, false);
-            parse_says(0, MOD_VERSION, -1, -1);
-            parse_says(1, (conf.debug_mode ?
-                "Debug mode enabled." : "Debug mode disabled."), -1, -1);
-            popp("modmenu", "GENERIC", 0, 0, 0);
-        }
-
-    } else if (DEBUG && msg == WM_CHAR && wParam == 'm' && GetAsyncKeyState(VK_MENU) < 0) {
-        conf.debug_verbose = !conf.debug_verbose;
-        parse_says(0, MOD_VERSION, -1, -1);
-        parse_says(1, (conf.debug_verbose ?
-            "Verbose mode enabled." : "Verbose mode disabled."), -1, -1);
-        popp("modmenu", "GENERIC", 0, 0, 0);
-
-    } else if (tools && msg == WM_CHAR && wParam == 'y' && GetAsyncKeyState(VK_MENU) < 0) {
-        static int draw_diplo = 0;
-        draw_diplo = !draw_diplo;
-        if (draw_diplo) {
-            pMain->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_DIPLO_STATE;
-            *game_state |= STATE_DEBUG_MODE;
-        } else {
-            pMain->oMap.iWhatToDrawFlags &= ~MAPWIN_DRAW_DIPLO_STATE;
-        }
-        MapWin_draw_map(pMain, 0);
-        InvalidateRect(hwnd, NULL, false);
-
-    } else if (tools && msg == WM_CHAR && wParam == 'v' && GetAsyncKeyState(VK_MENU) < 0) {
-        pMain->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
-        memset(pm_overlay, 0, sizeof(pm_overlay));
-        static int ts_type = 0;
-        int i = 0;
-        TileSearch ts;
-        ts_type = (ts_type+1) % (MaxTileSearchType+1);
-        ts.init(pMain->oMap.iTileX, pMain->oMap.iTileY, ts_type, 0);
-        while (ts.get_next() != NULL) {
-            pm_overlay[ts.rx][ts.ry] = ++i;
-        }
-        pm_overlay[pMain->oMap.iTileX][pMain->oMap.iTileY] = ts_type;
-        MapWin_draw_map(pMain, 0);
-        InvalidateRect(hwnd, NULL, false);
-
-    } else if (tools && msg == WM_CHAR && wParam == 'f' && GetAsyncKeyState(VK_MENU) < 0) {
-        pMain->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
-        memset(pm_overlay, 0, sizeof(pm_overlay));
-        MAP* sq = mapsq(pMain->oMap.iTileX, pMain->oMap.iTileY);
-        if (sq && sq->is_owned()) {
-            move_upkeep(sq->owner, M_Visual);
-            MapWin_draw_map(pMain, 0);
-            InvalidateRect(hwnd, NULL, false);
-        }
-
-    } else if (tools && msg == WM_CHAR && wParam == 'x' && GetAsyncKeyState(VK_MENU) < 0) {
-        pMain->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
-        static int px = 0, py = 0;
-        int x = pMain->oMap.iTileX, y = pMain->oMap.iTileY;
-        int unit = is_ocean(mapsq(x, y)) ? BSC_UNITY_FOIL : BSC_UNITY_ROVER;
-        path_distance(px, py, x, y, unit, 1);
-        px=x;
-        py=y;
-        MapWin_draw_map(pMain, 0);
-        InvalidateRect(hwnd, NULL, false);
-
-    } else if (tools && msg == WM_CHAR && wParam == 'z' && GetAsyncKeyState(VK_MENU) < 0) {
-        int x = pMain->oMap.iTileX, y = pMain->oMap.iTileY;
-        int base_id;
-        if ((base_id = base_at(x, y)) >= 0) {
-            print_base(base_id);
-        }
-        print_map(x, y);
-        for (int k=0; k < *total_num_vehicles; k++) {
-            VEH* veh = &Vehicles[k];
-            if (veh->x == x && veh->y == y) {
-                Vehicles[k].state |= VSTATE_UNK_40000;
-                Vehicles[k].state &= ~VSTATE_UNK_2000;
-                print_veh(k);
-            }
-        }
-        flushlog();
-
-    } else {
-        return WinProc(hwnd, msg, wParam, lParam);
-    }
-    return 0;
-}
-
-/*
-Render custom debug overlays with original goals.
-*/
-void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
-{
-    Buffer* Canvas = (Buffer*)0x939888;
-    RECT rt;
-    if (*game_state & STATE_OMNISCIENT_VIEW && pMain->oMap.iWhatToDrawFlags & MAPWIN_DRAW_GOALS)
-    {
-        MapWin_tile_to_pixel(This, x, y, &rt.left, &rt.top);
-        rt.right = rt.left + This->oMap.iPixelsPerTileX;
-        rt.bottom = rt.top + This->oMap.iPixelsPerHalfTileX;
-
-        char buf[20] = {};
-        bool found = false;
-        int color = 255;
-        int value = pm_overlay[x][y];
-
-        for (int faction = 1; faction < MaxPlayerNum && !found; faction++) {
-            Faction& f = Factions[faction];
-            MFaction& m = MFactions[faction];
-            if (!f.base_count) {
-                continue;
-            }
-            for (int i = 0; i < MaxGoalsNum && !found; i++) {
-                Goal& goal = Factions[faction].goals[i];
-                if (goal.x == x && goal.y == y && goal.priority > 0
-                && goal.type != AI_GOAL_UNUSED ) {
-                    found = true;
-                    buf[0] = m.filename[0];
-                    switch (goal.type) {
-                        case AI_GOAL_ATTACK:
-                            buf[1] = 'a';
-                            color = 249;
-                            break;
-                        case AI_GOAL_DEFEND:
-                            buf[1] = 'd';
-                            color = 251;
-                            break;
-                        case AI_GOAL_SCOUT:
-                            buf[1] = 's';
-                            color = 253;
-                            break;
-                        case AI_GOAL_UNK_1:
-                            buf[1] = 'n';
-                            color = 252;
-                            break;
-                        case AI_GOAL_COLONIZE:
-                            buf[1] = 'c';
-                            color = 254;
-                            break;
-                        case AI_GOAL_TERRAFORM_LAND:
-                            buf[1] = 'f';
-                            color = 250;
-                            break;
-                        case AI_GOAL_UNK_4:
-                            buf[1] = '^';
-                            break;
-                        case AI_GOAL_RAISE_LAND:
-                            buf[1] = 'r';
-                            break;
-                        default:
-                            buf[1] = (goal.type < 200 ? '*' : 'g');
-                            break;
-                    }
-                    _itoa(goal.priority, &buf[2], 10);
-                }
-            }
-        }
-        if (!found && value != 0) {
-            color = (value >= 0 ? 255 : 251);
-            _itoa(value, buf, 10);
-        }
-        if (found || value) {
-            Buffer_set_text_color(Canvas, color, 0, 1, 1);
-            Buffer_set_font(Canvas, &This->oMap.oFont2, 0, 0, 0);
-            Buffer_write_cent_l3(Canvas, buf, &rt, 10);
-        }
-    }
-}
-
-/*
-Override Windows API call to give fake screensize values to SMACX while in windowed mode.
-When DirectDraw=0 is set, this allows us to force SMACX run in a borderless window, enabling
-very fast rendering and full user access to the other windows.
-*/
-int WINAPI ModGetSystemMetrics(int nIndex) {
-    if (conf.windowed) {
-        if (nIndex == SM_CXSCREEN) {
-            return conf.window_width;
-        }
-        if (nIndex == SM_CYSCREEN) {
-            return conf.window_height;
-        }
-    }
-    return GetSystemMetrics(nIndex);
-}
-
-ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass) {
-    pstWndClass->lpfnWndProc = ModWinProc;
-    return RegisterClassA(pstWndClass);
-}
-
 int __thiscall mod_gen_map(Console* This, int iOwner, int fUnitsOnly) {
 
     if (This == pMain) {
@@ -776,7 +461,7 @@ int __thiscall mod_calc_dim(Console* This) {
         fy = (ptNewTile.y == ptOldTile.y);
         memcpy(&ptOldTile, &ptNewTile, sizeof(POINT));
         MapWin_tile_to_pixel(This, ptNewTile.x, ptNewTile.y, &ptOldCenter.x, &ptOldCenter.y);
-        MapWin_calculate_dim(This);
+        MapWin_calculate_dimensions(This);
 
         if (CState.Scrolling) {
             This->oMap.iMapPixelLeft = (int)CState.ScrollOffsetX;
@@ -796,15 +481,12 @@ int __thiscall mod_calc_dim(Console* This) {
             }
         }
     } else {
-        MapWin_calculate_dim(This);
+        MapWin_calculate_dimensions(This);
     }
     return 0;
 }
 
-/*
-Original Offset: 0050EA40
-*/
-int __cdecl blink_timer() {
+int __cdecl mod_blink_timer() {
     if (!*GameHalted && !*ControlRedraw) {
         if (Win_is_visible(BaseWin)) {
             return TutWin_draw_arrow(TutWin);
@@ -840,6 +522,284 @@ int __cdecl blink_timer() {
         }
     }
     return 0;
+}
+
+LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    static int iDeltaAccum = 0;
+    bool fHasFocus = (GetFocus() == *phWnd);
+    bool tools = DEBUG && !*GameHalted;
+    POINT p;
+
+    if (msg == WM_MOUSEWHEEL && fHasFocus) {
+        int iDelta = GET_WHEEL_DELTA_WPARAM(wParam) + iDeltaAccum;
+        iDeltaAccum = iDelta % WHEEL_DELTA;
+        iDelta /= WHEEL_DELTA;
+        bool zoom_in = (iDelta >= 0);
+        iDelta = labs(iDelta);
+
+        if (map_is_visible() && *map_axis_x) {
+            int iZoomType = (zoom_in ? 515 : 516);
+            for (int i = 0; i < iDelta; i++) {
+                if (MapWin->oMap.iZoomFactor > -8 || zoom_in) {
+                    Console_zoom(iZoomType, 0);
+                }
+            }
+        } else {
+            int iKey = (zoom_in ? VK_UP : VK_DOWN);
+            iDelta *= CState.ListScrollDelta;
+            for (int i = 0; i < iDelta; i++) {
+                PostMessage(hwnd, WM_KEYDOWN, iKey, 0);
+                PostMessage(hwnd, WM_KEYUP, iKey, 0);
+            }
+            return 0;
+        }
+
+    } else if (msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) {
+        if (!map_is_visible() || !fHasFocus) {
+            CState.RightButtonDown = false;
+            CState.ScrollDragging = false;
+            return WinProc(hwnd, msg, wParam, lParam);
+
+        } else if (msg == WM_RBUTTONDOWN) {
+            CState.RightButtonDown = true;
+            GetCursorPos(&p);
+            memcpy(&CState.ScrollDragPos, &p, sizeof(POINT));
+
+        } else if (msg == WM_RBUTTONUP) {
+            CState.RightButtonDown = false;
+            if (CState.ScrollDragging) {
+                CState.ScrollDragging = false;
+                SetCursor(LoadCursor(0, IDC_ARROW));
+            } else {
+                WinProc(hwnd, WM_RBUTTONDOWN, wParam | MK_RBUTTON, lParam);
+                return WinProc(hwnd, WM_RBUTTONUP, wParam, lParam);
+            }
+        } else if (CState.RightButtonDown) {
+            check_scroll();
+        } else {
+            return WinProc(hwnd, msg, wParam, lParam);
+        }
+    } else if (msg == WM_ACTIVATEAPP) {
+        // If window has just become inactive e.g. ALT+TAB
+        if (LOWORD(wParam)) {
+            ShowWindow(*phWnd, SW_RESTORE);
+        } else {
+            //wParam is 0 if the window has become inactive.
+            //ShowWindow(*phWnd, SW_MINIMIZE);
+        }
+        return WinProc(hwnd, msg, wParam, lParam);
+
+    } else if (msg == WM_CHAR && wParam == 'r' && GetAsyncKeyState(VK_MENU) < 0) {
+        CState.MouseOverTileInfo = !CState.MouseOverTileInfo;
+
+    } else if (msg == WM_CHAR && wParam == 't' && GetAsyncKeyState(VK_MENU) < 0) {
+        show_mod_menu();
+
+    } else if (DEBUG && msg == WM_CHAR && wParam == 'd' && GetAsyncKeyState(VK_MENU) < 0) {
+        conf.debug_mode = !conf.debug_mode;
+        if (conf.debug_mode) {
+            for (int i = 1; i < MaxPlayerNum; i++) {
+                Faction& f = Factions[i];
+                if (!f.base_count) {
+                    memset(f.goals, 0, sizeof(f.goals));
+                    memset(f.sites, 0, sizeof(f.sites));
+                }
+            }
+            *game_state |= STATE_DEBUG_MODE;
+            *game_preferences |= PREF_ADV_FAST_BATTLE_RESOLUTION;
+            *game_more_preferences |=
+                (MPREF_ADV_QUICK_MOVE_VEH_ORDERS | MPREF_ADV_QUICK_MOVE_ALL_VEH);
+        } else {
+            *game_state &= ~STATE_DEBUG_MODE;
+        }
+        if (!*GameHalted) {
+            MapWin_draw_map(MapWin, 0);
+            InvalidateRect(hwnd, NULL, false);
+            parse_says(0, MOD_VERSION, -1, -1);
+            parse_says(1, (conf.debug_mode ?
+                "Debug mode enabled." : "Debug mode disabled."), -1, -1);
+            popp("modmenu", "GENERIC", 0, 0, 0);
+        }
+
+    } else if (DEBUG && msg == WM_CHAR && wParam == 'm' && GetAsyncKeyState(VK_MENU) < 0) {
+        conf.debug_verbose = !conf.debug_verbose;
+        parse_says(0, MOD_VERSION, -1, -1);
+        parse_says(1, (conf.debug_verbose ?
+            "Verbose mode enabled." : "Verbose mode disabled."), -1, -1);
+        popp("modmenu", "GENERIC", 0, 0, 0);
+
+    } else if (tools && msg == WM_CHAR && wParam == 'y' && GetAsyncKeyState(VK_MENU) < 0) {
+        static int draw_diplo = 0;
+        draw_diplo = !draw_diplo;
+        if (draw_diplo) {
+            MapWin->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_DIPLO_STATE;
+            *game_state |= STATE_DEBUG_MODE;
+        } else {
+            MapWin->oMap.iWhatToDrawFlags &= ~MAPWIN_DRAW_DIPLO_STATE;
+        }
+        MapWin_draw_map(MapWin, 0);
+        InvalidateRect(hwnd, NULL, false);
+
+    } else if (tools && msg == WM_CHAR && wParam == 'v' && GetAsyncKeyState(VK_MENU) < 0) {
+        MapWin->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
+        memset(pm_overlay, 0, sizeof(pm_overlay));
+        static int ts_type = 0;
+        int i = 0;
+        TileSearch ts;
+        ts_type = (ts_type+1) % (MaxTileSearchType+1);
+        ts.init(MapWin->oMap.iTileX, MapWin->oMap.iTileY, ts_type, 0);
+        while (ts.get_next() != NULL) {
+            pm_overlay[ts.rx][ts.ry] = ++i;
+        }
+        pm_overlay[MapWin->oMap.iTileX][MapWin->oMap.iTileY] = ts_type;
+        MapWin_draw_map(MapWin, 0);
+        InvalidateRect(hwnd, NULL, false);
+
+    } else if (tools && msg == WM_CHAR && wParam == 'f' && GetAsyncKeyState(VK_MENU) < 0) {
+        MapWin->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
+        memset(pm_overlay, 0, sizeof(pm_overlay));
+        MAP* sq = mapsq(MapWin->oMap.iTileX, MapWin->oMap.iTileY);
+        if (sq && sq->is_owned()) {
+            move_upkeep(sq->owner, M_Visual);
+            MapWin_draw_map(MapWin, 0);
+            InvalidateRect(hwnd, NULL, false);
+        }
+
+    } else if (tools && msg == WM_CHAR && wParam == 'x' && GetAsyncKeyState(VK_MENU) < 0) {
+        MapWin->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
+        static int px = 0, py = 0;
+        int x = MapWin->oMap.iTileX, y = MapWin->oMap.iTileY;
+        int unit = is_ocean(mapsq(x, y)) ? BSC_UNITY_FOIL : BSC_UNITY_ROVER;
+        path_distance(px, py, x, y, unit, 1);
+        px=x;
+        py=y;
+        MapWin_draw_map(MapWin, 0);
+        InvalidateRect(hwnd, NULL, false);
+
+    } else if (tools && msg == WM_CHAR && wParam == 'z' && GetAsyncKeyState(VK_MENU) < 0) {
+        int x = MapWin->oMap.iTileX, y = MapWin->oMap.iTileY;
+        int base_id;
+        if ((base_id = base_at(x, y)) >= 0) {
+            print_base(base_id);
+        }
+        print_map(x, y);
+        for (int k=0; k < *total_num_vehicles; k++) {
+            VEH* veh = &Vehicles[k];
+            if (veh->x == x && veh->y == y) {
+                Vehicles[k].state |= VSTATE_UNK_40000;
+                Vehicles[k].state &= ~VSTATE_UNK_2000;
+                print_veh(k);
+            }
+        }
+        flushlog();
+
+    } else {
+        return WinProc(hwnd, msg, wParam, lParam);
+    }
+    return 0;
+}
+
+/*
+Render custom debug overlays with original goals.
+*/
+void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
+{
+    Buffer* Canvas = (Buffer*)0x939888;
+    RECT rt;
+    if (*game_state & STATE_OMNISCIENT_VIEW && MapWin->oMap.iWhatToDrawFlags & MAPWIN_DRAW_GOALS)
+    {
+        MapWin_tile_to_pixel(This, x, y, &rt.left, &rt.top);
+        rt.right = rt.left + This->oMap.iPixelsPerTileX;
+        rt.bottom = rt.top + This->oMap.iPixelsPerHalfTileX;
+
+        char buf[20] = {};
+        bool found = false;
+        int color = 255;
+        int value = pm_overlay[x][y];
+
+        for (int faction = 1; faction < MaxPlayerNum && !found; faction++) {
+            Faction& f = Factions[faction];
+            MFaction& m = MFactions[faction];
+            if (!f.base_count) {
+                continue;
+            }
+            for (int i = 0; i < MaxGoalsNum && !found; i++) {
+                Goal& goal = Factions[faction].goals[i];
+                if (goal.x == x && goal.y == y && goal.priority > 0
+                && goal.type != AI_GOAL_UNUSED ) {
+                    found = true;
+                    buf[0] = m.filename[0];
+                    switch (goal.type) {
+                        case AI_GOAL_ATTACK:
+                            buf[1] = 'a';
+                            color = 249;
+                            break;
+                        case AI_GOAL_DEFEND:
+                            buf[1] = 'd';
+                            color = 251;
+                            break;
+                        case AI_GOAL_SCOUT:
+                            buf[1] = 's';
+                            color = 253;
+                            break;
+                        case AI_GOAL_UNK_1:
+                            buf[1] = 'n';
+                            color = 252;
+                            break;
+                        case AI_GOAL_COLONIZE:
+                            buf[1] = 'c';
+                            color = 254;
+                            break;
+                        case AI_GOAL_TERRAFORM_LAND:
+                            buf[1] = 'f';
+                            color = 250;
+                            break;
+                        case AI_GOAL_UNK_4:
+                            buf[1] = '^';
+                            break;
+                        case AI_GOAL_RAISE_LAND:
+                            buf[1] = 'r';
+                            break;
+                        default:
+                            buf[1] = (goal.type < Thinker_Goal_ID_First ? '*' : 'g');
+                            break;
+                    }
+                    _itoa(goal.priority, &buf[2], 10);
+                }
+            }
+        }
+        if (!found && value != 0) {
+            color = (value >= 0 ? 255 : 251);
+            _itoa(value, buf, 10);
+        }
+        if (found || value) {
+            Buffer_set_text_color(Canvas, color, 0, 1, 1);
+            Buffer_set_font(Canvas, &This->oMap.oFont2, 0, 0, 0);
+            Buffer_write_cent_l3(Canvas, buf, &rt, 10);
+        }
+    }
+}
+
+/*
+Override Windows API call to give fake screensize values to SMACX while in windowed mode.
+When DirectDraw=0 is set, this allows us to force SMACX run in a borderless window, enabling
+very fast rendering and full user access to the other windows.
+*/
+int WINAPI ModGetSystemMetrics(int nIndex) {
+    if (conf.windowed) {
+        if (nIndex == SM_CXSCREEN) {
+            return conf.window_width;
+        }
+        if (nIndex == SM_CYSCREEN) {
+            return conf.window_height;
+        }
+    }
+    return GetSystemMetrics(nIndex);
+}
+
+ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass) {
+    pstWndClass->lpfnWndProc = ModWinProc;
+    return RegisterClassA(pstWndClass);
 }
 
 void __cdecl mod_turn_timer() {
@@ -898,21 +858,26 @@ void show_mod_stats() {
         faction_minerals = 0,
         faction_energy = 0;
 
-    Faction* f = &Factions[*current_player_faction];
-    for (int i=0; i<*total_num_bases; ++i) {
+    Faction* f = &Factions[MapWin->cOwner];
+    for (int i = 0; i < *total_num_bases; ++i) {
         BASE* b = &Bases[i];
-        if (b->faction_id == *current_player_faction) {
+        int mindiv = (has_project(b->faction_id, FAC_SPACE_ELEVATOR)
+             && (b->item() == -FAC_ORBITAL_DEFENSE_POD
+             || b->item() == -FAC_NESSUS_MINING_STATION
+             || b->item() == -FAC_ORBITAL_POWER_TRANS
+             || b->item() == -FAC_SKY_HYDRO_LAB) ? 2 : 1);
+        if (b->faction_id == MapWin->cOwner) {
             faction_pop += b->pop_size;
-            faction_minerals += b->mineral_intake_2;
+            faction_minerals += b->mineral_intake_2 / mindiv;
             faction_energy += b->energy_intake_2;
         }
         total_pop += b->pop_size;
-        total_minerals += b->mineral_intake_2;
+        total_minerals += b->mineral_intake_2 / mindiv;
         total_energy += b->energy_intake_2;
     }
-    for (int i=0; i<*total_num_vehicles; i++) {
+    for (int i = 0; i < *total_num_vehicles; i++) {
         VEH* v = &Vehicles[i];
-        if (v->faction_id == *current_player_faction) {
+        if (v->faction_id == MapWin->cOwner) {
             faction_units++;
         }
     }
@@ -1027,7 +992,7 @@ const char* UNUSED(filename), const char* UNUSED(label), int a4, int a5, int a6,
     minimal_cost = hurry_cost(*current_base_id, base->queue_items[0], mins);
     ParseNumTable[1] = minimal_cost;
     ParseNumTable[2] = f->energy_credits - f->energy_cost;
-    return popup_start(This, "modmenu", "HURRY", a4, a5, a6, a7);
+    return Popup_start(This, "modmenu", "HURRY", a4, a5, a6, a7);
 }
 
 int __cdecl basewin_ask_number(const char* label, int value, int a3)
@@ -1157,14 +1122,16 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
     || *diplo_counter_proposal_id != DiploCounterLoanPayment) {
         return energy_trade(faction1, faction2);
     }
+    bool is_pact = has_treaty(faction1, faction2, DIPLO_PACT);
+    bool is_treaty = has_treaty(faction1, faction2, DIPLO_TREATY);
     int friction = clamp(*DiploFriction, 0, 20);
     int score = 5 - friction
         - 16*f_cmp.diplo_betrayed[faction1]
         - 8*f_plr.integrity_blemishes
         - 4*f_plr.atrocities
         + 2*f_plr.diplo_gifts[faction2]
-        + (f_plr.diplo_status[faction2] & DIPLO_PACT ? 10 : 0)
-        + (f_plr.diplo_status[faction2] & DIPLO_TREATY ? 5 : 0)
+        + (is_pact ? 10 : 0)
+        + (is_treaty ? 5 : 0)
         + (want_revenge(faction2, faction1) ? -50 : 0)
         + (f_plr.pop_total > f_cmp.pop_total ? -5 : 0)
         + (f_plr.labs_total > 2*f_cmp.labs_total ? -5 : 0)
@@ -1186,7 +1153,8 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
     }
     int reserve = clamp(*current_turn * f_cmp.base_count / 8, 50, 400);
     int amount = clamp(f_cmp.energy_credits - reserve - 10*friction, 0, *current_turn * 4)
-        * clamp(32 + score - 16*f_cmp.AI_fight - 24*(f_plr.ranking > 5), 16, 64) / (64 * 20) * 20;
+        * clamp(20 + score - 16*f_cmp.AI_fight + 16*clamp(f_cmp.SE_economy_base, -1, 1)
+        - 20*(f_plr.ranking > 5) + 20*is_pact, 16, 64) / (64 * 20) * 20;
     int turns = clamp(50 - *diff_level*5 - friction + min(20, score), 10, 50);
     int payment = ((18 + friction/4 + *diff_level*2)*amount + 15) / (16*turns);
 

@@ -110,7 +110,7 @@ bool has_ships(int faction) {
     return has_chassis(faction, CHS_FOIL) || has_chassis(faction, CHS_CRUISER);
 }
 
-bool has_terra(int faction, int act, bool ocean) {
+bool has_terra(int faction, FormerItem act, bool ocean) {
     int preq_tech = (ocean ? Terraform[act].preq_tech_sea : Terraform[act].preq_tech);
     if ((act == FORMER_RAISE_LAND || act == FORMER_LOWER_LAND)
     && *game_rules & RULES_SCN_NO_TERRAFORMING) {
@@ -131,7 +131,8 @@ bool has_project(int faction, int id) {
 }
 
 bool has_facility(int base_id, int id) {
-    assert(base_id >= 0 && id > 0 && id <= FAC_EMPTY_SP_64);
+    assert(base_id >= 0 && base_id < *total_num_bases);
+    assert(id > 0 && id <= FAC_EMPTY_SP_64);
     if (id >= SP_ID_First) {
         return SecretProjects[id - SP_ID_First] == base_id;
     }
@@ -1320,11 +1321,11 @@ Goal* find_priority_goal(int faction, int type, int* px, int* py) {
     return value;
 }
 
-std::vector<MapTile> iterate_tiles(int x, int y, int start_index, int end_index) {
+std::vector<MapTile> iterate_tiles(int x, int y, size_t start_index, size_t end_index) {
     std::vector<MapTile> tiles;
-    assert(start_index < end_index && (size_t)end_index <= sizeof(TableOffsetX)/sizeof(int));
+    assert(start_index < end_index && end_index <= sizeof(TableOffsetX)/sizeof(int));
 
-    for (int i = start_index; i < end_index; i++) {
+    for (size_t i = start_index; i < end_index; i++) {
         int x2 = wrap(x + TableOffsetX[i]);
         int y2 = y + TableOffsetY[i];
         MAP* sq = mapsq(x2, y2);

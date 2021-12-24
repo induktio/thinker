@@ -120,14 +120,14 @@ int __cdecl mod_faction_upkeep(int faction) {
                 f->corner_market_active = cost;
                 f->energy_credits -= cost;
 
-                gender_default = &m->noun_gender;
-                plurality_default = 0;
+                *gender_default = m->noun_gender;
+                *plurality_default = 0;
                 parse_says(0, m->title_leader, -1, -1);
                 parse_says(1, m->name_leader, -1, -1);
-                plurality_default = &m->is_noun_plural;
+                *plurality_default = m->is_noun_plural;
                 parse_says(2, m->noun_faction, -1, -1);
                 parse_says(3, m->adj_name_faction, -1, -1);
-                parse_num(0, game_year(f->corner_market_turn));
+                ParseNumTable[0] = game_year(f->corner_market_turn);
                 popp("SCRIPT", "CORNERWARNING", 0, "econwin_sm.pcx", 0);
             }
         }
@@ -151,7 +151,7 @@ int __cdecl mod_faction_upkeep(int faction) {
     Path->yDst = -1;
 
     if (!(*game_state & STATE_GAME_DONE) || *game_state & STATE_FINAL_SCORE_DONE) {
-        if (faction == *current_player_faction
+        if (faction == MapWin->cOwner
         && !(*game_state & (STATE_COUNCIL_HAS_CONVENED | STATE_DISPLAYED_COUNCIL_AVAIL_MSG))
         && can_call_council(faction, 0) && !(*game_state & STATE_GAME_DONE)) {
             *game_state |= STATE_DISPLAYED_COUNCIL_AVAIL_MSG;
@@ -162,7 +162,7 @@ int __cdecl mod_faction_upkeep(int faction) {
         }
     }
     if (!*multiplayer_active && *game_preferences & PREF_BSC_AUTOSAVE_EACH_TURN
-    && faction == *current_player_faction) {
+    && faction == MapWin->cOwner) {
         auto_save();
     }
     flushlog();
@@ -436,7 +436,7 @@ int probe_upkeep(int faction) {
                     set_treaty(i, faction, DIPLO_HAVE_INFILTRATOR, 0);
                     MFactions[i].thinker_probe_flags |= (1 << faction);
 
-                    if (faction == *current_player_faction) {
+                    if (faction == MapWin->cOwner) {
                         parse_says(0, MFactions[i].adj_name_faction, -1, -1);
                         popp("modmenu", "SPYFOUND", 0, "infil_sm.pcx", 0);
                     }
@@ -444,7 +444,7 @@ int probe_upkeep(int faction) {
             }
         }
         for (int i=1; i < MaxPlayerNum; i++) {
-            if (faction == *current_player_faction
+            if (faction == MapWin->cOwner
             && Factions[i].base_count > 0
             && MFactions[faction].thinker_probe_flags & (1 << i)) {
                 parse_says(0, MFactions[i].noun_faction, -1, -1);

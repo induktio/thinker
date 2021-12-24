@@ -81,12 +81,12 @@ int __cdecl mod_base_draw(int ptr, int base_id, int x, int y, int zoom, int v1) 
         // Game engine uses this way to determine the population label width
         const char* s1 = "8";
         const char* s2 = "88";
-        int w = font_width(*(int*)0x93FC24, (int)(b->pop_size >= 10 ? s2 : s1)) + 5;
-        int h = *(int*)((*(int*)0x93FC24)+16) + 4;
+        int w = Font_width(*MapLabelFont, (int)(b->pop_size >= 10 ? s2 : s1)) + 5;
+        int h = (*MapLabelFont)->iHeight + 4;
 
         for (int i = 1; i <= width; i++) {
             RECT rr = {x-i, y-i, x+w+i, y+h+i};
-            buffer_box(ptr, (int)(&rr), color, color);
+            Buffer_box((void*)ptr, (int)(&rr), color, color);
         }
     }
     return 0;
@@ -196,6 +196,10 @@ int __cdecl find_return_base(int veh_id) {
         }
     }
     return base_id;
+}
+
+int __cdecl probe_return_base(int UNUSED(x), int UNUSED(y), int veh_id) {
+    return find_return_base(veh_id);
 }
 
 /*
@@ -613,9 +617,15 @@ bool patch_setup(Config* cf) {
         write_jump(0x5ABD20, (int)mod_auto_save);
     }
     if (cf->skip_random_factions) {
-        std::vector<std::string> lines = read_txt_block(
-            (cf->smac_only ? ac_alpha : "alphax"), "#CUSTOMFACTIONS", 100);
-        cf->faction_file_count = 14 + lines.size();
+        const char* filename = (cf->smac_only ? ac_alpha : "alphax");
+        std::vector<std::string> lines;
+        cf->faction_file_count = 0;
+        lines = read_txt_block(filename, "#FACTIONS", 100);
+        cf->faction_file_count += lines.size();
+        lines = read_txt_block(filename, "#NEWFACTIONS", 100);
+        cf->faction_file_count += lines.size();
+        lines = read_txt_block(filename, "#CUSTOMFACTIONS", 100);
+        cf->faction_file_count += lines.size();
         debug("faction_file_count: %d\n", cf->faction_file_count);
 
         memset((void*)0x58B63C, 0x90, 10);
@@ -625,7 +635,7 @@ bool patch_setup(Config* cf) {
         write_call(0x587066, (int)config_game_rand); // read_factions
     }
     if (cf->smooth_scrolling) {
-        write_offset(0x50F3DC, (void*)blink_timer);
+        write_offset(0x50F3DC, (void*)mod_blink_timer);
         write_call(0x46AB81, (int)mod_gen_map);
         write_call(0x46ABD1, (int)mod_gen_map);
         write_call(0x46AC56, (int)mod_gen_map);
@@ -636,8 +646,12 @@ bool patch_setup(Config* cf) {
         write_call(0x48B91F, (int)mod_calc_dim);
         write_call(0x48BA15, (int)mod_calc_dim);
     }
+    if (cf->directdraw) {
+        *(int32_t*)0x45F9EF = cf->window_width;
+        *(int32_t*)0x45F9F4 = cf->window_height;
+    }
     if (DEBUG) {
-        if (conf.minimal_popups) {
+        if (cf->minimal_popups) {
             remove_call(0x4E5F96); // #BEGINPROJECT
             remove_call(0x4E5E0D); // #CHANGEPROJECT
             remove_call(0x4F4817); // #DONEPROJECT
@@ -645,8 +659,6 @@ bool patch_setup(Config* cf) {
         }
         write_call(0x4DF19B, (int)spawn_veh); // Console_editor_veh
     }
-    *(int8_t*)0x4E3222 = NetVersion; // AlphaNet::setup
-    *(int8_t*)0x52AA5C = NetVersion; // control_game
     /*
     Provide better defaults for multiplayer settings.
     */
@@ -654,6 +666,8 @@ bool patch_setup(Config* cf) {
     *(int8_t*)0x481EE7 = 1; // MapErosiveForces
     *(int8_t*)0x481EEE = 1; // MapNativeLifeForms
     *(int8_t*)0x481EF5 = 1; // MapCloudCover
+    *(int8_t*)0x4E3222 = NetVersion; // AlphaNet::setup
+    *(int8_t*)0x52AA5C = NetVersion; // control_game
 
     /*
     Hide unnecessary region_base_plan display next to base names in debug mode.
@@ -752,7 +766,7 @@ bool patch_setup(Config* cf) {
     Patch map window to render more detailed tiles when zoomed out.
     83 7D 10 F8      cmp     [ebp+zoom], 0FFFFFFF8h
     */
-    if (!conf.smooth_scrolling && !pracx) {
+    if (!cf->smooth_scrolling && !pracx) {
         int locations[] = {
             0x4636AE,
             0x465050,
@@ -780,23 +794,27 @@ bool patch_setup(Config* cf) {
         }
     }
     /*
-    Find nearest base for returned probes in order_veh / GOTMYPROBE.
+    Find nearest base for returned probes in order_veh and probe functions.
     */
     {
-        const byte old_bytes[] = {
+        const byte old_order_veh[] = {
             0xBA,0x46,0xD0,0x97,0x00,0x33,0xC9,0x8A,0x4A,0xFE,
             0x3B,0x4D,0xE4,0x75,0x0B,0x0F,0xBE,0x0A,0x3B,0xCF,
             0x7E,0x04,0x8B,0xF9,0x8B,0xF0,0x40,0x81,0xC2,0x34,
             0x01,0x00,0x00,0x3B,0xC3,0x7C,0xE0
         };
-        const byte new_bytes[] = {
+        const byte new_order_veh[] = {
             0x8B,0x7D,0xE0,0x57,0xE8,0x00,0x00,0x00,0x00,0x8B,
             0xF0,0x83,0xC4,0x04,0x90,0x90,0x90,0x90,0x90,0x90,
             0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,
             0x90,0x90,0x90,0x90,0x90,0x90,0x90
         };
-        write_bytes(0x597021, old_bytes, new_bytes, sizeof(new_bytes));
+        const byte old_probe[] = {0x53};
+        const byte new_probe[] = {0x50};
+        write_bytes(0x597021, old_order_veh, new_order_veh, sizeof(new_order_veh));
         write_call(0x597025, (int)find_return_base);
+        write_bytes(0x5A430F, old_probe, new_probe, sizeof(new_probe));
+        write_call(0x5A432C, (int)probe_return_base);
     }
     {
         const byte old_bytes[] = {0x8B,0xC7,0x99,0x2B,0xC2,0xD1,0xF8};
@@ -805,15 +823,15 @@ bool patch_setup(Config* cf) {
 
         write_bytes(0x501CFB, old_bytes, new_bytes, sizeof(new_bytes));
         write_call(0x501CFC, (int)neural_amplifier_bonus); // get_basic_defense
-        *(int*)0x50209F = conf.neural_amplifier_bonus; // battle_compute
+        *(int*)0x50209F = cf->neural_amplifier_bonus; // battle_compute
         
         write_bytes(0x501D11, old_bytes, new_bytes, sizeof(new_bytes));
         write_call(0x501D12, (int)fungal_tower_bonus); // get_basic_defense
-        *(int*)0x5020EC = conf.fungal_tower_bonus; // battle_compute
+        *(int*)0x5020EC = cf->fungal_tower_bonus; // battle_compute
         
         write_bytes(0x501914, old_bytes, new_bytes, sizeof(new_bytes));
         write_call(0x501915, (int)dream_twister_bonus); // get_basic_offense
-        *(int*)0x501F9C = conf.dream_twister_bonus; // battle_compute
+        *(int*)0x501F9C = cf->dream_twister_bonus; // battle_compute
     }
     if (cf->smac_only) {
         if (!FileExists("smac_mod/alphax.txt")

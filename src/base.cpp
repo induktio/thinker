@@ -153,11 +153,11 @@ int project_score(int faction, int proj) {
 
 int hurry_item(BASE* b, int mins, int cost) {
     Faction* f = &Factions[b->faction_id];
+    debug("hurry_item %d %d mins: %2d cost: %2d credits: %d %s %s\n",
+        *current_turn, b->faction_id, mins, cost, f->energy_credits, b->name, prod_name(b->item()));
     f->energy_credits -= cost;
     b->minerals_accumulated += mins;
     b->state_flags |= BSTATE_HURRY_PRODUCTION;
-    debug("hurry_item %d %d mins: %2d cost: %2d credits: %d %s %s\n",
-        *current_turn, b->faction_id, mins, cost, f->energy_credits, b->name, prod_name(b->item()));
     return 1;
 }
 
@@ -181,10 +181,10 @@ int consider_hurry() {
     int mins = mineral_cost(base_id, t) - b->minerals_accumulated;
     int cost = hurry_cost(base_id, t, mins);
     int turns = prod_turns(base_id, t);
-    int reserve = clamp(*current_turn * f->base_count / 5, 20, 800)
-        * (is_project ? 1 : 2)
+    int reserve = clamp(*current_turn * 2 + 10 * f->base_count, 20, 600)
+        * (is_project ? 1 : 4)
         * (has_facility(base_id, FAC_HEADQUARTERS) ? 1 : 2)
-        * (b->defend_goal > 3 && p->enemy_factions > 0 ? 1 : 2) / 8;
+        * (b->defend_goal > 3 && p->enemy_factions > 0 ? 1 : 2) / 16;
 
     if (!is_cheap || mins < 1 || cost < 1 || f->energy_credits - cost < reserve) {
         return 0;
@@ -876,7 +876,7 @@ int select_production(int base_id) {
         int turns = max(0, facility.cost * min(12, cfactor) - base->minerals_accumulated)
             / max(2, base->mineral_surplus);
         /* Check if we have sufficient base energy for multiplier facilities. */
-        if (flag & F_Energy && (turns > 10 || base->energy_surplus < 4*max(2, facility.maint)))
+        if (flag & F_Energy && (turns > 10 || base->energy_surplus < 8))
             continue;
         /* Avoid building combat-related facilities in peacetime. */
         if (flag & F_Combat && p->enemy_base_range > MaxEnemyRange - 5*min(5, facility.maint))

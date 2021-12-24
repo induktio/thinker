@@ -1,11 +1,20 @@
 #pragma once
 
+/* Temporarily disable warnings for thiscall parameter type. */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
+
+#include <stdio.h>
 #include <stdint.h>
+#include <windows.h>
+
 typedef uint8_t byte;
+typedef uint32_t Dib;
 typedef struct char256 { char str[256]; } char256;
 
 #include "terranx_enums.h"
 #include "terranx_types.h"
+#include "terranx_win.h"
 
 typedef int (__cdecl *fp_void)();
 typedef int (__cdecl *fp_1int)(int);
@@ -15,21 +24,16 @@ typedef int (__cdecl *fp_4int)(int, int, int, int);
 typedef int (__cdecl *fp_5int)(int, int, int, int, int);
 typedef int (__cdecl *fp_6int)(int, int, int, int, int, int);
 typedef int (__cdecl *fp_7int)(int, int, int, int, int, int, int);
+typedef int (__cdecl *fp_8int)(int, int, int, int, int, int, int, int);
 
-
-/* Temporarily disable warnings for thiscall parameter type. */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wattributes"
-
-typedef int (__thiscall *tc_1int)(int);
-typedef int (__thiscall *tc_2int)(int, int);
-typedef int (__thiscall *tc_3int)(int, int, int);
-typedef int (__thiscall *tc_4int)(int, int, int, int);
-typedef int (__thiscall *tc_5int)(int, int, int, int, int);
-typedef int (__thiscall *tc_6int)(int, int, int, int, int, int);
-typedef int (__thiscall *tc_7int)(int, int, int, int, int, int, int);
-
-#pragma GCC diagnostic pop
+typedef int (__thiscall *tc_1int)(void*);
+typedef int (__thiscall *tc_2int)(void*, int);
+typedef int (__thiscall *tc_3int)(void*, int, int);
+typedef int (__thiscall *tc_4int)(void*, int, int, int);
+typedef int (__thiscall *tc_5int)(void*, int, int, int, int);
+typedef int (__thiscall *tc_6int)(void*, int, int, int, int, int);
+typedef int (__thiscall *tc_7int)(void*, int, int, int, int, int, int);
+typedef int (__thiscall *tc_8int)(void*, int, int, int, int, int, int, int);
 
 /*
 pad_1 in MFaction is reserved for faction specific variables.
@@ -59,8 +63,8 @@ Thinker functions that are replacements to the SMACX binary versions
 should be prefixed with 'mod_' if their equivalent is also listed here.
 */
 
-extern const char** engine_version;
-extern const char** engine_date;
+extern const char** EngineVersion;
+extern const char** EngineDate;
 extern char*** TextLabels;
 extern char* LastSavePath;
 extern char* ScriptFile;
@@ -151,6 +155,7 @@ extern int* DiploFriction;
 extern int* DiploFrictionFactionIDWith;
 extern int* DiploFrictionFactionID;
 
+extern ThinkerData* ThinkerVars;
 extern MFaction* MFactions;
 extern Faction* Factions;
 extern BASE* Bases;
@@ -160,7 +165,18 @@ extern VEH* Vehs;
 extern MAP** MapPtr;
 extern Continent* Continents;
 extern Landmark* Landmarks;
-extern ThinkerData* ThinkerVars;
+extern Console* MapWin;
+extern Win* BaseWin;
+extern Win* StringBox;
+extern Win* PlanWin;
+extern Win* SocialWin;
+extern Win* StatusWin;
+extern Win* TutWin;
+extern Win* WorldWin;
+extern Win* CouncilWin;
+extern Win* DatalinkWin;
+extern Font** MapLabelFont;
+extern Sprite** FactionPortraits;
 
 // Rules parsed from alphax.txt
 extern CRules* Rules;
@@ -189,7 +205,7 @@ typedef int(__cdecl *Fparse_says)(int index, const char* text, int v1, int v2);
 typedef int(__cdecl *Fhex_cost)(int unit_id, int faction, int x1, int y1, int x2, int y2, int a7);
 typedef void(__cdecl *Fname_base)(int faction, char* name, bool save_offset, bool sea_base);
 typedef int(__cdecl *Fveh_cost)(int item_id, int base_id, int* ptr);
-typedef int (__cdecl *Fsave_daemon)(char* filename);
+typedef int (__cdecl *Fsave_daemon)(const char* filename);
 typedef int(__cdecl *Fbase_at)(int x, int y);
 typedef int(__cdecl *Fpopp)(const char* filename, const char* label, int v1,
     const char* pcx_filename, int v2);
@@ -198,33 +214,67 @@ typedef int (__cdecl *FX_pops)(const char* filename, const char* label,
     int a3, int a4, int a5, int a6, int a7, int a8, int a9);
 typedef int(__cdecl *Fpop_ask_number)(const char *filename, const char* label, int value, int a4);
 
-extern Fpropose_proto propose_proto;
-extern Fhas_abil has_abil;
-extern Fparse_says parse_says;
+typedef int(__thiscall *FMapWin_pixel_to_tile)(Console* This, int x, int y, long* px, long* py);
+typedef int(__thiscall *FMapWin_tile_to_pixel)(Console* This, int x, int y, long* px, long* py);
+typedef int(__thiscall *FMapWin_set_center)(Console* This, int x, int y, int v1);
+typedef int(__thiscall *FMapWin)(Console* This);
+typedef int(__thiscall *FWin_is_visible)(Win* This);
+typedef int(__thiscall *FTutWin_draw_arrow)(Win* This);
+typedef int(__thiscall *FPlanWin_blink)(Win* This);
+typedef int(__thiscall *FStringBox_clip_ids)(Win* This, int len);
+typedef int(__thiscall *FMapWin_gen_map)(Console* This, int owner, int units_only);
+typedef int(__thiscall *FMapWin_draw_map)(Console* This, int v1);
+typedef int(__stdcall *FWinProc)(HWND, int, WPARAM, LPARAM);
+typedef int(__stdcall *FConsole_zoom)(int zoom_type, int v1);
+typedef int(__cdecl *FWin_update_screen)(RECT* prRect, int v1);
+typedef int(__cdecl *FWin_flip)(RECT* pRect);
+typedef int(__thiscall *FBuffer_set_text_color)(Buffer* This, int a2, int a3, int a4, int a5);
+typedef int(__thiscall *FBuffer_set_font)(Buffer* This, Font* font, int a3, int a4, int a5);
+typedef int(__thiscall *FBuffer_write_cent_l3)(Buffer* This, LPCSTR lpString, RECT* rt, int len);
+typedef int(__thiscall *FPopup_start)(
+    Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
+typedef int(__thiscall *FBaseWin_on_redraw)(Win* This);
+typedef int(__thiscall *FGeneric)(void* This);
+
+#pragma GCC diagnostic pop
+
+
+extern FPopup_start Popup_start;
+extern FBaseWin_on_redraw BaseWin_on_redraw;
+extern FGeneric SubInterface_release_iface_mode;
+extern FMapWin MapWin_calculate_dimensions;
+extern FMapWin_tile_to_pixel MapWin_tile_to_pixel;
+extern FMapWin_pixel_to_tile MapWin_pixel_to_tile;
+extern FMapWin_gen_map MapWin_gen_map;
+extern FMapWin_draw_map MapWin_draw_map;
+extern fp_void draw_cursor;
+extern fp_3int draw_tile;
+extern fp_1int draw_map;
+extern FMapWin_set_center MapWin_set_center;
+extern fp_void MapWin_main_caption;
+extern FMapWin MapWin_clear_terrain;
+extern FPlanWin_blink PlanWin_blink;
 extern Fpopp popp;
+extern FGeneric StatusWin_on_redraw;
+extern FGeneric StatusWin_redraw;
+extern FTutWin_draw_arrow TutWin_draw_arrow;
+extern fp_void turn_timer;
+extern FConsole_zoom Console_zoom;
 extern Fhex_cost hex_cost;
+extern Fhas_abil has_abil;
 extern FX_pop X_pop;
 extern FX_pops X_pops;
+extern FBuffer_set_font Buffer_set_font;
+extern FBuffer_set_text_color Buffer_set_text_color;
+extern FBuffer_write_cent_l3 Buffer_write_cent_l3;
+extern tc_4int Buffer_box;
+extern FWin_flip Win_flip;
+extern FWinProc WinProc;
+extern FWin_update_screen Win_update_screen;
+extern FWin_is_visible Win_is_visible;
+extern tc_2int Font_width;
 extern Fpop_ask_number pop_ask_number;
-
-extern fp_3int zoc_any;
-extern fp_1int monolith;
-extern fp_1int enemy_diplomacy;
-extern fp_1int enemy_strategy;
-extern fp_3int wants_to_attack;
-extern fp_void do_all_non_input;
-extern fp_2int parse_num;
-extern fp_6int base_draw;
-extern fp_3int draw_tile;
-extern tc_2int font_width;
-extern tc_4int buffer_box;
-extern tc_3int buffer_fill3;
-extern tc_5int buffer_write_l;
-extern fp_1int consider_designs;
-extern fp_1int enemy_move;
-extern fp_void draw_cursor;
-extern fp_1int draw_map;
-extern fp_void turn_timer;
+extern FStringBox_clip_ids StringBox_clip_ids;
 
 
 extern fp_3int terraform_cost;
@@ -446,6 +496,105 @@ extern fp_3int communicate;
 extern fp_2int commlink_attempter;
 extern fp_1int commlink_attempt;
 
+extern fp_1int pick_top_veh;
+extern fp_7int veh_draw;
+extern fp_5int sub_55A150;
+extern fp_6int base_draw;
+extern fp_3int treaty_off;
+extern fp_3int agenda_off;
+extern fp_3int treaty_on;
+extern fp_3int agenda_on;
+//extern fp_4int set_treaty;
+//extern fp_4int set_agenda;
+extern fp_1int spying;
+extern fp_3int wants_to_attack;
+extern fp_2int comm_check;
+extern fp_2int enemies_war;
+extern fp_2int pact_unpact;
+extern fp_2int enemies_unpact;
+extern fp_3int enemies_team_up;
+extern fp_2int enemies_trade_tech;
+extern fp_3int enemies_treaty;
+extern fp_6int encounter;
+extern fp_5int territory;
+extern fp_4int atrocity;
+extern fp_2int major_atrocity;
+extern fp_3int break_treaty;
+extern fp_1int enemy_diplomacy;
+extern fp_4int go_to;
+extern fp_1int garrison_check;
+extern fp_1int defensive_check;
+extern fp_2int guard_check;
+extern fp_1int enemy_capabilities;
+extern fp_1int enemy_strategy;
+extern fp_4int set_course;
+extern fp_3int assemble_passengers;
+extern fp_2int can_convoy;
+extern fp_3int good_sensor;
+extern fp_5int can_terraform;
+extern fp_5int compute_odds;
+extern fp_3int alien_base;
+extern fp_1int alien_move;
+extern fp_5int air_power;
+extern fp_1int enemy_planet_buster;
+extern fp_3int get_there;
+extern fp_5int coast_or_border;
+extern fp_1int enemy_move;
+extern fp_1int enemy_veh;
+extern fp_1int enemy_turn;
+//extern fp_1int rnd;
+extern fp_2int cursor_dist;
+extern fp_3int site_at;
+extern fp_3int is_known;
+extern fp_2int base_who;
+extern fp_2int anything_at;
+extern fp_1int veh_top;
+extern fp_1int veh_moves;
+extern fp_1int proto_power;
+extern fp_2int is_port;
+//extern fp_6int add_goal;
+//extern fp_5int add_site;
+extern fp_4int at_goal;
+extern fp_4int at_site;
+//extern fp_1int wipe_goals;
+extern fp_1int clear_goals;
+extern fp_5int del_site;
+extern fp_1int want_monolith;
+extern fp_1int monolith;
+extern fp_1int goody_box;
+extern fp_2int valid_tech_leap;
+extern fp_1int study_artifact;
+extern fp_2int header_check;
+extern fp_2int header_write;
+extern fp_2int arm_strat;
+extern fp_2int weap_strat;
+extern fp_2int weap_val;
+extern fp_2int arm_val;
+extern fp_2int armor_val;
+extern fp_3int transport_val;
+extern fp_2int say_offense;
+extern fp_2int say_defense;
+extern fp_2int say_stats_3;
+extern fp_2int say_stats_2;
+extern fp_3int say_stats;
+extern fp_1int clear_bunglist;
+extern fp_2int sub_57DF30;
+extern fp_6int is_bunged;
+extern fp_8int name_proto;
+//extern fp_1int best_reactor;
+extern fp_3int pick_chassis;
+extern fp_3int weapon_budget;
+extern fp_2int retire_proto;
+extern fp_3int prune_protos;
+extern Fpropose_proto propose_proto;
+extern fp_1int abil_index;
+extern fp_3int add_abil;
+extern fp_1int consider_designs;
+extern fp_2int design_new_veh;
+extern fp_6int sub_583CD0;
+extern fp_2int design_workshop;
+extern fp_4int abil_cond;
+
 extern fp_void map_wipe;
 extern fp_3int alt_put_detail;
 extern fp_3int alt_set;
@@ -641,5 +790,38 @@ extern fp_2int world_mesa;
 extern fp_2int world_ridge;
 extern fp_2int world_geothermal;
 extern fp_void world_build;
+//extern fp_1int game_year;
+extern fp_1int say_year;
+extern fp_3int zoc_any;
+extern fp_3int zoc_veh;
+extern fp_3int zoc_sea;
+extern fp_3int zoc_move;
+
+extern fp_void wait_task;
+extern fp_void do_task;
+extern fp_void do_all_tasks;
+extern fp_1int do_all_tasks2;
+extern fp_void do_non_input;
+extern fp_void do_all_non_input;
+extern fp_void do_draw;
+extern fp_void do_all_draws;
+extern fp_void sub_5FCFE0;
+extern fp_void flush_input;
+extern fp_void do_sound;
+extern fp_void flush_timer;
+extern fp_void text_shutdown;
+extern fp_void text_dtor;
+extern fp_void text_close;
+extern fp_2int text_open;
+extern fp_void text_get;
+extern fp_void text_string;
+extern fp_void text_item;
+extern fp_void text_item_string;
+extern fp_void text_item_number;
+extern fp_void text_item_binary;
+extern fp_2int parse_string;
+extern fp_2int parse_num;
+extern fp_4int parse_say;
+extern Fparse_says parse_says;
 
 
