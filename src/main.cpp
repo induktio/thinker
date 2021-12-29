@@ -93,8 +93,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->social_ai = clamp(atoi(value), 0, 1000);
     } else if (MATCH("thinker", "tech_balance")) {
         cf->tech_balance = atoi(value);
-    } else if (MATCH("thinker", "hurry_items")) {
-        cf->hurry_items = atoi(value);
+    } else if (MATCH("thinker", "base_hurry")) {
+        cf->base_hurry = atoi(value);
     } else if (MATCH("thinker", "base_spacing")) {
         cf->base_spacing = clamp(atoi(value), 2, 8);
     } else if (MATCH("thinker", "base_nearby_limit")) {

@@ -1523,7 +1523,7 @@ int select_item(int x, int y, int faction, MAP* sq) {
     const bool sea = is_ocean(sq);
     if (sq->is_base() || (sea && !is_ocean_shelf(sq))
     || (sq->landmarks & LM_VOLCANO && sq->art_ref_id == 0)) {
-        return -1;
+        return FORMER_NONE;
     }
     int bonus = bonus_at(x, y);
     bool road = can_road(x, y, faction, sq);
@@ -1538,7 +1538,7 @@ int select_item(int x, int y, int faction, MAP* sq) {
         }
     }
     if (sq->owner != faction || road || ~items & BIT_BASE_RADIUS || items & BIT_MONOLITH) {
-        return (road ? FORMER_ROAD : -1);
+        return (road ? FORMER_ROAD : FORMER_NONE);
     }
     if (can_river(x, y, faction, sq)) {
         return FORMER_AQUIFER;
@@ -1569,7 +1569,7 @@ int select_item(int x, int y, int faction, MAP* sq) {
     }
     if (farm_val == max_val && sea && max_val > 0) {
         if (items & BIT_FUNGUS) {
-            return (rem_fungus ? FORMER_REMOVE_FUNGUS : -1);
+            return (rem_fungus ? FORMER_REMOVE_FUNGUS : FORMER_NONE);
         }
         if (farm_val > current && allow_farm && ~items & BIT_FARM) {
             return FORMER_FARM;
@@ -1577,10 +1577,10 @@ int select_item(int x, int y, int faction, MAP* sq) {
     }
     if (forest_val == max_val && max_val > 0) {
         if (items & BIT_FUNGUS) {
-            return (rem_fungus ? FORMER_REMOVE_FUNGUS : -1);
+            return (rem_fungus ? FORMER_REMOVE_FUNGUS : FORMER_NONE);
         }
         if (items & BIT_FOREST) {
-            return (can_sensor(x, y, faction, sq) ? FORMER_SENSOR : -1);
+            return (can_sensor(x, y, faction, sq) ? FORMER_SENSOR : FORMER_NONE);
         }
         if (forest_val > current + bonus_val && allow_forest) {
             return FORMER_FOREST;
@@ -1588,7 +1588,7 @@ int select_item(int x, int y, int faction, MAP* sq) {
     }
     if (fungus_val == max_val && max_val > 0) {
         if (items & BIT_FUNGUS) {
-            return (can_sensor(x, y, faction, sq) ? FORMER_SENSOR : -1);
+            return (can_sensor(x, y, faction, sq) ? FORMER_SENSOR : FORMER_NONE);
         }
         if (fungus_val > current + (bonus != RES_NONE) && allow_fungus) {
             return FORMER_PLANT_FUNGUS;
@@ -1596,10 +1596,10 @@ int select_item(int x, int y, int faction, MAP* sq) {
     }
     if (borehole_val == max_val && max_val > 0) {
         if (items & BIT_FUNGUS) {
-            return (rem_fungus ? FORMER_REMOVE_FUNGUS : -1);
+            return (rem_fungus ? FORMER_REMOVE_FUNGUS : FORMER_NONE);
         }
         if (items & BIT_THERMAL_BORE) {
-            return -1;
+            return FORMER_NONE;
         }
         if (borehole_val > current && allow_borehole) {
             return FORMER_THERMAL_BORE;
@@ -1607,9 +1607,9 @@ int select_item(int x, int y, int faction, MAP* sq) {
     }
     if (items & BIT_FUNGUS) {
         if (keep_fungus(x, y, faction, sq)) {
-            return (can_sensor(x, y, faction, sq) ? FORMER_SENSOR : -1);
+            return (can_sensor(x, y, faction, sq) ? FORMER_SENSOR : FORMER_NONE);
         }
-        return (rem_fungus ? FORMER_REMOVE_FUNGUS : -1);
+        return (rem_fungus ? FORMER_REMOVE_FUNGUS : FORMER_NONE);
     }
     if (can_level(x, y, faction, bonus, sq)) {
         return FORMER_LEVEL_TERRAIN;
@@ -1640,7 +1640,7 @@ int select_item(int x, int y, int faction, MAP* sq) {
         return FORMER_MINE;
     }
     if (items & BIT_SOLAR && solar_need >= 0) {
-        return -1;
+        return FORMER_NONE;
     }
     if (allow_farm && ~items & BIT_FARM) {
         return FORMER_FARM;
@@ -1659,7 +1659,7 @@ int select_item(int x, int y, int faction, MAP* sq) {
     if (forest_val > current + skip_val && can_forest(x, y, faction, sq)) {
         return FORMER_FOREST;
     }
-    return -1;
+    return FORMER_NONE;
 }
 
 int former_tile_score(int x, int y, int faction, MAP* sq) {

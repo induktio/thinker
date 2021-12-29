@@ -155,7 +155,7 @@ struct Config {
     int social_ai = 1;
     int social_ai_bias = 10;
     int tech_balance = 0;
-    int hurry_items = 0;
+    int base_hurry = 0;
     int base_spacing = 3;
     int base_nearby_limit = -1;
     int expansion_limit = 100;

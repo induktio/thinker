@@ -3,4 +3,5 @@ text eol=lf
 
 # text files should have windows encoding
 *.txt eol=crlf
+*.ini eol=crlf
 *.md eol=crlf

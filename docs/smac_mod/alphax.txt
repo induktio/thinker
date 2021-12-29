@@ -1,8 +1,9 @@
 ;
-; *************************************************************
-; *  SMAC-in-SMACX Mod / includes changes for Thinker Mod     *
-; *  https://github.com/induktio/thinker                      *
-; *************************************************************
+; **************************************************************
+; *  SMAC-in-SMACX Mod / Includes minor edits for Thinker Mod  *
+; *  This file should always remain in smac_mod folder.        *
+; *  https://github.com/induktio/thinker                       *
+; **************************************************************
 ;
 ; Sid Meier's ALPHA CENTAURI
 ;

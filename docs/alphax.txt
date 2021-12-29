@@ -1,8 +1,8 @@
 ;
-; *************************************************************
-; *  Contains changes made for SMACX Thinker Mod by Induktio  *
-; *  https://github.com/induktio/thinker                      *
-; *************************************************************
+; **************************************************************
+; *  SMACX Thinker Mod / Default tech tree for the expansion   *
+; *  https://github.com/induktio/thinker                       *
+; **************************************************************
 ;
 ; Sid Meier's ALPHA CENTAURI
 ;

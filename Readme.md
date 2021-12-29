@@ -9,12 +9,10 @@ By patching the game to use an additional DLL, new functionality can be develope
 * Vastly improved production/terraforming AI
 * Improved code for AI social engineering choices
 * AI combat units are rewritten to use more variety in tactics
-* AI deploys colony pods much sooner instead of wandering on the map
-* AI builds more crawlers and deploys them better
+* AI colony pods reach their destinations much more often
 * More config options for many previously fixed settings in the game engine
 * Many enhancements to random map generation/spawn locations
-* Name labels for HQ bases are emphasized on the map
-* Minimal changes to vanilla game mechanics
+* Visual changes on how base name labels are emphasized on the map
 * Game binary includes [Scient's patches](Details.md)
 
 This mod is tested to work with the [GOG version](https://www.gog.com/game/sid_meiers_alpha_centauri) of Alpha Centauri.

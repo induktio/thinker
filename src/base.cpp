@@ -168,16 +168,17 @@ int consider_hurry() {
     Faction* f = &Factions[b->faction_id];
     AIPlans* p = &plans[b->faction_id];
     assert(b == *current_base_ptr);
+    bool is_cheap = conf.simple_hurry_cost || b->minerals_accumulated >= Rules->retool_exemption;
+    bool is_project = t <= -SP_ID_First && t >= -SP_ID_Last;
 
     if (!thinker_enabled(b->faction_id)) {
         return base_hurry();
     }
-    if (!conf.hurry_items || t == -FAC_STOCKPILE_ENERGY || t < -SP_ID_Last
+    if (conf.base_hurry < (is_project ? 2 : 1)
+    || t == -FAC_STOCKPILE_ENERGY || t < -SP_ID_Last
     || b->state_flags & (BSTATE_PRODUCTION_DONE | BSTATE_HURRY_PRODUCTION)) {
         return 0;
     }
-    bool is_cheap = conf.simple_hurry_cost || b->minerals_accumulated >= Rules->retool_exemption;
-    bool is_project = t <= -SP_ID_First && t >= -SP_ID_Last;
     int mins = mineral_cost(base_id, t) - b->minerals_accumulated;
     int cost = hurry_cost(base_id, t, mins);
     int turns = prod_turns(base_id, t);
@@ -194,8 +195,8 @@ int consider_hurry() {
         int threshold = max(Facility[-t].cost/8, 4*cost_factor(b->faction_id, 1, -1));
 
         if (has_project(-1, -t) || turns < 2+delay
-        || b->mineral_surplus < 5 || b->defend_goal > 3
-        || b->minerals_accumulated < threshold) {
+        || (b->defend_goal > 3 && p->enemy_factions > 0)
+        || b->mineral_surplus < 5 || b->minerals_accumulated < threshold) {
             return 0;
         }
         for (int i = 0; i < *total_num_bases; i++) {

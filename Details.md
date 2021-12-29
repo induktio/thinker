@@ -3,7 +3,7 @@ Main features
 =============
 Thinker has several advanced planning routines that enhance the base game AI to manage the complexities of colony building in Alpha Centauri. In the original game, many of the AI aspects were left underdeveloped while the computer factions struggled to deal with various punitive penalties. This left the single player experience severely lacking, since the AI would have no counter to many simple strategies.
 
-As a general principle, Thinker uses the same production bonuses than what the vanilla difficulty levels would grant the AI normally. There should no extra resources received by the AI unless this is specified in the configuration file. Thinker should not change the automated behaviour of units or governors in player-controlled factions unless this is set in the options. The mod also will not attempt to remake the lore, reorder the tech tree, or adjust most vanilla game design decisions, since the main goal is to make the AI play better given any game config options.
+As a general principle, Thinker uses the same production bonuses than what the vanilla difficulty levels would grant the AI normally. There should be no extra resources received by the AI unless this is specified in the configuration file. The main goal is to make the AI play better given any game config options, so generally the mod will not attempt to remake the lore or adjust most vanilla game design decisions.
 
 Thinker does not have any special save game format, so it's possible to open an old save and have the factions switch to the new AI and vice-versa. None of the `thinker.ini` config options are preserved in the save game either, but the units or resources spawned at the game start will remain.
 
@@ -20,7 +20,7 @@ In addition to the binary patches listed separately in this file, items that are
 3. Thinker base production AI will decide every item that is produced in a base. The build order can differ substantially from anything the normal AIs might decide to produce, and the difference can be easily noted in the vastly increased quantity of formers and crawlers the AIs might have.
 4. Social AI feature will decide the social engineering models the AI factions will choose. It will attempt to take into account the various cumulative/non-linear effects of the society models and any bonuses provided by the secret projects. The AI is now capable of pop-booming if enough growth is attainable, and it will also try to avoid pacifist drones by switching out of SE models with too many police penalties. All the SE model effects are moddable because the AI is not hardcoded in any particular choices. This feature is also capable of managing all the custom factions.
 5. Tech balance will assign extra importance on some specific techs when selecting what to research: requirements for formers, crawlers, recycling tanks, children's creches, and the 3 technologies to allow the production of more than 2 resources per square. If these items don't have any requirements, or the techs are not available to research, the tech progression is unaffacted by this feature. It will also not affect player faction research in any way.
-6. `hurry_items` feature is able to use AI energy reserves to occasionally hurry base production. Items that can be hurried include most basic facilities, formers, combat units, and sometimes secret projects. The amount of credits spent on rushing projects depends on difficulty level. When a project has been rushed, it will be displayed in a popup if there's no sunspots active and the player has a commlink to the other faction.
+6. `base_hurry` feature is able to use AI energy reserves to occasionally hurry base production. Items that can be hurried include most basic facilities, formers, combat units, and sometimes secret projects. The amount of credits spent on rushing projects depends on difficulty level. When a project has been rushed, it will be displayed in a popup if the player has a commlink the faction and there are no sunspots active.
 7. `design_units` feature will introduce custom probe teams, armored crawlers, gravship formers, and AAA garrison prototypes for the computer factions.
 8. `auto_relocate_hq` feature imports a game mechanic from Civilization 3 where lost/captured headquarters are automatically moved to another suitable base. This ensures the AI factions will not struggle without active headquarters.
 9. AI mineral/nutrient production cost factors for each difficulty level can be changed from the `cost_factor` setting. Does not affect other difficulty related modifiers.
@@ -163,6 +163,21 @@ When enabled, for each turn for every infiltration active to the current faction
 The chance to discover infiltration is 0.5% at -7 score, 1.2% at +0 score, and 3.3% at +7 score (maximum possible). Thus having any kind of advantage over the other faction will give a lopsided bonus for the defender by design. In this mechanic, it is important to have a better PROBE rating or at least parity to maintain the infiltration.
 
 
+Recommended alphax.txt settings
+===============================
+All alphax.txt files provided by Thinker contain some optional, minor edits as summarized below.
+These edits will introduce fairly minimal differences to the vanilla game mechanics.
+
+1. Fix: Enabled the "Antigrav Struts" special ability for air units as stated in the manual.
+2. Fix: Disabled the "Clean Reactor" special ability for Probe Teams because they already don't require any support.
+3. The frequency of climate change effects is reduced. Thinker level AIs regularly achieve much higher mineral production and eco damage than the AIs in the base game. As a result, excessive sea level rise may occur early on unless this is modified.
+4. WorldBuilder is modified to produce bigger continents, less tiny islands, more rivers and ocean shelf on random maps.
+5. Large map size is increased to 50x100. Previous value was nearly the same as a standard map.
+6. Descriptions of various configuration values have been updated to reflect their actual meaning.
+7. Add new predefined units Trance Scout Patrol and Police Garrison.
+8. Plasma Shard weapon strength is raised to 14.
+
+
 SMAC in SMACX mod
 =================
 Thinker includes the files necessary to play a game similar to the original SMAC while disabling all expansion-related content. See the original release posts of SMAC in SMACX [here](https://github.com/DrazharLn/smac-in-smax/) and [here](https://alphacentauri2.info/index.php?topic=17869.0).
@@ -180,22 +195,6 @@ See below for some custom faction sets. The factions can be played in both game 
 
 * [Sigma Faction Set](https://alphacentauri2.info/index.php?action=downloads;sa=view;down=264)
 * [Tayta's Dystopian Faction Set](https://alphacentauri2.info/index.php?topic=21515)
-
-
-Recommended alphax.txt settings
-===============================
-Modified alphax.txt settings for Thinker can be found from [this file](docs/alphax.txt).
-These edits will introduce fairly minimal differences to the vanilla game mechanics, instead they will mostly fix bugs and improve the gameplay experience.
-That means the tech tree or production cost values are not modified, for example. The changes are summarized below:
-
-1. Fix: Enabled the "Antigrav Struts" special ability for air units as stated in the manual.
-2. Fix: Disabled the "Clean Reactor" special ability for Probe Teams because they already don't require any support.
-3. The frequency of climate change effects is reduced. Thinker level AIs regularly achieve much higher mineral production and eco damage than the AIs in the base game. As a result, excessive sea level rise may occur early on unless this is modified.
-4. WorldBuilder is modified to produce bigger continents, less tiny islands, more rivers and ocean shelf on random maps.
-5. Large map size is increased to 50x100. Previous value was nearly the same as a standard map.
-6. Descriptions of various configuration values have been updated to reflect their actual meaning.
-7. Add new predefined units Trance Scout Patrol and Police Garrison.
-8. Plasma Shard weapon strength is raised to 14.
 
 
 Compatibility with other mods
