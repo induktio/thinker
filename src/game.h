@@ -57,6 +57,7 @@ bool has_ships(int faction);
 bool has_terra(int faction, FormerItem act, bool ocean);
 bool has_project(int faction, int id);
 bool has_facility(int base_id, int id);
+bool has_fac_built(int base_id, int facility_id);
 bool can_build(int base_id, int id);
 bool can_build_unit(int faction, int id);
 bool can_build_ships(int base_id);

@@ -845,6 +845,18 @@ int __cdecl X_pops4(const char* label, int a2, Sprite* a3, int a4)
     return X_pops(ScriptFile, label, -1, 0, a2, (int)a3, 1, 1, a4);
 }
 
+int __cdecl X_dialog(const char* label, int faction2)
+{
+    return X_pops(ScriptFile, label, -1, 0, PopDialogUnk100000,
+        (int)FactionPortraits[faction2], 1, 1, (int)sub_5398E0);
+}
+
+int __cdecl X_dialog(const char* filename, const char* label, int faction2)
+{
+    return X_pops(filename, label, -1, 0, PopDialogUnk100000,
+        (int)FactionPortraits[faction2], 1, 1, (int)sub_5398E0);
+}
+
 void popup_homepage() {
     ShellExecute(NULL, "open", "https://github.com/induktio/thinker", NULL, NULL, SW_SHOWNORMAL);
 }
@@ -1151,10 +1163,11 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
             }
         }
     }
-    int reserve = clamp(*current_turn * f_cmp.base_count / 8, 50, 400);
-    int amount = clamp(f_cmp.energy_credits - reserve - 10*friction, 0, *current_turn * 4)
+    int reserve = clamp(*current_turn * f_cmp.base_count / 8, 50, 200 + 20*friction);
+    int amount = clamp(f_cmp.energy_credits - reserve, 0, *current_turn * 4)
+        * (f_plr.pop_total > f_cmp.pop_total ? 1 : 2)
         * clamp(20 + score - 16*f_cmp.AI_fight + 16*clamp(f_cmp.SE_economy_base, -1, 1)
-        - 20*(f_plr.ranking > 5) + 20*is_pact, 16, 64) / (64 * 20) * 20;
+        - 20*(f_plr.ranking > 5) + 20*is_pact, 16, 64) / (128 * 20) * 20;
     int turns = clamp(50 - *diff_level*5 - friction + min(20, score), 10, 50);
     int payment = ((18 + friction/4 + *diff_level*2)*amount + 15) / (16*turns);
 
@@ -1165,18 +1178,15 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
     if (f_plr.sanction_turns > 0 || score < -10) {
         parse_says(0, MFactions[faction1].title_leader, -1, -1);
         parse_says(1, MFactions[faction1].name_leader, -1, -1);
-        X_pops("modmenu", "REJECTIDEA", -1, 0,
-            PopDialogUnk100000, (int)FactionPortraits[faction2], 1, 1, (int)sub_5398E0);
+        X_dialog("modmenu", "REJECTIDEA", faction2);
         return 0;
     }
     if (f_plr.loan_balance[faction2] > 0) {
-        X_pops("modmenu", "REJECTLOAN", -1, 0,
-            PopDialogUnk100000, (int)FactionPortraits[faction2], 1, 1, (int)sub_5398E0);
+        X_dialog("modmenu", "REJECTLOAN", faction2);
         return 0;
     }
     if (amount < 10 || payment < 1 || score < 0) {
-        X_pops4(random(2) ? "REJENERGY0" : "REJENERGY1",
-            PopDialogUnk100000, FactionPortraits[faction2], (int)sub_5398E0);
+        X_dialog(random(2) ? "REJENERGY0" : "REJENERGY1", faction2);
         return 0;
     }
 
@@ -1185,8 +1195,7 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
     ParseNumTable[0] = amount;
     ParseNumTable[1] = payment;
     ParseNumTable[2] = turns;
-    int choice = X_pops4(random(2) ? "ENERGYLOAN1" : "ENERGYLOAN2",
-        PopDialogUnk100000, FactionPortraits[faction2], (int)sub_5398E0);
+    int choice = X_dialog(random(2) ? "ENERGYLOAN1" : "ENERGYLOAN2", faction2);
 
     if (choice == 1) {
         f_plr.loan_balance[faction2] = turns * payment;
@@ -1198,5 +1207,169 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
     return 0;
 }
 
+int base_trade_value(int base_id, int faction1, int faction2)
+{
+    if (base_id < 0 || base_id >= *total_num_bases) {
+        return 0;
+    }
+    BASE* base = &Bases[base_id];
+    int value = 50*base->pop_size;
+    int friction_score = *diff_level*2 + clamp(*DiploFriction, 0, 20)
+        + 4*max(0, Factions[faction1].ranking - 4)
+        + (Factions[faction1].pop_total > Factions[faction2].pop_total ? 4 : 0)
+        + 4*Factions[faction1].integrity_blemishes
+        + 2*Factions[faction1].atrocities;
+
+    for (int i = Fac_ID_First; i < Fac_ID_Last; i++) {
+        if (has_fac_built(base_id, i)) {
+            value += Facility[i].cost * 20;
+        }
+    } 
+    for (int i = SP_ID_First; i <= SP_ID_Last; i++) {
+        if (SecretProjects[i - SP_ID_First] == base_id) {
+            value += Facility[i].cost * 30;
+        }
+    }
+    MAP* sq;
+    TileSearch ts;
+    ts.init(base->x, base->y, TRIAD_AIR);
+    int num_own = 0;
+    int num_all = 0;
+    while ((sq = ts.get_next()) != NULL && ts.dist <= 10 && num_all < 5) {
+        if (sq->is_base()) {
+            if (sq->owner == faction2) {
+                num_own++;
+            }
+            num_all++;
+        }
+    }
+    for (auto& m : iterate_tiles(base->x, base->y, 0, 21)) {
+        if (mod_base_find3(m.x, m.y, -1, m.sq->region, -1, -1) == base_id) {
+            if (m.sq->landmarks & ~(LM_DUNES|LM_SARGASSO|LM_UNITY)) {
+                value += (m.sq->landmarks & LM_JUNGLE ? 20 : 15);
+            }
+            if (mod_bonus_at(m.x, m.y) > 0) {
+                value += 20;
+            }
+            if (m.sq->items & (BIT_MONOLITH|BIT_CONDENSER|BIT_THERMAL_BORE)) {
+                value += 20;
+            }
+        }
+    }
+    if (base->faction_id == faction2) {
+        for (int i = 0; i < *total_num_vehicles; i++) {
+            if ((Vehs[i].x == base->x && Vehs[i].y == base->y)
+            || Vehs[i].home_base_id == base_id) {
+                value += Units[Vehs[i].unit_id].cost * 20;
+            }
+        }
+        if (num_own > 0) {
+            value = value * (num_own == num_all ? 5 : 3) / 2;
+        }
+        value = max(value, 100) * (base->assimilation_turns_left > 8 ? 3 : 4)
+            * (max(0, friction_score) + (has_pact(faction1, faction2) ? 32 : 40)) / (32 * 4);
+    } else {
+        if (num_own < num_all) {
+            value = value * (num_own ? 5 : 3) / 8;
+        }
+    }
+    if (base->event_flags & BEVENT_OBJECTIVE || *game_rules & RULES_SCN_VICT_ALL_BASE_COUNT_OBJ) {
+        value *= 2;
+    }
+    debug("base_trade_value %s %d %d friction: %d num_own: %d num_all: %d value: %d\n",
+    base->name, faction1, faction2, friction_score, num_own, num_all, value);
+    flushlog();
+    return value;
+}
+
+int __cdecl mod_base_swap(int faction1, int faction2)
+{
+    Faction& f_plr = Factions[faction1];
+    Faction& f_cmp = Factions[faction2];
+    bool surrender = has_treaty(faction2, faction1, DIPLO_PACT)
+        && has_treaty(faction2, faction1, DIPLO_HAVE_SURRENDERED);
+
+    if (*multiplayer_active || *pbem_active || *diplo_ask_base_swap_id < 0 || is_human(faction2)) {
+        if (surrender) {
+            return base_swap(faction1, faction2);
+        }
+        X_dialog("NEVERBASESWAP", faction2);
+        return 0;
+    }
+    if (want_revenge(faction2, faction1) || f_cmp.diplo_betrayed[faction1] > 0) {
+        X_dialog("NEVERBASESWAP", faction2);
+        return 0;
+    }
+    if (*diplo_counter_proposal_id == DiploCounterThreaten) {
+        cause_friction(faction2, faction1, 2);
+        parse_says(0, MFactions[faction1].title_leader, -1, -1);
+        parse_says(1, MFactions[faction1].name_leader, -1, -1);
+        X_dialog("BASENOCEDE", faction2);
+        return 0;
+    }
+    int cost_ask = base_trade_value(*diplo_ask_base_swap_id, faction1, faction2);
+    parse_says(0, Bases[*diplo_ask_base_swap_id].name, -1, -1);
+    ParseNumTable[0] = cost_ask;
+
+    if (cost_ask < 1 || f_cmp.base_count == 1
+    || has_fac_built(*diplo_ask_base_swap_id, FAC_HEADQUARTERS)) {
+        X_dialog("NOBASESWAP2", faction2);
+        return 0;
+    }
+    if (*diplo_counter_proposal_id == DiploCounterEnergyPayment
+    || *diplo_counter_proposal_id == DiploCounterNameAPrice) {
+        if (8*f_plr.energy_credits < cost_ask) {
+            X_dialog("NOBASESWAP2", faction2);
+            return 0;
+        }
+        if (f_plr.energy_credits < cost_ask) {
+            X_dialog("NOBASESWAP", faction2);
+            return 0;
+        }
+        if (!X_dialog("PAYBASESWAP", faction2)) {
+            return 0;
+        }
+        f_plr.energy_credits -= cost_ask;
+        f_cmp.energy_credits += cost_ask;
+        give_a_base(*diplo_ask_base_swap_id, faction1);
+        StatusWin_redraw(StatusWin);
+        draw_map(1);
+        return 0;
+    }
+    if (*diplo_counter_proposal_id == DiploCounterGiveBase && *diplo_bid_base_swap_id >= 0) {
+        int cost_bid = base_trade_value(*diplo_bid_base_swap_id, faction1, faction2);
+        parse_says(0, Bases[*diplo_ask_base_swap_id].name, -1, -1);
+        parse_says(1, Bases[*diplo_bid_base_swap_id].name, -1, -1);
+
+        if (cost_bid < 1 && !surrender) {
+            X_dialog("NOBASESWAP2", faction2);
+            return 0;
+        }
+        if (4*cost_bid < cost_ask && !surrender) {
+            X_dialog("NOBASESWAP3", faction2);
+            return 0;
+        }
+        if (cost_bid < cost_ask && !surrender) {
+            X_dialog("NOBASESWAP", faction2);
+            return 0;
+        }
+        X_dialog("YESBASESWAP", faction2);
+        give_a_base(*diplo_ask_base_swap_id, faction1);
+        give_a_base(*diplo_bid_base_swap_id, faction2);
+        StatusWin_redraw(StatusWin);
+        draw_map(1);
+        return 0;
+    }
+    if (*diplo_counter_proposal_id == DiploCounterFriendship) {
+        // skipped
+    }
+    if (*diplo_counter_proposal_id == DiploCounterResearchData) {
+        // skipped
+    }
+    parse_says(0, MFactions[faction1].title_leader, -1, -1);
+    parse_says(1, MFactions[faction1].name_leader, -1, -1);
+    X_dialog("modmenu", "REJECTIDEA", faction2);
+    return 0;
+}
 
 

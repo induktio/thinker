@@ -78,6 +78,8 @@ int* diplo_value_93FA24 = (int*)0x93FA24;
 int* diplo_entry_id = (int*)0x93FAA8;
 int* diplo_counter_proposal_id = (int*)0x93FAB0;
 int* diplo_current_proposal_id = (int*)0x93FA34;
+int* diplo_ask_base_swap_id = (int*)0x93FA7C;
+int* diplo_bid_base_swap_id = (int*)0x93FA30;
 
 uint8_t* TechOwners = (uint8_t*)0x9A6670;
 int* SecretProjects = (int*)0x9A6514;
@@ -562,6 +564,13 @@ fp_void auto_save                = (fp_void)0x5ABD20;
 fp_1int load_undo                = (fp_1int)0x5ABE40;
 fp_void wipe_undo                = (fp_void)0x5ABEC0;
 fp_void auto_undo                = (fp_void)0x5ABF20;
+fp_2int sub_5ABFF0               = (fp_2int)0x5ABFF0;
+fp_1int is_objective             = (fp_1int)0x5AC060;
+fp_2int num_objectives           = (fp_2int)0x5AC110;
+fp_2int most_objectives          = (fp_2int)0x5AC5A0;
+fp_void ascending                = (fp_void)0x5AC680;
+fp_1int rankings                 = (fp_1int)0x5AC690;
+fp_4int compute_score            = (fp_4int)0x5ACBE0;
 
 fp_3int setup_player             = (fp_3int)0x5B0E00;
 fp_2int eliminate_player         = (fp_2int)0x5B3380;

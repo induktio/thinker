@@ -45,6 +45,7 @@ int __cdecl mod_turn_upkeep() {
     }
     if (*current_turn == 1 && conf.ignore_reactor_power) {
         *game_preferences &= ~PREF_BSC_AUTO_DESIGN_VEH;
+        *game_more_preferences &= ~MPREF_BSC_AUTO_PRUNE_OBS_VEH;
     }
     if (*current_turn == 1) {
         ThinkerVars->game_time_spent = 0;

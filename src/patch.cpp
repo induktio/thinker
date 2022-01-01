@@ -236,28 +236,81 @@ int __cdecl dummy_value() {
 }
 
 int __cdecl config_game_rand() {
-    int iter = 0;
     int val = 0;
-    while (!iter || (iter < 100 && (1 << (val)) & conf.skip_random_factions)) {
+    for (int i = 0; i < 1000; i++) {
         val = random(conf.faction_file_count);
-        iter++;
+        if ((1 << val) & ~conf.skip_random_factions) {
+            break;
+        }
     }
     return val;
 }
 
 int __cdecl mod_setup_player(int faction, int v1, int v2) {
+    MFaction* m = &MFactions[faction];
+    debug("setup_player %d %d %d\n", faction, v1, v2);
+    if (!faction) {
+        return setup_player(faction, v1, v2);
+    }
+    /*
+    Fix issue with randomized faction agendas where they might be given agendas
+    that are their opposition social models.
+    */
+    if (*game_state & STATE_RAND_FAC_LEADER_SOCIAL_AGENDA) {
+        int active_factions = 0;
+        for (int i = 0; i < *total_num_vehicles; i++) {
+            active_factions |= (1 << Vehs[i].faction_id);
+        }
+        for (int i = 0; i < 1000; i++) {
+            int sfield = random(3);
+            int smodel = random(3) + 1;
+            if (sfield == m->soc_opposition_category && smodel == m->soc_opposition_model) {
+                continue;
+            }
+            for (int j = 1; j < MaxPlayerNum; j++) {
+                if (faction != j && (1 << j) & active_factions) {
+                    if (MFactions[j].soc_priority_category == sfield
+                    && MFactions[j].soc_priority_model == smodel) {
+                        continue;
+                    }
+                }
+            }
+            m->soc_priority_category = sfield;
+            m->soc_priority_model = smodel;
+            debug("setup_player_agenda %s %d %d\n", m->filename, sfield, smodel);
+            break;
+        }
+    }
+    if (*game_state & STATE_RAND_FAC_LEADER_PERSONALITIES) {
+        m->AI_fight = random(3) - 1;
+        m->AI_tech = 0;
+        m->AI_power = 0;
+        m->AI_growth = 0;
+        m->AI_wealth = 0;
+
+        for (int i = 0; i < 2; i++) {
+            int val = random(4);
+            switch (val) {
+                case 0: m->AI_tech = 1; break;
+                case 1: m->AI_power = 1; break;
+                case 2: m->AI_growth = 1; break;
+                case 3: m->AI_wealth = 1; break;
+            }
+        }
+    }
     setup_player(faction, v1, v2);
-    if (faction > 0 && (!is_human(faction) || conf.player_free_units > 0)) {
-        for (int i=0; i < *total_num_vehicles; i++) {
+
+    if (!is_human(faction) || conf.player_free_units > 0) {
+        for (int i = 0; i < *total_num_vehicles; i++) {
             VEH* veh = &Vehicles[i];
             if (veh->faction_id == faction) {
                 MAP* sq = mapsq(veh->x, veh->y);
                 int former = (is_ocean(sq) ? BSC_SEA_FORMERS : BSC_FORMERS);
                 int colony = (is_ocean(sq) ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
-                for (int j=0; j < conf.free_formers; j++) {
+                for (int j = 0; j < conf.free_formers; j++) {
                     spawn_veh(former, faction, veh->x, veh->y);
                 }
-                for (int j=0; j < conf.free_colony_pods; j++) {
+                for (int j = 0; j < conf.free_colony_pods; j++) {
                     spawn_veh(colony, faction, veh->x, veh->y);
                 }
                 break;
@@ -330,7 +383,7 @@ void exit_fail(int addr) {
     char buf[512];
     snprintf(buf, sizeof(buf),
         "Error while patching address %08X in the game binary.\n"
-        "The mod is unable to start with an incompatible game version.", addr);
+        "This mod requires the original Alien Crossfire v2.0 terranx.exe in the same folder.", addr);
     MessageBoxA(0, buf, MOD_VERSION, MB_OK | MB_ICONSTOP);
     exit(EXIT_FAILURE);
 }
@@ -593,6 +646,7 @@ bool patch_setup(Config* cf) {
     write_call(0x4EFB76, (int)mod_upgrade_cost);
     write_call(0x4EFEB9, (int)mod_upgrade_cost);
     write_call(0x54F7D7, (int)mod_energy_trade);
+    write_call(0x54F77E, (int)mod_base_swap);
     write_jump(0x6262F0, (int)log_say);
     write_jump(0x626250, (int)log_say2);
     write_jump(0x6263F0, (int)log_say_hex);
@@ -891,6 +945,12 @@ bool patch_setup(Config* cf) {
         memset((void*)0x5B2257, 0x90, 11);
         memcpy((void*)0x5B220F, asm_find_start, sizeof(asm_find_start));
         write_call(0x5B221B, (int)find_start);
+    }
+    {
+        // Skip default randomize faction leader personalities code
+        const byte old_bytes[] = {0x74};
+        const byte new_bytes[] = {0xEB};
+        write_bytes(0x5B1254, old_bytes, new_bytes, sizeof(new_bytes));
     }
     if (cf->ignore_reactor_power) {
         const byte old_bytes[] = {0x7C};

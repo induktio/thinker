@@ -4,6 +4,8 @@ const int SP_Unbuilt = -1;
 const int SP_Destroyed = -2;
 const int SP_ID_First = 70;
 const int SP_ID_Last = 106;
+const int Fac_ID_First = 1;
+const int Fac_ID_Last = 64;
 const int Tech_ID_First = 0;
 const int Tech_ID_Last = 88;
 

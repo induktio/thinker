@@ -141,6 +141,8 @@ extern int* diplo_value_93FA24;
 extern int* diplo_entry_id;
 extern int* diplo_counter_proposal_id;
 extern int* diplo_current_proposal_id;
+extern int* diplo_ask_base_swap_id;
+extern int* diplo_bid_base_swap_id;
 
 extern uint8_t* TechOwners;
 extern int* SecretProjects;
@@ -667,6 +669,13 @@ extern fp_void auto_save;
 extern fp_1int load_undo;
 extern fp_void wipe_undo;
 extern fp_void auto_undo;
+extern fp_2int sub_5ABFF0;
+extern fp_1int is_objective;
+extern fp_2int num_objectives;
+extern fp_2int most_objectives;
+extern fp_void ascending;
+extern fp_1int rankings;
+extern fp_4int compute_score;
 
 extern fp_3int setup_player;
 extern fp_2int eliminate_player;

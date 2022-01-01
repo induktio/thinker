@@ -20,7 +20,7 @@ In addition to the binary patches listed separately in this file, items that are
 3. Thinker base production AI will decide every item that is produced in a base. The build order can differ substantially from anything the normal AIs might decide to produce, and the difference can be easily noted in the vastly increased quantity of formers and crawlers the AIs might have.
 4. Social AI feature will decide the social engineering models the AI factions will choose. It will attempt to take into account the various cumulative/non-linear effects of the society models and any bonuses provided by the secret projects. The AI is now capable of pop-booming if enough growth is attainable, and it will also try to avoid pacifist drones by switching out of SE models with too many police penalties. All the SE model effects are moddable because the AI is not hardcoded in any particular choices. This feature is also capable of managing all the custom factions.
 5. Tech balance will assign extra importance on some specific techs when selecting what to research: requirements for formers, crawlers, recycling tanks, children's creches, and the 3 technologies to allow the production of more than 2 resources per square. If these items don't have any requirements, or the techs are not available to research, the tech progression is unaffacted by this feature. It will also not affect player faction research in any way.
-6. `base_hurry` feature is able to use AI energy reserves to occasionally hurry base production. Items that can be hurried include most basic facilities, formers, combat units, and sometimes secret projects. The amount of credits spent on rushing projects depends on difficulty level. When a project has been rushed, it will be displayed in a popup if the player has a commlink the faction and there are no sunspots active.
+6. `base_hurry` feature is able to use AI energy reserves to occasionally hurry base production. Items that can be hurried include most basic facilities, formers, combat units, and sometimes secret projects. The amount of credits spent on rushing projects depends on difficulty level. When a project has been rushed, it will be displayed in a popup if the player has a commlink for the faction and there are no sunspots active.
 7. `design_units` feature will introduce custom probe teams, armored crawlers, gravship formers, and AAA garrison prototypes for the computer factions.
 8. `auto_relocate_hq` feature imports a game mechanic from Civilization 3 where lost/captured headquarters are automatically moved to another suitable base. This ensures the AI factions will not struggle without active headquarters.
 9. AI mineral/nutrient production cost factors for each difficulty level can be changed from the `cost_factor` setting. Does not affect other difficulty related modifiers.
@@ -39,6 +39,15 @@ Thinker's in-game menu can be opened by pressing `ALT+T`. It shows the current v
 * This feature works in conjunction with the simple hurry cost option so that it's easy to start hurrying base production on the first turn without worrying about double cost mineral thresholds.
 * To ease calculations, base hurry dialog will now display the minimum required hurry cost to complete the item on the next turn. This assumes the mineral surplus does not decrease, so take it into account if adjusting the workers. When entering a partial payment, this minimal amount will be the default choice in the dialog, instead of the full hurry cost like previously.
 * When a base has been nerve stapled, the remaining turns for the staple effect are shown after the base name separated by a slash in the main base window. This is only shown for player-owned bases. Previously this value was not shown in the user interface.
+
+
+Diplomacy changes
+=================
+For the most part, AI factions utilize vanilla game engine logic when deciding on any actions having to do with diplomacy. There are some notable exceptions where Thinker patches existing diplomacy dialogue and decision making.
+
+Energy loan dialogue ("generous schedule of loan payments") has been revamped to make better decisions on what kind of loans to grant. AI willingness for loan granting is now heavily dependent on treaty status, diplomatic friction, integrity blemishes, and the relative size of the factions (more powerful opponent factions are disliked). AI also has new dialogue when they reject a proposed loan.
+
+Base swapping dialogue has been adjusted to reject any base swaps where the AI would previously accept very disadvantageous trades for itself. AI can be willing to exchange bases for energy credits or another base that is worth more according to the same valuation. During multiplayer games base swapping is disabled altogether, unless the AI faction is an ally and has surrendered previously.
 
 
 Player automation features
@@ -176,6 +185,7 @@ These edits will introduce fairly minimal differences to the vanilla game mechan
 6. Descriptions of various configuration values have been updated to reflect their actual meaning.
 7. Add new predefined units Trance Scout Patrol and Police Garrison.
 8. Plasma Shard weapon strength is raised to 14.
+9. Secret project priorities are adjusted for the AI to start important projects first.
 
 
 SMAC in SMACX mod
@@ -251,6 +261,7 @@ Some notable game engine patches included with Thinker may not have their separa
 21. Fix diplomacy dialog to show the missing response messages (GAVEENERGY) when gifting energy credits to another faction.
 22. Fix issue that caused sea-based probe teams to be returned to landlocked bases. Probes are now returned to the closest base as determined by the actual pathfinding distance.
 23. Patch crawler upgrade cost so that it depends only on the mineral row cost difference between the prototypes multiplied by 40. Nano Factory does not affect crawler upgrades anymore.
+24. Fix issue with randomized faction agendas where they might be given agendas that are their opposition social models. Additionally randomized leader personalities option now always selects 1 or 2 AI priorities.
 
 
 Scient's patch

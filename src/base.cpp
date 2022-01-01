@@ -146,7 +146,7 @@ bool need_scouts(int x, int y, int faction, int scouts) {
 int project_score(int faction, int proj) {
     CFacility* p = &Facility[proj];
     Faction* f = &Factions[faction];
-    return random(5) + f->AI_fight * p->AI_fight
+    return random(4) + f->AI_fight * p->AI_fight
         + (f->AI_growth+1) * p->AI_growth + (f->AI_power+1) * p->AI_power
         + (f->AI_tech+1) * p->AI_tech + (f->AI_wealth+1) * p->AI_wealth;
 }
@@ -354,7 +354,7 @@ int find_project(int base_id) {
             UNIT* u = &Units[unit_id];
             if (u->weapon_type == WPN_PLANET_BUSTER && strlen(u->name) > 0
             && u->std_offense_value() > Units[best].std_offense_value()) {
-                debug("find_project %d %d %s\n", faction, unit_id, (char*)Units[unit_id].name);
+                debug("find_project %d %d %s\n", faction, unit_id, Units[unit_id].name);
                 best = unit_id;
             }
         }
@@ -373,18 +373,20 @@ int find_project(int base_id) {
         if (can_build(base_id, FAC_SUBSPACE_GENERATOR)) {
             return -FAC_SUBSPACE_GENERATOR;
         }
-        int score = INT_MIN;
+        int best_score = INT_MIN;
         int choice = 0;
         for (int i = SP_ID_First; i <= SP_ID_Last; i++) {
             if (can_build(base_id, i) && prod_count(faction, -i, base_id) < similar_limit
             && (similar_limit > 1 || !redundant_project(faction, i))) {
-                int sc = project_score(faction, i);
-                choice = (sc > score ? i : choice);
-                score = max(score, sc);
-                debug("find_project %d %d %d %s\n", faction, i, sc, Facility[i].name);
+                int score = project_score(faction, i);
+                if (score > best_score) {
+                    choice = i;
+                    best_score = score;
+                }
+                debug("find_project %d %d %d %s\n", faction, i, score, Facility[i].name);
             }
         }
-        return (projs > 0 || score > 3 ? -choice : 0);
+        return (projs > 0 || best_score > 3 ? -choice : 0);
     }
     return 0;
 }

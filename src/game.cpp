@@ -154,6 +154,13 @@ bool has_facility(int base_id, int id) {
     return Bases[base_id].facilities_built[id/8] & (1 << (id % 8));
 }
 
+bool has_fac_built(int base_id, int facility_id) {
+    if (facility_id < Fac_ID_First || facility_id > Fac_ID_Last) {
+        return false;
+    }
+    return Bases[base_id].facilities_built[facility_id/8] & (1 << (facility_id % 8));
+}
+
 bool can_build(int base_id, int id) {
     assert(base_id >= 0 && base_id < *total_num_bases);
     assert(id > 0 && id <= FAC_EMPTY_SP_64);
@@ -772,7 +779,6 @@ bool has_colony_pods(int faction) {
     }
     return false;
 }
-
 
 int nearby_items(int x, int y, int range, uint32_t item) {
     assert(range >= 0 && range <= MaxTableRange);

@@ -18,22 +18,27 @@ enum {
 enum {
     DiploProposalUnk1 = 1, // ?
     DiploProposalUnk2 = 2, // ?
-    DiploProposalUnk3 = 3, // threaten
+    DiploProposalUnk3 = 3, // ?
     DiploProposalUnk4 = 4, // tech trade?
     DiploProposalUnk5 = 5, // tech trade?
     DiploProposalNeedEnergy = 6,
-    DiploProposalUnk8 = 8, // propose attack
-    DiploProposalUnk9 = 9, // base swap
-    DiploProposalUnk11 = 11, // repay loan
-    DiploProposalUnk12 = 12, // buy council vote
-    DiploProposalUnk13 = 13, // tech trade?
+    DiploProposalTradeMaps = 7,
+    DiploProposalJointAttack = 8,
+    DiploProposalBaseSwap = 9,
+    DiploProposalCloseDialog = 10,
+    DiploProposalRepayLoan = 11,
+    DiploProposalCouncilVote = 12,
+    DiploProposalUnk13 = 13, // tech/commlink trade?
 };
 
 enum {
     DiploCounterFriendship = 1, // goodwill and friendship
     DiploCounterNameAPrice = 2, // need but name your price
+    DiploCounterThreaten = 3, // threaten with attack or cancel pact
     DiploCounterResearchData = 4, // valuable research data
+    DiploCounterEnergyPayment = 5, // modest sum of energy credits
     DiploCounterLoanPayment = 6, // schedule of loan payments
+    DiploCounterGiveBase = 8, // turn over one of my bases
 };
 
 
@@ -58,6 +63,7 @@ void __thiscall Console_editor_fungus(Console* UNUSED(This));
 void __cdecl mod_say_loc(char* dest, int x, int y, int a4, int a5, int a6);
 void __cdecl mod_diplomacy_caption(int faction1, int faction2);
 int __cdecl mod_energy_trade(int faction1, int faction2);
+int __cdecl mod_base_swap(int faction1, int faction2);
 
 
 
