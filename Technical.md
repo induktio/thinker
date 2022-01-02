@@ -46,7 +46,7 @@ Another way to build Thinker on Linux platforms is to convert the CodeBlocks pro
 
 Patches included in the release version
 =======================================
-Thinker's launcher program thinker.exe requires the original, unmodified terranx.exe provided by the GOG version in the same folder, (3 084 288 bytes, GOG version SHA-1: 4b19c1fe3266b5ebc4305cd182ed6e864e3a1c4a). Using other official game binaries of the same version may also work. If an incompatible, modified binary is found, the mod will display an error message and close the game.
+Thinker's launcher program thinker.exe requires the original terranx.exe (game version 2.0) provided by GOG in the same folder, (3 084 288 bytes, GOG version SHA-1: 4b19c1fe3266b5ebc4305cd182ed6e864e3a1c4a). Using other official game binaries of the same version should also work. If an incompatible, modified binary is found, the mod will display an error message and close the game.
 
 Thinker will not modify terranx.exe file on disk, so it can still be used to start an unpatched version of the game. The mod will apply all of the changes at startup by patching the binary in memory. Also Scient's patch v2.0 changes are automatically loaded at startup.
 

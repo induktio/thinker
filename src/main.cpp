@@ -135,6 +135,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->counter_espionage = atoi(value);
     } else if (MATCH("thinker", "ignore_reactor_power")) {
         cf->ignore_reactor_power = atoi(value);
+    } else if (MATCH("thinker", "former_rebase")) {
+        cf->former_rebase = atoi(value);
     } else if (MATCH("thinker", "early_research_start")) {
         cf->early_research_start = atoi(value);
     } else if (MATCH("thinker", "facility_capture_fix")) {
@@ -319,7 +321,7 @@ int robust, int immunity, int impunity, int penalty) {
     double base_ratio = min(1.0, f->base_count / min(40.0, *map_area_sq_root * 0.5));
     int w_morale = (has_project(faction, FAC_COMMAND_NEXUS) ? 2 : 0)
         + (has_project(faction, FAC_CYBORG_FACTORY) ? 2 : 0);
-    int w_probe = (range < 25 && *current_turn - m->thinker_last_mc_turn < 7 ? 5 : 0);
+    int w_probe = (range < 25 && *current_turn - m->thinker_last_mc_turn < 8 ? 5 : 0);
     int sc = 0;
     int vals[11];
 

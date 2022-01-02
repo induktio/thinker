@@ -25,6 +25,7 @@ In addition to the binary patches listed separately in this file, items that are
 8. `auto_relocate_hq` feature imports a game mechanic from Civilization 3 where lost/captured headquarters are automatically moved to another suitable base. This ensures the AI factions will not struggle without active headquarters.
 9. AI mineral/nutrient production cost factors for each difficulty level can be changed from the `cost_factor` setting. Does not affect other difficulty related modifiers.
 10. Content (non-drone) base population for each difficulty level can be adjusted from `content_pop_player` and `content_pop_computer` variables. By default these have the same values than vanilla game mechanics.
+11. Also according to vanilla game rules, the AI pays reduced maintenance for facilities on two highest difficulty levels. Transcend level has 1/3 and Thinker level 2/3 maintenance from usual amounts.
 
 
 User interface additions
@@ -97,7 +98,7 @@ Another novel addition has been naval invasions executed by the AI. This has bee
 
 Thinker prioritizes naval invasions if the closest enemy is located on another continent. Otherwise, most of the focus is spent on building land and air units. At any given time, only one priority landing zone can be active for the AI. Maximum distance for invasions depends slightly on pathfinding but it should be possible on all Huge maps.
 
-Base garrisoning priorities are also handled entirely by the new logic which tries prioritize vulnerable border bases much more than usual. Air units also utilize the same priorities when deciding where to rebase. You might notice there's less massive AI stacks being rebased around for no meaningful reason. Instead Thinker tries to rebase the aircraft in much smaller stacks to more bases so that they can cover a larger area.
+Base garrisoning priorities are also handled entirely by the new logic which tries to prioritize vulnerable border bases much more than usual. Air units also utilize the same priorities when deciding where to rebase. You might notice there's less massive AI stacks being rebased around for no meaningful reason. Instead Thinker tries to rebase the aircraft in much smaller stacks to more bases so that they can cover a larger area.
 
 
 Hurry and upgrade formulas
@@ -244,7 +245,7 @@ Some notable game engine patches included with Thinker may not have their separa
 4. Fix engine rendering issue where ocean fungus tiles displayed inconsistent graphics compared to the adjacent land fungus tiles.
 5. Fix game showing redundant "rainfall patterns have been altered" messages when these events are caused by other factions.
 6. Fix a bug that occurs after the player does an artillery attack on unoccupied tile and then selects another unit to view combat odds and cancels the attack. After this veh_attack_flags will not get properly cleared and the next bombardment on an unoccupied tile always results in the destruction of the bombarding unit.
-7. Patch AI vehicle home base reassignment bug. This change inverts the old condition where an apparent oversight made the engine to reassign vehicles to bases with mineral_surplus < 2.
+7. Disable legacy upkeep code in the game engine that might cause AI formers to be reassigned to nearby bases that are owned by other factions.
 8. Patch the game engine to use significantly less CPU time when idling using a method similar to [smac-cpu-fix](https://github.com/vinceho/smac-cpu-fix/). Normally the game uses 100% of CPU time which can be be a problem on laptop devices.
 9. When capturing a base, Recycling Tanks and Recreation Commons are not always destroyed unlike previously. They are sometimes randomly destroyed like other facilities.
 10. Patch any faction with negative research rating to start accumulating labs on the first turn. In vanilla rules each negative point results in an additional 5 turn delay before the faction starts accumulating labs (e.g. Believers had a 10 turn delay).

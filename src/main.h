@@ -178,6 +178,7 @@ struct Config {
     int tech_stagnate_rate = 200;
     int counter_espionage = 0;
     int ignore_reactor_power = 0;
+    int former_rebase = 0; // unlisted option
     int early_research_start = 1; // unlisted option
     int facility_capture_fix = 1; // unlisted option
     int territory_border_fix = 1;

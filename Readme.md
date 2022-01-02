@@ -13,9 +13,12 @@ By patching the game to use an additional DLL, new functionality can be develope
 * More config options for many previously fixed settings in the game engine
 * Many enhancements to random map generation/spawn locations
 * Visual changes on how base name labels are emphasized on the map
-* Game binary includes [Scient's patches](Details.md)
+* Mod also includes [Scient's patches](Details.md)
 
 This mod is tested to work with the [GOG version](https://www.gog.com/game/sid_meiers_alpha_centauri) of Alpha Centauri.
+Note that official Alien Crossfire patch version 2.0 must be installed for the launcher to work with terranx.exe.
+Older game version 1.0 is NOT supported by Thinker. Installing Scient's patch v2.x also works since this binary can be used by the launcher.
+
 [See more information](Details.md) about the features and recommended settings.
 It's strongly recommended to read Details.md as many features provided by the mod are not present in the vanilla game.
 [Discuss here](https://github.com/induktio/thinker/discussions) about anything related to Thinker development.
@@ -36,7 +39,7 @@ Installation
 2. Check Changelog.md and Details.md for useful information.
 3. Change configuration from thinker.ini or just use the defaults.
 4. Start the game from thinker.exe.
-5. The launcher requires original terranx.exe in the same folder but this file is not modified on disk. All the changes are applied at runtime.
+5. The launcher requires original Alien Crossfire v2.0 terranx.exe in the same folder but this file is not modified on disk. In case of startup problems, make sure the official v2.0 patch is applied on the game.
 6. Press ALT+T to open Thinker's options menu. Other option is to check that mod version/build date is visible in the game version menu (Ctrl+F4).
 7. If none of those options display mod version, Thinker is incorrectly installed and not loaded.
 

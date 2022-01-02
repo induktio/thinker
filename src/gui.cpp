@@ -1213,6 +1213,9 @@ int base_trade_value(int base_id, int faction1, int faction2)
         return 0;
     }
     BASE* base = &Bases[base_id];
+    bool own_base = base->faction_id == faction2;
+    bool pact = has_pact(faction1, faction2);
+    int hq_id = find_hq(faction2);
     int value = 50*base->pop_size;
     int friction_score = *diff_level*2 + clamp(*DiploFriction, 0, 20)
         + 4*max(0, Factions[faction1].ranking - 4)
@@ -1227,7 +1230,8 @@ int base_trade_value(int base_id, int faction1, int faction2)
     } 
     for (int i = SP_ID_First; i <= SP_ID_Last; i++) {
         if (SecretProjects[i - SP_ID_First] == base_id) {
-            value += Facility[i].cost * 30;
+            value += Facility[i].cost * (own_base && !pact ? 40 : 20)
+                + 60 * clamp(project_score(faction2, i, false), 0, 10);
         }
     }
     MAP* sq;
@@ -1256,7 +1260,8 @@ int base_trade_value(int base_id, int faction1, int faction2)
             }
         }
     }
-    if (base->faction_id == faction2) {
+    if (own_base) {
+        value += 80;
         for (int i = 0; i < *total_num_vehicles; i++) {
             if ((Vehs[i].x == base->x && Vehs[i].y == base->y)
             || Vehs[i].home_base_id == base_id) {
@@ -1266,12 +1271,16 @@ int base_trade_value(int base_id, int faction1, int faction2)
         if (num_own > 0) {
             value = value * (num_own == num_all ? 5 : 3) / 2;
         }
-        value = max(value, 100) * (base->assimilation_turns_left > 8 ? 3 : 4)
-            * (max(0, friction_score) + (has_pact(faction1, faction2) ? 32 : 40)) / (32 * 4);
+        value = value * (base->assimilation_turns_left > 8 ? 3 : 4)
+            * (max(0, friction_score) + (pact ? 32 : 40)) / (32 * 4);
     } else {
         if (num_own < num_all) {
             value = value * (num_own ? 5 : 3) / 8;
         }
+    }
+    if (hq_id >= 0) {
+        int dist = map_range(base->x, base->y, Bases[hq_id].x, Bases[hq_id].y);
+        value = value * (72 - clamp(dist, 8, 40)) / 64;
     }
     if (base->event_flags & BEVENT_OBJECTIVE || *game_rules & RULES_SCN_VICT_ALL_BASE_COUNT_OBJ) {
         value *= 2;

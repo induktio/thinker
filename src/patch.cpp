@@ -774,14 +774,13 @@ bool patch_setup(Config* cf) {
     }
 
     /*
-    Patch AI vehicle home base reassignment bug.
-    This change inverts the old condition where an apparent oversight made
-    the engine to reassign vehicles to bases with mineral_surplus < 2.
+    Disable legacy upkeep code in the game engine that might cause AI formers
+    to be reassigned to nearby bases that are owned by other factions.
     */
-    {
-        const byte old_bytes[] = {0x0F,0x8D,0x83,0x00,0x00,0x00};
-        const byte new_bytes[] = {0x0F,0x8C,0x83,0x00,0x00,0x00};
-        write_bytes(0x562094, old_bytes, new_bytes, sizeof(new_bytes));
+    if (!cf->former_rebase) {
+        const byte old_bytes[] = {0x0F,0x84,0x92,0x01,0x00};
+        const byte new_bytes[] = {0xE9,0x93,0x01,0x00,0x00};
+        write_bytes(0x561FF2, old_bytes, new_bytes, sizeof(new_bytes));
     }
 
     /*
