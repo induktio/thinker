@@ -1,6 +1,21 @@
 
 # Thinker mod release changelog
 
+## Version 3.0 (2022-01-02)
+* Energy loan and base swapping negotiations in diplomacy have been overhauled to make better decisions for the AI.
+* AI has new dialogue when they sometimes reject a proposed offer or when they are unable to grant new loans.
+* AI tries to evict neutral probe teams from its territory. This will be displayed in a separate popup if foreign_treaty_popup is enabled.
+* AI probes will sometimes attempt to subvert adjacent enemy units (only one per tile) with their energy reserves.
+* AI is now able to hurry secret projects with energy reserves if it is considered an important project by the AI priorities.
+* Secret project hurrying can also be adjusted with base_hurry config option.
+* Removed config options: hurry_items, limit_project_start.
+* Fix issue that caused sea-based probe teams to be returned to landlocked bases. Probes are now returned to the closest base by the pathfinding distance.
+* Fix issue with randomized faction agendas where they might be given agendas that are their opposition social models.
+* Additionally randomized leader personalities option now always selects 1 or 2 AI priorities.
+* Patch crawler upgrade cost so that it depends only on the mineral row cost difference between the prototypes multiplied by 40. Nano Factory does not affect crawler upgrades anymore.
+* Disable legacy upkeep code in the game engine that might cause AI formers to be reassigned to nearby bases that are owned by other factions.
+
+
 ## Version 2.9 (2021-12-17)
 * Thinker now uses a new launcher program called thinker.exe to start the mod. It requires having the original terranx.exe version in the game folder.
 * Base hurry dialog is overhauled to display the minimal required hurry cost to complete the current production on the next turn.
