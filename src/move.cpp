@@ -1026,6 +1026,10 @@ int crawler_move(const int id) {
         return mod_veh_skip(id);
     }
     if (!veh->at_target()) {
+        // Move status overrides any waypoint target when the unit is not at target
+        if (veh->move_status == ORDER_CONVOY) {
+            veh->move_status = ORDER_MOVE_TO;
+        }
         return SYNC;
     }
     int best_score = 0;
@@ -2430,7 +2434,15 @@ int combat_move(const int id) {
                 }
             }
         }
-        return SYNC;
+        bool replace_order = veh->is_probe()
+            && (sq = mapsq(veh->waypoint_1_x, veh->waypoint_1_y))
+            && sq->is_base()
+            && sq->owner != faction
+            && !has_pact(faction, sq->owner)
+            && !allow_probe(faction, sq->owner);
+        if (!replace_order) {
+            return SYNC;
+        }
     }
     if (at_base) {
         defenders = max(0, defender_count(veh->x, veh->y) - 1); // Excluding this unit
