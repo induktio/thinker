@@ -911,16 +911,20 @@ int show_mod_config() {
         MapGen = 1,
         MapContinents = 2,
         MapLandmarks = 4,
-        MapLabels = 8,
-        AutoBases = 16,
-        AutoUnits = 32,
-        FormerReplace = 64,
+        MapMirrorX = 8,
+        MapMirrorY = 16,
+        MapLabels = 32,
+        AutoBases = 64,
+        AutoUnits = 128,
+        FormerReplace = 256,
     };
     *DialogChoices = 0
         | (conf.new_world_builder ? MapGen : 0)
         | (conf.world_continents ? MapContinents : 0)
         | (conf.modified_landmarks ? MapLandmarks : 0)
         | (conf.world_map_labels ? MapLabels : 0)
+        | (conf.map_mirror_x ? MapMirrorX : 0)
+        | (conf.map_mirror_y ? MapMirrorY : 0)
         | (conf.manage_player_bases ? AutoBases : 0)
         | (conf.manage_player_units ? AutoUnits : 0)
         | (conf.warn_on_former_replace ? FormerReplace : 0);
@@ -941,6 +945,14 @@ int show_mod_config() {
     conf.modified_landmarks = !!(value & MapLandmarks);
     WritePrivateProfileStringA(ModAppName, "modified_landmarks",
         (conf.modified_landmarks ? "1" : "0"), GameIniFile);
+
+    conf.map_mirror_x = !!(value & MapMirrorX);
+    WritePrivateProfileStringA(ModAppName, "map_mirror_x",
+        (conf.map_mirror_x ? "1" : "0"), GameIniFile);
+
+    conf.map_mirror_y = !!(value & MapMirrorY);
+    WritePrivateProfileStringA(ModAppName, "map_mirror_y",
+        (conf.map_mirror_y ? "1" : "0"), GameIniFile);
 
     conf.world_map_labels = !!(value & MapLabels);
     WritePrivateProfileStringA(ModAppName, "world_map_labels",

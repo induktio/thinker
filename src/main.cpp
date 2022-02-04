@@ -115,6 +115,10 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->world_continents = atoi(value);
     } else if (MATCH("thinker", "modified_landmarks")) {
         cf->modified_landmarks = atoi(value);
+    } else if (MATCH("thinker", "map_mirror_x")) {
+        cf->map_mirror_x = atoi(value);
+    } else if (MATCH("thinker", "map_mirror_y")) {
+        cf->map_mirror_y = atoi(value);
     } else if (MATCH("thinker", "world_sea_levels")) {
         opt_list_parse(cf->world_sea_levels, buf, 3, 0);
     } else if (MATCH("thinker", "faction_placement")) {
@@ -261,6 +265,10 @@ int game_ini_parse(Config* cf) {
         ModAppName, "world_continents", cf->world_continents, GameIniFile);
     cf->modified_landmarks = GetPrivateProfileIntA(
         ModAppName, "modified_landmarks", cf->modified_landmarks, GameIniFile);
+    cf->map_mirror_x = GetPrivateProfileIntA(
+        ModAppName, "map_mirror_x", cf->map_mirror_x, GameIniFile);
+    cf->map_mirror_y = GetPrivateProfileIntA(
+        ModAppName, "map_mirror_y", cf->map_mirror_y, GameIniFile);
     cf->world_map_labels = GetPrivateProfileIntA(
         ModAppName, "world_map_labels", cf->world_map_labels, GameIniFile);
     cf->manage_player_bases = GetPrivateProfileIntA(

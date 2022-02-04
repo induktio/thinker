@@ -44,8 +44,10 @@ Open Project Homepage
 #caption Thinker Mod Options
 #itemlist
 Use new random map generator
-Create random maps with larger islands
-Add modified landmarks on random maps
+__Create random maps with larger islands
+__Add modified landmarks on random maps
+__Mirror maps along X axis
+__Mirror maps along Y axis
 Show world map labels
 Thinker manages player base governors
 Thinker manages player colony pods/formers

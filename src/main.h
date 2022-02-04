@@ -166,6 +166,8 @@ struct Config {
     int new_world_builder = 1;
     int world_continents = 0;
     int modified_landmarks = 0;
+    int map_mirror_x = 0;
+    int map_mirror_y = 0;
     int world_sea_levels[3] = {40,55,70};
     int faction_placement = 1;
     int nutrient_bonus = 0;

@@ -520,10 +520,34 @@ void __cdecl mod_world_build() {
             }
             sq = mapsq(x, y);
             sq->contour = clamp((int)(L + L*value), 0, 255);
+        }
+    }
+    if (conf.map_mirror_x) {
+        const int ky = 2 - (*map_axis_y & 1);
+        for (y = 0; y < *map_axis_y/2; y++) {
+            for (x = y&1; x < *map_axis_x; x+=2) {
+                MAP* src = mapsq(x, y);
+                MAP* tgt = mapsq(x, *map_axis_y - y - ky);
+                tgt->contour = src->contour;
+            }
+        }
+    }
+    if (conf.map_mirror_y) {
+        const int kx = 2 - (*map_axis_x & 1);
+        for (y = 0; y < *map_axis_y; y++) {
+            for (x = y&1; x < *map_axis_x/2; x+=2) {
+                MAP* src = mapsq(x, y);
+                MAP* tgt = mapsq(*map_axis_x - x - kx, y);
+                tgt->contour = src->contour;
+            }
+        }
+    }
+    for (y = 0; y < *map_axis_y; y++) {
+        for (x = y&1; x < *map_axis_x; x+=2) {
+            sq = mapsq(x, y);
             levels[sq->contour]++;
         }
     }
-
     int level_sum = 0;
     int level_mod = 0;
     for (i = 0; i < 256; i++) {
@@ -589,7 +613,7 @@ void __cdecl mod_world_build() {
     world_fungus();
     world_validate();
 
-    int lm = conf.landmarks;
+    int lm = (conf.map_mirror_x || conf.map_mirror_y ? 0 : conf.landmarks);
     if (lm & LM_JUNGLE) {
         if (conf.modified_landmarks) {
             mod_world_monsoon();
@@ -603,12 +627,17 @@ void __cdecl mod_world_build() {
     if (lm & LM_RIDGE) world_ridge(-1, -1);
     if (lm & LM_URANIUM) world_diamond(-1, -1);
     if (lm & LM_RUINS) world_ruin(-1, -1);
+    /*
+    Unity Wreckage and Fossil Field Ridge are always expansion only content.
+    Manifold Nexus and Borehole Cluster were also added to vanilla SMAC
+    in the patches, even though those landmarks are technically expansion content.
+    */
     if (*expansion_enabled) {
         if (lm & LM_UNITY) world_unity(-1, -1);
-        if (lm & LM_NEXUS) world_temple(-1, -1);
+        if (lm & LM_FOSSIL) world_fossil(-1, -1);
     }
-    if (lm & LM_FOSSIL) world_fossil(-1, -1);
     if (lm & LM_CANYON) world_canyon_nessus(-1, -1);
+    if (lm & LM_NEXUS) world_temple(-1, -1);
     if (lm & LM_BOREHOLE) world_borehole(-1, -1);
     if (lm & LM_SARGASSO) world_sargasso(-1, -1);
     if (lm & LM_DUNES) world_dune(-1, -1);
