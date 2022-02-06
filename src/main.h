@@ -379,6 +379,7 @@ extern AIPlans plans[MaxPlayerNum];
 DLL_EXPORT int ThinkerDecide();
 int opt_list_parse(int* ptr, char* buf, int len, int min_val);
 int __cdecl mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5);
+int __cdecl SocialWin_social_ai(int faction, int v1, int v2, int v3, int v4, int v5);
 
 
 

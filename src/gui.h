@@ -53,11 +53,11 @@ void __cdecl mod_turn_timer();
 int __thiscall mod_calc_dim(Console* This);
 int __thiscall mod_gen_map(Console* This, int iOwner, int fUnitsOnly);
 void __thiscall MapWin_gen_overlays(Console* This, int x, int y);
-int __thiscall basewin_popup_start(
+int __thiscall BaseWin_popup_start(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
-int __cdecl basewin_ask_number(const char* label, int value, int a3);
-void __cdecl basewin_draw_name(char* dest, char* name);
-void __cdecl basewin_action_staple(int base_id);
+int __cdecl BaseWin_ask_number(const char* label, int value, int a3);
+void __cdecl BaseWin_draw_name(char* dest, char* name);
+void __cdecl BaseWin_action_staple(int base_id);
 int __thiscall ReportWin_close_handler(void* This);
 void __thiscall Console_editor_fungus(Console* UNUSED(This));
 void __cdecl mod_say_loc(char* dest, int x, int y, int a4, int a5, int a6);

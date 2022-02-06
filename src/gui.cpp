@@ -1006,7 +1006,7 @@ int show_mod_menu() {
 
 static int minimal_cost = 0;
 
-int __thiscall basewin_popup_start(Win* This,
+int __thiscall BaseWin_popup_start(Win* This,
 const char* UNUSED(filename), const char* UNUSED(label), int a4, int a5, int a6, int a7)
 {
     BASE* base = *current_base_ptr;
@@ -1019,13 +1019,13 @@ const char* UNUSED(filename), const char* UNUSED(label), int a4, int a5, int a6,
     return Popup_start(This, "modmenu", "HURRY", a4, a5, a6, a7);
 }
 
-int __cdecl basewin_ask_number(const char* label, int value, int a3)
+int __cdecl BaseWin_ask_number(const char* label, int value, int a3)
 {
     ParseNumTable[0] = value;
     return pop_ask_number(ScriptFile, label, minimal_cost, a3);
 }
 
-void __cdecl basewin_draw_name(char* dest, char* name)
+void __cdecl BaseWin_draw_name(char* dest, char* name)
 {
     BASE& base = Bases[*current_base_id];
     if ((base.faction_id == MapWin->cOwner || *game_state & STATE_OMNISCIENT_VIEW)
@@ -1039,7 +1039,7 @@ void __cdecl basewin_draw_name(char* dest, char* name)
 /*
 Refresh base window workers properly after nerve staple is done.
 */
-void __cdecl basewin_action_staple(int base_id) {
+void __cdecl BaseWin_action_staple(int base_id) {
     action_staple(base_id);
     base_compute(base_id);
     BaseWin_on_redraw(BaseWin);

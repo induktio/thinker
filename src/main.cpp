@@ -464,6 +464,16 @@ int robust, int immunity, int impunity, int penalty) {
     return sc;
 }
 
+int __cdecl SocialWin_social_ai(int faction,
+int UNUSED(v1), int UNUSED(v2), int UNUSED(v3), int UNUSED(v4), int UNUSED(v5))
+{
+    Faction* f = &Factions[faction];
+    if (f->SE_upheaval_cost_paid > 0) {
+        social_set(faction);
+    }
+    return 0;
+}
+
 int __cdecl mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5) {
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];

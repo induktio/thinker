@@ -635,11 +635,12 @@ bool patch_setup(Config* cf) {
     write_call(0x4E113B, (int)mod_world_build);
     write_call(0x58B9BF, (int)mod_world_build);
     write_call(0x58DDD8, (int)mod_world_build);
-    write_call(0x415C6A, (int)basewin_draw_name);
-    write_call(0x41B771, (int)basewin_action_staple);
-    write_call(0x41916B, (int)basewin_popup_start);
-    write_call(0x4195A6, (int)basewin_ask_number);
+    write_call(0x415C6A, (int)BaseWin_draw_name);
+    write_call(0x41B771, (int)BaseWin_action_staple);
+    write_call(0x41916B, (int)BaseWin_popup_start);
+    write_call(0x4195A6, (int)BaseWin_ask_number);
     write_call(0x51D1C2, (int)Console_editor_fungus);
+    write_call(0x4AED04, (int)SocialWin_social_ai);
     write_call(0x54814D, (int)mod_diplomacy_caption);
     write_call(0x4D0ECF, (int)mod_upgrade_cost);
     write_call(0x4D16D9, (int)mod_upgrade_cost);
@@ -846,6 +847,7 @@ bool patch_setup(Config* cf) {
             }
         }
     }
+
     /*
     Find nearest base for returned probes in order_veh and probe functions.
     */
@@ -869,6 +871,20 @@ bool patch_setup(Config* cf) {
         write_bytes(0x5A430F, old_probe, new_probe, sizeof(new_probe));
         write_call(0x5A432C, (int)probe_return_base);
     }
+
+    /*
+    Fix bug that prevents the turn from advancing after force-ending the turn
+    while any player-owned needlejet in flight has moves left.
+    */
+    {
+        const byte old_bytes[] = {0x3B,0xC8,0x0F,0x8C,0x65,0x01,0x00,0x00};
+        const byte new_bytes[] = {0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90};
+        write_bytes(0x5259CE, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+
+    /*
+    Additional PSI combat bonus options.
+    */
     {
         const byte old_bytes[] = {0x8B,0xC7,0x99,0x2B,0xC2,0xD1,0xF8};
         const byte new_bytes[] = {0x57,0xE8,0x00,0x00,0x00,0x00,0x5F};
@@ -886,6 +902,7 @@ bool patch_setup(Config* cf) {
         write_call(0x501915, (int)dream_twister_bonus); // get_basic_offense
         *(int*)0x501F9C = cf->dream_twister_bonus; // battle_compute
     }
+
     if (cf->smac_only) {
         if (!FileExists("smac_mod/alphax.txt")
         || !FileExists("smac_mod/conceptsx.txt")
