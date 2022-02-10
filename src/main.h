@@ -196,11 +196,14 @@ struct Config {
     int planetpearls = 1;
     int aquatic_bonus_minerals = 1;
     int alien_guaranteed_techs = 1;
+    int alien_early_start = 0;
+    int cult_early_start = 0;
     int natives_weak_until_turn = -1;
     int neural_amplifier_bonus = 50;
     int dream_twister_bonus = 50;
     int fungal_tower_bonus = 50;
-    int patch_content_pop = 0;
+    int perimeter_defense_bonus = 2;
+    int tachyon_field_bonus = 2;
     int content_pop_player[MaxDiffNum] = {6,5,4,3,2,1};
     int content_pop_computer[MaxDiffNum] = {3,3,3,3,3,3};
     int repair_minimal = 1;
@@ -213,9 +216,9 @@ struct Config {
     int repair_base_facility = 10;
     int repair_nano_factory = 10;
     int skip_random_factions = 0;
-    int faction_file_count = 14;
-    int debug_mode = DEBUG;
-    int debug_verbose = DEBUG;
+    int faction_file_count = 14; // internal variable
+    int debug_mode = DEBUG; // internal variable
+    int debug_verbose = DEBUG; // internal variable
 };
 
 /*
@@ -255,7 +258,8 @@ struct AIPlans {
     All faction-owned bases are ranked each turn based on the surplus mineral production,
     and only the top third are selected for project building.
     */
-    int proj_limit = 5;
+    int project_limit = 5;
+    int satellite_limit = 5;
     /*
     PSI combat units are only selected for production if this score is higher than zero.
     Higher values will make the prototype picker choose these units more often.
@@ -263,7 +267,8 @@ struct AIPlans {
     int psi_score = 0;
     int keep_fungus = 0;
     int plant_fungus = 0;
-    int satellites_goal = 0;
+    int satellite_goal = 0;
+    int satellite_priority = 1;
     int mil_strength = 0;
     int enemy_nukes = 0;
     float enemy_base_range = 0;

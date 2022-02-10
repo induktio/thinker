@@ -189,6 +189,7 @@ void plans_upkeep(int faction) {
         const int i = faction;
         int minerals[MaxBaseNum];
         int population[MaxBaseNum];
+        int enemy_odp = 0;
         Faction* f = &Factions[i];
 
         plans[i].unknown_factions = 0;
@@ -249,6 +250,9 @@ void plans_upkeep(int faction) {
                 if (at_war(i, j)) {
                     plans[i].enemy_factions++;
                     plans[i].enemy_nukes += Factions[j].planet_busters;
+                    enemy_odp += Factions[j].satellites_ODP;
+                } else if (has_pact(i, j)) {
+                    enemy_odp -= Factions[j].satellites_ODP;
                 }
                 float factor = min(8.0f, (is_human(j) ? 2.0f : 1.0f)
                     * (has_treaty(i, j, DIPLO_COMMLINK) ? 1.0f : 0.5f)
@@ -294,20 +298,22 @@ void plans_upkeep(int faction) {
             }
         }
         plans[i].enemy_base_range = (n > 0 ? enemy_sum/n : MaxEnemyRange);
-
         std::sort(minerals, minerals+n);
         std::sort(population, population+n);
         if (f->base_count >= 32) {
-            plans[i].proj_limit = max(5, minerals[n*3/4]);
+            plans[i].project_limit = max(5, minerals[n*3/4]);
         } else {
-            plans[i].proj_limit = max(5, minerals[n*2/3]);
+            plans[i].project_limit = max(5, minerals[n*2/3]);
         }
-        plans[i].satellites_goal = min(conf.max_satellites, population[n*3/4]);
         plans[i].psi_score = psi_score(i);
+        plans[i].satellite_limit = max(5, minerals[n/2]);
+        plans[i].satellite_goal = min(conf.max_satellites, population[n*4/5]);
+        plans[i].satellite_priority = enemy_odp < 2
+            || has_tech(i, Facility[FAC_ORBITAL_DEFENSE_POD].preq_tech);
 
         debug("plans_upkeep %d %d proj_limit: %2d sat_goal: %2d psi: %2d keep_fungus: %d "\
             "plant_fungus: %d enemy_bases: %2d enemy_mil: %.4f enemy_range: %.4f\n",
-            *current_turn, i, plans[i].proj_limit, plans[i].satellites_goal,
+            *current_turn, i, plans[i].project_limit, plans[i].satellite_goal,
             plans[i].psi_score, plans[i].keep_fungus, plans[i].plant_fungus,
             plans[i].enemy_bases, plans[i].enemy_mil_factor, plans[i].enemy_base_range);
     }

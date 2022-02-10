@@ -264,6 +264,7 @@ Some notable game engine patches included with Thinker may not have their separa
 23. Patch crawler upgrade cost so that it depends only on the mineral row cost difference between the prototypes multiplied by 40. Nano Factory does not affect crawler upgrades anymore.
 24. Fix issue with randomized faction agendas where they might be given agendas that are their opposition social models. Additionally randomized leader personalities option now always selects 1 or 2 AI priorities.
 25. Fix bug that prevents the turn from advancing after force-ending the turn while any player-owned needlejet in flight has moves left.
+26. Patch Energy Market Crash event to reduce energy reserves only by 1/4 instead of 3/4.
 
 
 Scient's patch

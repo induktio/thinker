@@ -171,6 +171,10 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->aquatic_bonus_minerals = atoi(value);
     } else if (MATCH("thinker", "alien_guaranteed_techs")) {
         cf->alien_guaranteed_techs = atoi(value);
+    } else if (MATCH("thinker", "alien_early_start")) {
+        cf->alien_early_start = atoi(value);
+    } else if (MATCH("thinker", "cult_early_start")) {
+        cf->cult_early_start = atoi(value);
     } else if (MATCH("thinker", "natives_weak_until_turn")) {
         cf->natives_weak_until_turn = clamp(atoi(value), 0, 127);
     } else if (MATCH("thinker", "neural_amplifier_bonus")) {
@@ -179,16 +183,18 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->dream_twister_bonus = clamp(atoi(value), 0, 1000);
     } else if (MATCH("thinker", "fungal_tower_bonus")) {
         cf->fungal_tower_bonus = clamp(atoi(value), 0, 1000);
+    } else if (MATCH("thinker", "perimeter_defense_bonus")) {
+        cf->perimeter_defense_bonus = clamp(atoi(value), 0, 127);
+    } else if (MATCH("thinker", "tachyon_field_bonus")) {
+        cf->tachyon_field_bonus = clamp(atoi(value), 0, 127);
     } else if (MATCH("thinker", "cost_factor")) {
         opt_list_parse(CostRatios, buf, MaxDiffNum, 1);
     } else if (MATCH("thinker", "tech_cost_factor")) {
         opt_list_parse(cf->tech_cost_factor, buf, MaxDiffNum, 1);
     } else if (MATCH("thinker", "content_pop_player")) {
         opt_list_parse(cf->content_pop_player, buf, MaxDiffNum, 0);
-        cf->patch_content_pop = 1;
     } else if (MATCH("thinker", "content_pop_computer")) {
         opt_list_parse(cf->content_pop_computer, buf, MaxDiffNum, 0);
-        cf->patch_content_pop = 1;
     } else if (MATCH("thinker", "repair_minimal")) {
         cf->repair_minimal = clamp(atoi(value), 0, 10);
     } else if (MATCH("thinker", "repair_fungus")) {

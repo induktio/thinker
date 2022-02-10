@@ -256,7 +256,7 @@ int __cdecl mod_setup_player(int faction, int v1, int v2) {
     Fix issue with randomized faction agendas where they might be given agendas
     that are their opposition social models.
     */
-    if (*game_state & STATE_RAND_FAC_LEADER_SOCIAL_AGENDA) {
+    if (*game_state & STATE_RAND_FAC_LEADER_SOCIAL_AGENDA && !*current_turn) {
         int active_factions = 0;
         for (int i = 0; i < *total_num_vehicles; i++) {
             active_factions |= (1 << Vehs[i].faction_id);
@@ -281,7 +281,7 @@ int __cdecl mod_setup_player(int faction, int v1, int v2) {
             break;
         }
     }
-    if (*game_state & STATE_RAND_FAC_LEADER_PERSONALITIES) {
+    if (*game_state & STATE_RAND_FAC_LEADER_PERSONALITIES && !*current_turn) {
         m->AI_fight = random(3) - 1;
         m->AI_tech = 0;
         m->AI_power = 0;
@@ -883,6 +883,15 @@ bool patch_setup(Config* cf) {
     }
 
     /*
+    Patch Energy Market Crash event to reduce energy reserves only by 1/4 instead of 3/4.
+    */
+    {
+        const byte old_bytes[] = {0x99,0x83,0xE2,0x03,0x03,0xC2,0xC1,0xF8,0x02};
+        const byte new_bytes[] = {0xC1,0xF8,0x02,0x6B,0xC0,0x03,0x90,0x90,0x90};
+        write_bytes(0x520725, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+
+    /*
     Additional PSI combat bonus options.
     */
     {
@@ -901,6 +910,19 @@ bool patch_setup(Config* cf) {
         write_bytes(0x501914, old_bytes, new_bytes, sizeof(new_bytes));
         write_call(0x501915, (int)dream_twister_bonus); // get_basic_offense
         *(int*)0x501F9C = cf->dream_twister_bonus; // battle_compute
+    }
+
+    /*
+    Modify Perimeter Defense and Tachyon Field defense values.
+    */
+    {
+        const byte old_perimeter[] = {0xBE,0x04,0x00,0x00,0x00};
+        const byte new_perimeter[] = {0xBE,(byte)(2 + cf->perimeter_defense_bonus),0x00,0x00,0x00};
+        write_bytes(0x5034B9, old_perimeter, new_perimeter, sizeof(new_perimeter));
+
+        const byte old_tachyon[] = {0x83,0xC6,0x02};
+        const byte new_tachyon[] = {0x83,0xC6,(byte)cf->tachyon_field_bonus};
+        write_bytes(0x503506, old_tachyon, new_tachyon, sizeof(new_tachyon));
     }
 
     if (cf->smac_only) {
@@ -967,6 +989,22 @@ bool patch_setup(Config* cf) {
         const byte old_bytes[] = {0x74};
         const byte new_bytes[] = {0xEB};
         write_bytes(0x5B1254, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+    if (cf->alien_early_start) {
+        const byte old_bytes[] = {0x75,0x1A};
+        const byte new_bytes[] = {0x90,0x90};
+        write_bytes(0x589081, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+    if (cf->cult_early_start) {
+        const byte old_bytes[] = {0x0F,0x85};
+        const byte new_bytes[] = {0x90,0xE9};
+        write_bytes(0x589097, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+    if (cf->alien_early_start || cf->cult_early_start) {
+        // Use default starting year instead of advancing by 5 turns
+        const byte old_bytes[] = {0xC7,0x05,0xD4,0x64,0x9A,0x00,0x05,0x00,0x00,0x00};
+        write_bytes(0x5AE3C3, old_bytes, NULL, sizeof(old_bytes));
+        write_bytes(0x5AE3E9, old_bytes, NULL, sizeof(old_bytes));
     }
     if (cf->ignore_reactor_power) {
         const byte old_bytes[] = {0x7C};
@@ -1094,7 +1132,10 @@ bool patch_setup(Config* cf) {
             (byte)cf->natives_weak_until_turn};
         write_bytes(0x507C22, old_bytes, new_bytes, sizeof(new_bytes));
     }
-    if (cf->patch_content_pop) {
+    /*
+    Content base population config options.
+    */
+    {
         const byte old_bytes[] = {
             0x74,0x19,0x8B,0xD3,0xC1,0xE2,0x06,0x03,0xD3,0x8D,
             0x04,0x53,0x8D,0x0C,0xC3,0x8D,0x14,0x4B,0x8B,0x04,

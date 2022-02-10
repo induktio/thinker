@@ -203,7 +203,11 @@ bool valid_start(int faction, int iter, int x, int y, bool need_bonus) {
     if (min_range(spawns, x, y) < max(limit, *map_area_sq_root/4 + 8 - iter/8)) {
         return false;
     }
-    if (!aquatic) {
+    if (aquatic) {
+        if (Continents[sq->region].tile_count < *map_area_tiles / (16 << (iter/32))) {
+            return false;
+        }
+    } else {
         for (int i = 2; i < 20; i+=2) {
             if (is_ocean(mapsq(wrap(x-i), y)) || is_ocean(mapsq(wrap(x+i), y))) {
                 break;

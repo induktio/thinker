@@ -143,6 +143,7 @@ extern int* diplo_counter_proposal_id;
 extern int* diplo_current_proposal_id;
 extern int* diplo_ask_base_swap_id;
 extern int* diplo_bid_base_swap_id;
+extern int* diplo_tech_id1;
 
 extern uint8_t* TechOwners;
 extern int* SecretProjects;

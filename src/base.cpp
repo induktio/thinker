@@ -271,8 +271,8 @@ int consider_hurry() {
                 return hurry_item(b, mins, cost);
             }
         }
-        if (Units[t].is_former() && b->mineral_surplus < p->proj_limit/2
-        && cost < f->energy_credits/16) {
+        if (Units[t].is_former() && cost < f->energy_credits/16
+        && (*current_turn < 80 || b->mineral_surplus < p->project_limit*3/4)) {
             return hurry_item(b, mins, cost);
         }
         if (Units[t].is_colony() && b->state_flags & BSTATE_DRONE_RIOTS_ACTIVE
@@ -553,7 +553,7 @@ Triad select_colony(int base_id, int pods, bool build_ships) {
 
     if (Factions[faction].base_count >= 8
     && base_id < *total_num_bases/4
-    && base->mineral_surplus >= plans[faction].proj_limit
+    && base->mineral_surplus >= plans[faction].project_limit
     && find_project(base_id) != 0) {
         limit = (base_id > *total_num_bases/8);
     }
@@ -642,7 +642,7 @@ int select_production(int base_id) {
     int content_pop_value = (is_human(faction) ? conf.content_pop_player[*diff_level]
         : conf.content_pop_computer[*diff_level]);
     bool sea_base = is_ocean(base);
-    bool core_base = minerals >= plans[faction].proj_limit;
+    bool core_base = minerals >= plans[faction].project_limit;
     bool project_change = base->item_is_project()
         && !can_build(base_id, -base->item())
         && ~base->state_flags & BSTATE_PRODUCTION_DONE
@@ -709,7 +709,7 @@ int select_production(int base_id) {
     bool build_ships = can_build_ships(base_id);
     bool build_pods = allow_expand(faction) && pods < 2
         && (base->pop_size > 1 || base->nutrient_surplus > 1);
-    double w1 = min(1.0, max(0.4, 1.0 * minerals / p->proj_limit))
+    double w1 = min(1.0, max(0.4, 1.0 * minerals / p->project_limit))
         * (conf.conquer_priority / 100.0)
         * (region_at(base->x, base->y) == p->target_land_region
         && p->main_region != p->target_land_region ? 4 : 1);
@@ -722,7 +722,7 @@ int select_production(int base_id) {
         "scouts: %d min: %2d res: %2d limit: %2d mil: %.4f threat: %.4f\n",
         *current_turn, faction, base->x, base->y,
         defenders, formers, landprobes+seaprobes, all_crawlers, pods, build_pods,
-        scouts, minerals, reserve, p->proj_limit, p->enemy_mil_factor, threat);
+        scouts, minerals, reserve, p->project_limit, p->enemy_mil_factor, threat);
 
     const int SecretProject = -1;
     const int MorePsych = -2;
@@ -758,18 +758,18 @@ int select_production(int base_id) {
         {FAC_RECREATION_COMMONS,    F_Default},
         {FAC_TREE_FARM,             F_Trees},
         {SecretProject,             0},
-        {FAC_CHILDREN_CRECHE,       0},
-        {FAC_HAB_COMPLEX,           0},
-        {FAC_HOLOGRAM_THEATRE,      F_Default},
         {FAC_ORBITAL_DEFENSE_POD,   F_Space},
         {FAC_NESSUS_MINING_STATION, F_Space},
         {FAC_ORBITAL_POWER_TRANS,   F_Space},
         {FAC_SKY_HYDRO_LAB,         F_Space},
+        {FAC_CHILDREN_CRECHE,       0},
+        {FAC_HAB_COMPLEX,           0},
+        {FAC_HOLOGRAM_THEATRE,      F_Default},
         {FAC_PERIMETER_DEFENSE,     F_Combat},
         {FAC_GENEJACK_FACTORY,      F_Mineral},
+        {FAC_AEROSPACE_COMPLEX,     0},
         {FAC_ROBOTIC_ASSEMBLY_PLANT,F_Mineral},
         {FAC_NANOREPLICATOR,        F_Mineral},
-        {FAC_AEROSPACE_COMPLEX,     0},
         {FAC_NETWORK_NODE,          F_Energy|F_Default},
         {FAC_COMMAND_CENTER,        F_Repair|F_Combat},
         {FAC_NAVAL_YARD,            F_Repair|F_Combat},
@@ -896,7 +896,10 @@ int select_production(int base_id) {
         || 3*base->mineral_intake_2 > 2*(conf.clean_minerals + f->clean_minerals_modifier)
         || turns > 5 + f->AI_power + f->AI_wealth))
             continue;
-        if (flag & F_Space && (!core_base || !has_facility(base_id, FAC_AEROSPACE_COMPLEX)))
+        if (flag & F_Space && (minerals < plans[faction].satellite_limit
+        || !has_facility(base_id, FAC_AEROSPACE_COMPLEX)))
+            continue;
+        if (flag & F_Space && !p->satellite_priority && random(3))
             continue;
         if (flag & F_Trees && (base->eco_damage < random(16)
         || (!base->eco_damage && (turns >= 12 || nearby_items(base->x, base->y, 1, BIT_FOREST) < 3))))

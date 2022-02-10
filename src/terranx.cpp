@@ -80,6 +80,7 @@ int* diplo_counter_proposal_id = (int*)0x93FAB0;
 int* diplo_current_proposal_id = (int*)0x93FA34;
 int* diplo_ask_base_swap_id = (int*)0x93FA7C;
 int* diplo_bid_base_swap_id = (int*)0x93FA30;
+int* diplo_tech_id1 = (int*)0x93F800;
 
 uint8_t* TechOwners = (uint8_t*)0x9A6670;
 int* SecretProjects = (int*)0x9A6514;

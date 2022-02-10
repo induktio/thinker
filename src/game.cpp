@@ -223,7 +223,7 @@ bool can_build(int base_id, int id) {
             return false;
         }
         int n = prod_count(faction, -id, base_id);
-        int goal = plans[faction].satellites_goal;
+        int goal = plans[faction].satellite_goal;
         if (id == FAC_ORBITAL_DEFENSE_POD) {
             goal = min(conf.max_satellites,
                 goal/3 + (plans[faction].diplo_flags & DIPLO_VENDETTA ? 4 : 0));
@@ -461,7 +461,7 @@ VehArmor best_armor(int faction, bool cheap) {
         if (has_tech(faction, Armor[i].preq_tech)) {
             int val = Armor[i].defense_value;
             int cost = Armor[i].cost;
-            if (cheap && (cost > 6 || cost > val))
+            if (cheap && (cost > 5 || cost > val))
                 continue;
             int iv = val * (i >= ARM_PULSE_3_ARMOR ? 5 : 4);
             if (iv > cv) {
@@ -502,7 +502,7 @@ int offense_value(UNIT* u) {
     int w = (conf.ignore_reactor_power ? (int)REC_FISSION : u->reactor_type);
     if (u->weapon_type == WPN_CONVENTIONAL_PAYLOAD) {
         int wpn = best_weapon(*active_faction);
-        return max(1, Weapon[wpn].offense_value * w * 4/5);
+        return max(1, Weapon[wpn].offense_value * w);
     }
     return Weapon[u->weapon_type].offense_value * w;
 }
