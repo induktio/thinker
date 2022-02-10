@@ -176,7 +176,7 @@ The chance to discover infiltration is 0.5% at -7 score, 1.2% at +0 score, and 3
 Recommended alphax.txt settings
 ===============================
 All alphax.txt files provided by Thinker contain some optional, minor edits as summarized below.
-These edits will introduce fairly minimal differences to the vanilla game mechanics.
+These edits will introduce fairly minimal differences to the vanilla game mechanics and they also will not change the default tech tree ordering.
 
 1. Fix: Enabled the "Antigrav Struts" special ability for air units as stated in the manual.
 2. Fix: Disabled the "Clean Reactor" special ability for Probe Teams because they already don't require any support.
@@ -187,6 +187,9 @@ These edits will introduce fairly minimal differences to the vanilla game mechan
 7. Add new predefined units Trance Scout Patrol and Police Garrison.
 8. Plasma Shard weapon strength is raised to 14.
 9. Secret project priorities are adjusted for the AI to start important projects first.
+10. Copter range is reduced to 8 (fission reactor).
+11. Missile range is increased to 18 (fission reactor).
+12. Crawler, Needlejet, Copter and Gravship chassis costs are slightly increased overall. This results in about 10 mineral increase for most prototypes. For example the default Supply Crawler prototype costs 40 minerals.
 
 
 SMAC in SMACX mod
