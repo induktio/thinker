@@ -19,8 +19,8 @@ enum {
     DiploProposalUnk1 = 1, // ?
     DiploProposalUnk2 = 2, // ?
     DiploProposalUnk3 = 3, // ?
-    DiploProposalUnk4 = 4, // tech trade?
-    DiploProposalUnk5 = 5, // tech trade?
+    DiploProposalTechTrade = 4,
+    DiploProposalBuyTech = 5, // mention related prototype?
     DiploProposalNeedEnergy = 6,
     DiploProposalTradeMaps = 7,
     DiploProposalJointAttack = 8,
@@ -28,7 +28,7 @@ enum {
     DiploProposalCloseDialog = 10,
     DiploProposalRepayLoan = 11,
     DiploProposalCouncilVote = 12,
-    DiploProposalUnk13 = 13, // tech/commlink trade?
+    DiploProposalTradeCommlink = 13,
 };
 
 enum {
@@ -62,8 +62,9 @@ int __thiscall ReportWin_close_handler(void* This);
 void __thiscall Console_editor_fungus(Console* UNUSED(This));
 void __cdecl mod_say_loc(char* dest, int x, int y, int a4, int a5, int a6);
 void __cdecl mod_diplomacy_caption(int faction1, int faction2);
-int __cdecl mod_energy_trade(int faction1, int faction2);
 int __cdecl mod_base_swap(int faction1, int faction2);
+int __cdecl mod_energy_trade(int faction1, int faction2);
+int __cdecl mod_buy_tech(int faction1, int faction2, int counter_id, bool high_price, int proposal_id);
 
 
 

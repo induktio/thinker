@@ -648,6 +648,10 @@ bool patch_setup(Config* cf) {
     write_call(0x4EFEB9, (int)mod_upgrade_cost);
     write_call(0x54F7D7, (int)mod_energy_trade);
     write_call(0x54F77E, (int)mod_base_swap);
+    write_call(0x542278, (int)mod_buy_tech);
+    write_call(0x542425, (int)mod_buy_tech);
+    write_call(0x5425CF, (int)mod_buy_tech);
+    write_call(0x543843, (int)mod_buy_tech);
     write_jump(0x6262F0, (int)log_say);
     write_jump(0x626250, (int)log_say2);
     write_jump(0x6263F0, (int)log_say_hex);

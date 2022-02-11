@@ -23,9 +23,6 @@ In addition to the binary patches listed separately in this file, items that are
 6. `base_hurry` feature is able to use AI energy reserves to occasionally hurry base production. Items that can be hurried include most basic facilities, formers, combat units, and sometimes secret projects. The amount of credits spent on rushing projects depends on difficulty level. When a project has been rushed, it will be displayed in a popup if the player has a commlink for the faction and there are no sunspots active.
 7. `design_units` feature will introduce custom probe teams, armored crawlers, gravship formers, and AAA garrison prototypes for the computer factions.
 8. `auto_relocate_hq` feature imports a game mechanic from Civilization 3 where lost/captured headquarters are automatically moved to another suitable base. This ensures the AI factions will not struggle without active headquarters.
-9. AI mineral/nutrient production cost factors for each difficulty level can be changed from the `cost_factor` setting. Does not affect other difficulty related modifiers.
-10. Content (non-drone) base population for each difficulty level can be adjusted from `content_pop_player` and `content_pop_computer` variables. By default these have the same values than vanilla game mechanics.
-11. Also according to vanilla game rules, the AI pays reduced maintenance for facilities on two highest difficulty levels. Transcend level has 1/3 and Thinker level 2/3 maintenance from usual amounts.
 
 
 User interface additions
@@ -47,6 +44,8 @@ Diplomacy changes
 For the most part, AI factions utilize vanilla game engine logic when deciding on any actions having to do with diplomacy. There are some notable exceptions where Thinker patches existing diplomacy dialogue and decision making.
 
 Energy loan dialogue ("generous schedule of loan payments") has been revamped to make better decisions on what kind of loans to grant. AI willingness for loan granting is now heavily dependent on treaty status, diplomatic friction, integrity blemishes, and the relative size of the factions (more powerful opponent factions are disliked). AI also has new dialogue when they reject a proposed loan.
+
+Tech trading for energy credits has been modified such that AIs will not offer to buy techs if they have less than 100 credits available. Also when the player offers to trade energy for techs, AIs will use a new tech valuation scheme that makes it a lot more expensive to buy later techs. Many similar factors as used in the energy loan dialogue affect how good the offered tech trades are.
 
 Base swapping dialogue has been adjusted to reject any base swaps where the AI would previously accept very disadvantageous trades for itself. AI can be willing to exchange bases for energy credits or another base that is worth more according to the same valuation. During multiplayer games base swapping is disabled altogether, unless the AI faction is an ally and has surrendered previously.
 
@@ -99,6 +98,17 @@ Another novel addition has been naval invasions executed by the AI. This has bee
 Thinker prioritizes naval invasions if the closest enemy is located on another continent. Otherwise, most of the focus is spent on building land and air units. At any given time, only one priority landing zone can be active for the AI. Maximum distance for invasions depends slightly on pathfinding but it should be possible on all Huge maps.
 
 Base garrisoning priorities are also handled entirely by the new logic which tries to prioritize vulnerable border bases much more than usual. Air units also utilize the same priorities when deciding where to rebase. You might notice there's less massive AI stacks being rebased around for no meaningful reason. Instead Thinker tries to rebase the aircraft in much smaller stacks to more bases so that they can cover a larger area.
+
+
+AI production bonuses
+=====================
+This list is not complete, but it details the most important bonuses granted for AI factions, thus changing these settings has the largest impact on AI performance. There can be various other, smaller benefits granted for the AIs by the game that are not listed here.
+
+1. AI mineral production and nutrient base growth cost factors for each difficulty level can be changed with `cost_factor` setting. Does not affect other difficulty related modifiers.
+2. When `revised_tech_cost` is enabled, `tech_cost_factor` scales the AI tech cost for each difficulty level.
+3. Content (non-drone) base population for each difficulty level can be adjusted with `content_pop_player` and `content_pop_computer` variables. By default these have the same values than vanilla game mechanics.
+4. AI pays reduced maintenance for facilities on two highest difficulty levels. Transcend level has 1/3 and Thinker level 2/3 maintenance from the normal amounts.
+5. AI pays no retooling costs whenever it changes production from one item to another.
 
 
 Hurry and upgrade formulas

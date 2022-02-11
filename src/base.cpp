@@ -272,11 +272,12 @@ int consider_hurry() {
             }
         }
         if (Units[t].is_former() && cost < f->energy_credits/16
-        && (*current_turn < 80 || b->mineral_surplus < p->project_limit*3/4)) {
+        && (*current_turn < 80 || b->mineral_surplus < p->median_limit)) {
             return hurry_item(b, mins, cost);
         }
-        if (Units[t].is_colony() && b->state_flags & BSTATE_DRONE_RIOTS_ACTIVE
-        && cost < f->energy_credits/16) {
+        if (Units[t].is_colony() && cost < f->energy_credits/16
+        && (b->state_flags & BSTATE_DRONE_RIOTS_ACTIVE
+        || (!unused_space(base_id) && turns > 3))) {
             return hurry_item(b, mins, cost);
         }
     }
@@ -468,6 +469,9 @@ int unit_score(int id, int faction, int cfactor, int minerals, int accumulated, 
     }
     if (u->ability_flags & ABL_POLICE_2X && need_police(faction)) {
         v += (u->speed() > 1 ? 16 : 32);
+    }
+    if (u->chassis_type == CHS_MISSILE) {
+        v -= 8 * plans[faction].missile_units;
     }
     for (const int* s : specials) {
         if (u->ability_flags & s[0]) {
@@ -896,10 +900,8 @@ int select_production(int base_id) {
         || 3*base->mineral_intake_2 > 2*(conf.clean_minerals + f->clean_minerals_modifier)
         || turns > 5 + f->AI_power + f->AI_wealth))
             continue;
-        if (flag & F_Space && (minerals < plans[faction].satellite_limit
-        || !has_facility(base_id, FAC_AEROSPACE_COMPLEX)))
-            continue;
-        if (flag & F_Space && !p->satellite_priority && random(3))
+        if (flag & F_Space && (!has_facility(base_id, FAC_AEROSPACE_COMPLEX)
+        || minerals < p->median_limit || random(4) < (p->satellite_priority ? 1 : 3)))
             continue;
         if (flag & F_Trees && (base->eco_damage < random(16)
         || (!base->eco_damage && (turns >= 12 || nearby_items(base->x, base->y, 1, BIT_FOREST) < 3))))

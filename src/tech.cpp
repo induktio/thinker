@@ -21,12 +21,12 @@ int __cdecl mod_tech_value(int tech, int faction, int flag) {
     return value;
 }
 
-int tech_level(int id, int lvl) {
-    if (id < 0 || id > TECH_TranT || lvl > TECH_TranT) {
+int tech_level(int tech, int lvl) {
+    if (tech < 0 || tech > TECH_TranT || lvl > TECH_TranT) {
         return lvl;
     } else {
-        int v1 = tech_level(Tech[id].preq_tech1, lvl + 1);
-        int v2 = tech_level(Tech[id].preq_tech2, lvl + 1);
+        int v1 = tech_level(Tech[tech].preq_tech1, lvl + 1);
+        int v2 = tech_level(Tech[tech].preq_tech2, lvl + 1);
         return max(v1, v2);
     }
 }

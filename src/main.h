@@ -248,6 +248,7 @@ struct AIPlans {
     int sea_combat_units = 0;
     int air_combat_units = 0;
     int probe_units = 0;
+    int missile_units = 0;
     int transport_units = 0;
     int unknown_factions = 0;
     int contacted_factions = 0;
@@ -259,7 +260,7 @@ struct AIPlans {
     and only the top third are selected for project building.
     */
     int project_limit = 5;
-    int satellite_limit = 5;
+    int median_limit = 5;
     /*
     PSI combat units are only selected for production if this score is higher than zero.
     Higher values will make the prototype picker choose these units more often.

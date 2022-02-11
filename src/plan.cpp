@@ -203,6 +203,7 @@ void plans_upkeep(int faction) {
         plans[i].sea_combat_units = 0;
         plans[i].air_combat_units = 0;
         plans[i].probe_units = 0;
+        plans[i].missile_units = 0;
         plans[i].transport_units = 0;
         update_main_region(faction);
         former_plans(faction);
@@ -234,11 +235,15 @@ void plans_upkeep(int faction) {
                         plans[i].transport_units++;
                     }
                 }
+                if (veh->chassis_type() == CHS_MISSILE) { // not included in is_combat_unit
+                    plans[i].missile_units++;
+                }
             }
         }
-        debug("plans_totals %d %d bases: %3d land: %3d sea: %3d air: %3d probe: %3d transport: %3d\n",
-            *current_turn, i, f->base_count, plans[i].land_combat_units, plans[i].sea_combat_units,
-            plans[i].air_combat_units, plans[i].probe_units, plans[i].transport_units);
+        debug("plans_totals %d %d bases: %3d land: %3d sea: %3d air: %3d "\
+            "probe: %3d missile: %3d transport: %3d\n", *current_turn, i, f->base_count,
+            plans[i].land_combat_units, plans[i].sea_combat_units, plans[i].air_combat_units,
+            plans[i].probe_units, plans[i].missile_units, plans[i].transport_units);
 
         for (int j=1; j < MaxPlayerNum; j++) {
             if (i != j && Factions[j].base_count > 0) {
@@ -298,6 +303,7 @@ void plans_upkeep(int faction) {
             }
         }
         plans[i].enemy_base_range = (n > 0 ? enemy_sum/n : MaxEnemyRange);
+        plans[i].psi_score = psi_score(i);
         std::sort(minerals, minerals+n);
         std::sort(population, population+n);
         if (f->base_count >= 32) {
@@ -305,9 +311,8 @@ void plans_upkeep(int faction) {
         } else {
             plans[i].project_limit = max(5, minerals[n*2/3]);
         }
-        plans[i].psi_score = psi_score(i);
-        plans[i].satellite_limit = max(5, minerals[n/2]);
-        plans[i].satellite_goal = min(conf.max_satellites, population[n*4/5]);
+        plans[i].median_limit = max(5, minerals[n/2]);
+        plans[i].satellite_goal = min(conf.max_satellites, population[n*7/8]);
         plans[i].satellite_priority = enemy_odp < 2
             || has_tech(i, Facility[FAC_ORBITAL_DEFENSE_POD].preq_tech);
 

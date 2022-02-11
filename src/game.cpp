@@ -226,7 +226,8 @@ bool can_build(int base_id, int id) {
         int goal = plans[faction].satellite_goal;
         if (id == FAC_ORBITAL_DEFENSE_POD) {
             goal = min(conf.max_satellites,
-                goal/3 + (plans[faction].diplo_flags & DIPLO_VENDETTA ? 4 : 0));
+                goal/4 + clamp(f->base_count/8, 2, 8)
+                + (plans[faction].diplo_flags & DIPLO_VENDETTA ? 4 : 0));
         }
         if ((id == FAC_SKY_HYDRO_LAB && f->satellites_nutrient + n >= goal)
         || (id == FAC_ORBITAL_POWER_TRANS && f->satellites_energy + n >= goal)
