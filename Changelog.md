@@ -1,6 +1,20 @@
 
 # Thinker mod release changelog
 
+## Version 3.1 (2022-02-11)
+* New config options: alien_early_start, cult_early_start, perimeter_defense_bonus, tachyon_field_bonus.
+* Add option for X/Y map mirroring. This must be enabled separately from ALT+T menu. All landmarks will be disabled if the generated map is mirrored.
+* Include cost rebalance increases for Crawler, Needlejet, Copter and Gravship chassis units.
+* Copter range is reduced to 8 and Missile range increased to 18. These ranges are for fission reactors.
+* AI tech trading has been updated to ask for higher prices whenever the player offers to buy techs for credits.
+* AI will not attempt to buy techs when they have less than 100 credits to avoid an issue where they could end up with negative credits.
+* Remove Fossil Field Ridge from smac-in-smacx maps since this is expansion-only content.
+* Patch Energy Market Crash event to reduce credit reserves only by 1/4 instead of 3/4.
+* Fix probe teams and crawlers sometimes being given incorrect move orders.
+* Fix issue that causes the AI to recalculate social engineering choices each time 'E' screen in scenario editor mode is opened.
+* Fix bug that prevents the turn from advancing after force-ending the turn while any player-owned needlejet in flight has moves left.
+
+
 ## Version 3.0 (2022-01-02)
 * Energy loan and base swapping negotiations in diplomacy have been overhauled to make better decisions for the AI.
 * AI has new dialogue when they sometimes reject a proposed offer or when they are unable to grant new loans.
