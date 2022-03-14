@@ -1,8 +1,6 @@
 ;
 ;  Help
 ;  
-;  Based on Yitzi's 3.4 patch. Modded to remove or hide SMACX references
-;  -cmc 2014 and 2016
 
 #HELPCATS
 Concepts
@@ -42,17 +40,14 @@ Terraform
 ^Increases Probe Team base morale.
 ^Increases COMMERCE income from Treaties and Pacts.
 ^Entire planetary map is revealed.
-^Genetic Warfare atrocity can be committed by probe teams.
+^Genetic Warfare atrocity can be commited by probe teams.
 ^Increases ENERGY production in fungus squares.
 ^Increases MINERALS production in fungus squares.
 ^Increases NUTRIENT production in fungus squares.
-^Units with drop pods may make orbital insertions.
-^+1 Mineral bonus for all Mining Platforms.
-^Economic Victory allowed.
-^Multiresource convoys allowed inside base radius
-^Multiresource convoys not restricted to base radius.
-^Effectiveness of ECM and AAA abilities doubled.
-^Diplomatic Victory allowed.
+^Units w/ drop pods may make orbital insertions.
+^+1 Mineral bonus for all Mining Platforms
+^Economic Victory allowed
+^Diplomatic Victory allowed
 ^Formers can execute the "$TERRAFORM0" order.
  
 #CITIZENHECK
