@@ -40,7 +40,7 @@ Terraform
 ^Increases Probe Team base morale.
 ^Increases COMMERCE income from Treaties and Pacts.
 ^Entire planetary map is revealed.
-^Genetic Warfare atrocity can be commited by probe teams.
+^Genetic Warfare atrocity can be committed by probe teams.
 ^Increases ENERGY production in fungus squares.
 ^Increases MINERALS production in fungus squares.
 ^Increases NUTRIENT production in fungus squares.
