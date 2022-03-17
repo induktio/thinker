@@ -39,7 +39,7 @@ Installation
 2. Check Changelog.md and Details.md for useful information.
 3. Change configuration from thinker.ini or just use the defaults.
 4. Start the game from thinker.exe.
-5. The launcher requires original Alien Crossfire v2.0 terranx.exe in the same folder but this file is not modified on disk. In case of startup problems, make sure the official v2.0 patch is applied on the game.
+5. The launcher requires original Alien Crossfire v2.0 terranx.exe in the same folder but this file is not modified on disk. In case of startup problems, make sure the official v2.0 patch is applied on the game. Sometimes startup issues can be fixed by enabling Windows XP compatibility mode on terranx.exe.
 6. Press ALT+T to open Thinker's options menu. Other option is to check that mod version/build date is visible in the game version menu (Ctrl+F4).
 7. If none of those options display mod version, Thinker is incorrectly installed and not loaded.
 

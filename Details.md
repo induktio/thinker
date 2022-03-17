@@ -76,7 +76,7 @@ From the menu options it is also possible to choose the random map style from la
 All landmarks that are placed on random maps can also be configured from `thinker.ini`. Nessus Canyon is available but disabled by default. When new map generator is enabled, `modified_landmarks` option replaces the default Monsoon Jungle landmark with multiple smaller jungles dispersed across the equator area. 
 Planet rainfall level will determine how many jungle tiles are placed. When playing on smaller maps, it might make more sense to disable some additional landmarks, as otherwise the maps might appear cluttered.
 
-The new map generator is entirely different from the game vanilla version, so it does not parse some of the variables specified in `alphax.txt`. Any WorldBuilder variable names starting with Land, Continent, Hills or Plateau are not currently used by the generator. The other options listed below in the file are mostly supported regardless if the `new_world_builder` is enabled or not.
+The new map generator is entirely different from the game vanilla version, so it does not parse some of the variables specified in `alphax.txt`. Any WorldBuilder variable names starting with Land, Continent, Hills, Plateau, Plains, Beach or Peaks are not currently used by the generator. The other options listed in the WorldBuilder section are mostly supported regardless if the `new_world_builder` is enabled or not.
 
 Thinker's `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on Huge map sizes.
 
