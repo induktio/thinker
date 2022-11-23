@@ -1,8 +1,8 @@
 ;
-; *************************************************************
-; *  Contains changes made for SMACX Thinker Mod by Induktio  *
-; *  https://github.com/induktio/thinker                      *
-; *************************************************************
+; ************************************************************
+; *  SMACX Thinker Mod / German version default tech tree    *
+; *  https://github.com/induktio/thinker                     *
+; ************************************************************
 ;
 ; Sid Meier's ALPHA CENTAURI
 ;
@@ -278,7 +278,7 @@ Monopolmagn.,               Magnets, 1, 1, 5, 0, String,  Alloys,  000000000
 Materiekompr.,              MatComp, 3, 1, 2, 0, Metal,   NanoMin, 000000000
 Einheitliche Feldtheorie,   Unified, 4, 3, 0, 1, Magnets, E=Mc2,   000000000
 Gravitontheorie,            Gravity, 3, 1, 0, 3, QuanMac, MindMac, 000000000
-Polymorphe Software,        Poly,    2, 3, 1, 0, Indust,  InfNet,  000000010
+Polymorphe Software,        Poly,    2, 3, 1, 0, Indust,  InfNet,  000000000
 Angewandte Gravitonik,      AGrav,   3, 1, 0, 4, Gravity, DigSent, 000000000
 Gelöscht,                   delete,  3, 2, 0, 2, Disable, Disable, 000000000
 Quantenenergie,             Quantum, 3, 4, 3, 0, Surface, PlaEcon, 000000000
@@ -290,14 +290,14 @@ Prä-Intellig. Algorithmen,  Algor,   2, 4, 3, 2, MilAlg,  Cyber,   000000010
 Superfeste Stoffe,          Solids,  1, 0, 5, 2, MatComp, Space,   000000000
 Planetare Netzwerke,        PlaNets, 0, 4, 3, 1, InfNet,  None,    000000000
 Digitale Intelligenz,       DigSent, 0, 4, 3, 2, IndRob,  MindMac, 000000010
-Intelligente Maschinen,     HAL9000, 0, 4, 3, 3, NewMiss, DigSent, 000000010
+Intelligente Maschinen,     HAL9000, 0, 4, 3, 3, NewMiss, DigSent, 000000000
 Doktrin: Initiative,        DocInit, 2, 0, 0, 4, DocFlex, IndAuto, 000000000
 Doktrin: Flexibilität,      DocFlex, 2, 0, 1, 4, Mobile,  None,    000000000
 Intellektuelle Integrität,  Integ,   0, 1, 3, 4, EthCalc, DocLoy,  000000000
 Synth. fossile Treibstoffe, Fossil,  1, 0, 2, 4, Chemist, Gene,    000000000
 Doktrin: Luftmacht,         DocAir,  3, 0, 3, 4, Fossil,  DocFlex, 000000000
 Photonen/ Wellen-Mechanik,  DocSec,  3, 2, 2, 0, E=Mc2,   Alloys,  000000000
-Mensch-Maschine- Interface, MindMac, 4, 0, 2, 2, DocAir,  Neural,  000000010
+Mensch-Maschine- Interface, MindMac, 4, 0, 2, 2, DocAir,  Neural,  000000000
 Nano- Miniaturisierung,     NanoMin, 1, 0, 4, 3, Magnets, SupLube, 000000000
 Doktrin: Loyalität,         DocLoy,  3, 0, 2, 2, Mobile,  Psych,   000000000
 Ethisches Kalkül,           EthCalc, 0, 1, 3, 3, Psych,   None,    000000000

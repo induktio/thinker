@@ -196,6 +196,8 @@ These edits will introduce fairly minimal differences to the vanilla game mechan
 10. Copter range is reduced to 8 (fission reactor).
 11. Missile range is increased to 18 (fission reactor).
 12. Crawler, Needlejet, Copter and Gravship chassis costs are slightly increased overall. This results in about 10 mineral increase for most prototypes. For example the default Supply Crawler prototype costs 40 minerals.
+13. When using SMAC in SMACX mod, in-game help files will contain additional information about some game engine limitations and known bugs.
+14. The amount of techs that grant automatic morale boosts for probe teams is reduced from five to two. These techs are now Pre-Sentient Algorithms and Digital Sentience. This makes it much harder to build elite-level probe teams.
 
 
 SMAC in SMACX mod

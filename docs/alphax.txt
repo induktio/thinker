@@ -278,7 +278,7 @@ Monopole Magnets,           Magnets, 1, 1, 5, 0, String,  Alloys,  000000000
 Matter Compression,         MatComp, 3, 1, 2, 0, Metal,   NanoMin, 000000000
 Unified Field Theory,       Unified, 4, 3, 0, 1, Magnets, E=Mc2,   000000000
 Graviton Theory,            Gravity, 3, 1, 0, 3, QuanMac, MindMac, 000000000
-Polymorphic Software,       Poly,    2, 3, 1, 0, Indust,  InfNet,  000000010
+Polymorphic Software,       Poly,    2, 3, 1, 0, Indust,  InfNet,  000000000
 Applied Gravitonics,        AGrav,   3, 1, 0, 4, Gravity, DigSent, 000000000
 deleted,                    delete,  3, 2, 0, 2, Disable, Disable, 000000000
 Quantum Power,              Quantum, 3, 4, 3, 0, Surface, PlaEcon, 000000000
@@ -290,14 +290,14 @@ Pre-Sentient Algorithms,    Algor,   2, 4, 3, 2, MilAlg,  Cyber,   000000010
 Super Tensile Solids,       Solids,  1, 0, 5, 2, MatComp, Space,   000000000
 Planetary Networks,         PlaNets, 0, 4, 3, 1, InfNet,  None,    000000000
 Digital Sentience,          DigSent, 0, 4, 3, 2, IndRob,  MindMac, 000000010
-Self-Aware Machines,        HAL9000, 0, 4, 3, 3, NewMiss, DigSent, 000000010
+Self-Aware Machines,        HAL9000, 0, 4, 3, 3, NewMiss, DigSent, 000000000
 Doctrine: Initiative,       DocInit, 2, 0, 0, 4, DocFlex, IndAuto, 000000000
 Doctrine: Flexibility,      DocFlex, 2, 0, 1, 4, Mobile,  None,    000000000
 Intellectual Integrity,     Integ,   0, 1, 3, 4, EthCalc, DocLoy,  000000000
 Synthetic Fossil Fuels,     Fossil,  1, 0, 2, 4, Chemist, Gene,    000000000
 Doctrine: Air Power,        DocAir,  3, 0, 3, 4, Fossil,  DocFlex, 000000000
 Photon/Wave Mechanics,      DocSec,  3, 2, 2, 0, E=Mc2,   Alloys,  000000000
-Mind/Machine Interface,     MindMac, 4, 0, 2, 2, DocAir,  Neural,  000000010
+Mind/Machine Interface,     MindMac, 4, 0, 2, 2, DocAir,  Neural,  000000000
 Nanominiaturization,        NanoMin, 1, 0, 4, 3, Magnets, SupLube, 000000000
 Doctrine: Loyalty,          DocLoy,  3, 0, 2, 2, Mobile,  Psych,   000000000
 Ethical Calculus,           EthCalc, 0, 1, 3, 3, Psych,   None,    000000000
