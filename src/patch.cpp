@@ -308,10 +308,10 @@ int __cdecl mod_setup_player(int faction, int v1, int v2) {
                 int former = (is_ocean(sq) ? BSC_SEA_FORMERS : BSC_FORMERS);
                 int colony = (is_ocean(sq) ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
                 for (int j = 0; j < conf.free_formers; j++) {
-                    spawn_veh(former, faction, veh->x, veh->y);
+                    mod_veh_init(former, faction, veh->x, veh->y);
                 }
                 for (int j = 0; j < conf.free_colony_pods; j++) {
-                    spawn_veh(colony, faction, veh->x, veh->y);
+                    mod_veh_init(colony, faction, veh->x, veh->y);
                 }
                 break;
             }
@@ -652,6 +652,7 @@ bool patch_setup(Config* cf) {
     write_call(0x542425, (int)mod_buy_tech);
     write_call(0x5425CF, (int)mod_buy_tech);
     write_call(0x543843, (int)mod_buy_tech);
+    write_call(0x59FBA7, (int)set_treaty);
     write_jump(0x6262F0, (int)log_say);
     write_jump(0x626250, (int)log_say2);
     write_jump(0x6263F0, (int)log_say_hex);
@@ -716,7 +717,7 @@ bool patch_setup(Config* cf) {
             remove_call(0x4F4817); // #DONEPROJECT
             remove_call(0x4F2A4C); // #PRODUCE (project/satellite)
         }
-        write_call(0x4DF19B, (int)spawn_veh); // Console_editor_veh
+        write_call(0x4DF19B, (int)mod_veh_init); // Console_editor_veh
     }
     /*
     Provide better defaults for multiplayer settings.
@@ -954,6 +955,12 @@ bool patch_setup(Config* cf) {
         memset((void*)0x58A5E1, 0x90, 6);
         memset((void*)0x58B76F, 0x90, 2);
         memset((void*)0x58B9F3, 0x90, 2);
+    }
+    if (cf->counter_espionage) {
+        const byte old_bytes[] = {0xF6, 0xC5, 0x10};
+        const byte new_bytes[] = {0xF6, 0xC5, 0x80};
+        write_bytes(0x59F90C, old_bytes, new_bytes, sizeof(new_bytes)); // probe
+        write_bytes(0x59FB99, old_bytes, new_bytes, sizeof(new_bytes)); // probe
     }
     if (cf->render_probe_labels) {
         memset((void*)0x559590, 0x90, 2);

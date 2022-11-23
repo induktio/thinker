@@ -105,7 +105,7 @@ int __cdecl mod_faction_upkeep(int faction) {
         Thinker-specific AI planning routines.
         Note that move_upkeep is only updated after all the production is done,
         so that the movement code can utilize up-to-date priority maps.
-        This means we mostly cannot use move_upkeep variables in production phase.
+        This means we cannot use move_upkeep maps or variables in production phase.
         */
         mod_social_ai(faction, -1, -1, -1, -1, 0);
         probe_upkeep(faction);
@@ -413,49 +413,63 @@ int __cdecl battle_fight_parse_num(int index, int value)
     return 0;
 }
 
-int probe_rating(int faction) {
-    return Factions[faction].SE_probe_pending
-        + has_project(faction, FAC_HUNTER_SEEKER_ALGO)
-        + has_project(faction, FAC_NETHACK_TERMINUS);
+int probe_roll_value(int faction) {
+    return 2*clamp(Factions[faction].SE_probe, -3, 3)
+        + clamp(Factions[faction].SE_police, -2, 2)
+        + clamp(Factions[faction].SE_probe_base, -2, 2);
 }
 
-int probe_upkeep(int faction) {
-    if (faction > 0 && is_alive(faction) && conf.counter_espionage) {
-        for (int i=1; i < MaxPlayerNum; i++) {
-            if (faction != i
-            && Factions[i].base_count > 0
-            && has_treaty(i, faction, DIPLO_HAVE_INFILTRATOR)
-            && !has_treaty(i, faction, DIPLO_PACT)
-            && !has_project(i, FAC_EMPATH_GUILD)) {
-                int rnd = map_hash(faction + 8*i, *current_turn) % 1000;
-                int val = max(-7, min(7,
-                    (is_human(faction) ? 2 : 0) + probe_rating(faction) - probe_rating(i)));
-                debug("probe_upkeep %3d %d %d value: %d roll: %d\n",
-                    *current_turn, faction, i, val, rnd);
+int probe_active_turns(int faction1, int faction2) {
+    int value = clamp(10 + probe_roll_value(faction1) - probe_roll_value(faction2), 4, 24);
+    return value * (4 + (*map_area_tiles >= 4000) + (*map_area_tiles >= 6000)
+        + (*diff_level < DIFF_TRANSCEND) + (*diff_level < DIFF_THINKER)) / 4;
+}
 
-                if (rnd < 12 + (val > 0 ? 3 : 1) * val) {
-                    set_treaty(i, faction, DIPLO_HAVE_INFILTRATOR, 0);
-                    MFactions[i].thinker_probe_flags |= (1 << faction);
-
-                    if (faction == MapWin->cOwner) {
-                        parse_says(0, MFactions[i].adj_name_faction, -1, -1);
+int probe_upkeep(int faction1) {
+    if (faction1 <= 0 || !is_alive(faction1) || !conf.counter_espionage) {
+        return 0;
+    }
+    /*
+    Do not expire infiltration while the faction is the governor or has the Empath Guild.
+    Status can be renewed once per turn and sets the flag DIPLO_RENEW_INFILTRATOR.
+    This is checked in patched version of probe() game code.
+    */
+    for (int faction2=1; faction2 < MaxPlayerNum; faction2++) {
+        if (faction1 != faction2 && is_alive(faction2)
+        && faction2 != *GovernorFaction && !has_project(faction2, FAC_EMPATH_GUILD)) {
+            if (has_treaty(faction2, faction1, DIPLO_HAVE_INFILTRATOR)) {
+                if (!MFactions[faction2].thinker_probe_end_turn[faction1]) {
+                    MFactions[faction2].thinker_probe_end_turn[faction1] =
+                        *current_turn + probe_active_turns(faction2, faction1);
+                }
+                if (MFactions[faction2].thinker_probe_end_turn[faction1] <= *current_turn) {
+                    set_treaty(faction2, faction1, DIPLO_HAVE_INFILTRATOR, 0);
+                    MFactions[faction2].thinker_probe_lost |= (1 << faction1);
+                    if (faction1 == MapWin->cOwner) {
+                        parse_says(0, MFactions[faction2].adj_name_faction, -1, -1);
                         popp("modmenu", "SPYFOUND", 0, "infil_sm.pcx", 0);
                     }
                 }
             }
         }
-        for (int i=1; i < MaxPlayerNum; i++) {
-            if (faction == MapWin->cOwner
-            && Factions[i].base_count > 0
-            && MFactions[faction].thinker_probe_flags & (1 << i)) {
-                parse_says(0, MFactions[i].noun_faction, -1, -1);
+    }
+    for (int faction2=1; faction2 < MaxPlayerNum; faction2++) {
+        if (faction1 != faction2 && is_alive(faction2)) {
+            debug("probe_upkeep %3d %d %d spying: %d ends: %d\n",
+                *current_turn, faction1, faction2,
+                has_treaty(faction1, faction2, DIPLO_HAVE_INFILTRATOR),
+                MFactions[faction1].thinker_probe_end_turn[faction2]
+            );
+            if (faction1 != *GovernorFaction && !has_project(faction1, FAC_EMPATH_GUILD)) {
+                set_treaty(faction1, faction2, DIPLO_RENEW_INFILTRATOR, 0);
+            }
+            if (faction1 == MapWin->cOwner && MFactions[faction1].thinker_probe_lost & (1 << faction2)) {
+                parse_says(0, MFactions[faction2].noun_faction, -1, -1);
                 popp("modmenu", "SPYLOST", 0, "capture_sm.pcx", 0);
             }
         }
     }
-    if (faction > 0) {
-        MFactions[faction].thinker_probe_flags = 0;
-    }
+    MFactions[faction1].thinker_probe_lost = 0;
     return 0;
 }
 

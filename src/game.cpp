@@ -347,25 +347,6 @@ bool has_agenda(int faction1, int faction2, uint32_t agenda) {
         && Factions[faction1].diplo_agenda[faction2] & agenda;
 }
 
-void set_treaty(int faction1, int faction2, uint32_t treaty, bool add) {
-    if (add) {
-        Factions[faction1].diplo_status[faction2] |= treaty;
-        if (treaty & DIPLO_UNK_40) {
-            Factions[faction1].diplo_merc[faction2] = 50;
-        }
-    } else {
-        Factions[faction1].diplo_status[faction2] &= ~treaty;
-    }
-}
-
-void set_agenda(int faction1, int faction2, uint32_t agenda, bool add) {
-    if (add) {
-        Factions[faction1].diplo_agenda[faction2] |= agenda;
-    } else {
-        Factions[faction1].diplo_agenda[faction2] &= ~agenda;
-    }
-}
-
 bool want_revenge(int faction1, int faction2) {
     return Factions[faction1].diplo_status[faction2] & (DIPLO_ATROCITY_VICTIM | DIPLO_WANT_REVENGE);
 }
@@ -903,7 +884,35 @@ void print_base(int id) {
         base->state_flags, prod, prod_name(prod), (char*)&(base->name));
 }
 
-int __cdecl spawn_veh(int unit_id, int faction, int x, int y) {
+void __cdecl set_treaty(int faction1, int faction2, uint32_t treaty, bool add) {
+    if (add) {
+        Factions[faction1].diplo_status[faction2] |= treaty;
+        if (treaty & DIPLO_UNK_40) {
+            Factions[faction1].diplo_merc[faction2] = 50;
+        }
+        if (treaty & DIPLO_HAVE_INFILTRATOR && conf.counter_espionage) {
+            int turns = probe_active_turns(faction1, faction2);
+            MFactions[faction1].thinker_probe_end_turn[faction2] = *current_turn + turns;
+            Factions[faction1].diplo_status[faction2] |= DIPLO_RENEW_INFILTRATOR;
+            if (faction1 == MapWin->cOwner) {
+                ParseNumTable[0] = turns;
+                popp("modmenu", "SPYRENEW", 0, "infil_sm.pcx", 0);
+            }
+        }
+    } else {
+        Factions[faction1].diplo_status[faction2] &= ~treaty;
+    }
+}
+
+void __cdecl set_agenda(int faction1, int faction2, uint32_t agenda, bool add) {
+    if (add) {
+        Factions[faction1].diplo_agenda[faction2] |= agenda;
+    } else {
+        Factions[faction1].diplo_agenda[faction2] &= ~agenda;
+    }
+}
+
+int __cdecl mod_veh_init(int unit_id, int faction, int x, int y) {
     int id = veh_init(unit_id, faction, x, y);
     if (id >= 0) {
         Vehicles[id].home_base_id = -1;

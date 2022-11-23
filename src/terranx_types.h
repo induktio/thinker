@@ -202,9 +202,10 @@ struct MFaction {
     int8_t thinker_tech_id;
     int32_t thinker_tech_cost;
     float thinker_enemy_range;
-    int16_t thinker_probe_flags;
+    int16_t thinker_probe_lost;
     int16_t thinker_last_mc_turn;
-    char pad_1[112];
+    int16_t thinker_probe_end_turn[8];
+    char pad_1[96];
     /*
     End of block
     */

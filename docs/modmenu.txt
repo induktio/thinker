@@ -82,6 +82,11 @@ Value:
 #caption $MSG0
 $MSG1
 
+#SPYRENEW
+#xs 400
+#caption Intelligence Operations Director
+Our probe team estimates the infiltration will expire after {$NUM0} turns.
+
 #SPYLOST
 #xs 400
 #caption Intelligence Operations Director

@@ -425,7 +425,8 @@ bool unit_is_better(UNIT* u1, UNIT* u2) {
         && defense_value(u1) <= defense_value(u2)
         && Chassis[u1->chassis_type].speed <= Chassis[u2->chassis_type].speed
         && (Chassis[u2->chassis_type].triad != TRIAD_AIR || u1->chassis_type == u2->chassis_type)
-        && !((u1->ability_flags & u2->ability_flags) ^ u1->ability_flags));
+        && !((u1->ability_flags & u2->ability_flags) ^ u1->ability_flags))
+        && (u1->ability_flags & ABL_SLOW) <= (u2->ability_flags & ABL_SLOW);
     if (val) {
         debug("unit_is_better %s -> %s\n", u1->name, u2->name);
     }
@@ -784,6 +785,7 @@ int select_production(int base_id) {
         {FAC_ENERGY_BANK,           F_Energy},
         {FAC_RESEARCH_HOSPITAL,     F_Energy},
         {FAC_TACHYON_FIELD,         F_Surplus|F_Combat},
+        {FAC_COVERT_OPS_CENTER,     F_Surplus|F_Combat},
         {FAC_FLECHETTE_DEFENSE_SYS, F_Surplus|F_Combat},
         {FAC_QUANTUM_LAB,           F_Energy|F_Surplus},
         {FAC_NANOHOSPITAL,          F_Energy|F_Surplus},

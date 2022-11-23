@@ -170,17 +170,13 @@ The final cost calculated by this formula is visible in the F2 status screen aft
 
 Expiring infiltration feature
 =============================
-Normally establishing infiltration with a probe team on another faction is permanent and cannot be removed in any way. In multiplayer games this can be especially unbalanced. Thinker provides a config option `counter_espionage` to make infiltration expire randomly based on a variety of factors.
+Normally establishing infiltration with a probe team on another faction is permanent and cannot be removed in any way. In multiplayer games this can be especially unbalanced. Thinker provides a config option `counter_espionage` to make infiltration expire after a specific duration based on a variety of factors.
 
-When enabled, for each turn for every infiltration active to the current faction (defender), a score is calculated and rolled against a random chance. If the roll succeeds, both factions will get a message of removed infiltration on their turn and the infiltration stops immediately. While allied to another faction or having the Empath Guild, infiltration will never expire. The score is based on these factors:
+When enabled, every time a probe teams infiltrates a base of another faction, a popup will display the amount of turns infiltration is expected to last. Infiltration should always succeed, however the probe team may be randomly lost afterwards (vanilla game mechanic). Whenever infiltration is discovered and removed, both factions will receive a notification on their respective turns. While the spying faction is the governor or has the Empath Guild, infiltration will never expire regardless.
 
-* Get the current social engineering PROBE rating for both factions.
-* Having Hunter Seeker Algorithm or Nethack Terminus will give +1 bonus each.
-* If a human player faction is defending, give extra +2 bonus for the defender.
-* Calculate DefenderProbeScore - AttackerProbeScore.
-* Clamp the value to -7 to +7 range.
+The infiltration status can be renewed once per turn for every opponent faction which resets the expiration counter to the initial value. The duration is determined by comparing PROBE (most important) and POLICE ratings (minor importance) of the opposing factions. Factions which have an initial PROBE rating defined will receive additional bonus/penalty regardless of current SE choices.
 
-The chance to discover infiltration is 0.5% at -7 score, 1.2% at +0 score, and 3.3% at +7 score (maximum possible). Thus having any kind of advantage over the other faction will give a lopsided bonus for the defender by design. In this mechanic, it is important to have a better PROBE rating or at least parity to maintain the infiltration.
+In this mechanic, it is important to have a better PROBE/POLICE rating or at least a parity to maintain the infiltration for longer periods of time. In addition, infiltration lasts longer on maps larger than the standard size to balance for the longer travel distances. On Thinker and Transcend difficulty levels, the duration is reduced from normal values. For example, on Transcend difficulty, standard map having two factions with equal ratings, the infiltration period is 10 turns.
 
 
 Recommended alphax.txt settings
