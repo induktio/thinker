@@ -43,7 +43,8 @@ struct ThinkerData {
     uint64_t reserved;
     uint64_t game_time_spent;
     char build_date[12];
-    int8_t padding[148];
+    uint32_t map_random_value;
+    int8_t padding[144];
 };
 
 static_assert(sizeof(struct CRules) == 308, "");

@@ -201,7 +201,7 @@ struct MFaction {
     int8_t thinker_flags;
     int8_t thinker_tech_id;
     int32_t thinker_tech_cost;
-    float thinker_enemy_range;
+    int32_t thinker_unused;
     int16_t thinker_probe_lost;
     int16_t thinker_last_mc_turn;
     int16_t thinker_probe_end_turn[8];

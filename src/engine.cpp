@@ -4,28 +4,24 @@
 static int current_attacker_veh_id = -1;
 static int current_defender_veh_id = -1;
 
-int probe_upkeep(int faction);
-
 
 void init_save_game(int faction) {
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
     if (m->thinker_header != THINKER_HEADER) {
+        // Clear old save game storage locations
+        if (f->old_thinker_header == THINKER_HEADER) {
+            memset(&f->old_thinker_header, 0, 12);
+        }
         m->thinker_header = THINKER_HEADER;
         m->thinker_flags = 0;
-        /* Convert old save game to the new format. */
-        if (f->old_thinker_header == THINKER_HEADER) {
-            m->thinker_tech_id = f->old_thinker_tech_id;
-            m->thinker_tech_cost = f->old_thinker_tech_cost;
-            memset(&f->old_thinker_header, 0, 12);
-        } else {
-            m->thinker_tech_id = f->tech_research_id;
-            m->thinker_tech_cost = f->tech_cost;
-        }
-    } else {
-        m->thinker_enemy_range = 0;
-        assert(f->old_thinker_header != THINKER_HEADER);
+        m->thinker_tech_id = f->tech_research_id;
+        m->thinker_tech_cost = f->tech_cost;
+        m->thinker_probe_lost = 0;
+        m->thinker_last_mc_turn = 0;
     }
+    m->thinker_unused = 0;
+    assert(f->old_thinker_header != THINKER_HEADER);
 }
 
 int __cdecl mod_turn_upkeep() {
@@ -345,7 +341,7 @@ void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool sea_b
     uint32_t b = 0;
 
     while (i < 1024) {
-        x = map_hash(faction + 8*f.base_name_offset, ++i);
+        x = pair_hash(faction + 8*f.base_name_offset, *map_random_seed ^ ++i);
         a = x % MaxWordsNum;
         b = (x / 256) % MaxWordsNum;
         name[0] = '\0';
@@ -414,15 +410,23 @@ int __cdecl battle_fight_parse_num(int index, int value)
 }
 
 int probe_roll_value(int faction) {
-    return 2*clamp(Factions[faction].SE_probe, -3, 3)
-        + clamp(Factions[faction].SE_police, -2, 2)
-        + clamp(Factions[faction].SE_probe_base, -2, 2);
+    int techs = 0;
+    for (int i=Tech_ID_First; i <= Tech_ID_Last; i++) {
+        if (Tech[i].preq_tech1 != TECH_Disable && has_tech(faction, i)
+        && Tech[i].flags & TFLAG_IMPROVE_PROBE) {
+            techs++;
+        }
+    }
+    return 2*techs + 2*clamp(Factions[faction].SE_probe, -3, 3)
+        + clamp(Factions[faction].SE_probe_base, -3, 3)
+        + clamp(Factions[faction].SE_police, -3, 3);
 }
 
 int probe_active_turns(int faction1, int faction2) {
-    int value = clamp(10 + probe_roll_value(faction1) - probe_roll_value(faction2), 4, 24);
-    return value * (4 + (*map_area_tiles >= 4000) + (*map_area_tiles >= 6000)
-        + (*diff_level < DIFF_TRANSCEND) + (*diff_level < DIFF_THINKER)) / 4;
+    int value = clamp(15 + probe_roll_value(faction1) - probe_roll_value(faction2), 4, 50);
+    value = value * (4 + (*map_area_tiles >= 4000) + (*map_area_tiles >= 7000)) / 4;
+    value = value * (4 + (*diff_level < DIFF_TRANSCEND) + (*diff_level < DIFF_THINKER)) / 4;
+    return clamp(value, 5, 50);
 }
 
 int probe_upkeep(int faction1) {

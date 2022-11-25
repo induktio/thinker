@@ -452,7 +452,10 @@ void __cdecl mod_world_monsoon() {
 }
 
 void __cdecl mod_world_build() {
+    static uint32_t seed = random_state();
+    MAP* sq;
     if (!conf.new_world_builder) {
+        ThinkerVars->map_random_value = 0;
         world_build();
         return;
     }
@@ -474,13 +477,13 @@ void __cdecl mod_world_build() {
         draw_map(1);
     }
     assert(*MapOceanCoverage >= 0 && *MapOceanCoverage < 3);
-    MAP* sq;
-    uint32_t seed = GetTickCount();
+    seed = ((seed << 15) | (seed >> 17)) ^ GetTickCount();
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
     noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     noise.SetSeed(seed);
-    random_seed(seed);
+    random_reseed(seed);
+    ThinkerVars->map_random_value = seed;
     *map_random_seed = (seed % 0x7fff) + 1; // Must be non-zero
 
     Points conts;

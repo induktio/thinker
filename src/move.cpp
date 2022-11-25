@@ -1109,23 +1109,29 @@ bool can_build_base(int x, int y, int faction, int triad) {
     assert(valid_player(faction));
     assert(valid_triad(triad));
     MAP* sq;
-    if (!(sq = mapsq(x, y))) // Invalid map coordinates
+    if (!(sq = mapsq(x, y))) {// Invalid map coordinates
         return false;
-    if (y < 3 || y >= *map_axis_y - 3 && *MapSizePlanet > 0)
+    }
+    if (y < 3 || y >= *map_axis_y - 3 && *MapSizePlanet > 0) {
         return false;
-    if (*map_toggle_flat & 1 && (x < 2 || x >= *map_axis_x - 2) && *MapSizePlanet > 0)
+    }
+    if (*map_toggle_flat & 1 && (x < 2 || x >= *map_axis_x - 2) && *MapSizePlanet > 0) {
         return false;
-    if ((sq->is_rocky() && !is_ocean(sq)) || (sq->items & (BIT_BASE_DISALLOWED | BIT_ADVANCED)))
+    }
+    if ((sq->is_rocky() && !is_ocean(sq)) || (sq->items & (BIT_BASE_DISALLOWED | BIT_ADVANCED))) {
         return false;
+    }
     // Allow base building on smaller maps in owned territory if a new faction is spawning.
     if (sq->is_owned() && faction != sq->owner && !at_war(faction, sq->owner)
-    && Factions[faction].base_count > 0)
+    && Factions[faction].base_count > 0) {
         return false;
-    if (non_ally_in_tile(x, y, faction))
+    }
+    if (non_ally_in_tile(x, y, faction)) {
         return false;
-    if (sq->landmarks & LM_VOLCANO && sq->art_ref_id == 0)
+    }
+    if (sq->landmarks & LM_VOLCANO && sq->art_ref_id == 0) {
         return false;
-
+    }
     int range = conf.base_spacing - (conf.base_nearby_limit < 0 ? 1 : 0);
     int num = 0;
     int i = 0;

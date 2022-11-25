@@ -68,9 +68,9 @@
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 #define HOOK_API extern "C"
 #define THINKER_HEADER (int16_t)0xACAC
-#define ModAppName "ThinkerMod"
+#define ModAppName "thinker"
 #define GameAppName "Alpha Centauri"
-#define GameIniFile ".\\Alpha Centauri.ini"
+#define GameIniFile ".\\thinker.ini"
 
 #ifdef BUILD_DEBUG
 #ifdef assert
@@ -128,8 +128,6 @@ can be set negative values to use the defaults from Alpha Centauri.ini.
 struct Config {
     int directdraw = 0;
     int disable_opening_movie = 1;
-    int cpu_idle_fix = 1; // unlisted option
-    int minimal_popups = 0; // unlisted option
     int autosave_interval = 1;
     int smooth_scrolling = 0;
     int scroll_area = 40;
@@ -215,7 +213,9 @@ struct Config {
     int repair_base_native = 10;
     int repair_base_facility = 10;
     int repair_nano_factory = 10;
-    int skip_random_factions = 0;
+    int cpu_idle_fix = 1; // unlisted option
+    int minimal_popups = 0; // unlisted option
+    int skip_random_factions = 0; // internal variable
     int faction_file_count = 14; // internal variable
     int debug_mode = DEBUG; // internal variable
     int debug_verbose = DEBUG; // internal variable
@@ -365,6 +365,8 @@ typedef std::set<MapNode,NodeComp> NodeSet;
 typedef std::set<Point,PointComp> Points;
 typedef std::list<Point> PointList;
 
+#include "random.h"
+#include "engine.h"
 #include "patch.h"
 #include "path.h"
 #include "plan.h"
@@ -374,7 +376,6 @@ typedef std::list<Point> PointList;
 #include "game.h"
 #include "move.h"
 #include "tech.h"
-#include "engine.h"
 #include "test.h"
 
 extern FILE* debug_log;

@@ -1,7 +1,6 @@
 
 #include "game.h"
 
-static uint32_t random_state = 0;
 
 char* prod_name(int item_id) {
     if (item_id >= 0) {
@@ -123,18 +122,18 @@ bool has_terra(int faction, FormerItem act, bool ocean) {
     return has_tech(faction, preq_tech);
 }
 
-bool has_project(int faction, int id) {
+bool has_project(int faction, int fac_id) {
     /* If faction_id is negative, check if anyone has built the project. */
-    assert(faction < MaxPlayerNum && id >= SP_ID_First && id <= FAC_EMPTY_SP_64);
-    int i = SecretProjects[id - SP_ID_First];
+    assert(faction < MaxPlayerNum && fac_id >= SP_ID_First && fac_id <= FAC_EMPTY_SP_64);
+    int i = SecretProjects[fac_id - SP_ID_First];
     return i >= 0 && (faction < 0 || Bases[i].faction_id == faction);
 }
 
-bool has_facility(int base_id, int id) {
+bool has_facility(int base_id, int fac_id) {
     assert(base_id >= 0 && base_id < *total_num_bases);
-    assert(id > 0 && id <= FAC_EMPTY_SP_64);
-    if (id >= SP_ID_First) {
-        return SecretProjects[id - SP_ID_First] == base_id;
+    assert(fac_id > 0 && fac_id <= FAC_EMPTY_SP_64);
+    if (fac_id >= SP_ID_First) {
+        return SecretProjects[fac_id - SP_ID_First] == base_id;
     }
     int faction = Bases[base_id].faction_id;
     const int freebies[][2] = {
@@ -147,18 +146,18 @@ bool has_facility(int base_id, int id) {
         {FAC_QUANTUM_CONVERTER, FAC_SINGULARITY_INDUCTOR},
     };
     for (const int* p : freebies) {
-        if (p[0] == id && has_project(faction, p[1])) {
+        if (p[0] == fac_id && has_project(faction, p[1])) {
             return true;
         }
     }
-    return Bases[base_id].facilities_built[id/8] & (1 << (id % 8));
+    return Bases[base_id].facilities_built[fac_id/8] & (1 << (fac_id % 8));
 }
 
-bool has_fac_built(int base_id, int facility_id) {
-    if (facility_id < Fac_ID_First || facility_id > Fac_ID_Last) {
+bool has_fac_built(int base_id, int fac_id) {
+    if (fac_id < Fac_ID_First || fac_id > Fac_ID_Last) {
         return false;
     }
-    return Bases[base_id].facilities_built[facility_id/8] & (1 << (facility_id % 8));
+    return Bases[base_id].facilities_built[fac_id/8] & (1 << (fac_id % 8));
 }
 
 bool can_build(int base_id, int id) {
@@ -402,7 +401,7 @@ int facility_count(int faction, int facility_id) {
     int n = 0;
     for (int i=0; i < *total_num_bases; i++) {
         BASE* base = &Bases[i];
-        if (base->faction_id == faction && has_facility(i, facility_id)) {
+        if (base->faction_id == faction && has_fac_built(i, facility_id)) {
             n++;
         }
     }
@@ -412,7 +411,7 @@ int facility_count(int faction, int facility_id) {
 int find_hq(int faction) {
     for(int i=0; i < *total_num_bases; i++) {
         BASE* base = &Bases[i];
-        if (base->faction_id == faction && has_facility(i, FAC_HEADQUARTERS)) {
+        if (base->faction_id == faction && has_fac_built(i, FAC_HEADQUARTERS)) {
             return i;
         }
     }
@@ -515,26 +514,6 @@ bool allow_expand(int faction) {
         return Factions[faction].base_count < max(bases, conf.expansion_limit);
     }
     return true;
-}
-
-uint32_t map_hash(uint32_t a, uint32_t b) {
-    uint32_t h = (*map_random_seed ^ (a << 8) ^ (a << 24) ^ b ^ (b << 16)) * 2654435761;
-    return (h ^ (h>>16));
-}
-
-uint32_t pair_hash(uint32_t a, uint32_t b) {
-    uint32_t h = (a ^ b ^ (b << 16)) * 2654435761;
-    return (h ^ (h>>16));
-}
-
-void random_seed(uint32_t value) {
-    random_state = value;
-}
-
-int random(int n) {
-    // Produces same values than the game engine function random(0, n)
-    random_state = 1664525 * random_state + 1013904223;
-    return ((random_state & 0xffff) * n) >> 16;
 }
 
 int wrap(int a) {

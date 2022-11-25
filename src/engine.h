@@ -4,6 +4,7 @@
 
 std::vector<std::string> read_txt_block(const char* filename, const char* section, unsigned max_len);
 int probe_active_turns(int faction1, int faction2);
+int probe_upkeep(int faction);
 void init_save_game(int faction);
 void __cdecl mod_auto_save();
 int __cdecl mod_turn_upkeep();

@@ -36,13 +36,6 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->directdraw = atoi(value);
     } else if (MATCH("thinker", "DisableOpeningMovie")) {
         cf->disable_opening_movie = atoi(value);
-    } else if (MATCH("thinker", "cpu_idle_fix")) {
-        cf->cpu_idle_fix = atoi(value);
-    } else if (MATCH("thinker", "minimal_popups")) {
-        if (DEBUG) {
-            cf->minimal_popups = atoi(value);
-            cf->debug_verbose = !atoi(value);
-        }
     } else if (MATCH("thinker", "autosave_interval")) {
         cf->autosave_interval = atoi(value);
     } else if (MATCH("thinker", "smooth_scrolling")) {
@@ -213,6 +206,13 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->repair_base_facility = clamp(atoi(value), 0, 10);
     } else if (MATCH("thinker", "repair_nano_factory")) {
         cf->repair_nano_factory = clamp(atoi(value), 0, 10);
+    } else if (MATCH("thinker", "cpu_idle_fix")) {
+        cf->cpu_idle_fix = atoi(value);
+    } else if (MATCH("thinker", "minimal_popups")) {
+        if (DEBUG) {
+            cf->minimal_popups = atoi(value);
+            cf->debug_verbose = !atoi(value);
+        }
     } else if (MATCH("thinker", "skip_faction")) {
         if (atoi(value) > 0) {
             cf->skip_random_factions |= 1 << (atoi(value) - 1);
@@ -264,28 +264,6 @@ int cmd_parse(Config* cf) {
     return 1;
 }
 
-int game_ini_parse(Config* cf) {
-    cf->new_world_builder = GetPrivateProfileIntA(
-        ModAppName, "new_world_builder", cf->new_world_builder, GameIniFile);
-    cf->world_continents = GetPrivateProfileIntA(
-        ModAppName, "world_continents", cf->world_continents, GameIniFile);
-    cf->modified_landmarks = GetPrivateProfileIntA(
-        ModAppName, "modified_landmarks", cf->modified_landmarks, GameIniFile);
-    cf->map_mirror_x = GetPrivateProfileIntA(
-        ModAppName, "map_mirror_x", cf->map_mirror_x, GameIniFile);
-    cf->map_mirror_y = GetPrivateProfileIntA(
-        ModAppName, "map_mirror_y", cf->map_mirror_y, GameIniFile);
-    cf->world_map_labels = GetPrivateProfileIntA(
-        ModAppName, "world_map_labels", cf->world_map_labels, GameIniFile);
-    cf->manage_player_bases = GetPrivateProfileIntA(
-        ModAppName, "manage_player_bases", cf->manage_player_bases, GameIniFile);
-    cf->manage_player_units = GetPrivateProfileIntA(
-        ModAppName, "manage_player_units", cf->manage_player_units, GameIniFile);
-    cf->warn_on_former_replace = GetPrivateProfileIntA(
-        ModAppName, "warn_on_former_replace", cf->warn_on_former_replace, GameIniFile);
-    return 1;
-}
-
 DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LPVOID UNUSED(lpvReserved)) {
     switch (fdwReason) {
         case DLL_PROCESS_ATTACH:
@@ -297,12 +275,12 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
                     MOD_VERSION, MB_OK | MB_ICONSTOP);
                 exit(EXIT_FAILURE);
             }
-            if (!game_ini_parse(&conf) || !cmd_parse(&conf) || !patch_setup(&conf)) {
+            if (!cmd_parse(&conf) || !patch_setup(&conf)) {
                 MessageBoxA(0, "Error while loading the game.",
                     MOD_VERSION, MB_OK | MB_ICONSTOP);
                 exit(EXIT_FAILURE);
             }
-            random_seed(GetTickCount());
+            random_reseed(GetTickCount());
             *EngineVersion = MOD_VERSION;
             *EngineDate = MOD_DATE;
             break;
@@ -544,7 +522,7 @@ int __cdecl mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5) {
     debug("social_params %d %d %8s range: %2d has_nexus: %d pop_boom: %d want_pop: %3d pop_total: %3d "\
         "robust: %04x immunity: %04x impunity: %04x penalty: %04x\n", *current_turn, faction, m->filename,
         range, has_nexus, pop_boom, want_pop, pop_total, robust, immunity, impunity, penalty);
-    int score_diff = 1 + map_hash(*current_turn, faction) % 6;
+    int score_diff = 1 + (*current_turn + 11*faction) % 6;
     int sf = -1;
     int sm2 = -1;
 

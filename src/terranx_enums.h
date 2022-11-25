@@ -9,7 +9,7 @@ const int Fac_ID_Last = 64;
 const int Tech_ID_First = 0;
 const int Tech_ID_Last = 88;
 
-enum facility_id {
+enum FacilityId {
     FAC_HEADQUARTERS = 1,
     FAC_CHILDREN_CRECHE = 2,
     FAC_RECYCLING_TANKS = 3,
@@ -145,7 +145,7 @@ enum facility_id {
     FAC_EMPTY_SP_64 = 133,
 };
 
-enum technology_id {
+enum TechId {
     TECH_Biogen = 0,
     TECH_Indust = 1,
     TECH_InfNet = 2,
@@ -239,16 +239,16 @@ enum technology_id {
     TECH_Disable = -2,
 };
 
-enum tech_flags {
-    TECH_FLAGS_SECRETS = 0x1,
-    TECH_FLAGS_IMPROVE_PROBE = 0x2,
-    TECH_FLAGS_INC_COMMERCE = 0x4,
-    TECH_FLAGS_REVEALS_MAP = 0x8,
-    TECH_FLAGS_ALLOW_GENE_WARFARE = 0x10,
-    TECH_FLAGS_INC_DEFENSE_GENE_WARFARE = 0x20,
-    TECH_FLAGS_INC_ENERGY_FUNGUS = 0x40,
-    TECH_FLAGS_INC_MINERALS_FUNGUS = 0x80,
-    TECH_FLAGS_INC_NUTRIENT_FUNGUS = 0x100,
+enum TechFlags {
+    TFLAG_SECRETS = 0x1,
+    TFLAG_IMPROVE_PROBE = 0x2,
+    TFLAG_INC_COMMERCE = 0x4,
+    TFLAG_REVEALS_MAP = 0x8,
+    TFLAG_ALLOW_GENE_WARFARE = 0x10,
+    TFLAG_INC_GENE_WARFARE_DEFENSE = 0x20,
+    TFLAG_INC_ENERGY_FUNGUS = 0x40,
+    TFLAG_INC_MINERALS_FUNGUS = 0x80,
+    TFLAG_INC_NUTRIENT_FUNGUS = 0x100,
 };
 
 enum Triad {
