@@ -3,11 +3,11 @@ Main features
 =============
 Thinker has several advanced planning routines that enhance the base game AI to manage the complexities of colony building in Alpha Centauri. In the original game, many of the AI aspects were left underdeveloped while the computer factions struggled to deal with various punitive penalties. This left the single player experience severely lacking, since the AI would have no counter to many simple strategies.
 
-As a general principle, Thinker uses the same production bonuses than what the vanilla difficulty levels would grant the AI normally. There should be no extra resources received by the AI unless this is specified in the configuration file. The main goal is to make the AI play better given any game config options, so generally the mod will not attempt to remake the lore or adjust most vanilla game design decisions.
+As a general principle, Thinker uses the same production bonuses than the vanilla difficulty levels would grant the AI normally. There should be no extra resources received by the AI unless this is chosen in the configuration file. The main goal is to make the AI play better given any game config options, so generally the mod will not attempt to remake the lore or adjust most vanilla game design decisions.
 
 Thinker does not have any special save game format, so it's possible to open an old save and have the factions switch to the new AI and vice-versa. None of the `thinker.ini` config options are preserved in the save game either, but the units or resources spawned at the game start will remain.
 
-Note that in `thinker.ini` config file, for binary settings **only zero values are treated as disabled**, any non-zero value usually enables the option. Whenever Thinker options are changed in the GUI, they are saved to `Alpha Centauri.ini`. While the same settings can be set in thinker.ini, **the values in Alpha Centauri.ini take priority**.
+Note that in `thinker.ini` config file, for binary settings **only zero values are treated as disabled**, any non-zero value usually enables the option. Whenever Thinker options are changed in the GUI, they are also saved to `thinker.ini` in the game folder.
 
 For testing purposes it is also possible to run old/new AIs side-by-side by setting `factions_enabled=3` or similar. In that case, only the factions in the first 3 slots will use Thinker AI if they are not player-controlled. By default, `factions_enabled=7` setting enables Thinker AI for all computer factions.
 
@@ -170,13 +170,18 @@ The final cost calculated by this formula is visible in the F2 status screen aft
 
 Expiring infiltration feature
 =============================
-Normally establishing infiltration with a probe team on another faction is permanent and cannot be removed in any way. In multiplayer games this can be especially unbalanced. Thinker provides a config option `counter_espionage` to make infiltration expire after a specific duration based on a variety of factors.
+Normally establishing infiltration with a probe team on another faction is permanent and cannot be removed in any way. In multiplayer games this can be especially unbalanced. Thinker provides a config option `counter_espionage` to make infiltration expire after a specific period based on a variety of factors.
 
-When enabled, every time a probe teams infiltrates a base of another faction, a popup will display the amount of turns infiltration is expected to last. Infiltration should always succeed, however the probe team may be randomly lost afterwards (vanilla game mechanic). Whenever infiltration is discovered and removed, both factions will receive a notification on their respective turns. While the spying faction is the governor or has the Empath Guild, infiltration will never expire regardless.
+When enabled, every time a probe teams infiltrates a base of another faction, a popup will display the amount of turns infiltration is expected to last. Infiltration should always succeed, however the probe team may be randomly lost afterwards, as in vanilla game rules. Whenever infiltration is discovered and removed, both factions will receive a notification on their own turns. While the spying faction is the governor or has the Empath Guild, infiltration will never expire regardless.
 
-The infiltration status can be renewed once per turn for every opponent faction which resets the expiration counter to the initial value. The duration is determined by comparing PROBE (most important) and POLICE ratings (minor importance) of the opposing factions. Factions which have an initial PROBE rating defined will receive additional bonus/penalty regardless of current SE choices.
+The infiltration status can be renewed once per turn for every opponent faction which resets the expiration counter to the initial value. The duration is determined by comparing espionage ratings of two factions. In this mechanic, it is important to have a better PROBE/POLICE rating or at least a parity to maintain the infiltration for longer periods of time.
 
-In this mechanic, it is important to have a better PROBE/POLICE rating or at least a parity to maintain the infiltration for longer periods of time. In addition, infiltration lasts longer on maps larger than the standard size to balance for the longer travel distances. On Thinker and Transcend difficulty levels, the duration is reduced from normal values. For example, on Transcend difficulty, standard map having two factions with equal ratings, the infiltration period is 10 turns.
+* Current social engineering PROBE rating counts twice.
+* Initial PROBE rating in faction definition counts once.
+* Current POLICE rating counts once.
+* Each tech that increases probe team base morale counts twice.
+
+Each social engineering value is treated as being from -3 to 3 even if it falls outside this range. In addition, infiltration lasts longer on maps larger than the standard size to balance for the longer travel distances. On Thinker and Transcend difficulty levels, the duration is reduced from normal values. The final time value is always at least 5 turns. For example, on Transcend difficulty, standard map, with two factions having equal ratings, the default infiltration period is 15 turns.
 
 
 Recommended alphax.txt settings
