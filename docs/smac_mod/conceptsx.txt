@@ -1,4 +1,12 @@
 ;
+; *************************************
+; *  SMAC-in-SMACX Mod / Thinker Mod  *
+; *************************************
+;
+; Based on SMACX GOG-version. SMACX concepts hidden or removed.
+; -cmc 2014
+;
+;
 ; Sid Meier's ALPHA CENTAURI
 ;
 ; BASIC CONCEPTS HELP
@@ -9,9 +17,6 @@
 ; Feel free, at your own risk, to experiment with editing
 ; this file. We recommend you make a backup copy of the original.
 ;
-
-; Based on SMACX GOG-version. SMACX concepts hidden or removed.
-; -cmc 2014
 
 #TITLES
 Rainfall

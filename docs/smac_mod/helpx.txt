@@ -1,8 +1,11 @@
 ;
-; **************************************************************
-; *  SMAC-in-SMACX Mod / Includes minor edits for Thinker Mod  *
-; *  Many game engine issues are marked with {KNOWN BUG} tag.  *
-; **************************************************************
+; *************************************
+; *  SMAC-in-SMACX Mod / Thinker Mod  *
+; *************************************
+;
+; Initial version by cmc 2014 and 2016.
+; Includes many edits and clarifications for Thinker Mod.
+; Many game engine issues are marked with {KNOWN BUG} tag.
 ;
 
 #HELPCATS
@@ -213,7 +216,7 @@ Reduces base's vulnerability to enemy mind control.
 ^
 Prevents the riot $LINK<Random Event=55>, and instead increases base population.
 ^
-{KNOWN BUG}: The effects on the base square with regards to combat and morale are inconsistent.
+{KNOWN BUG}: The combat and morale effects on the base square are inconsistent.
 See $LINK<Advanced Morale=10017> for more information.
 
 #; Recycling Tanks
@@ -246,7 +249,7 @@ Reduces number of $LINK<Drones=36> in base by two.
 #HELPFAC7
 Increases $LINK<ECONOMY=44> at base by 50%.
 ^
-Prevents all mines in base radius being destroyed by a $LINK<Random Event=55>, and instead grants 50 $LINK<Credits=46>.
+Prevents a $LINK<Random Event=55> from destroying all mines in base radius, and instead grants 50 $LINK<Credits=46>.
 
 #; Network Node
 #HELPFAC8
@@ -261,14 +264,14 @@ Prevents research overload $LINK<Random Event=55>, and instead grants a free tec
 $LINK<+2 labs=45> per turn.
 Any alien lifeforms you breed at this base gain a $LINK<+1 lifecycle=11> bonus.
 ^
-Prevents the Planet Blight $LINK<random event=55> from causing all forests and farms within base squares to be destroyed.
+Prevents the Planet Blight $LINK<random event=55> from causing all forests and farms within base radius to be destroyed.
 ^Instead, provides +1 nutrient per square for 10 years due to the discovery of a beneficial bacterium.
 ^
 Native units repair quickly.
 
 #; Skunkworks
 #HELPFAC10
-Eliminates additional cost to $LINK<prototype=23> new units at this base. {Skunkworks}
+Eliminates additional cost to $LINK<prototype=23> new units at this base.
 Lifts the retooling penalty for mid-course production switching within category.
 
 #; Hologram Theatre
@@ -324,7 +327,7 @@ population loss caused by genetic warfare and other $LINK<disease outbreaks=55>.
 Increases $LINK<PSYCH=38> at base by 25% and $LINK<LABS=45> at
 base by 50% and reduces number of $LINK<drones=36> by one. Reduces
 population loss caused by genetic warfare and other $LINK<disease outbreaks=55>.
-^Cumulative with $LINK<Research Hospital=100017> requires Research Hospital.
+^Cumulative with $LINK<Research Hospital=100017>. Requires Research Hospital.
 
 #; Robotic Assembly Plant
 #HELPFAC19
@@ -335,7 +338,7 @@ facilities of this type.
 #HELPFAC20
 Increases $LINK<MINERALS=42> output at base by 50%. Cumulative with all other
 facilities of this type.
-^Requires  $LINK<Robotic Assembly Plant=100019>.
+^Requires $LINK<Robotic Assembly Plant=100019> or $LINK<Genejack Factory=100022>.
 ^Reduces effect of industry on Planet's $LINK<ecology=26>.
 
 #; Quantum Converter
@@ -376,9 +379,6 @@ Bonus not cumulative with $LINK<Recycling Tanks=100003>.
 #HELPFAC27
 Repairs damaged ground units quickly. Ground units built here
 receive two $LINK<morale=11> upgrades.
-^
-The maintenance is determined by the current level of $LINK<reactor
-technology=50001> researched.
 
 #; Naval Yard
 #HELPFAC28
@@ -420,7 +420,7 @@ Any alien lifeforms you breed at this base gain a $LINK<+1 lifecycle=11> bonus.
 #HELPFAC32
 Reduces effect of industry on Planet's $LINK<ecology=26>.
 Any alien lifeforms you breed at this base gain a $LINK<+1 lifecycle=11> bonus.
-Cumulative with $LINK<Centauri Preserve=100031> requires Centauri Preserve.
+Cumulative with $LINK<Centauri Preserve=100031>. Requires Centauri Preserve.
 ^Increases clean minerals limit by 1.
 
 #; Psi Gate
@@ -474,16 +474,16 @@ All $LINK<MINERALS=42> produced at base are immediately converted to
 $LINK<ECONOMY=44> energy reserves (each 2 minerals makes 1 energy rounded up).
 ^
 {KNOWN BUG}: If a base completes construction of a facility or secret project
-and its build queue is empty, then for that turn the base will accumulate energy as if production had been set to
-{Stockpile Energy} in addition to accumulating the usual amount of minerals.
-$LINK<ECONOMY=44> energy reserves (each 2 minerals makes 1 energy).
+and its build queue is empty, then for that turn the base will accumulate
+energy as if production had been set to {Stockpile Energy} in addition to
+accumulating the usual amount of minerals.
 
 
 #; Human Genome Project
 #HELPPROJ0
 One extra $LINK<Talent=37> at every base.
 ^
-Protects all of your bases against the $LINK<Prometheus Virus=55>
+Protects all of your bases against the $LINK<Prometheus Virus=55>.
 
 #; The Command Nexus
 #HELPPROJ1
@@ -492,9 +492,10 @@ Counts as a $LINK<Command Center=100027> at every one of your bases.
 #; The Weather Paradigm
 #HELPPROJ2
 Increases terraforming speed by 50% for all tasks except
-for $LINK<Remove Fungus=90010>. Your $LINK<formers=30001> may build $LINK<Condensers=90012> and $LINK<Echelon Mirrors=90013>
-sink $LINK<Boreholes=90014>, $LINK<Drill to aquifer=90015>
-and may $LINK<raise=90016>/$LINK<lower terrain=90017>, even if you have
+for $LINK<Remove Fungus=90010>. Your $LINK<formers=30001> may build
+$LINK<Condensers=90012>, $LINK<Echelon Mirrors=90013>,
+$LINK<Boreholes=90014>, $LINK<Drill to aquifer=90015>
+and $LINK<raise=90016>/$LINK<lower terrain=90017>, even if you have
 not yet discovered the appropriate technologies.
 
 #; The Merchant Exchange
@@ -544,8 +545,8 @@ In addition your non-native units may heal completely in fungus.
 
 #; The Maritime Control Center
 #HELPPROJ10
-Increases the movement rate of all naval units by two
-(including $LINK<Isles of the Deep=30009>.
+Increases the movement rate of all naval units by two,
+including $LINK<Isles of the Deep=30009>.
 ^Counts as a $LINK<Naval Yard=100028> at every one of your bases.
 
 #; The Planetary Datalinks
@@ -572,7 +573,7 @@ or $LINK<green=120009>.
 $LINK<ECONOMY=44> increased by 50% at this base for
 $LINK<free market=120007> economies.
 ^
-Protects all of your bases against the $LINK<Prometheus Virus=55>
+Protects all of your bases against the $LINK<Prometheus Virus=55>.
 
 #; The Hunter-Seeker Algorithm
 #HELPPROJ15
@@ -640,7 +641,7 @@ all of your bases are considered to have an extra police unit.
 One extra $LINK<Talent=37> at every base. Doubles your votes in elections
 for $LINK<Planetary Governor=28> and $LINK<Supreme Leader=10005>.
 ^
-Protects all of your bases against the $LINK<Prometheus Virus=55>
+Protects all of your bases against the $LINK<Prometheus Virus=55>.
 
 #; The Space Elevator
 #HELPPROJ27
@@ -658,9 +659,8 @@ $LINK<ecological effects=26> of mineral production.
 
 #; The Bulk Matter Transmitter
 #HELPPROJ29
-$LINK<+50% MINERALS=42> at every base
-(before facility multipliers are applied, and the multipliers are do not boost
-these extra minerals).
+$LINK<+50% MINERALS=42> at every base (before any facility multipliers
+are applied, and the facility effects are not multiplicative with each other).
 
 #; The Telepathic Matrix
 #HELPPROJ30
@@ -936,7 +936,6 @@ Increasing this value will increase your $LINK<energy=43> flow.
 ^ 3, +1 energy/sq; +2 energy/base +1 commerce rating!!
 ^ 4, +1 energy/sq; +4 energy/base; +2 commerce!!!
 ^ 5, +1 energy/sq; +4 energy/base; +3 commerce
-^ 6, +1 energy/sq; +4 energy/base; +3 commerce
 
 #;EFFIC
 #HELPEFFECT1
@@ -952,7 +951,7 @@ will begin to lose $LINK<energy=43> to inefficiency.
 ^ 1, Reasonable efficiency
 ^ 2, Commendable efficiency
 ^ 3, Exemplary efficiency!
-^ 4, 4+, PARADIGM ECONOMY!!
+^ 4, PARADIGM ECONOMY!!
 
 #;SUPPORT
 #HELPEFFECT2
@@ -1040,7 +1039,7 @@ A low score indicates that ecological damage will occur more quickly.
 #;PROBE
 #HELPEFFECT8
 {PROBE} affects your vulnerability (or strength) on security issues.
-A high score will help prevent enemy $LINK<probe team=30006> subversion attacks.
+A high score will help prevent enemy $LINK<probe team=30006> attacks.
 ^
 ^-2, -50% cost of enemy probe team actions; enemy success rate increased
 ^-1, -25% cost of enemy probe team actions; enemy success rate increased
@@ -1064,7 +1063,6 @@ number of $LINK<minerals=42> required to build units and facilities.
 ^ 3, Mineral costs decreased by 30%!
 ^ 4, Mineral costs decreased by 40%!!
 ^ 5, Mineral costs decreased by 50%!!!
-^ 5+, Mineral costs decreased by 50%!!!
 
 #;RESEARCH
 #HELPEFFECT10
@@ -1118,8 +1116,8 @@ A {mine} increases the $LINK<mineral output=42> of a square:
 #HELPTERRASEA2
 A {mining platform} increases the $LINK<minerals output=42> of an ocean square
 by +1, or +2 if $LINK<Advanced Ecological Engineering=140062> has been discovered.
-^A mining platforms can only be built in shelf squares (depth less than 1000m).
-^A mine reduces the nutrient output of a square by 1, but never below 1.
+^Mining platforms can only be built in shelf squares (depth less than 1000m).
+^Building a mine reduces the nutrient output of a square by 1, but never below 1.
 
 #;SOLAR
 #HELPTERRALAND3
@@ -1143,8 +1141,8 @@ $LINK<Tree Farm=100013> and/or a $LINK<Hybrid Forest=100014>.
 ^
 A Forest also provides a strong defensive bonus (+50%).
 ^
-A Forest will sometimes expand into adjacent non-rocky squares, even driving out
-native $LINK<fungus=14> in the process.
+A Forest will sometimes expand into adjacent non-rocky squares,
+even driving out native $LINK<fungus=14> in the process.
 
 #HELPTERRASEA4
 no
@@ -1158,7 +1156,7 @@ Roads also increase $LINK<mine=90002> production in $LINK<rocky squares=1>.
 ^
 Requires $LINK<Centauri Empathy=140058> to be constructed on $LINK<fungus=14>.
 ^
-{Terraform Variation:}         (Modifiers are Additive)
+{Extra build turns required}, modifiers are additive:
 ^+1 Rolling, +2 Rocky, +1 $LINK<River=90015>, +2 $LINK<Fungus=90011>, +2 $LINK<Forest=90004>.
 
 #HELPTERRASEA5
@@ -1171,8 +1169,8 @@ Mag Tube squares do not expend {any} movement points.
 ^
 Requires $LINK<Centauri Psi=140063> to be constructed on $LINK<fungus=14>.
 ^
-{Terraform Variation:}         (Modifiers are Additive)
-^+1 $LINK<Rolling=1>, +2 Rocky,+1 $LINK<River=90015>, +2 $LINK<Fungus=90011>, +2 $LINK<Forest=90004>.
+{Extra build turns required}, modifiers are additive:
+^+1 $LINK<Rolling=1>, +2 Rocky, +1 $LINK<River=90015>, +2 $LINK<Fungus=90011>, +2 $LINK<Forest=90004>.
 
 #HELPTERRASEA6
 no
@@ -1184,7 +1182,7 @@ in bunkers have a 50% bonus in combat.
 ^
 Protects against collateral damage.
 ^
-However, A bunker does not protect against $LINK<self-destruction=10016>.
+However, a bunker does not protect against $LINK<self-destruction=10016>.
 ^
 Requires $LINK<Centauri Psi=140063> to be constructed on $LINK<fungus=14>.
 
@@ -1208,8 +1206,8 @@ Arrays can see any enemy unit within two squares.
 Data from Sensor Arrays also increases defense readiness: any unit
 in a land square within two squares of a friendly sensor array
 gains +25% to its defense.
-^If a sensor array is not within any faction's territory, then:
-^The sensor has no effect on the map (i.e., does not reveal
+^If a sensor array is not within any faction's territory, then
+^the sensor has no effect on the map visibility (does not reveal
 fog of war, does not reveal AI units). However, the sensor confers
 a defensive bonus to any faction's unit within two squares.
 ^Requires $LINK<Centauri Psi=140063> to be constructed on $LINK<fungus=14>.
@@ -1251,7 +1249,8 @@ SURROUNDING SQUARES.  It also provides an additional {+50%} increase
 with $LINK<farm=90000> bonuses. Use condensers to increase nutrient production
 drastically in dry areas.
 ^
-A Condenser will also lift nutrient restriction even before the discovery of $LINK<Gene Splicing=140049> in its own square.
+A Condenser will also lift nutrient restriction even before the discovery of
+$LINK<Gene Splicing=140049> in its own square.
 ^
 Condensers have a significant negative $LINK<ecological impact=26>.
 
@@ -1279,10 +1278,9 @@ $LINK<+6 minerals=42> and $LINK<+6 energy=43>, but no
 $LINK<nutrients=41> in any situation. They are unaffected by $LINK<fungus=90014>.
 ^
 Boreholes cannot be built adjacent to other boreholes, nor
-on slopes (adjacent to other squares of lower
-$LINK<altitude=2>).
+on slopes (adjacent to other squares of lower $LINK<altitude=2>).
 ^
-Any rivers flowing into a borehole will go down the hole.
+Any rivers flowing into a borehole will end in that square.
 ^
 Boreholes have a significant negative $LINK<ecological impact=26>.
 
@@ -1296,7 +1294,8 @@ no
 This operation is not allowed in squares adjacent to an existing river.
 ^
 {KNOWN BUG}:
-^It is possible to create rivers in adjacent squares by performing the drill to aquifer operation in multiple squares at the same time.
+It is possible to create rivers in adjacent squares by performing the drill
+to aquifer operation in multiple squares at the same time.
 
 #HELPTERRASEA15
 no
@@ -1345,7 +1344,7 @@ build a new {base}.
 
 #UNITDESC1
 Your Terraforming Engineers ("FORMERS") are crucial to your
-expedition's survival. Formers can plant $LINK<forests=90004> and$LINK<farms=90000>;
+expedition's survival. Formers can plant $LINK<forests=90004> and $LINK<farms=90000>;
 ^build $LINK<roads=90005>, $LINK<mines=90002>, and $LINK<solar collectors=90003>; reduce $LINK<rockiness=90018>,
 ^and even $LINK<raise up=90016> or $LINK<tear down=90017> mountains.
 ^
@@ -1962,7 +1961,7 @@ to attack Needlejets in flight. Air units with Air Superiority gain a +100%
 combat advantage when attacking other air units in flight, but incur
 a -50% penalty if they attack ground or naval units.
 ^
-Ground or Naval units with air superiority do not gain the 100% bonus vs air,
+Ground or naval units with air superiority do not gain the 100% bonus vs air,
 but they do not get the 50% penalty vs other ground or naval units either.
 ^
 Air-to-air combat is resolved by comparing attack factors--the armor
@@ -1972,7 +1971,7 @@ Note that even ground and naval units can be equipped with the SAM
 missiles necessary to confer this ability.
 ^
 A ground unit equipped with Air Superiority can attack an adjacent Needlejet chassis at sea.
-A Naval unit equipped with Air Superiority can attack an adjacent Needlejet chassis on land.
+A naval unit equipped with Air Superiority can attack an adjacent Needlejet chassis on land.
 ^
 A $LINK<needlejet=40005> unit with air superiority is able to {scramble} against an air attack
 or hostile $LINK<air drop=80004> within 2 a square radius.
@@ -2062,9 +2061,11 @@ ability.
 The {High Morale} ability gives a unit a $LINK<+1 morale=11> upgrade when it
 is first created.
 ^
-when you upgrade a trained design in the workshop to a design that is not trained, you lose the effect of the training in the units you are upgrading.
-If you do the same operation unit by unit on the board, the morale level is retained.
-On the other hand, if you workshop upgrade TO a trained design, the units so upgraded gain the benefit of the trained attribute.
+{KNOWN BUG}: When upgrading a trained design in the workshop to a design that
+is not trained, the extra training in the units that are upgraded is lost.
+If the same operation is done unit by unit on the board, the morale level
+is retained. On the other hand, when upgrading to a trained design in the workshop,
+the upgraded units gain the benefit of the trained attribute.
 Doing this same operation unit by unit on the board DOES NOT gain a morale benefit.
 ^
 ^Desc: Advanced Warfare Training

@@ -1,15 +1,20 @@
 ;
-;   Sid Meier's ALPHA CENTAURI
+; *************************************
+; *  SMAC-in-SMACX Mod / Thinker Mod  *
+; *************************************
 ;
-;   Tutorial dialog boxes
+; Spore Launcher entry replaced by Mind Worms. Constructions like
+; "human factions" replaced by "factions". References to alien factions
+; and progenitors removed.
+; -cmc 2014
+; 
+; 
+; Sid Meier's ALPHA CENTAURI
+; 
+; Tutorial dialog boxes
+; 
+; Copyright (c) 1997, 1998 by Firaxis Games, Inc.
 ;
-;   Copyright (c) 1997, 1998 by Firaxis Games, Inc.
-;
-
-;   Spore Launcher entry replaced by Mind Worms. Constructions like
-;   "human factions" replaced by "factions". References to alien factions
-;   and progenitors removed.
-;   -cmc 2014
 
 #LANDFALL
 #xs 300
