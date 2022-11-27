@@ -15,16 +15,16 @@ void ExitFail() {
 }
 
 int main(int argc, char* argv[]) {
-	if (!FileExists(GameExeFile)) {
+    if (!FileExists(GameExeFile)) {
         MessageBox(0, "Cannot find " GameExeFile ". Game is unable to start.",
             MOD_VERSION, MB_OK|MB_ICONSTOP);
         exit(EXIT_FAILURE);
-	}
-	if (!FileExists(ModDllFile)) {
+    }
+    if (!FileExists(ModDllFile)) {
         MessageBox(0, "Cannot find " ModDllFile ". Game is unable to start.",
             MOD_VERSION, MB_OK|MB_ICONSTOP);
         exit(EXIT_FAILURE);
-	}
+    }
     if (DEBUG) {
         debug_log = fopen("debugstart.txt", "w");
     }
@@ -69,15 +69,17 @@ int main(int argc, char* argv[]) {
     immediately while the game process is still in suspended state.
     DLL initialization routines are serialized within a process and the main thread
     does not begin execution until all the DLL initialization is done.
+    Sleep calls added nevertheless for compatibility reasons.
     */
+    Sleep(100);
     if (!ResumeThread(pi.hThread)) {
         ExitFail();
     }
-//    WaitForSingleObject(pi.hProcess, INFINITE);
+    WaitForSingleObject(pi.hProcess, 100);
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
 
-	return 0;
+    return 0;
 }
 
 

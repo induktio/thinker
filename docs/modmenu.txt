@@ -43,15 +43,15 @@ Open Project Homepage
 #xs 480
 #caption Thinker Mod Options
 #itemlist
-Use new random map generator
-__Create random maps with larger islands
-__Add modified landmarks on random maps
-__Mirror maps along X axis
-__Mirror maps along Y axis
-Show world map labels
-Thinker manages player base governors
-Thinker manages player colony pods/formers
-Warn when manually replacing tile improvements
+Use new random map generator.
+__Create random maps with larger islands.
+__Add modified landmarks on random maps.
+__Mirror maps along X axis.
+__Mirror maps along Y axis.
+Show world map labels.
+Thinker manages player base governors.
+Thinker manages player colony pods/formers.
+Warn when manually replacing tile improvements.
 
 #HURRY
 #xs 400
@@ -82,19 +82,25 @@ Value:
 #caption $MSG0
 $MSG1
 
+#PROBE
+#xs 440
+#caption Operations Director
+^Our probe team has linked to the $<M1:$FACTIONADJ1> network and is awaiting instructions.
+^We estimate the current infiltration will expire after {$NUM0} turns.
+
 #SPYRENEW
-#xs 400
-#caption Intelligence Operations Director
+#xs 440
+#caption Operations Director
 Our probe team estimates the infiltration will expire after {$NUM0} turns.
 
 #SPYLOST
-#xs 400
-#caption Intelligence Operations Director
+#xs 440
+#caption Operations Director
 Our infiltration on {$MSG0} has been discovered! The spies have been lost.
 
 #SPYFOUND
-#xs 400
-#caption Intelligence Operations Director
+#xs 440
+#caption Operations Director
 We have discovered and removed {$MSG0} infiltration on our networks!
 
 # ; This line must remain at end of file
