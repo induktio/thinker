@@ -6,7 +6,7 @@ static uint32_t random_seed = 0;
 
 uint32_t pair_hash(uint32_t a, uint32_t b) {
     uint32_t x;
-    x = a ^ b ^ (~b << 16);
+    x = 0x87654321 ^ a ^ (b << 16) ^ (b >> 16);
     x *= 0x604baa5d;
     x ^= x >> 15;
     x *= 0x43d6ce97;

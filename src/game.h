@@ -137,8 +137,6 @@ int __cdecl psi_factor(int value, int faction_id, bool is_attack, bool is_fungal
 int __cdecl fac_maint(int facility_id, int faction_id);
 int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id);
 int __cdecl mod_upgrade_cost(int faction, int new_unit_id, int old_unit_id);
-int __cdecl mod_bonus_at(int x, int y);
-int __cdecl mod_goody_at(int x, int y);
 int __cdecl cargo_capacity(int veh_id);
 bool __cdecl can_arty(int unit_id, bool allow_sea_arty);
 void __cdecl add_goal(int faction, int type, int priority, int x, int y, int base_id);
@@ -148,13 +146,6 @@ void __cdecl wipe_goals(int faction);
 int has_goal(int faction, int type, int x, int y);
 Goal* find_priority_goal(int faction, int type, int* px, int* py);
 std::vector<MapTile> iterate_tiles(int x, int y, size_t start_index, size_t end_index);
-
-template <class T, class C>
-const T& pick_random(const std::set<T,C>& s) {
-    auto it = std::begin(s);
-    std::advance(it, random(s.size()));
-    return *it;
-}
 
 const int PathLimit = 80;
 const int QueueSize = 6400;

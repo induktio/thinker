@@ -1,3 +1,4 @@
+
 #include "map.h"
 
 
@@ -5,6 +6,87 @@ static Points spawns;
 static Points natives;
 static Points goodtiles;
 
+
+int __cdecl mod_hex_cost(int unit_id, int faction, int x1, int y1, int x2, int y2, int a7)
+{
+    int value = hex_cost(unit_id, faction, x1, y1, x2, y2, a7);
+    MAP* sq_a = mapsq(x1, y1);
+    MAP* sq_b = mapsq(x2, y2);
+
+    if (conf.magtube_movement_rate > 0) {
+        if (!is_ocean(sq_a) && !is_ocean(sq_b)) {
+            if (sq_a->items & (BIT_BASE_IN_TILE | BIT_MAGTUBE)
+            && sq_b->items & (BIT_BASE_IN_TILE | BIT_MAGTUBE)) {
+                value = 1;
+            } else if (value == 1) { // Moving along a road
+                value = conf.road_movement_rate;
+            }
+        }
+    }
+    return value;
+}
+
+/*
+Purpose: Determine if the tile has a resource bonus.
+Return Value: 0 (no bonus), 1 (nutrient), 2 (mineral), 3 (energy)
+*/
+int __cdecl mod_bonus_at(int x, int y) {
+    MAP* sq = mapsq(x, y);
+    uint32_t bit = sq->items;
+    uint32_t alt = sq->climate >> 5;
+    bool has_rsc_bonus = bit & BIT_BONUS_RES;
+    if (!has_rsc_bonus && (!*map_random_seed || (alt >= ALT_SHORE_LINE
+    && !conf.rare_supply_pods && !(*game_rules & RULES_NO_UNITY_SCATTERING)))) {
+        return 0;
+    }
+    int avg = (x + y) >> 1;
+    x -= avg;
+    int chk = (avg & 3) + 4 * (x & 3);
+    if (!has_rsc_bonus && chk != ((*map_random_seed + (-5 * (avg >> 2)) - 3 * (x >> 2)) & 0xF)) {
+        return 0;
+    }
+    if (alt < ALT_OCEAN_SHELF) {
+        return 0;
+    }
+    int ret = (alt < ALT_SHORE_LINE && !conf.rare_supply_pods) ? chk % 3 + 1 : (chk % 5) & 3;
+    if (!ret || bit & BIT_NUTRIENT_RES) {
+        if (bit & BIT_ENERGY_RES) {
+            return 3; // energy
+        }
+        return ((bit & BIT_MINERAL_RES) != 0) + 1; // nutrient or mineral
+    }
+    return ret;
+}
+
+/*
+Purpose: Determine if the tile has a supply pod and if so what type.
+Return Value: 0 (no supply pod), 1 (standard supply pod), 2 (unity pod?)
+*/
+int __cdecl mod_goody_at(int x, int y) {
+    MAP* sq = mapsq(x, y);
+    uint32_t bit = sq->items;
+    if (bit & (BIT_SUPPLY_REMOVE | BIT_MONOLITH)) {
+        return 0; // nothing, supply pod already opened or monolith
+    }
+    if (*game_rules & RULES_NO_UNITY_SCATTERING) {
+        return (bit & (BIT_UNK_4000000 | BIT_UNK_8000000)) ? 2 : 0; // ?
+    }
+    if (bit & BIT_SUPPLY_POD) {
+        return 1; // supply pod
+    }
+    if (!*map_random_seed) {
+        return 0; // nothing
+    }
+    int avg = (x + y) >> 1;
+    int x_diff = x - avg;
+    int cmp = (avg & 3) + 4 * (x_diff & 3);
+    if (!conf.rare_supply_pods && !is_ocean(sq)) {
+        if (cmp == ((-5 * (avg >> 2) - 3 * (x_diff >> 2) + *map_random_seed) & 0xF)) {
+            return 2;
+        }
+    }
+    return cmp == ((11 * (avg / 4) + 61 * (x_diff / 4) + *map_random_seed + 8) & 0x1F); // 0 or 1
+}
 
 int total_yield(int x, int y, int faction) {
     return crop_yield(faction, -1, x, y, 0)
@@ -315,19 +397,17 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
         }
     }
     while (pods.size() > 0 && nutrient + num < 2) {
-        Points::const_iterator it(pods.begin());
-        std::advance(it, random(pods.size()));
-        sq = mapsq(it->x, it->y);
-        pods.erase(it);
+        auto t = pick_random(pods);
+        sq = mapsq(t.x, t.y);
+        pods.erase(t);
         sq->items &= ~(BIT_FUNGUS | BIT_MINERAL_RES | BIT_ENERGY_RES);
         sq->items |= (BIT_SUPPLY_REMOVE | BIT_BONUS_RES | BIT_NUTRIENT_RES);
         num++;
     }
     if (rivers.size() > 0 && *map_area_sq_root > 30) { // Adjust position to adjacent river
-        Points::const_iterator it(rivers.begin());
-        std::advance(it, random(rivers.size()));
-        *x = it->x;
-        *y = it->y;
+        auto t = pick_random(rivers);
+        *x = t.x;
+        *y = t.y;
     }
 }
 
@@ -342,10 +422,9 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
 
     while (++i <= 300) {
         if (!aquatic && goodtiles.size() > 0 && i <= 200) {
-            Points::const_iterator it(goodtiles.begin());
-            std::advance(it, random(goodtiles.size()));
-            x = it->x;
-            y = it->y;
+            auto t = pick_random(goodtiles);
+            y = t.y;
+            x = t.x;
         } else {
             y = (random(*map_axis_y - k*2) + k);
             x = (random(*map_axis_x) &~1) + (y&1);

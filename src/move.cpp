@@ -2195,7 +2195,11 @@ double battle_priority(int id1, int id2, int dist, int moves, MAP* sq) {
                 if (x2 == veh2->x && y2 == veh2->y) {
                     break;
                 }
-                cost += hex_cost(veh1->unit_id, veh1->faction_id, x1, y1, x2, y2, 0);
+                if (conf.magtube_movement_rate > 0) {
+                    cost += mod_hex_cost(veh1->unit_id, veh1->faction_id, x1, y1, x2, y2, 0);
+                } else {
+                    cost += hex_cost(veh1->unit_id, veh1->faction_id, x1, y1, x2, y2, 0);
+                }
                 x1 = x2;
                 y1 = y2;
             }
@@ -2242,7 +2246,6 @@ int aircraft_move(const int id) {
     int faction = veh->faction_id;
     int moves = mod_veh_speed(id) - veh->road_moves_spent;
     int max_dist = max(0, moves / Rules->mov_rate_along_roads);
-    assert(moves >= Rules->mov_rate_along_roads);
 
     if (!veh->at_target()) {
         return SYNC;

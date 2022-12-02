@@ -342,6 +342,15 @@ int __cdecl render_ocean_fungus(int x, int y) {
     return k;
 }
 
+int __cdecl mod_read_basic_rules() {
+    int value = read_basic_rules();
+    if (value == 0 && conf.magtube_movement_rate > 0) {
+        conf.road_movement_rate = conf.magtube_movement_rate;
+        Rules->mov_rate_along_roads *= conf.magtube_movement_rate;
+    }
+    return value;
+}
+
 /*
 Read more about the idea behind idle loop patch: https://github.com/vinceho/smac-cpu-fix/
 */
@@ -975,6 +984,19 @@ bool patch_setup(Config* cf) {
         write_call(0x4CFF47, (int)mod_name_base);
         write_call(0x4E4CFC, (int)mod_name_base);
         write_call(0x4F7E18, (int)mod_name_base);
+    }
+    if (cf->magtube_movement_rate > 0) {
+        write_call(0x587424, (int)mod_read_basic_rules);
+        write_call(0x467711, (int)mod_hex_cost);
+        write_call(0x572518, (int)mod_hex_cost);
+        write_call(0x5772D7, (int)mod_hex_cost);
+        write_call(0x5776F4, (int)mod_hex_cost);
+        write_call(0x577E2C, (int)mod_hex_cost);
+        write_call(0x577F0E, (int)mod_hex_cost);
+        write_call(0x597695, (int)mod_hex_cost);
+        write_call(0x59ACA4, (int)mod_hex_cost);
+        write_call(0x59B61A, (int)mod_hex_cost);
+        write_call(0x59C105, (int)mod_hex_cost);
     }
     if (cf->foreign_treaty_popup) {
         const byte old_bytes[] = {0x68, 0x88, 0x13, 0x00, 0x00};

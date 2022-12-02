@@ -176,6 +176,8 @@ struct Config {
     int tech_cost_factor[MaxDiffNum] = {116,108,100,92,84,76};
     int cheap_early_tech = 1;
     int tech_stagnate_rate = 200;
+    int magtube_movement_rate = 0;
+    int road_movement_rate = 1; // internal variable
     int counter_espionage = 0;
     int ignore_reactor_power = 0;
     int former_rebase = 0; // unlisted option
@@ -346,6 +348,15 @@ struct NodeComp {
     }
 };
 
+#include "random.h"
+
+template <class T, class C>
+const T& pick_random(const std::set<T,C>& s) {
+    auto it = std::begin(s);
+    std::advance(it, random(s.size()));
+    return *it;
+}
+
 template <class T>
 const T& min (const T& a, const T& b) {
     return std::min(a, b);
@@ -365,7 +376,6 @@ typedef std::set<MapNode,NodeComp> NodeSet;
 typedef std::set<Point,PointComp> Points;
 typedef std::list<Point> PointList;
 
-#include "random.h"
 #include "engine.h"
 #include "patch.h"
 #include "path.h"
