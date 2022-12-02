@@ -1,6 +1,17 @@
 
 # Thinker mod release changelog
 
+## Version 3.2 (2022-12-02)
+* New config option: magtube_movement_rate sets the movement speed on magtubes (not enabled by default).
+* Expiring infiltration feature has been rewritten to display the expected active turns immediately when infiltration is established.
+* Infiltration can now be refreshed once per turn to reset the expiration counter. Probe team may sometimes be lost by this action.
+* The amount of techs that grant automatic morale boosts for probe teams is reduced from five to two. These techs are now Pre-Sentient Algorithms and Digital Sentience.
+* AI may sometimes build Covert Ops Centers in the late game.
+* Many updates and clarifications to smac-in-smacx mod help files.
+* Thinker now reads and saves all settings changed from the GUI in thinker.ini. Mod settings are not saved anymore in Alpha Centauri.ini.
+* Fix some game startup issues in the launcher that occurred with Windows 10.
+
+ 
 ## Version 3.1 (2022-02-11)
 * New config options: alien_early_start, cult_early_start, perimeter_defense_bonus, tachyon_field_bonus.
 * Add option for X/Y map mirroring. This must be enabled separately from ALT+T menu. All landmarks will be disabled if the generated map is mirrored.
