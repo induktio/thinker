@@ -1,3 +1,7 @@
+/*
+ * Thinker - AI improvement mod for Sid Meier's Alpha Centauri.
+ * https://github.com/induktio/thinker/
+ */
 
 #include "launch.h"
 
@@ -9,8 +13,30 @@ bool FileExists(const char* path) {
 }
 
 void ExitFail() {
-    MessageBox(0, "Error while attempting to patch game binary. Game is unable to start.",
-        MOD_VERSION, MB_OK|MB_ICONSTOP);
+    DWORD code = GetLastError();
+    WCHAR msgBuf[StrBufSize];
+    WCHAR displayBuf[StrBufSize];
+
+    FormatMessage(
+        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        code,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPTSTR)&msgBuf,
+        StrBufSize,
+        NULL);
+
+    StringCchPrintf((LPTSTR)displayBuf,
+        StrBufSize,
+        (code == ERROR_ELEVATION_REQUIRED ?
+            TEXT("Unable to start the game due to an error.\n"\
+                "Starting the game in this folder might need administrator privileges.\n"\
+                "Error code %d: %s") :
+            TEXT("Game is unable to start due to an error.\n"\
+                "Error code %d: %s")),
+        code, msgBuf);
+
+    MessageBox(0, (LPCTSTR)displayBuf, MOD_VERSION, MB_OK|MB_ICONSTOP);
     exit(EXIT_FAILURE);
 }
 
@@ -31,7 +57,7 @@ int main(int argc, char* argv[]) {
     PROCESS_INFORMATION pi = {};
     STARTUPINFO si = {};
     si.cb = sizeof(si);
-    char cmdline[1024] = GameExeFile;
+    char cmdline[StrBufSize] = GameExeFile;
 
     for (int i=1; i<argc; i++) {
         if (strlen(cmdline) + strlen(argv[i]) >= sizeof(cmdline)-4) {
@@ -42,9 +68,9 @@ int main(int argc, char* argv[]) {
     }
     debug("cmdline: %s\n", cmdline);
 
-    BOOL value = CreateProcess(
+    BOOL createValue = CreateProcess(
         GameExeFile, cmdline, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &si, &pi);
-    if (!value) {
+    if (!createValue) {
         ExitFail();
     }
     LPVOID loadAddr = (LPVOID)GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
@@ -56,7 +82,8 @@ int main(int argc, char* argv[]) {
     if (arg == NULL) {
         ExitFail();
     }
-    if (!WriteProcessMemory(pi.hProcess, arg, ModDllFile, HookBufSize, NULL)) {
+    BOOL writeValue = WriteProcessMemory(pi.hProcess, arg, ModDllFile, HookBufSize, NULL);
+    if (!writeValue) {
         ExitFail();
     }
     HANDLE hThread = CreateRemoteThread(

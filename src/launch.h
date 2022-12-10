@@ -1,3 +1,8 @@
+/*
+ * Thinker - AI improvement mod for Sid Meier's Alpha Centauri.
+ * https://github.com/induktio/thinker/
+ */
+
 #pragma once
 
 #define MOD_VERSION "Thinker Mod"
@@ -29,9 +34,14 @@
 #include <stdio.h>
 #include <limits.h>
 #include <windows.h>
+#include <winerror.h>
+#include <strsafe.h>
 
 #define GameExeFile "terranx.exe"
 #define ModDllFile "thinker.dll"
+#define ERROR_ELEVATION_REQUIRED 740
+
+const int StrBufSize = 4096;
 
 const int HookBufSize = strlen(ModDllFile)+1;
 

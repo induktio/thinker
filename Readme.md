@@ -39,11 +39,23 @@ Installation
 2. Check Changelog.md and Details.md for useful information.
 3. Change configuration from thinker.ini or just use the defaults.
 4. Start the game from thinker.exe.
-5. The launcher requires original Alien Crossfire v2.0 terranx.exe in the same folder but this file is not modified on disk.
-   In case of startup problems, make sure the official v2.0 patch is applied on the game, and the mod is actually started
-   from same folder with the game. Sometimes startup issues can be fixed by starting the launcher with administrator privileges.
-6. Press ALT+T to open Thinker's options menu. Other option is to check that mod version/build date is visible in the game version menu (CTRL+F4).
-7. If neither of those options display mod version, Thinker is incorrectly installed and not loaded.
+5. Press ALT+T to open Thinker's options menu. Other option is to check that mod version/build date is visible in the game version menu (CTRL+F4).
+6. If neither of those options display mod version, Thinker is incorrectly installed and not loaded.
+
+
+Troubleshooting
+---------------
+The launcher requires original Alien Crossfire v2.0 terranx.exe in the same folder but this file is not modified on disk.
+In case of startup problems, make sure the official v2.0 patch is applied on the game, and the mod is actually started
+from same folder with the game. Sometimes startup issues can be fixed by starting the launcher with administrator privileges.
+
+Alt-tabbing may sometimes not work by default in Alpha Centauri's GOG version. To re-enable alt-tab feature, follow these steps.
+First open a command prompt with administator privileges in Alpha Centauri's installation folder. Then enter these commands:
+
+    sdbinst -u game.sdb
+    sdbinst -u game_add.sdb
+
+Alt-tabbing should now work when the game is restarted.
 
 
 Other mods
