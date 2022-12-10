@@ -82,6 +82,9 @@ int __cdecl mod_faction_upkeep(int faction) {
     if (faction > 0) {
         init_save_game(faction);
         plans_upkeep(faction);
+        if (conf.foreign_treaty_popup) {
+            reset_netmsg_status();
+        }
     }
     *ControlUpkeepA = 1;
     social_upkeep(faction);

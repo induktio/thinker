@@ -1130,11 +1130,45 @@ StrBuffer in make_gift but diplomacy_caption overwrites it with other data.
 */
 void __cdecl mod_diplomacy_caption(int faction1, int faction2)
 {
-    char buf[256];
-    strncpy(buf, StrBuffer, 256);
-    buf[255] = '\0';
+    char buf[StrBufLen];
+    strncpy(buf, StrBuffer, StrBufLen);
+    buf[StrBufLen-1] = '\0';
     diplomacy_caption(faction1, faction2);
-    strncpy(StrBuffer, buf, 256);
+    strncpy(StrBuffer, buf, StrBufLen);
+}
+
+/*
+Fix foreign_treaty_popup displaying same treaty changes multiple times per turn.
+In any case, these events will be displayed as a non-persistent message in map window.
+*/
+static char netmsg_label[StrBufLen] = {};
+static char netmsg_item0[StrBufLen] = {};
+static char netmsg_item1[StrBufLen] = {};
+
+void __cdecl reset_netmsg_status()
+{
+    netmsg_label[0] = '\0';
+    netmsg_item0[0] = '\0';
+    netmsg_item1[0] = '\0';
+}
+
+int __thiscall mod_NetMsg_pop(void* This, char* label, int delay, int a4, void* a5)
+{
+    if (!strcmp(label, "GOTMYPROBE")) {
+        return NetMsg_pop(This, label, -1, a4, a5);
+    }
+    if (!strcmp(label, netmsg_label)
+    && !strcmp((char*)&ParseStrBuffer[0], netmsg_item0)
+    && !strcmp((char*)&ParseStrBuffer[1], netmsg_item1)) {
+        return NetMsg_pop(This, label, delay, a4, a5);
+    }
+    strncpy(netmsg_label, label, sizeof(netmsg_label));
+    netmsg_label[StrBufLen-1] = '\0';
+    strncpy(netmsg_item0, (char*)&ParseStrBuffer[0], sizeof(netmsg_item0));
+    netmsg_item0[StrBufLen-1] = '\0';
+    strncpy(netmsg_item1, (char*)&ParseStrBuffer[1], sizeof(netmsg_item1));
+    netmsg_item1[StrBufLen-1] = '\0';
+    return NetMsg_pop(This, label, -1, a4, a5);
 }
 
 int base_trade_value(int base_id, int faction1, int faction2)
@@ -1157,7 +1191,7 @@ int base_trade_value(int base_id, int faction1, int faction2)
         if (has_fac_built(base_id, i)) {
             value += Facility[i].cost * 20;
         }
-    } 
+    }
     for (int i = SP_ID_First; i <= SP_ID_Last; i++) {
         if (SecretProjects[i - SP_ID_First] == base_id) {
             value += Facility[i].cost * (own_base && !pact ? 40 : 20)

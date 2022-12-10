@@ -916,11 +916,11 @@ bool patch_setup(Config* cf) {
         write_bytes(0x501CFB, old_bytes, new_bytes, sizeof(new_bytes));
         write_call(0x501CFC, (int)neural_amplifier_bonus); // get_basic_defense
         *(int*)0x50209F = cf->neural_amplifier_bonus; // battle_compute
-        
+
         write_bytes(0x501D11, old_bytes, new_bytes, sizeof(new_bytes));
         write_call(0x501D12, (int)fungal_tower_bonus); // get_basic_defense
         *(int*)0x5020EC = cf->fungal_tower_bonus; // battle_compute
-        
+
         write_bytes(0x501914, old_bytes, new_bytes, sizeof(new_bytes));
         write_call(0x501915, (int)dream_twister_bonus); // get_basic_offense
         *(int*)0x501F9C = cf->dream_twister_bonus; // battle_compute
@@ -999,16 +999,11 @@ bool patch_setup(Config* cf) {
         write_call(0x59C105, (int)mod_hex_cost);
     }
     if (cf->foreign_treaty_popup) {
-        const byte old_bytes[] = {0x68, 0x88, 0x13, 0x00, 0x00};
-        const byte new_bytes[] = {0x68, 0xFF, 0xFF, 0xFF, 0xFF};
-
-        write_bytes(0x55DACC, old_bytes, new_bytes, sizeof(new_bytes)); // enemies_treaty
-        write_bytes(0x55DBF1, old_bytes, new_bytes, sizeof(new_bytes)); // enemies_treaty
-        write_bytes(0x55DDD0, old_bytes, new_bytes, sizeof(new_bytes)); // enemies_treaty
-        write_bytes(0x55DEF5, old_bytes, new_bytes, sizeof(new_bytes)); // enemies_treaty
-        write_bytes(0x55E355, old_bytes, new_bytes, sizeof(new_bytes)); // enemies_treaty
-        write_bytes(0x55CB24, old_bytes, new_bytes, sizeof(new_bytes)); // enemies_war
-        write_bytes(0x597137, old_bytes, new_bytes, sizeof(new_bytes)); // order_veh
+        write_call(0x55DC00, (int)mod_NetMsg_pop); // enemies_treaty
+        write_call(0x55DF04, (int)mod_NetMsg_pop); // enemies_treaty
+        write_call(0x55E364, (int)mod_NetMsg_pop); // enemies_treaty
+        write_call(0x55CB33, (int)mod_NetMsg_pop); // enemies_war
+        write_call(0x597141, (int)mod_NetMsg_pop); // order_veh
     }
     if (cf->faction_placement) {
         const byte asm_find_start[] = {

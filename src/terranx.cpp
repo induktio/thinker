@@ -151,6 +151,7 @@ fp_1int draw_map                             = (fp_1int               )0x46B190;
 FMapWin_set_center MapWin_set_center         = (FMapWin_set_center    )0x46B1F0;
 fp_void MapWin_main_caption                  = (fp_void               )0x46FB10;
 FMapWin MapWin_clear_terrain                 = (FMapWin               )0x46FD90;
+FNetMsg_pop NetMsg_pop                       = (FNetMsg_pop           )0x47A890;
 FPlanWin_blink PlanWin_blink                 = (FPlanWin_blink        )0x48BC20;
 Fpopp popp                                   = (Fpopp                 )0x48C0A0;
 FGeneric StatusWin_on_redraw                 = (FGeneric              )0x4B8890;
@@ -173,7 +174,6 @@ FWin_is_visible Win_is_visible               = (FWin_is_visible       )0x5F7E90;
 tc_2int Font_width                           = (tc_2int               )0x619280;
 Fpop_ask_number pop_ask_number               = (Fpop_ask_number       )0x627C30;
 FStringBox_clip_ids StringBox_clip_ids       = (FStringBox_clip_ids   )0x629A70;
-
 
 fp_3int terraform_cost           = (fp_3int)0x4C9420;
 fp_2int action_build             = (fp_2int)0x4C96E0;
@@ -296,7 +296,7 @@ fp_1int parse_set                = (fp_1int)0x50B930;
 fp_3int sub_50B970               = (fp_3int)0x50B970;
 fp_1int sub_50B9A0               = (fp_1int)0x50B9A0;
 fp_2int sub_50B9C0               = (fp_2int)0x50B9C0;
-fp_2int NetMsg_pop2              = (fp_2int)0x50B9E0;
+FNetMsg_pop2 NetMsg_pop2    = (FNetMsg_pop2)0x50B9E0;
 fp_3int bitmask                  = (fp_3int)0x50BA00;
 fp_1int bit_count                = (fp_1int)0x50BA30;
 fp_2int intervention             = (fp_2int)0x50BA50;

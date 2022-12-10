@@ -60,7 +60,7 @@ static_assert(sizeof(struct MAP) == 44, "");
 static_assert(sizeof(struct ThinkerData) == 176, "");
 
 /*
-Thinker functions that are replacements to the SMACX binary versions 
+Thinker functions that are replacements to the SMACX binary versions
 should be prefixed with 'mod_' if their equivalent is also listed here.
 */
 
@@ -199,7 +199,7 @@ extern CNatural* Natural;
 extern CWorldbuilder *WorldBuilder;
 
 typedef int(__cdecl *Fbattle_fight_1)(int veh_id, int offset, bool use_table_offset, int v1, int v2);
-typedef int(__cdecl *Fpropose_proto)(int faction, VehChassis chassis, VehWeapon weapon, VehArmor armor, 
+typedef int(__cdecl *Fpropose_proto)(int faction, VehChassis chassis, VehWeapon weapon, VehArmor armor,
     int abilities, VehReactor reactor, VehPlan ai_plan, const char* name);
 typedef int(__cdecl *Fact_airdrop)(int veh_id, int x, int y, int veh_attack_flags);
 typedef int(__cdecl *Fact_destroy)(int veh_id, int flags, int x, int y);
@@ -239,6 +239,8 @@ typedef int(__thiscall *FPopup_start)(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
 typedef int(__thiscall *FBaseWin_on_redraw)(Win* This);
 typedef int(__thiscall *FGeneric)(void* This);
+typedef int(__cdecl *FNetMsg_pop2)(char* label, void* a2);
+typedef int(__thiscall *FNetMsg_pop)(void* This, char* label, int delay, int a4, void* a5);
 
 #pragma GCC diagnostic pop
 
@@ -257,6 +259,7 @@ extern fp_1int draw_map;
 extern FMapWin_set_center MapWin_set_center;
 extern fp_void MapWin_main_caption;
 extern FMapWin MapWin_clear_terrain;
+extern FNetMsg_pop NetMsg_pop;
 extern FPlanWin_blink PlanWin_blink;
 extern Fpopp popp;
 extern FGeneric StatusWin_on_redraw;
@@ -402,7 +405,7 @@ extern fp_1int parse_set;
 extern fp_3int sub_50B970;
 extern fp_1int sub_50B9A0;
 extern fp_2int sub_50B9C0;
-extern fp_2int NetMsg_pop2;
+extern FNetMsg_pop2 NetMsg_pop2;
 //extern fp_3int bitmask;
 //extern fp_1int bit_count;
 extern fp_2int intervention;
