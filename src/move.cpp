@@ -39,7 +39,7 @@ static Points nonally;
 static int upkeep_faction = 0;
 static int build_tubes = false;
 static int region_flags[MaxRegionNum] = {};
-int base_defend_range[MaxBaseNum] = {};
+int base_enemy_range[MaxBaseNum] = {};
 
 int arty_value(int x, int y);
 int base_tile_score(int x1, int y1, int range, int triad);
@@ -692,10 +692,20 @@ void move_upkeep(int faction, UpdateMode mode) {
             adjust_value(pm_safety, veh->x, veh->y, 1, 20);
             pm_safety[veh->x][veh->y] += 30;
         }
-        if (veh->is_artifact() && veh->faction_id != faction
-        && stack_search(veh->x, veh->y, faction, S_NonPactOnly, WMODE_ARTIFACT)) {
-            mapnodes.insert({veh->x, veh->y, NODE_COMBAT_PATROL});
-            debug("artifact %2d %2d\n", veh->x, veh->y);
+        // Check if we can evict neutral probe teams from home territory
+        // Also check if we can capture artifacts from neutral or home territory
+        if (veh->faction_id != faction) {
+            if (veh->is_artifact()
+            && (sq->owner == faction || !sq->is_owned())
+            && stack_search(veh->x, veh->y, faction, S_NonPactOnly, WMODE_ARTIFACT)) {
+                mapnodes.insert({veh->x, veh->y, NODE_COMBAT_PATROL});
+                debug("capture_artifact %2d %2d\n", veh->x, veh->y);
+            }
+            if (veh->is_probe() && sq->owner == faction
+            && stack_search(veh->x, veh->y, faction, S_NeutralOnly, WMODE_INFOWAR)) {
+                mapnodes.insert({veh->x, veh->y, NODE_COMBAT_PATROL});
+                debug("capture_probe %2d %2d\n", veh->x, veh->y);
+            }
         }
     }
     TileSearch ts;
@@ -766,9 +776,9 @@ void move_upkeep(int faction, UpdateMode mode) {
         for (int i=0; i < *total_num_bases; i++) {
             BASE* base = &Bases[i];
             if (base->faction_id == faction) {
-                assert(base_defend_range[i] > 0);
+                assert(base_enemy_range[i] > 0);
                 values[i] = base->pop_size + 10*has_facility(i, FAC_HEADQUARTERS)
-                    + 10*pm_enemy_near[base->x][base->y] - base_defend_range[i];
+                    + 10*pm_enemy_near[base->x][base->y] - base_enemy_range[i];
                 sorter[bases] = values[i];
                 bases++;
                 debug("defend_score %4d %s\n", values[i], base->name);
@@ -1171,8 +1181,10 @@ int base_tile_score(int x1, int y1, int range, int triad) {
     for (int i=1; i <= 20; i++) {
         int x2 = wrap(x1 + TableOffsetX[i]);
         int y2 = y1 + TableOffsetY[i];
-
-        if ((sq = mapsq(x2, y2)) && !sq->is_base()) {
+        if (!(sq = mapsq(x2, y2))) {
+            continue;
+        }
+        if (!sq->is_base()) {
             assert(map_range(x1, y1, x2, y2) == 1 + (i > 8));
             score += (bonus_at(x2, y2) ? 6 : 0);
             if (sq->landmarks && !(sq->landmarks & (LM_DUNES | LM_SARGASSO | LM_UNITY))) {
@@ -2057,7 +2069,7 @@ int trans_move(const int id) {
         if (veh->iter_count < 4) {
             return SYNC;
         }
-        return mod_veh_skip(id); 
+        return mod_veh_skip(id);
     }
     if (cargo > 0 && !sq->is_base() && sq->region == p.main_sea_region && p.naval_end_x >= 0) {
         if (veh->x == p.naval_end_x && veh->y == p.naval_end_y) {
@@ -2286,10 +2298,11 @@ int aircraft_move(const int id) {
                 ty = ts.ry;
                 best_odds = odds;
             }
-        } else if (non_ally_in_tile(ts.rx, ts.ry, faction) || !veh->mid_damage()) {
-            continue;
-        } else if (tx < 0 && mapnodes.count({ts.rx, ts.ry, NODE_COMBAT_PATROL})) {
+        } else if (tx < 0 && mapnodes.count({ts.rx, ts.ry, NODE_COMBAT_PATROL})
+        && ts.dist + 4*veh->mid_damage() + 8*veh->high_damage() < random(16)) {
             return set_move_to(id, ts.rx, ts.ry);
+        } else if (non_ally_in_tile(ts.rx, ts.ry, faction) || veh->high_damage()) {
+            continue;
         } else if (tx < 0 && allow_scout(faction, sq)) {
             return set_move_to(id, ts.rx, ts.ry);
         }
@@ -2502,7 +2515,9 @@ int combat_move(const int id) {
         assert(map_range(veh->x, veh->y, ts.rx, ts.ry) <= ts.dist);
         assert((at_base && to_base) < ts.dist);
 
+        // Choose defender skips tiles that have neutral or allied units only
         if (attack && (id2 = choose_defender(ts.rx, ts.ry, id, sq)) >= 0) {
+            assert(at_war(faction, Vehs[id2].faction_id));
             if (!ignore_zocs) { // Avoid zones of control
                 max_dist = ts.dist;
             }
@@ -2522,17 +2537,9 @@ int combat_move(const int id) {
 
         } else if (to_base && at_war(faction, sq->owner)
         && (triad == TRIAD_SEA) == is_ocean(sq)
-        && choose_defender(ts.rx, ts.ry, id, sq) < 0) {
+        && choose_defender(ts.rx, ts.ry, id, sq) < 0
+        && pm_target[ts.rx][ts.ry] < 2 + random(16)) {
             return set_move_to(id, ts.rx, ts.ry);
-
-        } else if (non_ally_in_tile(ts.rx, ts.ry, faction)) {
-            if (combat && tx < 0 && sq->owner == faction
-            && ts.dist <= (at_base ? 1 : 2 + (sq->items & BIT_BASE_RADIUS ? 1 : 0))
-            && stack_search(ts.rx, ts.ry, faction, S_NeutralOnly, WMODE_INFOWAR)
-            && path_distance(veh->x, veh->y, ts.rx, ts.ry, veh->unit_id, faction) <= veh->speed()) {
-                return set_move_to(id, ts.rx, ts.ry);
-            }
-            continue;
 
         } else if (arty && veh->iter_count < 2
         && arty_value(ts.rx, ts.ry) - 4*ts.dist > best_score
@@ -2541,7 +2548,9 @@ int combat_move(const int id) {
             ty = ts.ry;
             best_score = arty_value(ts.rx, ts.ry) - 4*ts.dist;
 
-        } else if (tx < 0 && attack && mapnodes.count({ts.rx, ts.ry, NODE_COMBAT_PATROL})) {
+        } else if (tx < 0 && attack && mapnodes.count({ts.rx, ts.ry, NODE_COMBAT_PATROL})
+        && ts.dist <= (at_base ? 1 + min(3, defenders/4) : 3)
+        && path_distance(veh->x, veh->y, ts.rx, ts.ry, veh->unit_id, faction) <= veh->speed()) {
             return set_move_to(id, ts.rx, ts.ry);
 
         } else if (tx < 0 && mapnodes.count({ts.rx, ts.ry, NODE_PATROL})) {

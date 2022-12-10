@@ -13,7 +13,7 @@ const int BIT_BASE_DISALLOWED = (BIT_BASE_IN_TILE | BIT_MONOLITH | BIT_FUNGUS | 
 
 extern PMTable pm_target;
 extern PMTable pm_overlay;
-extern int base_defend_range[MaxBaseNum];
+extern int base_enemy_range[MaxBaseNum];
 
 int __cdecl mod_enemy_move(const int id);
 int __cdecl log_veh_kill(int a, int b, int c, int d);

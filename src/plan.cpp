@@ -269,7 +269,7 @@ void plans_upkeep(int faction) {
                 plans[i].diplo_flags |= f->diplo_status[j];
             }
         }
-        memset(base_defend_range, 0, sizeof(base_defend_range));
+        memset(base_enemy_range, 0, sizeof(base_enemy_range));
         float enemy_sum = 0;
         int n = 0;
         for (int j=0; j < *total_num_bases; j++) {
@@ -295,7 +295,7 @@ void plans_upkeep(int faction) {
                         enemy_range = min(enemy_range, range);
                     }
                 }
-                base_defend_range[j] = (int)enemy_range;
+                base_enemy_range[j] = (int)enemy_range;
                 enemy_sum += min((float)MaxEnemyRange, enemy_range);
 
             } else if (base->faction_id_former == faction && at_war(faction, base->faction_id)) {
