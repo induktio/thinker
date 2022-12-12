@@ -89,6 +89,13 @@ int __cdecl mod_faction_upkeep(int faction) {
     *ControlUpkeepA = 1;
     social_upkeep(faction);
     do_all_non_input();
+    if (conf.activate_skipped_units) {
+        for (int i = 0; i < *total_num_vehicles; i++) {
+            if (Vehs[i].faction_id == faction) {
+                Vehs[i].flags &= ~VFLAG_FULL_MOVE_SKIPPED;
+            }
+        }
+    }
     repair_phase(faction);
     do_all_non_input();
     production_phase(faction);

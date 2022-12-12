@@ -1,4 +1,3 @@
-
 #include "veh.h"
 
 
@@ -23,17 +22,57 @@ int __cdecl mod_veh_kill(int veh_id) {
     return veh_kill(veh_id);
 }
 
-int mod_veh_skip(int veh_id) {
+int __cdecl mod_veh_skip(int veh_id) {
     VEH* veh = &Vehicles[veh_id];
-    veh->waypoint_1_x = veh->x;
-    veh->waypoint_1_y = veh->y;
-    veh->status_icon = '-';
-    if (veh->need_monolith()) {
-        MAP* sq = mapsq(veh->x, veh->y);
-        if (sq && sq->items & BIT_MONOLITH) {
-            monolith(veh_id);
+    int moves = veh_speed(veh_id, 0);
+
+    if (is_human(veh->faction_id)) {
+        if (conf.activate_skipped_units) {
+            if (!veh->road_moves_spent && veh->order < ORDER_FARM && !(veh->state & VSTATE_HAS_MOVED)) {
+                veh->flags |= VFLAG_FULL_MOVE_SKIPPED;
+            } else {
+                veh->flags &= ~VFLAG_FULL_MOVE_SKIPPED;
+            }
+        }
+    } else if (veh->faction_id > 0) {
+        veh->waypoint_1_x = veh->x;
+        veh->waypoint_1_y = veh->y;
+        veh->status_icon = '-';
+        if (veh->need_monolith()) {
+            MAP* sq = mapsq(veh->x, veh->y);
+            if (sq && sq->items & BIT_MONOLITH) {
+                monolith(veh_id);
+            }
         }
     }
-    return veh_skip(veh_id);
+    veh->road_moves_spent = moves;
+    return moves;
+}
+
+int __cdecl mod_veh_wake(int veh_id) {
+    VEH* veh = &Vehicles[veh_id];
+    if (veh->order >= ORDER_FARM && veh->order < ORDER_MOVE_TO && !(veh->state & VSTATE_CRAWLING)) {
+        veh->road_moves_spent = veh_speed(veh_id, 0) - Rules->mov_rate_along_roads;
+        if (veh->terraforming_turns) {
+            int turns = veh->terraforming_turns - contribution(veh_id, veh->order - 4);
+            veh->terraforming_turns = max(0, turns);
+        }
+    }
+    if (veh->state & VSTATE_ON_ALERT && !(veh->state & VSTATE_HAS_MOVED) && veh->order_auto_type == ORDERA_ON_ALERT) {
+        veh->road_moves_spent = 0;
+    }
+    /*
+    Formers are a special case since they might not move but can build items immediately.
+    When formers build something, VSTATE_HAS_MOVED should be set to prevent them from moving twice per turn.
+    */
+    if (conf.activate_skipped_units) {
+        if (veh->flags & VFLAG_FULL_MOVE_SKIPPED && !(veh->state & VSTATE_HAS_MOVED)) {
+            veh->road_moves_spent = 0;
+        }
+        veh->flags &= ~VFLAG_FULL_MOVE_SKIPPED;
+    }
+    veh->order = ORDER_NONE;
+    veh->state &= ~(VSTATE_UNK_8000000|VSTATE_UNK_2000000|VSTATE_UNK_1000000|VSTATE_EXPLORE|VSTATE_ON_ALERT);
+    return veh_id;
 }
 

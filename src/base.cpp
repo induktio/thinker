@@ -30,8 +30,6 @@ have been replaced with the governor force recalculate flag.
 int __cdecl mod_base_build(int base_id, bool has_gov) {
     BASE& base = Bases[base_id];
     int choice = 0;
-    assert(thinker_enabled(base.faction_id)
-        || (is_human(base.faction_id) && governor_enabled(base.faction_id)));
     set_base(base_id);
     base_compute(1);
 

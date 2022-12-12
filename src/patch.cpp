@@ -1,6 +1,6 @@
 
 #include "patch.h"
-#include "binary.h"
+#include "patchdata.h"
 
 const char* ac_alpha = "smac_mod\\alphax";
 const char* ac_help = "smac_mod\\helpx";
@@ -603,6 +603,8 @@ bool patch_setup(Config* cf) {
     write_jump(0x5BF310, (int)X_pop2);
     write_jump(0x4E4AA0, (int)base_first);
     write_jump(0x592250, (int)mod_say_loc);
+    write_jump(0x5C1D20, (int)mod_veh_skip);
+    write_jump(0x5C1D70, (int)mod_veh_wake);
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
     write_call(0x415F35, (int)mod_base_reset);

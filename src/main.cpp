@@ -206,6 +206,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->repair_base_facility = clamp(atoi(value), 0, 10);
     } else if (MATCH("thinker", "repair_nano_factory")) {
         cf->repair_nano_factory = clamp(atoi(value), 0, 10);
+    } else if (MATCH("thinker", "activate_skipped_units")) {
+        cf->activate_skipped_units = atoi(value);
     } else if (MATCH("thinker", "cpu_idle_fix")) {
         cf->cpu_idle_fix = atoi(value);
     } else if (MATCH("thinker", "minimal_popups")) {

@@ -7,15 +7,16 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <windows.h>
+#include <algorithm>
 
 typedef uint8_t byte;
 typedef uint32_t Dib;
 typedef struct char256 { char str[256]; } char256;
 
-#include "terranx_enums.h"
-#include "terranx_types.h"
-#include "terranx_veh.h"
-#include "terranx_win.h"
+#include "engine_enums.h"
+#include "engine_types.h"
+#include "engine_veh.h"
+#include "engine_win.h"
 
 typedef int (__cdecl *fp_void)();
 typedef int (__cdecl *fp_1int)(int);

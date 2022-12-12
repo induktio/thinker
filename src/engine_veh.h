@@ -222,57 +222,7 @@ enum VehAbilityRules {
     AFLAG_ONLY_PROBE_TEAM = 0x800,
 };
 
-enum UnitPrototypeFlags {
-    UNIT_ACTIVE = 0x1, // if this bit is zero, prototype has been retired
-    UNIT_CUSTOM_NAME_SET = 0x2,
-    UNIT_PROTOTYPED = 0x4,
-};
-
-enum VehFlags {
-    VFLAG_PROBE_PACT_OPERATIONS = 0x4,
-    VFLAG_IS_OBJECTIVE = 0x20,
-    VFLAG_LURKER = 0x40,
-    VFLAG_START_RAND_LOCATION = 0x80,
-    VFLAG_START_RAND_MONOLITH = 0x100,
-    VFLAG_START_RAND_FUNGUS = 0x200,
-    VFLAG_INVISIBLE = 0x400,
-};
-
-enum VehState {
-    VSTATE_IN_TRANSPORT = 0x1,
-    VSTATE_UNK_2 = 0x2,
-    VSTATE_HAS_MOVED = 0x4, // set after first movement attempt (even if failed) on each turn
-    VSTATE_UNK_8 = 0x8,
-    VSTATE_REQUIRES_SUPPORT = 0x10,
-    VSTATE_MADE_AIRDROP = 0x20,
-    VSTATE_UNK_40 = 0x40,
-    VSTATE_DESIGNATE_DEFENDER = 0x80,
-    VSTATE_MONOLITH_UPGRADED = 0x100,
-    VSTATE_UNK_200 = 0x200,
-    VSTATE_UNK_400 = 0x400,
-    VSTATE_UNK_800 = 0x800,
-    VSTATE_UNK_1000 = 0x1000,
-    VSTATE_UNK_2000 = 0x2000,
-    VSTATE_EXPLORE = 0x4000,
-    VSTATE_UNK_8000 = 0x8000,
-    VSTATE_UNK_10000 = 0x10000,
-    VSTATE_UNK_20000 = 0x20000,
-    VSTATE_UNK_40000 = 0x40000,
-    VSTATE_USED_NERVE_GAS = 0x80000, // set/reset on attacking Veh after each attack
-    VSTATE_UNK_100000 = 0x100000,
-    VSTATE_PACIFISM_DRONE = 0x200000,
-    VSTATE_PACIFISM_FREE_SKIP = 0x400000,
-    VSTATE_ASSISTANT_WORM = 0x800000, // Int: Brood Trainer; Human player's 1st spawned Mind Worm
-    VSTATE_UNK_1000000 = 0x1000000,
-    VSTATE_UNK_2000000 = 0x2000000,
-    VSTATE_CRAWLING = 0x4000000, // more than just crawling, terraforming also?
-    VSTATE_UNK_8000000 = 0x8000000,
-    VSTATE_UNK_10000000 = 0x10000000,
-    VSTATE_UNK_20000000 = 0x20000000,
-    VSTATE_UNK_40000000 = 0x40000000,
-    VSTATE_UNK_80000000 = 0x80000000,
-};
-
+// Only items that formers may be allowed to build
 enum FormerItem {
     FORMER_NONE = -1, // Thinker variable
     FORMER_FARM = 0,
@@ -344,6 +294,66 @@ enum VehOrderAutoType {
     ORDERA_BOMBING_RUN = 10, // air units only
     ORDERA_ON_ALERT = 11,
     ORDERA_AUTOMATE_AIR_DEFENSE = 12,
+};
+
+enum UnitFlags {
+    UNIT_ACTIVE = 0x1, // if this bit is zero, prototype has been retired
+    UNIT_CUSTOM_NAME_SET = 0x2,
+    UNIT_PROTOTYPED = 0x4,
+};
+
+enum VehFlags {
+    VFLAG_UNK_1 = 0x1, // used in repair_phase
+    VFLAG_UNK_2 = 0x2, // used in repair_phase, if not set, VFLAG_UNK_1 gets cleared instead
+    VFLAG_PROBE_PACT_OPERATIONS = 0x4,
+    VFLAG_UNK_8 = 0x8, // used
+    VFLAG_UNK_10 = 0x10, // used
+    VFLAG_IS_OBJECTIVE = 0x20,
+    VFLAG_LURKER = 0x40,
+    VFLAG_START_RAND_LOCATION = 0x80,
+    VFLAG_START_RAND_MONOLITH = 0x100,
+    VFLAG_START_RAND_FUNGUS = 0x200,
+    VFLAG_INVISIBLE = 0x400,
+    VFLAG_UNK_800 = 0x800, // used
+    VFLAG_UNK_1000 = 0x1000, // used
+    VFLAG_UNK_2000 = 0x2000, // used
+    VFLAG_UNK_4000 = 0x4000, // maybe unused
+    VFLAG_FULL_MOVE_SKIPPED = 0x8000, // Thinker variable
+};
+
+enum VehState {
+    VSTATE_IN_TRANSPORT = 0x1,
+    VSTATE_UNK_2 = 0x2, // cleared in repair_phase
+    VSTATE_HAS_MOVED = 0x4, // set after first movement attempt (even if failed) on each turn
+    VSTATE_UNK_8 = 0x8, // used in repair_phase
+    VSTATE_REQUIRES_SUPPORT = 0x10,
+    VSTATE_MADE_AIRDROP = 0x20,
+    VSTATE_UNK_40 = 0x40,
+    VSTATE_DESIGNATE_DEFENDER = 0x80,
+    VSTATE_MONOLITH_UPGRADED = 0x100,
+    VSTATE_ON_ALERT = 0x200, // related to ORDERA_ON_ALERT, cleared in veh_wake
+    VSTATE_UNK_400 = 0x400,
+    VSTATE_UNK_800 = 0x800, // used in repair_phase (remove when VFLAG_UNK_1 or VFLAG_UNK_2 is cleared)
+    VSTATE_UNK_1000 = 0x1000,
+    VSTATE_UNK_2000 = 0x2000, // cleared in repair_phase
+    VSTATE_EXPLORE = 0x4000, // cleared in veh_wake
+    VSTATE_UNK_8000 = 0x8000,
+    VSTATE_UNK_10000 = 0x10000,
+    VSTATE_UNK_20000 = 0x20000,
+    VSTATE_UNK_40000 = 0x40000,
+    VSTATE_USED_NERVE_GAS = 0x80000, // set/reset on attacking Veh after each attack
+    VSTATE_UNK_100000 = 0x100000,
+    VSTATE_PACIFISM_DRONE = 0x200000,
+    VSTATE_PACIFISM_FREE_SKIP = 0x400000,
+    VSTATE_ASSISTANT_WORM = 0x800000, // Int: Brood Trainer; Human player's 1st spawned Mind Worm
+    VSTATE_UNK_1000000 = 0x1000000, // cleared in veh_wake
+    VSTATE_UNK_2000000 = 0x2000000, // cleared in veh_wake
+    VSTATE_CRAWLING = 0x4000000, // cleared in repair_phase, flag also related to terraforming
+    VSTATE_UNK_8000000 = 0x8000000, // cleared in veh_wake
+    VSTATE_UNK_10000000 = 0x10000000,
+    VSTATE_UNK_20000000 = 0x20000000,
+    VSTATE_UNK_40000000 = 0x40000000,
+    VSTATE_UNK_80000000 = 0x80000000,
 };
 
 struct UNIT {
@@ -440,8 +450,8 @@ struct VEH {
     uint8_t probe_action; // see above and ProbePrimaryAction, last action taken by probe team
     uint8_t probe_sabotage_id; // for targeted sabotage: production: 0, abort: 99, or facility id
     int16_t home_base_id;
-    int16_t next_unit_id_stack;
-    int16_t prev_unit_id_stack;
+    int16_t next_veh_id_stack;
+    int16_t prev_veh_id_stack;
 
     const char* name() {
         return Units[unit_id].name;
@@ -459,7 +469,7 @@ struct VEH {
         return Units[unit_id].chassis_type;
     }
     int reactor_type() {
-        return Units[unit_id].reactor_type;
+        return std::max(1, (int)Units[unit_id].reactor_type);
     }
     int armor_type() {
         return Units[unit_id].armor_type;

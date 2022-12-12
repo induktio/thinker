@@ -74,7 +74,12 @@
 		</ExtraCommands>
 		<Unit filename="src/base.cpp" />
 		<Unit filename="src/base.h" />
-		<Unit filename="src/binary.h" />
+		<Unit filename="src/engine.cpp" />
+		<Unit filename="src/engine.h" />
+		<Unit filename="src/engine_enums.h" />
+		<Unit filename="src/engine_types.h" />
+		<Unit filename="src/engine_veh.h" />
+		<Unit filename="src/engine_win.h" />
 		<Unit filename="src/game.cpp" />
 		<Unit filename="src/game.h" />
 		<Unit filename="src/gui.cpp" />
@@ -92,6 +97,7 @@
 		<Unit filename="src/move.h" />
 		<Unit filename="src/patch.cpp" />
 		<Unit filename="src/patch.h" />
+		<Unit filename="src/patchdata.h" />
 		<Unit filename="src/path.cpp" />
 		<Unit filename="src/path.h" />
 		<Unit filename="src/plan.cpp" />
@@ -100,12 +106,6 @@
 		<Unit filename="src/random.h" />
 		<Unit filename="src/tech.cpp" />
 		<Unit filename="src/tech.h" />
-		<Unit filename="src/terranx.cpp" />
-		<Unit filename="src/terranx.h" />
-		<Unit filename="src/terranx_enums.h" />
-		<Unit filename="src/terranx_types.h" />
-		<Unit filename="src/terranx_veh.h" />
-		<Unit filename="src/terranx_win.h" />
 		<Unit filename="src/test.cpp" />
 		<Unit filename="src/test.h" />
 		<Unit filename="src/turn.cpp" />

@@ -213,6 +213,7 @@ struct Config {
     int repair_base_native = 10;
     int repair_base_facility = 10;
     int repair_nano_factory = 10;
+    int activate_skipped_units = 1; // unlisted option
     int cpu_idle_fix = 1; // unlisted option
     int minimal_popups = 0; // unlisted option
     int skip_random_factions = 0; // internal variable
@@ -313,7 +314,7 @@ enum NodesetType {
     NODE_COMBAT_PATROL, // Only attack-capable units
 };
 
-#include "terranx.h"
+#include "engine.h"
 #include "random.h"
 
 struct MapTile {
