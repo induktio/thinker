@@ -1,5 +1,5 @@
 
-#include "engine.h"
+#include "turn.h"
 
 static int current_attacker_veh_id = -1;
 static int current_defender_veh_id = -1;

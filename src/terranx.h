@@ -14,6 +14,7 @@ typedef struct char256 { char str[256]; } char256;
 
 #include "terranx_enums.h"
 #include "terranx_types.h"
+#include "terranx_veh.h"
 #include "terranx_win.h"
 
 typedef int (__cdecl *fp_void)();

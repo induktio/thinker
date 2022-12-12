@@ -683,7 +683,7 @@ int select_production(int base_id) {
                 }
             } else if (veh->is_transport()) {
                 transports++;
-            } else if (veh->is_supply() && veh->move_status != ORDER_CONVOY) {
+            } else if (veh->is_supply() && veh->order != ORDER_CONVOY) {
                 allow_supply = false;
             }
         }

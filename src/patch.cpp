@@ -392,7 +392,7 @@ void exit_fail(int addr) {
     char buf[512];
     snprintf(buf, sizeof(buf),
         "Error while patching address %08X in the game binary.\n"
-        "This mod requires the original Alien Crossfire v2.0 terranx.exe in the same folder.", addr);
+        "This mod requires Alien Crossfire v2.0 terranx.exe in the same folder.", addr);
     MessageBoxA(0, buf, MOD_VERSION, MB_OK | MB_ICONSTOP);
     exit(EXIT_FAILURE);
 }
@@ -792,7 +792,7 @@ bool patch_setup(Config* cf) {
     Disable legacy upkeep code in the game engine that might cause AI formers
     to be reassigned to nearby bases that are owned by other factions.
     */
-    if (!cf->former_rebase) {
+    {
         const byte old_bytes[] = {0x0F,0x84,0x92,0x01,0x00};
         const byte new_bytes[] = {0xE9,0x93,0x01,0x00,0x00};
         write_bytes(0x561FF2, old_bytes, new_bytes, sizeof(new_bytes));

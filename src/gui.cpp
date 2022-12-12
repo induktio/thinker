@@ -1162,11 +1162,11 @@ int __thiscall mod_NetMsg_pop(void* This, char* label, int delay, int a4, void* 
     && !strcmp((char*)&ParseStrBuffer[1], netmsg_item1)) {
         return NetMsg_pop(This, label, delay, a4, a5);
     }
-    strncpy(netmsg_label, label, sizeof(netmsg_label));
+    strncpy(netmsg_label, label, StrBufLen);
     netmsg_label[StrBufLen-1] = '\0';
-    strncpy(netmsg_item0, (char*)&ParseStrBuffer[0], sizeof(netmsg_item0));
+    strncpy(netmsg_item0, (char*)&ParseStrBuffer[0], StrBufLen);
     netmsg_item0[StrBufLen-1] = '\0';
-    strncpy(netmsg_item1, (char*)&ParseStrBuffer[1], sizeof(netmsg_item1));
+    strncpy(netmsg_item1, (char*)&ParseStrBuffer[1], StrBufLen);
     netmsg_item1[StrBufLen-1] = '\0';
     return NetMsg_pop(This, label, -1, a4, a5);
 }

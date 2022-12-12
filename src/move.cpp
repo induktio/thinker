@@ -649,13 +649,13 @@ void move_upkeep(int faction, UpdateMode mode) {
         if (!(sq = mapsq(veh->x, veh->y))) {
             continue;
         }
-        if (veh->move_status == ORDER_THERMAL_BOREHOLE) {
+        if (veh->order == ORDER_THERMAL_BOREHOLE) {
             mapnodes.insert({veh->x, veh->y, NODE_BOREHOLE});
         }
-        if (veh->move_status == ORDER_TERRAFORM_UP) {
+        if (veh->order == ORDER_TERRAFORM_UP) {
             mapnodes.insert({veh->x, veh->y, NODE_RAISE_LAND});
         }
-        if (veh->move_status == ORDER_SENSOR_ARRAY) {
+        if (veh->order == ORDER_SENSOR_ARRAY) {
             mapnodes.insert({veh->x, veh->y, NODE_SENSOR_ARRAY});
         }
         if (veh->faction_id == faction) {
@@ -1037,8 +1037,8 @@ int crawler_move(const int id) {
     }
     if (!veh->at_target()) {
         // Move status overrides any waypoint target when the unit is not at target
-        if (veh->move_status == ORDER_CONVOY) {
-            veh->move_status = ORDER_MOVE_TO;
+        if (veh->order == ORDER_CONVOY) {
+            veh->order = ORDER_MOVE_TO;
         }
         return SYNC;
     }
@@ -1752,11 +1752,11 @@ int former_move(const int id) {
         }
         return mod_veh_skip(id);
     }
-    int turns = (veh->move_status >= ORDER_FARM && veh->move_status < ORDER_MOVE_TO ?
-        Terraform[veh->move_status - 4].rate : 0);
+    int turns = (veh->order >= ORDER_FARM && veh->order < ORDER_MOVE_TO ?
+        Terraform[veh->order - 4].rate : 0);
 
     if (safe || turns >= 12 || is_human(faction)) {
-        if (turns > 0 && !(veh->move_status == ORDER_DRILL_AQUIFER
+        if (turns > 0 && !(veh->order == ORDER_DRILL_AQUIFER
         && nearby_items(veh->x, veh->y, 1, BIT_RIVER) >= 4)) {
             return SYNC;
         }
@@ -1913,7 +1913,7 @@ int defender_count(int x, int y) {
         VEH* veh = &Vehicles[k];
         if (veh->x == x && veh->y == y
         && veh->triad() != TRIAD_AIR
-        && veh->move_status != ORDER_SENTRY_BOARD
+        && veh->order != ORDER_SENTRY_BOARD
         && veh->at_target()) {
             if (veh->is_combat_unit()) {
                 num += 2;
@@ -2020,7 +2020,7 @@ int trans_move(const int id) {
     for (int k=0; k < *total_num_vehicles; k++) {
         VEH* v = &Vehicles[k];
         if (veh->x == v->x && veh->y == v->y && k != id && v->triad() == TRIAD_LAND) {
-            if (v->move_status == ORDER_SENTRY_BOARD && v->waypoint_1_x == id) {
+            if (v->order == ORDER_SENTRY_BOARD && v->waypoint_1_x == id) {
                 cargo++;
             } else if (v->is_combat_unit() || v->is_probe()) {
                 defenders++;
@@ -2058,7 +2058,7 @@ int trans_move(const int id) {
             if (veh->faction_id == v->faction_id
             && veh->x == v->x && veh->y == v->y
             && (v->is_combat_unit() || v->is_probe())
-            && v->triad() == TRIAD_LAND && v->move_status != ORDER_SENTRY_BOARD) {
+            && v->triad() == TRIAD_LAND && v->order != ORDER_SENTRY_BOARD) {
                 set_board_to(k, id);
                 cargo++;
             }
@@ -2405,11 +2405,14 @@ bool airdrop_move(const int id, MAP* sq) {
 
 int combat_move(const int id) {
     VEH* veh = &Vehicles[id];
-    MAP* sq = mapsq(veh->x, veh->y);
+    MAP* sq;
+    MAP* veh_sq = mapsq(veh->x, veh->y);
+    if (!veh_sq) {
+        return SYNC;
+    }
     AIPlans& p = plans[veh->faction_id];
     int faction = veh->faction_id;
     int triad = veh->triad();
-    int veh_region = sq->region;
     int moves = mod_veh_speed(id) - veh->road_moves_spent;
     assert(veh->is_combat_unit() || veh->is_probe());
     assert(triad == TRIAD_LAND || triad == TRIAD_SEA);
@@ -2421,27 +2424,27 @@ int combat_move(const int id) {
     bool attack = combat && !can_arty(veh->unit_id, false);
     bool arty   = combat && can_arty(veh->unit_id, true);
     bool ignore_zocs = triad == TRIAD_SEA || veh->is_probe();
-    bool at_home = sq->owner == faction || has_pact(faction, sq->owner);
-    bool at_base = sq->is_base();
-    bool at_enemy = at_war(faction, sq->owner);
+    bool at_home = veh_sq->owner == faction || has_pact(faction, veh_sq->owner);
+    bool at_base = veh_sq->is_base();
+    bool at_enemy = at_war(faction, veh_sq->owner);
     bool base_found = at_base;
     /*
     Scouting priority is mainly represented by maximum search distance.
     */
     int max_dist = min(10, max((veh->high_damage() ? 2 : 3),
-        random(4) + (triad == TRIAD_SEA ? 4 : 0) + (at_base ? 0 : 2)
+        random(4) + (veh->speed() > 3 ? 4 : 0) + (at_base ? 0 : 2)
         + (veh->need_heals() ? -5 : 0) + (at_enemy ? -3 : 0)
         + (*current_turn < 80 ? 2 : 0)
         + (p.unknown_factions / 2) + (p.contacted_factions ? 0 : 2)
     ));
     int defenders = 0;
-    if (at_base && airdrop_move(id, sq)) {
+    if (at_base && airdrop_move(id, veh_sq)) {
         return SYNC;
     }
     if (triad == TRIAD_LAND && mapnodes.count({veh->x, veh->y, NODE_GOAL_NAVAL_END})) {
         return make_landing(id);
     }
-    if (triad == TRIAD_LAND && is_ocean(sq) && at_base && !has_transport(veh->x, veh->y, faction)) {
+    if (triad == TRIAD_LAND && is_ocean(veh_sq) && at_base && !has_transport(veh->x, veh->y, faction)) {
         return mod_veh_skip(id);
     }
     if (veh->is_probe() && veh->need_heals()) {
@@ -2475,12 +2478,12 @@ int combat_move(const int id) {
     bool defend;
     if (triad == TRIAD_SEA) {
         defend = (at_home && (id % 11) < 3 && !veh->is_probe())
-            || (!(region_flags[veh_region] & (veh->is_probe() ? PM_PROBE : PM_ENEMY))
+            || (!(region_flags[veh_sq->region] & (veh->is_probe() ? PM_PROBE : PM_ENEMY))
             && !(region_flags[p.main_sea_region] & (veh->is_probe() ? PM_PROBE : PM_ENEMY)));
     } else {
         defend = (at_home && (id % 11) < 5)
             || (veh->is_probe() && veh->speed() < 2)
-            || !(region_flags[veh_region] & (veh->is_probe() ? PM_PROBE : PM_ENEMY));
+            || !(region_flags[veh_sq->region] & (veh->is_probe() ? PM_PROBE : PM_ENEMY));
     }
     bool landing_unit = triad == TRIAD_LAND
         && (!at_base || defenders > 0)
@@ -2653,8 +2656,8 @@ int combat_move(const int id) {
             battle_fight_1(id, offset, 1, 1, 0);
             return SYNC;
         }
-    } else if (at_enemy && mapsq(veh->x, veh->y)->items
-    & (BIT_SENSOR | BIT_AIRBASE | BIT_THERMAL_BORE)) {
+    }
+    if (!arty && at_enemy && veh_sq->items & (BIT_SENSOR | BIT_AIRBASE | BIT_THERMAL_BORE)) {
         return action_destroy(id, 0, -1, -1);
     }
     if (at_base && (!defenders || defenders < garrison_goal(veh->x, veh->y, faction, triad))) {
@@ -2802,7 +2805,7 @@ int combat_move(const int id) {
         if (flank || skip) {
             tx = -1;
             ty = -1;
-            best_score = flank_score(veh->x, veh->y, mapsq(veh->x, veh->y));
+            best_score = flank_score(veh->x, veh->y, veh_sq);
             ts.init(veh->x, veh->y, triad);
             while ((sq = ts.get_next()) != NULL && ts.dist <= 2) {
                 if (!sq->is_base() && allow_move(ts.rx, ts.ry, faction, triad)) {

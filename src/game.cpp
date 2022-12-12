@@ -431,10 +431,6 @@ int manifold_nexus_owner() {
     return -1;
 }
 
-int mod_veh_speed(int veh_id) {
-    return veh_speed(veh_id, 0);
-}
-
 VehArmor best_armor(int faction, bool cheap) {
     int ci = ARM_NO_ARMOR;
     int cv = 4;
@@ -593,7 +589,7 @@ int set_move_to(int veh_id, int x, int y) {
     debug("set_move_to %2d %2d -> %2d %2d %s\n", veh->x, veh->y, x, y, veh->name());
     veh->waypoint_1_x = x;
     veh->waypoint_1_y = y;
-    veh->move_status = ORDER_MOVE_TO;
+    veh->order = ORDER_MOVE_TO;
     veh->status_icon = 'G';
     veh->terraforming_turns = 0;
     mapnodes.erase({x, y, NODE_PATROL});
@@ -616,7 +612,7 @@ int set_road_to(int veh_id, int x, int y) {
     VEH* veh = &Vehicles[veh_id];
     veh->waypoint_1_x = x;
     veh->waypoint_1_y = y;
-    veh->move_status = ORDER_ROAD_TO;
+    veh->order = ORDER_ROAD_TO;
     veh->status_icon = 'R';
     return SYNC;
 }
@@ -630,7 +626,7 @@ int set_action(int veh_id, int act, char icon) {
     } else if (act == ORDER_SENSOR_ARRAY) {
         mapnodes.insert({veh->x, veh->y, NODE_SENSOR_ARRAY});
     }
-    veh->move_status = act;
+    veh->order = act;
     veh->status_icon = icon;
     veh->state &= ~VSTATE_UNK_10000;
     return SYNC;
@@ -639,8 +635,8 @@ int set_action(int veh_id, int act, char icon) {
 int set_convoy(int veh_id, int res) {
     VEH* veh = &Vehicles[veh_id];
     mapnodes.insert({veh->x, veh->y, NODE_CONVOY});
-    veh->type_crawling = res-1;
-    veh->move_status = ORDER_CONVOY;
+    veh->order_auto_type = res-1;
+    veh->order = ORDER_CONVOY;
     veh->status_icon = 'C';
     return veh_skip(veh_id);
 }
@@ -651,7 +647,7 @@ int set_board_to(int veh_id, int trans_veh_id) {
     assert(veh_id != trans_veh_id);
     assert(veh->x == v2->x && veh->y == v2->y);
     assert(cargo_capacity(trans_veh_id) > 0);
-    veh->move_status = ORDER_SENTRY_BOARD;
+    veh->order = ORDER_SENTRY_BOARD;
     veh->waypoint_1_x = trans_veh_id;
     veh->waypoint_1_y = 0;
     veh->status_icon = 'L';
@@ -663,31 +659,11 @@ int cargo_loaded(int veh_id) {
     int n=0;
     for (int i=0; i < *total_num_vehicles; i++) {
         VEH* veh = &Vehicles[i];
-        if (veh->move_status == ORDER_SENTRY_BOARD && veh->waypoint_1_x == veh_id) {
+        if (veh->order == ORDER_SENTRY_BOARD && veh->waypoint_1_x == veh_id) {
             n++;
         }
     }
     return n;
-}
-
-int mod_veh_skip(int veh_id) {
-    VEH* veh = &Vehicles[veh_id];
-    veh->waypoint_1_x = veh->x;
-    veh->waypoint_1_y = veh->y;
-    veh->status_icon = '-';
-    if (veh->need_monolith()) {
-        MAP* sq = mapsq(veh->x, veh->y);
-        if (sq && sq->items & BIT_MONOLITH) {
-            monolith(veh_id);
-        }
-    }
-    return veh_skip(veh_id);
-}
-
-int mod_veh_kill(int veh_id) {
-    VEH* veh = &Vehicles[veh_id];
-    debug("disband %d %d %s\n", veh->x, veh->y, veh->name());
-    return veh_kill(veh_id);
 }
 
 bool is_ocean(MAP* sq) {
@@ -846,7 +822,7 @@ void print_veh(int id) {
     debug("VEH %24s %3d %3d %d order: %2d %c %3d %3d -> %3d %3d moves: %2d speed: %2d damage: %d "
         "state: %08x flags: %04x vis: %02x mor: %d iter: %d angle: %d\n",
         Units[v->unit_id].name, v->unit_id, id, v->faction_id,
-        v->move_status, (v->status_icon ? v->status_icon : ' '),
+        v->order, (v->status_icon ? v->status_icon : ' '),
         v->x, v->y, v->waypoint_1_x, v->waypoint_1_y, speed - v->road_moves_spent, speed,
         v->damage_taken, v->state, v->flags, v->visibility, v->morale,
         v->iter_count, v->rotate_angle);
@@ -889,17 +865,6 @@ void __cdecl set_agenda(int faction1, int faction2, uint32_t agenda, bool add) {
     } else {
         Factions[faction1].diplo_agenda[faction2] &= ~agenda;
     }
-}
-
-int __cdecl mod_veh_init(int unit_id, int faction, int x, int y) {
-    int id = veh_init(unit_id, faction, x, y);
-    if (id >= 0) {
-        Vehicles[id].home_base_id = -1;
-        // Set these flags to disable any non-Thinker unit automation.
-        Vehicles[id].state |= VSTATE_UNK_40000;
-        Vehicles[id].state &= ~VSTATE_UNK_2000;
-    }
-    return id;
 }
 
 /*

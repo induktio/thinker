@@ -6,12 +6,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
  * (at your option) version 3 of the GPL.
- * 
+ *
  * Thinker is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with Thinker.  If not, see <https://www.gnu.org/licenses/>.
  */
@@ -63,7 +63,6 @@
 #include <list>
 #include <string>
 #include <vector>
-#include "terranx.h"
 
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 #define HOOK_API extern "C"
@@ -180,7 +179,6 @@ struct Config {
     int road_movement_rate = 1; // internal variable
     int counter_espionage = 0;
     int ignore_reactor_power = 0;
-    int former_rebase = 0; // unlisted option
     int early_research_start = 1; // unlisted option
     int facility_capture_fix = 1; // unlisted option
     int territory_border_fix = 1;
@@ -315,6 +313,9 @@ enum NodesetType {
     NODE_COMBAT_PATROL, // Only attack-capable units
 };
 
+#include "terranx.h"
+#include "random.h"
+
 struct MapTile {
     int x;
     int y;
@@ -348,8 +349,6 @@ struct NodeComp {
     }
 };
 
-#include "random.h"
-
 template <class T, class C>
 const T& pick_random(const std::set<T,C>& s) {
     auto it = std::begin(s);
@@ -376,16 +375,17 @@ typedef std::set<MapNode,NodeComp> NodeSet;
 typedef std::set<Point,PointComp> Points;
 typedef std::list<Point> PointList;
 
-#include "engine.h"
 #include "patch.h"
 #include "path.h"
 #include "plan.h"
 #include "gui.h"
 #include "map.h"
+#include "veh.h"
 #include "base.h"
 #include "game.h"
 #include "move.h"
 #include "tech.h"
+#include "turn.h"
 #include "test.h"
 
 extern FILE* debug_log;
