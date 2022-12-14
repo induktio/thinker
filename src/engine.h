@@ -183,6 +183,7 @@ extern Win* CouncilWin;
 extern Win* DatalinkWin;
 extern Font** MapLabelFont;
 extern Sprite** FactionPortraits;
+extern void* NetMsg;
 
 // Rules parsed from alphax.txt
 extern CRules* Rules;
@@ -447,6 +448,24 @@ extern fp_2int council_action;
 extern fp_2int can_call_council;
 extern fp_1int call_council;
 
+extern fp_5int danger;
+extern fp_1int my_srand;
+extern fp_1int checksum_file;
+extern fp_3int checksum;
+extern fp_1int checksum_password;
+extern fp_void auto_contact;
+extern fp_4int net_treaty_on;
+extern fp_4int net_treaty_off;
+extern fp_5int net_set_treaty;
+extern fp_4int net_agenda_off;
+extern fp_5int net_set_agenda;
+extern fp_5int net_energy;
+extern fp_4int net_loan;
+extern fp_3int net_maps;
+extern fp_4int net_tech;
+extern fp_3int net_pact_ends;
+extern fp_3int net_cede_base;
+extern fp_4int net_double_cross;
 extern fp_1int diplo_lock;
 extern fp_void diplo_unlock;
 extern fp_void sub_5398E0;
@@ -806,7 +825,7 @@ extern fp_3int offense_proto;
 extern fp_3int armor_proto;
 extern fp_1int speed_proto;
 extern fp_2int veh_speed; // renamed
-extern fp_1int veh_cargo;
+//extern fp_1int veh_cargo;
 extern fp_1int prototype_factor;
 extern Fveh_cost veh_cost;
 extern fp_1int veh_selectable;

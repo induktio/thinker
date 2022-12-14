@@ -1,5 +1,35 @@
+
 #include "veh.h"
 
+
+bool __cdecl can_arty(int unit_id, bool allow_sea_arty) {
+    UNIT& u = Units[unit_id];
+    if ((Weapon[u.weapon_type].offense_value <= 0 // PSI + non-combat
+    || Armor[u.armor_type].defense_value < 0) // PSI
+    && unit_id != BSC_SPORE_LAUNCHER) { // Spore Launcher exception
+        return false;
+    }
+    if (u.triad() == TRIAD_SEA) {
+        return allow_sea_arty;
+    }
+    if (u.triad() == TRIAD_AIR) {
+        return false;
+    }
+    return has_abil(unit_id, ABL_ARTILLERY); // TRIAD_LAND
+}
+
+/*
+Original version assigned cargo capacity on Spore Launchers but it seems this feature is not used.
+*/
+int __cdecl veh_cargo(int veh_id) {
+    VEH* v = &Vehicles[veh_id];
+    UNIT* u = &Units[v->unit_id];
+    if (u->carry_capacity > 0 && veh_id < MaxProtoFactionNum
+    && Weapon[u->weapon_type].offense_value < 0) {
+        return v->morale + 1;
+    }
+    return u->carry_capacity;
+}
 
 int mod_veh_speed(int veh_id) {
     return veh_speed(veh_id, 0);
@@ -52,7 +82,7 @@ int __cdecl mod_veh_skip(int veh_id) {
 int __cdecl mod_veh_wake(int veh_id) {
     VEH* veh = &Vehicles[veh_id];
     if (veh->order >= ORDER_FARM && veh->order < ORDER_MOVE_TO && !(veh->state & VSTATE_CRAWLING)) {
-        veh->road_moves_spent = veh_speed(veh_id, 0) - Rules->mov_rate_along_roads;
+        veh->road_moves_spent = veh_speed(veh_id, 0) - Rules->move_rate_roads;
         if (veh->terraforming_turns) {
             int turns = veh->terraforming_turns - contribution(veh_id, veh->order - 4);
             veh->terraforming_turns = max(0, turns);

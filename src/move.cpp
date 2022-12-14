@@ -183,7 +183,7 @@ int __cdecl mod_enemy_move(const int id) {
             return crawler_move(id);
         } else if (veh->is_former()) {
             return former_move(id);
-        } else if (triad == TRIAD_SEA && cargo_capacity(id) > 0) {
+        } else if (triad == TRIAD_SEA && veh_cargo(id) > 0) {
             return trans_move(id);
         } else if (triad == TRIAD_AIR && veh->is_combat_unit()) {
             return aircraft_move(id);
@@ -2015,7 +2015,7 @@ int trans_move(const int id) {
     int offset;
     int cargo = 0;
     int defenders = 0;
-    int capacity = cargo_capacity(id);
+    int capacity = veh_cargo(id);
 
     for (int k=0; k < *total_num_vehicles; k++) {
         VEH* v = &Vehicles[k];
@@ -2028,7 +2028,7 @@ int trans_move(const int id) {
         }
     }
     debug("trans_move %2d %2d defenders: %d cargo: %d capacity: %d %s\n",
-        veh->x, veh->y, defenders, cargo, cargo_capacity(id), veh->name());
+        veh->x, veh->y, defenders, cargo, veh_cargo(id), veh->name());
 
     if (is_ocean(sq)) {
         if (invasion_unit(id) && sq->region != p.main_sea_region
@@ -2217,8 +2217,8 @@ double battle_priority(int id1, int id2, int dist, int moves, MAP* sq) {
             }
         }
         if (moves - cost > 0) {
-            att_moves = min(moves - cost, Rules->mov_rate_along_roads);
-            mov_rate = Rules->mov_rate_along_roads;
+            att_moves = min(moves - cost, Rules->move_rate_roads);
+            mov_rate = Rules->move_rate_roads;
         } else { // Tile is not reachable during this turn
             att_moves = 2;
             mov_rate = 3;
@@ -2257,7 +2257,7 @@ int aircraft_move(const int id) {
     bool at_base = sq->is_base();
     int faction = veh->faction_id;
     int moves = mod_veh_speed(id) - veh->road_moves_spent;
-    int max_dist = max(0, moves / Rules->mov_rate_along_roads);
+    int max_dist = max(0, moves / Rules->move_rate_roads);
 
     if (!veh->at_target()) {
         return SYNC;

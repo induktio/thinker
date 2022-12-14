@@ -346,7 +346,7 @@ int __cdecl mod_read_basic_rules() {
     int value = read_basic_rules();
     if (value == 0 && conf.magtube_movement_rate > 0) {
         conf.road_movement_rate = conf.magtube_movement_rate;
-        Rules->mov_rate_along_roads *= conf.magtube_movement_rate;
+        Rules->move_rate_roads *= conf.magtube_movement_rate;
     }
     return value;
 }

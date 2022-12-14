@@ -119,6 +119,7 @@ Win*         CouncilWin       = (Win*)0x6FEC80;
 Win*         DatalinkWin      = (Win*)0x703EA0;
 Font**       MapLabelFont     = (Font**)0x93FC24;
 Sprite**     FactionPortraits = (Sprite**)0x6846D8;
+void*        NetMsg           = (void*)0x805338;
 
 // Rules parsed from alphax.txt
 CRules*        Rules        = (CRules*)0x949738;
@@ -336,6 +337,24 @@ fp_2int council_action           = (fp_2int)0x52BF60;
 fp_2int can_call_council         = (fp_2int)0x52C670;
 fp_1int call_council             = (fp_1int)0x52C880;
 
+fp_5int danger                   = (fp_5int)0x538F30;
+fp_1int my_srand                 = (fp_1int)0x538FB0;
+fp_1int checksum_file            = (fp_1int)0x538FE0;
+fp_3int checksum                 = (fp_3int)0x539090;
+fp_1int checksum_password        = (fp_1int)0x5390C0;
+fp_void auto_contact             = (fp_void)0x539160;
+fp_4int net_treaty_on            = (fp_4int)0x5391C0;
+fp_4int net_treaty_off           = (fp_4int)0x539230;
+fp_5int net_set_treaty           = (fp_5int)0x5392A0;
+fp_4int net_agenda_off           = (fp_4int)0x539380;
+fp_5int net_set_agenda           = (fp_5int)0x5393F0;
+fp_5int net_energy               = (fp_5int)0x539460;
+fp_4int net_loan                 = (fp_4int)0x539510;
+fp_3int net_maps                 = (fp_3int)0x539580;
+fp_4int net_tech                 = (fp_4int)0x5395F0;
+fp_3int net_pact_ends            = (fp_3int)0x539660;
+fp_3int net_cede_base            = (fp_3int)0x539740;
+fp_4int net_double_cross         = (fp_4int)0x5397B0;
 fp_1int diplo_lock               = (fp_1int)0x539820;
 fp_void diplo_unlock             = (fp_void)0x5398C0;
 fp_void sub_5398E0               = (fp_void)0x5398E0;

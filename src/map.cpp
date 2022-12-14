@@ -7,8 +7,79 @@ static Points natives;
 static Points goodtiles;
 
 
-int __cdecl mod_hex_cost(int unit_id, int faction, int x1, int y1, int x2, int y2, int a7)
-{
+MAP* mapsq(int x, int y) {
+    if (x >= 0 && y >= 0 && x < *map_axis_x && y < *map_axis_y && !((x + y)&1)) {
+        return &((*MapPtr)[ x/2 + (*map_half_x) * y ]);
+    } else {
+        return NULL;
+    }
+}
+
+int wrap(int x) {
+    if (!(*map_toggle_flat & 1)) {
+        return (x < 0 ? x + *map_axis_x : x % *map_axis_x);
+    } else {
+        return x;
+    }
+}
+
+int map_range(int x1, int y1, int x2, int y2) {
+    int dx = abs(x1 - x2);
+    int dy = abs(y1 - y2);
+    if (!(*map_toggle_flat & 1) && dx > *map_half_x) {
+        dx = *map_axis_x - dx;
+    }
+    return (dx + dy)/2;
+}
+
+int vector_dist(int x1, int y1, int x2, int y2) {
+    int dx = abs(x1 - x2);
+    int dy = abs(y1 - y2);
+    if (!(*map_toggle_flat & 1) && dx > *map_half_x) {
+        dx = *map_axis_x - dx;
+    }
+    return max(dx, dy) - ((((dx + dy) / 2) - min(dx, dy) + 1) / 2);
+}
+
+int min_range(const Points& S, int x, int y) {
+    int z = MaxMapW;
+    for (auto& p : S) {
+        z = min(z, map_range(x, y, p.x, p.y));
+    }
+    return z;
+}
+
+int min_vector(const Points& S, int x, int y) {
+    int z = MaxMapW;
+    for (auto& p : S) {
+        z = min(z, vector_dist(x, y, p.x, p.y));
+    }
+    return z;
+}
+
+double avg_range(const Points& S, int x, int y) {
+    int n = 0;
+    int sum = 0;
+    for (auto& p : S) {
+        sum += map_range(x, y, p.x, p.y);
+        n++;
+    }
+    return (n > 0 ? (double)sum/n : 0);
+}
+
+int unit_in_tile(MAP* sq) {
+    if (!sq || (sq->val2 & 0xf) == 0xf) {
+        return -1;
+    }
+    return sq->val2 & 0xf;
+}
+
+int __cdecl region_at(int x, int y) {
+    MAP* sq = mapsq(x, y);
+    return sq ? sq->region : 0;
+}
+
+int __cdecl mod_hex_cost(int unit_id, int faction, int x1, int y1, int x2, int y2, int a7) {
     int value = hex_cost(unit_id, faction, x1, y1, x2, y2, a7);
     MAP* sq_a = mapsq(x1, y1);
     MAP* sq_b = mapsq(x2, y2);
@@ -532,19 +603,26 @@ void __cdecl mod_world_monsoon() {
 
 void __cdecl mod_world_build() {
     static uint32_t seed = random_state();
-    MAP* sq;
     if (!conf.new_world_builder) {
         ThinkerVars->map_random_value = 0;
         world_build();
         return;
     }
+    seed = random_next(seed) ^ GetTickCount();
+    world_generate(seed);
+}
+
+void __cdecl world_generate(uint32_t seed) {
     if (DEBUG) {
         memset(pm_overlay, 0, sizeof(pm_overlay));
         *game_state |= STATE_DEBUG_MODE;
     }
+    MAP* sq;
     memcpy(AltNatural, AltNaturalDefault, 0x2Cu);
     *WorldAddTemperature = 1;
     *WorldSkipTerritory = 1;
+    *MapOceanCoverage = clamp(*MapOceanCoverage, 0, 2);
+    *MapErosiveForces = clamp(*MapErosiveForces, 0, 2);
     for (int i = 0; i < 7; i++) {
         if (MapSizePlanet[i] < 0) {
             MapSizePlanet[i] = random(3);
@@ -555,18 +633,17 @@ void __cdecl mod_world_build() {
         MapWin_clear_terrain(MapWin);
         draw_map(1);
     }
-    assert(*MapOceanCoverage >= 0 && *MapOceanCoverage < 3);
-    seed = ((seed << 15) | (seed >> 17)) ^ GetTickCount();
+    ThinkerVars->map_random_value = seed;
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
     noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     noise.SetSeed(seed);
     random_reseed(seed);
-    ThinkerVars->map_random_value = seed;
+    my_srand(seed); // For game engine rand function
     *map_random_seed = (seed % 0x7fff) + 1; // Must be non-zero
 
     Points conts;
-    size_t continents = clamp(*map_area_sq_root / 12, 4, 20);
+    uint32_t continents = clamp(*map_area_sq_root / 12, 4, 20);
     int levels[256] = {};
     int x = 0, y = 0, i = 0;
 
@@ -585,8 +662,8 @@ void __cdecl mod_world_build() {
 
     const float L = AltNatural[ALT_SHORE_LINE]; // Default shoreline altitude = 45
     const float Wmid = (50 - conf.world_sea_levels[*MapOceanCoverage])*0.01f;
-    const float Wsea = 0.8f + 0.04f * clamp(WorldBuilder->deep_water - WorldBuilder->shelf, -16, 16);
-    const float Wland = 0.5f + 0.25f * (*MapErosiveForces);
+    const float Wsea = 0.1f + 0.01f * conf.world_ocean_mod;
+    const float Wland = 0.1f + 0.01f * conf.world_hills_mod + 0.25f * (*MapErosiveForces);
     const float Wdist = 1.0f / clamp(*map_area_sq_root * 0.1f, 1.0f, 15.0f);
 
     for (y = 0; y < *map_axis_y; y++) {
@@ -650,9 +727,9 @@ void __cdecl mod_world_build() {
         }
     }
     debug("world_build seed: %10u size: %d x: %d y: %d "\
-    "ocean: %d erosion: %d cloud: %d deep: %d sea_level: %d level_mod: %d\n",
-    seed, *MapSizePlanet, *map_axis_x, *map_axis_y, *MapOceanCoverage, *MapErosiveForces, *MapCloudCover,
-    WorldBuilder->deep_water - WorldBuilder->shelf, conf.world_sea_levels[*MapOceanCoverage], level_mod);
+    "ocean: %d erosion: %d cloud: %d sea_level: %d level_mod: %d\n",
+    seed, *MapSizePlanet, *map_axis_x, *map_axis_y, *MapOceanCoverage,
+    *MapErosiveForces, *MapCloudCover, conf.world_sea_levels[*MapOceanCoverage], level_mod);
 
     world_polar_caps();
     world_linearize_contours();
@@ -668,12 +745,12 @@ void __cdecl mod_world_build() {
             }
             uint64_t sea = 0;
             int land_count = Continents[sq->region].tile_count;
-            if (land_count <= 4 || (land_count <= 24
-            && pair_hash(seed, sq->region) & 0x3f > WorldBuilder->islands - 2)) {
-                // islands=1 removes all continents under size 25
-                bridges.insert({x, y});
-                if (DEBUG) pm_overlay[x][y] = -1;
-                continue;
+            if (conf.world_islands_mod > 0) {
+                if (land_count < conf.world_islands_mod && land_count < *map_area_tiles/8) {
+                    bridges.insert({x, y});
+                    if (DEBUG) pm_overlay[x][y] = -1;
+                    continue;
+                }
             }
             for (auto& m : iterate_tiles(x, y, 1, 13)) {
                 if (is_ocean(m.sq)) {

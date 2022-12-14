@@ -485,7 +485,7 @@ struct Faction {
 };
 
 struct CRules {
-    int mov_rate_along_roads;
+    int move_rate_roads;
     int nutrient_intake_req_citizen;
     int max_airdrop_rng_wo_orbital_insert;
     int artillery_max_rng;

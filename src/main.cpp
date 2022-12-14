@@ -99,13 +99,19 @@ int option_handler(void* user, const char* section, const char* name, const char
     } else if (MATCH("thinker", "conquer_priority")) {
         cf->conquer_priority = clamp(atoi(value), 1, 10000);
     } else if (MATCH("thinker", "crawler_priority")) {
-        cf->crawler_priority = atoi(value);
+        cf->crawler_priority = clamp(atoi(value), 1, 10000);
     } else if (MATCH("thinker", "max_satellites")) {
         cf->max_satellites = atoi(value);
     } else if (MATCH("thinker", "new_world_builder")) {
         cf->new_world_builder = atoi(value);
     } else if (MATCH("thinker", "world_continents")) {
         cf->world_continents = atoi(value);
+    } else if (MATCH("thinker", "world_hills_mod")) {
+        cf->world_hills_mod = clamp(atoi(value), 0, 100);
+    } else if (MATCH("thinker", "world_ocean_mod")) {
+        cf->world_ocean_mod = clamp(atoi(value), 0, 100);
+    } else if (MATCH("thinker", "world_islands_mod")) {
+        cf->world_islands_mod = atoi(value);
     } else if (MATCH("thinker", "modified_landmarks")) {
         cf->modified_landmarks = atoi(value);
     } else if (MATCH("thinker", "map_mirror_x")) {
@@ -227,7 +233,7 @@ int option_handler(void* user, const char* section, const char* name, const char
             }
         }
         if (!unknown_option) {
-            char msg[500] = {};
+            char msg[1024] = {};
             snprintf(msg, sizeof(msg),
                 "Unknown configuration option detected in thinker.ini.\n"
                 "Game might not work as intended.\n"

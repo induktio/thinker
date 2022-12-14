@@ -22,6 +22,10 @@ uint32_t random_state() {
     return random_seed;
 }
 
+uint32_t random_next(uint32_t value) {
+    return 1664525 * value + 1013904223;
+}
+
 /*
 Produces same values than the game engine function random(0, n) and Random::get(0, n).
 */

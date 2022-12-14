@@ -512,78 +512,6 @@ bool allow_expand(int faction) {
     return true;
 }
 
-int wrap(int a) {
-    if (!(*map_toggle_flat & 1)) {
-        return (a < 0 ? a + *map_axis_x : a % *map_axis_x);
-    } else {
-        return a;
-    }
-}
-
-int map_range(int x1, int y1, int x2, int y2) {
-    int dx = abs(x1 - x2);
-    int dy = abs(y1 - y2);
-    if (!(*map_toggle_flat & 1) && dx > *map_half_x) {
-        dx = *map_axis_x - dx;
-    }
-    return (dx + dy)/2;
-}
-
-int vector_dist(int x1, int y1, int x2, int y2) {
-    int dx = abs(x1 - x2);
-    int dy = abs(y1 - y2);
-    if (!(*map_toggle_flat & 1) && dx > *map_half_x) {
-        dx = *map_axis_x - dx;
-    }
-    return max(dx, dy) - ((((dx + dy) / 2) - min(dx, dy) + 1) / 2);
-}
-
-int min_range(const Points& S, int x, int y) {
-    int z = MaxMapW;
-    for (auto& p : S) {
-        z = min(z, map_range(x, y, p.x, p.y));
-    }
-    return z;
-}
-
-int min_vector(const Points& S, int x, int y) {
-    int z = MaxMapW;
-    for (auto& p : S) {
-        z = min(z, vector_dist(x, y, p.x, p.y));
-    }
-    return z;
-}
-
-double avg_range(const Points& S, int x, int y) {
-    int n = 0;
-    int sum = 0;
-    for (auto& p : S) {
-        sum += map_range(x, y, p.x, p.y);
-        n++;
-    }
-    return (n > 0 ? (double)sum/n : 0);
-}
-
-MAP* mapsq(int x, int y) {
-    if (x >= 0 && y >= 0 && x < *map_axis_x && y < *map_axis_y && !((x + y)&1)) {
-        return &((*MapPtr)[ x/2 + (*map_half_x) * y ]);
-    } else {
-        return NULL;
-    }
-}
-
-int unit_in_tile(MAP* sq) {
-    if (!sq || (sq->val2 & 0xf) == 0xf) {
-        return -1;
-    }
-    return sq->val2 & 0xf;
-}
-
-int region_at(int x, int y) {
-    MAP* sq = mapsq(x, y);
-    return sq ? sq->region : 0;
-}
-
 int set_move_to(int veh_id, int x, int y) {
     VEH* veh = &Vehicles[veh_id];
     debug("set_move_to %2d %2d -> %2d %2d %s\n", veh->x, veh->y, x, y, veh->name());
@@ -646,7 +574,7 @@ int set_board_to(int veh_id, int trans_veh_id) {
     VEH* v2 = &Vehicles[trans_veh_id];
     assert(veh_id != trans_veh_id);
     assert(veh->x == v2->x && veh->y == v2->y);
-    assert(cargo_capacity(trans_veh_id) > 0);
+    assert(veh_cargo(trans_veh_id) > 0);
     veh->order = ORDER_SENTRY_BOARD;
     veh->waypoint_1_x = trans_veh_id;
     veh->waypoint_1_y = 0;
@@ -1027,38 +955,6 @@ int __cdecl mod_upgrade_cost(int faction, int new_unit_id, int old_unit_id) {
         cost /= 2;
     }
     return cost;
-}
-
-/*
-Original Offset: 005C1760
-*/
-int __cdecl cargo_capacity(int veh_id) {
-    VEH* v = &Vehicles[veh_id];
-    UNIT* u = &Units[v->unit_id];
-    if (u->carry_capacity > 0 && veh_id < MaxProtoFactionNum
-    && Weapon[u->weapon_type].offense_value < 0) {
-        return v->morale + 1;
-    }
-    return u->carry_capacity;
-}
-
-/*
-Original Offset: 005C0DB0
-*/
-bool __cdecl can_arty(int unit_id, bool allow_sea_arty) {
-    UNIT& u = Units[unit_id];
-    if ((Weapon[u.weapon_type].offense_value <= 0 // PSI + non-combat
-    || Armor[u.armor_type].defense_value < 0) // PSI
-    && unit_id != BSC_SPORE_LAUNCHER) { // Spore Launcher exception
-        return false;
-    }
-    if (u.triad() == TRIAD_SEA) {
-        return allow_sea_arty;
-    }
-    if (u.triad() == TRIAD_AIR) {
-        return false;
-    }
-    return has_abil(unit_id, ABL_ARTILLERY); // TRIAD_LAND
 }
 
 bool ignore_goal(int type) {

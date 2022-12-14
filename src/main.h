@@ -157,7 +157,11 @@ struct Config {
     int base_nearby_limit = -1;
     int expansion_limit = 100;
     int expansion_autoscale = 0;
+    // Adjust how often the AIs should build new military units instead of infrastructure.
+    // Unlisted option for AI tuning. Allowed values 1-10000.
     int conquer_priority = 100;
+    // Adjust how often the AIs should build new crawlers relative to the base count.
+    // Unlisted option for AI tuning. Allowed values 1-10000.
     int crawler_priority = 100;
     int max_satellites = 20;
     int new_world_builder = 1;
@@ -166,6 +170,9 @@ struct Config {
     int map_mirror_x = 0;
     int map_mirror_y = 0;
     int world_sea_levels[3] = {40,55,70};
+    int world_hills_mod = 40;
+    int world_ocean_mod = 40;
+    int world_islands_mod = 16;
     int faction_placement = 1;
     int nutrient_bonus = 0;
     int rare_supply_pods = 0;
