@@ -2,10 +2,11 @@
 #include "patch.h"
 #include "patchdata.h"
 
-const char* ac_alpha = "smac_mod\\alphax";
-const char* ac_help = "smac_mod\\helpx";
-const char* ac_tutor = "smac_mod\\tutor";
-const char* ac_concepts = "smac_mod\\conceptsx";
+const char* ac_mod_alpha = "smac_mod\\alphax";
+const char* ac_mod_help = "smac_mod\\helpx";
+const char* ac_mod_tutor = "smac_mod\\tutor";
+const char* ac_mod_concepts = "smac_mod\\conceptsx";
+const char* ac_alpha = "alphax";
 const char* ac_opening = "opening";
 const char* ac_movlist = "movlist";
 const char* ac_movlist_txt = "movlist.txt";
@@ -22,6 +23,8 @@ const char* landmark_params[] = {
 typedef int(__cdecl *Fexcept_handler3)(EXCEPTION_RECORD*, PVOID, CONTEXT*);
 Fexcept_handler3 _except_handler3 = (Fexcept_handler3)0x646DF8;
 
+static bool delay_base_riot = false;
+
 
 bool FileExists(const char* path) {
     return GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES;
@@ -37,10 +40,34 @@ int __cdecl governor_only_crop_yield(int faction, int base_id, int x, int y, int
     return value;
 }
 
+/*
+These functions (first base_growth and then drone_riot)
+will only get called from production_phase > base_upkeep.
+*/
+int __cdecl mod_base_growth() {
+    BASE* base = *current_base_ptr;
+    delay_base_riot = base->talent_total >= base->drone_total
+        && ~base->state_flags & BSTATE_DRONE_RIOTS_ACTIVE;
+    int cur_pop = base->pop_size;
+    int value = base_growth();
+    assert(*current_base_ptr == base);
+    delay_base_riot = delay_base_riot && base->pop_size > cur_pop;
+    return value;
+}
+
+void __cdecl mod_drone_riot() {
+    if (!delay_base_riot) {
+        drone_riot();
+    } else {
+        assert(!((*current_base_ptr)->state_flags & BSTATE_DRONE_RIOTS_ACTIVE));
+    }
+}
+
+/*
+Check if the base might riot on the next turn, usually after a population increase.
+Used only for world_map_labels feature.
+*/
 bool maybe_riot(int base_id) {
-    /*
-    Check if the base might riot on next turn, usually after a population increase.
-    */
     BASE* b = &Bases[base_id];
 
     if (!base_can_riot(base_id, true)) {
@@ -525,7 +552,7 @@ or a near call with absolute indirect address (FF 25) before patching.
 */
 void write_jump(int addr, int func) {
     if ((*(uint32_t*)addr & 0xFFFFFF) != 0xEC8B55 && *(uint16_t*)addr != 0x25FF
-    && *(uint16_t*)(addr-1) != 0xA190) {
+    && *(uint16_t*)(addr-1) != 0xA190 && *(uint8_t*)(addr) != 0xE9) {
         exit_fail(addr);
     }
     *(byte*)addr = 0xE9;
@@ -688,7 +715,7 @@ bool patch_setup(Config* cf) {
         write_jump(0x5ABD20, (int)mod_auto_save);
     }
     if (cf->skip_random_factions) {
-        const char* filename = (cf->smac_only ? ac_alpha : "alphax");
+        const char* filename = (cf->smac_only ? ac_mod_alpha : ac_alpha);
         std::vector<std::string> lines;
         cf->faction_file_count = 0;
         lines = read_txt_block(filename, "#FACTIONS", 100);
@@ -951,13 +978,13 @@ bool patch_setup(Config* cf) {
             exit(EXIT_FAILURE);
         }
         *(int*)0x45F97A = 0;
-        *(const char**)0x691AFC = ac_alpha;
-        *(const char**)0x691B00 = ac_help;
-        *(const char**)0x691B14 = ac_tutor;
-        write_offset(0x42B30E, ac_concepts);
-        write_offset(0x42B49E, ac_concepts);
-        write_offset(0x42C450, ac_concepts);
-        write_offset(0x42C7C2, ac_concepts);
+        *(const char**)0x691AFC = ac_mod_alpha;
+        *(const char**)0x691B00 = ac_mod_help;
+        *(const char**)0x691B14 = ac_mod_tutor;
+        write_offset(0x42B30E, ac_mod_concepts);
+        write_offset(0x42B49E, ac_mod_concepts);
+        write_offset(0x42C450, ac_mod_concepts);
+        write_offset(0x42C7C2, ac_mod_concepts);
         write_offset(0x403BA8, ac_movlist);
         write_offset(0x4BEF8D, ac_movlist);
         write_offset(0x52AB68, ac_opening);
@@ -965,6 +992,10 @@ bool patch_setup(Config* cf) {
         memset((void*)0x58A5E1, 0x90, 6);
         memset((void*)0x58B76F, 0x90, 2);
         memset((void*)0x58B9F3, 0x90, 2);
+    }
+    if (cf->delay_drone_riots) {
+        write_call(0x4F7A52, (int)mod_base_growth);
+        write_jump(0x4F5E08, (int)mod_drone_riot);
     }
     if (cf->counter_espionage) {
         // Check for flag DIPLO_RENEW_INFILTRATOR when choosing the menu entries

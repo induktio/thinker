@@ -165,14 +165,14 @@ struct Config {
     int crawler_priority = 100;
     int max_satellites = 20;
     int new_world_builder = 1;
-    int world_continents = 0;
-    int modified_landmarks = 0;
-    int map_mirror_x = 0;
-    int map_mirror_y = 0;
     int world_sea_levels[3] = {40,55,70};
     int world_hills_mod = 40;
     int world_ocean_mod = 40;
     int world_islands_mod = 16;
+    int world_continents = 0;
+    int modified_landmarks = 0;
+    int map_mirror_x = 0;
+    int map_mirror_y = 0;
     int faction_placement = 1;
     int nutrient_bonus = 0;
     int rare_supply_pods = 0;
@@ -184,6 +184,7 @@ struct Config {
     int tech_stagnate_rate = 200;
     int magtube_movement_rate = 0;
     int road_movement_rate = 1; // internal variable
+    int delay_drone_riots = 0;
     int counter_espionage = 0;
     int ignore_reactor_power = 0;
     int early_research_start = 1; // unlisted option

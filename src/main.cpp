@@ -136,6 +136,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->tech_stagnate_rate = max(1, atoi(value));
     } else if (MATCH("thinker", "magtube_movement_rate")) {
         cf->magtube_movement_rate = atoi(value);
+    } else if (MATCH("thinker", "delay_drone_riots")) {
+        cf->delay_drone_riots = atoi(value);
     } else if (MATCH("thinker", "counter_espionage")) {
         cf->counter_espionage = atoi(value);
     } else if (MATCH("thinker", "ignore_reactor_power")) {

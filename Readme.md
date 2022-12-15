@@ -61,10 +61,8 @@ Alt-tabbing should now work when the game is restarted.
 Other mods
 ----------
 * [SMAC-in-SMACX mod](Details.md#smac-in-smacx-mod) can be installed to play a game similar to original SMAC while Thinker is enabled.
-* [PRACX](https://github.com/DrazharLn/pracx) graphics enhancement patch can be used together with Thinker.
-  For possible issues before installing see [compatibility with other mods](Details.md#compatibility-with-other-mods).
-  For easiest installation, download [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/).
 * [OpenSMACX](https://github.com/b-casey/OpenSMACX) is a long-term project to decompile and create a full open source clone of SMACX.
+* Also see [compatibility with other mods](Details.md#compatibility-with-other-mods).
 
 
 Compiling

@@ -93,7 +93,7 @@ From the menu options it is also possible to choose the random map style from la
 All landmarks that are placed on random maps can also be configured from `thinker.ini`. Nessus Canyon is available but disabled by default. When new map generator is enabled, `modified_landmarks` option replaces the default Monsoon Jungle landmark with multiple smaller jungles dispersed across the equator area.
 Planet rainfall level will determine how many jungle tiles are placed. When playing on smaller maps, it might make more sense to disable some additional landmarks, as otherwise the maps might appear cluttered.
 
-The new map generator is entirely different from the game vanilla version, so it does not parse some of the variables specified in `alphax.txt`. Any WorldBuilder variable names starting with Land, Continent, Hills, Plateau, Plains, Beach or Peaks are not currently used by the generator. The other options listed in the WorldBuilder section are mostly supported regardless if the `new_world_builder` is enabled or not.
+The new map generator is entirely different from the vanilla version, so it does not parse the variables specified in `alphax.txt` WorldBuilder section. Only in limited cases, such as fungus placement, WorldBuilder variables might be used the game engine when the new map generator is enabled.
 
 Thinker's `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on Huge map sizes.
 
@@ -134,15 +134,21 @@ Nano Factory does not lower crawler upgrade costs anymore. This means crawlers c
 
 Revised tech costs
 ==================
-In the original game, research costs were mainly decided by how many techs a faction had already researched. That meant the current research target was irrelevant as far as the costs were concerned. For speed runs, it made sense to avoid researching any techs that were not strictly necessary to keep the cost of discovering new techs as low as possible.
+In the original game, research costs were mainly decided by how many techs a faction had already researched. That meant the current research target was irrelevant as far as the costs were concerned. This is somewhat counter-intuitive since lower level techs would be worth the same than higher level techs. For speed runs, it made sense to avoid researching any techs that were not strictly necessary to keep the cost of discovering new techs as low as possible.
 
-The config option `revised_tech_cost` attempts to remake this mechanic so that the research cost for any particular tech is fixed and depends mainly on the level of the tech. This follows the game design choices that were also made in later Civilization games.
+The config option `revised_tech_cost` attempts to remake this mechanic so that the research cost for any particular tech is fixed and depends mainly on the level of the tech. This follows the game design choices that were also made in later Civilization games. Enabling this feature should delay the tech race in mid to late game.
 
-For example, in the default tech tree, Social Psych is level 1 and Transcendent Thought is level 16. Enabling this feature should delay the tech race in mid to late game. See also [a helpful chart](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAkyzALX76aWAOc363a7mgpa/resources?dl=0&lst=) of the standard tech tree. The base cost for any particular tech is determined by this formula:
+Optionally it is possible to choose `cheap_early_tech` so the tech cost is somewhat between the old and new version. In this case, each tech known to the faction, including starting techs, will increase all tech costs slightly.
+
+For example, in the default tech tree, Social Psych is level 1 and Transcendent Thought is level 16. See also [a helpful chart](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAkyzALX76aWAOc363a7mgpa/resources?dl=0&lst=) of the standard tech tree. The base cost for any particular tech is determined by this formula.
 
     5 * Level^3 + 75 * Level
 
-Here are the base costs for standard maps:
+When `cheap_early_tech` is enabled, the formula changes to the following, and also the costs for first 8 techs are discounted.
+
+    5 * Level^3 + 25 * Level + 15 * KnownTechs
+
+Here are the base costs without early tech adjustment for standard maps.
 
 | Level | Labs  |
 |-------|-------|
@@ -174,7 +180,6 @@ After calculating the base cost, it is multiplied by all of the following factor
 * Divide by Technology Discovery Rate set in alphax.txt (higher values means faster progress).
 * If Tech Stagnation is enabled, the cost is doubled unless a different rate is set in the options.
 * Count every other faction with commlink to the current faction who has the tech, while allied or infiltrated factions count twice. Discount 5% for every point in this value. Maximum allowed discount from this step is 30%. Only infiltration gained using probe teams counts for the purposes of extra discount, the Empath Guild or Planetary Governor status is ignored in this step.
-* If `cheap_early_tech` is enabled, apply a decreasing discount from 60% to 0% until the first 16 techs are discovered. Any starting techs count against this limit.
 
 The final cost calculated by this formula is visible in the F2 status screen after the label "TECH COST". Note that the social engineering RESEARCH rating does not affect this number. Instead it changes "TECH PER TURN" value displayed on the same screen.
 
@@ -237,7 +242,9 @@ See below for some custom faction sets. The factions can be played in both game 
 
 Compatibility with other mods
 =============================
-While it is possible to run both Thinker and PRACX at the same time, this combination of patches will not receive the same testing than the normal configuration, so some issues are likely. Additionally some optional features provided by Thinker will be disabled while running PRACX because they would patch conflicting areas of the game binary. These disabled feature include:
+It should be possible to run both Thinker and [PRACX](https://github.com/DrazharLn/pracx) graphics enhancement patch at the same time. For easiest installation, download [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). However this combination of patches will not receive the same testing than the normal configuration, so some issues are likely.
+
+If any issues are encountered, first check if they occur with the vanilla game and/or Thinker without additional mods. Also some optional features provided by Thinker will be disabled while running PRACX because they would patch conflicting areas of the game binary. These disabled feature include:
 
 * Smooth scrolling config option.
 * Windowed mode config option.
@@ -292,6 +299,8 @@ Some notable game engine patches included with Thinker may not have their separa
 24. Fix issue with randomized faction agendas where they might be given agendas that are their opposition social models. Additionally randomized leader personalities option now always selects 1 or 2 AI priorities.
 25. Fix bug that prevents the turn from advancing after force-ending the turn while any player-owned needlejet in flight has moves left.
 26. Patch Energy Market Crash event to reduce energy reserves only by 1/4 instead of 3/4.
+27. Game will now allow reselecting units that have already skipped their turns if they have full movement points available (activate_skipped_units).
+28. Bases that have sufficient drone control facilities available can grow without triggering possible drone riots on the same turn (delay_drone_riots).
 
 
 Scient's patch
