@@ -93,7 +93,7 @@ From the menu options it is also possible to choose the random map style from la
 All landmarks that are placed on random maps can also be configured from `thinker.ini`. Nessus Canyon is available but disabled by default. When new map generator is enabled, `modified_landmarks` option replaces the default Monsoon Jungle landmark with multiple smaller jungles dispersed across the equator area.
 Planet rainfall level will determine how many jungle tiles are placed. When playing on smaller maps, it might make more sense to disable some additional landmarks, as otherwise the maps might appear cluttered.
 
-The new map generator is entirely different from the vanilla version, so it does not parse the variables specified in `alphax.txt` WorldBuilder section. Only in limited cases, such as fungus placement, WorldBuilder variables might be used the game engine when the new map generator is enabled.
+The new map generator is entirely different from the vanilla version, so it does not parse the variables specified in `alphax.txt` WorldBuilder section. Only in limited cases, such as fungus placement, WorldBuilder variables might be used by the game engine when the new map generator is enabled.
 
 Thinker's `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on Huge map sizes.
 
@@ -300,7 +300,7 @@ Some notable game engine patches included with Thinker may not have their separa
 25. Fix bug that prevents the turn from advancing after force-ending the turn while any player-owned needlejet in flight has moves left.
 26. Patch Energy Market Crash event to reduce energy reserves only by 1/4 instead of 3/4.
 27. Game will now allow reselecting units that have already skipped their turns if they have full movement points available (activate_skipped_units).
-28. Bases that have sufficient drone control facilities available can grow without triggering possible drone riots on the same turn (delay_drone_riots).
+28. Bases that have sufficient drone control facilities before the growth phase can grow without triggering possible drone riots on the same turn (delay_drone_riots).
 
 
 Scient's patch

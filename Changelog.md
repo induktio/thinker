@@ -1,6 +1,17 @@
 
 # Thinker mod release changelog
 
+## Version 3.3 (2022-12-15)
+* Game will now allow reselecting units that have already skipped their turns if they have full movement points available.
+* Bases that have sufficient drone control facilities before the growth phase can grow without triggering possible drone riots on the same turn.
+* Thinker's map generator now reads all settings from thinker.ini. WorldBuilder in alphax.txt is not used for this purpose.
+* New map generator options: world_hills_mod, world_ocean_mod, world_islands_mod.
+* Modify revised_tech_cost to take more into account the number of known techs.
+* Mod launcher displays more detailed error messages whenever it encounters an issue at startup.
+* Fix foreign_treaty_popup displaying same treaty changes multiple times per turn.
+* Fix several issues with AI capturing alien artifacts.
+
+
 ## Version 3.2 (2022-12-02)
 * New config option: magtube_movement_rate sets the movement speed on magtubes (not enabled by default).
 * Expiring infiltration feature has been rewritten to display the expected active turns immediately when infiltration is established.
@@ -11,7 +22,7 @@
 * Thinker now reads and saves all settings changed from the GUI in thinker.ini. Mod settings are not saved anymore in Alpha Centauri.ini.
 * Fix some game startup issues in the launcher that occurred with Windows 10.
 
- 
+
 ## Version 3.1 (2022-02-11)
 * New config options: alien_early_start, cult_early_start, perimeter_defense_bonus, tachyon_field_bonus.
 * Add option for X/Y map mirroring. This must be enabled separately from ALT+T menu. All landmarks will be disabled if the generated map is mirrored.
