@@ -493,10 +493,15 @@ int __thiscall probe_popup_start(Win* This, int veh_id1, int base_id, int a4, in
         int faction1 = Vehs[veh_id1].faction_id;
         int faction2 = Bases[base_id].faction_id;
         int turns = MFactions[faction1].thinker_probe_end_turn[faction2] - *current_turn;
-        if (has_treaty(faction1, faction2, DIPLO_HAVE_INFILTRATOR) && turns > 0
-        && faction1 != *GovernorFaction && !has_project(faction1, FAC_EMPATH_GUILD)) {
-            ParseNumTable[0] =  turns;
-            return Popup_start(This, "modmenu", "PROBE", a4, a5, a6, a7);
+        bool always_active = faction1 == *GovernorFaction || has_project(faction1, FAC_EMPATH_GUILD);
+
+        if (!always_active) {
+            if (has_treaty(faction1, faction2, DIPLO_HAVE_INFILTRATOR) && turns > 0) {
+                ParseNumTable[0] =  turns;
+                return Popup_start(This, "modmenu", "PROBE", a4, a5, a6, a7);
+            }
+            // Sometimes this flag is set even when infiltration is not active
+            set_treaty(faction1, faction2, DIPLO_RENEW_INFILTRATOR, 0);
         }
     }
     return Popup_start(This, ScriptFile, "PROBE", a4, a5, a6, a7);

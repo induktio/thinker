@@ -73,7 +73,7 @@ bool maybe_riot(int base_id) {
     if (!base_can_riot(base_id, true)) {
         return false;
     }
-    if (unused_space(base_id) > 0 && b->drone_total <= b->talent_total) {
+    if (!conf.delay_drone_riots && unused_space(base_id) > 0 && b->drone_total <= b->talent_total) {
         int cost = (b->pop_size + 1) * cost_factor(b->faction_id, 0, base_id);
         return b->drone_total + 1 > b->talent_total && (base_pop_boom(base_id)
             || (b->nutrients_accumulated + b->nutrient_surplus >= cost));
