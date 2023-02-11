@@ -33,21 +33,22 @@ writes output to `debug.txt` in the game folder if the game happens to crash for
 
 Compiling Thinker
 =================
-The preferred and actively supported way to compile Thinker on Windows is to use
-[CodeBlocks](https://www.codeblocks.org/downloads/) and GCC with the included project file.
-GCC version 8.1.0 or later is recommended.
+Install dependencies to compile Thinker on Windows using CodeBlocks:
 
-To avoid compiling issues, do not use the MinGW toolkit version bundled with CodeBlocks.
-Instead get the compiler toolkit separately from the
-[MinGW-w64 project](https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/).
+* [CodeBlocks](https://www.codeblocks.org/downloads/)
+* [MinGW toolkit](https://github.com/niXman/mingw-builds-binaries/releases/download/12.2.0-rt_v10-rev2/i686-12.2.0-release-posix-dwarf-msvcrt-rt_v10-rev2.7z)
 
-Another way to build Thinker on Linux platforms is to convert the CodeBlocks project files into
+To avoid compiling issues, do not use the older MinGW toolkit version bundled with CodeBlocks.
+GCC versions older than 8.1.0 are not supported. After installing MinGW, new paths need to be
+entered in Settings > Compiler > Toolchain Executables for the default GNU GCC Compiler profile.
+
+Another way to build Thinker on Linux platforms is to convert the CodeBlocks project file into
 actual Makefiles and then compile them using g++-mingw-w64. A build script that does all these
 steps is provided in `tools/compile` folder.
 
 1. First install dependencies: `apt install build-essential g++-mingw-w64`
 2. Clone [cbp2make](https://github.com/dmpas/cbp2make) and compile it from sources.
-3. Install `cbp2make` binary on environment path.
+3. Install `cbp2make` binary on a location that is included in the PATH variable.
 4. Build Thinker: `./tools/compile/mingw-compile.sh`
 5. Get compiled binaries from: `build/bin/`
 
@@ -63,12 +64,9 @@ Thinker will not modify terranx.exe file on disk, so it can still be used to sta
 version of the game. Instead the mod will apply all of the changes at startup by patching
 the binary in memory. Also Scient's patch v2.0 changes are automatically loaded at startup.
 
-This repo also contains an equivalent binary diff `terranx.dif` between the GOG binary and
-Thinker's version after all of the changes are patched in memory.
-
-In the diff listing, the vast majority of changes relate to Scient's patch with the exception of
-these address ranges (38 lines total) that add thinker.dll to the dll import table while replacing
-an unused entry that was left in the table.
+In the binary diff listing in `terranx.dif`, the vast majority of changes relate to Scient's patch with
+the exception of these address ranges (38 lines total) that add thinker.dll to the dll import table
+while replacing an unused entry that was left in the table.
 
     00280A1E .. 00280A32
     002EF4FC .. 002EF516

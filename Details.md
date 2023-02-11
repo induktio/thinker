@@ -271,7 +271,8 @@ Known bugs
 
 Other patches included
 ======================
-Some notable game engine patches included with Thinker may not have their separate config option, but they are listed here.
+This list covers the game engine patches used by Thinker that are not included in Scient's Patch. These patches are all enabled by default.
+If the line mentions a config variable name in parentheses, the patch can be optionally disabled by adding `config_variable=0` in thinker.ini.
 
 1. Base governors of all factions will now prefer to work borehole tiles instead of always emphasizing food production. The patch makes governors assume borehole tiles produce 1 food but this will not affect the actual nutrient intake or anything else beyond tile selection.
 2. Make sure the game engine can read movie settings from "movlistx.txt" while using smac_only mode.
@@ -280,9 +281,9 @@ Some notable game engine patches included with Thinker may not have their separa
 5. Fix game showing redundant "rainfall patterns have been altered" messages when these events are caused by other factions.
 6. Fix a bug that occurs after the player does an artillery attack on unoccupied tile and then selects another unit to view combat odds and cancels the attack. After this veh_attack_flags will not get properly cleared and the next bombardment on an unoccupied tile always results in the destruction of the bombarding unit.
 7. Disable legacy upkeep code in the game engine that might cause AI formers to be reassigned to nearby bases that are owned by other factions.
-8. Patch the game engine to use significantly less CPU time by using a method similar to [smac-cpu-fix](https://github.com/vinceho/smac-cpu-fix/). Normally the game uses 100% of CPU time which can be be a problem on laptop devices.
-9. When capturing a base, Recycling Tanks and Recreation Commons are not always destroyed unlike previously. They are sometimes randomly destroyed like other facilities.
-10. Patch any faction with negative research rating to start accumulating labs on the first turn. In vanilla rules each negative point results in an additional 5 turn delay before the faction starts accumulating labs (e.g. Believers had a 10 turn delay).
+8. Patch the game engine to use significantly less CPU time by using a method similar to [smac-cpu-fix](https://github.com/vinceho/smac-cpu-fix/). Normally the game uses 100% of CPU time which can be be a problem on laptop devices (cpu_idle_fix).
+9. When capturing a base, Recycling Tanks and Recreation Commons are not always destroyed unlike previously. They are sometimes randomly destroyed like other facilities (facility_capture_fix).
+10. Patch any faction with negative research rating to start accumulating labs on the first turn. In vanilla rules each negative point results in an additional 5 turn delay before the faction starts accumulating labs, for example Believers had a 10 turn delay (early_research_start).
 11. Fix faction graphics bug that appears when Alpha Centauri.ini has a different set of faction filenames than the loaded scenario file. The patch will make sure the correct graphics set is loaded when opening the scenario. This bug only happened with scenario files, while regular save games were unaffected.
 12. Patch the game to use the Command Center maintenance cost that is set in alphax.txt. Normally the game would ignore this value and make the cost dependent on faction's best reactor value which is inconsistent with the other settings for facilities in alphax.txt.
 13. Sometimes the base window population row would display superdrones even though they would be suppressed by psych-related effects. The patch removes superdrone icons from the main population row and uses regular worker/drone/talent icons if applicable, so any drones should not be displayed there if they are suppressed by psych effects. To check the superdrone status, open the psych sub window.
