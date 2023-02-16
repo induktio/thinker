@@ -1,0 +1,55 @@
+#BASES
+Dreamland Valley
+Earthsong Enclave
+Emerald Eden
+Enchanted Everglade
+Eternal Earth
+Ethereal Expanse
+Garden of Gaia
+Garden of Growth
+Golden Grove
+Hallowed Hill
+Harmony Hill
+Haven Heights
+Heartland Haven
+Humming Hollow
+Luminous Lagoon
+Meadow of Memories
+Nature's Nook
+Planet's Embrace
+Pulsing Prairie
+Pureland Preserve
+Radiant Enclave
+Rainbow Retreat
+Rootbound Refuge
+Rustling Ravine
+Silvermoon Meadow
+Skywatch Sanctuary
+Starlight Meadow
+Tranquil Terrace
+Verdant Vista
+Wildwood Way
+#END
+
+#WATERBASES
+Aquatic Delight
+Coral Bayou
+Coral Reef Cove
+Fisherman's Oasis
+Kelp Kingdom
+Mystic Tides
+Neptune's Nook
+Ocean's Harvest
+Ocean's Oasis
+Reef's Refuge
+Sea Foam Fields
+Sea Glass Gardens
+Sea's Bounty
+Seashell Shores
+Serenity at Sea
+Shimmering Seabed
+Starfish Sanctuary
+Underwater Eden
+Water's Edge Garden
+Waterfall Way
+#END

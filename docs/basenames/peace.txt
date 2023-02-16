@@ -1,0 +1,55 @@
+#BASES
+U.N. Accord Center
+U.N. Aid Center
+U.N. Assistance Bureau
+U.N. Coordination Base
+U.N. Court of Arbitration
+U.N. Crisis Response Unit
+U.N. Data Repository
+U.N. Diplomatic Embassy
+U.N. Economic Council
+U.N. Educational Bureau
+U.N. Emergency Relief
+U.N. Equilibrium Hub
+U.N. Global Governance
+U.N. Harmony Outpost
+U.N. Harmony Village
+U.N. Hope Village
+U.N. Humanity Haven
+U.N. Intelligence Agency
+U.N. Justice Citadel
+U.N. Order Station
+U.N. Peace Zone
+U.N. Planetary Security
+U.N. Planning Authority
+U.N. Prosperity Town
+U.N. Protection Agency
+U.N. Reconciliation
+U.N. Safe Haven
+U.N. Solidarity Center
+U.N. Sovereignty Base
+U.N. Stability Base
+#END
+
+#WATERBASES
+U.N. Bay of Refuge
+U.N. Coastal Commission
+U.N. Island Refuge
+U.N. Marine Crossroads
+U.N. Maritime Depot
+U.N. Marine Habitat
+U.N. Maritime Station
+U.N. Ocean Gateway
+U.N. Ocean's Edge
+U.N. Oceanic Outpost
+U.N. Peaceful Harbor
+U.N. Port of Hope
+U.N. Port of Solitude
+U.N. Refuge by the Sea
+U.N. Sea Fortress
+U.N. Sea Sanctuary
+U.N. Seabound Base
+U.N. Seafaring Authority
+U.N. Seaside Haven
+U.N. Waterside City
+#END

@@ -365,6 +365,11 @@ const T& pick_random(const std::set<T,C>& s) {
     return *it;
 }
 
+template <class T, class C>
+bool has_item(const T& a, const C& b) {
+    return std::find(a.begin(), a.end(), b) != a.end();
+}
+
 template <class T>
 const T& min (const T& a, const T& b) {
     return std::min(a, b);

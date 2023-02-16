@@ -1,0 +1,55 @@
+#BASES
+Academy Archives
+Academy Campus
+Aurora Base
+Cosmic Campus
+Discovery Academy
+Future Foundation
+Gagarin Science Base
+Korolev Foundation
+Mendelev Laboratory
+Meteorite Park
+Mir City
+New Progress
+Nobel Institute
+Perestroika Base
+Pioneer College
+Pioneer Park
+Planetarium Base
+Planetary Campus
+Progression Center
+Quantum Lab
+Research Institute
+Saturn Center
+Science Center
+Science Nexus
+Solar Research Station
+Sputnik Base
+Sputnik Research
+Stellar Archives
+Terra Library
+Vostok Observatory
+#END
+
+#WATERBASES
+Aquatic Research Lab
+Aquatic Study Center
+Atlantis Research Lab
+Coastal Ecology Center
+Coastal Research Station
+Coral Reef Research
+Deep Blue Research Lab
+Hydro Dynamics Lab
+Hydro Research Facility
+Marine Geology Institute
+Marine Resources Center
+Neptune's Lab
+Ocean Control Center
+Oceanic Facility
+Oceanic Institute
+Seabed Mapping Facility
+Seafloor Observatory
+Seawater Science Center
+Tidal Research Lab
+Tidal Study Center
+#END

@@ -1,0 +1,55 @@
+#BASES
+Algorithm Alley
+Augmented Avenue
+Binary Bastion
+Byte Boulevard
+Code Kingdom
+Cyber Citadel
+Cyber Junction
+Data District
+Futuristic Niche
+Hacker's Hideaway
+Keyframe Station
+Keypad Base
+Lunar Labyrinth
+Matrix Mansion
+Net Niche
+Node Nexus
+Omega Outpost
+Phantom Plaza
+Programmer's Precinct
+Quantum Quarters
+Raster Realm
+Refuge Metropolis
+Shadow Shelter
+Silicon Sanctuary
+System Stronghold
+Techno Commons
+Techno Zone
+The Expanse
+Transistor Terrace
+Virus Vault
+#END
+
+#WATERBASES
+Aquatic Arcanum
+Atlantis Anchorage
+Blue Horizon Bay
+Coral Crest City
+Crystal Cove
+Ghost Outpost
+Mariana Metropolis
+Marine Mansion
+Nautical Nook
+Nautilus Niche
+Neural Nexus
+Oceanus Outpost
+Reef Retreat
+Sea Serenade
+Seabird Bay
+Seafloor Station
+Seaside Stronghold
+Seaweed Settlement
+Synthetic Shores
+Triton's Tower
+#END

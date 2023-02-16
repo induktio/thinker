@@ -1,0 +1,45 @@
+#BASES
+Adaptive Hold
+Caretaker Station
+Consonance Core
+Energy Modulation
+Greater Symphony
+Harmonic Mantle
+Hymn : Preservation
+Inner Worlds
+M'dar Memory
+Manifold : Echo
+Melody Keeper
+Overtone Nexus
+Phantom Memory
+Resonance : Mind
+Resonant Hold
+Seed of Harmony
+Star Resonance
+Thought : Balance
+Tower Resonance
+Visionary Sound
+#END
+
+#WATERBASES
+Aqua : Haven
+Coastal Current
+Coral Cavern
+Coral Cove
+Driftwood Bay
+Marine Hymn
+Mariner's Melody
+Nautical Nook
+Neptune's Harbor
+Ocean : Echo
+Oceanic Zenith
+Sea : Oasis
+Seabreeze Shoal
+Seashell Bay
+Seaside Sonata
+Seaweed Lagoon
+Seaworthy Serenity
+Tidal Basin
+Water's Whisper
+Wavefront
+#END

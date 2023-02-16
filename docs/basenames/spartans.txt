@@ -1,0 +1,55 @@
+#BASES
+Armored Citadel
+Armory Base
+Barracks of Valor
+Battlefront Base
+Command Hub
+Command Post
+Courageous Outpost
+Defenders' Den
+Elite Stronghold
+Fighter's Folly
+Fortress Triumph
+Iron Brigade Fortress
+Martial Keep
+Military Compound
+Phantom Tower
+Rebellion Bunker
+Rebellion Stronghold
+Sentinel Camp
+Sentry Outpost
+Shield Barracks
+Shielded Citadel
+Siege Command Post
+Soldier's Sanctuary
+Squadron Station
+Strategy Citadel
+Tactical Bunker
+Vanguard Station
+Victory Outpost
+War Council Center
+Warrior's Watch
+#END
+
+#WATERBASES
+Aquatic Stronghold
+Coastal Fortress
+Fleet Harbor
+Fleet Haven
+Marine Citadel
+Maritime Fortress
+Nautical Refuge
+Ocean Citadel
+Oceanic Outpost
+Port Citadel
+Saltwater Station
+Sea Garrison
+Sea Sovereignty
+Sea Surveillance
+Seabound Sentry
+Submarine Base
+Tidal Bastion
+Underwater Outpost
+Waterfront Stronghold
+Wavebreaker's Base
+#END

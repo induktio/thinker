@@ -1,0 +1,55 @@
+#BASES
+Black Pearl Hotel
+Blackbeard's Barracks
+Booty Bay Inn
+Buccaneer's Bay
+Captain's Quarters
+Corsair's Corner
+Crimson Cove
+Crossed Swords Inn
+Cutthroat's Cove
+Dead Man's Harbor
+Galleon's Grotto
+Golden Anchor
+Harpoon Hill
+Kraken's Lair
+Mariner's Cove
+Mutiny Motel
+Parrot's Perch
+Pegleg Pub
+Pirate Paradise
+Privateer's Port
+Rumrunner's Roost
+Sailor's Retreat
+Sea Rover's Retreat
+Seafarer's Retreat
+Silver Sail Inn
+Smuggler's Den
+Swashbuckler's Saloon
+The Plank Inn
+Tortuga Tavern
+Treasure Hunters
+#END
+
+#WATERBASES
+Anchor's Rest
+Brigantine Bay
+Coral Cove
+Coral Reef Harbor
+Fisherman's Wharf
+Neptune's Quay
+Ocean's Roost
+Oceanic View
+Port Royal
+Sailor's Sanctuary
+Saltwater Sanctuary
+Sea Breeze Harbor
+Seafarer's Retreat
+Seafaring Way
+Shipshape Shores
+Tidal Haven
+Treasure Island Port
+Wave Watch
+Wavecrest Bay
+Windward Bay
+#END

@@ -1,0 +1,55 @@
+#BASES
+Celestial Blessing
+Celestial Gate
+Cherub's Keep
+City of Saints
+Divine Calling
+Divine Mandate
+Divine Vision
+Divine Will
+Eden's Gateway
+Glorious Throne
+Graceful Haven
+Great Resurrection
+Heavenly Abode
+Heavenly Gate
+Holy Landmark
+Holy Seat
+Judgment's Edge
+Kingdom's Reign
+Messiah's Path
+New Promise
+New Sanctuary
+Noah's Promise
+Purification Base
+Purity's Reign
+Redemption Refuge
+Righteous Glory
+Risen Spirit
+Sacred Serenity
+Sanctified Ground
+Zion's Citadel
+#END
+
+#WATERBASES
+Cleansing Waters
+Divine Delta
+Fountain of Mercy
+Graceful Seas
+Heavenly Harbor
+Holy Waterway
+Port of Blessings
+Reborn Reef
+Resurrection Bay
+Sacred Shores
+Savior's Shore
+Sea of Grace
+Sea of Tranquility
+The Chosen Harbor
+The Flood of Grace
+The Holy Shoals
+The Lord's Harbor
+The Savior's Bay
+Water Sanctuary
+Waves of Redemption
+#END

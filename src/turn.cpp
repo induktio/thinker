@@ -217,7 +217,7 @@ int __cdecl mod_base_find3(int x, int y, int faction1, int region, int faction2,
     return result;
 }
 
-std::vector<std::string> read_txt_block(const char* filename, const char* section, unsigned max_len) {
+std::vector<std::string> read_txt_block(const char* filename, const char* section, uint32_t max_len) {
     std::vector<std::string> lines;
     FILE* file;
     const int buf_size = 1024;
@@ -250,113 +250,125 @@ std::vector<std::string> read_txt_block(const char* filename, const char* sectio
     return lines;
 }
 
+uint32_t offset_next(int32_t faction, uint32_t position, uint32_t amount) {
+    if (!position) {
+        return 0;
+    }
+    uint32_t loop = 0;
+    uint32_t offset = ((*map_random_seed + faction) & 0xFE) | 1;
+    do {
+        if (offset & 1) {
+            offset ^= 0x170;
+        }
+        offset >>= 1;
+    } while (offset >= amount || ++loop != position);
+    return offset;
+}
+
 /*
-Generate a base name. If all base names from faction definition are used, the name
-generated will be unique across all bases on the map, e.g. Alpha Beta Sector.
+Generate a base name. Uses additional base names from basenames folder.
+When faction base names are used, creates additional variations from basenames/generic.txt.
 First land/sea base always uses the first available name from land/sea names list.
-Vanilla version chooses sea base names in a sequential non-random order.
+Unlike this version, vanilla name_base chooses sea base names in a sequential non-random order.
 Original Offset: 004E4090
 */
 void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool sea_base) {
-    const int MaxWordsNum = 24;
-    const char* words[MaxWordsNum] = {
-        "Alpha",
-        "Beta",
-        "Gamma",
-        "Delta",
-        "Epsilon",
-        "Zeta",
-        "Eta",
-        "Theta",
-        "Iota",
-        "Kappa",
-        "Lambda",
-        "Mu",
-        "Nu",
-        "Xi",
-        "Omicron",
-        "Pi",
-        "Rho",
-        "Sigma",
-        "Tau",
-        "Upsilon",
-        "Phi",
-        "Chi",
-        "Psi",
-        "Omega"
-    };
     Faction& f = Factions[faction];
     uint32_t offset = f.base_name_offset;
     uint32_t offset_sea = f.base_sea_name_offset;
+    const int buf_size = 1024;
+    char file_name[buf_size];
+    std::set<std::string> all_names;
+    std::vector<std::string> lines;
+    std::vector<std::string> sea_names;
+    std::vector<std::string> land_names;
 
+    for (int i = 0; i < *total_num_bases; i++) {
+        if (Bases[i].faction_id == faction) {
+            all_names.insert(Bases[i].name);
+        }
+    }
     if (sea_base) {
-        std::vector<std::string> sea_names = read_txt_block(
-            MFactions[faction].filename, "#WATERBASES", MaxBaseNameLen);
-        if (sea_names.size() > 0) {
-            if (offset_sea > 0 && offset_sea < sea_names.size()) {
-                uint32_t seed = ((*map_random_seed + faction) & 0xFE) | 1;
-                uint32_t loop = 0;
-                do {
-                    if (seed & 1) {
-                        seed ^= 0x170;
+        sea_names = read_txt_block(MFactions[faction].filename, "#WATERBASES", MaxBaseNameLen);
+        snprintf(file_name, buf_size, "basenames\\%s", MFactions[faction].filename);
+        lines = read_txt_block(file_name, "#WATERBASES", MaxBaseNameLen);
+        for (auto& p : lines) {
+            sea_names.push_back(p);
+        }
+
+        if (sea_names.size() > 0 && offset_sea < sea_names.size()) {
+            for (uint32_t i = 0; i < sea_names.size(); i++) {
+                uint32_t seed = offset_next(faction, offset_sea + i, sea_names.size());
+                if (seed < sea_names.size()) {
+                    std::vector<std::string>::const_iterator it(sea_names.begin());
+                    std::advance(it, seed);
+                    if (!has_item(all_names, it->c_str())) {
+                        strncpy(name, it->c_str(), MaxBaseNameLen);
+                        name[MaxBaseNameLen - 1] = '\0';
+                        if (save_offset) {
+                            f.base_sea_name_offset++;
+                        }
+                        return;
                     }
-                    seed >>= 1;
-                } while (seed >= sea_names.size() || ++loop != offset_sea);
-                offset_sea = seed;
-            }
-            if (offset_sea < sea_names.size()) {
-                std::vector<std::string>::const_iterator it(sea_names.begin());
-                std::advance(it, offset_sea);
-                strncpy(name, it->c_str(), MaxBaseNameLen);
-                name[MaxBaseNameLen - 1] = '\0';
-                if (save_offset) {
-                    f.base_sea_name_offset++;
                 }
-                return;
             }
         }
     }
-    std::vector<std::string> land_names = read_txt_block(
-        MFactions[faction].filename, "#BASES", MaxBaseNameLen);
+    land_names = read_txt_block(MFactions[faction].filename, "#BASES", MaxBaseNameLen);
+    snprintf(file_name, buf_size, "basenames\\%s", MFactions[faction].filename);
+    lines = read_txt_block(file_name, "#BASES", MaxBaseNameLen);
+    for (auto& p : lines) {
+        land_names.push_back(p);
+    }
     if (save_offset) {
         f.base_name_offset++;
     }
-    if (land_names.size() > 0) {
-        if (offset > 0 && offset < land_names.size()) {
-            uint32_t seed = ((*map_random_seed + faction) & 0xFE) | 1;
-            uint32_t loop = 0;
-            do {
-                if (seed & 1) {
-                    seed ^= 0x170;
+    if (land_names.size() > 0 && offset < land_names.size()) {
+        for (uint32_t i = 0; i < land_names.size(); i++) {
+            uint32_t seed = offset_next(faction, offset + i, land_names.size());
+            if (seed < land_names.size()) {
+                std::vector<std::string>::const_iterator it(land_names.begin());
+                std::advance(it, seed);
+                if (!has_item(all_names, it->c_str())) {
+                    strncpy(name, it->c_str(), MaxBaseNameLen);
+                    name[MaxBaseNameLen - 1] = '\0';
+                    return;
                 }
-                seed >>= 1;
-            } while (seed >= land_names.size() || ++loop != offset);
-            offset = seed;
-        }
-        if (offset < land_names.size()) {
-            std::vector<std::string>::const_iterator it(land_names.begin());
-            std::advance(it, offset);
-            strncpy(name, it->c_str(), MaxBaseNameLen);
-            name[MaxBaseNameLen - 1] = '\0';
-            return;
+            }
         }
     }
-    std::set<std::string> all_names;
     for (int i = 0; i < *total_num_bases; i++) {
         all_names.insert(Bases[i].name);
     }
-    int i = 0;
     uint32_t x = 0;
-    uint32_t a = 0;
-    uint32_t b = 0;
+    int32_t a = 0;
+    int32_t b = 0;
 
-    while (i < 1024) {
-        x = pair_hash(faction + 8*f.base_name_offset, *map_random_seed ^ ++i);
-        a = x % MaxWordsNum;
-        b = (x / 256) % MaxWordsNum;
+    land_names = read_txt_block("basenames\\generic", "#BASESA", MaxBaseNameLen);
+    sea_names = read_txt_block("basenames\\generic", "#BASESB", MaxBaseNameLen);
+
+    for (int i = 0; i < 2*MaxBaseNum && land_names.size() > 1; i++) {
+        x = pair_hash(faction + 8*f.base_name_offset, *map_random_seed + i);
+        a = (x & 0xffff) % land_names.size();
         name[0] = '\0';
-        snprintf(name, MaxBaseNameLen, "%s %s Sector", words[a], words[b]);
-        if (a != b && strlen(name) >= 14 && !all_names.count(name)) {
+
+        if (sea_names.size() > 1) {
+            b = ((x >> 16) & 0xffff) % sea_names.size();
+            snprintf(name, MaxBaseNameLen, "%s %s", land_names[a].c_str(), sea_names[b].c_str());
+        } else {
+            b = -1;
+            snprintf(name, MaxBaseNameLen, "%s", land_names[a].c_str());
+        }
+        if (a != b && strlen(name) >= 5 && !all_names.count(name)) {
+            return;
+        }
+    }
+    int i = *total_num_bases;
+    while (i < 2*MaxBaseNum) {
+        i++;
+        name[0] = '\0';
+        snprintf(name, MaxBaseNameLen, "Sector %d", i);
+        if (!all_names.count(name)) {
             return;
         }
     }
