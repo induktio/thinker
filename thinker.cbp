@@ -33,7 +33,7 @@
 				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
 				<Compiler>
-					<Add option="-O2 -fsplit-paths -fno-strict-aliasing -fno-delete-null-pointer-checks" />
+					<Add option="-O2 -fno-common -fno-strict-aliasing -fno-delete-null-pointer-checks" />
 					<Add option="-DBUILD_DLL" />
 				</Compiler>
 				<Linker>
@@ -51,7 +51,7 @@
 				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
 				<Compiler>
-					<Add option="-O2 -fsplit-paths -fno-strict-aliasing -fno-delete-null-pointer-checks" />
+					<Add option="-O2 -fno-common -fno-strict-aliasing -fno-delete-null-pointer-checks" />
 					<Add option="-DBUILD_DLL" />
 					<Add option="-DBUILD_REL" />
 				</Compiler>
@@ -61,7 +61,7 @@
 			</Target>
 		</Build>
 		<Compiler>
-			<Add option="-std=c++11 -pedantic -Wall -Wextra -Wshadow -Wundef -Wuseless-cast -Wpointer-arith -Wfloat-conversion" />
+			<Add option="-std=c++11 -march=i686 -mtune=generic -pedantic -Wall -Wextra -Wshadow -Wundef -Wuseless-cast -Wpointer-arith -Wfloat-conversion" />
 		</Compiler>
 		<Linker>
 			<Add library="user32" />

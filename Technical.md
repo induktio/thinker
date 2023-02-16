@@ -31,6 +31,19 @@ As a general troubleshooting feature, all Thinker builds also include a custom c
 writes output to `debug.txt` in the game folder if the game happens to crash for any reason.
 
 
+Tech tree visualization
+=======================
+As an additional feature, this repository includes a script written in Python 3 that can be used to visualize
+any custom tech trees defined in alphax.txt. Techs are strictly aligned based on their level in the output
+to make it easier to visualize the research order. To use the script, first install dependencies.
+
+    pip install networkx matplotlib
+
+Then plot any possible tech tree defined in alphax.txt to a png file.
+
+    ./tools/techvisual.py -f techs.png /path/to/alphax.txt
+
+
 Compiling Thinker
 =================
 Install dependencies to compile Thinker on Windows using CodeBlocks:
@@ -46,9 +59,9 @@ Another way to build Thinker on Linux platforms is to convert the CodeBlocks pro
 actual Makefiles and then compile them using g++-mingw-w64. A build script that does all these
 steps is provided in `tools/compile` folder.
 
-1. First install dependencies: `apt install build-essential g++-mingw-w64`
+1. First install dependencies: `apt install build-essential g++-mingw-w64-i686`
 2. Clone [cbp2make](https://github.com/dmpas/cbp2make) and compile it from sources.
-3. Install `cbp2make` binary on a location that is included in the PATH variable.
+3. Install `cbp2make` binary on a folder included in the environment PATH.
 4. Build Thinker: `./tools/compile/mingw-compile.sh`
 5. Get compiled binaries from: `build/bin/`
 
