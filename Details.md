@@ -32,7 +32,7 @@ To save the current queue to template, open a base and **right click** on the qu
 
 To ease calculations, base hurry dialog will now display the minimum required hurry cost to complete the item on the next turn. This assumes the mineral surplus does not decrease, so take it into account if adjusting the workers. When entering a partial payment, this minimal amount will be the default choice in the dialog, instead of the full hurry cost like previously.
 
-When a base has been nerve stapled, the remaining turns for the staple effect are shown after the base name separated by a slash in the main base window. This is only shown for player-owned bases. Previously this value was not shown in the user interface.
+When a base has been nerve stapled, the remaining turns for the staple effect are shown near the base resource window. Previously this value was not shown in the user interface.
 
 
 Summary of AI changes

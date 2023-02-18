@@ -1,6 +1,16 @@
 
 # Thinker mod release changelog
 
+## Version 3.4 (2023-02-18)
+* Include hundreds of additional base names for all standard factions. These names are stored in basenames folder.
+* Whenever standard base names for any faction run out, the mod creates more variations from basenames/generic.txt.
+* Disable drone revolt event from player factions since this event did not happen on AI factions (skip_drone_revolts).
+* When moving units into land fungus squares, the movement cost is always limited to full speed of the unit to avoid random waiting (fast_fungus_movement).
+* Nerve staple turns are now displayed on a new location on base resource window.
+* Fix infiltrate option sometimes disappearing from the probe menu when infiltration is not active.
+* Fix issue where world map labels updated one turn too early to indicate an impending drone riot.
+
+
 ## Version 3.3 (2022-12-15)
 * Game will now allow reselecting units that have already skipped their turns if they have full movement points available.
 * Bases that have sufficient drone control facilities before the growth phase can grow without triggering possible drone riots on the same turn.
