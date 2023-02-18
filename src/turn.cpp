@@ -343,8 +343,8 @@ void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool sea_b
         all_names.insert(Bases[i].name);
     }
     uint32_t x = 0;
-    int32_t a = 0;
-    int32_t b = 0;
+    uint32_t a = 0;
+    uint32_t b = 0;
 
     land_names.clear();
     sea_names.clear();

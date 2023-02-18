@@ -673,7 +673,7 @@ bool patch_setup(Config* cf) {
     write_call(0x4E113B, (int)mod_world_build);
     write_call(0x58B9BF, (int)mod_world_build);
     write_call(0x58DDD8, (int)mod_world_build);
-    write_call(0x415C6A, (int)BaseWin_draw_name);
+    write_call(0x40F8F8, (int)Basewin_draw_farm_set_font);
     write_call(0x41B771, (int)BaseWin_action_staple);
     write_call(0x41916B, (int)BaseWin_popup_start);
     write_call(0x4195A6, (int)BaseWin_ask_number);

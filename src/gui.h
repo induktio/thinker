@@ -58,7 +58,7 @@ void __thiscall MapWin_gen_overlays(Console* This, int x, int y);
 int __thiscall BaseWin_popup_start(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
 int __cdecl BaseWin_ask_number(const char* label, int value, int a3);
-void __cdecl BaseWin_draw_name(char* dest, char* name);
+void __thiscall Basewin_draw_farm_set_font(Buffer* This, Font* font, int a3, int a4, int a5);
 void __cdecl BaseWin_action_staple(int base_id);
 int __thiscall ReportWin_close_handler(void* This);
 void __thiscall Console_editor_fungus(Console* UNUSED(This));

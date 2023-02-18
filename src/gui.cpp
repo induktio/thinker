@@ -1025,15 +1025,24 @@ int __cdecl BaseWin_ask_number(const char* label, int value, int a3)
     return pop_ask_number(ScriptFile, label, minimal_cost, a3);
 }
 
-void __cdecl BaseWin_draw_name(char* dest, char* name)
+void __thiscall Basewin_draw_farm_set_font(Buffer* This, Font* font, int a3, int a4, int a5)
 {
-    BASE& base = Bases[*current_base_id];
-    if ((base.faction_id == MapWin->cOwner || *game_state & STATE_OMNISCIENT_VIEW)
-    && base.nerve_staple_turns_left > 0) {
-        snprintf(dest, 256, "%s / %d", name, base.nerve_staple_turns_left);
+    BASE* base = *current_base_ptr;
+    char buf[256] = {};
+    int x = ((int*)BaseWin)[66277] - 2;
+    int y = ((int*)BaseWin)[66274] - 26;
+
+    if (base && x > 0 && y > 0) {
+        if (base->nerve_staple_turns_left > 0) {
+            snprintf(buf, 256, "Nerve staple: %d turns", base->nerve_staple_turns_left);
+            Buffer_set_font(This, font, 0, 0, 0);
+            Buffer_set_text_color(This, 7, 0, 1, 1); // 7 = gray color
+            Buffer_write_right_l2(This, buf, x, y, strlen(buf));
+        }
     } else {
-        snprintf(dest, 256, name);
+        assert(0);
     }
+    Buffer_set_font(This, font, a3, a4, a5);
 }
 
 /*

@@ -167,6 +167,7 @@ FX_pops X_pops                               = (FX_pops               )0x5BF930;
 FBuffer_set_font Buffer_set_font             = (FBuffer_set_font      )0x5DAC70;
 FBuffer_set_text_color Buffer_set_text_color = (FBuffer_set_text_color)0x5DACB0;
 FBuffer_write_cent_l3 Buffer_write_cent_l3   = (FBuffer_write_cent_l3 )0x5DD130;
+FBuffer_write_right_l2 Buffer_write_right_l2 = (FBuffer_write_right_l2)0x5DD3B0;
 tc_4int Buffer_box                           = (tc_4int               )0x5E3203;
 FWin_flip Win_flip                           = (FWin_flip             )0x5EFD20;
 FWinProc WinProc                             = (FWinProc              )0x5F0650;
