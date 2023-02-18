@@ -720,7 +720,7 @@ void move_upkeep(int faction, UpdateMode mode) {
             adjust_value(pm_former, base->x, base->y, 2, base->pop_size);
             pm_safety[base->x][base->y] += 10000;
 
-            if (unit_in_tile(sq) < 0) { // Undefended base
+            if (sq->veh_owner() < 0) { // Undefended base
                 mapnodes.insert({base->x, base->y, NODE_PATROL});
             }
             if (sq->region == p.main_region) {
@@ -2207,11 +2207,7 @@ double battle_priority(int id1, int id2, int dist, int moves, MAP* sq) {
                 if (x2 == veh2->x && y2 == veh2->y) {
                     break;
                 }
-                if (conf.magtube_movement_rate > 0) {
-                    cost += mod_hex_cost(veh1->unit_id, veh1->faction_id, x1, y1, x2, y2, 0);
-                } else {
-                    cost += hex_cost(veh1->unit_id, veh1->faction_id, x1, y1, x2, y2, 0);
-                }
+                cost += mod_hex_cost(veh1->unit_id, veh1->faction_id, x1, y1, x2, y2, 0);
                 x1 = x2;
                 y1 = y2;
             }

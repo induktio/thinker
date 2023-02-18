@@ -149,6 +149,9 @@ struct MAP {
     bool is_base_or_bunker() {
         return items & (BIT_BUNKER | BIT_BASE_IN_TILE);
     }
+    bool is_fungus() {
+        return items & BIT_FUNGUS;
+    }
     int alt_level() {
         return climate >> 5;
     }
@@ -166,6 +169,12 @@ struct MAP {
     }
     bool is_rainy_or_moist() {
         return climate & (TILE_MOIST | TILE_RAINY);
+    }
+    int veh_owner() {
+        if ((val2 & 0xf) == 0xf) {
+            return -1; // No vehicles in this tile
+        }
+        return val2 & 0xf;
     }
 };
 
@@ -481,7 +490,14 @@ struct Faction {
     char old_thinker_flags;
     char old_thinker_tech_id;
     int old_thinker_tech_cost;
-    int padding[8];
+    int unk_111;
+    int unk_112;
+    int unk_113;
+    int unk_114;
+    int unk_115;
+    int unk_116;
+    int unk_117;
+    int unk_118;
 };
 
 struct CRules {

@@ -594,22 +594,6 @@ int cargo_loaded(int veh_id) {
     return n;
 }
 
-bool is_ocean(MAP* sq) {
-    return (!sq || (sq->climate >> 5) < ALT_SHORE_LINE);
-}
-
-bool is_ocean(BASE* base) {
-    return is_ocean(mapsq(base->x, base->y));
-}
-
-bool is_ocean_shelf(MAP* sq) {
-    return (sq && (sq->climate >> 5) == ALT_OCEAN_SHELF);
-}
-
-bool is_shore_level(MAP* sq) {
-    return (sq && (sq->climate >> 5) == ALT_SHORE_LINE);
-}
-
 bool has_transport(int x, int y, int faction) {
     assert(valid_player(faction));
     for (int i = 0; i < *total_num_vehicles; i++) {
@@ -1225,7 +1209,7 @@ MAP* TileSearch::get_next() {
             continue;
         }
         if (first) {
-            faction = unit_in_tile(sq);
+            faction = sq->veh_owner();
             if (faction < 0) {
                 faction = sq->owner;
             }

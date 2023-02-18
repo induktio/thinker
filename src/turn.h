@@ -2,7 +2,8 @@
 
 #include "main.h"
 
-std::vector<std::string> read_txt_block(const char* filename, const char* section, uint32_t max_len);
+void reader_file(vec_str_t& lines, const char* filename, const char* section, uint32_t max_len);
+void reader_path(vec_str_t& lines, const char* filename, const char* section, uint32_t max_len);
 void init_save_game(int faction);
 void __cdecl mod_auto_save();
 int __cdecl mod_turn_upkeep();

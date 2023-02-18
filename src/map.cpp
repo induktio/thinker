@@ -67,11 +67,20 @@ double avg_range(const Points& S, int x, int y) {
     return (n > 0 ? (double)sum/n : 0);
 }
 
-int unit_in_tile(MAP* sq) {
-    if (!sq || (sq->val2 & 0xf) == 0xf) {
-        return -1;
-    }
-    return sq->val2 & 0xf;
+bool is_ocean(MAP* sq) {
+    return (!sq || (sq->climate >> 5) < ALT_SHORE_LINE);
+}
+
+bool is_ocean(BASE* base) {
+    return is_ocean(mapsq(base->x, base->y));
+}
+
+bool is_ocean_shelf(MAP* sq) {
+    return (sq && (sq->climate >> 5) == ALT_OCEAN_SHELF);
+}
+
+bool is_shore_level(MAP* sq) {
+    return (sq && (sq->climate >> 5) == ALT_SHORE_LINE);
 }
 
 int __cdecl region_at(int x, int y) {
@@ -81,6 +90,9 @@ int __cdecl region_at(int x, int y) {
 
 int __cdecl mod_hex_cost(int unit_id, int faction, int x1, int y1, int x2, int y2, int a7) {
     int value = hex_cost(unit_id, faction, x1, y1, x2, y2, a7);
+    if (conf.magtube_movement_rate < 1 && conf.fast_fungus_movement < 1) {
+        return value;
+    }
     MAP* sq_a = mapsq(x1, y1);
     MAP* sq_b = mapsq(x2, y2);
 
@@ -92,6 +104,11 @@ int __cdecl mod_hex_cost(int unit_id, int faction, int x1, int y1, int x2, int y
             } else if (value == 1) { // Moving along a road
                 value = conf.road_movement_rate;
             }
+        }
+    }
+    if (conf.fast_fungus_movement > 0) {
+        if (!is_ocean(sq_b) && sq_b->is_fungus()) {
+            value = min(max(speed_proto(unit_id), Rules->move_rate_roads), value);
         }
     }
     return value;
@@ -307,7 +324,7 @@ void process_map(int faction, int k) {
             if (y < k || y >= *map_axis_y - k || !(sq = mapsq(x, y))) {
                 continue;
             }
-            if (!is_ocean(sq) && !sq->is_rocky() && ~sq->items & BIT_FUNGUS
+            if (!is_ocean(sq) && !sq->is_rocky() && !sq->is_fungus()
             && !(sq->landmarks & ~LM_FRESH) && region_count[sq->region] >= limit) {
                 goodtiles.insert({x, y});
             }

@@ -217,17 +217,14 @@ int __cdecl mod_base_find3(int x, int y, int faction1, int region, int faction2,
     return result;
 }
 
-std::vector<std::string> read_txt_block(const char* filename, const char* section, uint32_t max_len) {
-    std::vector<std::string> lines;
+void reader_path(vec_str_t& lines, const char* filename, const char* section, uint32_t max_len) {
     FILE* file;
     const int buf_size = 1024;
-    char filename_txt[buf_size];
     char line[buf_size];
     bool start = false;
-    snprintf(filename_txt, buf_size, "%s.txt", filename);
-    file = fopen(filename_txt, "r");
+    file = fopen(filename, "r");
     if (!file) {
-        return lines;
+        return;
     }
     while (fgets(line, buf_size, file) != NULL) {
         line[strlen(line) - 1] = '\0';
@@ -235,10 +232,10 @@ std::vector<std::string> read_txt_block(const char* filename, const char* sectio
             start = true;
         } else if (start && line[0] == '#') {
             break;
-        } else if (start) {
+        } else if (start && line[0] != ';') {
             char* p = strstrip(line);
             // Truncate long lines to max_len (including null)
-            if (strlen(p) > 0 && line[0] != ';') {
+            if (strlen(p) > 0 && p[0] != ';') {
                 if (strlen(p) >= max_len) {
                     p[max_len - 1] = '\0';
                 }
@@ -247,7 +244,14 @@ std::vector<std::string> read_txt_block(const char* filename, const char* sectio
         }
     }
     fclose(file);
-    return lines;
+}
+
+void reader_file(vec_str_t& lines, const char* filename, const char* section, uint32_t max_len) {
+    const int buf_size = 1024;
+    char filename_txt[buf_size];
+    snprintf(filename_txt, buf_size, "%s.txt", filename);
+    strlwr(filename_txt);
+    reader_path(lines, filename_txt, section, max_len);
 }
 
 uint32_t offset_next(int32_t faction, uint32_t position, uint32_t amount) {
@@ -269,7 +273,7 @@ uint32_t offset_next(int32_t faction, uint32_t position, uint32_t amount) {
 Generate a base name. Uses additional base names from basenames folder.
 When faction base names are used, creates additional variations from basenames/generic.txt.
 First land/sea base always uses the first available name from land/sea names list.
-Unlike this version, vanilla name_base chooses sea base names in a sequential non-random order.
+Vanilla name_base chooses sea base names in a sequential non-random order (this version is random).
 Original Offset: 004E4090
 */
 void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool sea_base) {
@@ -277,11 +281,15 @@ void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool sea_b
     uint32_t offset = f.base_name_offset;
     uint32_t offset_sea = f.base_sea_name_offset;
     const int buf_size = 1024;
-    char file_name[buf_size];
-    std::set<std::string> all_names;
-    std::vector<std::string> lines;
-    std::vector<std::string> sea_names;
-    std::vector<std::string> land_names;
+    char file_name_1[buf_size];
+    char file_name_2[buf_size];
+    set_str_t all_names;
+    vec_str_t sea_names;
+    vec_str_t land_names;
+    snprintf(file_name_1, buf_size, "%s.txt", MFactions[faction].filename);
+    snprintf(file_name_2, buf_size, "basenames\\%s.txt", MFactions[faction].filename);
+    strlwr(file_name_1);
+    strlwr(file_name_2);
 
     for (int i = 0; i < *total_num_bases; i++) {
         if (Bases[i].faction_id == faction) {
@@ -289,18 +297,14 @@ void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool sea_b
         }
     }
     if (sea_base) {
-        sea_names = read_txt_block(MFactions[faction].filename, "#WATERBASES", MaxBaseNameLen);
-        snprintf(file_name, buf_size, "basenames\\%s", MFactions[faction].filename);
-        lines = read_txt_block(file_name, "#WATERBASES", MaxBaseNameLen);
-        for (auto& p : lines) {
-            sea_names.push_back(p);
-        }
+        reader_path(sea_names, file_name_1, "#WATERBASES", MaxBaseNameLen);
+        reader_path(sea_names, file_name_2, "#WATERBASES", MaxBaseNameLen);
 
         if (sea_names.size() > 0 && offset_sea < sea_names.size()) {
             for (uint32_t i = 0; i < sea_names.size(); i++) {
                 uint32_t seed = offset_next(faction, offset_sea + i, sea_names.size());
                 if (seed < sea_names.size()) {
-                    std::vector<std::string>::const_iterator it(sea_names.begin());
+                    vec_str_t::const_iterator it(sea_names.begin());
                     std::advance(it, seed);
                     if (!has_item(all_names, it->c_str())) {
                         strncpy(name, it->c_str(), MaxBaseNameLen);
@@ -314,12 +318,10 @@ void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool sea_b
             }
         }
     }
-    land_names = read_txt_block(MFactions[faction].filename, "#BASES", MaxBaseNameLen);
-    snprintf(file_name, buf_size, "basenames\\%s", MFactions[faction].filename);
-    lines = read_txt_block(file_name, "#BASES", MaxBaseNameLen);
-    for (auto& p : lines) {
-        land_names.push_back(p);
-    }
+    land_names.clear();
+    reader_path(land_names, file_name_1, "#BASES", MaxBaseNameLen);
+    reader_path(land_names, file_name_2, "#BASES", MaxBaseNameLen);
+
     if (save_offset) {
         f.base_name_offset++;
     }
@@ -327,7 +329,7 @@ void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool sea_b
         for (uint32_t i = 0; i < land_names.size(); i++) {
             uint32_t seed = offset_next(faction, offset + i, land_names.size());
             if (seed < land_names.size()) {
-                std::vector<std::string>::const_iterator it(land_names.begin());
+                vec_str_t::const_iterator it(land_names.begin());
                 std::advance(it, seed);
                 if (!has_item(all_names, it->c_str())) {
                     strncpy(name, it->c_str(), MaxBaseNameLen);
@@ -344,22 +346,23 @@ void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool sea_b
     int32_t a = 0;
     int32_t b = 0;
 
-    land_names = read_txt_block("basenames\\generic", "#BASESA", MaxBaseNameLen);
-    sea_names = read_txt_block("basenames\\generic", "#BASESB", MaxBaseNameLen);
+    land_names.clear();
+    sea_names.clear();
+    reader_path(land_names, "basenames\\generic.txt", "#BASESA", MaxBaseNameLen);
+    reader_path(sea_names, "basenames\\generic.txt", "#BASESB", MaxBaseNameLen);
 
-    for (int i = 0; i < 2*MaxBaseNum && land_names.size() > 1; i++) {
+    for (int i = 0; i < 2*MaxBaseNum && land_names.size() > 0; i++) {
         x = pair_hash(faction + 8*f.base_name_offset, *map_random_seed + i);
-        a = (x & 0xffff) % land_names.size();
+        a = ((x & 0xffff) * land_names.size()) >> 16;
         name[0] = '\0';
 
-        if (sea_names.size() > 1) {
-            b = ((x >> 16) & 0xffff) % sea_names.size();
+        if (sea_names.size() > 0) {
+            b = ((x >> 16) * sea_names.size()) >> 16;
             snprintf(name, MaxBaseNameLen, "%s %s", land_names[a].c_str(), sea_names[b].c_str());
         } else {
-            b = -1;
             snprintf(name, MaxBaseNameLen, "%s", land_names[a].c_str());
         }
-        if (a != b && strlen(name) >= 5 && !all_names.count(name)) {
+        if (strlen(name) >= 5 && !all_names.count(name)) {
             return;
         }
     }

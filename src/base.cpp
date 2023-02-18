@@ -566,7 +566,7 @@ Triad select_colony(int base_id, int pods, bool build_ships) {
     if (is_ocean(base)) {
         for (auto& m : iterate_tiles(base->x, base->y, 1, 9)) {
             if (land && (!m.sq->is_owned() || (m.sq->owner == faction && !random(6)))
-            && (unit_in_tile(m.sq) < 0 || unit_in_tile(m.sq) == faction)) {
+            && (m.sq->veh_owner() < 0 || m.sq->veh_owner() == faction)) {
                 return TRIAD_LAND;
             }
         }

@@ -81,23 +81,23 @@ bool maybe_riot(int base_id) {
     return b->drone_total > b->talent_total;
 }
 
-int __cdecl mod_base_draw(int ptr, int base_id, int x, int y, int zoom, int v1) {
+int __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, int v1) {
     int color = -1;
     int width = 1;
     BASE* b = &Bases[base_id];
-    base_draw(ptr, base_id, x, y, zoom, v1);
+    base_draw((int)buffer, base_id, x, y, zoom, v1);
 
     if (conf.world_map_labels > 0 && zoom >= -8) {
         if (has_facility(base_id, FAC_HEADQUARTERS)) {
             color = 255;
             width = 2;
         }
-        if (b->state_flags & BSTATE_GOLDEN_AGE_ACTIVE) {
-            color = 251;
-        }
         if (has_facility(base_id, FAC_GEOSYNC_SURVEY_POD)
         || has_facility(base_id, FAC_FLECHETTE_DEFENSE_SYS)) {
             color = 254;
+        }
+        if (b->faction_id == MapWin->cOwner && b->state_flags & BSTATE_GOLDEN_AGE_ACTIVE) {
+            color = 251;
         }
         if (b->faction_id == MapWin->cOwner && maybe_riot(base_id)) {
             color = 249;
@@ -113,7 +113,7 @@ int __cdecl mod_base_draw(int ptr, int base_id, int x, int y, int zoom, int v1) 
 
         for (int i = 1; i <= width; i++) {
             RECT rr = {x-i, y-i, x+w+i, y+h+i};
-            Buffer_box((void*)ptr, (int)(&rr), color, color);
+            Buffer_box(buffer, (int)(&rr), color, color);
         }
     }
     return 0;
@@ -710,20 +710,29 @@ bool patch_setup(Config* cf) {
     write_offset(0x649335, (void*)mod_except_handler3);
     write_offset(0x64A3C0, (void*)mod_except_handler3);
     write_offset(0x64D947, (void*)mod_except_handler3);
+    // Magtube and fungus movement speed patches
+    write_call(0x587424, (int)mod_read_basic_rules);
+    write_call(0x467711, (int)mod_hex_cost);
+    write_call(0x572518, (int)mod_hex_cost);
+    write_call(0x5772D7, (int)mod_hex_cost);
+    write_call(0x5776F4, (int)mod_hex_cost);
+    write_call(0x577E2C, (int)mod_hex_cost);
+    write_call(0x577F0E, (int)mod_hex_cost);
+    write_call(0x597695, (int)mod_hex_cost);
+    write_call(0x59ACA4, (int)mod_hex_cost);
+    write_call(0x59B61A, (int)mod_hex_cost);
+    write_call(0x59C105, (int)mod_hex_cost);
 
     if (cf->autosave_interval > 0) {
         write_jump(0x5ABD20, (int)mod_auto_save);
     }
     if (cf->skip_random_factions) {
         const char* filename = (cf->smac_only ? ac_mod_alpha : ac_alpha);
-        std::vector<std::string> lines;
-        cf->faction_file_count = 0;
-        lines = read_txt_block(filename, "#FACTIONS", 100);
-        cf->faction_file_count += lines.size();
-        lines = read_txt_block(filename, "#NEWFACTIONS", 100);
-        cf->faction_file_count += lines.size();
-        lines = read_txt_block(filename, "#CUSTOMFACTIONS", 100);
-        cf->faction_file_count += lines.size();
+        vec_str_t lines;
+        reader_file(lines, filename, "#FACTIONS", 100);
+        reader_file(lines, filename, "#NEWFACTIONS", 100);
+        reader_file(lines, filename, "#CUSTOMFACTIONS", 100);
+        cf->faction_file_count = lines.size();
         debug("faction_file_count: %d\n", cf->faction_file_count);
 
         memset((void*)0x58B63C, 0x90, 10);
@@ -997,6 +1006,11 @@ bool patch_setup(Config* cf) {
         write_call(0x4F7A52, (int)mod_base_growth);
         write_jump(0x4F5E08, (int)mod_drone_riot);
     }
+    if (cf->skip_drone_revolts) {
+        const byte old_bytes[] = {0x0F, 0x8E};
+        const byte new_bytes[] = {0x90, 0xE9};
+        write_bytes(0x4F5663, old_bytes, new_bytes, sizeof(new_bytes));
+    }
     if (cf->counter_espionage) {
         // Check for flag DIPLO_RENEW_INFILTRATOR when choosing the menu entries
         const byte old_bytes[] = {0xF6, 0xC5, 0x10};
@@ -1017,19 +1031,6 @@ bool patch_setup(Config* cf) {
         write_call(0x4CFF47, (int)mod_name_base);
         write_call(0x4E4CFC, (int)mod_name_base);
         write_call(0x4F7E18, (int)mod_name_base);
-    }
-    if (cf->magtube_movement_rate > 0) {
-        write_call(0x587424, (int)mod_read_basic_rules);
-        write_call(0x467711, (int)mod_hex_cost);
-        write_call(0x572518, (int)mod_hex_cost);
-        write_call(0x5772D7, (int)mod_hex_cost);
-        write_call(0x5776F4, (int)mod_hex_cost);
-        write_call(0x577E2C, (int)mod_hex_cost);
-        write_call(0x577F0E, (int)mod_hex_cost);
-        write_call(0x597695, (int)mod_hex_cost);
-        write_call(0x59ACA4, (int)mod_hex_cost);
-        write_call(0x59B61A, (int)mod_hex_cost);
-        write_call(0x59C105, (int)mod_hex_cost);
     }
     if (cf->foreign_treaty_popup) {
         write_call(0x55DC00, (int)mod_NetMsg_pop); // enemies_treaty

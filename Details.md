@@ -302,6 +302,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 26. Patch Energy Market Crash event to reduce energy reserves only by 1/4 instead of 3/4.
 27. Game will now allow reselecting units that have already skipped their turns if they have full movement points available (activate_skipped_units).
 28. Bases that have sufficient drone control facilities before the growth phase can grow without triggering possible drone riots on the same turn (delay_drone_riots).
+29. Disable DRONEREVOLT event which sometimes caused rioting player-owned bases to join other factions while this did not happen on AI factions (skip_drone_revolts).
 
 
 Scient's patch

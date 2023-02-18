@@ -182,9 +182,11 @@ struct Config {
     int tech_cost_factor[MaxDiffNum] = {116,108,100,92,84,76};
     int cheap_early_tech = 1;
     int tech_stagnate_rate = 200;
+    int fast_fungus_movement = 0;
     int magtube_movement_rate = 0;
     int road_movement_rate = 1; // internal variable
     int delay_drone_riots = 0;
+    int skip_drone_revolts = 1; // unlisted option
     int counter_espionage = 0;
     int ignore_reactor_power = 0;
     int early_research_start = 1; // unlisted option
@@ -388,6 +390,8 @@ const T& clamp (const T& value, const T& low, const T& high) {
 typedef std::set<MapNode,NodeComp> NodeSet;
 typedef std::set<Point,PointComp> Points;
 typedef std::list<Point> PointList;
+typedef std::set<std::string> set_str_t;
+typedef std::vector<std::string> vec_str_t;
 
 #include "patch.h"
 #include "path.h"
