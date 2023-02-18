@@ -1,19 +1,19 @@
 #BASES
 Adaptive Hold
-Caretaker Station
 Consonance Core
 Energy Modulation
+Field Awareness
 Greater Symphony
 Harmonic Mantle
 Hymn : Preservation
 Inner Worlds
-M'dar Memory
 Manifold : Echo
 Melody Keeper
 Overtone Nexus
 Phantom Memory
-Resonance : Mind
-Resonant Hold
+Resonance Reach
+Resonant Domain
+Resonant Mind
 Seed of Harmony
 Star Resonance
 Thought : Balance
@@ -40,6 +40,6 @@ Seaside Sonata
 Seaweed Lagoon
 Seaworthy Serenity
 Tidal Basin
-Water's Whisper
-Wavefront
+Water : Whisper
+Wavefront Bay
 #END

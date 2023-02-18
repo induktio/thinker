@@ -1,4 +1,5 @@
 #BASES
+Ancestral Dominion
 Battleground Ascent
 Chaos Citadel
 Conquest : Crusade
@@ -6,9 +7,8 @@ Crimson Peak
 Destiny : Call
 Divinity : Domain
 Eclipse of Fate
-Enduring Legacy
 Final Restitution
-Might's Embrace
+Might : Embrace
 Nemesis Nexus
 Rage's Revelation
 Rebellion's Rising
@@ -25,16 +25,16 @@ Valiant Vanguard
 Barracuda Bay
 Crest of Destiny
 Deepwater Watch
+Enduring Legacy
 Fury's Wake
-Grouper's Grotto
 Horizon : Edge
 Infinite Stronghold
 Kraken's Keep
 Leviathan's Lair
 Marine : Outpost
+Marine : Resonance
 Maritime Citadel
 Nautical Nexus
-Sea Sentinel Station
 Sky's Reflection
 Stormcaller Cove
 The Coral Citadel

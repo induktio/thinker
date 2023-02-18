@@ -1,54 +1,54 @@
 #BASES
+Collective Assembly
 Collective Chamber
 Communal Complex
 Community Core
+Discipline Enclave
 Disciplined Dugout
 Factory Stronghold
-Hivemind Hub
-Industrial Infestation
+Fortress of Loyalty
 Laborer's Labyrinth
 Laborer's Lode
+Loyalty Stronghold
 Manufacturing Maze
-People's Pitstop
+Mental Fortress
 People's Unity
+Proletarian Gathering
 Proletarian Passage
-Proletariat Palisade
 Social Commune
 Social Spire
 Social Substructure
-Society Stronghold
 Society Synthesis
-The Assembly's Abode
 The Collective Core
 The Comrade's Hold
 The Great Coalescence
-The Great Nexus
 The Industry Warren
 The Loyalist's Lair
 The Unifier's Den
-The Worker's Burrow
+Unity Halls
+Willpower Bastion
 Worker's Nexus
-Worker's Warren
+Yang Community
 #END
 
 #WATERBASES
 Aquatic Commune
 Deep Harbor
 Maritime Collective
-Ocean Oasis
+Nautical Assembly
+Ocean Citadel
 Ocean Outpost
 Oceanic Hub
 Port Assembly
 Port Progress
 Sea Convergence
-Sea Station
+Sea Unity
 Seabed Stronghold
-Seafarer's Shelter
-Seafaring Settlement
+Seafaring Collective
+Seafaring Synthesis
+Seafloor Garrison
 The Aquatic Assembly
 The Deep Society
-The Marine Metropolis
-The Oceanic Collective
 The Oceanic Nexus
 The Underwater Union
 Watery Hive

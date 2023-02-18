@@ -18,17 +18,17 @@ Pioneer Park
 Planetarium Base
 Planetary Campus
 Progression Center
-Quantum Lab
+Quantum Institute
 Research Institute
 Saturn Center
 Science Center
 Science Nexus
-Solar Research Station
-Sputnik Base
+Solar Research Lab
 Sputnik Research
 Stellar Archives
 Terra Library
 Vostok Observatory
+Zarya Station
 #END
 
 #WATERBASES
@@ -36,20 +36,20 @@ Aquatic Research Lab
 Aquatic Study Center
 Atlantis Research Lab
 Coastal Ecology Center
-Coastal Research Station
+Coastal Research
 Coral Reef Research
 Deep Blue Research Lab
 Hydro Dynamics Lab
-Hydro Research Facility
-Marine Geology Institute
-Marine Resources Center
-Neptune's Lab
+Hydro Facility
+Marine Geology Lab
+Marine Resources Lab
+Neptune Foundation
 Ocean Control Center
 Oceanic Facility
 Oceanic Institute
+Prichal Research Lab
 Seabed Mapping Facility
 Seafloor Observatory
 Seawater Science Center
-Tidal Research Lab
 Tidal Study Center
 #END

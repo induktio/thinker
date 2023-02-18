@@ -1,5 +1,10 @@
-; Create names by adding together variations from BASESA and BASESB lists.
-; If BASESB is not defined, uses only names from BASESA list.
+; *****************************************
+; *  SMACX Thinker Mod by Induktio        *
+; *  https://github.com/induktio/thinker  *
+; *****************************************
+;
+; Generic names are created by adding together variations from BASESA and BASESB lists.
+; If BASESB is not defined, the game uses only names from BASESA list.
 
 #BASESA
 Bastion

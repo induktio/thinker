@@ -1,4 +1,5 @@
 #BASES
+Morgan Applications
 Morgan Aviation
 Morgan Communications
 Morgan Components
@@ -10,14 +11,13 @@ Morgan Dynamics
 Morgan Finance
 Morgan Foundries
 Morgan Fusion Systems
-Morgan Futuristics
 Morgan Geothermal
-Morgan Heavy Equipment
 Morgan Holdings
 Morgan Innovations
 Morgan Laboratories
 Morgan Legal Services
 Morgan Logistics
+Morgan Machinery
 Morgan Manufacturing
 Morgan Organics
 Morgan Power
