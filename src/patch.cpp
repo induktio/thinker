@@ -872,7 +872,7 @@ bool patch_setup(Config* cf) {
     Patch map window to render more detailed tiles when zoomed out.
     83 7D 10 F8      cmp     [ebp+zoom], 0FFFFFFF8h
     */
-    if (!cf->smooth_scrolling && !pracx) {
+    if (cf->world_high_detail) {
         int locations[] = {
             0x4636AE,
             0x465050,

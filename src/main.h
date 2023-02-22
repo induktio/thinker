@@ -131,6 +131,7 @@ struct Config {
     int smooth_scrolling = 0;
     int scroll_area = 40;
     int world_map_labels = 1;
+    int world_high_detail = 1; // unlisted option
     int warn_on_former_replace = 1;
     int manage_player_bases = 0;
     int manage_player_units = 0;

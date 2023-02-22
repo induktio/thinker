@@ -12,7 +12,6 @@ struct ConsoleState {
     const int ListScrollDelta = 1;
     POINT ScreenSize;
     bool MouseOverTileInfo = true;
-    bool TimersEnabled = false;
     bool Scrolling = false;
     bool RightButtonDown = false;
     bool ScrollDragging = false;
@@ -128,12 +127,24 @@ CMAP_GETCORNERYOFFSET_F        pfncMapGetCornerYOffset =        (CMAP_GETCORNERY
 
 
 bool map_is_visible() {
-    return CState.TimersEnabled
-        && !*GameHalted
+    return !*GameHalted
+        && Win_is_visible(WorldWin)
         && !Win_is_visible(BaseWin)
+        && !Win_is_visible(PlanWin)
+        && !Win_is_visible(FameWin)
+        && !Win_is_visible(MonuWin)
+        && !Win_is_visible(ReportWin)
         && !Win_is_visible(SocialWin)
-        && !Win_is_visible(TutWin)
+        && !Win_is_visible(CouncilWin)
         && !Win_is_visible(DatalinkWin);
+}
+
+bool win_has_focus() {
+    return GetFocus() == *phWnd;
+}
+
+bool alt_key_down() {
+    return GetAsyncKeyState(VK_MENU) < 0;
 }
 
 void mouse_over_tile(POINT* p) {
@@ -514,7 +525,6 @@ int __cdecl mod_blink_timer() {
                     if (*game_preferences & PREF_BSC_MOUSE_EDGE_SCROLL_VIEW || mouse_btn_down || *dword_9B7AE4 != 0) {
                         CState.ScreenSize.x = *screen_width;
                         CState.ScreenSize.y = *screen_height;
-                        CState.TimersEnabled = true;
                         check_scroll();
                     }
                 }
@@ -526,11 +536,10 @@ int __cdecl mod_blink_timer() {
 
 LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     static int iDeltaAccum = 0;
-    bool fHasFocus = (GetFocus() == *phWnd);
     bool tools = DEBUG && !*GameHalted;
     POINT p;
 
-    if (msg == WM_MOUSEWHEEL && fHasFocus) {
+    if (msg == WM_MOUSEWHEEL && win_has_focus()) {
         int iDelta = GET_WHEEL_DELTA_WPARAM(wParam) + iDeltaAccum;
         iDeltaAccum = iDelta % WHEEL_DELTA;
         iDelta /= WHEEL_DELTA;
@@ -554,8 +563,8 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             return 0;
         }
 
-    } else if (msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) {
-        if (!map_is_visible() || !fHasFocus) {
+    } else if (conf.smooth_scrolling && msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) {
+        if (!map_is_visible() || !win_has_focus()) {
             CState.RightButtonDown = false;
             CState.ScrollDragging = false;
             return WinProc(hwnd, msg, wParam, lParam);
@@ -579,6 +588,10 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         } else {
             return WinProc(hwnd, msg, wParam, lParam);
         }
+
+    } else if (conf.smooth_scrolling && msg == WM_CHAR && wParam == 'r' && alt_key_down()) {
+        CState.MouseOverTileInfo = !CState.MouseOverTileInfo;
+
     } else if (msg == WM_ACTIVATEAPP) {
         // If window has just become inactive e.g. ALT+TAB
         if (LOWORD(wParam)) {
@@ -589,13 +602,10 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         }
         return WinProc(hwnd, msg, wParam, lParam);
 
-    } else if (msg == WM_CHAR && wParam == 'r' && GetAsyncKeyState(VK_MENU) < 0) {
-        CState.MouseOverTileInfo = !CState.MouseOverTileInfo;
-
-    } else if (msg == WM_CHAR && wParam == 't' && GetAsyncKeyState(VK_MENU) < 0) {
+    } else if (msg == WM_CHAR && wParam == 't' && alt_key_down()) {
         show_mod_menu();
 
-    } else if (DEBUG && msg == WM_CHAR && wParam == 'd' && GetAsyncKeyState(VK_MENU) < 0) {
+    } else if (DEBUG && msg == WM_CHAR && wParam == 'd' && alt_key_down()) {
         conf.debug_mode = !conf.debug_mode;
         if (conf.debug_mode) {
             for (int i = 1; i < MaxPlayerNum; i++) {
@@ -621,14 +631,14 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             popp("modmenu", "GENERIC", 0, 0, 0);
         }
 
-    } else if (DEBUG && msg == WM_CHAR && wParam == 'm' && GetAsyncKeyState(VK_MENU) < 0) {
+    } else if (DEBUG && msg == WM_CHAR && wParam == 'm' && alt_key_down()) {
         conf.debug_verbose = !conf.debug_verbose;
         parse_says(0, MOD_VERSION, -1, -1);
         parse_says(1, (conf.debug_verbose ?
             "Verbose mode enabled." : "Verbose mode disabled."), -1, -1);
         popp("modmenu", "GENERIC", 0, 0, 0);
 
-    } else if (tools && msg == WM_CHAR && wParam == 'y' && GetAsyncKeyState(VK_MENU) < 0) {
+    } else if (tools && msg == WM_CHAR && wParam == 'y' && alt_key_down()) {
         static int draw_diplo = 0;
         draw_diplo = !draw_diplo;
         if (draw_diplo) {
@@ -640,7 +650,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         MapWin_draw_map(MapWin, 0);
         InvalidateRect(hwnd, NULL, false);
 
-    } else if (tools && msg == WM_CHAR && wParam == 'v' && GetAsyncKeyState(VK_MENU) < 0) {
+    } else if (tools && msg == WM_CHAR && wParam == 'v' && alt_key_down()) {
         MapWin->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
         memset(pm_overlay, 0, sizeof(pm_overlay));
         static int ts_type = 0;
@@ -655,7 +665,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         MapWin_draw_map(MapWin, 0);
         InvalidateRect(hwnd, NULL, false);
 
-    } else if (tools && msg == WM_CHAR && wParam == 'f' && GetAsyncKeyState(VK_MENU) < 0) {
+    } else if (tools && msg == WM_CHAR && wParam == 'f' && alt_key_down()) {
         MapWin->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
         memset(pm_overlay, 0, sizeof(pm_overlay));
         MAP* sq = mapsq(MapWin->oMap.iTileX, MapWin->oMap.iTileY);
@@ -665,7 +675,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             InvalidateRect(hwnd, NULL, false);
         }
 
-    } else if (tools && msg == WM_CHAR && wParam == 'x' && GetAsyncKeyState(VK_MENU) < 0) {
+    } else if (tools && msg == WM_CHAR && wParam == 'x' && alt_key_down()) {
         MapWin->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
         static int px = 0, py = 0;
         int x = MapWin->oMap.iTileX, y = MapWin->oMap.iTileY;
@@ -676,7 +686,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         MapWin_draw_map(MapWin, 0);
         InvalidateRect(hwnd, NULL, false);
 
-    } else if (tools && msg == WM_CHAR && wParam == 'z' && GetAsyncKeyState(VK_MENU) < 0) {
+    } else if (tools && msg == WM_CHAR && wParam == 'z' && alt_key_down()) {
         int x = MapWin->oMap.iTileX, y = MapWin->oMap.iTileY;
         int base_id;
         if ((base_id = base_at(x, y)) >= 0) {

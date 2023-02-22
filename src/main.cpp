@@ -44,6 +44,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->scroll_area = max(0, atoi(value));
     } else if (MATCH("thinker", "world_map_labels")) {
         cf->world_map_labels = atoi(value);
+    } else if (MATCH("thinker", "world_high_detail")) {
+        cf->world_high_detail = atoi(value);
     } else if (MATCH("thinker", "manage_player_bases")) {
         cf->manage_player_bases = atoi(value);
     } else if (MATCH("thinker", "manage_player_units")) {
