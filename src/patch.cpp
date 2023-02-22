@@ -552,7 +552,8 @@ or a near call with absolute indirect address (FF 25) before patching.
 */
 void write_jump(int addr, int func) {
     if ((*(uint32_t*)addr & 0xFFFFFF) != 0xEC8B55 && *(uint16_t*)addr != 0x25FF
-    && *(uint16_t*)(addr-1) != 0xA190 && *(uint8_t*)(addr) != 0xE9) {
+    && *(uint16_t*)(addr-1) != 0xA190 && *(uint8_t*)(addr) != 0xE9
+    && *(uint16_t*)(addr) != 0x90C3 && *(uint16_t*)addr != 0xC18B) { // FileBox exceptions
         exit_fail(addr);
     }
     *(byte*)addr = 0xE9;
@@ -695,6 +696,8 @@ bool patch_setup(Config* cf) {
     write_jump(0x626250, (int)log_say2);
     write_jump(0x6263F0, (int)log_say_hex);
     write_jump(0x626350, (int)log_say_hex2);
+    write_jump(0x634BE0, (int)FileBox_init);
+    write_jump(0x634C20, (int)FileBox_close);
     write_offset(0x50F421, (void*)mod_turn_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);
     write_offset(0x64576E, (void*)mod_except_handler3);

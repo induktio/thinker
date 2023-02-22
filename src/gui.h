@@ -43,7 +43,6 @@ enum {
     DiploCounterGiveBase = 8, // turn over one of my bases
 };
 
-
 ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass);
 int WINAPI ModGetSystemMetrics(int nIndex);
 int show_mod_menu();
@@ -54,6 +53,8 @@ int __cdecl mod_blink_timer();
 void __cdecl mod_turn_timer();
 int __thiscall mod_calc_dim(Console* This);
 int __thiscall mod_gen_map(Console* This, int iOwner, int fUnitsOnly);
+void __thiscall FileBox_init(void* This);
+void __thiscall FileBox_close(void* This);
 void __thiscall MapWin_gen_overlays(Console* This, int x, int y);
 int __thiscall BaseWin_popup_start(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
@@ -69,7 +70,6 @@ int __thiscall mod_NetMsg_pop(void* This, char* label, int delay, int a4, void* 
 int __cdecl mod_base_swap(int faction1, int faction2);
 int __cdecl mod_energy_trade(int faction1, int faction2);
 int __cdecl mod_buy_tech(int faction1, int faction2, int counter_id, bool high_price, int proposal_id);
-
 
 
 

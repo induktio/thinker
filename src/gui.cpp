@@ -6,6 +6,8 @@
 const int ConsoleHeight = 219;
 const int ConsoleWidth = 1024;
 
+static bool FileboxVisible = false;
+
 struct ConsoleState {
     const int ScrollMin = 1;
     const int ScrollMax = 20;
@@ -126,8 +128,32 @@ CMAP_GETCORNERYOFFSET_F        pfncMapGetCornerYOffset =        (CMAP_GETCORNERY
 // End of PRACX definitions
 
 
+void __thiscall FileBox_init(void* This) {
+    FileboxVisible = true;
+    int32_t* pa = (int32_t*)This;
+    int8_t* pb = (int8_t*)This;
+    int8_t* pc = pb + 780;
+    *(pa + 260) = (int32_t)pc;
+    *pa = 0;
+    *pb = 0;
+    pb[260] = 0;
+    pb[520] = 0;
+    pb[781] = 0;
+    pb[1044] = 0;
+    pb[1048] = 0;
+}
+
+void __thiscall FileBox_close(void* UNUSED(This)) {
+    FileboxVisible = false;
+}
+
+/*
+Returns true only when the world map is visible and has focus
+and other large modal windows are not blocking it.
+*/
 bool map_is_visible() {
     return !*GameHalted
+        && !FileboxVisible
         && Win_is_visible(WorldWin)
         && !Win_is_visible(BaseWin)
         && !Win_is_visible(PlanWin)

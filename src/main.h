@@ -28,12 +28,15 @@
     #define MOD_DATE __DATE__ " " __TIME__
     #define DEBUG 1
     #define debug(...) fprintf(debug_log, __VA_ARGS__);
+    #define debugf(...) { fprintf(debug_log, __VA_ARGS__); \
+        fflush(debug_log); }
     #define flushlog() fflush(debug_log);
 #else
     #define MOD_DATE __DATE__
     #define DEBUG 0
     #define NDEBUG /* Disable assertions */
     #define debug(...) /* Nothing */
+    #define debugf(...) /* Nothing */
     #define flushlog()
     #ifdef __GNUC__
     #pragma GCC diagnostic ignored "-Wunused-variable"
