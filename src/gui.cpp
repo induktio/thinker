@@ -126,10 +126,18 @@ CMAP_GETCORNERYOFFSET_F        pfncMapGetCornerYOffset =        (CMAP_GETCORNERY
 
 // End of PRACX definitions
 
-
+// True if the main game map view is probably visible, false if it is obscured
+// by some kinds of windows (not all). This function will return true even when
+// there is some kind of foreground UI element (e.g. the monuments screen,
+// workshop, etc). This isn't great, but also isn't that bad.
+//
+// PRACX does a little better here by detecting when the blink timer
+// (CState.TimersEnabled) is started and stopped because that timer is stopped
+// when the workshop and some other windows are open. At present, Thinker only
+// detects the timer being turned on, not turned off and only if PRACX is not
+// running (otherwise the patches would interfere).
 bool map_is_visible() {
-    return CState.TimersEnabled
-        && !*GameHalted
+    return !*GameHalted
         && !Win_is_visible(BaseWin)
         && !Win_is_visible(SocialWin)
         && !Win_is_visible(TutWin)
@@ -553,8 +561,8 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             }
             return 0;
         }
-
-    } else if (msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) {
+    // If smooth scrolling is on, handle mouse movements for edge and drag scrolling of the map
+    } else if (conf.smooth_scrolling && msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) {
         if (!map_is_visible() || !fHasFocus) {
             CState.RightButtonDown = false;
             CState.ScrollDragging = false;
