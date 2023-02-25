@@ -21,7 +21,6 @@ const char* landmark_params[] = {
 };
 
 static bool delay_base_riot = false;
-static bool pracx_loaded = false;
 
 
 bool FileExists(const char* path) {
@@ -431,7 +430,7 @@ int WINAPI ModGetSystemMetrics(int nIndex) {
 }
 
 ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass) {
-    if (pracx_loaded) {
+    if (conf.reduced_mode) {
         WinProc = (FWinProc)pstWndClass->lpfnWndProc;
     }
     pstWndClass->lpfnWndProc = ModWinProc;
@@ -510,9 +509,9 @@ bool patch_setup(Config* cf) {
     DWORD attrs;
     DWORD oldattrs;
     int lm = ~cf->landmarks;
-    pracx_loaded = strcmp((const char*)0x668165, "prax") == 0;
+    cf->reduced_mode = strcmp((const char*)0x668165, "prax") == 0;
 
-    if (cf->smooth_scrolling && pracx_loaded) {
+    if (cf->smooth_scrolling && cf->reduced_mode) {
         MessageBoxA(0, "Smooth scrolling feature will be disabled while PRACX is also running.",
             MOD_VERSION, MB_OK | MB_ICONWARNING);
         cf->smooth_scrolling = 0;
@@ -523,7 +522,7 @@ bool patch_setup(Config* cf) {
     *(int*)RegisterClassImport = (int)ModRegisterClassA;
     *(int*)GetPrivateProfileStringAImport = (int)ModGetPrivateProfileStringA;
 
-    if (cf->windowed && !pracx_loaded) {
+    if (cf->windowed && !cf->reduced_mode) {
         *(int*)GetSystemMetricsImport = (int)ModGetSystemMetrics;
     }
     if (cf->cpu_idle_fix) {

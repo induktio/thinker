@@ -633,7 +633,10 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         }
         return WinProc(hwnd, msg, wParam, lParam);
 
-    } else if (msg == WM_CHAR && wParam == 't' && alt_key_down()) {
+    } else if (msg == WM_CHAR && wParam == 't' && alt_key_down() && !conf.reduced_mode) {
+        show_mod_menu();
+
+    } else if (msg == WM_CHAR && wParam == 'h' && alt_key_down() && conf.reduced_mode) {
         show_mod_menu();
 
     } else if (DEBUG && msg == WM_CHAR && wParam == 'd' && alt_key_down()) {

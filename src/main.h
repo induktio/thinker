@@ -234,6 +234,7 @@ struct Config {
     int minimal_popups = 0; // unlisted option
     int skip_random_factions = 0; // internal variable
     int faction_file_count = 14; // internal variable
+    int reduced_mode = 0; // internal variable
     int debug_mode = DEBUG; // internal variable
     int debug_verbose = DEBUG; // internal variable
 };
