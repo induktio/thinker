@@ -81,6 +81,37 @@ void __cdecl base_first(int base_id) {
     }
 }
 
+int clean_minerals_value(int base_id) {
+    Faction& f = Factions[Bases[base_id].faction_id];
+    return max(0, conf.clean_minerals + f.clean_minerals_modifier - 5*f.major_atrocities);
+}
+
+int sat_output(int satellites, int pop_size, bool full_value) {
+    if (full_value) {
+        return max(0, min(pop_size, satellites));
+    }
+    return max(0, min(pop_size, (satellites + 1) / 2));
+}
+
+/*
+Calculate satellite bonuses and return true if any satellite is active.
+*/
+bool satellite_bonus(int base_id, int* nutrient, int* mineral, int* energy) {
+    BASE& base = Bases[base_id];
+    Faction& f = Factions[base.faction_id];
+
+    if (f.satellites_nutrient > 0 || f.satellites_mineral > 0 || f.satellites_mineral > 0) {
+        bool full_value = has_facility(base_id, FAC_AEROSPACE_COMPLEX)
+            || has_project(base.faction_id, FAC_SPACE_ELEVATOR);
+
+        *nutrient += sat_output(f.satellites_nutrient, base.pop_size, full_value);
+        *mineral += sat_output(f.satellites_mineral, base.pop_size, full_value);
+        *energy += sat_output(f.satellites_energy, base.pop_size, full_value);
+        return true;
+    }
+    return f.satellites_ODP > 0;
+}
+
 int consider_staple(int base_id) {
     BASE* b = &Bases[base_id];
     Faction* f = &Factions[b->faction_id];
@@ -245,16 +276,21 @@ int consider_hurry() {
     if (t < 0 && turns > 1 && cost < f->energy_credits/8) {
         if (t == -FAC_RECYCLING_TANKS || t == -FAC_PRESSURE_DOME
         || t == -FAC_RECREATION_COMMONS || t == -FAC_TREE_FARM
-        || t == -FAC_PUNISHMENT_SPHERE || t == -FAC_HEADQUARTERS)
+        || t == -FAC_PUNISHMENT_SPHERE || t == -FAC_HEADQUARTERS) {
             return hurry_item(b, mins, cost);
-        if (t == -FAC_CHILDREN_CRECHE && unused_space(base_id) > 2)
+        }
+        if (t == -FAC_CHILDREN_CRECHE && unused_space(base_id) > 2) {
             return hurry_item(b, mins, cost);
-        if (t == -FAC_HAB_COMPLEX && unused_space(base_id) == 0)
+        }
+        if (t == -FAC_HAB_COMPLEX && unused_space(base_id) == 0) {
             return hurry_item(b, mins, cost);
-        if (t == -FAC_PERIMETER_DEFENSE && b->defend_goal > 2 && p->enemy_factions > 0)
+        }
+        if (t == -FAC_PERIMETER_DEFENSE && b->defend_goal > 2 && p->enemy_factions > 0) {
             return hurry_item(b, mins, cost);
-        if (t == -FAC_AEROSPACE_COMPLEX && has_tech(b->faction_id, TECH_Orbital))
+        }
+        if (t == -FAC_AEROSPACE_COMPLEX && has_tech(b->faction_id, TECH_Orbital)) {
             return hurry_item(b, mins, cost);
+        }
     }
     if (t >= 0 && turns > 1 && cost < f->energy_credits/4) {
         if (Units[t].is_combat_unit()) {

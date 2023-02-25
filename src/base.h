@@ -17,3 +17,5 @@ int select_production(int base_id);
 int project_score(int faction, int proj, bool shuffle);
 int find_proto(int base_id, Triad triad, VehWeaponMode mode, bool defend);
 int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships);
+int clean_minerals_value(int base_id);
+bool satellite_bonus(int base_id, int* nutrient, int* mineral, int* energy);

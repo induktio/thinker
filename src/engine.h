@@ -136,6 +136,7 @@ extern int* ControlRedraw;
 extern int* ControlUpkeepA;
 extern int* WorldAddTemperature;
 extern int* WorldSkipTerritory;
+extern int* popup_dialog_visible;
 
 // TODO: rename dwords
 extern int* dword_9B7AE4;

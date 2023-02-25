@@ -2,6 +2,13 @@
 #include "gui.h"
 
 
+const int* color_nutrient = (int*)0x8C6CC4;
+const int* color_mineral = (int*)0x8C6CD4;
+const int* color_energy = (int*)0x8C6CB4;
+const int* color_nutrient_light = (int*)0x8C6CCC;
+const int* color_mineral_light = (int*)0x8C6CDC;
+const int* color_energy_light = (int*)0x8C6D5C;
+
 static int minimal_cost = 0;
 static bool filebox_visible = false;
 
@@ -26,13 +33,13 @@ converted to the actual names reversed from the SMACX binary (add F prefix for f
 */
 
 typedef int(__stdcall *START_F)(HINSTANCE, HINSTANCE, LPSTR, int);
-typedef int(__thiscall *CCANVAS_CREATE_F)(Buffer* pthis);
+typedef int(__thiscall *CCANVAS_CREATE_F)(Buffer* This);
 typedef int(__stdcall *WNDPROC_F)(HWND, int, WPARAM, LPARAM);
-typedef int(__thiscall *CMAIN_ZOOMPROCESSING_F)(Console* pthis);
+typedef int(__thiscall *CMAIN_ZOOMPROCESSING_F)(Console* This);
 typedef int(__stdcall *PROC_ZOOM_KEY_F)(int iZoomType, int iZero);
-typedef int(__thiscall *CMAIN_TILETOPT_F)(Console* pthis, int iTileX, int iTileY, long* piX, long* piY);
-typedef int(__thiscall *CMAIN_MOVEMAP_F)(Console *pthis, int iXPos, int iYPos, int a4);
-typedef int(__thiscall *CMAIN_REDRAWMAP_F)(Console *pthis, int a2);
+typedef int(__thiscall *CMAIN_TILETOPT_F)(Console* This, int iTileX, int iTileY, long* piX, long* piY);
+typedef int(__thiscall *CMAIN_MOVEMAP_F)(Console* This, int iXPos, int iYPos, int a4);
+typedef int(__thiscall *CMAIN_REDRAWMAP_F)(Console* This, int a2);
 typedef int(__thiscall *CMAIN_DRAWMAP_F)(Console* This, int iOwner, int fUnitsOnly);
 typedef int(__thiscall *CMAIN_PTTOTILE_F)(Console* This, POINT p, long* piTileX, long* piTileY);
 typedef int(__thiscall *CINFOWIN_DRAWTILEINFO_F)(CInfoWin* This);
@@ -150,7 +157,8 @@ and other large modal windows are not blocking it.
 */
 bool map_is_visible() {
     return !*GameHalted
-        && !filebox_visible
+        && !*popup_dialog_visible // Most popup dialogs including scrollable lists
+        && !filebox_visible // Game save/load dialog
         && Win_is_visible(WorldWin)
         && !Win_is_visible(BaseWin)
         && !Win_is_visible(PlanWin)
@@ -1053,18 +1061,40 @@ void __thiscall Basewin_draw_farm_set_font(Buffer* This, Font* font, int a3, int
     int y1 = ((int*)BaseWin)[66276];
     int x2 = ((int*)BaseWin)[66277];
     int y2 = ((int*)BaseWin)[66278];
+    int N = 0;
+    int M = 0;
+    int E = 0;
+    Buffer_set_font(This, font, a3, a4, a5);
 
-    if (base_id >= 0 && x1 > 0 && y1 > 0 && x2 > 0 && y2 > 0) {
+    if (base_id < 0 || x1 < 0 || y1 < 0 || x2 < 0 || y2 < 0) {
+        assert(0);
+    } else if (conf.render_base_info) {
+        int clean_mins = clean_minerals_value(base_id);
         if (base->nerve_staple_turns_left > 0) {
             snprintf(buf, 256, "Nerve staple: %d turns", base->nerve_staple_turns_left);
-            Buffer_set_font(This, font, 0, 0, 0);
-            Buffer_set_text_color(This, 7, 0, 1, 1); // 7 = gray color
+            Buffer_set_text_color(This, *color_energy, 0, 1, 1);
             Buffer_write_right_l2(This, buf, x2 - 2, y2 - 35, 50);
         }
-    } else {
-        assert(0);
+        if (satellite_bonus(base_id, &N, &M, &E)) {
+            snprintf(buf, 256, "N +%d", N);
+            Buffer_set_text_color(This, *color_nutrient, 0, 1, 1);
+            Buffer_write_l(This, buf, x1 + 4, y2 - 35 - 28, 50);
+            snprintf(buf, 256, "M +%d", M);
+            Buffer_set_text_color(This, *color_mineral, 0, 1, 1);
+            Buffer_write_l(This, buf, x1 + 4, y2 - 35 - 14, 50);
+            snprintf(buf, 256, "E +%d", E);
+            Buffer_set_text_color(This, *color_energy, 0, 1, 1);
+            Buffer_write_l(This, buf, x1 + 4, y2 - 35     , 50);
+        }
+        if (base->mineral_intake_2 >= clean_mins || base->eco_damage > 0) {
+            snprintf(buf, 256, "CM: %d", clean_mins);
+            Buffer_set_text_color(This, *color_mineral, 0, 1, 1);
+            Buffer_write_right_l2(
+              This, buf, x2 - 2,
+              y2 - 35 - (base->nerve_staple_turns_left > 0 ? 14 : 0),
+              50);
+        }
     }
-    Buffer_set_font(This, font, a3, a4, a5);
 }
 
 /*
