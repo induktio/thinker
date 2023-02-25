@@ -20,10 +20,8 @@ const char* landmark_params[] = {
     "borehole", "nexus", "unity", "fossil"
 };
 
-typedef int(__cdecl *Fexcept_handler3)(EXCEPTION_RECORD*, PVOID, CONTEXT*);
-Fexcept_handler3 _except_handler3 = (Fexcept_handler3)0x646DF8;
-
 static bool delay_base_riot = false;
+static bool pracx_loaded = false;
 
 
 bool FileExists(const char* path) {
@@ -65,7 +63,7 @@ void __cdecl mod_drone_riot() {
 
 /*
 Check if the base might riot on the next turn, usually after a population increase.
-Used only for world_map_labels feature.
+Used only for rendering additional details on base labels.
 */
 bool maybe_riot(int base_id) {
     BASE* b = &Bases[base_id];
@@ -87,7 +85,7 @@ int __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, i
     BASE* b = &Bases[base_id];
     base_draw((int)buffer, base_id, x, y, zoom, v1);
 
-    if (conf.world_map_labels > 0 && zoom >= -8) {
+    if (conf.render_base_info > 0 && zoom >= -8) {
         if (has_facility(base_id, FAC_HEADQUARTERS)) {
             color = 255;
             width = 2;
@@ -113,7 +111,7 @@ int __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, i
 
         for (int i = 1; i <= width; i++) {
             RECT rr = {x-i, y-i, x+w+i, y+h+i};
-            Buffer_box(buffer, (int)(&rr), color, color);
+            Buffer_box(buffer, &rr, color, color);
         }
     }
     return 0;
@@ -415,6 +413,31 @@ LPCSTR lpDefault, LPSTR lpReturnedString, DWORD nSize, LPCSTR lpFileName)
         lpDefault, lpReturnedString, nSize, lpFileName);
 }
 
+/*
+Override Windows API call to give fake screensize values to SMACX while in windowed mode.
+When DirectDraw=0 is set, this allows us to force SMACX run in a borderless window, enabling
+very fast rendering and full user access to the other windows.
+*/
+int WINAPI ModGetSystemMetrics(int nIndex) {
+    if (conf.windowed) {
+        if (nIndex == SM_CXSCREEN) {
+            return conf.window_width;
+        }
+        if (nIndex == SM_CYSCREEN) {
+            return conf.window_height;
+        }
+    }
+    return GetSystemMetrics(nIndex);
+}
+
+ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass) {
+    if (pracx_loaded) {
+        WinProc = (FWinProc)pstWndClass->lpfnWndProc;
+    }
+    pstWndClass->lpfnWndProc = ModWinProc;
+    return RegisterClassA(pstWndClass);
+}
+
 void exit_fail(int addr) {
     char buf[512];
     snprintf(buf, sizeof(buf),
@@ -425,107 +448,8 @@ void exit_fail(int addr) {
 }
 
 /*
-Replace the default C++ exception handler in SMACX binary with a custom version.
-This allows us to get more information about crash locations.
-https://en.wikipedia.org/wiki/Microsoft-specific_exception_handling_mechanisms
-*/
-int __cdecl mod_except_handler3(EXCEPTION_RECORD *rec, PVOID *frame, CONTEXT *ctx)
-{
-    if (!debug_log && !(debug_log = fopen("debug.txt", "w"))) {
-        return _except_handler3(rec, frame, ctx);
-    }
-    time_t rawtime = time(&rawtime);
-    struct tm *now = localtime(&rawtime);
-    char datetime[70];
-    char savepath[512];
-    char filepath[512];
-    strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", now);
-    strncpy(savepath, LastSavePath, sizeof(savepath));
-    savepath[200] = '\0';
-    HANDLE hProcess = GetCurrentProcess();
-    int ret = GetMappedFileNameA(hProcess, (LPVOID)ctx->Eip, filepath, sizeof(filepath));
-    filepath[200] = '\0';
-
-    fprintf(debug_log,
-        "************************************************************\n"
-        "ModVersion %s (%s)\n"
-        "CrashTime  %s\n"
-        "SavedGame  %s\n"
-        "ModuleName %s\n"
-        "************************************************************\n"
-        "ExceptionCode    %08x\n"
-        "ExceptionFlags   %08x\n"
-        "ExceptionRecord  %08x\n"
-        "ExceptionAddress %08x\n",
-        MOD_VERSION,
-        MOD_DATE,
-        datetime,
-        savepath,
-        (ret != 0 ? filepath : ""),
-        (int)rec->ExceptionCode,
-        (int)rec->ExceptionFlags,
-        (int)rec->ExceptionRecord,
-        (int)rec->ExceptionAddress);
-
-     fprintf(debug_log,
-        "CFlags %08lx\n"
-        "EFlags %08lx\n"
-        "EAX %08lx\n"
-        "EBX %08lx\n"
-        "ECX %08lx\n"
-        "EDX %08lx\n"
-        "ESI %08lx\n"
-        "EDI %08lx\n"
-        "EBP %08lx\n"
-        "ESP %08lx\n"
-        "EIP %08lx\n",
-        ctx->ContextFlags, ctx->EFlags,
-        ctx->Eax, ctx->Ebx, ctx->Ecx, ctx->Edx,
-        ctx->Esi, ctx->Edi, ctx->Ebp, ctx->Esp, ctx->Eip);
-
-    int32_t* p = (int32_t*)&conf;
-    for (int32_t i = 0; i < (int32_t)sizeof(conf)/4; i++) {
-        fprintf(debug_log, "Config %d: %d\n", i, p[i]);
-    }
-
-    fflush(debug_log);
-    return _except_handler3(rec, frame, ctx);
-}
-
-/*
-Original (legacy) game engine logging functions.
-*/
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
-void __cdecl log_say(const char* a1, int a2, int a3, int a4) {
-    if (conf.debug_verbose) {
-        debug("**** %s %d %d %d\n", a1, a2, a3, a4);
-    }
-}
-
-void __cdecl log_say2(const char* a1, const char* a2, int a3, int a4, int a5) {
-    if (conf.debug_verbose) {
-        debug("**** %s %s %d %d %d\n", a1, a2, a3, a4, a5);
-    }
-}
-
-void __cdecl log_say_hex(const char* a1, int a2, int a3, int a4) {
-    if (conf.debug_verbose) {
-        debug("**** %s %04x %04x %04x\n", a1, a2, a3, a4);
-    }
-}
-
-void __cdecl log_say_hex2(const char* a1, const char* a2, int a3, int a4, int a5) {
-    if (conf.debug_verbose) {
-        debug("**** %s %s %04x %04x %04x\n", a1, a2, a3, a4, a5);
-    }
-}
-#pragma GCC diagnostic pop
-
-/*
 Replaces old byte sequence with a new byte sequence at address.
-Verifies that address contains old values before replacing.
+Checks that the address contains old values before replacing.
 If new_bytes is a null pointer, replace old_bytes with NOP code instead.
 */
 void write_bytes(int addr, const byte* old_bytes, const byte* new_bytes, int len) {
@@ -547,8 +471,9 @@ void write_bytes(int addr, const byte* old_bytes, const byte* new_bytes, int len
 }
 
 /*
-Verify that the location contains a standard function prologue (55 8B EC)
-or a near call with absolute indirect address (FF 25) before patching.
+Check before patching that the locations contain expected data.
+Standard function prologue (55 8B EC).
+Near call with absolute indirect address (FF 25).
 */
 void write_jump(int addr, int func) {
     if ((*(uint32_t*)addr & 0xFFFFFF) != 0xEC8B55 && *(uint16_t*)addr != 0x25FF
@@ -585,9 +510,9 @@ bool patch_setup(Config* cf) {
     DWORD attrs;
     DWORD oldattrs;
     int lm = ~cf->landmarks;
-    bool pracx = strcmp((const char*)0x668165, "prax") == 0;
+    pracx_loaded = strcmp((const char*)0x668165, "prax") == 0;
 
-    if (cf->smooth_scrolling && pracx) {
+    if (cf->smooth_scrolling && pracx_loaded) {
         MessageBoxA(0, "Smooth scrolling feature will be disabled while PRACX is also running.",
             MOD_VERSION, MB_OK | MB_ICONWARNING);
         cf->smooth_scrolling = 0;
@@ -598,7 +523,7 @@ bool patch_setup(Config* cf) {
     *(int*)RegisterClassImport = (int)ModRegisterClassA;
     *(int*)GetPrivateProfileStringAImport = (int)ModGetPrivateProfileStringA;
 
-    if (cf->windowed && !pracx) {
+    if (cf->windowed && !pracx_loaded) {
         *(int*)GetSystemMetricsImport = (int)ModGetSystemMetrics;
     }
     if (cf->cpu_idle_fix) {
@@ -760,6 +685,9 @@ bool patch_setup(Config* cf) {
         *(int32_t*)0x45F9EF = cf->window_width;
         *(int32_t*)0x45F9F4 = cf->window_height;
     }
+    if (cf->editor_free_units) {
+        write_call(0x4DF19B, (int)mod_veh_init); // Console_editor_veh
+    }
     if (DEBUG) {
         if (cf->minimal_popups) {
             remove_call(0x4E5F96); // #BEGINPROJECT
@@ -767,7 +695,6 @@ bool patch_setup(Config* cf) {
             remove_call(0x4F4817); // #DONEPROJECT
             remove_call(0x4F2A4C); // #PRODUCE (project/satellite)
         }
-        write_call(0x4DF19B, (int)mod_veh_init); // Console_editor_veh
     }
     /*
     Provide better defaults for multiplayer settings.
@@ -875,7 +802,7 @@ bool patch_setup(Config* cf) {
     Patch map window to render more detailed tiles when zoomed out.
     83 7D 10 F8      cmp     [ebp+zoom], 0FFFFFFF8h
     */
-    if (cf->world_high_detail) {
+    if (cf->render_high_detail) {
         int locations[] = {
             0x4636AE,
             0x465050,

@@ -3,6 +3,9 @@
 #include "main.h"
 
 const int StrBufLen = 256;
+// Bottom middle UI console size in pixels
+const int ConsoleHeight = 219;
+const int ConsoleWidth = 1024;
 
 enum {
     PopDialogCheckbox = 0x1, // Multiple choices
@@ -43,8 +46,7 @@ enum {
     DiploCounterGiveBase = 8, // turn over one of my bases
 };
 
-ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass);
-int WINAPI ModGetSystemMetrics(int nIndex);
+LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 int show_mod_menu();
 int __cdecl X_pop2(const char* label, int a2);
 int __cdecl X_pop7(const char* label, int a2, int a3);

@@ -11,8 +11,6 @@ Thinker does not have any special save game format, so it's possible to open an 
 
 Note that in `thinker.ini` config file, for binary settings **only zero values are treated as disabled**, any non-zero value usually enables the option. Whenever Thinker options are changed in the GUI, they are also saved to `thinker.ini` in the game folder.
 
-For testing purposes it is also possible to run old/new AIs side-by-side by setting `factions_enabled=3` or similar. In that case, only the factions in the first 3 slots will use Thinker AI if they are not player-controlled. By default, `factions_enabled=7` setting enables Thinker AI for all computer factions. Regardless of which AI is enabled, all of them should receive the same production bonuses that are set in the config file.
-
 
 User interface additions
 ========================
@@ -20,7 +18,7 @@ Thinker's in-game menu can be opened by pressing `ALT+T`. It shows the mod versi
 
 Statistics feature calculates mineral and energy production numbers after multiplier facility effects are applied. However the mineral output bonus provided by Space Elevator is ignored in this step. Energy calculation also does not substract inefficiency from the final number.
 
-World map labels feature draws colored labels around various bases to identify them more easily. HQ bases are highlighted with a white label. Bases in golden age are highlighted with a yellow label. Bases that have Flechette Defense System or Geo Survey Pods are highlighted with a blue label.
+Render base info feature draws colored labels around various bases to identify them more easily and shows more details on the base resource window. HQ bases are highlighted with a white label. Bases in golden age are highlighted with a yellow label. Bases that have Flechette Defense System or Geo Survey Pods are highlighted with a blue label.
 
 If a base might riot on the next turn due to population increase or already has too many drones, it will be highlighted with a red label. This is not always entirely accurate due to the complexity of psych calculations.
 
@@ -53,7 +51,9 @@ Base hurry feature is able to use AI energy reserves to occasionally hurry base 
 
 Social AI feature will decide the social engineering models the AI factions will choose. It will attempt to take into account the various cumulative/non-linear effects of the society models and any bonuses provided by the secret projects. The AI is now capable of pop-booming if enough growth is attainable, and it will also try to avoid pacifist drones by switching out of SE models with too many police penalties. All the SE model effects are moddable because the AI is not hardcoded in any particular choices. This feature is also capable of managing all the custom factions.
 
-Tech balance will assign extra importance on some specific techs when selecting what to research: requirements for formers, crawlers, recycling tanks, children's creches, and the 3 technologies to allow the production of more than 2 resources per square. If these items don't have any requirements, or the techs are not available to research, the tech progression is unaffacted by this feature. It will also not affect player faction research in any way.
+Tech balance feature will prioritize certain important techs for the AIs when choosing what to research, such as the requirements for formers, crawlers, recycling tanks, children's creches, and the 3 technologies to allow the production of more than 2 resources per square. If these techs are not available for research, the tech progression is unaffacted by this feature. It will also not affect player faction research in any way.
+
+For testing purposes it is also possible to run old/new AIs side-by-side. For example `factions_enabled=3` makes only the factions in the first 3 slots to use Thinker AI if they are not player-controlled. By default `factions_enabled=7` setting enables Thinker AI for all computer factions. Regardless of which AI is enabled, all of them should receive the same production bonuses that are set in the config file.
 
 
 Diplomacy changes
@@ -248,9 +248,8 @@ If any issues are encountered, first check if they occur with the vanilla game a
 
 * Smooth scrolling config option.
 * Windowed mode config option.
-* Map rendering patch that draws more detailed tiles when zoomed out.
 
-Scient's patch is already included in the Thinker binary and does not need any additional installation steps from the user. In any case, it is possible to install modified txt files provided by Scient's patch. Yitzi's patch or any other mod that uses a custom patched game binary is NOT supported while running Thinker. Note also that Yitzi's patch uses an incompatible version of alphax.txt that can't be used by the vanilla game binary or Thinker.
+Scient's patch is already included in the Thinker binary and does not need any additional installation steps from the user. Optionally it is possible to install the modified txt files provided by Scient's patch. Any other mod that uses a custom patched binary not listed here is not supported while running Thinker. Using any other binaries may prevent the game from starting if any of  Thinker's startup checks fail because of an incompatible version.
 
 
 Features not supported
@@ -303,6 +302,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 27. Game will now allow reselecting units that have already skipped their turns if they have full movement points available (activate_skipped_units).
 28. Bases that have sufficient drone control facilities before the growth phase can grow without triggering possible drone riots on the same turn (delay_drone_riots).
 29. Disable DRONEREVOLT event which sometimes caused rioting player-owned bases to join other factions while this did not happen on AI factions (skip_drone_revolts).
+30. Whenever additional units are added in the editor mode, these are set as independent units requiring no support by default (editor_free_units).
 
 
 Scient's patch

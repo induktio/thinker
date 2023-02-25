@@ -748,7 +748,9 @@ void __cdecl world_generate(uint32_t seed) {
     seed, *MapSizePlanet, *map_axis_x, *map_axis_y, *MapOceanCoverage,
     *MapErosiveForces, *MapCloudCover, conf.world_sea_levels[*MapOceanCoverage], level_mod);
 
-    world_polar_caps();
+    if (conf.world_polar_caps) {
+        world_polar_caps();
+    }
     world_linearize_contours();
     world_shorelines();
     world_validate(); // Run Path::continents

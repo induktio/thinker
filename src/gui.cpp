@@ -2,11 +2,8 @@
 #include "gui.h"
 
 
-// Size in pixels of the bottom middle UI console
-const int ConsoleHeight = 219;
-const int ConsoleWidth = 1024;
-
-static bool FileboxVisible = false;
+static int minimal_cost = 0;
+static bool filebox_visible = false;
 
 struct ConsoleState {
     const int ScrollMin = 1;
@@ -129,7 +126,7 @@ CMAP_GETCORNERYOFFSET_F        pfncMapGetCornerYOffset =        (CMAP_GETCORNERY
 
 
 void __thiscall FileBox_init(void* This) {
-    FileboxVisible = true;
+    filebox_visible = true;
     int32_t* pa = (int32_t*)This;
     int8_t* pb = (int8_t*)This;
     int8_t* pc = pb + 780;
@@ -144,7 +141,7 @@ void __thiscall FileBox_init(void* This) {
 }
 
 void __thiscall FileBox_close(void* UNUSED(This)) {
-    FileboxVisible = false;
+    filebox_visible = false;
 }
 
 /*
@@ -153,7 +150,7 @@ and other large modal windows are not blocking it.
 */
 bool map_is_visible() {
     return !*GameHalted
-        && !FileboxVisible
+        && !filebox_visible
         && Win_is_visible(WorldWin)
         && !Win_is_visible(BaseWin)
         && !Win_is_visible(PlanWin)
@@ -816,28 +813,6 @@ void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
     }
 }
 
-/*
-Override Windows API call to give fake screensize values to SMACX while in windowed mode.
-When DirectDraw=0 is set, this allows us to force SMACX run in a borderless window, enabling
-very fast rendering and full user access to the other windows.
-*/
-int WINAPI ModGetSystemMetrics(int nIndex) {
-    if (conf.windowed) {
-        if (nIndex == SM_CXSCREEN) {
-            return conf.window_width;
-        }
-        if (nIndex == SM_CYSCREEN) {
-            return conf.window_height;
-        }
-    }
-    return GetSystemMetrics(nIndex);
-}
-
-ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass) {
-    pstWndClass->lpfnWndProc = ModWinProc;
-    return RegisterClassA(pstWndClass);
-}
-
 void __cdecl mod_turn_timer() {
     // Timer calls function every 500ms
     static uint32_t iter = 0;
@@ -947,20 +922,22 @@ int show_mod_config() {
         MapGen = 1,
         MapContinents = 2,
         MapLandmarks = 4,
-        MapMirrorX = 8,
-        MapMirrorY = 16,
-        MapLabels = 32,
-        AutoBases = 64,
-        AutoUnits = 128,
-        FormerReplace = 256,
+        MapPolarCaps = 8,
+        MapMirrorX = 16,
+        MapMirrorY = 32,
+        MapBaseInfo = 64,
+        AutoBases = 128,
+        AutoUnits = 256,
+        FormerReplace = 512,
     };
     *DialogChoices = 0
         | (conf.new_world_builder ? MapGen : 0)
         | (conf.world_continents ? MapContinents : 0)
         | (conf.modified_landmarks ? MapLandmarks : 0)
-        | (conf.world_map_labels ? MapLabels : 0)
+        | (conf.world_polar_caps ? MapPolarCaps: 0)
         | (conf.map_mirror_x ? MapMirrorX : 0)
         | (conf.map_mirror_y ? MapMirrorY : 0)
+        | (conf.render_base_info ? MapBaseInfo : 0)
         | (conf.manage_player_bases ? AutoBases : 0)
         | (conf.manage_player_units ? AutoUnits : 0)
         | (conf.warn_on_former_replace ? FormerReplace : 0);
@@ -974,13 +951,17 @@ int show_mod_config() {
     WritePrivateProfileStringA(ModAppName, "new_world_builder",
         (conf.new_world_builder ? "1" : "0"), GameIniFile);
 
+    conf.modified_landmarks = !!(value & MapLandmarks);
+    WritePrivateProfileStringA(ModAppName, "modified_landmarks",
+        (conf.modified_landmarks ? "1" : "0"), GameIniFile);
+
     conf.world_continents = !!(value & MapContinents);
     WritePrivateProfileStringA(ModAppName, "world_continents",
         (conf.world_continents ? "1" : "0"), GameIniFile);
 
-    conf.modified_landmarks = !!(value & MapLandmarks);
-    WritePrivateProfileStringA(ModAppName, "modified_landmarks",
-        (conf.modified_landmarks ? "1" : "0"), GameIniFile);
+    conf.world_polar_caps = !!(value & MapPolarCaps);
+    WritePrivateProfileStringA(ModAppName, "world_polar_caps",
+        (conf.world_polar_caps ? "1" : "0"), GameIniFile);
 
     conf.map_mirror_x = !!(value & MapMirrorX);
     WritePrivateProfileStringA(ModAppName, "map_mirror_x",
@@ -990,9 +971,9 @@ int show_mod_config() {
     WritePrivateProfileStringA(ModAppName, "map_mirror_y",
         (conf.map_mirror_y ? "1" : "0"), GameIniFile);
 
-    conf.world_map_labels = !!(value & MapLabels);
-    WritePrivateProfileStringA(ModAppName, "world_map_labels",
-        (conf.world_map_labels ? "1" : "0"), GameIniFile);
+    conf.render_base_info = !!(value & MapBaseInfo);
+    WritePrivateProfileStringA(ModAppName, "render_base_info",
+        (conf.render_base_info ? "1" : "0"), GameIniFile);
 
     conf.manage_player_bases = !!(value & AutoBases);
     WritePrivateProfileStringA(ModAppName, "manage_player_bases",
@@ -1018,9 +999,12 @@ int show_mod_menu() {
     if (*GameHalted) {
         int ret = popp("modmenu", "MAINMENU", 0, "stars_sm.pcx", 0);
         if (ret == 1) {
+            show_mod_config();
+        }
+        else if (ret == 2) {
             popup_homepage();
         }
-        return 0;
+        return 0; // Close dialog
     }
     uint64_t seconds = ThinkerVars->game_time_spent / 1000;
     ParseNumTable[0] = seconds / 3600;
@@ -1028,19 +1012,17 @@ int show_mod_menu() {
     ParseNumTable[2] = seconds % 60;
     int ret = popp("modmenu", "GAMEMENU", 0, "stars_sm.pcx", 0);
 
-    if (ret == 1 && !*GameHalted && !*pbem_active && !*multiplayer_active) {
+    if (ret == 1 && !*pbem_active && !*multiplayer_active) {
         show_mod_stats();
     }
-    else if (ret == 2 && !*GameHalted) {
+    else if (ret == 2) {
         show_mod_config();
     }
     else if (ret == 3) {
         popup_homepage();
     }
-    return 0;
+    return 0; // Close dialog
 }
-
-static int minimal_cost = 0;
 
 int __thiscall BaseWin_popup_start(Win* This,
 const char* UNUSED(filename), const char* UNUSED(label), int a4, int a5, int a6, int a7)
@@ -1063,17 +1045,21 @@ int __cdecl BaseWin_ask_number(const char* label, int value, int a3)
 
 void __thiscall Basewin_draw_farm_set_font(Buffer* This, Font* font, int a3, int a4, int a5)
 {
-    BASE* base = *current_base_ptr;
+    int base_id = *current_base_id;
+    BASE* base = &Bases[base_id];
     char buf[256] = {};
-    int x = ((int*)BaseWin)[66277] - 2;
-    int y = ((int*)BaseWin)[66274] - 26;
+    // Base resource window coordinates including button row
+    int x1 = ((int*)BaseWin)[66275];
+    int y1 = ((int*)BaseWin)[66276];
+    int x2 = ((int*)BaseWin)[66277];
+    int y2 = ((int*)BaseWin)[66278];
 
-    if (base && x > 0 && y > 0) {
+    if (base_id >= 0 && x1 > 0 && y1 > 0 && x2 > 0 && y2 > 0) {
         if (base->nerve_staple_turns_left > 0) {
             snprintf(buf, 256, "Nerve staple: %d turns", base->nerve_staple_turns_left);
             Buffer_set_font(This, font, 0, 0, 0);
             Buffer_set_text_color(This, 7, 0, 1, 1); // 7 = gray color
-            Buffer_write_right_l2(This, buf, x, y, strlen(buf));
+            Buffer_write_right_l2(This, buf, x2 - 2, y2 - 35, 50);
         }
     } else {
         assert(0);
@@ -1091,7 +1077,7 @@ void __cdecl BaseWin_action_staple(int base_id) {
 }
 
 /*
-This is called when ReportWin is closing and it is to refresh world_map_labels
+This is called when ReportWin is closing and is used to refresh base labels
 on any bases where workers have been adjusted from the base list window.
 */
 int __thiscall ReportWin_close_handler(void* This) {

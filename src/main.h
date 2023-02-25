@@ -133,13 +133,14 @@ struct Config {
     int autosave_interval = 1;
     int smooth_scrolling = 0;
     int scroll_area = 40;
-    int world_map_labels = 1;
-    int world_high_detail = 1; // unlisted option
+    int render_base_info = 1;
+    int render_high_detail = 1; // unlisted option
     int warn_on_former_replace = 1;
     int manage_player_bases = 0;
     int manage_player_units = 0;
     int render_probe_labels = 1;
     int foreign_treaty_popup = 0;
+    int editor_free_units = 1;
     int new_base_names = 0;
     int windowed = 0;
     int window_width = 1024;
@@ -174,6 +175,7 @@ struct Config {
     int world_ocean_mod = 40;
     int world_islands_mod = 16;
     int world_continents = 0;
+    int world_polar_caps = 1;
     int modified_landmarks = 0;
     int map_mirror_x = 0;
     int map_mirror_y = 0;
@@ -409,6 +411,7 @@ typedef std::vector<std::string> vec_str_t;
 #include "tech.h"
 #include "turn.h"
 #include "test.h"
+#include "debug.h"
 
 extern FILE* debug_log;
 extern Config conf;

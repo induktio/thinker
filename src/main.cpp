@@ -42,10 +42,10 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->smooth_scrolling = atoi(value);
     } else if (MATCH("thinker", "scroll_area")) {
         cf->scroll_area = max(0, atoi(value));
-    } else if (MATCH("thinker", "world_map_labels")) {
-        cf->world_map_labels = atoi(value);
-    } else if (MATCH("thinker", "world_high_detail")) {
-        cf->world_high_detail = atoi(value);
+    } else if (MATCH("thinker", "render_base_info")) {
+        cf->render_base_info = atoi(value);
+    } else if (MATCH("thinker", "render_high_detail")) {
+        cf->render_high_detail = atoi(value);
     } else if (MATCH("thinker", "manage_player_bases")) {
         cf->manage_player_bases = atoi(value);
     } else if (MATCH("thinker", "manage_player_units")) {
@@ -56,6 +56,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->render_probe_labels = atoi(value);
     } else if (MATCH("thinker", "foreign_treaty_popup")) {
         cf->foreign_treaty_popup = atoi(value);
+    } else if (MATCH("thinker", "editor_free_units")) {
+        cf->editor_free_units = atoi(value);
     } else if (MATCH("thinker", "new_base_names")) {
         cf->new_base_names = atoi(value);
     } else if (MATCH("thinker", "windowed")) {
@@ -108,6 +110,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->new_world_builder = atoi(value);
     } else if (MATCH("thinker", "world_continents")) {
         cf->world_continents = atoi(value);
+    } else if (MATCH("thinker", "world_polar_caps")) {
+        cf->world_polar_caps = atoi(value);
     } else if (MATCH("thinker", "world_hills_mod")) {
         cf->world_hills_mod = clamp(atoi(value), 0, 100);
     } else if (MATCH("thinker", "world_ocean_mod")) {
