@@ -1,6 +1,6 @@
---- Makefile_exe.orig	2021-12-15 01:11:16.902662069 +0100
-+++ Makefile_exe	2021-12-15 01:13:00.400756592 +0100
-@@ -5,18 +5,20 @@
+--- Makefile_exe.orig	2023-02-27 04:23:51.539011248 +0100
++++ Makefile_exe	2023-02-27 04:14:27.980155222 +0100
+@@ -5,18 +5,19 @@
  
  WORKDIR = `pwd`
  
@@ -8,9 +8,8 @@
 -CXX = g++
 -AR = ar
 -LD = g++
--WINDRES = 
+-WINDRES = windres
 +COMPILER_PREFIX = i686-w64-mingw32-
-+
 +CC = $(COMPILER_PREFIX)gcc
 +CXX = $(COMPILER_PREFIX)g++
 +AR = $(COMPILER_PREFIX)ar
@@ -27,7 +26,7 @@
  
  INC_DEBUG = $(INC)
  CFLAGS_DEBUG = $(CFLAGS) -g -Og -DBUILD_DEBUG
-@@ -27,7 +29,7 @@
+@@ -27,7 +28,7 @@
  LDFLAGS_DEBUG = $(LDFLAGS)
  OBJDIR_DEBUG = build/obj/debug
  DEP_DEBUG = 
@@ -36,7 +35,7 @@
  
  INC_RELEASE = $(INC)
  CFLAGS_RELEASE = $(CFLAGS) -O2 -flto -fno-rtti -fno-strict-aliasing -fno-delete-null-pointer-checks -DBUILD_REL
-@@ -38,11 +40,13 @@
+@@ -38,11 +39,13 @@
  LDFLAGS_RELEASE = $(LDFLAGS) -s -static
  OBJDIR_RELEASE = build/obj/release
  DEP_RELEASE = 
@@ -53,7 +52,7 @@
  
  all: before_build build_debug build_release after_build
  
-@@ -51,7 +55,6 @@
+@@ -51,7 +54,6 @@
  before_build: 
  
  after_build: 
@@ -61,7 +60,7 @@
  
  before_debug: 
  	test -d build/bin/debug || mkdir -p build/bin/debug
-@@ -63,12 +66,14 @@
+@@ -63,12 +65,14 @@
  
  debug: before_build build_debug after_build
  
@@ -72,14 +71,14 @@
  
  $(OBJDIR_DEBUG)/src/launch.o: src/launch.cpp src/launch.rc
  	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/launch.cpp -o $(OBJDIR_DEBUG)/src/launch.o
--	gcc -x c -c -o $(OBJDIR_DEBUG)/src/launch.o /dev/null
+-	$(CPP) -i src/launch.rc -J rc -o $(OBJDIR_DEBUG)/src/launch.o -O coff $(INC_DEBUG)
 +
 +$(OBJDIR_DEBUG)/src/launch.res: src/launch.rc
 +	$(WINDRES) src/launch.rc -O coff -o $(OBJDIR_DEBUG)/src/launch.res
  
  clean_debug: 
  	rm -f $(OBJ_DEBUG) $(OUT_DEBUG)
-@@ -85,12 +90,14 @@
+@@ -85,12 +89,14 @@
  
  release: before_build build_release after_build
  
@@ -90,7 +89,7 @@
  
  $(OBJDIR_RELEASE)/src/launch.o: src/launch.cpp src/launch.rc
  	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/launch.cpp -o $(OBJDIR_RELEASE)/src/launch.o
--	gcc -x c -c -o $(OBJDIR_RELEASE)/src/launch.o /dev/null
+-	$(CPP) -i src/launch.rc -J rc -o $(OBJDIR_RELEASE)/src/launch.o -O coff $(INC_RELEASE)
 +
 +$(OBJDIR_RELEASE)/src/launch.res: src/launch.rc
 +	$(WINDRES) src/launch.rc -O coff -o $(OBJDIR_RELEASE)/src/launch.res
