@@ -306,11 +306,6 @@ void set_base_facility(int base_id, int facility_id, bool add) {
     }
 }
 
-int clean_minerals_value(int base_id) {
-    Faction& f = Factions[Bases[base_id].faction_id];
-    return max(0, conf.clean_minerals + f.clean_minerals_modifier - 5*f.major_atrocities);
-}
-
 int sat_output(int satellites, int pop_size, bool full_value) {
     if (full_value) {
         return max(0, min(pop_size, satellites));

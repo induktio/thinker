@@ -39,7 +39,7 @@ void reader_file(vec_str_t& lines, const char* filename, const char* section, si
     reader_path(lines, filename_txt, section, max_len);
 }
 
-char* parse_str(char* buf, int len, const char* s1, const char* s2, const char* s3, const char* s4) {
+char* parse_str(char* buf, size_t len, const char* s1, const char* s2, const char* s3, const char* s4) {
     buf[0] = '\0';
     strncat(buf, s1, len);
     if (s2) {
@@ -55,7 +55,7 @@ char* parse_str(char* buf, int len, const char* s1, const char* s2, const char* 
         strncat(buf, s4, len);
     }
     // strlen count does not include the first null character.
-    if (strlen(buf) > 0 && strlen(buf) < (size_t)len) {
+    if (strlen(buf) > 0 && strlen(buf) < len) {
         return buf;
     }
     return NULL;

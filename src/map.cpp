@@ -181,7 +181,7 @@ int __cdecl mod_goody_at(int x, int y) {
 }
 
 /*
-This version adds support for modified territory borders only on water bases.
+This version adds support for modified territory borders (earlier bases claim tiles first).
 */
 int __cdecl mod_base_find3(int x, int y, int faction1, int region, int faction2, int faction3) {
     int dist = 9999;
@@ -577,16 +577,6 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
     flushlog();
 }
 
-
-float map_fractal(FastNoiseLite& noise, int x, int y) {
-    float val = 1.0f * noise.GetNoise(2.0f*x, 1.5f*y)
-        + 0.4f * (2 + *MapErosiveForces) * noise.GetNoise(-6.0f*x, -4.0f*y);
-    if (x < 8 && *map_axis_x >= 32 && !(*map_toggle_flat & 1)) {
-        val = x/8.0f * val + (1.0f - x/8.0f) * map_fractal(noise, *map_axis_x + x, y);
-    }
-    return val;
-}
-
 void __cdecl mod_world_monsoon() {
     typedef struct {
         uint8_t valid;
@@ -664,6 +654,15 @@ void __cdecl mod_world_monsoon() {
     delete[] tiles;
 }
 
+float world_fractal(FastNoiseLite& noise, int x, int y) {
+    float val = 1.0f * noise.GetNoise(3.0f*x, 2.0f*y)
+        + 0.3f * (2 + *MapErosiveForces) * noise.GetNoise(-6.0f*x, -4.0f*y);
+    if (x < 8 && *map_axis_x >= 32 && !map_is_flat()) {
+        val = x/8.0f * val + (1.0f - x/8.0f) * world_fractal(noise, *map_axis_x + x, y);
+    }
+    return val;
+}
+
 void __cdecl mod_world_build() {
     static uint32_t seed = random_state();
     if (!conf.new_world_builder) {
@@ -702,8 +701,8 @@ void __cdecl world_generate(uint32_t seed) {
     noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     noise.SetSeed(seed);
     random_reseed(seed);
-    my_srand(seed); // For game engine rand function
-    *map_random_seed = (seed % 0x7fff) + 1; // Must be non-zero
+    my_srand(seed ^ 0xffff); // For game engine rand function, terrain detail placement
+    *map_random_seed = ((seed) % 0x7fff) + 1; // Must be non-zero, supply pod placement
 
     Points conts;
     uint32_t continents = clamp(*map_area_sq_root / 12, 4, 20);
@@ -711,10 +710,10 @@ void __cdecl world_generate(uint32_t seed) {
     int x = 0, y = 0, i = 0;
 
     if (conf.world_continents && *map_axis_y >= 32) {
-        while (++i < 100 && conts.size() < continents) {
+        while (++i <= 200 && conts.size() < continents) {
             y = (random(*map_axis_y - 16) + 8);
             x = (random(*map_axis_x) &~1) + (y&1);
-            if (i & 1 && min_vector(conts, x, y) < *map_area_sq_root/5) {
+            if (i & 1 && min_vector(conts, x, y) <= *map_area_sq_root/6) {
                 conts.insert({x, y});
             }
             if (~i & 1 && min_vector(conts, x, y) >= *map_area_sq_root/3) {
@@ -734,7 +733,7 @@ void __cdecl world_generate(uint32_t seed) {
 
         for (x = y&1; x < *map_axis_x; x+=2) {
             float Wcont = 1.5f - clamp(min_vector(conts, x, y) * Wdist, 0.75f, 1.5f);
-            float value = map_fractal(noise, x, y) + Wmid - 0.5f*Wcaps;
+            float value = world_fractal(noise, x, y) + Wmid - 0.5f*Wcaps;
             if (value > 0) {
                 value = value * Wland;
             } else {

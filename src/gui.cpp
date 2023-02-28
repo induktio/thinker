@@ -1041,10 +1041,17 @@ void __thiscall Basewin_draw_farm_set_font(Buffer* This, Font* font, int a3, int
     if (base_id < 0 || x1 < 0 || y1 < 0 || x2 < 0 || y2 < 0) {
         assert(0);
     } else if (conf.render_base_info) {
-        int clean_mins = clean_minerals_value(base_id);
         if (base->nerve_staple_turns_left > 0) {
-            snprintf(buf, 256, "Nerve staple: %d turns", base->nerve_staple_turns_left);
+            // Nerve Staple: N turns
+            snprintf(buf, 256, "%s: %d %s",
+                (*TextLabels)[662], base->nerve_staple_turns_left, (*TextLabels)[49]);
             Buffer_set_text_color(This, *color_energy, 0, 1, 1);
+            Buffer_write_right_l2(This, buf, x2 - 2, y2 - 35, 50);
+        }
+        else if (base_can_riot(base_id, false) && base->talent_total < base->drone_total) {
+            // DRONE RIOTS
+            snprintf(buf, 256, "%s", (*TextLabels)[705]);
+            Buffer_set_text_color(This, *color_inefficiency, 0, 1, 1);
             Buffer_write_right_l2(This, buf, x2 - 2, y2 - 35, 50);
         }
         if (satellite_bonus(base_id, &N, &M, &E)) {
@@ -1058,22 +1065,28 @@ void __thiscall Basewin_draw_farm_set_font(Buffer* This, Font* font, int a3, int
             Buffer_set_text_color(This, *color_energy, 0, 1, 1);
             Buffer_write_l(This, buf, x1 + 4, y2 - 35     , 50);
         }
-        if (base->mineral_intake_2 >= clean_mins || base->eco_damage > 0) {
-            snprintf(buf, 256, "CM: %d", clean_mins);
-            Buffer_set_text_color(This, *color_mineral, 0, 1, 1);
-            Buffer_write_right_l2(
-              This, buf, x2 - 2,
-              y2 - 35 - (base->nerve_staple_turns_left > 0 ? 14 : 0),
-              50);
-        }
     }
 }
 
-void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, int v1) {
+void __cdecl BaseWin_draw_psych_strcat(char* buffer, char* source)
+{
+    if (!strcmp(source, (*TextLabels)[970]) && *current_base_id >= 0) {
+        int turns = Bases[*current_base_id].assimilation_turns_left;
+        if (turns > 0) {
+            // Captured Base: N turns
+            snprintf(buffer, StrBufLen, "%s: %d %s", source, turns, (*TextLabels)[49]);
+            return;
+        }
+    }
+    snprintf(buffer, StrBufLen, "%s", source);
+}
+
+void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, int a6)
+{
     int color = -1;
     int width = 1;
     BASE* b = &Bases[base_id];
-    base_draw((int)buffer, base_id, x, y, zoom, v1);
+    base_draw((int)buffer, base_id, x, y, zoom, a6);
 
     if (conf.render_base_info > 0 && zoom >= -8) {
         if (has_facility(base_id, FAC_HEADQUARTERS)) {
@@ -1104,7 +1117,6 @@ void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, 
             Buffer_box(buffer, &rr, color, color);
         }
     }
-    return;
 }
 
 /*
