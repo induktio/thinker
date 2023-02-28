@@ -81,6 +81,231 @@ void __cdecl base_first(int base_id) {
     }
 }
 
+char* prod_name(int item_id) {
+    if (item_id >= 0) {
+        return Units[item_id].name;
+    } else {
+        return Facility[-item_id].name;
+    }
+}
+
+int prod_turns(int base_id, int item_id) {
+    BASE* b = &Bases[base_id];
+    assert(base_id >= 0 && base_id < *total_num_bases);
+    int minerals = max(0, mineral_cost(base_id, item_id) - b->minerals_accumulated);
+    int surplus = max(1, 10 * b->mineral_surplus);
+    return 10 * minerals / surplus + ((10 * minerals) % surplus != 0);
+}
+
+int mineral_cost(int base_id, int item_id) {
+    assert(base_id >= 0 && base_id < *total_num_bases);
+    // Take possible prototype costs into account in veh_cost
+    if (item_id >= 0) {
+        return veh_cost(item_id, base_id, 0) * cost_factor(Bases[base_id].faction_id, 1, -1);
+    } else {
+        return Facility[-item_id].cost * cost_factor(Bases[base_id].faction_id, 1, -1);
+    }
+}
+
+int hurry_cost(int base_id, int item_id, int hurry_mins) {
+    BASE* b = &Bases[base_id];
+    MFaction* m = &MFactions[b->faction_id];
+    assert(base_id >= 0 && base_id < *total_num_bases);
+
+    bool cheap = conf.simple_hurry_cost || b->minerals_accumulated >= Rules->retool_exemption;
+    int project_factor = (item_id > -SP_ID_First ? 1 :
+        2 * (b->minerals_accumulated < 4*cost_factor(b->faction_id, 1, -1) ? 2 : 1));
+    int mins = max(0, mineral_cost(base_id, item_id) - b->minerals_accumulated);
+    int cost = (item_id < 0 ? 2*mins : mins*mins/20 + 2*mins)
+        * project_factor
+        * (cheap ? 1 : 2)
+        * (has_project(-1, FAC_VOICE_OF_PLANET) ? 2 : 1)
+        * m->rule_hurry / 100;
+    if (hurry_mins > 0 && mins > 0) {
+        return hurry_mins * cost / mins + (((hurry_mins * cost) % mins) != 0);
+    }
+    return 0;
+}
+
+int unused_space(int base_id) {
+    BASE* base = &Bases[base_id];
+    int limit_mod = (has_project(base->faction_id, FAC_ASCETIC_VIRTUES) ? 2 : 0)
+        - MFactions[base->faction_id].rule_population;
+
+    if (!has_facility(base_id, FAC_HAB_COMPLEX)) {
+        return max(0, Rules->pop_limit_wo_hab_complex + limit_mod - base->pop_size);
+    }
+    if (!has_facility(base_id, FAC_HABITATION_DOME)) {
+        return max(0, Rules->pop_limit_wo_hab_dome + limit_mod - base->pop_size);
+    }
+    return max(0, 24 - base->pop_size);
+}
+
+bool can_build(int base_id, int fac_id) {
+    assert(base_id >= 0 && base_id < *total_num_bases);
+    assert(fac_id > 0 && fac_id <= FAC_EMPTY_SP_64);
+    BASE* base = &Bases[base_id];
+    int faction = base->faction_id;
+    Faction* f = &Factions[faction];
+    if (fac_id >= SP_ID_First && fac_id <= FAC_EMPTY_SP_64) {
+        if (SecretProjects[fac_id-SP_ID_First] != SP_Unbuilt
+        || *game_rules & RULES_SCN_NO_BUILDING_SP) {
+            return false;
+        }
+    }
+    if (fac_id == FAC_ASCENT_TO_TRANSCENDENCE || fac_id == FAC_VOICE_OF_PLANET) {
+        if (is_alien(faction) || ~*game_rules & RULES_VICTORY_TRANSCENDENCE) {
+            return false;
+        }
+    }
+    if (fac_id == FAC_ASCENT_TO_TRANSCENDENCE) {
+        return has_project(-1, FAC_VOICE_OF_PLANET)
+            && !has_project(-1, FAC_ASCENT_TO_TRANSCENDENCE);
+    }
+    if (fac_id == FAC_HEADQUARTERS && find_hq(faction) >= 0) {
+        return false;
+    }
+    if (fac_id == FAC_RECYCLING_TANKS && has_facility(base_id, FAC_PRESSURE_DOME)) {
+        return false;
+    }
+    if (fac_id == FAC_HOLOGRAM_THEATRE && (has_project(faction, FAC_VIRTUAL_WORLD)
+    || !has_facility(base_id, FAC_RECREATION_COMMONS))) {
+        return false;
+    }
+    if ((fac_id == FAC_RECREATION_COMMONS || fac_id == FAC_HOLOGRAM_THEATRE
+    || fac_id == FAC_PUNISHMENT_SPHERE || fac_id == FAC_PARADISE_GARDEN)
+    && !base_can_riot(base_id, false)) {
+        return false;
+    }
+    if (fac_id == FAC_GENEJACK_FACTORY && base_can_riot(base_id, false)
+    && base->talent_total + 1 < base->drone_total + Rules->drones_induced_genejack_factory) {
+        return false;
+    }
+    if ((fac_id == FAC_HAB_COMPLEX || fac_id == FAC_HABITATION_DOME) && base->nutrient_surplus < 2) {
+        return false;
+    }
+    if (fac_id == FAC_SUBSPACE_GENERATOR) {
+        if (!is_alien(faction) || base->pop_size < Rules->base_size_subspace_gen) {
+            return false;
+        }
+        int n = 0;
+        for (int i=0; i < *total_num_bases; i++) {
+            BASE* b = &Bases[i];
+            if (b->faction_id == faction && has_facility(i, FAC_SUBSPACE_GENERATOR)
+            && b->pop_size >= Rules->base_size_subspace_gen
+            && ++n >= Rules->subspace_gen_req) {
+                return false;
+            }
+        }
+    }
+    if (fac_id >= FAC_SKY_HYDRO_LAB && fac_id <= FAC_ORBITAL_DEFENSE_POD) {
+        if (!has_facility(base_id, FAC_AEROSPACE_COMPLEX)) {
+            return false;
+        }
+        int n = prod_count(faction, -fac_id, base_id);
+        int goal = plans[faction].satellite_goal;
+        if (fac_id == FAC_ORBITAL_DEFENSE_POD) {
+            goal = min(conf.max_satellites,
+                goal/4 + clamp(f->base_count/8, 2, 8)
+                + (plans[faction].diplo_flags & DIPLO_VENDETTA ? 4 : 0));
+        }
+        if ((fac_id == FAC_SKY_HYDRO_LAB && f->satellites_nutrient + n >= goal)
+        || (fac_id == FAC_ORBITAL_POWER_TRANS && f->satellites_energy + n >= goal)
+        || (fac_id == FAC_NESSUS_MINING_STATION && f->satellites_mineral + n >= goal)
+        || (fac_id == FAC_ORBITAL_DEFENSE_POD && f->satellites_ODP + n >= goal)) {
+            return false;
+        }
+    }
+    if (fac_id == FAC_FLECHETTE_DEFENSE_SYS && f->satellites_ODP > 0) {
+        return false;
+    }
+    if (fac_id == FAC_GEOSYNC_SURVEY_POD || fac_id == FAC_FLECHETTE_DEFENSE_SYS) {
+        for (int i=0; i < *total_num_bases; i++) {
+            BASE* b = &Bases[i];
+            if (b->faction_id == faction && i != base_id
+            && map_range(base->x, base->y, b->x, b->y) <= 3
+            && (has_facility(i, FAC_GEOSYNC_SURVEY_POD)
+            || has_facility(i, FAC_FLECHETTE_DEFENSE_SYS)
+            || b->item() == -FAC_GEOSYNC_SURVEY_POD
+            || b->item() == -FAC_FLECHETTE_DEFENSE_SYS)) {
+                return false;
+            }
+        }
+    }
+    /* Rare special case if the game engine reaches the global unit limit. */
+    if (fac_id == FAC_STOCKPILE_ENERGY) {
+        return (*current_turn + base_id) % 4 > 0 || !can_build_unit(faction, -1);
+    }
+    return has_tech(faction, Facility[fac_id].preq_tech) && !has_facility(base_id, fac_id);
+}
+
+bool can_build_unit(int faction, int unit_id) {
+    assert(valid_player(faction) && unit_id >= -1);
+    UNIT* u = &Units[unit_id];
+    if (unit_id >= 0 && unit_id < MaxProtoFactionNum && u->preq_tech != TECH_None
+    && !has_tech(faction, u->preq_tech)) {
+        return false;
+    }
+    return *total_num_vehicles < MaxVehNum * 15 / 16;
+}
+
+/*
+Check if the base might riot on the next turn, usually after a population increase.
+Used only for rendering additional details about base psych status.
+*/
+bool maybe_riot(int base_id) {
+    BASE* b = &Bases[base_id];
+
+    if (!base_can_riot(base_id, true)) {
+        return false;
+    }
+    if (!conf.delay_drone_riots && unused_space(base_id) > 0 && b->drone_total <= b->talent_total) {
+        int cost = (b->pop_size + 1) * cost_factor(b->faction_id, 0, base_id);
+        return b->drone_total + 1 > b->talent_total && (base_pop_boom(base_id)
+            || (b->nutrients_accumulated + b->nutrient_surplus >= cost));
+    }
+    return b->drone_total > b->talent_total;
+}
+
+bool can_build_ships(int base_id) {
+    BASE* b = &Bases[base_id];
+    int k = *map_area_sq_root + 20;
+    return has_ships(b->faction_id) && nearby_tiles(b->x, b->y, TRIAD_SEA, k) >= k;
+}
+
+bool base_can_riot(int base_id, bool allow_staple) {
+    BASE* b = &Bases[base_id];
+    return (!allow_staple || !b->nerve_staple_turns_left)
+        && !has_project(b->faction_id, FAC_TELEPATHIC_MATRIX)
+        && !has_facility(base_id, FAC_PUNISHMENT_SPHERE);
+}
+
+bool base_pop_boom(int base_id) {
+    BASE* b = &Bases[base_id];
+    Faction* f = &Factions[b->faction_id];
+    if (b->nutrient_surplus < Rules->nutrient_intake_req_citizen) {
+        return false;
+    }
+    return has_project(b->faction_id, FAC_CLONING_VATS)
+        || f->SE_growth_pending
+        + (has_facility(base_id, FAC_CHILDREN_CRECHE) ? 2 : 0)
+        + (b->state_flags & BSTATE_GOLDEN_AGE_ACTIVE ? 2 : 0) > 5;
+}
+
+bool can_use_teleport(int base_id) {
+    return has_facility(base_id, FAC_PSI_GATE)
+        && ~Bases[base_id].state_flags & BSTATE_PSI_GATE_USED;
+}
+
+void set_base_facility(int base_id, int facility_id, bool add) {
+    assert(base_id >= 0 && facility_id > 0 && facility_id <= FAC_EMPTY_FACILITY_64);
+    if (add) {
+        Bases[base_id].facilities_built[facility_id/8] |= (1 << (facility_id % 8));
+    } else {
+        Bases[base_id].facilities_built[facility_id/8] &= ~(1 << (facility_id % 8));
+    }
+}
+
 int clean_minerals_value(int base_id) {
     Faction& f = Factions[Bases[base_id].faction_id];
     return max(0, conf.clean_minerals + f.clean_minerals_modifier - 5*f.major_atrocities);
@@ -567,7 +792,7 @@ int find_proto(int base_id, Triad triad, VehWeaponMode mode, bool defend) {
                 continue;
             }
             if (mode == WMODE_COMBAT && best_id != basic
-            && (defend && offense_value(u) > defense_value(u)
+            && ((defend && offense_value(u) > defense_value(u))
             || (!defend && offense_value(u) < defense_value(u)))) {
                 continue;
             }

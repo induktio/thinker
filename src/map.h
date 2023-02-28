@@ -14,10 +14,13 @@ bool is_ocean(MAP* sq);
 bool is_ocean(BASE* base);
 bool is_ocean_shelf(MAP* sq);
 bool is_shore_level(MAP* sq);
+bool map_is_flat();
+
 int __cdecl region_at(int x, int y);
 int __cdecl mod_hex_cost(int unit_id, int faction, int x1, int y1, int x2, int y2, int a7);
 int __cdecl mod_bonus_at(int x, int y);
 int __cdecl mod_goody_at(int x, int y);
+int __cdecl mod_base_find3(int x, int y, int faction1, int region, int faction2, int faction3);
 int total_yield(int x, int y, int faction);
 int fungus_yield(int faction, int res_type);
 int item_yield(int x, int y, int faction, int bonus, MapItem item);

@@ -106,3 +106,178 @@ int __cdecl mod_veh_wake(int veh_id) {
     return veh_id;
 }
 
+int __cdecl find_return_base(int veh_id) {
+    VEH* veh = &Vehs[veh_id];
+    MAP* sq;
+    debug("find_return_base %2d %2d %s\n", veh->x, veh->y, veh->name());
+    TileSearch ts;
+    ts.init(veh->x, veh->y, veh->triad() == TRIAD_SEA ? TS_SEA_AND_SHORE : veh->triad());
+    while ((sq = ts.get_next()) != NULL) {
+        if (sq->is_base() && sq->owner == veh->faction_id) {
+            return base_at(ts.rx, ts.ry);
+        }
+    }
+    int region = region_at(veh->x, veh->y);
+    int min_dist = INT_MAX;
+    int base_id = -1;
+    bool sea = region > MaxRegionLandNum;
+    for (int i = 0; i < *total_num_bases; i++) {
+        BASE* base = &Bases[i];
+        if (base->faction_id == veh->faction_id) {
+            int base_region = region_at(base->x, base->y);
+            int dist = map_range(base->x, base->y, veh->x, veh->y)
+                * ((base_region > MaxRegionLandNum) == sea ? 1 : 4)
+                * (base_region == region ? 1 : 8);
+            if (dist < min_dist) {
+                base_id = i;
+                min_dist = dist;
+            }
+        }
+    }
+    return base_id;
+}
+
+int __cdecl probe_return_base(int UNUSED(x), int UNUSED(y), int veh_id) {
+    return find_return_base(veh_id);
+}
+
+VehArmor best_armor(int faction, bool cheap) {
+    int ci = ARM_NO_ARMOR;
+    int cv = 4;
+    for (int i=ARM_SYNTHMETAL_ARMOR; i<=ARM_RESONANCE_8_ARMOR; i++) {
+        if (has_tech(faction, Armor[i].preq_tech)) {
+            int val = Armor[i].defense_value;
+            int cost = Armor[i].cost;
+            if (cheap && (cost > 5 || cost > val))
+                continue;
+            int iv = val * (i >= ARM_PULSE_3_ARMOR ? 5 : 4);
+            if (iv > cv) {
+                cv = iv;
+                ci = i;
+            }
+        }
+    }
+    return (VehArmor)ci;
+}
+
+VehWeapon best_weapon(int faction) {
+    int ci = WPN_HAND_WEAPONS;
+    int cv = 4;
+    for (int i=WPN_LASER; i<=WPN_STRING_DISRUPTOR; i++) {
+        if (has_tech(faction, Weapon[i].preq_tech)) {
+            int iv = Weapon[i].offense_value *
+                (i == WPN_RESONANCE_LASER || i == WPN_RESONANCE_BOLT ? 5 : 4);
+            if (iv > cv) {
+                cv = iv;
+                ci = i;
+            }
+        }
+    }
+    return (VehWeapon)ci;
+}
+
+VehReactor best_reactor(int faction) {
+    for (VehReactor r : {REC_SINGULARITY, REC_QUANTUM, REC_FUSION}) {
+        if (has_tech(faction, Reactor[r - 1].preq_tech)) {
+            return r;
+        }
+    }
+    return REC_FISSION;
+}
+
+int offense_value(UNIT* u) {
+    int w = (conf.ignore_reactor_power ? (int)REC_FISSION : u->reactor_type);
+    if (u->weapon_type == WPN_CONVENTIONAL_PAYLOAD) {
+        int wpn = best_weapon(*active_faction);
+        return max(1, Weapon[wpn].offense_value * w);
+    }
+    return Weapon[u->weapon_type].offense_value * w;
+}
+
+int defense_value(UNIT* u) {
+    int w = (conf.ignore_reactor_power ? (int)REC_FISSION : u->reactor_type);
+    return Armor[u->armor_type].defense_value * w;
+}
+
+int set_move_to(int veh_id, int x, int y) {
+    VEH* veh = &Vehicles[veh_id];
+    debug("set_move_to %2d %2d -> %2d %2d %s\n", veh->x, veh->y, x, y, veh->name());
+    veh->waypoint_1_x = x;
+    veh->waypoint_1_y = y;
+    veh->order = ORDER_MOVE_TO;
+    veh->status_icon = 'G';
+    veh->terraforming_turns = 0;
+    mapnodes.erase({x, y, NODE_PATROL});
+    mapnodes.erase({x, y, NODE_COMBAT_PATROL});
+    if (veh->x == x && veh->y == y) {
+        return mod_veh_skip(veh_id);
+    }
+    pm_target[x][y]++;
+    return SYNC;
+}
+
+int set_move_next(int veh_id, int offset) {
+    VEH* veh = &Vehicles[veh_id];
+    int x = wrap(veh->x + BaseOffsetX[offset]);
+    int y = veh->y + BaseOffsetY[offset];
+    return set_move_to(veh_id, x, y);
+}
+
+int set_road_to(int veh_id, int x, int y) {
+    VEH* veh = &Vehicles[veh_id];
+    veh->waypoint_1_x = x;
+    veh->waypoint_1_y = y;
+    veh->order = ORDER_ROAD_TO;
+    veh->status_icon = 'R';
+    return SYNC;
+}
+
+int set_action(int veh_id, int act, char icon) {
+    VEH* veh = &Vehicles[veh_id];
+    if (act == ORDER_THERMAL_BOREHOLE) {
+        mapnodes.insert({veh->x, veh->y, NODE_BOREHOLE});
+    } else if (act == ORDER_TERRAFORM_UP) {
+        mapnodes.insert({veh->x, veh->y, NODE_RAISE_LAND});
+    } else if (act == ORDER_SENSOR_ARRAY) {
+        mapnodes.insert({veh->x, veh->y, NODE_SENSOR_ARRAY});
+    }
+    veh->order = act;
+    veh->status_icon = icon;
+    veh->state &= ~VSTATE_UNK_10000;
+    return SYNC;
+}
+
+int set_convoy(int veh_id, ResType res) {
+    VEH* veh = &Vehicles[veh_id];
+    mapnodes.insert({veh->x, veh->y, NODE_CONVOY});
+    veh->order_auto_type = res-1;
+    veh->order = ORDER_CONVOY;
+    veh->status_icon = 'C';
+    return veh_skip(veh_id);
+}
+
+int set_board_to(int veh_id, int trans_veh_id) {
+    VEH* veh = &Vehicles[veh_id];
+    VEH* v2 = &Vehicles[trans_veh_id];
+    assert(veh_id != trans_veh_id);
+    assert(veh->x == v2->x && veh->y == v2->y);
+    assert(veh_cargo(trans_veh_id) > 0);
+    veh->order = ORDER_SENTRY_BOARD;
+    veh->waypoint_1_x = trans_veh_id;
+    veh->waypoint_1_y = 0;
+    veh->status_icon = 'L';
+    debug("set_board_to %2d %2d %s -> %s\n", veh->x, veh->y, veh->name(), v2->name());
+    return SYNC;
+}
+
+int cargo_loaded(int veh_id) {
+    int n=0;
+    for (int i=0; i < *total_num_vehicles; i++) {
+        VEH* veh = &Vehicles[i];
+        if (veh->order == ORDER_SENTRY_BOARD && veh->waypoint_1_x == veh_id) {
+            n++;
+        }
+    }
+    return n;
+}
+

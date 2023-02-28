@@ -16,7 +16,7 @@ MAP* mapsq(int x, int y) {
 }
 
 int wrap(int x) {
-    if (!(*map_toggle_flat & 1)) {
+    if (!map_is_flat()) {
         return (x < 0 ? x + *map_axis_x : x % *map_axis_x);
     } else {
         return x;
@@ -26,7 +26,7 @@ int wrap(int x) {
 int map_range(int x1, int y1, int x2, int y2) {
     int dx = abs(x1 - x2);
     int dy = abs(y1 - y2);
-    if (!(*map_toggle_flat & 1) && dx > *map_half_x) {
+    if (!map_is_flat() && dx > *map_half_x) {
         dx = *map_axis_x - dx;
     }
     return (dx + dy)/2;
@@ -35,7 +35,7 @@ int map_range(int x1, int y1, int x2, int y2) {
 int vector_dist(int x1, int y1, int x2, int y2) {
     int dx = abs(x1 - x2);
     int dy = abs(y1 - y2);
-    if (!(*map_toggle_flat & 1) && dx > *map_half_x) {
+    if (!map_is_flat() && dx > *map_half_x) {
         dx = *map_axis_x - dx;
     }
     return max(dx, dy) - ((((dx + dy) / 2) - min(dx, dy) + 1) / 2);
@@ -81,6 +81,10 @@ bool is_ocean_shelf(MAP* sq) {
 
 bool is_shore_level(MAP* sq) {
     return (sq && (sq->climate >> 5) == ALT_SHORE_LINE);
+}
+
+bool map_is_flat() {
+    return *map_toggle_flat & 1;
 }
 
 int __cdecl region_at(int x, int y) {
@@ -174,6 +178,47 @@ int __cdecl mod_goody_at(int x, int y) {
         }
     }
     return cmp == ((11 * (avg / 4) + 61 * (x_diff / 4) + *map_random_seed + 8) & 0x1F); // 0 or 1
+}
+
+/*
+This version adds support for modified territory borders only on water bases.
+*/
+int __cdecl mod_base_find3(int x, int y, int faction1, int region, int faction2, int faction3) {
+    int dist = 9999;
+    int result = -1;
+    bool border_fix = conf.territory_border_fix && region >= MaxRegionNum/2;
+
+    for (int i=0; i<*total_num_bases; ++i) {
+        BASE* base = &Bases[i];
+        MAP* bsq = mapsq(base->x, base->y);
+
+        if (bsq && (region < 0 || bsq->region == region || border_fix)) {
+            if ((faction1 < 0 && (faction2 < 0 || faction2 != base->faction_id))
+            || (faction1 == base->faction_id)
+            || (faction2 == -2 && Factions[faction1].diplo_status[base->faction_id] & DIPLO_PACT)
+            || (faction2 >= 0 && faction2 == base->faction_id)) {
+                if (faction3 < 0 || base->faction_id == faction3 || base->visibility & (1 << faction3)) {
+                    int val = vector_dist(x, y, base->x, base->y);
+                    if (conf.territory_border_fix ? val < dist : val <= dist) {
+                        dist = val;
+                        result = i;
+                    }
+                }
+            }
+        }
+    }
+    if (DEBUG && !conf.territory_border_fix) {
+        int res = base_find3(x, y, faction1, region, faction2, faction3);
+        debug("base_find3 x: %2d y: %2d r: %2d %2d %2d %2d %2d %4d\n",
+              x, y, region, faction1, faction2, faction3, result, dist);
+        assert(res == result);
+        assert(*base_find_dist == dist);
+    }
+    *base_find_dist = 9999;
+    if (result >= 0) {
+        *base_find_dist = dist;
+    }
+    return result;
 }
 
 int total_yield(int x, int y, int faction) {
@@ -531,6 +576,7 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
     debug("find_start %d %d x: %3d y: %3d range: %d\n", faction, i, *tx, *ty, min_range(spawns, *tx, *ty));
     flushlog();
 }
+
 
 float map_fractal(FastNoiseLite& noise, int x, int y) {
     float val = 1.0f * noise.GetNoise(2.0f*x, 1.5f*y)

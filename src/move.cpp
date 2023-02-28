@@ -894,7 +894,7 @@ bool has_base_sites(int x, int y, int faction, int triad) {
 Determine if the unit should hold on the current tile and skip the turn.
 */
 bool defend_tile(VEH* veh, MAP* sq) {
-    if (!sq || sq->items & BIT_MONOLITH && veh->need_monolith()) {
+    if (!sq || (sq->items & BIT_MONOLITH && veh->need_monolith())) {
         return true;
     }
     if (sq->items & BIT_FUNGUS && veh->is_native_unit() && veh->need_heals()) {
@@ -996,10 +996,10 @@ int move_to_base(const int id, bool ally) {
     return mod_veh_skip(id);
 }
 
-int want_convoy(int base_id, int x, int y, int* score) {
+ResType want_convoy(int base_id, int x, int y, int* score) {
     MAP* sq;
     BASE* base = &Bases[base_id];
-    int choice = RES_NONE;
+    ResType choice = RES_NONE;
     *score = 0;
 
     if ((sq = mapsq(x, y)) && !sq->is_base()
@@ -1043,7 +1043,7 @@ int crawler_move(const int id) {
         return SYNC;
     }
     int best_score = 0;
-    int best_choice = want_convoy(veh->home_base_id, veh->x, veh->y, &best_score);
+    ResType best_choice = want_convoy(veh->home_base_id, veh->x, veh->y, &best_score);
     if (best_choice != RES_NONE && (*current_turn + id) % 4) {
         return set_convoy(id, best_choice);
     }
@@ -1122,10 +1122,10 @@ bool can_build_base(int x, int y, int faction, int triad) {
     if (!(sq = mapsq(x, y))) {// Invalid map coordinates
         return false;
     }
-    if (y < 3 || y >= *map_axis_y - 3 && *MapSizePlanet > 0) {
+    if (y < 3 || (y >= *map_axis_y - 3 && *MapSizePlanet > 0)) {
         return false;
     }
-    if (*map_toggle_flat & 1 && (x < 2 || x >= *map_axis_x - 2) && *MapSizePlanet > 0) {
+    if (map_is_flat() && (x < 2 || x >= *map_axis_x - 2) && *MapSizePlanet > 0) {
         return false;
     }
     if ((sq->is_rocky() && !is_ocean(sq)) || (sq->items & (BIT_BASE_DISALLOWED | BIT_ADVANCED))) {

@@ -21,7 +21,6 @@ void init_save_game(int faction) {
         m->thinker_last_mc_turn = 0;
     }
     m->thinker_unused = 0;
-    assert(f->old_thinker_header != THINKER_HEADER);
 }
 
 int __cdecl mod_turn_upkeep() {
@@ -176,84 +175,6 @@ int __cdecl mod_faction_upkeep(int faction) {
     return 0;
 }
 
-/*
-Original Offset: 004E3D50
-*/
-int __cdecl mod_base_find3(int x, int y, int faction1, int region, int faction2, int faction3) {
-    int dist = 9999;
-    int result = -1;
-    bool border_fix = conf.territory_border_fix && region >= MaxRegionNum/2;
-
-    for (int i=0; i<*total_num_bases; ++i) {
-        BASE* base = &Bases[i];
-        MAP* bsq = mapsq(base->x, base->y);
-
-        if (bsq && (region < 0 || bsq->region == region || border_fix)) {
-            if ((faction1 < 0 && (faction2 < 0 || faction2 != base->faction_id))
-            || (faction1 == base->faction_id)
-            || (faction2 == -2 && Factions[faction1].diplo_status[base->faction_id] & DIPLO_PACT)
-            || (faction2 >= 0 && faction2 == base->faction_id)) {
-                if (faction3 < 0 || base->faction_id == faction3 || base->visibility & (1 << faction3)) {
-                    int val = vector_dist(x, y, base->x, base->y);
-                    if (conf.territory_border_fix ? val < dist : val <= dist) {
-                        dist = val;
-                        result = i;
-                    }
-                }
-            }
-        }
-    }
-    if (DEBUG && !conf.territory_border_fix) {
-        int res = base_find3(x, y, faction1, region, faction2, faction3);
-        debug("base_find3 x: %2d y: %2d r: %2d %2d %2d %2d %2d %4d\n",
-              x, y, region, faction1, faction2, faction3, result, dist);
-        assert(res == result);
-        assert(*base_find_dist == dist);
-    }
-    *base_find_dist = 9999;
-    if (result >= 0) {
-        *base_find_dist = dist;
-    }
-    return result;
-}
-
-void reader_path(vec_str_t& lines, const char* filename, const char* section, uint32_t max_len) {
-    FILE* file;
-    const int buf_size = 1024;
-    char line[buf_size];
-    bool start = false;
-    file = fopen(filename, "r");
-    if (!file) {
-        return;
-    }
-    while (fgets(line, buf_size, file) != NULL) {
-        line[strlen(line) - 1] = '\0';
-        if (!start && stricmp(line, section) == 0) {
-            start = true;
-        } else if (start && line[0] == '#') {
-            break;
-        } else if (start && line[0] != ';') {
-            char* p = strstrip(line);
-            // Truncate long lines to max_len (including null)
-            if (strlen(p) > 0 && p[0] != ';') {
-                if (strlen(p) >= max_len) {
-                    p[max_len - 1] = '\0';
-                }
-                lines.push_back(p);
-            }
-        }
-    }
-    fclose(file);
-}
-
-void reader_file(vec_str_t& lines, const char* filename, const char* section, uint32_t max_len) {
-    const int buf_size = 1024;
-    char filename_txt[buf_size];
-    snprintf(filename_txt, buf_size, "%s.txt", filename);
-    strlwr(filename_txt);
-    reader_path(lines, filename_txt, section, max_len);
-}
-
 uint32_t offset_next(int32_t faction, uint32_t position, uint32_t amount) {
     if (!position) {
         return 0;
@@ -349,7 +270,11 @@ void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool sea_b
     land_names.clear();
     sea_names.clear();
     reader_path(land_names, "basenames\\generic.txt", "#BASESA", MaxBaseNameLen);
-    reader_path(sea_names, "basenames\\generic.txt", "#BASESB", MaxBaseNameLen);
+    if (land_names.size() > 0) {
+        reader_path(sea_names, "basenames\\generic.txt", "#BASESB", MaxBaseNameLen);
+    } else {
+        reader_path(land_names, "basename.txt", "#GENERIC", MaxBaseNameLen);
+    }
 
     for (int i = 0; i < 2*MaxBaseNum && land_names.size() > 0; i++) {
         x = pair_hash(faction + 8*f.base_name_offset, *map_random_seed + i);

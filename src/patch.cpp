@@ -60,62 +60,6 @@ void __cdecl mod_drone_riot() {
     }
 }
 
-/*
-Check if the base might riot on the next turn, usually after a population increase.
-Used only for rendering additional details on base labels.
-*/
-bool maybe_riot(int base_id) {
-    BASE* b = &Bases[base_id];
-
-    if (!base_can_riot(base_id, true)) {
-        return false;
-    }
-    if (!conf.delay_drone_riots && unused_space(base_id) > 0 && b->drone_total <= b->talent_total) {
-        int cost = (b->pop_size + 1) * cost_factor(b->faction_id, 0, base_id);
-        return b->drone_total + 1 > b->talent_total && (base_pop_boom(base_id)
-            || (b->nutrients_accumulated + b->nutrient_surplus >= cost));
-    }
-    return b->drone_total > b->talent_total;
-}
-
-int __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, int v1) {
-    int color = -1;
-    int width = 1;
-    BASE* b = &Bases[base_id];
-    base_draw((int)buffer, base_id, x, y, zoom, v1);
-
-    if (conf.render_base_info > 0 && zoom >= -8) {
-        if (has_facility(base_id, FAC_HEADQUARTERS)) {
-            color = 255;
-            width = 2;
-        }
-        if (has_facility(base_id, FAC_GEOSYNC_SURVEY_POD)
-        || has_facility(base_id, FAC_FLECHETTE_DEFENSE_SYS)) {
-            color = 254;
-        }
-        if (b->faction_id == MapWin->cOwner && b->state_flags & BSTATE_GOLDEN_AGE_ACTIVE) {
-            color = 251;
-        }
-        if (b->faction_id == MapWin->cOwner && maybe_riot(base_id)) {
-            color = 249;
-        }
-        if (color < 0) {
-            return 0;
-        }
-        // Game engine uses this way to determine the population label width
-        const char* s1 = "8";
-        const char* s2 = "88";
-        int w = Font_width(*MapLabelFont, (int)(b->pop_size >= 10 ? s2 : s1)) + 5;
-        int h = (*MapLabelFont)->iHeight + 4;
-
-        for (int i = 1; i <= width; i++) {
-            RECT rr = {x-i, y-i, x+w+i, y+h+i};
-            Buffer_box(buffer, &rr, color, color);
-        }
-    }
-    return 0;
-}
-
 void check_relocate_hq(int faction) {
     if (find_hq(faction) < 0) {
         int best_score = INT_MIN;
@@ -191,41 +135,6 @@ int __cdecl mod_base_kill(int base_id) {
     return 0;
 }
 
-int __cdecl find_return_base(int veh_id) {
-    VEH* veh = &Vehs[veh_id];
-    MAP* sq;
-    debug("find_return_base %2d %2d %s\n", veh->x, veh->y, veh->name());
-    TileSearch ts;
-    ts.init(veh->x, veh->y, veh->triad() == TRIAD_SEA ? TS_SEA_AND_SHORE : veh->triad());
-    while ((sq = ts.get_next()) != NULL) {
-        if (sq->is_base() && sq->owner == veh->faction_id) {
-            return base_at(ts.rx, ts.ry);
-        }
-    }
-    int region = region_at(veh->x, veh->y);
-    int min_dist = INT_MAX;
-    int base_id = -1;
-    bool sea = region > MaxRegionLandNum;
-    for (int i = 0; i < *total_num_bases; i++) {
-        BASE* base = &Bases[i];
-        if (base->faction_id == veh->faction_id) {
-            int base_region = region_at(base->x, base->y);
-            int dist = map_range(base->x, base->y, veh->x, veh->y)
-                * ((base_region > MaxRegionLandNum) == sea ? 1 : 4)
-                * (base_region == region ? 1 : 8);
-            if (dist < min_dist) {
-                base_id = i;
-                min_dist = dist;
-            }
-        }
-    }
-    return base_id;
-}
-
-int __cdecl probe_return_base(int UNUSED(x), int UNUSED(y), int veh_id) {
-    return find_return_base(veh_id);
-}
-
 /*
 Calculate current vehicle health only for the purposes of
 possible damage from genetic warfare probe team action.
@@ -270,82 +179,6 @@ int __cdecl config_game_rand() {
     return val;
 }
 
-int __cdecl mod_setup_player(int faction, int v1, int v2) {
-    MFaction* m = &MFactions[faction];
-    debug("setup_player %d %d %d\n", faction, v1, v2);
-    if (!faction) {
-        return setup_player(faction, v1, v2);
-    }
-    /*
-    Fix issue with randomized faction agendas where they might be given agendas
-    that are their opposition social models.
-    */
-    if (*game_state & STATE_RAND_FAC_LEADER_SOCIAL_AGENDA && !*current_turn) {
-        int active_factions = 0;
-        for (int i = 0; i < *total_num_vehicles; i++) {
-            active_factions |= (1 << Vehs[i].faction_id);
-        }
-        for (int i = 0; i < 1000; i++) {
-            int sfield = random(3);
-            int smodel = random(3) + 1;
-            if (sfield == m->soc_opposition_category && smodel == m->soc_opposition_model) {
-                continue;
-            }
-            for (int j = 1; j < MaxPlayerNum; j++) {
-                if (faction != j && (1 << j) & active_factions) {
-                    if (MFactions[j].soc_priority_category == sfield
-                    && MFactions[j].soc_priority_model == smodel) {
-                        continue;
-                    }
-                }
-            }
-            m->soc_priority_category = sfield;
-            m->soc_priority_model = smodel;
-            debug("setup_player_agenda %s %d %d\n", m->filename, sfield, smodel);
-            break;
-        }
-    }
-    if (*game_state & STATE_RAND_FAC_LEADER_PERSONALITIES && !*current_turn) {
-        m->AI_fight = random(3) - 1;
-        m->AI_tech = 0;
-        m->AI_power = 0;
-        m->AI_growth = 0;
-        m->AI_wealth = 0;
-
-        for (int i = 0; i < 2; i++) {
-            int val = random(4);
-            switch (val) {
-                case 0: m->AI_tech = 1; break;
-                case 1: m->AI_power = 1; break;
-                case 2: m->AI_growth = 1; break;
-                case 3: m->AI_wealth = 1; break;
-            }
-        }
-    }
-    setup_player(faction, v1, v2);
-
-    if (!is_human(faction) || conf.player_free_units > 0) {
-        for (int i = 0; i < *total_num_vehicles; i++) {
-            VEH* veh = &Vehicles[i];
-            if (veh->faction_id == faction) {
-                MAP* sq = mapsq(veh->x, veh->y);
-                int former = (is_ocean(sq) ? BSC_SEA_FORMERS : BSC_FORMERS);
-                int colony = (is_ocean(sq) ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
-                for (int j = 0; j < conf.free_formers; j++) {
-                    mod_veh_init(former, faction, veh->x, veh->y);
-                }
-                for (int j = 0; j < conf.free_colony_pods; j++) {
-                    mod_veh_init(colony, faction, veh->x, veh->y);
-                }
-                break;
-            }
-        }
-        Factions[faction].satellites_nutrient = conf.satellites_nutrient;
-        Factions[faction].satellites_mineral = conf.satellites_mineral;
-        Factions[faction].satellites_energy = conf.satellites_energy;
-    }
-    return 0;
-}
 
 int __cdecl skip_action_destroy(int id) {
     veh_skip(id);

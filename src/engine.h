@@ -8,6 +8,10 @@
 #include <stdint.h>
 #include <windows.h>
 #include <algorithm>
+#include <set>
+#include <list>
+#include <string>
+#include <vector>
 
 typedef uint8_t byte;
 typedef uint32_t Dib;
@@ -17,6 +21,65 @@ typedef struct char256 { char str[256]; } char256;
 #include "engine_types.h"
 #include "engine_veh.h"
 #include "engine_win.h"
+
+struct MapTile {
+    int x;
+    int y;
+    MAP* sq;
+};
+
+struct Point {
+    int x;
+    int y;
+};
+
+struct PointComp {
+    bool operator()(const Point& p1, const Point& p2) const
+    {
+        return p1.x < p2.x || (p1.x == p2.x && p1.y < p2.y);
+    }
+};
+
+struct MapNode {
+    int x;
+    int y;
+    int type;
+};
+
+struct NodeComp {
+    bool operator()(const MapNode& p1, const MapNode& p2) const
+    {
+        return p1.x < p2.x || (p1.x == p2.x && (
+            p1.y < p2.y || (p1.y == p2.y && (p1.type < p2.type))
+        ));
+    }
+};
+
+template <class T, class C>
+bool has_item(const T& a, const C& b) {
+    return std::find(a.begin(), a.end(), b) != a.end();
+}
+
+template <class T>
+const T& min (const T& a, const T& b) {
+    return std::min(a, b);
+}
+
+template <class T>
+const T& max (const T& a, const T& b) {
+    return std::max(a, b);
+}
+
+template <class T>
+const T& clamp (const T& value, const T& low, const T& high) {
+    return (value < low ? low : (value > high ? high : value));
+}
+
+typedef std::set<MapNode,NodeComp> NodeSet;
+typedef std::set<Point,PointComp> Points;
+typedef std::list<Point> PointList;
+typedef std::set<std::string> set_str_t;
+typedef std::vector<std::string> vec_str_t;
 
 typedef int (__cdecl *fp_void)();
 typedef int (__cdecl *fp_1int)(int);
@@ -119,6 +182,14 @@ extern int* diplo_second_faction;
 extern int* diplo_third_faction;
 extern int* diplo_tech_faction;
 extern int* reportwin_opponent_faction;
+extern int* diplo_value_93FA98;
+extern int* diplo_value_93FA24;
+extern int* diplo_entry_id;
+extern int* diplo_counter_proposal_id;
+extern int* diplo_current_proposal_id;
+extern int* diplo_ask_base_swap_id;
+extern int* diplo_bid_base_swap_id;
+extern int* diplo_tech_id1;
 extern int* base_find_dist;
 extern int* veh_attack_flags;
 extern int* screen_width;
@@ -134,20 +205,11 @@ extern int* ControlTurnB;
 extern int* ControlTurnC;
 extern int* ControlRedraw;
 extern int* ControlUpkeepA;
+extern int* ControlWaitLoop;
 extern int* WorldAddTemperature;
 extern int* WorldSkipTerritory;
-extern int* popup_dialog_visible;
-
-// TODO: rename dwords
-extern int* dword_9B7AE4;
-extern int* diplo_value_93FA98;
-extern int* diplo_value_93FA24;
-extern int* diplo_entry_id;
-extern int* diplo_counter_proposal_id;
-extern int* diplo_current_proposal_id;
-extern int* diplo_ask_base_swap_id;
-extern int* diplo_bid_base_swap_id;
-extern int* diplo_tech_id1;
+extern int* WinModalState;
+extern int* PopupDialogState;
 
 extern uint8_t* TechOwners;
 extern int* SecretProjects;
@@ -174,12 +236,23 @@ extern Continent* Continents;
 extern Landmark* Landmarks;
 extern Console* MapWin;
 extern Win* BaseWin;
+extern Win* BattleWin;
 extern Win* CouncilWin;
 extern Win* DatalinkWin;
+extern Win* DesignWin;
+extern Win* DiploWin;
 extern Win* FameWin;
 extern Win* StringBox;
+extern Win* InfoWin;
+extern Win* BaseMapWin;
+extern Win* MessageWin;
 extern Win* MonuWin;
+extern Win* MultiWin;
+extern Win* NetWin;
+extern Win* NetTechWin;
+extern Win* PickWin;
 extern Win* PlanWin;
+extern Win* PrefWin;
 extern Win* ReportWin;
 extern Win* SocialWin;
 extern Win* StatusWin;
@@ -203,6 +276,7 @@ extern CResource* Resource;
 extern CTerraform* Terraform;
 extern CWeapon* Weapon;
 extern CNatural* Natural;
+extern CProposal* Proposal;
 extern CWorldbuilder *WorldBuilder;
 
 typedef int(__cdecl *Fbattle_fight_1)(int veh_id, int offset, bool use_table_offset, int v1, int v2);

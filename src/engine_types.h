@@ -750,6 +750,12 @@ struct CWeapon {
     short padding;
 };
 
+struct CProposal {
+    char* name;
+    char* description;
+    int preq_tech;
+};
+
 struct CNatural {
     char* name;
     char* name_short;

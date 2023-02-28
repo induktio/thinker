@@ -47,7 +47,6 @@
 #ifdef __GNUC__
     #define UNUSED(x) UNUSED_ ## x __attribute__((__unused__))
     #pragma GCC diagnostic ignored "-Wchar-subscripts"
-    #pragma GCC diagnostic ignored "-Wparentheses"
     #pragma GCC diagnostic ignored "-Wattributes"
 #else
     #define UNUSED(x) UNUSED_ ## x
@@ -68,7 +67,6 @@
 #include <vector>
 
 #define DLL_EXPORT extern "C" __declspec(dllexport)
-#define HOOK_API extern "C"
 #define THINKER_HEADER (int16_t)0xACAC
 #define ModAppName "thinker"
 #define GameAppName "Alpha Centauri"
@@ -120,6 +118,10 @@ const int MaxSecretProjectNum = 64;
 const int MaxSocialCatNum = 4;
 const int MaxSocialModelNum = 4;
 const int MaxSocialEffectNum = 11;
+const int MaxMoodNum = 9;
+const int MaxReputeNum = 8;
+const int MaxMightNum = 7;
+const int MaxBonusNameNum = 41;
 
 const int MaxEnemyRange = 50;
 
@@ -193,6 +195,7 @@ struct Config {
     int road_movement_rate = 1; // internal variable
     int delay_drone_riots = 0;
     int skip_drone_revolts = 1; // unlisted option
+    int activate_skipped_units = 1; // unlisted option
     int counter_espionage = 0;
     int ignore_reactor_power = 0;
     int early_research_start = 1; // unlisted option
@@ -229,7 +232,6 @@ struct Config {
     int repair_base_native = 10;
     int repair_base_facility = 10;
     int repair_nano_factory = 10;
-    int activate_skipped_units = 1; // unlisted option
     int cpu_idle_fix = 1; // unlisted option
     int minimal_popups = 0; // unlisted option
     int skip_random_factions = 0; // internal variable
@@ -332,78 +334,14 @@ enum NodesetType {
 };
 
 #include "engine.h"
+#include "strings.h"
+#include "faction.h"
 #include "random.h"
-
-struct MapTile {
-    int x;
-    int y;
-    MAP* sq;
-};
-
-struct Point {
-    int x;
-    int y;
-};
-
-struct PointComp {
-    bool operator()(const Point& p1, const Point& p2) const
-    {
-        return p1.x < p2.x || (p1.x == p2.x && p1.y < p2.y);
-    }
-};
-
-struct MapNode {
-    int x;
-    int y;
-    int type;
-};
-
-struct NodeComp {
-    bool operator()(const MapNode& p1, const MapNode& p2) const
-    {
-        return p1.x < p2.x || (p1.x == p2.x && (
-            p1.y < p2.y || (p1.y == p2.y && (p1.type < p2.type))
-        ));
-    }
-};
-
-template <class T, class C>
-const T& pick_random(const std::set<T,C>& s) {
-    auto it = std::begin(s);
-    std::advance(it, random(s.size()));
-    return *it;
-}
-
-template <class T, class C>
-bool has_item(const T& a, const C& b) {
-    return std::find(a.begin(), a.end(), b) != a.end();
-}
-
-template <class T>
-const T& min (const T& a, const T& b) {
-    return std::min(a, b);
-}
-
-template <class T>
-const T& max (const T& a, const T& b) {
-    return std::max(a, b);
-}
-
-template <class T>
-const T& clamp (const T& value, const T& low, const T& high) {
-    return (value < low ? low : (value > high ? high : value));
-}
-
-typedef std::set<MapNode,NodeComp> NodeSet;
-typedef std::set<Point,PointComp> Points;
-typedef std::list<Point> PointList;
-typedef std::set<std::string> set_str_t;
-typedef std::vector<std::string> vec_str_t;
-
 #include "patch.h"
 #include "path.h"
 #include "plan.h"
 #include "gui.h"
+#include "gui_dialog.h"
 #include "map.h"
 #include "veh.h"
 #include "base.h"
@@ -419,10 +357,8 @@ extern Config conf;
 extern NodeSet mapnodes;
 extern AIPlans plans[MaxPlayerNum];
 
-DLL_EXPORT int ThinkerDecide();
+DLL_EXPORT DWORD ThinkerModule();
 int opt_list_parse(int* ptr, char* buf, int len, int min_val);
-int __cdecl mod_social_ai(int faction, int v1, int v2, int v3, int v4, int v5);
-int __cdecl SocialWin_social_ai(int faction, int v1, int v2, int v3, int v4, int v5);
 
 
 
