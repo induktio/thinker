@@ -10,11 +10,11 @@ while True:
     a = f0.read(1)
     b = f1.read(1)
     if (not a) != (not b):
-        sys.stderr.write("File size mismatch\n")
+        sys.stderr.write('File size mismatch\n')
         exit(1)
     if not a:
         exit(0)
     if (a != b):
-        print("%08X: %02X %02X" % (i, ord(a), ord(b)))
+        print('%08X: %02X %02X' % (i, ord(a), ord(b)))
     i += 1
     
