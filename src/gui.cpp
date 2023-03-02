@@ -571,7 +571,17 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     bool tools = DEBUG && !*GameHalted;
     POINT p;
 
-    if (msg == WM_MOUSEWHEEL && win_has_focus()) {
+    if (msg == WM_ACTIVATEAPP) {
+        if (LOWORD(wParam)) {
+            ShowWindow(*phWnd, SW_RESTORE);
+        } else {
+            //If window has just become inactive e.g. ALT+TAB
+            //wParam is 0 if the window has become inactive.
+            //ShowWindow(*phWnd, SW_MINIMIZE);
+        }
+        return WinProc(hwnd, msg, wParam, lParam);
+
+    } else if (msg == WM_MOUSEWHEEL && win_has_focus()) {
         int iDelta = GET_WHEEL_DELTA_WPARAM(wParam) + iDeltaAccum;
         iDeltaAccum = iDelta % WHEEL_DELTA;
         iDelta /= WHEEL_DELTA;
@@ -624,21 +634,22 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     } else if (conf.smooth_scrolling && msg == WM_CHAR && wParam == 'r' && alt_key_down()) {
         CState.MouseOverTileInfo = !CState.MouseOverTileInfo;
 
-    } else if (msg == WM_ACTIVATEAPP) {
-        // If window has just become inactive e.g. ALT+TAB
-        if (LOWORD(wParam)) {
-            ShowWindow(*phWnd, SW_RESTORE);
-        } else {
-            //wParam is 0 if the window has become inactive.
-            //ShowWindow(*phWnd, SW_MINIMIZE);
-        }
-        return WinProc(hwnd, msg, wParam, lParam);
-
     } else if (msg == WM_CHAR && wParam == 't' && alt_key_down() && !conf.reduced_mode) {
         show_mod_menu();
 
     } else if (msg == WM_CHAR && wParam == 'h' && alt_key_down() && conf.reduced_mode) {
         show_mod_menu();
+
+    } else if (msg == WM_CHAR && wParam == 'o' && alt_key_down() && !*GameHalted
+    && *game_state & STATE_SCENARIO_EDITOR && *game_state & STATE_OMNISCIENT_VIEW) {
+        uint32_t seed = ThinkerVars->map_random_value;
+        if (!seed) {
+            seed = random_next(GetTickCount()) >> 16;
+        }
+        int value = pop_ask_number("modmenu", "MAPGEN", seed, 0);
+        if (!value) { // OK button pressed
+            console_world_generate(ParseNumTable[0]);
+        }
 
     } else if (DEBUG && msg == WM_CHAR && wParam == 'd' && alt_key_down()) {
         conf.debug_mode = !conf.debug_mode;
@@ -1123,8 +1134,9 @@ void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, 
 Refresh base window workers properly after nerve staple is done.
 */
 void __cdecl BaseWin_action_staple(int base_id) {
+    set_base(base_id);
     action_staple(base_id);
-    base_compute(base_id);
+    base_compute(1);
     BaseWin_on_redraw(BaseWin);
 }
 

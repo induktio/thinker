@@ -26,7 +26,8 @@ int fungus_yield(int faction, int res_type);
 int item_yield(int x, int y, int faction, int bonus, MapItem item);
 void __cdecl find_start(int faction, int* tx, int* ty);
 void __cdecl mod_world_build();
-void __cdecl world_generate(uint32_t seed);
+void world_generate(uint32_t seed);
+void console_world_generate(uint32_t seed);
 
 
 

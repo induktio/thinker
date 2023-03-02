@@ -10,6 +10,7 @@ char* MapFilePath = (char*)0x94A2BC;
 char* StrBuffer = (char*)0x9B86A0;
 BASE** current_base_ptr = (BASE**)0x90EA30;
 int* current_base_id = (int*)0x689370;
+int* compute_base_id = (int*)0x689374; // changed whenever base_support values are refreshed
 int* game_preferences = (int*)0x9A6490;
 int* game_more_preferences = (int*)0x9A6494;
 int* game_warnings = (int*)0x9A6498;
@@ -156,7 +157,8 @@ CWorldbuilder* WorldBuilder = (CWorldbuilder*)0x9502A8;
 
 
 FPopup_start Popup_start                     = (FPopup_start          )0x406380;
-FBaseWin_on_redraw BaseWin_on_redraw         = (FBaseWin_on_redraw    )0x41E790;
+FWinGeneric BaseWin_on_redraw                = (FWinGeneric           )0x41E790;
+FWinGeneric GraphicWin_redraw                = (FWinGeneric           )0x5D5A70;
 FGeneric SubInterface_release_iface_mode     = (FGeneric              )0x45D380;
 FMapWin MapWin_calculate_dimensions          = (FMapWin               )0x462980;
 FMapWin_tile_to_pixel MapWin_tile_to_pixel   = (FMapWin_tile_to_pixel )0x462F00;

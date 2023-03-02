@@ -79,6 +79,13 @@ Enter a new value for {$MSG0}.
 
 Value:
 
+#MAPGEN
+#xs 400
+#caption Thinker Mod
+Enter a new value for random map generator.
+
+Value:
+
 #GENERIC
 #xs 400
 #caption $MSG0

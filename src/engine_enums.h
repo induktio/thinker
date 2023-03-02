@@ -560,7 +560,7 @@ enum base_state_flags {
     BSTATE_UNK_10 = 0x10,
     BSTATE_UNK_20 = 0x20, // enemy_strategy, former units
     BSTATE_RESEARCH_DATA_STOLEN = 0x40,
-    BSTATE_UNK_80 = 0x80,
+    BSTATE_UNK_80 = 0x80, // prevents capture_base from adding flag BSTATE_UNK_10000
     BSTATE_UNK_100 = 0x100,
     BSTATE_FACILITY_SCRAPPED = 0x200, // Only one facility can be scrapped/recycled per turn
     BSTATE_ARTIFACT_LINKED = 0x400, // Alien Artifact linked to Network Node
@@ -569,7 +569,7 @@ enum base_state_flags {
     BSTATE_UNK_2000 = 0x2000,
     BSTATE_UNK_4000 = 0x4000,
     BSTATE_UNK_8000 = 0x8000,
-    BSTATE_UNK_10000 = 0x10000,
+    BSTATE_UNK_10000 = 0x10000, // set in capture_base, this base can be renamed in base_upkeep
     BSTATE_GENETIC_PLAGUE_INTRO = 0x20000,
     BSTATE_ASSISTANT_KILLER_HOME = 0x40000, // Veh home base (or closest) of Assistant worm killer
     BSTATE_UNK_80000 = 0x80000, // enemy_strategy, former units

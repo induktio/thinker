@@ -138,6 +138,7 @@ extern char* MapFilePath;
 extern char* StrBuffer;
 extern BASE** current_base_ptr;
 extern int* current_base_id;
+extern int* compute_base_id;
 extern int* game_preferences;
 extern int* game_more_preferences;
 extern int* game_warnings;
@@ -320,7 +321,7 @@ typedef int(__thiscall *FBuffer_write_cent_l3)(Buffer* This, char* text, RECT* r
 typedef int(__thiscall *FBuffer_box)(Buffer* This, RECT* rt, int color_h, int color_v);
 typedef int(__thiscall *FPopup_start)(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
-typedef int(__thiscall *FBaseWin_on_redraw)(Win* This);
+typedef int(__thiscall *FWinGeneric)(Win* This);
 typedef int(__thiscall *FGeneric)(void* This);
 typedef int(__cdecl *FNetMsg_pop2)(char* label, void* a2);
 typedef int(__thiscall *FNetMsg_pop)(void* This, char* label, int delay, int a4, void* a5);
@@ -329,7 +330,8 @@ typedef int(__thiscall *FNetMsg_pop)(void* This, char* label, int delay, int a4,
 
 
 extern FPopup_start Popup_start;
-extern FBaseWin_on_redraw BaseWin_on_redraw;
+extern FWinGeneric BaseWin_on_redraw;
+extern FWinGeneric GraphicWin_redraw;
 extern FGeneric SubInterface_release_iface_mode;
 extern FMapWin MapWin_calculate_dimensions;
 extern FMapWin_tile_to_pixel MapWin_tile_to_pixel;

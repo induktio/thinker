@@ -663,6 +663,21 @@ float world_fractal(FastNoiseLite& noise, int x, int y) {
     return val;
 }
 
+void console_world_generate(uint32_t seed) {
+    if (*game_state & STATE_SCENARIO_EDITOR && *game_state & STATE_OMNISCIENT_VIEW) {
+        *total_num_vehicles = 0;
+        *total_num_bases = 0;
+        MapWin->fUnitNotViewMode = 0;
+        MapWin->iUnit = -1;
+        *game_state |= STATE_UNK_4;
+        *game_state &= ~STATE_OMNISCIENT_VIEW;
+        world_generate(seed);
+        *game_state |= STATE_OMNISCIENT_VIEW;
+        draw_map(1);
+        GraphicWin_redraw(WorldWin);
+    }
+}
+
 void __cdecl mod_world_build() {
     static uint32_t seed = random_state();
     if (!conf.new_world_builder) {
@@ -674,7 +689,7 @@ void __cdecl mod_world_build() {
     world_generate(seed);
 }
 
-void __cdecl world_generate(uint32_t seed) {
+void world_generate(uint32_t seed) {
     if (DEBUG) {
         memset(pm_overlay, 0, sizeof(pm_overlay));
         *game_state |= STATE_DEBUG_MODE;
@@ -702,7 +717,7 @@ void __cdecl world_generate(uint32_t seed) {
     noise.SetSeed(seed);
     random_reseed(seed);
     my_srand(seed ^ 0xffff); // For game engine rand function, terrain detail placement
-    *map_random_seed = ((seed) % 0x7fff) + 1; // Must be non-zero, supply pod placement
+    *map_random_seed = (seed % 0x7fff) + 1; // Must be non-zero, supply pod placement
 
     Points conts;
     uint32_t continents = clamp(*map_area_sq_root / 12, 4, 20);
