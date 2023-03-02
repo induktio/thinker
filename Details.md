@@ -22,6 +22,8 @@ Render base info feature draws colored labels around various bases to identify t
 
 If a base might riot on the next turn due to population increase or already has too many drones, it will be highlighted with a red label. This is not always entirely accurate due to the complexity of psych calculations.
 
+When a base has been nerve stapled, the remaining turns for the staple effect are shown near the base resource window. Previously this value was not shown in the user interface.
+
 Whenever the player instructs a former to build an improvement that replaces any other item in the tile, the game will display a warning dialog. This dialog can be skipped by toggling the option here (warn_on_former_replace).
 
 When building or capturing a new base, the mod will automatically copy the saved build queue from **Template 1** to the new base. At maximum 8 items can be saved to the template, and the first item from the template will be automatically moved to current production choice when a new base is built or captured. Only the template saved to the first slot is checked, any other saved templates are ignored.
@@ -29,8 +31,6 @@ When building or capturing a new base, the mod will automatically copy the saved
 To save the current queue to template, open a base and **right click** on the queue and select **Save current list to template**. This feature works in conjunction with the simple hurry cost option so that it's easy to start hurrying base production on the first turn without worrying about double cost mineral thresholds.
 
 To ease calculations, base hurry dialog will now display the minimum required hurry cost to complete the item on the next turn. This assumes the mineral surplus does not decrease, so take it into account if adjusting the workers. When entering a partial payment, this minimal amount will be the default choice in the dialog, instead of the full hurry cost like previously.
-
-When a base has been nerve stapled, the remaining turns for the staple effect are shown near the base resource window. Previously this value was not shown in the user interface.
 
 
 Summary of AI changes
@@ -109,6 +109,8 @@ In Alpha Centauri, Fusion reactor technology was extremely important for militar
 Another notable change is the introduction of reduced unit healing rates. In the vanilla game, units were often able to fully heal in a single turn inside a base but this is no longer the case. Prolonged offensives are no longer trivially easy against opponents since units may have to stop healing for multiple turns. The healing rate can be significantly increased by building Command Centers and similar facilities though.
 
 Related to combat mechanics, it is also possible to adjust movement speeds on magtubes with `magtube_movement_rate` setting. By default this setting allows zero cost movement on magtubes but it can be changed for example to allow twice as fast movement compared to normal roads.
+
+When bases are captured from another faction, the captured base extra drone psych effect is shown separately on the psych window. While in vanilla game this period was always 50 turns, in the modded version this depends on the population size and facilities in the captured base, and it can range from 20 to 50 turns. This makes it somewhat easier to assimilate smaller bases while larger bases will still take a long time to switch previous owner.
 
 
 AI production bonuses
@@ -249,23 +251,20 @@ If any issues are encountered, first check if they occur with the vanilla game a
 * Smooth scrolling config option.
 * Windowed mode config option.
 
-Scient's patch is already included in the Thinker binary and does not need any additional installation steps from the user. Optionally it is possible to install the modified txt files provided by Scient's patch. Any other mod that uses a custom patched binary not listed here is not supported while running Thinker. Using any other binaries may prevent the game from starting if any of  Thinker's startup checks fail because of an incompatible version.
+Scient's patch is already included in the Thinker binary and does not need any additional installation steps from the user. Optionally it is possible to install the modified txt files provided by Scient's patch. 
+Any other mod that uses a custom patched binary not listed here is not supported while running Thinker. Using any other binaries may prevent the game from starting if any of Thinker's startup checks fail because of an incompatible version.
 
 
-Features not supported
-======================
-Currently the features listed here are not supported while Thinker is enabled. The list may be subject to change in future releases. Some requested features are not feasible to implement due to the limitations of patching a game binary.
+Known limitations
+=================
+Currently the features listed here may not be fully supported or may have issues while Thinker is enabled. The list may be subject to change in future releases.
 
-1. Network multiplayer (TCP/IP) and PBEM should be supported, however this receives less testing than the singleplayer configuration, so some issues might occur. In case of network problems, refer to other manuals on how to configure firewalls and open the necessary ports for multiplayer.
+1. Network multiplayer TCP/IP and PBEM should be supported, however this receives less testing than the singleplayer configuration, so some issues might occur. In case of network problems, refer to other manuals on how to configure firewalls and open the necessary ports for multiplayer.
 2. More factions/units/bases. These limits were hardcoded in the game binary at compilation time and are not feasible to change without a full open source port.
 3. Some custom scenario rules in "Edit Scenario Rules" menus are not supported fully. This will not affect randomly generated maps. However these rules are supported: `No terraforming`, `No colony pods can be built`, `No secret projects can be built` and `No technological advances`.
-
-
-Known bugs
-==========
-1. While `collateral_damage_value` is set to 0, the game might still display temporary messages about collateral damage being inflicted on units on the stack, but none of them will actually take any damage.
-2. The faction selection dialog in game setup is limited to showing only the first 24 factions even if installed factions in alphax.txt exceed this number.
-3. Maximum supported map size by Thinker is 256x256. This is also the largest map that the game interface will allow selecting.
+4. While `collateral_damage_value` is set to 0, the game might still display messages about collateral damage being inflicted on units on the stack, but none of them will actually take any damage.
+5. Faction selection dialog in the game setup is limited to showing only the first 24 factions even if installed factions in alphax.txt exceed this number.
+6. Maximum supported map size by Thinker is 256x256. While this is a compile time constant, it is also the largest map that the game interface will allow selecting.
 
 
 Other patches included
@@ -301,8 +300,11 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 26. Patch Energy Market Crash event to reduce energy reserves only by 1/4 instead of 3/4.
 27. Game will now allow reselecting units that have already skipped their turns if they have full movement points available (activate_skipped_units).
 28. Bases that have sufficient drone control facilities before the growth phase can grow without triggering possible drone riots on the same turn (delay_drone_riots).
-29. Disable DRONEREVOLT event which sometimes caused rioting player-owned bases to join other factions while this did not happen on AI factions (skip_drone_revolts).
+29. Disable drone revolt event which sometimes caused rioting player-owned bases to join other factions while this did not happen on AI factions (skip_drone_revolts).
 30. Whenever additional units are added in the editor mode, these are set as independent units requiring no support by default (editor_free_units).
+31. Patch captured base psych effect to last a variable time from 20 to 50 turns depending on the captured base size.
+32. Whenever a base is captured that was previously owned by a third faction and the time to assimilate the base was more than 10 turns, the previous ownership is preserved after capture.
+33. Remove refugees event from base capture when both human and alien factions are involved to avoid issues with diplomacy events on the same turn.
 
 
 Scient's patch

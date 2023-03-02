@@ -394,7 +394,7 @@ extern Fact_gate action_gate;
 extern fp_4int action_sat_attack;
 extern fp_1int action;
 
-extern fp_1int set_base;
+//extern fp_1int set_base;
 extern fp_2int say_base;
 extern Fbase_at base_at;
 extern fp_2int base_find;
@@ -433,7 +433,7 @@ extern fp_3int psych_check;
 extern fp_void base_psych;
 extern fp_2int base_rank;
 extern fp_void base_energy;
-extern fp_1int base_compute;
+//extern fp_1int base_compute;
 extern fp_1int base_connect;
 extern fp_1int base_terraform;
 extern fp_1int pop_goal;

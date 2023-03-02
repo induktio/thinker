@@ -24,6 +24,12 @@ Config conf;
 NodeSet mapnodes;
 AIPlans plans[MaxPlayerNum];
 
+const char* landmark_params[] = {
+    "crater", "volcano", "jungle", "uranium",
+    "sargasso", "ruins", "dunes", "fresh",
+    "mesa", "canyon", "geothermal", "ridge",
+    "borehole", "nexus", "unity", "fossil"
+};
 
 int option_handler(void* user, const char* section, const char* name, const char* value) {
     static bool unknown_option = false;

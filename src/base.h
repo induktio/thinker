@@ -8,6 +8,10 @@ const int GOV_ALLOW_COMBAT =
 void __cdecl mod_base_reset(int base_id, bool has_gov);
 int __cdecl mod_base_build(int base_id, bool has_gov);
 void __cdecl base_first(int base_id);
+void __cdecl set_base(int base_id);
+void __cdecl base_compute(bool update_prev);
+int __cdecl mod_base_kill(int base_id);
+int __cdecl mod_capture_base(int base_id, int faction, int is_probe);
 
 char* prod_name(int item_id);
 int prod_turns(int base_id, int item_id);

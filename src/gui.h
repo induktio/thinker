@@ -2,7 +2,6 @@
 
 #include "main.h"
 
-const int StrBufLen = 256;
 // Bottom middle UI console size in pixels
 const int ConsoleHeight = 219;
 const int ConsoleWidth = 1024;

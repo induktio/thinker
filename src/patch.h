@@ -12,7 +12,7 @@ const int RegisterClassImport = 0x66929C;
 const int GetSystemMetricsImport = 0x669334;
 const int GetPrivateProfileStringAImport = 0x669108;
 
-extern const char* landmark_params[];
+const int StrBufLen = 256;
 
 void write_jump(int addr, int func);
 void write_call(int addr, int func);

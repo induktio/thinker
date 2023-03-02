@@ -81,6 +81,147 @@ void __cdecl base_first(int base_id) {
     }
 }
 
+void __cdecl set_base(int base_id) {
+    *current_base_id = base_id;
+    *current_base_ptr = &Bases[base_id];
+}
+
+void __cdecl base_compute(bool update_prev) {
+    if (update_prev || *compute_base_id != *current_base_id) {
+        *compute_base_id = *current_base_id;
+        base_support();
+        base_yield();
+        base_nutrient();
+        base_minerals();
+        base_energy();
+    }
+}
+
+bool valid_relocate_base(int base_id) {
+    int faction = Bases[base_id].faction_id;
+    int new_id = -1;
+
+    if (!has_tech(faction, Facility[FAC_HEADQUARTERS].preq_tech)) {
+        return false;
+    }
+    for (int i = 0; i < *total_num_bases; i++) {
+        BASE* b = &Bases[i];
+        if (b->faction_id == faction) {
+            if ((i != base_id && b->item() == -FAC_HEADQUARTERS)
+            || has_facility(i, FAC_HEADQUARTERS)) {
+                return false;
+            }
+            if (new_id < 0 && b->mineral_surplus > 3) {
+                new_id = i;
+            }
+        }
+    }
+    return new_id == base_id;
+}
+
+void find_relocate_base(int faction) {
+    if (find_hq(faction) < 0) {
+        int best_score = INT_MIN;
+        int best_id = -1;
+        Points bases;
+        for (int i = 0; i < *total_num_bases; i++) {
+            BASE* b = &Bases[i];
+            if (b->faction_id == faction) {
+                bases.insert({b->x, b->y});
+            }
+        }
+        for (int i = 0; i < *total_num_bases; i++) {
+            BASE* b = &Bases[i];
+            if (b->faction_id == faction) {
+                int score = 4 * b->pop_size - (int)(10 * avg_range(bases, b->x, b->y))
+                    - clamp(2 * b->assimilation_turns_left, 0, 80);
+                debug("relocate_base %s %4d %s\n",
+                    MFactions[faction].filename, score, b->name);
+                if (score > best_score) {
+                    best_id = i;
+                    best_score = score;
+                }
+            }
+        }
+        if (best_id >= 0) {
+            BASE* b = &Bases[best_id];
+            set_base_facility(best_id, FAC_HEADQUARTERS, true);
+            draw_tile(b->x, b->y, 0);
+        }
+    }
+}
+
+int __cdecl mod_base_kill(int base_id) {
+    int old_faction = Bases[base_id].faction_id;
+    assert(base_id >= 0 && base_id < *total_num_bases);
+    base_kill(base_id);
+    find_relocate_base(old_faction);
+    return 0;
+}
+
+int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
+    BASE* base = &Bases[base_id];
+    int old_faction = base->faction_id;
+    int prev_owner = base->faction_id;
+    int last_spoke = *current_turn - Factions[faction].diplo_spoke[old_faction];
+    bool vendetta = at_war(faction, old_faction);
+    bool alien_fight = is_alien(faction) != is_alien(old_faction);
+    bool destroy_base = base->pop_size < 2;
+    assert(base_id >= 0 && base_id < *total_num_bases);
+    assert(valid_player(faction) && faction != old_faction);
+
+    if (is_probe) {
+        MFactions[old_faction].thinker_last_mc_turn = *current_turn;
+    }
+    if (!destroy_base && alien_fight) {
+        base->pop_size = max(2, base->pop_size / 2);
+    }
+    if (!destroy_base && base->faction_id_former >= 0
+    && is_alive(base->faction_id_former)
+    && base->assimilation_turns_left > 10) {
+        prev_owner = base->faction_id_former;
+    }
+    base->defend_goal = 0;
+    capture_base(base_id, faction, is_probe);
+    find_relocate_base(old_faction);
+    /*
+    Modify captured base extra drone effect to take into account the base size.
+    */
+    if (!destroy_base) {
+        int num = 0;
+        for (int i = Fac_ID_First; i <= Fac_ID_Last; i++) {
+            if (has_fac_built(base_id, i)) {
+                num++;
+            }
+        }
+        base->assimilation_turns_left = clamp((num + base->pop_size) * 5 + 15, 20, 50);
+        base->faction_id_former = prev_owner;
+    }
+    /*
+    Prevent AIs from initiating diplomacy once every turn after losing a base.
+    Allow dialog if surrender is possible given the diplomacy check values.
+    */
+    if (vendetta && is_human(faction) && !is_human(old_faction)
+    && last_spoke < 10 && !*diplo_value_93FA98 && !*diplo_value_93FA24) {
+        int lost = 0;
+        for (int i = 0; i < *total_num_bases; i++) {
+            BASE* b = &Bases[i];
+            if (b->faction_id == faction && b->faction_id_former == old_faction) {
+                lost++;
+            }
+        }
+        int div = max(2, 6 - last_spoke/2) + max(0, 4 - lost/2)
+            + (want_revenge(old_faction, faction) ? 4 : 0);
+        if (random(div) > 0) {
+            set_treaty(faction, old_faction, DIPLO_WANT_TO_TALK, 0);
+            set_treaty(old_faction, faction, DIPLO_WANT_TO_TALK, 0);
+        }
+    }
+    debug("capture_base %3d %3d old_owner: %d new_owner: %d last_spoke: %d v1: %d v2: %d\n",
+        *current_turn, base_id, old_faction, faction, last_spoke, *diplo_value_93FA98, *diplo_value_93FA24);
+    return 0;
+}
+
 char* prod_name(int item_id) {
     if (item_id >= 0) {
         return Units[item_id].name;
@@ -646,28 +787,6 @@ int find_project(int base_id) {
     return 0;
 }
 
-bool relocate_hq(int base_id) {
-    int faction = Bases[base_id].faction_id;
-    int new_id = -1;
-
-    if (!has_tech(faction, Facility[FAC_HEADQUARTERS].preq_tech)) {
-        return false;
-    }
-    for (int i=0; i < *total_num_bases; i++) {
-        BASE* b = &Bases[i];
-        int t = b->queue_items[0];
-        if (b->faction_id == faction) {
-            if ((i != base_id && t == -FAC_HEADQUARTERS) || has_facility(i, FAC_HEADQUARTERS)) {
-                return false;
-            }
-            if (new_id < 0 && b->mineral_surplus > 3) {
-                new_id = i;
-            }
-        }
-    }
-    return new_id == base_id;
-}
-
 /*
 Return true if unit2 is strictly better than unit1 in all circumstances (non PSI).
 Disable random chance in prototype choices in these instances.
@@ -1170,7 +1289,7 @@ int select_production(int base_id) {
             continue;
         if (t == FAC_PRESSURE_DOME && (*climate_future_change <= 0 || !is_shore_level(mapsq(base->x, base->y))))
             continue;
-        if (t == FAC_HEADQUARTERS && (conf.auto_relocate_hq || !relocate_hq(base_id)))
+        if (t == FAC_HEADQUARTERS && (conf.auto_relocate_hq || !valid_relocate_base(base_id)))
             continue;
         if (t == FAC_COMMAND_CENTER && (sea_base || turns > 5))
             continue;

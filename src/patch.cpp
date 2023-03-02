@@ -13,13 +13,6 @@ const char* ac_movlist_txt = "movlist.txt";
 const char* ac_movlistx_txt = "movlistx.txt";
 const int8_t NetVersion = (DEBUG ? 64 : 10);
 
-const char* landmark_params[] = {
-    "crater", "volcano", "jungle", "uranium",
-    "sargasso", "ruins", "dunes", "fresh",
-    "mesa", "canyon", "geothermal", "ridge",
-    "borehole", "nexus", "unity", "fossil"
-};
-
 static bool delay_base_riot = false;
 
 
@@ -58,81 +51,6 @@ void __cdecl mod_drone_riot() {
     } else {
         assert(!((*current_base_ptr)->state_flags & BSTATE_DRONE_RIOTS_ACTIVE));
     }
-}
-
-void check_relocate_hq(int faction) {
-    if (find_hq(faction) < 0) {
-        int best_score = INT_MIN;
-        int best_id = -1;
-        Points bases;
-        for (int i = 0; i < *total_num_bases; i++) {
-            BASE* b = &Bases[i];
-            if (b->faction_id == faction) {
-                bases.insert({b->x, b->y});
-            }
-        }
-        for (int i = 0; i < *total_num_bases; i++) {
-            BASE* b = &Bases[i];
-            if (b->faction_id == faction) {
-                int score = b->pop_size - (int)(10 * avg_range(bases, b->x, b->y))
-                    + (has_facility(i, FAC_PERIMETER_DEFENSE) ? 4 : 0);
-                debug("relocate_hq %4d %s\n", score, b->name);
-                if (score > best_score) {
-                    best_id = i;
-                    best_score = score;
-                }
-            }
-        }
-        if (best_id >= 0) {
-            BASE* b = &Bases[best_id];
-            set_base_facility(best_id, FAC_HEADQUARTERS, true);
-            draw_tile(b->x, b->y, 0);
-        }
-    }
-}
-
-int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
-    int old_faction = Bases[base_id].faction_id;
-    int vendetta = at_war(faction, old_faction);
-    int last_spoke = *current_turn - Factions[faction].diplo_spoke[old_faction];
-    assert(valid_player(faction) && faction != old_faction);
-    if (is_probe) {
-        MFactions[old_faction].thinker_last_mc_turn = *current_turn;
-    }
-    Bases[base_id].defend_goal = 0;
-    capture_base(base_id, faction, is_probe);
-    check_relocate_hq(old_faction);
-    /*
-    Prevent AIs from initiating diplomacy once every turn after losing a base.
-    Allow dialog if surrender is possible given the diplomacy check values.
-    */
-    if (vendetta && is_human(faction) && !is_human(old_faction) && last_spoke < 10
-    && !*diplo_value_93FA98 && !*diplo_value_93FA24) {
-        int lost = 0;
-        for (int i = 0; i < *total_num_bases; i++) {
-            BASE* b = &Bases[i];
-            if (b->faction_id == faction && b->faction_id_former == old_faction) {
-                lost++;
-            }
-        }
-        int div = max(2, 6 - last_spoke/2) + max(0, 4 - lost/2)
-            + (want_revenge(old_faction, faction) ? 4 : 0);
-        if (random(div) > 0) {
-            set_treaty(faction, old_faction, DIPLO_WANT_TO_TALK, 0);
-            set_treaty(old_faction, faction, DIPLO_WANT_TO_TALK, 0);
-        }
-    }
-    debug("capture_base %3d %3d old_owner: %d new_owner: %d last_spoke: %d v1: %d v2: %d\n",
-        *current_turn, base_id, old_faction, faction, last_spoke, *diplo_value_93FA98, *diplo_value_93FA24);
-    return 0;
-}
-
-int __cdecl mod_base_kill(int base_id) {
-    int old_faction = Bases[base_id].faction_id;
-    assert(base_id >= 0 && base_id < *total_num_bases);
-    base_kill(base_id);
-    check_relocate_hq(old_faction);
-    return 0;
 }
 
 /*
@@ -179,7 +97,6 @@ int __cdecl config_game_rand() {
     return val;
 }
 
-
 int __cdecl skip_action_destroy(int id) {
     veh_skip(id);
     *veh_attack_flags = 0;
@@ -208,8 +125,14 @@ int __cdecl mod_read_basic_rules() {
     return value;
 }
 
+char* __cdecl limit_strcpy(char* dst, const char* src)
+{
+    strcpy_s(dst, StrBufLen, src);
+    return dst;
+}
+
 /*
-Read more about the idea behind idle loop patch: https://github.com/vinceho/smac-cpu-fix/
+Patch the game engine to use significantly less CPU time by modifying the idle loop.
 */
 BOOL WINAPI ModPeekMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg)
 {
@@ -285,10 +208,10 @@ Checks that the address contains old values before replacing.
 If new_bytes is a null pointer, replace old_bytes with NOP code instead.
 */
 void write_bytes(int addr, const byte* old_bytes, const byte* new_bytes, int len) {
-    if ((int*)addr < (int*)AC_IMAGE_BASE || (int*)addr + len > (int*)AC_IMAGE_BASE + AC_IMAGE_LEN) {
+    if (addr < (int)AC_IMAGE_BASE || addr + len > (int)AC_IMAGE_BASE + (int)AC_IMAGE_LEN) {
         exit_fail(addr);
     }
-    for (int i=0; i<len; i++) {
+    for (int i = 0; i < len; i++) {
         if (*((byte*)addr + i) != old_bytes[i]) {
             debug("write_bytes: address: %08X actual value: %02X expected value: %02X\n",
                 addr + i, *((byte*)addr + i), old_bytes[i]);
@@ -304,13 +227,9 @@ void write_bytes(int addr, const byte* old_bytes, const byte* new_bytes, int len
 
 /*
 Check before patching that the locations contain expected data.
-Standard function prologue (55 8B EC).
-Near call with absolute indirect address (FF 25).
 */
 void write_jump(int addr, int func) {
-    if ((*(uint32_t*)addr & 0xFFFFFF) != 0xEC8B55 && *(uint16_t*)addr != 0x25FF
-    && *(uint16_t*)(addr-1) != 0xA190 && *(uint8_t*)(addr) != 0xE9
-    && *(uint16_t*)(addr) != 0x90C3 && *(uint16_t*)addr != 0xC18B) { // FileBox exceptions
+    if ((addr & 0xF) != 0 && *(uint8_t*)(addr) != 0xE9) {
         exit_fail(addr);
     }
     *(byte*)addr = 0xE9;
@@ -318,14 +237,14 @@ void write_jump(int addr, int func) {
 }
 
 void write_call(int addr, int func) {
-    if (*(byte*)addr != 0xE8 || abs(*(int*)(addr+1)) > (int)AC_IMAGE_LEN) {
+    if (*(byte*)addr != 0xE8 || *(int*)(addr+1) + addr < (int)AC_IMAGE_BASE) {
         exit_fail(addr);
     }
     *(int*)(addr+1) = func - addr - 5;
 }
 
 void write_offset(int addr, const void* ofs) {
-    if (*(byte*)addr != 0x68 || *(int*)(addr+1) < (int)AC_IMAGE_BASE) {
+    if (*(byte*)addr != 0x68 || *(int*)(addr+1) < (int)AC_IMAGE_BASE || ofs < AC_IMAGE_BASE) {
         exit_fail(addr);
     }
     *(int*)(addr+1) = (int)ofs;
@@ -456,6 +375,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x626350, (int)log_say_hex2);
     write_jump(0x634BE0, (int)FileBox_init);
     write_jump(0x634C20, (int)FileBox_close);
+    write_jump(0x645460, (int)limit_strcpy);
     write_offset(0x50F421, (void*)mod_turn_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);
     write_offset(0x64576E, (void*)mod_except_handler3);
@@ -704,6 +624,15 @@ bool patch_setup(Config* cf) {
         const byte old_bytes[] = {0x99,0x83,0xE2,0x03,0x03,0xC2,0xC1,0xF8,0x02};
         const byte new_bytes[] = {0xC1,0xF8,0x02,0x6B,0xC0,0x03,0x90,0x90,0x90};
         write_bytes(0x520725, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+
+    /*
+    Remove refugees event from base capture when both human and alien factions are involved.
+    */
+    {
+        const byte old_bytes[] = {0x0F,0x84};
+        const byte new_bytes[] = {0x90,0xE9};
+        write_bytes(0x50D67A, old_bytes, new_bytes, sizeof(new_bytes));
     }
 
     /*
