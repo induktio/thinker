@@ -8,7 +8,6 @@ Corsair's Corner
 Crimson Cove
 Crossed Swords Inn
 Cutthroat's Cove
-Dead Man's Harbor
 Galleon's Grotto
 Golden Anchor
 Harpoon Hill
@@ -21,10 +20,11 @@ Pirate Paradise
 Privateer's Port
 Rumrunner's Roost
 Sailor's Retreat
-Sea Rover's Retreat
 Seafarer's Retreat
 Silver Sail Inn
 Smuggler's Den
+Stormy Outpost
+Supplies Point
 Swashbuckler's Saloon
 The Plank Inn
 Tortuga Tavern
@@ -35,21 +35,21 @@ Treasure Hunters
 Anchor's Rest
 Brigantine Bay
 Coral Cove
-Coral Reef Harbor
+Endless Horizon
 Fisherman's Wharf
+Harborview Haven
 Neptune's Quay
 Ocean's Roost
 Oceanic View
 Port Royal
-Sailor's Sanctuary
-Saltwater Sanctuary
+Private Cove
+Safe Passage
 Sea Breeze Harbor
-Seafarer's Retreat
 Seafaring Way
 Shipshape Shores
+Sunken Harbor
 Tidal Haven
-Treasure Island Port
-Wave Watch
+Treasure Trove
 Wavecrest Bay
 Windward Bay
 #END

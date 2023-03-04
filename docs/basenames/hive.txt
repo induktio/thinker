@@ -4,22 +4,22 @@ Collective Chamber
 Communal Complex
 Community Core
 Discipline Enclave
-Disciplined Dugout
+Factory Pathways
 Factory Stronghold
 Fortress of Loyalty
+Great Cohesion
+Industrial Enclave
 Laborer's Labyrinth
-Laborer's Lode
 Loyalty Stronghold
 Manufacturing Maze
 Mental Fortress
 People's Unity
 Proletarian Gathering
 Proletarian Passage
-Social Commune
 Social Spire
 Social Substructure
+Socialism Pathways
 Society Synthesis
-The Collective Core
 The Comrade's Hold
 The Great Coalescence
 The Industry Warren
@@ -33,23 +33,23 @@ Yang Community
 
 #WATERBASES
 Aquatic Commune
+Aspiration Depths
+Communal Grid
 Deep Harbor
+Fellowship Enclave
+Laborer's Colony
 Maritime Collective
 Nautical Assembly
-Ocean Citadel
-Ocean Outpost
+Observer Outpost
 Oceanic Hub
 Port Assembly
 Port Progress
+Production Hub
 Sea Convergence
 Sea Unity
 Seabed Stronghold
-Seafaring Collective
-Seafaring Synthesis
-Seafloor Garrison
-The Aquatic Assembly
+Society Labyrinth
+Society Matrix
 The Deep Society
-The Oceanic Nexus
-The Underwater Union
 Watery Hive
 #END

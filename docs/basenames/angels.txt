@@ -2,11 +2,13 @@
 Algorithm Alley
 Augmented Avenue
 Binary Bastion
+Bitropolis
 Byte Boulevard
-Code Kingdom
-Cyber Citadel
+Circuit City
 Cyber Junction
 Data District
+Data Metropolis
+Digital Dominion
 Futuristic Niche
 Hacker's Hideaway
 Keyframe Station
@@ -15,10 +17,8 @@ Lunar Labyrinth
 Matrix Mansion
 Net Niche
 Node Nexus
-Omega Outpost
-Phantom Plaza
+Pixel Plaza
 Programmer's Precinct
-Quantum Quarters
 Raster Realm
 Refuge Metropolis
 Shadow Shelter
@@ -35,21 +35,21 @@ Virus Vault
 Aquatic Arcanum
 Atlantis Anchorage
 Blue Horizon Bay
-Coral Crest City
+Code Citadel
 Crystal Cove
+Cyberhaven
+Data Dimension
 Ghost Outpost
-Mariana Metropolis
 Marine Mansion
-Nautical Nook
 Nautilus Niche
 Neural Nexus
 Oceanus Outpost
+Processor Place
 Reef Retreat
 Sea Serenade
 Seabird Bay
-Seafloor Station
-Seaside Stronghold
 Seaweed Settlement
 Synthetic Shores
 Triton's Tower
+Wave Network
 #END

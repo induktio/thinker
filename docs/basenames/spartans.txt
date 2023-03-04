@@ -14,10 +14,10 @@ Iron Brigade Fortress
 Martial Keep
 Military Compound
 Phantom Tower
+Ranger Barracks
 Rebellion Bunker
-Rebellion Stronghold
+Rifleman Ridge
 Sentinel Camp
-Sentry Outpost
 Shield Barracks
 Shielded Citadel
 Siege Command Post
@@ -32,24 +32,24 @@ Warrior's Watch
 #END
 
 #WATERBASES
-Aquatic Stronghold
+Admiralty Fortress
+Armory Alpha
 Coastal Fortress
 Fleet Harbor
-Fleet Haven
-Marine Citadel
+Fleet Station
+Fortress Freedom
 Maritime Fortress
 Nautical Refuge
-Ocean Citadel
+Naval Depot
 Oceanic Outpost
 Port Citadel
 Saltwater Station
 Sea Garrison
 Sea Sovereignty
-Sea Surveillance
 Seabound Sentry
+Sentry Outpost
 Submarine Base
 Tidal Bastion
 Underwater Outpost
 Waterfront Stronghold
-Wavebreaker's Base
 #END

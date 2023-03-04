@@ -1,5 +1,6 @@
 #BASES
 Morgan Applications
+Morgan Atmospherics
 Morgan Aviation
 Morgan Communications
 Morgan Components
@@ -15,7 +16,6 @@ Morgan Geothermal
 Morgan Holdings
 Morgan Innovations
 Morgan Laboratories
-Morgan Legal Services
 Morgan Logistics
 Morgan Machinery
 Morgan Manufacturing
@@ -33,23 +33,23 @@ Morgan Ventures
 
 #WATERBASES
 Morgan Aquatic Exchange
+Morgan Automation
+Morgan Bioengineering
 Morgan Coral Gateway
 Morgan Current Station
 Morgan Deepwater Depot
+Morgan Infrastructure
 Morgan Marine Depot
-Morgan Ocean Exchange
+Morgan Nanotech
 Morgan Ocean Frontiers
-Morgan Ocean Markets
 Morgan Ocean Salvage
 Morgan Poseidon
 Morgan Reef Platform
-Morgan Saltwater
+Morgan Refinery
 Morgan Sea Station
-Morgan Sea Trading
 Morgan Seabed Exchange
-Morgan Shipyards
+Morgan Shipping
 Morgan Tidal Nexus
 Morgan Tidal Outpost
-Morgan Underwater Hub
 Morgan Waterfront
 #END

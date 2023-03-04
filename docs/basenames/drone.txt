@@ -1,17 +1,19 @@
 #BASES
 Assembly Grounds
+Assembly Point
 Common Future
 Equality Forge
 Forge of Freedom
 Freedom Foundation
 Freedom's Forge
 Guild Haven
+Hammerhead Base
+Industrial Citadel
 Industry Hall
 Iron Stronghold
 Labor Unity Hall
 Laborer's Citadel
 Laborer's Utopia
-Liberty Promise
 Liberty Station
 Liberty Works
 People's Foundry
@@ -20,13 +22,11 @@ Progress Park
 Progress Plant
 Resource Workshop
 Steel Citadel
-The Brotherhood's Base
 The Foundry
 Toolmaker's Den
 Unity Works
 Worker's Commons
 Worker's Quarter
-Worker's Unity
 Worker's Way
 Working Rights Hub
 #END
@@ -38,18 +38,18 @@ Deepwater Depot
 Marine Makerspace
 Marine Manufacturing
 Maritime Hub
-Ocean's Gateway
 Oceanic Workstation
 Reefside Refinery
 Saltwater Station
 Salvage Dock
 Sea Anchor Wharf
 Seabound Foundry
-Seafarer's Base
 Seafloor Forge
 Seaside Shipyard
 Subsea Station
 Tidal Factory
 Underwater Workshop
+Union Foundry
 Wharfside Welding
+Worker's Forge
 #END

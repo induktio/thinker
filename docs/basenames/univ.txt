@@ -3,6 +3,7 @@ Academy Archives
 Academy Campus
 Aurora Base
 Cosmic Campus
+Cybernetics Research
 Discovery Academy
 Future Foundation
 Gagarin Science Base
@@ -22,7 +23,6 @@ Quantum Institute
 Research Institute
 Saturn Center
 Science Center
-Science Nexus
 Solar Research Lab
 Sputnik Research
 Stellar Archives
@@ -33,23 +33,23 @@ Zarya Station
 
 #WATERBASES
 Aquatic Research Lab
-Aquatic Study Center
 Atlantis Research Lab
 Coastal Ecology Center
 Coastal Research
 Coral Reef Research
 Deep Blue Research Lab
+Exploration Hub
 Hydro Dynamics Lab
 Hydro Facility
 Marine Geology Lab
 Marine Resources Lab
+Meteorology Center
 Neptune Foundation
 Ocean Control Center
-Oceanic Facility
 Oceanic Institute
+Particle Physics Lab
 Prichal Research Lab
 Seabed Mapping Facility
 Seafloor Observatory
-Seawater Science Center
 Tidal Study Center
 #END

@@ -2,12 +2,12 @@
 Dreamland Valley
 Earthsong Enclave
 Emerald Eden
+Emerald Heights
 Enchanted Everglade
 Eternal Earth
 Ethereal Expanse
 Garden of Gaia
 Garden of Growth
-Golden Grove
 Hallowed Hill
 Harmony Hill
 Haven Heights
@@ -33,23 +33,23 @@ Wildwood Way
 
 #WATERBASES
 Aquatic Delight
-Coral Bayou
-Coral Reef Cove
-Fisherman's Oasis
+Azure Waters
+Botanical Bay
+Cascading Falls
+Golden Grove
 Kelp Kingdom
+Mossy Meadow
 Mystic Tides
 Neptune's Nook
 Ocean's Harvest
-Ocean's Oasis
 Reef's Refuge
 Sea Foam Fields
-Sea Glass Gardens
 Sea's Bounty
 Seashell Shores
+Serenity Garden
 Serenity at Sea
 Shimmering Seabed
-Starfish Sanctuary
 Underwater Eden
-Water's Edge Garden
+Verdant Vista
 Waterfall Way
 #END
