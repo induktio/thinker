@@ -246,7 +246,8 @@ Compatibility with other mods
 =============================
 It should be possible to run both Thinker and [PRACX](https://github.com/DrazharLn/pracx) graphics enhancement patch at the same time. For easiest installation, download [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). However this combination of patches will not receive the same testing than the normal configuration, so some issues are likely.
 
-If any issues are encountered, first check if they occur with the vanilla game and/or Thinker without additional mods. Also some optional features provided by Thinker will be disabled while running PRACX because they would patch conflicting areas of the game binary. These disabled feature include:
+When PRACX is loaded at the same time, Thinker's config menu shortcut changes to `ALT+H`. If any issues are encountered, first check if they occur with the vanilla game and/or Thinker without additional mods.
+Also some optional features provided by Thinker will be disabled while running PRACX because they would patch conflicting areas of the game binary. These disabled feature include:
 
 * Smooth scrolling config option.
 * Windowed mode config option.
@@ -260,11 +261,11 @@ Known limitations
 Currently the features listed here may not be fully supported or may have issues while Thinker is enabled. The list may be subject to change in future releases.
 
 1. Network multiplayer TCP/IP and PBEM should be supported, however this receives less testing than the singleplayer configuration, so some issues might occur. In case of network problems, refer to other manuals on how to configure firewalls and open the necessary ports for multiplayer.
-2. More factions/units/bases. These limits were hardcoded in the game binary at compilation time and are not feasible to change without a full open source port.
-3. Some custom scenario rules in "Edit Scenario Rules" menus are not supported fully. This will not affect randomly generated maps. However these rules are supported: `No terraforming`, `No colony pods can be built`, `No secret projects can be built` and `No technological advances`.
-4. While `collateral_damage_value` is set to 0, the game might still display messages about collateral damage being inflicted on units on the stack, but none of them will actually take any damage.
-5. Faction selection dialog in the game setup is limited to showing only the first 24 factions even if installed factions in alphax.txt exceed this number.
-6. Maximum supported map size by Thinker is 256x256. While this is a compile time constant, it is also the largest map that the game interface will allow selecting.
+2. Most notable limits in the game engine are 8 factions, 512 bases, and 2048 units. These limits were fixed in the game binary at compilation time and are not feasible to change without a full open source port.
+3. Faction selection dialog in the game setup is limited to showing only the first 24 factions even if installed factions in alphax.txt exceed this number.
+4. Some custom scenario rules in "Edit Scenario Rules" menus are not supported fully. This will not affect randomly generated maps. However these rules are supported: `No terraforming`, `No colony pods can be built`, `No secret projects can be built` and `No technological advances`.
+5. While `collateral_damage_value` is set to 0, the game might still display messages about collateral damage being inflicted on units on the stack, but none of them will actually take any damage.
+6. Maximum supported map size by Thinker is 256x256. This is a compile time constant, but it is also the largest map that the game interface will allow selecting.
 
 
 Other patches included
@@ -302,9 +303,9 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 28. Bases that have sufficient drone control facilities before the growth phase can grow without triggering possible drone riots on the same turn (delay_drone_riots).
 29. Disable drone revolt event which sometimes caused rioting player-owned bases to join other factions while this did not happen on AI factions (skip_drone_revolts).
 30. Whenever additional units are added in the editor mode, these are set as independent units requiring no support by default (editor_free_units).
-31. Patch captured base psych effect to last a variable time from 20 to 50 turns depending on the captured base size.
-32. Whenever a base is captured that was previously owned by a third faction and the time to assimilate the base was more than 10 turns, the previous ownership is preserved after capture.
-33. Remove refugees event from base capture when both human and alien factions are involved to avoid issues with diplomacy events on the same turn.
+31. Patch captured base extra drone effect to last a variable time from 20 to 50 turns depending on the captured base size.
+32. When a base is captured that was previously owned by active third faction and the time to assimilate the base was more than 10 turns, the previous owner is preserved after capture.
+33. Fix diplomacy dialog issues when both human and alien factions are involved in a base capture by removing the event that spawns additional colony pods.
 
 
 Scient's patch
@@ -370,7 +371,7 @@ The following fixes from Scient's patch are automatically applied at game startu
 
 Contributions
 =============
-Following people contributed source code that was incorporated into Thinker Mod in various parts of the project.
+Source code provided by following people has been incorporated into Thinker Mod in various parts of the project.
 
 * Brendan Casey for [OpenSMACX](https://github.com/b-casey/OpenSMACX) related insights into the game engine and Scient's patch.
 * Tim Nevolin's [Will To Power Mod](https://github.com/tnevolin/thinker-doer) for unit healing and reactor power patch and various other game engine config options.

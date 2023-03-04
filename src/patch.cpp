@@ -69,7 +69,7 @@ int __cdecl mod_veh_health(int veh_id) {
     return clamp(min(5*level, 10*level - veh->damage_taken), 0, 9999);
 }
 
-int __cdecl content_pop() {
+int __cdecl base_psych_content_pop() {
     int faction = (*current_base_ptr)->faction_id;
     assert(valid_player(faction));
     if (is_human(faction)) {
@@ -82,7 +82,7 @@ int __cdecl basewin_random_seed() {
     return *current_base_id ^ *map_random_seed;
 }
 
-int __cdecl dummy_value() {
+int __cdecl zero_value() {
     return 0;
 }
 
@@ -103,7 +103,7 @@ int __cdecl skip_action_destroy(int id) {
     return 0;
 }
 
-int __cdecl render_ocean_fungus(int x, int y) {
+int __cdecl MapWin_gen_terrain_nearby_fungus(int x, int y) {
     MAP* sq;
     int k = 0;
     for (int i=0; i<8; i++) {
@@ -125,9 +125,23 @@ int __cdecl mod_read_basic_rules() {
     return value;
 }
 
+/*
+Draw Hive faction labels with a more visible high contrast text color.
+*/
+int __cdecl map_draw_strcmp(const char* s1, const char* UNUSED(s2))
+{
+    return strcmp(s1, "SPARTANS") && (!conf.render_base_info || strcmp(s1, "HIVE"));
+}
+
 char* __cdecl limit_strcpy(char* dst, const char* src)
 {
     strcpy_s(dst, StrBufLen, src);
+    return dst;
+}
+
+char* __cdecl limit_strcat(char* dst, const char* src)
+{
+    strcat_s(dst, StrBufLen, src);
     return dst;
 }
 
@@ -369,6 +383,8 @@ bool patch_setup(Config* cf) {
     write_call(0x5425CF, (int)mod_buy_tech);
     write_call(0x543843, (int)mod_buy_tech);
     write_call(0x59FBA7, (int)set_treaty);
+    write_call(0x559E21, (int)map_draw_strcmp); // veh_draw
+    write_call(0x55B5E1, (int)map_draw_strcmp); // base_draw
     write_jump(0x6262F0, (int)log_say);
     write_jump(0x626250, (int)log_say2);
     write_jump(0x6263F0, (int)log_say_hex);
@@ -376,6 +392,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x634BE0, (int)FileBox_init);
     write_jump(0x634C20, (int)FileBox_close);
     write_jump(0x645460, (int)limit_strcpy);
+    write_jump(0x645470, (int)limit_strcat);
     write_offset(0x50F421, (void*)mod_turn_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);
     write_offset(0x64576E, (void*)mod_except_handler3);
@@ -417,8 +434,8 @@ bool patch_setup(Config* cf) {
         debug("faction_file_count: %d\n", cf->faction_file_count);
 
         memset((void*)0x58B63C, 0x90, 10);
-        write_call(0x58B526, (int)dummy_value); // config_game
-        write_call(0x58B539, (int)dummy_value); // config_game
+        write_call(0x58B526, (int)zero_value); // config_game
+        write_call(0x58B539, (int)zero_value); // config_game
         write_call(0x58B632, (int)config_game_rand); // config_game
         write_call(0x587066, (int)config_game_rand); // read_factions
     }
@@ -496,7 +513,7 @@ bool patch_setup(Config* cf) {
             0x00,0x83,0xC4,0x08,0x89,0x45,0xC4,0xE9,0x85,0x07,0x00,0x00,
         };
         write_bytes(0x463651, old_bytes, new_bytes, sizeof(new_bytes));
-        write_call(0x463659, (int)render_ocean_fungus);
+        write_call(0x463659, (int)MapWin_gen_terrain_nearby_fungus);
     }
 
     /*
@@ -908,7 +925,7 @@ bool patch_setup(Config* cf) {
             0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90
         };
         write_bytes(0x4EA56D, old_bytes, new_bytes, sizeof(new_bytes));
-        write_call(0x4EA56D, (int)content_pop);
+        write_call(0x4EA56D, (int)base_psych_content_pop);
     }
     if (cf->rare_supply_pods) {
         *(byte*)0x592085 = 0xEB; // bonus_at
