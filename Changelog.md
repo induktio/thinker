@@ -1,6 +1,23 @@
 
 # Thinker mod release changelog
 
+## Version 3.5 (2023-03-04)
+* Nerve staple turns and upcoming drone riots warning are shown on the bottom right side corner on base screen.
+* If any satellites are active, bonuses from satellites are shown on the left corner on base screen.
+* Remaining turns for the captured base extra drones is visible on the psych sub window.
+* Patch captured base extra drone effect to last a variable time from 20 to 50 turns depending on the captured base size.
+* When a base is captured that was previously owned by active third faction and the time to assimilate the base was more than 10 turns, the previous owner is preserved after capture.
+* Whenever additional units are added in the editor mode, these are set as independent units requiring no support by default (editor_free_units).
+* Add shortcut ALT+O for scenario editor mode to run the random map generator with a predefined value.
+* Add config option to select whether polar caps should be placed on randomly generated maps.
+* Rename world_map_labels config option to render_base_info.
+* Minor updates to base name lists and map generator settings.
+* Draw Hive faction labels with a more visible high contrast text color.
+* Fix multiple issues with mouse wheel zooming on the world map and some additional popup windows.
+* Fix diplomacy dialog issues when both human and alien factions are involved in a base capture by removing the event that spawns additional colony pods.
+* Fix visual bug on some Windows versions that caused random characters to appear on the diplomacy scan display on the world map.
+
+
 ## Version 3.4 (2023-02-18)
 * Include hundreds of additional base names for all standard factions. These names are stored in basenames folder.
 * Whenever standard base names for any faction run out, the mod creates more variations from basenames/generic.txt.
