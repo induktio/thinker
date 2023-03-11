@@ -73,10 +73,16 @@ void design_units(int faction) {
             create_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, ABL_POLICE_2X, rec, PLAN_DEFENSIVE, NULL);
         }
     }
-    if (has_chassis(i, CHS_NEEDLEJET) && has_ability(i, ABL_ID_AIR_SUPERIORITY, CHS_NEEDLEJET, wpn)) {
-        int abls = ABL_AIR_SUPERIORITY
-            | (twoabl && has_ability(i, ABL_ID_DEEP_RADAR, CHS_NEEDLEJET, wpn) ? ABL_DEEP_RADAR : 0);
-        create_proto(i, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, abls, rec, PLAN_AIR_SUPERIORITY, NULL);
+    if (has_chassis(i, CHS_NEEDLEJET)) {
+        if (has_ability(i, ABL_ID_AIR_SUPERIORITY, CHS_NEEDLEJET, wpn)) {
+            int abls = ABL_AIR_SUPERIORITY
+                | (twoabl && has_ability(i, ABL_ID_DEEP_RADAR, CHS_NEEDLEJET, wpn) ? ABL_DEEP_RADAR : 0);
+            create_proto(i, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, abls, rec, PLAN_AIR_SUPERIORITY, NULL);
+        }
+        if (has_ability(i, ABL_ID_DISSOCIATIVE_WAVE, CHS_NEEDLEJET, wpn)
+        && has_ability(i, ABL_ID_AAA, CHS_INFANTRY, wpn)) {
+            create_proto(i, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, ABL_DISSOCIATIVE_WAVE, rec, PLAN_OFFENSIVE, NULL);
+        }
     }
     if (has_weapon(i, WPN_TERRAFORMING_UNIT) && rec >= REC_FUSION) {
         bool grav = has_chassis(i, CHS_GRAVSHIP);

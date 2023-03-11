@@ -2327,7 +2327,7 @@ int aircraft_move(const int id) {
     }
     if ((*current_turn + id) % 4 == 0) {
         int best_score = INT_MIN;
-        for (i=0; i < *total_num_bases; i++) {
+        for (i = 0; i < *total_num_bases; i++) {
             BASE* base = &Bases[i];
             if (base->faction_id == faction && base->defend_goal >= 3) {
                 int score = base->defend_goal*10 + random(8)
@@ -2350,49 +2350,64 @@ int aircraft_move(const int id) {
     return mod_veh_skip(id);
 }
 
+bool prevent_airdrop(int x, int y, int faction) {
+    for (int i = 0; i < *total_num_bases; i++) {
+        if (at_war(faction, Bases[i].faction_id)
+        && map_range(Bases[i].x, Bases[i].y, x, y) <= 2
+        && has_facility(i, FAC_AEROSPACE_COMPLEX)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool airdrop_move(const int id, MAP* sq) {
     VEH* veh = &Vehicles[id];
     if (!has_abil(veh->unit_id, ABL_DROP_POD) || veh->state & VSTATE_MADE_AIRDROP) {
         return false;
     }
     int faction = veh->faction_id;
-    int veh_region = sq->region;
-    bool invade = invasion_unit(id) && veh_region != plans[faction].target_land_region;
+    int max_range = (has_orbital_drops(faction) ? 9 + random(32) :
+        Rules->max_airdrop_rng_wo_orbital_insert);
     int tx = -1;
     int ty = -1;
+    int best_score = 0;
+    int base_range;
 
-    for (int i = 9; i < TableRange[Rules->max_airdrop_rng_wo_orbital_insert]; i++) {
-        int x2 = wrap(veh->x + TableOffsetX[i]);
-        int y2 = veh->y + TableOffsetY[i];
-        if ((sq = mapsq(x2, y2)) && sq->is_base() && !is_ocean(sq)) {
-            if (at_war(faction, sq->owner) && veh_at(x2, y2) < 0) {
-                tx = x2;
-                ty = y2;
+    for (int i = 0; i < *total_num_bases; i++) {
+        BASE* base = &Bases[i];
+        if ((base->faction_id == faction || at_war(faction, base->faction_id))
+        && (sq = mapsq(base->x, base->y)) && !is_ocean(sq)
+        && (base_range = map_range(veh->x, veh->y, base->x, base->y)) <= max_range
+        && base_range >= 3) {
+            if (base->faction_id == faction) {
+                int enemy_diff = pm_enemy_near[base->x][base->y]
+                    - pm_enemy_near[veh->x][veh->y];
+                int score = random(5) + enemy_diff
+                    + 5*(sq->region == plans[faction].target_land_region)
+                    + 2*base->defend_goal
+                    - base_range/4
+                    - 2*pm_target[base->x][base->y];
+                if (enemy_diff > 0 && score > best_score
+                && !prevent_airdrop(base->x, base->y, faction)) {
+                    tx = base->x;
+                    ty = base->y;
+                    best_score = score;
+                }
+            } else if (veh_at(base->x, base->y) < 0
+            && base_range/4 < 2 + pm_unit_near[base->x][base->y]
+            && !prevent_airdrop(base->x, base->y, faction)) {
+                // Prioritize closest undefended enemy bases
+                tx = base->x;
+                ty = base->y;
                 break;
-            } else if (sq->owner == faction) {
-                if (invade && sq->region == plans[faction].target_land_region && !random(4)) {
-                    tx = x2;
-                    ty = y2;
-                    break;
-                }
-                if (i > TableRange[2]
-                && pm_enemy_near[x2][y2] > 1 + pm_enemy_near[veh->x][veh->y]
-                && defender_count(x2, y2) < random(4)) {
-                    tx = x2;
-                    ty = y2;
-                    break;
-                }
             }
         }
     }
     if (tx >= 0) {
-        for (int i=0; i < *total_num_bases; i++) {
-            if (at_war(faction, Bases[i].faction_id)
-            && map_range(Bases[i].x, Bases[i].y, tx, ty) <= 2
-            && has_facility(i, FAC_AEROSPACE_COMPLEX)) {
-                return false;
-            }
-        }
+        debug("airdrop_move %2d %2d -> %2d %2d score: %d %s\n",
+            veh->x, veh->y, tx, ty, best_score, veh->name());
+        pm_target[tx][ty]++;
         action_airdrop(id, tx, ty, 3);
         return true;
     }
