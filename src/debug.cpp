@@ -1,5 +1,7 @@
 
 #include "debug.h"
+#include <sys/types.h>
+#include <sys/stat.h>
 
 typedef int(__cdecl *Fexcept_handler3)(EXCEPTION_RECORD*, PVOID, CONTEXT*);
 Fexcept_handler3 _except_handler3 = (Fexcept_handler3)0x646DF8;
@@ -15,21 +17,48 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD* rec, PVOID* frame, CONTEXT* ct
     if (!debug_log && !(debug_log = fopen("debug.txt", "w"))) {
         return _except_handler3(rec, frame, ctx);
     }
+    int32_t* p;
+    int32_t bytes = 0;
+    int32_t value = 0;
+    int32_t config_num = (int32_t)sizeof(conf)/4;
     time_t rawtime = time(&rawtime);
-    struct tm *now = localtime(&rawtime);
-    char datetime[70];
-    char savepath[512];
-    char filepath[512];
-    strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", now);
+    struct stat filedata;
+    struct tm* now = localtime(&rawtime);
+    char time_now[256] = {};
+    char time_bin[256] = {};
+    char savepath[512] = {};
+    char filepath[512] = {};
+    char gamepath[512] = {};
+    strftime(time_now, sizeof(time_now), "%Y-%m-%d %H:%M:%S", now);
     strncpy(savepath, LastSavePath, sizeof(savepath));
     savepath[200] = '\0';
+
+    PBYTE pb = 0;
+    MEMORY_BASIC_INFORMATION mbi;
     HANDLE hProcess = GetCurrentProcess();
-    int ret = GetMappedFileNameA(hProcess, (LPVOID)ctx->Eip, filepath, sizeof(filepath));
+
+    while (VirtualQueryEx(hProcess, pb, &mbi, sizeof(mbi)) == sizeof(mbi)) {
+        if (mbi.BaseAddress == AC_IMAGE_BASE
+        && GetModuleFileNameA((HINSTANCE)mbi.AllocationBase, gamepath, sizeof(gamepath)) > 0) {
+            if(stat(gamepath, &filedata) == 0) {
+                now = localtime(&filedata.st_mtime);
+                strftime(time_bin, sizeof(time_bin), "%Y-%m-%d %H:%M:%S", now);
+            }
+        }
+        if (mbi.AllocationBase != NULL
+        && (DWORD)mbi.AllocationBase <= ctx->Eip
+        && (DWORD)mbi.AllocationBase + mbi.RegionSize > ctx->Eip) {
+            value = GetModuleFileNameA((HINSTANCE)mbi.AllocationBase, filepath, sizeof(filepath));
+            break;
+        }
+        pb += mbi.RegionSize;
+    }
     filepath[200] = '\0';
 
     fprintf(debug_log,
         "************************************************************\n"
         "ModVersion %s (%s)\n"
+        "BinVersion %s\n"
         "CrashTime  %s\n"
         "SavedGame  %s\n"
         "ModuleName %s\n"
@@ -40,15 +69,16 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD* rec, PVOID* frame, CONTEXT* ct
         "ExceptionAddress %08x\n",
         MOD_VERSION,
         MOD_DATE,
-        datetime,
+        time_bin,
+        time_now,
         savepath,
-        (ret != 0 ? filepath : ""),
+        (value > 0 ? filepath : ""),
         (int)rec->ExceptionCode,
         (int)rec->ExceptionFlags,
         (int)rec->ExceptionRecord,
         (int)rec->ExceptionAddress);
 
-     fprintf(debug_log,
+    fprintf(debug_log,
         "CFlags %08lx\n"
         "EFlags %08lx\n"
         "EAX %08lx\n"
@@ -64,12 +94,28 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD* rec, PVOID* frame, CONTEXT* ct
         ctx->Eax, ctx->Ebx, ctx->Ecx, ctx->Edx,
         ctx->Esi, ctx->Edi, ctx->Ebp, ctx->Esp, ctx->Eip);
 
-    int32_t* p = (int32_t*)&conf;
-    for (int32_t i = 0; i < (int32_t)sizeof(conf)/4; i++) {
-        fprintf(debug_log, "Config %d: %d\n", i, p[i]);
+    p = (int32_t*)ctx->Esp;
+    fprintf(debug_log, "Stack dump:\n");
+
+    for (int32_t i = 0; i < 24; i++) {
+        if (ReadProcessMemory(hProcess, p + i, &bytes, 4, NULL)) {
+            fprintf(debug_log, "%08x: %08x\n", (int32_t)(p + i), bytes);
+        } else {
+            fprintf(debug_log, "%08x: ********\n", (int32_t)(p + i));
+        }
     }
 
-    fflush(debug_log);
+    p = (int32_t*)&conf;
+    for (int32_t i = 0; i < config_num; i++) {
+        if (i % 10 == 0) {
+            fprintf(debug_log, "Config %d:", i);
+        }
+        fprintf(debug_log, " %d", p[i]);
+        if (i % 10 == 9 || i == config_num-1) {
+            fprintf(debug_log, "\n");
+        }
+    }
+    fclose(debug_log);
     return _except_handler3(rec, frame, ctx);
 }
 

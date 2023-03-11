@@ -20,7 +20,7 @@ bool FileExists(const char* path) {
     return GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES;
 }
 
-int __cdecl governor_only_crop_yield(int faction, int base_id, int x, int y, int flags) {
+int __cdecl base_governor_crop_yield(int faction, int base_id, int x, int y, int flags) {
     int value = crop_yield(faction, base_id, x, y, flags);
     MAP* sq = mapsq(x, y);
     if (sq && sq->items & BIT_THERMAL_BORE && value + mine_yield(faction, base_id, x, y, 0)
@@ -348,7 +348,7 @@ bool patch_setup(Config* cf) {
     write_call(0x4F7A38, (int)consider_hurry);
     write_call(0x5BDC4C, (int)mod_tech_value);
     write_call(0x579362, (int)mod_enemy_move);
-    write_call(0x4E888C, (int)governor_only_crop_yield);
+    write_call(0x4E888C, (int)base_governor_crop_yield);
     write_call(0x4672A7, (int)mod_base_draw);
     write_call(0x40F45A, (int)mod_base_draw);
     write_call(0x525CC7, (int)mod_setup_player);
