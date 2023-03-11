@@ -1,6 +1,7 @@
 
 #include "veh.h"
 
+static TileSearch ts;
 
 bool __cdecl can_arty(int unit_id, bool allow_sea_arty) {
     UNIT& u = Units[unit_id];
@@ -110,7 +111,6 @@ int __cdecl find_return_base(int veh_id) {
     VEH* veh = &Vehs[veh_id];
     MAP* sq;
     debug("find_return_base %2d %2d %s\n", veh->x, veh->y, veh->name());
-    TileSearch ts;
     ts.init(veh->x, veh->y, veh->triad() == TRIAD_SEA ? TS_SEA_AND_SHORE : veh->triad());
     while ((sq = ts.get_next()) != NULL) {
         if (sq->is_base() && sq->owner == veh->faction_id) {

@@ -66,13 +66,6 @@ public:
 
 extern CPath* Path;
 
-int path_distance(int x1, int y1, int x2, int y2, int unit_id, int faction);
-int path_get_next(int x1, int y1, int x2, int y2, int unit_id, int faction);
-int nearby_items(int x, int y, int range, uint32_t item);
-int nearby_tiles(int x, int y, int type, int limit);
-
-std::vector<MapTile> iterate_tiles(int x, int y, size_t start_index, size_t end_index);
-
 const int PathLimit = 80;
 const int QueueSize = 6400;
 const int MaxTileSearchType = 6;
@@ -86,6 +79,13 @@ enum TSType {
     TS_TERRITORY_BORDERS = 5,
     TS_SEA_AND_SHORE = 6,
 };
+
+int path_distance(int x1, int y1, int x2, int y2, int unit_id, int faction);
+int path_get_next(int x1, int y1, int x2, int y2, int unit_id, int faction);
+int nearby_items(int x, int y, int range, uint32_t item);
+bool nearby_tiles(int x, int y, TSType type, int limit);
+
+std::vector<MapTile> iterate_tiles(int x, int y, size_t start_index, size_t end_index);
 
 struct PathNode {
     int x;

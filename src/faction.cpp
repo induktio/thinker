@@ -4,6 +4,7 @@
 
 bool has_tech(int faction, int tech_id) {
     assert(valid_player(faction));
+    assert(tech_id >= TECH_Disable && tech_id <= TECH_TranT);
     if (tech_id == TECH_None) {
         return true;
     }
@@ -62,6 +63,11 @@ bool has_ships(int faction) {
     return has_chassis(faction, CHS_FOIL) || has_chassis(faction, CHS_CRUISER);
 }
 
+bool has_orbital_drops(int faction) {
+    return has_tech(faction, Rules->tech_preq_orb_insert_wo_space)
+        || has_project(faction, FAC_SPACE_ELEVATOR);
+}
+
 bool has_terra(int faction, FormerItem act, bool ocean) {
     int preq_tech = (ocean ? Terraform[act].preq_tech_sea : Terraform[act].preq_tech);
     if ((act == FORMER_RAISE_LAND || act == FORMER_LOWER_LAND)
@@ -114,7 +120,11 @@ bool has_fac_built(int base_id, int fac_id) {
 }
 
 int prod_count(int faction, int item_id, int base_skip_id) {
+    // Prototypes must be generic or defined for the faction
     assert(valid_player(faction));
+    assert(item_id < 0
+        || item_id/MaxProtoFactionNum == 0
+        || item_id/MaxProtoFactionNum == faction);
     int n = 0;
     for (int i=0; i < *total_num_bases; i++) {
         BASE* base = &Bases[i];
@@ -127,12 +137,12 @@ int prod_count(int faction, int item_id, int base_skip_id) {
     return n;
 }
 
-int facility_count(int faction, int facility_id) {
-    assert(valid_player(faction) && facility_id >= 0);
+int facility_count(int faction, int fac_id) {
+    assert(valid_player(faction) && fac_id >= 0);
     int n = 0;
     for (int i=0; i < *total_num_bases; i++) {
         BASE* base = &Bases[i];
-        if (base->faction_id == faction && has_fac_built(i, facility_id)) {
+        if (base->faction_id == faction && has_fac_built(i, fac_id)) {
             n++;
         }
     }

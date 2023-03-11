@@ -172,7 +172,7 @@ struct Config {
     int crawler_priority = 100;
     int max_satellites = 20;
     int new_world_builder = 1;
-    int world_sea_levels[3] = {40,55,70};
+    int world_sea_levels[3] = {45,57,70};
     int world_hills_mod = 40;
     int world_ocean_mod = 40;
     int world_islands_mod = 16;
@@ -289,9 +289,9 @@ struct AIPlans {
     int keep_fungus = 0;
     int plant_fungus = 0;
     int satellite_goal = 0;
-    int satellite_priority = 1;
-    int mil_strength = 0;
+    int enemy_odp = 0;
     int enemy_nukes = 0;
+    int mil_strength = 0;
     float enemy_base_range = 0;
     float enemy_mil_factor = 0;
     /*

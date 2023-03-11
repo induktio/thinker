@@ -57,7 +57,7 @@ void __cdecl mod_drone_riot() {
 Calculate current vehicle health only for the purposes of
 possible damage from genetic warfare probe team action.
 */
-int __cdecl mod_veh_health(int veh_id) {
+int __cdecl probe_veh_health(int veh_id) {
     VEH* veh = &Vehs[veh_id];
     int level = clamp(veh->reactor_type(), 1, 100);
     if (veh->is_artifact()) {
@@ -358,8 +358,8 @@ bool patch_setup(Config* cf) {
     write_call(0x5B3C4C, (int)mod_setup_player);
     write_call(0x5C0908, (int)log_veh_kill);
     write_call(0x498720, (int)ReportWin_close_handler);
-    write_call(0x5A3F7D, (int)mod_veh_health);
-    write_call(0x5A3F98, (int)mod_veh_health);
+    write_call(0x5A3F7D, (int)probe_veh_health);
+    write_call(0x5A3F98, (int)probe_veh_health);
     write_call(0x4E1061, (int)mod_world_build);
     write_call(0x4E113B, (int)mod_world_build);
     write_call(0x58B9BF, (int)mod_world_build);

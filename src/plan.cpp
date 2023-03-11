@@ -131,6 +131,38 @@ int psi_score(int faction) {
     return psi;
 }
 
+int satellite_count(int faction, int fac_id) {
+    Faction& f = Factions[faction];
+    int value;
+    switch (fac_id) {
+        case FAC_SKY_HYDRO_LAB: value = f.satellites_nutrient; break;
+        case FAC_ORBITAL_POWER_TRANS: value = f.satellites_energy; break;
+        case FAC_NESSUS_MINING_STATION: value = f.satellites_mineral; break;
+        case FAC_ORBITAL_DEFENSE_POD: default: value = f.satellites_ODP; break;
+    }
+    return value;
+}
+
+int satellite_goal(int faction, int fac_id) {
+    Faction& f = Factions[faction];
+    int goal = plans[faction].satellite_goal;
+    if (fac_id == FAC_ORBITAL_DEFENSE_POD) {
+        if (plans[faction].enemy_factions > 0) {
+            goal = clamp(goal/4, 0, 4) + clamp(f.base_count/8 + 2, 2, 8);
+        } else {
+            goal = clamp(goal/4, 0, 4) + clamp(f.base_count/8, 2, 4);
+        }
+    } else {
+        if (f.base_count <= 5) {
+            goal /= 2;
+        }
+    }
+    if (f.base_count <= 10) {
+        goal /= 2;
+    }
+    return clamp(goal, 0, conf.max_satellites);
+}
+
 void former_plans(int faction) {
     bool former_fungus = (has_terra(faction, FORMER_PLANT_FUNGUS, LAND)
         || has_terra(faction, FORMER_PLANT_FUNGUS, SEA));
@@ -189,7 +221,6 @@ void plans_upkeep(int faction) {
         const int i = faction;
         int minerals[MaxBaseNum];
         int population[MaxBaseNum];
-        int enemy_odp = 0;
         Faction* f = &Factions[i];
 
         plans[i].unknown_factions = 0;
@@ -198,6 +229,7 @@ void plans_upkeep(int faction) {
         plans[i].diplo_flags = 0;
         plans[i].enemy_nukes = 0;
         plans[i].enemy_bases = 0;
+        plans[i].enemy_odp = 0;
         plans[i].enemy_mil_factor = 0;
         plans[i].land_combat_units = 0;
         plans[i].sea_combat_units = 0;
@@ -255,9 +287,7 @@ void plans_upkeep(int faction) {
                 if (at_war(i, j)) {
                     plans[i].enemy_factions++;
                     plans[i].enemy_nukes += Factions[j].planet_busters;
-                    enemy_odp += Factions[j].satellites_ODP;
-                } else if (has_pact(i, j)) {
-                    enemy_odp -= Factions[j].satellites_ODP;
+                    plans[i].enemy_odp += Factions[j].satellites_ODP;
                 }
                 float factor = min(8.0f, (is_human(j) ? 2.0f : 1.0f)
                     * (has_treaty(i, j, DIPLO_COMMLINK) ? 1.0f : 0.5f)
@@ -312,9 +342,16 @@ void plans_upkeep(int faction) {
             plans[i].project_limit = max(5, minerals[n*2/3]);
         }
         plans[i].median_limit = max(5, minerals[n/2]);
-        plans[i].satellite_goal = min(conf.max_satellites, population[n*7/8]);
-        plans[i].satellite_priority = enemy_odp < 2
-            || has_tech(i, Facility[FAC_ORBITAL_DEFENSE_POD].preq_tech);
+
+        if (has_project(faction, FAC_CLOUDBASE_ACADEMY)
+        || has_project(faction, FAC_SPACE_ELEVATOR)
+        || facility_count(faction, FAC_AEROSPACE_COMPLEX) >= f->base_count/2) {
+            plans[i].satellite_goal = min(conf.max_satellites,
+                population[n*7/8]);
+        } else {
+            plans[i].satellite_goal = min(conf.max_satellites,
+                (population[n*3/4] + 3) / 2 * 2);
+        }
 
         debug("plans_upkeep %d %d proj_limit: %2d sat_goal: %2d psi: %2d keep_fungus: %d "\
             "plant_fungus: %d enemy_bases: %2d enemy_mil: %.4f enemy_range: %.4f\n",

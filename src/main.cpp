@@ -111,7 +111,7 @@ int option_handler(void* user, const char* section, const char* name, const char
     } else if (MATCH("thinker", "crawler_priority")) {
         cf->crawler_priority = clamp(atoi(value), 1, 10000);
     } else if (MATCH("thinker", "max_satellites")) {
-        cf->max_satellites = atoi(value);
+        cf->max_satellites = max(0, atoi(value));
     } else if (MATCH("thinker", "new_world_builder")) {
         cf->new_world_builder = atoi(value);
     } else if (MATCH("thinker", "world_continents")) {

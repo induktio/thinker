@@ -4,6 +4,8 @@
 CPath* Path = (CPath*)0x945B00;
 FPath_find Path_find = (FPath_find)0x59A530;
 
+static TileSearch ts;
+
 int CPath::find(int x1, int y1, int x2, int y2, int unit_id, int faction) {
     return Path_find(this, x1, y1, x2, y2, unit_id, faction, 0, -1);
 }
@@ -51,15 +53,16 @@ int nearby_items(int x, int y, int range, uint32_t item) {
     return n;
 }
 
-int nearby_tiles(int x, int y, int type, int limit) {
+bool nearby_tiles(int x, int y, TSType type, int limit) {
     MAP* sq;
     int n = 0;
-    TileSearch ts;
     ts.init(x, y, type, 2);
-    while (n < limit && (sq = ts.get_next()) != NULL) {
-        n++;
+    while ((sq = ts.get_next()) != NULL) {
+        if (++n >= limit) {
+            return true;
+        }
     }
-    return n;
+    return false;
 }
 
 std::vector<MapTile> iterate_tiles(int x, int y, size_t start_index, size_t end_index) {
