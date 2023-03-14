@@ -1,11 +1,12 @@
 #BASES
 Ancestral Dominion
 Battleground Ascent
-Chaos Citadel
+Chaos Cascade
 Conquest : Crusade
 Crimson Peak
 Destiny : Call
 Divinity : Domain
+Echoes of War
 Eclipse of Fate
 Final Restitution
 Might : Embrace
@@ -16,7 +17,6 @@ Shattered Symphony
 Skyreach Outpost
 Sovereign : Domain
 Sundering Heights
-Thunderous Vanguard
 Titan's Triumph
 Valiant Vanguard
 #END
@@ -26,20 +26,20 @@ Barracuda Bay
 Crest of Destiny
 Deepwater Watch
 Enduring Legacy
+Eternal Reach
 Fury's Wake
 Horizon : Edge
 Infinite Stronghold
 Kraken's Keep
 Leviathan's Lair
-Marine : Outpost
 Marine : Resonance
 Maritime Citadel
 Nautical Nexus
+Shadow Dominion
 Sky's Reflection
 Stormcaller Cove
-The Coral Citadel
 Thundering Seas
 Tidal Fortress
-Tidebreaker Outpost
+Vortex Citadel
 Wavecrest Harbor
 #END

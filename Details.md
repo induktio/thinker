@@ -47,7 +47,7 @@ Base garrisoning priorities are also handled entirely by Thinker which tries to 
 
 Thinker base production AI will also decide every item that is produced in a base. The build order can differ substantially from anything the normal AIs might decide to produce, and the difference can be easily noted in the vastly increased quantity of formers and crawlers the AIs might have. Design units feature will introduce custom probe teams, armored crawlers, gravship formers, and AAA garrison prototypes for the AI factions. Normally these prototypes are not created by the game engine.
 
-Base hurry feature is able to use AI energy reserves to occasionally hurry base production. Items that can be hurried include most basic facilities, formers, combat units, and sometimes secret projects. The amount of credits spent on rushing projects depends on difficulty level. When a project has been rushed, it will be displayed in a popup if the player has a commlink for the faction and there are no sunspots active.
+Base hurry feature is able to use AI energy reserves to occasionally hurry base production. Items that can be hurried include most basic facilities, formers, combat units, and sometimes secret projects. The amount of credits spent on rushing projects depends on difficulty level. When a project has been rushed, it will be displayed in a popup if the player has a commlink for the faction. This works even during sunspots.
 
 Social AI feature will decide the social engineering models the AI factions will choose. It will attempt to take into account the various cumulative/non-linear effects of the society models and any bonuses provided by the secret projects. The AI is now capable of pop-booming if enough growth is attainable, and it will also try to avoid pacifist drones by switching out of SE models with too many police penalties. All the SE model effects are moddable because the AI is not hardcoded in any particular choices. This feature is also capable of managing all the custom factions.
 
@@ -306,6 +306,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 31. Patch captured base extra drone effect to last a variable time from 20 to 50 turns depending on the captured base size.
 32. When a base is captured that was previously owned by active third faction and the time to assimilate the base was more than 10 turns, the previous owner is preserved after capture.
 33. Fix diplomacy dialog issues when both human and alien factions are involved in a base capture by removing the event that spawns additional colony pods.
+34. Fix missing defender bonus mentioned in the manual "Units in a headquarters base automatically gain +1 Morale when defending".
 
 
 Scient's patch

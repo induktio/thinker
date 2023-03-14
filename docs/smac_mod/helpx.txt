@@ -203,9 +203,11 @@ Terraform
 
 #; Headquarters
 #HELPFAC1
-Administrative center of your colony. $LINK<+1 ENERGY=43>. No
-$LINK<inefficiency=25>.
+Administrative center of your colony. $LINK<+1 ENERGY=43>.
+No $LINK<inefficiency=25>.
 Enemy $LINK<probe teams=30006> may not attempt mind control here.
+^
+Units defending here will gain $LINK<+1 Morale=11> increase.
 
 #; Children's Creche
 #HELPFAC2

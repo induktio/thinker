@@ -6,13 +6,13 @@ Emerald Heights
 Enchanted Everglade
 Eternal Earth
 Ethereal Expanse
-Garden of Gaia
-Garden of Growth
+Fruitful Fields
 Hallowed Hill
 Harmony Hill
 Haven Heights
 Heartland Haven
 Humming Hollow
+Leafy Retreat
 Luminous Lagoon
 Meadow of Memories
 Nature's Nook
@@ -20,7 +20,7 @@ Planet's Embrace
 Pulsing Prairie
 Pureland Preserve
 Radiant Enclave
-Rainbow Retreat
+Riverbank Retreat
 Rootbound Refuge
 Rustling Ravine
 Silvermoon Meadow
@@ -38,18 +38,18 @@ Botanical Bay
 Cascading Falls
 Golden Grove
 Kelp Kingdom
+Lotus Bay
 Mossy Meadow
 Mystic Tides
 Neptune's Nook
 Ocean's Harvest
 Reef's Refuge
+Riverbend Retreat
 Sea Foam Fields
 Sea's Bounty
 Seashell Shores
-Serenity Garden
+Seaside Garden
 Serenity at Sea
 Shimmering Seabed
-Underwater Eden
-Verdant Vista
 Waterfall Way
 #END

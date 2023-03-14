@@ -1,14 +1,14 @@
 #BASES
 Assembly Grounds
-Assembly Point
 Common Future
 Equality Forge
+Factory District
 Forge of Freedom
+Foundry Fortress
 Freedom Foundation
 Freedom's Forge
 Guild Haven
 Hammerhead Base
-Industrial Citadel
 Industry Hall
 Iron Stronghold
 Labor Unity Hall
@@ -18,31 +18,31 @@ Liberty Station
 Liberty Works
 People's Foundry
 People's Platform
-Progress Park
 Progress Plant
+Refinery Ridge
 Resource Workshop
 Steel Citadel
 The Foundry
 Toolmaker's Den
 Unity Works
 Worker's Commons
-Worker's Quarter
 Worker's Way
 Working Rights Hub
+Wrench Works
 #END
 
 #WATERBASES
-Anchor's Rest
-Aquatic Assembly Line
+Assembly Point
 Deepwater Depot
+Harbor Heights
+Industrial Island
 Marine Makerspace
 Marine Manufacturing
 Maritime Hub
 Oceanic Workstation
+Offshore Workshop
 Reefside Refinery
-Saltwater Station
 Salvage Dock
-Sea Anchor Wharf
 Seabound Foundry
 Seafloor Forge
 Seaside Shipyard

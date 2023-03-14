@@ -14,21 +14,21 @@ U.N. Emergency Relief
 U.N. Equilibrium Hub
 U.N. Financial Agency
 U.N. Global Governance
-U.N. Harmony Village
 U.N. Hope Village
 U.N. Humanity Haven
 U.N. Justice Citadel
 U.N. Order Station
 U.N. Peace Zone
 U.N. Planetary Security
-U.N. Planning Authority
+U.N. Population Bureau
+U.N. Progress Agency
 U.N. Prosperity Town
-U.N. Protection Agency
 U.N. Reconciliation
-U.N. Safe Haven
+U.N. Science Council
 U.N. Solidarity Center
 U.N. Sovereignty Base
 U.N. Stability Base
+U.N. Trade Bureau
 #END
 
 #WATERBASES

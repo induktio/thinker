@@ -1,4 +1,5 @@
 #BASES
+Arcadia Dome
 Blade of Cosmos
 Childhood's Redemption
 Chiron's Call
@@ -7,6 +8,7 @@ Dawn's Domain
 Daybreak on Planet
 Eclipse Sanctuary
 Eve of Chiron
+Fungal Sanctuary
 Fungus Fane
 Horror Heights
 Moth Maze
@@ -19,21 +21,19 @@ Salve of Mercy
 Sanctified Hollow
 Serpent's Song
 Soul Haven
+Soul's Well
 Spore Spot
 Swarm Refuge
 Swarm Shelter
-The Commands
 The Haven
 The Recluse Retreat
 Trance of Harmony
-Trance of Purity
 Twilight of Planet
-Twilight's Triumph
 #END
 
 #WATERBASES
+Abyssal Atoll
 Chiron's Cove
-Coral City
 Dawn's Wake
 Edict Archipelago
 Fear's Fathom
