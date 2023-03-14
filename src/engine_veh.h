@@ -359,10 +359,10 @@ enum VehState {
 struct UNIT {
     char name[32];
     uint32_t ability_flags;
-    int8_t chassis_type;
-    int8_t weapon_type;
-    int8_t armor_type;
-    int8_t reactor_type;
+    int8_t chassis_id;
+    int8_t weapon_id;
+    int8_t armor_id;
+    int8_t reactor_id;
     int8_t carry_capacity;
     uint8_t cost;
     int8_t plan;
@@ -375,19 +375,25 @@ struct UNIT {
     int16_t preq_tech;
 
     int triad() {
-        return Chassis[chassis_type].triad;
+        return Chassis[chassis_id].triad;
     }
-    uint8_t speed() {
-        return Chassis[chassis_type].speed;
+    uint8_t speed() { // does not take into account any other speed modifiers
+        return Chassis[chassis_id].speed;
     }
     uint8_t armor_cost() {
-        return Armor[armor_type].cost;
+        return Armor[armor_id].cost;
     }
     uint8_t weapon_cost() {
-        return Weapon[weapon_type].cost;
+        return Weapon[weapon_id].cost;
+    }
+    int offense_value() {
+        return Weapon[weapon_id].offense_value;
+    }
+    int defense_value() {
+        return Armor[armor_id].defense_value;
     }
     int std_offense_value() {
-        return Weapon[weapon_type].offense_value * reactor_type;
+        return Weapon[weapon_id].offense_value * reactor_id;
     }
     bool is_active() {
         return unit_flags & UNIT_ACTIVE;
@@ -396,22 +402,34 @@ struct UNIT {
         return unit_flags & UNIT_PROTOTYPED;
     }
     bool is_armored() {
-        return armor_type != ARM_NO_ARMOR;
+        return armor_id != ARM_NO_ARMOR;
     }
     bool is_combat_unit() {
-        return weapon_type <= WPN_PSI_ATTACK;
+        return weapon_id <= WPN_PSI_ATTACK;
     }
     bool is_defend_unit() {
-        return triad() == TRIAD_LAND && (armor_type != ARM_NO_ARMOR || weapon_type <= WPN_PSI_ATTACK);
+        return triad() == TRIAD_LAND && (armor_id != ARM_NO_ARMOR || weapon_id <= WPN_PSI_ATTACK);
+    }
+    bool is_planet_buster() {
+        return plan == PLAN_PLANET_BUSTER;
     }
     bool is_colony() {
-        return weapon_type == WPN_COLONY_MODULE;
+        return Weapon[weapon_id].mode == WMODE_COLONIST;
     }
     bool is_former() {
-        return weapon_type == WPN_TERRAFORMING_UNIT;
+        return Weapon[weapon_id].mode == WMODE_TERRAFORMER;
+    }
+    bool is_probe() {
+        return Weapon[weapon_id].mode == WPN_PROBE_TEAM;
     }
     bool is_supply() {
-        return weapon_type == WPN_SUPPLY_TRANSPORT;
+        return Weapon[weapon_id].mode == WMODE_CONVOY;
+    }
+    bool is_transport() {
+        return Weapon[weapon_id].mode == WMODE_TRANSPORT;
+    }
+    bool is_artifact() {
+        return Weapon[weapon_id].mode == WMODE_ARTIFACT;
     }
 };
 
@@ -457,63 +475,63 @@ struct VEH {
         return Units[unit_id].name;
     }
     int triad() {
-        return Chassis[Units[unit_id].chassis_type].triad;
+        return Chassis[Units[unit_id].chassis_id].triad;
     }
-    int speed() {
-        return Chassis[Units[unit_id].chassis_type].speed;
+    uint8_t speed() {
+        return Chassis[Units[unit_id].chassis_id].speed;
     }
-    int cost() {
+    uint8_t cost() {
         return Units[unit_id].cost;
     }
     int chassis_type() {
-        return Units[unit_id].chassis_type;
+        return Units[unit_id].chassis_id;
     }
     int reactor_type() {
-        return std::max(1, (int)Units[unit_id].reactor_type);
+        return std::max(1, (int)Units[unit_id].reactor_id);
     }
     int armor_type() {
-        return Units[unit_id].armor_type;
+        return Units[unit_id].armor_id;
     }
     int weapon_type() {
-        return Units[unit_id].weapon_type;
+        return Units[unit_id].weapon_id;
     }
     int weapon_mode() {
-        return Weapon[Units[unit_id].weapon_type].mode;
+        return Weapon[Units[unit_id].weapon_id].mode;
     }
     int offense_value() {
-        return Weapon[Units[unit_id].weapon_type].offense_value;
+        return Weapon[Units[unit_id].weapon_id].offense_value;
     }
     int defense_value() {
-        return Armor[Units[unit_id].armor_type].defense_value;
+        return Armor[Units[unit_id].armor_id].defense_value;
     }
     bool is_armored() {
         return armor_type() != ARM_NO_ARMOR;
     }
     bool is_combat_unit() {
-        return Units[unit_id].weapon_type <= WPN_PSI_ATTACK && unit_id != BSC_FUNGAL_TOWER;
+        return Units[unit_id].weapon_id <= WPN_PSI_ATTACK && unit_id != BSC_FUNGAL_TOWER;
     }
     bool is_native_unit() {
         return unit_id == BSC_MIND_WORMS || unit_id == BSC_ISLE_OF_THE_DEEP
             || unit_id == BSC_LOCUSTS_OF_CHIRON || unit_id == BSC_SEALURK
             || unit_id == BSC_SPORE_LAUNCHER || unit_id == BSC_FUNGAL_TOWER;
     }
-    bool is_probe() {
-        return Units[unit_id].weapon_type == WPN_PROBE_TEAM;
-    }
     bool is_colony() {
-        return Units[unit_id].weapon_type == WPN_COLONY_MODULE;
-    }
-    bool is_supply() {
-        return Units[unit_id].weapon_type == WPN_SUPPLY_TRANSPORT;
+        return Units[unit_id].is_colony();
     }
     bool is_former() {
-        return Units[unit_id].weapon_type == WPN_TERRAFORMING_UNIT;
+        return Units[unit_id].is_former();
+    }
+    bool is_probe() {
+        return Units[unit_id].is_probe();
+    }
+    bool is_supply() {
+        return Units[unit_id].is_supply();
     }
     bool is_transport() {
-        return Units[unit_id].weapon_type == WPN_TROOP_TRANSPORT;
+        return Units[unit_id].is_transport();
     }
     bool is_artifact() {
-        return Units[unit_id].weapon_type == WPN_ALIEN_ARTIFACT;
+        return Units[unit_id].is_artifact();
     }
     bool is_visible(int faction) {
         return visibility & (1 << faction);
@@ -523,10 +541,10 @@ struct VEH {
             || (x == waypoint_1_x && y == waypoint_1_y);
     }
     bool mid_damage() {
-        return damage_taken > 2*Units[unit_id].reactor_type;
+        return damage_taken > 2*Units[unit_id].reactor_id;
     }
     bool high_damage() {
-        return damage_taken > 4*Units[unit_id].reactor_type;
+        return damage_taken > 4*Units[unit_id].reactor_id;
     }
     bool need_heals() {
         return mid_damage() && unit_id != BSC_BATTLE_OGRE_MK1

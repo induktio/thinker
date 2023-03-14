@@ -2,20 +2,16 @@
 
 #include "main.h"
 
-bool has_tech(int faction, int tech_id);
-bool has_ability(int faction, VehAbility abl);
-bool has_ability(int faction, VehAbility abl, VehChassis chs, VehWeapon wpn);
+bool has_tech(int tech_id, int faction);
 bool has_chassis(int faction, VehChassis chs);
 bool has_weapon(int faction, VehWeapon wpn);
 bool has_aircraft(int faction);
 bool has_ships(int faction);
 bool has_orbital_drops(int faction);
 bool has_terra(int faction, FormerItem act, bool ocean);
-bool has_project(int faction, int fac_id);
-bool has_facility(int base_id, int fac_id);
-bool has_fac_built(int base_id, int fac_id);
-int facility_count(int faction, int fac_id);
-int prod_count(int faction, int item_id, int base_skip_id);
+bool has_project(FacilityId item_id, int faction);
+int facility_count(FacilityId item_id, int faction);
+int prod_count(int item_id, int faction, int base_skip_id);
 
 bool is_human(int faction);
 bool is_alive(int faction);

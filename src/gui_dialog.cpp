@@ -56,14 +56,14 @@ int base_trade_value(int base_id, int faction1, int faction2)
         + 2*Factions[faction1].atrocities;
 
     for (int i = Fac_ID_First; i < Fac_ID_Last; i++) {
-        if (has_fac_built(base_id, i)) {
+        if (has_fac_built((FacilityId)i, base_id)) {
             value += Facility[i].cost * 20;
         }
     }
     for (int i = SP_ID_First; i <= SP_ID_Last; i++) {
         if (SecretProjects[i - SP_ID_First] == base_id) {
             value += Facility[i].cost * (own_base && !pact ? 40 : 20)
-                + 60 * clamp(project_score(faction2, i, false), 0, 10);
+                + 60 * clamp(project_score(faction2, (FacilityId)i, false), 0, 10);
         }
     }
     MAP* sq;
@@ -153,7 +153,7 @@ int __cdecl mod_base_swap(int faction1, int faction2)
     ParseNumTable[0] = cost_ask;
 
     if (cost_ask < 1 || f_cmp.base_count == 1
-    || has_fac_built(*diplo_ask_base_swap_id, FAC_HEADQUARTERS)) {
+    || has_fac_built(FAC_HEADQUARTERS, *diplo_ask_base_swap_id)) {
         X_dialog("NOBASESWAP2", faction2);
         return 0;
     }

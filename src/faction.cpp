@@ -2,7 +2,7 @@
 #include "faction.h"
 
 
-bool has_tech(int faction, int tech_id) {
+bool has_tech(int tech_id, int faction) {
     assert(valid_player(faction));
     assert(tech_id >= TECH_Disable && tech_id <= TECH_TranT);
     if (tech_id == TECH_None) {
@@ -11,47 +11,12 @@ bool has_tech(int faction, int tech_id) {
     return tech_id >= 0 && TechOwners[tech_id] & (1 << faction);
 }
 
-bool has_ability(int faction, VehAbility abl) {
-    return has_tech(faction, Ability[abl].preq_tech);
-}
-
-bool has_ability(int faction, VehAbility abl, VehChassis chs, VehWeapon wpn) {
-    int F = Ability[abl].flags;
-    int triad = Chassis[chs].triad;
-
-    if ((triad == TRIAD_LAND && ~F & AFLAG_ALLOWED_LAND_UNIT)
-    || (triad == TRIAD_SEA && ~F & AFLAG_ALLOWED_SEA_UNIT)
-    || (triad == TRIAD_AIR && ~F & AFLAG_ALLOWED_AIR_UNIT)) {
-        return false;
-    }
-    if ((~F & AFLAG_ALLOWED_COMBAT_UNIT && wpn <= WPN_PSI_ATTACK)
-    || (~F & AFLAG_ALLOWED_TERRAFORM_UNIT && wpn == WPN_TERRAFORMING_UNIT)
-    || (~F & AFLAG_ALLOWED_NONCOMBAT_UNIT
-    && wpn > WPN_PSI_ATTACK && wpn != WPN_TERRAFORMING_UNIT)) {
-        return false;
-    }
-    if ((F & AFLAG_NOT_ALLOWED_PROBE_TEAM && wpn == WPN_PROBE_TEAM)
-    || (F & AFLAG_ONLY_PROBE_TEAM && wpn != WPN_PROBE_TEAM)) {
-        return false;
-    }
-    if (F & AFLAG_TRANSPORT_ONLY_UNIT && wpn != WPN_TROOP_TRANSPORT) {
-        return false;
-    }
-    if (F & AFLAG_NOT_ALLOWED_FAST_UNIT && Chassis[chs].speed > 1) {
-        return false;
-    }
-    if (F & AFLAG_NOT_ALLOWED_PSI_UNIT && wpn == WPN_PSI_ATTACK) {
-        return false;
-    }
-    return has_tech(faction, Ability[abl].preq_tech);
-}
-
 bool has_chassis(int faction, VehChassis chs) {
-    return has_tech(faction, Chassis[chs].preq_tech);
+    return has_tech(Chassis[chs].preq_tech, faction);
 }
 
 bool has_weapon(int faction, VehWeapon wpn) {
-    return has_tech(faction, Weapon[wpn].preq_tech);
+    return has_tech(Weapon[wpn].preq_tech, faction);
 }
 
 bool has_aircraft(int faction) {
@@ -64,8 +29,8 @@ bool has_ships(int faction) {
 }
 
 bool has_orbital_drops(int faction) {
-    return has_tech(faction, Rules->tech_preq_orb_insert_wo_space)
-        || has_project(faction, FAC_SPACE_ELEVATOR);
+    return has_tech(Rules->tech_preq_orb_insert_wo_space, faction)
+        || has_project(FAC_SPACE_ELEVATOR, faction);
 }
 
 bool has_terra(int faction, FormerItem act, bool ocean) {
@@ -75,52 +40,33 @@ bool has_terra(int faction, FormerItem act, bool ocean) {
         return false;
     }
     if (act >= FORMER_CONDENSER && act <= FORMER_LOWER_LAND
-    && has_project(faction, FAC_WEATHER_PARADIGM)) {
+    && has_project(FAC_WEATHER_PARADIGM, faction)) {
         return preq_tech != TECH_Disable;
     }
-    return has_tech(faction, preq_tech);
+    return has_tech(preq_tech, faction);
 }
 
-bool has_project(int faction, int fac_id) {
+bool has_project(FacilityId item_id, int faction) {
     /* If faction_id is negative, check if anyone has built the project. */
-    assert(faction < MaxPlayerNum && fac_id >= SP_ID_First && fac_id <= FAC_EMPTY_SP_64);
-    int i = SecretProjects[fac_id - SP_ID_First];
+    assert(faction < MaxPlayerNum && item_id >= SP_ID_First && item_id <= FAC_EMPTY_SP_64);
+    int i = SecretProjects[item_id - SP_ID_First];
     return i >= 0 && (faction < 0 || Bases[i].faction_id == faction);
 }
 
-bool has_facility(int base_id, int fac_id) {
-    assert(base_id >= 0 && base_id < *total_num_bases);
-    assert(fac_id > 0 && fac_id <= FAC_EMPTY_SP_64);
-    if (fac_id >= SP_ID_First) {
-        return SecretProjects[fac_id - SP_ID_First] == base_id;
-    }
-    int faction = Bases[base_id].faction_id;
-    const int freebies[][2] = {
-        {FAC_COMMAND_CENTER, FAC_COMMAND_NEXUS},
-        {FAC_NAVAL_YARD, FAC_MARITIME_CONTROL_CENTER},
-        {FAC_ENERGY_BANK, FAC_PLANETARY_ENERGY_GRID},
-        {FAC_PERIMETER_DEFENSE, FAC_CITIZENS_DEFENSE_FORCE},
-        {FAC_AEROSPACE_COMPLEX, FAC_CLOUDBASE_ACADEMY},
-        {FAC_BIOENHANCEMENT_CENTER, FAC_CYBORG_FACTORY},
-        {FAC_QUANTUM_CONVERTER, FAC_SINGULARITY_INDUCTOR},
-    };
-    for (const int* p : freebies) {
-        if (p[0] == fac_id && has_project(faction, p[1])) {
-            return true;
+int facility_count(FacilityId item_id, int faction) {
+    assert(valid_player(faction) && item_id < SP_ID_First);
+    int n = 0;
+    for (int i=0; i < *total_num_bases; i++) {
+        BASE* base = &Bases[i];
+        if (base->faction_id == faction && has_fac_built(item_id, i)) {
+            n++;
         }
     }
-    return Bases[base_id].facilities_built[fac_id/8] & (1 << (fac_id % 8));
+    return n;
 }
 
-bool has_fac_built(int base_id, int fac_id) {
-    if (fac_id < Fac_ID_First || fac_id > Fac_ID_Last) {
-        return false;
-    }
-    return Bases[base_id].facilities_built[fac_id/8] & (1 << (fac_id % 8));
-}
-
-int prod_count(int faction, int item_id, int base_skip_id) {
-    // Prototypes must be generic or defined for the faction
+int prod_count(int item_id, int faction, int base_skip_id) {
+    /* Prototypes must be predefined units or created by the faction. */
     assert(valid_player(faction));
     assert(item_id < 0
         || item_id/MaxProtoFactionNum == 0
@@ -137,17 +83,6 @@ int prod_count(int faction, int item_id, int base_skip_id) {
     return n;
 }
 
-int facility_count(int faction, int fac_id) {
-    assert(valid_player(faction) && fac_id >= 0);
-    int n = 0;
-    for (int i=0; i < *total_num_bases; i++) {
-        BASE* base = &Bases[i];
-        if (base->faction_id == faction && has_fac_built(i, fac_id)) {
-            n++;
-        }
-    }
-    return n;
-}
 
 /*
 Determine if the specified faction is controlled by a human player or computer AI.
@@ -183,17 +118,17 @@ bool at_war(int faction1, int faction2) {
 }
 
 bool has_pact(int faction1, int faction2) {
-    return faction1 > 0 && faction2 > 0
+    return faction1 >= 0 && faction2 >= 0
         && Factions[faction1].diplo_status[faction2] & DIPLO_PACT;
 }
 
 bool has_treaty(int faction1, int faction2, uint32_t treaty) {
-    return faction1 > 0 && faction2 > 0
+    return faction1 >= 0 && faction2 >= 0
         && Factions[faction1].diplo_status[faction2] & treaty;
 }
 
 bool has_agenda(int faction1, int faction2, uint32_t agenda) {
-    return faction1 > 0 && faction2 > 0
+    return faction1 >= 0 && faction2 >= 0
         && Factions[faction1].diplo_agenda[faction2] & agenda;
 }
 
@@ -224,7 +159,7 @@ bool has_transport(int x, int y, int faction) {
     for (int i = 0; i < *total_num_vehicles; i++) {
         VEH* veh = &Vehicles[i];
         if (veh->faction_id == faction && veh->x == x && veh->y == y
-        && veh->weapon_type() == WPN_TROOP_TRANSPORT) {
+        && veh->is_transport()) {
             return true;
         }
     }
@@ -257,7 +192,7 @@ bool has_colony_pods(int faction) {
 int find_hq(int faction) {
     for(int i=0; i < *total_num_bases; i++) {
         BASE* base = &Bases[i];
-        if (base->faction_id == faction && has_fac_built(i, FAC_HEADQUARTERS)) {
+        if (base->faction_id == faction && has_fac_built(FAC_HEADQUARTERS, i)) {
             return i;
         }
     }
@@ -396,8 +331,8 @@ int robust, int immunity, int impunity, int penalty) {
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
     double base_ratio = min(1.0, f->base_count / min(40.0, *map_area_sq_root * 0.5));
-    int w_morale = (has_project(faction, FAC_COMMAND_NEXUS) ? 2 : 0)
-        + (has_project(faction, FAC_CYBORG_FACTORY) ? 2 : 0);
+    int w_morale = (has_project(FAC_COMMAND_NEXUS, faction) ? 2 : 0)
+        + (has_project(FAC_CYBORG_FACTORY, faction) ? 2 : 0);
     int w_probe = (range < 25 && *current_turn - m->thinker_last_mc_turn < 8 ? 5 : 0);
     int sc = 0;
     int vals[11];
@@ -421,10 +356,10 @@ int robust, int immunity, int impunity, int penalty) {
                 vals[k] += val;
             }
         }
-        if (has_project(faction, FAC_ASCETIC_VIRTUES)) {
+        if (has_project(FAC_ASCETIC_VIRTUES, faction)) {
             vals[POL] += 1;
         }
-        if (has_project(faction, FAC_LIVING_REFINERY)) {
+        if (has_project(FAC_LIVING_REFINERY, faction)) {
             vals[SUP] += 2;
         }
         if (has_nexus) {
@@ -471,7 +406,7 @@ int robust, int immunity, int impunity, int penalty) {
     if (vals[MOR] >= 1 && vals[MOR] + w_morale >= 4) {
         sc += 10;
     }
-    if (vals[PRO] >= 3 && !has_project(faction, FAC_HUNTER_SEEKER_ALGO)) {
+    if (vals[PRO] >= 3 && !has_project(FAC_HUNTER_SEEKER_ALGO, faction)) {
         sc += 4 * max(0, 4 - range/8);
     }
     sc += max(2, 2 + 4*f->AI_wealth + 3*f->AI_tech - f->AI_fight)
@@ -483,20 +418,20 @@ int robust, int immunity, int impunity, int penalty) {
     sc += max(2, 4 - range/8 + 2*f->AI_power + 2*f->AI_fight)
         * clamp(vals[MOR], -4, 4);
 
-    if (!has_project(faction, FAC_TELEPATHIC_MATRIX)) {
+    if (!has_project(FAC_TELEPATHIC_MATRIX, faction)) {
         sc += (vals[POL] < 0 ? 2 : 4) * clamp(vals[POL], -5, 3);
         if (vals[POL] < -2) {
             sc -= (vals[POL] < -3 ? 4 : 2) * max(0, 4 - range/8)
                 * (has_aircraft(faction) ? 2 : 1);
         }
-        if (has_project(faction, FAC_LONGEVITY_VACCINE) && sf == SOCIAL_C_ECONOMICS) {
+        if (has_project(FAC_LONGEVITY_VACCINE, faction) && sf == SOCIAL_C_ECONOMICS) {
             sc += (sm == SOCIAL_M_PLANNED ? 10 : 0);
             sc += (sm == SOCIAL_M_SIMPLE || sm == SOCIAL_M_GREEN ? 5 : 0);
         }
         sc += 3*clamp(vals[TAL], -5, 5);
 
         int drone_score = 3 + (m->rule_drone > 0) - (m->rule_talent > 0)
-            - (has_tech(faction, Facility[FAC_PUNISHMENT_SPHERE].preq_tech) ? 1 : 0);
+            - (has_tech(Facility[FAC_PUNISHMENT_SPHERE].preq_tech, faction) ? 1 : 0);
         if (*SunspotDuration > 5 && *diff_level >= DIFF_LIBRARIAN
         && un_charter() && vals[POL] >= 0) {
             sc += 3*drone_score;
@@ -505,7 +440,7 @@ int robust, int immunity, int impunity, int penalty) {
             sc += 2*drone_score;
         }
     }
-    if (!has_project(faction, FAC_CLONING_VATS)) {
+    if (!has_project(FAC_CLONING_VATS, faction)) {
         if (pop_boom && vals[GRW] >= 4) {
             sc += 20;
         }
@@ -519,7 +454,7 @@ int robust, int immunity, int impunity, int penalty) {
         sc += 3*clamp(vals[PLA], -3, 0);
     }
     sc += max(2, (f->SE_planet_base > 0 ? 5 : 2) + m->rule_psi/10
-        + (has_project(faction, FAC_MANIFOLD_HARMONICS) ? 6 : 0)) * clamp(vals[PLA], -3, 3);
+        + (has_project(FAC_MANIFOLD_HARMONICS, faction) ? 6 : 0)) * clamp(vals[PLA], -3, 3);
     sc += max(2, 5 - range/8 + w_probe + 2*f->AI_power + 2*f->AI_fight)
         * clamp(vals[PRO], -2, 3);
     sc += 8 * clamp(vals[IND], -3, 8 - *diff_level);
@@ -582,21 +517,21 @@ int __cdecl mod_social_ai(int faction, int a2, int a3, int a4, int a5, int a6) {
             penalty |= (1 << (m->faction_bonus_val1[i] * 4 + m->faction_bonus_val2[i]));
         }
     }
-    if (has_project(faction, FAC_NETWORK_BACKBONE)) {
+    if (has_project(FAC_NETWORK_BACKBONE, faction)) {
         /* Cybernetic */
         impunity |= (1 << (4*SOCIAL_C_FUTURE + SOCIAL_M_CYBERNETIC));
     }
-    if (has_project(faction, FAC_CLONING_VATS)) {
+    if (has_project(FAC_CLONING_VATS, faction)) {
         /* Power & Thought Control */
         impunity |= (1 << (4*SOCIAL_C_VALUES + SOCIAL_M_POWER))
             | (1 << (4*SOCIAL_C_FUTURE + SOCIAL_M_THOUGHT_CONTROL));
 
-    } else if (has_tech(faction, Facility[FAC_CHILDREN_CRECHE].preq_tech)) {
+    } else if (has_tech(Facility[FAC_CHILDREN_CRECHE].preq_tech, faction)) {
         for (int i=0; i<*total_num_bases; i++) {
             BASE* b = &Bases[i];
             if (b->faction_id == faction) {
                 want_pop += (pop_goal(i) - b->pop_size)
-                    * (b->nutrient_surplus > 1 && has_facility(i, FAC_CHILDREN_CRECHE) ? 4 : 1);
+                    * (b->nutrient_surplus > 1 && has_facility(FAC_CHILDREN_CRECHE, i) ? 4 : 1);
                 pop_total += b->pop_size;
             }
         }
@@ -616,7 +551,7 @@ int __cdecl mod_social_ai(int faction, int a2, int a3, int a4, int a5, int a6) {
         int sc1 = social_score(faction, i, sm1, range, pop_boom, has_nexus, robust, immunity, impunity, penalty);
 
         for (int j=0; j<4; j++) {
-            if (j == sm1 || !has_tech(faction, Social[i].soc_preq_tech[j]) ||
+            if (j == sm1 || !has_tech(Social[i].soc_preq_tech[j], faction) ||
             (i == m->soc_opposition_category && j == m->soc_opposition_model)) {
                 continue;
             }

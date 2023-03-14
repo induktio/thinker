@@ -6,16 +6,22 @@ FPath_find Path_find = (FPath_find)0x59A530;
 
 static TileSearch ts;
 
-int CPath::find(int x1, int y1, int x2, int y2, int unit_id, int faction) {
-    return Path_find(this, x1, y1, x2, y2, unit_id, faction, 0, -1);
+int CPath::find(int x1, int y1, int x2, int y2, int unit_id, int faction_id) {
+    return Path_find(this, x1, y1, x2, y2, unit_id, faction_id, 0, -1);
 }
 
-int path_distance(int x1, int y1, int x2, int y2, int unit_id, int faction) {
-    Points visited;
+int path_get_next(int x1, int y1, int x2, int y2, int unit_id, int faction_id) {
+    return Path_find(Path, x1, y1, x2, y2, unit_id, faction_id, 0, -1);
+}
+
+/*
+Return tile distance to destination if it is less than MaxMapH, otherwise return -1.
+*/
+int path_distance(int x1, int y1, int x2, int y2, int unit_id, int faction_id) {
     int px = x1;
     int py = y1;
-    int dist = 0;
     int val = 0;
+    int dist = 0;
     memset(pm_overlay, 0, sizeof(pm_overlay));
 
     while (dist < MaxMapH && val >= 0) {
@@ -23,20 +29,40 @@ int path_distance(int x1, int y1, int x2, int y2, int unit_id, int faction) {
         if (px == x2 && py == y2) {
             return dist;
         }
-        val = Path_find(Path, px, py, x2, y2, unit_id, faction, 0, -1);
+        val = Path_find(Path, px, py, x2, y2, unit_id, faction_id, 0, -1);
         if (val >= 0) {
             px = wrap(px + BaseOffsetX[val]);
             py = py + BaseOffsetY[val];
         }
         dist++;
-        debug("path %2d %2d -> %2d %2d / %2d %2d / %2d\n", x1,y1,x2,y2,px,py,dist);
+        debug("path_dist %2d %2d -> %2d %2d / %2d %2d / %2d\n", x1,y1,x2,y2,px,py,dist);
     }
     flushlog();
     return -1;
 }
 
-int path_get_next(int x1, int y1, int x2, int y2, int unit_id, int faction) {
-    return Path_find(Path, x1, y1, x2, y2, unit_id, faction, 0, -1);
+/*
+Return road move distance to destination if it is less than max_cost, otherwise return -1.
+*/
+int path_cost(int x1, int y1, int x2, int y2, int unit_id, int faction_id, int max_cost) {
+    int px = x1;
+    int py = y1;
+    int val = 0;
+    int cost = 0;
+
+    while (val >= 0 && cost < max_cost) {
+        if (px == x2 && py == y2) {
+            return cost;
+        }
+        val = Path_find(Path, px, py, x2, y2, unit_id, faction_id, 0, -1);
+        if (val >= 0) {
+            px = wrap(px + BaseOffsetX[val]);
+            py = py + BaseOffsetY[val];
+            cost += mod_hex_cost(unit_id, faction_id, x1, y1, px, py, 0);
+        }
+        debug("path_cost %2d %2d -> %2d %2d / %2d %2d / %2d\n", x1,y1,x2,y2,px,py,cost);
+    }
+    return -1;
 }
 
 int nearby_items(int x, int y, int range, uint32_t item) {

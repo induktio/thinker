@@ -22,7 +22,7 @@ void design_units(int faction) {
         (has_chassis(i, CHS_FOIL) ? CHS_FOIL : CHS_INFANTRY);
     VehAbility DefendAbls[] =
         {ABL_ID_AAA, ABL_ID_COMM_JAMMER, ABL_ID_POLICE_2X, ABL_ID_TRANCE, ABL_ID_TRAINED};
-    bool twoabl = has_tech(i, Rules->tech_preq_allow_2_spec_abil);
+    bool twoabl = has_tech(Rules->tech_preq_allow_2_spec_abil, i);
     char buf[256];
 
     if (has_weapon(i, WPN_PROBE_TEAM)) {
@@ -103,7 +103,7 @@ void design_units(int faction) {
 
 bool need_police(int faction) {
     Faction* f = &Factions[faction];
-    return f->SE_police > -2 && f->SE_police < 3 && !has_project(faction, FAC_TELEPATHIC_MATRIX);
+    return f->SE_police > -2 && f->SE_police < 3 && !has_project(FAC_TELEPATHIC_MATRIX, faction);
 }
 
 int psi_score(int faction) {
@@ -117,16 +117,16 @@ int psi_score(int faction) {
         }
     }
     int psi = max(-6, 2 - weapon_value);
-    if (has_project(faction, FAC_NEURAL_AMPLIFIER)) {
+    if (has_project(FAC_NEURAL_AMPLIFIER, faction)) {
         psi += min(5, conf.neural_amplifier_bonus/20);
     }
-    if (has_project(faction, FAC_DREAM_TWISTER)) {
+    if (has_project(FAC_DREAM_TWISTER, faction)) {
         psi += min(5, conf.dream_twister_bonus/20);
     }
-    if (has_project(faction, FAC_PHOLUS_MUTAGEN)) {
+    if (has_project(FAC_PHOLUS_MUTAGEN, faction)) {
         psi++;
     }
-    if (has_project(faction, FAC_XENOEMPATHY_DOME)) {
+    if (has_project(FAC_XENOEMPATHY_DOME, faction)) {
         psi++;
     }
     if (MFactions[faction].rule_flags & RFLAG_WORMPOLICE && need_police(faction)) {
@@ -172,14 +172,14 @@ int satellite_goal(int faction, int fac_id) {
 void former_plans(int faction) {
     bool former_fungus = (has_terra(faction, FORMER_PLANT_FUNGUS, LAND)
         || has_terra(faction, FORMER_PLANT_FUNGUS, SEA));
-    bool improv_fungus = (has_tech(faction, Rules->tech_preq_ease_fungus_mov)
-        || has_tech(faction, Rules->tech_preq_improv_fungus)
-        || has_project(faction, FAC_XENOEMPATHY_DOME));
+    bool improv_fungus = (has_tech(Rules->tech_preq_ease_fungus_mov, faction)
+        || has_tech(Rules->tech_preq_improv_fungus, faction)
+        || has_project(FAC_XENOEMPATHY_DOME, faction));
     int value = fungus_yield(faction, RES_NONE)
         - (has_terra(faction, FORMER_FOREST, LAND)
-        ? Resource->forest_sq_nutrient
-        + Resource->forest_sq_mineral
-        + Resource->forest_sq_energy : 2);
+        ? ResInfo->forest_sq_nutrient
+        + ResInfo->forest_sq_mineral
+        + ResInfo->forest_sq_energy : 2);
     plans[faction].keep_fungus = (value > 0 ? min((improv_fungus ? 8 : 4), 2*value) : 0);
     plans[faction].plant_fungus = value > 0 && former_fungus && (improv_fungus || value > 2);
 }
@@ -194,18 +194,18 @@ void plans_upkeep(int faction) {
         Remove bugged prototypes from the savegame.
         */
         for (int j = 0; j < MaxProtoFactionNum; j++) {
-            int id = faction*MaxProtoFactionNum + j;
-            UNIT* u = &Units[id];
+            int unit_id = faction*MaxProtoFactionNum + j;
+            UNIT* u = &Units[unit_id];
             if (strlen(u->name) >= MaxProtoNameLen
-            || u->chassis_type < CHS_INFANTRY
-            || u->chassis_type > CHS_MISSILE) {
+            || u->chassis_id < CHS_INFANTRY
+            || u->chassis_id > CHS_MISSILE) {
                 for (int k = *total_num_vehicles-1; k >= 0; k--) {
-                    if (Vehicles[k].unit_id == id) {
+                    if (Vehicles[k].unit_id == unit_id) {
                         veh_kill(k);
                     }
                 }
                 for (int k=0; k < *total_num_bases; k++) {
-                    if (Bases[k].queue_items[0] == id) {
+                    if (Bases[k].queue_items[0] == unit_id) {
                         Bases[k].queue_items[0] = -FAC_STOCKPILE_ENERGY;
                     }
                 }
@@ -349,9 +349,9 @@ void plans_upkeep(int faction) {
         }
         plans[i].median_limit = max(5, minerals[n/2]);
 
-        if (has_project(faction, FAC_CLOUDBASE_ACADEMY)
-        || has_project(faction, FAC_SPACE_ELEVATOR)
-        || facility_count(faction, FAC_AEROSPACE_COMPLEX) >= f->base_count/2) {
+        if (has_project(FAC_CLOUDBASE_ACADEMY, faction)
+        || has_project(FAC_SPACE_ELEVATOR, faction)
+        || facility_count(FAC_AEROSPACE_COMPLEX, faction) >= f->base_count/2) {
             plans[i].satellite_goal = min(conf.max_satellites,
                 population[n*7/8]);
         } else {

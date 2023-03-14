@@ -580,7 +580,7 @@ struct CRules {
     int subspace_gen_req;
 };
 
-struct CResource {
+struct CResourceInfo {
     int ocean_sq_nutrient;
     int ocean_sq_mineral;
     int ocean_sq_energy;
@@ -619,11 +619,14 @@ struct CResource {
     int pad_8;
 };
 
-struct CSocial {
-    char* field_name;
-    int   soc_preq_tech[4];
-    char* soc_name[4];
-    int   effects[4][11];
+struct CResourceName {
+    char* name_singular;
+    char* name_plural;
+};
+
+struct CEnergy {
+    char* abbrev;
+    char* name;
 };
 
 struct CFacility {
@@ -748,6 +751,57 @@ struct CWeapon {
     char cost;
     short preq_tech;
     short padding;
+};
+
+struct CMorale {
+    char* name;
+    char* name_lifecycle;
+};
+
+struct CCombatMode {
+    char* name;
+    char* hyphened;
+    char* abbrev;
+    char* letter;
+};
+
+struct COrder {
+    char* order;
+    char* order_sea;
+    char* letter;
+};
+
+struct CTimeControl {
+    char* name;
+    int turn;
+    int base;
+    int unit;
+    int event;
+    int extra;
+    int refresh;
+    int accumulated;
+};
+
+struct CSocialField {
+    char* field_name;
+    int   soc_preq_tech[4];
+    char* soc_name[4];
+    int   effects[4][11];
+};
+
+struct CSocialEffect {
+    char set1[24];
+    char set2[24];
+    char padding[56];
+};
+
+struct CMight {
+    char* adj_start;
+    char* adj;
+};
+
+struct CBonusName {
+    char key[24];
 };
 
 struct CProposal {

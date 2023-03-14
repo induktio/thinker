@@ -301,16 +301,6 @@ struct AIPlans {
     int enemy_bases = 0;
 };
 
-enum EnemyVehMove { // Return codes for enemy_veh processing
-    SYNC = 0,
-    NO_SYNC = 1,
-};
-
-enum RegionFlag {
-    PM_ENEMY = 1,
-    PM_PROBE = 2,
-};
-
 enum ResType {
     RES_NONE = 0,
     RES_NUTRIENT = 1,
@@ -346,9 +336,9 @@ enum NodesetType {
 #include "veh.h"
 #include "base.h"
 #include "game.h"
+#include "goal.h"
 #include "move.h"
 #include "tech.h"
-#include "turn.h"
 #include "test.h"
 #include "debug.h"
 

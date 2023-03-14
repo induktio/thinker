@@ -635,7 +635,7 @@ enum base_governor_flags {
 
 enum MapItem {
     BIT_BASE_IN_TILE = 0x1,
-    BIT_UNIT_IN_TILE = 0x2,
+    BIT_VEH_IN_TILE = 0x2,
     BIT_ROAD = 0x4,
     BIT_MAGTUBE = 0x8,
     BIT_MINE = 0x10,

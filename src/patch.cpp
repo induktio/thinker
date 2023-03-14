@@ -653,9 +653,14 @@ bool patch_setup(Config* cf) {
     }
 
     /*
-    Additional PSI combat bonus options.
+    Additional combat bonus options (including PSI).
     */
     {
+        write_call(0x50211F, (int)mod_get_basic_offense);
+        write_call(0x50274A, (int)mod_get_basic_offense);
+        write_call(0x5044EB, (int)mod_get_basic_offense);
+        write_call(0x502A69, (int)mod_get_basic_defense);
+
         const byte old_bytes[] = {0x8B,0xC7,0x99,0x2B,0xC2,0xD1,0xF8};
         const byte new_bytes[] = {0x57,0xE8,0x00,0x00,0x00,0x00,0x5F};
         write_jump(0x501500, (int)psi_factor);

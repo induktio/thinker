@@ -45,7 +45,7 @@ const int TableOffsetY[] = {
 };
 
 typedef int(__thiscall *FPath_find)(
-    void* This, int x1, int y1, int x2, int y2, int unit_id, int faction, int flags, int unk1);
+    void* This, int x1, int y1, int x2, int y2, int unit_id, int faction_id, int flags, int unk1);
 
 class CPath {
 public:
@@ -61,7 +61,7 @@ public:
     int factionID2;
     int protoID;
 
-    int find(int x1, int y1, int x2, int y2, int unit_id, int faction);
+    int find(int x1, int y1, int x2, int y2, int unit_id, int faction_id);
 };
 
 extern CPath* Path;
@@ -80,8 +80,9 @@ enum TSType {
     TS_SEA_AND_SHORE = 6,
 };
 
-int path_distance(int x1, int y1, int x2, int y2, int unit_id, int faction);
-int path_get_next(int x1, int y1, int x2, int y2, int unit_id, int faction);
+int path_get_next(int x1, int y1, int x2, int y2, int unit_id, int faction_id);
+int path_distance(int x1, int y1, int x2, int y2, int unit_id, int faction_id);
+int path_cost(int x1, int y1, int x2, int y2, int unit_id, int faction_id, int max_cost);
 int nearby_items(int x, int y, int range, uint32_t item);
 bool nearby_tiles(int x, int y, TSType type, int limit);
 
@@ -109,7 +110,7 @@ class TileSearch {
     void init(int x, int y, int tp);
     void init(int x, int y, int tp, int skip);
     void init(const PointList& points, TSType tp, int skip);
-    bool has_zoc(int faction);
+    bool has_zoc(int faction_id);
     void get_route(PointList& pp);
     MAP* get_next();
 };

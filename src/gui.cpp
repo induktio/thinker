@@ -875,7 +875,7 @@ void show_mod_stats() {
     Faction* f = &Factions[MapWin->cOwner];
     for (int i = 0; i < *total_num_bases; ++i) {
         BASE* b = &Bases[i];
-        int mindiv = (has_project(b->faction_id, FAC_SPACE_ELEVATOR)
+        int mindiv = (has_project(FAC_SPACE_ELEVATOR, b->faction_id)
              && (b->item() == -FAC_ORBITAL_DEFENSE_POD
              || b->item() == -FAC_NESSUS_MINING_STATION
              || b->item() == -FAC_ORBITAL_POWER_TRANS
@@ -1100,12 +1100,12 @@ void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, 
     base_draw((int)buffer, base_id, x, y, zoom, a6);
 
     if (conf.render_base_info > 0 && zoom >= -8) {
-        if (has_facility(base_id, FAC_HEADQUARTERS)) {
+        if (has_facility(FAC_HEADQUARTERS, base_id)) {
             color = 255;
             width = 2;
         }
-        if (has_facility(base_id, FAC_GEOSYNC_SURVEY_POD)
-        || has_facility(base_id, FAC_FLECHETTE_DEFENSE_SYS)) {
+        if (has_facility(FAC_GEOSYNC_SURVEY_POD, base_id)
+        || has_facility(FAC_FLECHETTE_DEFENSE_SYS, base_id)) {
             color = 254;
         }
         if (b->faction_id == MapWin->cOwner && b->state_flags & BSTATE_GOLDEN_AGE_ACTIVE) {

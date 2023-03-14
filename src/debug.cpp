@@ -174,12 +174,12 @@ void print_map(int x, int y) {
 
 void print_veh(int id) {
     VEH* v = &Vehicles[id];
-    int speed = veh_speed(id, 0);
+    int moves = veh_speed(id);
     debug("VEH %24s %3d %3d %d order: %2d %c %3d %3d -> %3d %3d moves: %2d speed: %2d damage: %d "
         "state: %08x flags: %04x vis: %02x mor: %d iter: %d angle: %d\n",
         Units[v->unit_id].name, v->unit_id, id, v->faction_id,
         v->order, (v->status_icon ? v->status_icon : ' '),
-        v->x, v->y, v->waypoint_1_x, v->waypoint_1_y, speed - v->road_moves_spent, speed,
+        v->x, v->y, v->waypoint_1_x, v->waypoint_1_y, moves - v->road_moves_spent, moves,
         v->damage_taken, v->state, v->flags, v->visibility, v->morale,
         v->iter_count, v->rotate_angle);
 }

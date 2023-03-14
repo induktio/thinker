@@ -235,7 +235,7 @@ int fungus_yield(int faction, int res_type) {
     int M = clamp(f->tech_fungus_mineral + p, 0, 99);
     int E = clamp(f->tech_fungus_energy + p + (f->SE_economy_pending >= 2), 0, 99);
 
-    if (has_project(faction, FAC_MANIFOLD_HARMONICS)) {
+    if (has_project(FAC_MANIFOLD_HARMONICS, faction)) {
         int m = clamp(f->SE_planet_pending + 1, 0, 4);
         N += manifold[m][0];
         M += manifold[m][1];
@@ -261,13 +261,13 @@ int item_yield(int x, int y, int faction, int bonus, MapItem item) {
     int N = 0, M = 0, E = 0;
     if (item != BIT_FUNGUS) {
         if (bonus == RES_NUTRIENT) {
-            N += Resource->bonus_sq_nutrient;
+            N += ResInfo->bonus_sq_nutrient;
         }
         if (bonus == RES_MINERAL) {
-            M += Resource->bonus_sq_mineral;
+            M += ResInfo->bonus_sq_mineral;
         }
         if (bonus == RES_ENERGY) {
-            E += Resource->bonus_sq_energy;
+            E += ResInfo->bonus_sq_energy;
         }
         if (sq->items & BIT_RIVER && !is_ocean(sq)) {
             E++;
@@ -286,14 +286,14 @@ int item_yield(int x, int y, int faction, int bonus, MapItem item) {
         }
     }
     if (item == BIT_FOREST) {
-        N += Resource->forest_sq_nutrient;
-        M += Resource->forest_sq_mineral;
-        E += Resource->forest_sq_energy;
+        N += ResInfo->forest_sq_nutrient;
+        M += ResInfo->forest_sq_mineral;
+        E += ResInfo->forest_sq_energy;
     }
     else if (item == BIT_THERMAL_BORE) {
-        N += Resource->borehole_sq_nutrient;
-        M += Resource->borehole_sq_mineral;
-        E += Resource->borehole_sq_energy;
+        N += ResInfo->borehole_sq_nutrient;
+        M += ResInfo->borehole_sq_mineral;
+        E += ResInfo->borehole_sq_energy;
         N -= (N > 0);
     }
     else if (item == BIT_FUNGUS) {
@@ -302,31 +302,31 @@ int item_yield(int x, int y, int faction, int bonus, MapItem item) {
         E = fungus_yield(faction, RES_ENERGY);
     }
     else if (item == BIT_FARM && is_ocean(sq)) {
-        N += Resource->ocean_sq_nutrient + Resource->improved_sea_nutrient;
-        M += Resource->ocean_sq_mineral;
-        E += Resource->ocean_sq_energy;
+        N += ResInfo->ocean_sq_nutrient + ResInfo->improved_sea_nutrient;
+        M += ResInfo->ocean_sq_mineral;
+        E += ResInfo->ocean_sq_energy;
         if (sq->items & BIT_MINE) {
-            M += Resource->improved_sea_mineral
-                + has_tech(faction, Rules->tech_preq_mining_platform_bonus);
+            M += ResInfo->improved_sea_mineral
+                + has_tech(Rules->tech_preq_mining_platform_bonus, faction);
             N -= (N > 0);
         }
         if (sq->items & BIT_SOLAR) {
-            E += Resource->improved_sea_energy;
+            E += ResInfo->improved_sea_energy;
         }
     }
     else {
         assert(false);
     }
     if (N > 2 && bonus != RES_NUTRIENT
-    && !has_tech(faction, Rules->tech_preq_allow_3_nutrients_sq)) {
+    && !has_tech(Rules->tech_preq_allow_3_nutrients_sq, faction)) {
         N = 2;
     }
     if (M > 2 && bonus != RES_MINERAL
-    && !has_tech(faction, Rules->tech_preq_allow_3_minerals_sq)) {
+    && !has_tech(Rules->tech_preq_allow_3_minerals_sq, faction)) {
         M = 2;
     }
     if (E > 2 && bonus != RES_ENERGY
-    && !has_tech(faction, Rules->tech_preq_allow_3_energy_sq)) {
+    && !has_tech(Rules->tech_preq_allow_3_energy_sq, faction)) {
         E = 2;
     }
     debug("item_yield %2d %2d %08X faction: %d bonus: %d planet: %d N: %d M: %d E: %d prev: %d\n",

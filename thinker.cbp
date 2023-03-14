@@ -86,6 +86,8 @@
 		<Unit filename="src/faction.h" />
 		<Unit filename="src/game.cpp" />
 		<Unit filename="src/game.h" />
+		<Unit filename="src/goal.cpp" />
+		<Unit filename="src/goal.h" />
 		<Unit filename="src/gui.cpp" />
 		<Unit filename="src/gui.h" />
 		<Unit filename="src/gui_dialog.cpp" />
@@ -116,8 +118,6 @@
 		<Unit filename="src/tech.h" />
 		<Unit filename="src/test.cpp" />
 		<Unit filename="src/test.h" />
-		<Unit filename="src/turn.cpp" />
-		<Unit filename="src/turn.h" />
 		<Unit filename="src/veh.cpp" />
 		<Unit filename="src/veh.h" />
 		<Extensions>
