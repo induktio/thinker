@@ -113,3 +113,66 @@ Thinker should now start along with OpenSMACX. Thinker version should always be 
 version menu (Ctrl+F4). If this is not the case, Thinker did not start correctly with the game.
 Check if you are actually running the game binary with the imports patched as described above.
 
+
+Detailed changes in Scient patch
+================================
+This list describes the changes in src/patchdata.h in more detail while referencing Details.md.
+
+* Fix 1 & 15. 005A239D, 006185F8 -> probe attempting to mind control base
+* Fix 2.  00506865, 00618623 -> intercept crash
+* Fix 3.  0045C3A5, 005C3E7, 0045C510 (Design Workshop overflow)
+* Fix 3.  00618A94 -> increasing VM alloc at start
+* Fix 4.  0046D40A -> adding checks to right click airdrop
+* Fix 4.  004D89A8, 00618637 -> extended handling of airdrop for right click
+* Fix 5.  004CDA6C, 00618668 -> fixes patrol waypoint bug
+* Fix 6.  0052646B -> repair bay bug
+* Fix 7.  00598F80 -> removing check which ends turn for certain air units when entering base
+* Fix 8.  00494FBD, 006186A9 -> hurry production exploit
+* Fix 9.  0046E778 -> recenters on unexplorered city tiles when clicked
+* Fix 10. 004BFE81, 0061868C -> poles crash
+* Fix 11. 00497FC6, 004972C0, 006186B9 -> base ops changing infiltrated workers exploit (right/left click)
+* Fix 12. 004D7EAC, 006185A0 -> shift-g "go to home base"
+* Fix 13. 0045CE09, 0061867C -> resetting cursor when clicking unit selection
+* Fix 14. 004CD136, 006186E0 -> artillery range
+* Fix 15. 005A1788, 00618616 -> probe attempting to mind control unit
+* Fix 16. 004E6FCC -> borehole nutrient problem
+* Fix 17. 00683C8B -> Believers were using incorrect ambient sound string
+* Fix 18 & 19. 0059F0B9 -> flag to look into more whether correct mechanic
+* Fix 20. 0045FA5E, 006187F8 : disable useless cpu check, ForceOldVoxelAlgorithm=0 by default (use MMX voxel code) but read in ini value
+* Fix 20 also? 006392DC, 0063E85B : empty patch data spaces -> former cpu check functions
+* Fix 21. 00593590, 006186ED -> sealurk movement in fungus
+* Fix 22. **Removed**
+* Fix 23. 0052A9BC, 0052AAB1, 006186FF -> registry check complete install
+* Fix 24. 0059606B, 00618718 -> amphib / transport / sea base
+* Fix 25. 005BA128, 00618736 -> "Ascent to Transcendence" SMAX only
+* Fix 26. 00595869, 0059706B -> probe stacks
+* Fix 27. 005A3AEA, 005A3C50, 00618763 -> AI #FREEWHO using faction slot 0
+* Fix 28. 00403BA9, 004BEF8E, 00697214 -> movlistx
+* Fix 29. 005C88E9 -> Nessus Canyon
+* Fix 30. 00502F5B, 006392DC -> attacking along road
+* Fix 31. 0051E01D, 0051E049, 0051E06A, 0051E0AB, 0051E14A, 0051E175, 0051E196, 0051E262, 0051E324 : change offsets of duplicate const registry str to make room for new str table
+* Fix 31. 005201BF, 00520364, 005204BC, 0068AD88 -> NEWRESOURCE/PETERSOUT
+* Fix 32. 0042EC63, 0042E18F, 006187A2 -> ARMORDESC/REACTORDESC datalinks
+* Fix 33. 0042A648, 0042CAEF, 006187BB -> UNITDESC4 (sea formers)
+* Fix 34. 00500E84 -> PB attempting to defend 2nd time after PB shot down
+* Fix 34. 004CE516, 006187CF -> TM defending 2nd time after shot down
+* Fix 34. 004CE9DD, 006187DD -> FM defending 2nd time after shot down
+* Fix 35. 004CEA4F, 004CECB4, 006187EB -> Fungal Missiles spawning MW in ocean tiles
+* Fix 36. 0050B51E -> nerve gas message
+* Fix 37. 00587245, 0058731B -> ability to set reactor in alpha/x.txt
+* Fix 38. 004CF834, 004CF88C, 004D0080 -> modifying restrictions on adding pods to bases
+* Fix 39. 00596139, 00597323, 0063E86B -> DISEMBARKFAIL
+* Fix 40. 0051F439, 0051F491 -> Perihelion init date
+* Fix 41. 004CEA2A, 004CEB42, 004CED04, 004CED40, 004CED7A, 0063E85B -> FM #FUNGMOTIZED
+* Fix 42. 004D11C8, 0063932C -> rare crash on AI attempting to upgrade unit
+* Fix 43. 004F14C0, 004F1E57, 004F1F1B, 004F3FCA, 004F7A34 -> #ABANDONBASE fix
+* Fix 44. 005950BD -> movement pact sea bases
+* Fix 45. 00523849, 01238F6 -> interlude 6/7 issue #1
+* Fix 46. 00505FBA -> interlude 6 issue #2
+* Fix 47. 0041CFF7 -> base #CHANGEFORMER
+* Fix 48. 005856C3 -> retooling parsing
+* Fix 49. 004E4748, 0063E898 -> FREEPROTO & skunkworks
+* Fix 50. 00409F24, 00409B96 -> save/load queue exploit
+* Fix 51. 004D41D7 -> aquifer loop
+* Fix 52. 0054ACD6 -> diplo faction id
+

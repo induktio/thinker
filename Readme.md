@@ -7,8 +7,7 @@ This mod increases the level of challenge in single player while providing many 
 By patching the game to use an additional DLL, many new features can be developed in C++.
 
 * Vastly improved production/terraforming AI
-* AI combat units are rewritten to use more variety in tactics
-* AI colony pods reach their destinations much more often
+* AI unit movement is rewritten to use more variety in tactics
 * More config options for many previously fixed settings in the game engine
 * Many enhancements to random map generation/spawn locations
 * Visual changes on map rendering and other user interface additions
