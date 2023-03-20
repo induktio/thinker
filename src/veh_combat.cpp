@@ -179,21 +179,20 @@ int __cdecl mod_get_basic_offense(int veh_id_atk, int veh_id_def, int psi_combat
     }
     int base_id_atk = base_at(Vehs[veh_id_atk].x, Vehs[veh_id_atk].y);
     if (base_id_atk >= 0) {
+        // Morale effects with CC/BP are modified. SE Morale has no longer effect on native units.
+        bool native_unit = unit_id_atk < MaxProtoFactionNum
+            && (Units[unit_id_atk].offense_value() < 0 || unit_id_atk == BSC_SPORE_LAUNCHER);
         if (has_fac_built(FAC_CHILDREN_CRECHE, base_id_atk)) {
             morale++;
-            int morale_active = clamp(Factions[faction_id_atk].SE_morale, -4, 4);
+            int morale_active = clamp(Factions[faction_id_atk].SE_morale, -4, 0);
             if (morale_active <= -2) {
                 morale_active++;
             }
-            morale -= morale_active;
-        } else if (has_fac_built(FAC_BROOD_PIT, base_id_atk) && unit_id_atk < MaxProtoFactionNum
-        && (Units[unit_id_atk].offense_value() < 0 || unit_id_atk == BSC_SPORE_LAUNCHER)) {
+            if (!native_unit) {
+                morale -= morale_active;
+            }
+        } else if (has_fac_built(FAC_BROOD_PIT, base_id_atk) && native_unit) {
             morale++;
-            int morale_active = clamp(Factions[faction_id_atk].SE_morale, -4, 4);
-            if (morale_active <= -2) {
-                morale_active++;
-            }
-            morale -= morale_active;
         }
         if (unk_tgl) {
             int morale_pending = Factions[faction_id_atk].SE_morale_pending;
@@ -242,22 +241,20 @@ int __cdecl mod_get_basic_defense(int veh_id_def, int veh_id_atk, int psi_combat
         morale = mod_morale_alien(veh_id_def, veh_id_atk >= 0 ? Vehs[veh_id_atk].faction_id : -1);
     }
     if (base_id_def >= 0) {
+        // Morale effects with CC/BP are modified. SE Morale has no longer effect on native units.
+        bool native_unit = unit_id_def < MaxProtoFactionNum
+            && (Units[unit_id_def].offense_value() < 0 || unit_id_def == BSC_SPORE_LAUNCHER);
         if (has_fac_built(FAC_CHILDREN_CRECHE, base_id_def)) {
             morale++;
             int morale_active = clamp(Factions[faction_id_def].SE_morale, -4, 0);
             if (morale_active <= -2) {
                 morale_active++;
             }
-            morale -= morale_active;
-        } else if (has_fac_built(FAC_BROOD_PIT, base_id_def)
-        && unit_id_def < MaxProtoFactionNum
-        && (Units[unit_id_def].offense_value() < 0 || unit_id_def == BSC_SPORE_LAUNCHER)) {
-            morale++;
-            int morale_active = clamp(Factions[faction_id_def].SE_morale, -4, 4);
-            if (morale_active <= -2) {
-                morale_active++;
+            if (!native_unit) {
+                morale -= morale_active;
             }
-            morale -= morale_active;
+        } else if (has_fac_built(FAC_BROOD_PIT, base_id_def) && native_unit) {
+            morale++;
         }
         // Fix: manual has "Units in a headquarters base automatically gain +1 Morale when defending."
         if (has_fac_built(FAC_HEADQUARTERS, base_id_def)) {

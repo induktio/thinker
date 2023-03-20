@@ -110,7 +110,18 @@ Another notable change is the introduction of reduced unit healing rates. In the
 
 Related to combat mechanics, it is also possible to adjust movement speeds on magtubes with `magtube_movement_rate` setting. By default this setting allows zero cost movement on magtubes but it can be changed for example to allow twice as fast movement compared to normal roads.
 
+Setting magtube movement rate too high (non-zero) may cause potential variable overflow issues for fast aircraft units with special abilities that extend the range. In this case the mod will display an error message and disable the feature.
+
 When bases are captured from another faction, the captured base extra drone psych effect is shown separately on the psych window. While in vanilla game this period was always 50 turns, in the modded version this depends on the population size and facilities in the captured base, and it can range from 20 to 50 turns. This makes it somewhat easier to assimilate smaller bases while larger bases will still take a long time to switch previous owner.
+
+In the original game, combat morale calculation contained numerous bugs and contradictions with the game manual. These issues particularly with Children's Creche and Brood Pit are further described in [this article](https://alphacentauri2.info/wiki/Morale_(Advanced)).
+
+In the patched version enabled by default, units in a headquarters base automatically gain +1 Morale when defending as mentioned in the manual.
+When the unit's home base is experiencing drone riots, this always applies -1 Morale unless the faction has a special rule for ignoring negative morale modifiers. For independent units drone riots have no effect.
+
+When either unit involved in combat is inside the base tile, Children's Creche grants +1 Morale and cancels penalties from negative SE Morale rating.
+For native units inside the base tile and in the absence of Creche, Brood Pit grants +1 Lifecycle. This effect does not stack with Creche and has no effect on non-native units.
+Neither Creche nor Brood Pit affects combat outside the base tile even if the unit's home base contains such facilities. Like before, Brood Pit still affects native unit lifecycle when they are built.
 
 
 AI production bonuses
@@ -261,7 +272,7 @@ Known limitations
 Currently the features listed here may not be fully supported or may have issues while Thinker is enabled. The list may be subject to change in future releases.
 
 1. Network multiplayer TCP/IP and PBEM should be supported, however this receives less testing than the singleplayer configuration, so some issues might occur. In case of network problems, refer to other manuals on how to configure firewalls and open the necessary ports for multiplayer.
-2. Most notable limits in the game engine are 8 factions, 512 bases, and 2048 units. These limits were fixed in the game binary at compilation time and are not feasible to change without a full open source port.
+2. Most notable limits in the game engine are 8 factions (one for native life), 512 bases, 2048 units, and 64 prototypes for each faction. These limits were fixed in the game binary at compilation time and are not feasible to change without a full open source port.
 3. Faction selection dialog in the game setup is limited to showing only the first 24 factions even if installed factions in alphax.txt exceed this number.
 4. Some custom scenario rules in "Edit Scenario Rules" menus are not supported fully. This will not affect randomly generated maps. However these rules are supported: `No terraforming`, `No colony pods can be built`, `No secret projects can be built` and `No technological advances`.
 5. While `collateral_damage_value` is set to 0, the game might still display messages about collateral damage being inflicted on units on the stack, but none of them will actually take any damage.
@@ -307,6 +318,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 32. When a base is captured that was previously owned by active third faction and the time to assimilate the base was more than 10 turns, the previous owner is preserved after capture.
 33. Fix diplomacy dialog issues when both human and alien factions are involved in a base capture by removing the event that spawns additional colony pods.
 34. Fix missing defender bonus mentioned in the manual "Units in a headquarters base automatically gain +1 Morale when defending".
+35. Fix multiple issues in unit morale calculation, see more details in "Improved combat mechanics" section (modify_unit_morale).
 
 
 Scient's patch

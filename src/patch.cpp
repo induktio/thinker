@@ -737,12 +737,15 @@ bool patch_setup(Config* cf) {
     /*
     Additional combat bonus options (including PSI).
     */
-    {
+    if (cf->modify_unit_morale) {
+        write_jump(0x5C0E40, (int)mod_morale_veh);
         write_call(0x50211F, (int)mod_get_basic_offense);
         write_call(0x50274A, (int)mod_get_basic_offense);
         write_call(0x5044EB, (int)mod_get_basic_offense);
         write_call(0x502A69, (int)mod_get_basic_defense);
-
+    }
+    // These options below should be always enabled
+    {
         const byte old_bytes[] = {0x8B,0xC7,0x99,0x2B,0xC2,0xD1,0xF8};
         const byte new_bytes[] = {0x57,0xE8,0x00,0x00,0x00,0x00,0x5F};
         write_jump(0x501500, (int)psi_factor);
@@ -874,9 +877,6 @@ bool patch_setup(Config* cf) {
         write_call(0x506D07, (int)mod_best_defender);
         write_call(0x5082AF, (int)battle_fight_parse_num);
         write_call(0x5082B7, (int)battle_fight_parse_num);
-    }
-    if (cf->modify_unit_morale) {
-        write_jump(0x5C0E40, (int)mod_morale_veh);
     }
     if (cf->simple_cost_factor) {
         write_jump(0x4E4430, (int)mod_cost_factor);
