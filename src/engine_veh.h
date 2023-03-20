@@ -306,8 +306,8 @@ enum VehFlags {
     VFLAG_UNK_1 = 0x1, // used in repair_phase
     VFLAG_UNK_2 = 0x2, // used in repair_phase, if not set, VFLAG_UNK_1 gets cleared instead
     VFLAG_PROBE_PACT_OPERATIONS = 0x4,
-    VFLAG_UNK_8 = 0x8, // used
-    VFLAG_UNK_10 = 0x10, // used
+    VFLAG_UNK_8 = 0x8, // used by morale_alien
+    VFLAG_UNK_10 = 0x10, // used by morale_alien
     VFLAG_IS_OBJECTIVE = 0x20,
     VFLAG_LURKER = 0x40,
     VFLAG_START_RAND_LOCATION = 0x80,
@@ -386,6 +386,9 @@ struct UNIT {
     uint8_t weapon_cost() {
         return Weapon[weapon_id].cost;
     }
+    int weapon_mode() {
+        return Weapon[weapon_id].mode;
+    }
     int offense_value() {
         return Weapon[weapon_id].offense_value;
     }
@@ -401,35 +404,41 @@ struct UNIT {
     bool is_prototyped() {
         return unit_flags & UNIT_PROTOTYPED;
     }
-    bool is_armored() {
-        return armor_id != ARM_NO_ARMOR;
+    bool is_armored() { // include PSI armor
+        return Armor[armor_id].defense_value != 1;
     }
-    bool is_combat_unit() {
-        return weapon_id <= WPN_PSI_ATTACK;
+    bool is_combat_unit() { // include PSI units
+        return Weapon[weapon_id].offense_value != 0;
     }
-    bool is_defend_unit() {
-        return triad() == TRIAD_LAND && (armor_id != ARM_NO_ARMOR || weapon_id <= WPN_PSI_ATTACK);
+    bool is_garrison_unit() {
+        return triad() == TRIAD_LAND && Weapon[weapon_id].offense_value != 0
+            && (Armor[armor_id].defense_value >= Weapon[weapon_id].offense_value
+            || Armor[armor_id].defense_value < 0
+            || (chassis_id == CHS_INFANTRY && Armor[armor_id].defense_value > 1));
+    }
+    bool is_colony() {
+        return plan == PLAN_COLONIZATION;
+    }
+    bool is_former() {
+        return plan == PLAN_TERRAFORMING;
+    }
+    bool is_probe() {
+        return plan == PLAN_INFO_WARFARE;
+    }
+    bool is_supply() {
+        return plan == PLAN_SUPPLY_CONVOY;
+    }
+    bool is_transport() {
+        return plan == PLAN_NAVAL_TRANSPORT;
+    }
+    bool is_artifact() {
+        return plan == PLAN_ALIEN_ARTIFACT;
+    }
+    bool is_missile() {
+        return Chassis[chassis_id].missile;
     }
     bool is_planet_buster() {
         return plan == PLAN_PLANET_BUSTER;
-    }
-    bool is_colony() {
-        return Weapon[weapon_id].mode == WMODE_COLONIST;
-    }
-    bool is_former() {
-        return Weapon[weapon_id].mode == WMODE_TERRAFORMER;
-    }
-    bool is_probe() {
-        return Weapon[weapon_id].mode == WPN_PROBE_TEAM;
-    }
-    bool is_supply() {
-        return Weapon[weapon_id].mode == WMODE_CONVOY;
-    }
-    bool is_transport() {
-        return Weapon[weapon_id].mode == WMODE_TRANSPORT;
-    }
-    bool is_artifact() {
-        return Weapon[weapon_id].mode == WMODE_ARTIFACT;
     }
 };
 
@@ -458,7 +467,7 @@ struct VEH {
     uint8_t terraforming_turns;
     uint8_t order_auto_type;
     uint8_t visibility; // faction bitfield of who can currently see Veh excluding owner
-    uint8_t road_moves_spent;
+    uint8_t moves_spent; // stored as road moves spent unless magtube_movement_rate > 0
     int8_t rotate_angle;
     uint8_t iter_count;
     uint8_t status_icon;
@@ -496,19 +505,22 @@ struct VEH {
         return Units[unit_id].weapon_id;
     }
     int weapon_mode() {
-        return Weapon[Units[unit_id].weapon_id].mode;
+        return Units[unit_id].weapon_mode();
     }
     int offense_value() {
-        return Weapon[Units[unit_id].weapon_id].offense_value;
+        return Units[unit_id].offense_value();
     }
     int defense_value() {
-        return Armor[Units[unit_id].armor_id].defense_value;
+        return Units[unit_id].defense_value();
     }
     bool is_armored() {
-        return armor_type() != ARM_NO_ARMOR;
+        return Units[unit_id].is_armored();
     }
     bool is_combat_unit() {
-        return Units[unit_id].weapon_id <= WPN_PSI_ATTACK && unit_id != BSC_FUNGAL_TOWER;
+        return Units[unit_id].is_combat_unit() && unit_id != BSC_FUNGAL_TOWER;
+    }
+    bool is_garrison_unit() {
+        return Units[unit_id].is_garrison_unit();
     }
     bool is_native_unit() {
         return unit_id == BSC_MIND_WORMS || unit_id == BSC_ISLE_OF_THE_DEEP
@@ -532,6 +544,12 @@ struct VEH {
     }
     bool is_artifact() {
         return Units[unit_id].is_artifact();
+    }
+    bool is_missile() {
+        return Units[unit_id].is_missile();
+    }
+    bool is_planet_buster() {
+        return Units[unit_id].is_planet_buster();
     }
     bool is_visible(int faction) {
         return visibility & (1 << faction);

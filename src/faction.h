@@ -5,6 +5,7 @@
 bool has_tech(int tech_id, int faction);
 bool has_chassis(int faction, VehChassis chs);
 bool has_weapon(int faction, VehWeapon wpn);
+bool has_wmode(int faction, VehWeaponMode mode);
 bool has_aircraft(int faction);
 bool has_ships(int faction);
 bool has_orbital_drops(int faction);

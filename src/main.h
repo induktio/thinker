@@ -198,6 +198,7 @@ struct Config {
     int activate_skipped_units = 1; // unlisted option
     int counter_espionage = 0;
     int ignore_reactor_power = 0;
+    int modify_unit_morale = 1; // unlisted option
     int early_research_start = 1; // unlisted option
     int facility_capture_fix = 1; // unlisted option
     int territory_border_fix = 1;
@@ -290,6 +291,7 @@ struct AIPlans {
     int plant_fungus = 0;
     int satellite_goal = 0;
     int enemy_odp = 0;
+    int enemy_sat = 0;
     int enemy_nukes = 0;
     int mil_strength = 0;
     float enemy_base_range = 0;
@@ -332,8 +334,9 @@ enum NodesetType {
 #include "plan.h"
 #include "gui.h"
 #include "gui_dialog.h"
-#include "map.h"
 #include "veh.h"
+#include "veh_combat.h"
+#include "map.h"
 #include "base.h"
 #include "game.h"
 #include "goal.h"

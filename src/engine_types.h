@@ -143,6 +143,9 @@ struct MAP {
     bool is_base() {
         return items & BIT_BASE_IN_TILE;
     }
+    bool is_airbase() {
+        return items & (BIT_BASE_IN_TILE | BIT_AIRBASE);
+    }
     bool is_base_radius() {
         return items & BIT_BASE_RADIUS;
     }
@@ -169,6 +172,9 @@ struct MAP {
     }
     bool is_rainy_or_moist() {
         return climate & (TILE_MOIST | TILE_RAINY);
+    }
+    bool veh_in_tile() {
+        return items & BIT_VEH_IN_TILE;
     }
     int veh_owner() {
         if ((val2 & 0xf) == 0xf) {
@@ -656,6 +662,16 @@ struct CTech {
     int preq_tech2;
 };
 
+struct CCitizen {
+    char* singular_name;
+    char* plural_name;
+    int preq_tech;
+    int obsol_tech;
+    int ops_bonus;
+    int psych_bonus;
+    int research_bonus;
+};
+
 struct CAbility {
     char* name;
     char* description;
@@ -703,16 +719,6 @@ struct CChassis {
     short preq_tech;
 };
 
-struct CCitizen {
-    char* singular_name;
-    char* plural_name;
-    int preq_tech;
-    int obsol_tech;
-    int ops_bonus;
-    int psych_bonus;
-    int research_bonus;
-};
-
 struct CArmor {
     char* name;
     char* name_short;
@@ -731,17 +737,6 @@ struct CReactor {
     short padding;
 };
 
-struct CTerraform {
-    char* name;
-    char* name_sea;
-    int preq_tech;
-    int preq_tech_sea;
-    uint32_t bit;
-    uint32_t bit_incompatible;
-    int rate;
-    char* shortcuts;
-};
-
 struct CWeapon {
     char* name;
     char* name_short;
@@ -751,6 +746,17 @@ struct CWeapon {
     char cost;
     short preq_tech;
     short padding;
+};
+
+struct CTerraform {
+    char* name;
+    char* name_sea;
+    int preq_tech;
+    int preq_tech_sea;
+    uint32_t bit;
+    uint32_t bit_incompatible;
+    int rate;
+    char* shortcuts;
 };
 
 struct CMorale {

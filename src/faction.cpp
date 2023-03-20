@@ -19,6 +19,15 @@ bool has_weapon(int faction, VehWeapon wpn) {
     return has_tech(Weapon[wpn].preq_tech, faction);
 }
 
+bool has_wmode(int faction, VehWeaponMode mode) {
+    for (int i = 0; i < MaxWeaponNum; i++) {
+        if (Weapon[i].mode == mode && has_tech(Weapon[i].preq_tech, faction)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool has_aircraft(int faction) {
     return has_chassis(faction, CHS_NEEDLEJET) || has_chassis(faction, CHS_COPTER)
         || has_chassis(faction, CHS_GRAVSHIP);
@@ -138,7 +147,7 @@ bool want_revenge(int faction1, int faction2) {
 
 bool allow_expand(int faction) {
     int bases = 0;
-    if (*game_rules & RULES_SCN_NO_COLONY_PODS || !has_weapon(faction, WPN_COLONY_MODULE)
+    if (*game_rules & RULES_SCN_NO_COLONY_PODS || !has_wmode(faction, WMODE_COLONIST)
     || *total_num_bases >= MaxBaseNum * 19 / 20) {
         return false;
     }

@@ -120,6 +120,8 @@
 		<Unit filename="src/test.h" />
 		<Unit filename="src/veh.cpp" />
 		<Unit filename="src/veh.h" />
+		<Unit filename="src/veh_combat.cpp" />
+		<Unit filename="src/veh_combat.h" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
 		</Extensions>

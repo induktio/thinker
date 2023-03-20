@@ -178,7 +178,7 @@ int __cdecl mod_enemy_move(const int id) {
             return former_move(id);
         } else if (triad == TRIAD_SEA && veh_cargo(id) > 0) {
             return trans_move(id);
-        } else if (triad == TRIAD_AIR && veh->is_combat_unit()) {
+        } else if (triad == TRIAD_AIR && veh->is_combat_unit() && !veh->is_planet_buster()) {
             return aircraft_move(id);
         } else if (triad != TRIAD_AIR && (veh->is_combat_unit() || veh->is_probe())) {
             return combat_move(id);
@@ -1875,6 +1875,26 @@ bool allow_attack(int faction1, int faction2, bool is_probe, bool is_enhanced) {
     return at_war(faction1, faction2);
 }
 
+bool allow_conv_missile(VEH* veh, VEH* enemy, MAP* sq) {
+    if ((!enemy->is_combat_unit() && !enemy->is_probe()) || enemy->high_damage()) {
+        return false;
+    }
+    if (!enemy->faction_id) {
+        return sq->owner == veh->faction_id
+            && pm_enemy[enemy->x][enemy->y] >= 2 + random(6);
+    }
+    if (!enemy->is_combat_unit() && !enemy->is_armored()) {
+        // Missiles can attack probes inside our own territory
+        if (!enemy->is_probe() || sq->owner != veh->faction_id) {
+            return false;
+        }
+    }
+    return (sq->is_base() ? 3 : 0)
+        + min(4, (int)pm_enemy[enemy->x][enemy->y])
+        + min(4, arty_value(enemy->x, enemy->y)/16)
+        + min(4, Units[enemy->unit_id].cost/2) >= 6 + random(6);
+}
+
 int garrison_goal(int x, int y, int faction, int triad) {
     assert(triad == TRIAD_LAND || triad == TRIAD_SEA);
     AIPlans& p = plans[faction];
@@ -1900,14 +1920,29 @@ int garrison_goal(int x, int y, int faction, int triad) {
     return 0;
 }
 
-int defender_count(int x, int y) {
+int garrison_count(int x, int y) {
     int num = 0;
-    for (int k=0; k < *total_num_vehicles; k++) {
-        VEH* veh = &Vehicles[k];
+    for (int i = 0; i < *total_num_vehicles; i++) {
+        VEH* veh = &Vehicles[i];
+        if (veh->x == x && veh->y == y
+        && veh->is_garrison_unit()
+        && veh->order != ORDER_SENTRY_BOARD
+        && veh->at_target()) {
+            num++;
+        }
+    }
+    return num;
+}
+
+int defender_count(int x, int y, int veh_skip_id) {
+    int num = 0;
+    for (int i = 0; i < *total_num_vehicles; i++) {
+        VEH* veh = &Vehicles[i];
         if (veh->x == x && veh->y == y
         && veh->triad() != TRIAD_AIR
         && veh->order != ORDER_SENTRY_BOARD
-        && veh->at_target()) {
+        && veh->at_target()
+        && i != veh_skip_id) {
             if (veh->is_combat_unit()) {
                 num += 2;
             } else if (veh->is_probe()) {
@@ -2225,22 +2260,24 @@ int aircraft_move(const int id) {
     UNIT* u = &Units[veh->unit_id];
     AIPlans& p = plans[veh->faction_id];
     bool at_base = sq->is_base();
+    bool missile = u->chassis_id == CHS_MISSILE;
     int faction = veh->faction_id;
-    int moves = veh_speed(id) - veh->road_moves_spent;
-    int max_dist = max(0, moves / Rules->move_rate_roads);
+    int moves = veh_speed(id) - veh->moves_spent;
+    int max_range = max(0, moves / Rules->move_rate_roads);
+    int max_dist = max_range; // can be modified during search
 
     if (!veh->at_target()) {
         return VEH_SYNC;
     }
-    if (u->chassis_id == CHS_NEEDLEJET || u->chassis_id == CHS_MISSILE) {
+    if (u->chassis_id == CHS_NEEDLEJET || missile) {
         if (veh->iter_count == 0 && ++veh->iter_count && !at_base) {
-            return move_to_base(id, true);
+            return move_to_base(id, true); // Need refuel
         }
     }
     if (u->chassis_id == CHS_COPTER && !at_base && veh->mid_damage()) {
         max_dist /= (veh->high_damage() ? 4 : 2);
     }
-    if (at_base && veh->mid_damage()) {
+    if (at_base && veh->mid_damage() && !missile) {
         max_dist /= 2;
     }
     int i = 0;
@@ -2258,8 +2295,10 @@ int aircraft_move(const int id) {
             && !has_abil(veh->unit_id, ABL_AIR_SUPERIORITY)) {
                 continue;
             }
+            if (missile && !allow_conv_missile(veh, veh2, sq)) {
+                continue;
+            }
             double odds = battle_priority(id, id2, ts.dist - 1, moves, sq);
-
             if (odds > best_odds) {
                 if (tx < 0) {
                     max_dist = min(ts.dist + 2, max_dist);
@@ -2268,12 +2307,15 @@ int aircraft_move(const int id) {
                 ty = ts.ry;
                 best_odds = odds;
             }
-        } else if (tx < 0 && mapnodes.count({ts.rx, ts.ry, NODE_COMBAT_PATROL})
+        }
+        else if (!missile && tx < 0 && mapnodes.count({ts.rx, ts.ry, NODE_COMBAT_PATROL})
         && ts.dist + 4*veh->mid_damage() + 8*veh->high_damage() < random(16)) {
             return set_move_to(id, ts.rx, ts.ry);
-        } else if (non_ally_in_tile(ts.rx, ts.ry, faction) || veh->high_damage()) {
+        }
+        else if (missile || non_ally_in_tile(ts.rx, ts.ry, faction) || veh->high_damage()) {
             continue;
-        } else if (tx < 0 && allow_scout(faction, sq)) {
+        }
+        else if (tx < 0 && allow_scout(faction, sq)) {
             return set_move_to(id, ts.rx, ts.ry);
         }
     }
@@ -2299,13 +2341,17 @@ int aircraft_move(const int id) {
             veh->x, veh->y, p.naval_airbase_x, p.naval_airbase_y);
         return set_move_to(id, p.naval_airbase_x, p.naval_airbase_y);
     }
-    if ((*current_turn + id) % 4 == 0) {
+    if ((*current_turn + id) % 3 == 0) {
         int best_score = INT_MIN;
         for (i = 0; i < *total_num_bases; i++) {
             BASE* base = &Bases[i];
-            if (base->faction_id == faction && base->defend_goal >= 3) {
-                int score = base->defend_goal*10 + random(8)
-                    - map_range(veh->x, veh->y, base->x, base->y);
+            if (base->faction_id == faction && (missile || base->defend_goal >= 3)) {
+                int base_range = map_range(veh->x, veh->y, base->x, base->y);
+                if (missile && base_range  > max_range) {
+                    continue;
+                }
+                int score = base->defend_goal * (missile ? 5 : 10)
+                     - base_range + random(8);
                 if (score > best_score) {
                     tx = base->x;
                     ty = base->y;
@@ -2339,7 +2385,8 @@ bool airdrop_move(const int id, MAP* sq) {
     VEH* veh = &Vehicles[id];
     if (!has_abil(veh->unit_id, ABL_DROP_POD)
     || veh->state & VSTATE_MADE_AIRDROP
-    || veh->road_moves_spent > 0) {
+    || veh->moves_spent > 0
+    || !sq->is_airbase()) {
         return false;
     }
     int faction = veh->faction_id;
@@ -2352,11 +2399,14 @@ bool airdrop_move(const int id, MAP* sq) {
 
     for (int i = 0; i < *total_num_bases; i++) {
         BASE* base = &Bases[i];
-        if ((base->faction_id == faction || at_war(faction, base->faction_id))
+        bool allow_defend = base->faction_id == faction && (*current_turn + id) & 1;
+        bool allow_attack = at_war(faction, base->faction_id);
+
+        if ((allow_defend || allow_attack)
         && (sq = mapsq(base->x, base->y)) && !is_ocean(sq)
         && (base_range = map_range(veh->x, veh->y, base->x, base->y)) <= max_range
         && base_range >= 3) {
-            if (base->faction_id == faction) {
+            if (allow_defend) {
                 int enemy_diff = pm_enemy_near[base->x][base->y]
                     - pm_enemy_near[veh->x][veh->y];
                 if (enemy_diff <= 0) {
@@ -2377,7 +2427,8 @@ bool airdrop_move(const int id, MAP* sq) {
                     ty = base->y;
                     best_score = score;
                 }
-            } else if (veh_stack(base->x, base->y) < 0
+            }
+            else if (allow_attack && veh_stack(base->x, base->y) < 0
             && base_range/4 < 2 + pm_unit_near[base->x][base->y]
             && (base_range < 8 || sq->is_visible(faction))
             && !prevent_airdrop(base->x, base->y, faction)) {
@@ -2408,7 +2459,8 @@ int combat_move(const int id) {
     AIPlans& p = plans[veh->faction_id];
     int faction = veh->faction_id;
     int triad = veh->triad();
-    int moves = veh_speed(id) - veh->road_moves_spent;
+    int moves = veh_speed(id) - veh->moves_spent;
+    int defenders = 0;
     assert(veh->is_combat_unit() || veh->is_probe());
     assert(triad == TRIAD_LAND || triad == TRIAD_SEA);
     /*
@@ -2433,8 +2485,7 @@ int combat_move(const int id) {
         + (*current_turn < 80 ? 2 : 0)
         + (p.unknown_factions / 2) + (p.contacted_factions ? 0 : 2)
     ));
-    int defenders = 0;
-    if (at_base && airdrop_move(id, veh_sq)) {
+    if (veh_sq->is_airbase() && airdrop_move(id, veh_sq)) {
         return VEH_SYNC;
     }
     if (triad == TRIAD_LAND && mapnodes.count({veh->x, veh->y, NODE_GOAL_NAVAL_END})) {
@@ -2466,7 +2517,12 @@ int combat_move(const int id) {
         }
     }
     if (at_base) {
-        defenders = max(0, defender_count(veh->x, veh->y) - 1); // Excluding this unit
+        if (veh->is_garrison_unit() && garrison_count(veh->x, veh->y) <= 1
+        && *current_turn > random(32)) {
+            defenders = 0;
+        } else {
+            defenders = defender_count(veh->x, veh->y, id); // Excluding this unit
+        }
         if (!defenders) {
             max_dist = 1;
         }
@@ -2638,6 +2694,8 @@ int combat_move(const int id) {
                     continue;
                 }
                 score = score * (sq->is_base() ? 2 : 3) * (arty_limit == 10 ? 2 : 1) + random(32);
+                debug("arty_score %2d %2d -> %2d %2d score: %d %s\n",
+                    veh->x, veh->y, tx, ty, score, veh->name());
                 if (score > best_score) {
                     best_score = score;
                     offset = i;
@@ -2646,8 +2704,7 @@ int combat_move(const int id) {
                 }
             }
         }
-        if (tx >= 0 && ((at_base && !defenders)
-        || random(100) < 100*best_score/(best_score+100))) {
+        if (tx >= 0 && ((at_base && !defenders) || random(600) < min(500, best_score))) {
             debug("combat_arty %2d %2d -> %2d %2d score: %d %s\n",
                 veh->x, veh->y, tx, ty, best_score, veh->name());
             battle_fight_1(id, offset, 1, 1, 0);
@@ -2667,7 +2724,7 @@ int combat_move(const int id) {
     if (!veh->at_target() && veh->iter_count > 2 && at_base) {
         return mod_veh_skip(id);
     }
-    if (at_base && !veh->road_moves_spent && !random(4)) {
+    if (at_base && !veh->moves_spent && !random(4)) {
         best_score = 0;
         int source = -1;
         int target = -1;
@@ -2715,13 +2772,13 @@ int combat_move(const int id) {
 
         if (veh->x == tx && veh->y == ty) {
             return mod_veh_skip(id);
-        } else if (defender_count(tx, ty) < garrison_goal(tx, ty, faction, TRIAD_LAND)) {
+        } else if (defender_count(tx, ty, -1) < garrison_goal(tx, ty, faction, TRIAD_LAND)) {
             debug("combat_stack %2d %2d -> %2d %2d\n", veh->x, veh->y, tx, ty);
             return set_move_to(id, tx, ty);
         }
     }
     // Provide cover for naval transports
-    if (invasion_ship && !veh->road_moves_spent
+    if (invasion_ship && !veh->moves_spent
     && arty_value(veh->x, veh->y) < arty_value(p.naval_end_x, p.naval_end_y)) {
         debug("combat_escort %2d %2d -> %2d %2d\n", veh->x, veh->y, p.naval_end_x, p.naval_end_y);
         return set_move_to(id, p.naval_end_x, p.naval_end_y);
@@ -2771,7 +2828,7 @@ int combat_move(const int id) {
         }
         if (defend && sq->owner == faction) {
             if (garrison_goal(ts.rx, ts.ry, faction, triad)
-            > defender_count(ts.rx, ts.ry) + pm_target[ts.rx][ts.ry]/2) {
+            > defender_count(ts.rx, ts.ry, -1) + pm_target[ts.rx][ts.ry]/2) {
                 debug("combat_defend %2d %2d -> %2d %2d %s\n",
                 veh->x, veh->y, ts.rx, ts.ry, veh->name());
                 return set_move_to(id, ts.rx, ts.ry);

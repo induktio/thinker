@@ -117,10 +117,51 @@ int __cdecl MapWin_gen_terrain_nearby_fungus(int x, int y) {
 }
 
 int __cdecl mod_read_basic_rules() {
+    // read_basic_rules may be called multiple times
+    static bool loaded = false;
     int value = read_basic_rules();
-    if (value == 0 && conf.magtube_movement_rate > 0) {
-        conf.road_movement_rate = conf.magtube_movement_rate;
-        Rules->move_rate_roads *= conf.magtube_movement_rate;
+    if (value == 0 && conf.magtube_movement_rate > 0 && !loaded) {
+        int reactor_value = REC_FISSION;
+        for (VehReactor r : {REC_FUSION, REC_QUANTUM, REC_SINGULARITY}) {
+            if (Reactor[r - 1].preq_tech != TECH_Disable) {
+                reactor_value = r;
+            }
+        }
+        for (int i = 0; i < MaxChassisNum; i++) {
+            if (Chassis[i].speed < 1 || Chassis[i].preq_tech == TECH_Disable) {
+                continue;
+            }
+            int multiplier = Rules->move_rate_roads * conf.magtube_movement_rate;
+            int base_speed = Chassis[i].speed + 1; // elite bonus
+            loaded = true;
+            if (Chassis[i].triad == TRIAD_AIR) {
+                base_speed += 2*reactor_value; // triad bonus
+                if (!Chassis[i].missile) {
+                    if (Facility[FAC_CLOUDBASE_ACADEMY].preq_tech != TECH_Disable) {
+                        base_speed += 2;
+                    }
+                    if (Ability[ABL_ID_FUEL_NANOCELLS].preq_tech != TECH_Disable) {
+                        base_speed += 2;
+                    }
+                    if (Ability[ABL_ID_ANTIGRAV_STRUTS].preq_tech != TECH_Disable) {
+                        base_speed += 2*reactor_value;
+                    }
+                }
+            } else {
+                base_speed += 1; // antigrav struts
+            }
+            if (base_speed * multiplier > 255) {
+                MessageBoxA(0, "Due to possible overflow issues with high speed units "
+                    "magtube_movement_rate feature will be disabled.", MOD_VERSION, MB_OK | MB_ICONWARNING);
+                conf.magtube_movement_rate = 0;
+                debug("chassis_speed %d %d %s\n", i, base_speed * multiplier, Chassis[i].offsv1_name);
+                return value;
+            }
+        }
+        if (loaded) {
+            conf.road_movement_rate = conf.magtube_movement_rate;
+            Rules->move_rate_roads *= conf.magtube_movement_rate;
+        }
     }
     return value;
 }
@@ -250,6 +291,15 @@ void write_jump(int addr, int func) {
     *(int*)(addr + 1) = func - addr - 5;
 }
 
+void short_jump(int addr) {
+    if (*(byte*)addr == 0x74 || *(byte*)addr == 0x75
+    || *(byte*)addr == 0x7C || *(byte*)addr == 0x7D) {
+        *(byte*)addr = 0xEB;
+    } else if (*(byte*)addr != 0xEB) {
+        exit_fail(addr);
+    }
+}
+
 void write_call(int addr, int func) {
     if (*(byte*)addr != 0xE8 || *(int*)(addr+1) + addr < (int)AC_IMAGE_BASE) {
         exit_fail(addr);
@@ -263,6 +313,7 @@ void write_offset(int addr, const void* ofs) {
     }
     *(int*)(addr+1) = (int)ofs;
 }
+
 
 void remove_call(int addr) {
     if (*(byte*)addr != 0xE8 || *(int*)(addr+1) + addr < (int)AC_IMAGE_BASE) {
@@ -408,6 +459,7 @@ bool patch_setup(Config* cf) {
     write_offset(0x649335, (void*)mod_except_handler3);
     write_offset(0x64A3C0, (void*)mod_except_handler3);
     write_offset(0x64D947, (void*)mod_except_handler3);
+
     // Magtube and fungus movement speed patches
     write_call(0x587424, (int)mod_read_basic_rules);
     write_call(0x467711, (int)mod_hex_cost);
@@ -420,6 +472,35 @@ bool patch_setup(Config* cf) {
     write_call(0x59ACA4, (int)mod_hex_cost);
     write_call(0x59B61A, (int)mod_hex_cost);
     write_call(0x59C105, (int)mod_hex_cost);
+
+    // Redirected but not modified from vanilla game logic
+    write_call(0x40E666, (int)mod_veh_cost);
+    write_call(0x40E9C6, (int)mod_veh_cost);
+    write_call(0x418F75, (int)mod_veh_cost);
+    write_call(0x492D90, (int)mod_veh_cost);
+    write_call(0x493250, (int)mod_veh_cost);
+    write_call(0x49E097, (int)mod_veh_cost);
+    write_call(0x4F0B5E, (int)mod_veh_cost);
+    write_call(0x4F15DF, (int)mod_veh_cost);
+    write_call(0x4F4061, (int)mod_veh_cost);
+    write_call(0x4FA2AB, (int)mod_veh_cost);
+    write_call(0x4FA510, (int)mod_veh_cost);
+    write_call(0x4FD6B5, (int)mod_veh_cost);
+    write_call(0x56D38D, (int)mod_veh_cost);
+    write_call(0x57AB53, (int)mod_veh_cost);
+    write_call(0x593D35, (int)mod_veh_cost);
+    write_call(0x593F72, (int)mod_veh_cost);
+    write_call(0x594B8E, (int)mod_veh_cost);
+    write_call(0x4C1DC0, (int)mod_morale_alien);
+    write_call(0x4DDF29, (int)mod_morale_alien);
+    write_call(0x4DDF6A, (int)mod_morale_alien);
+    write_call(0x501609, (int)mod_morale_alien);
+    write_call(0x501994, (int)mod_morale_alien);
+    write_call(0x5230AC, (int)mod_morale_alien);
+    write_call(0x5597BD, (int)mod_morale_alien);
+    write_call(0x5672C7, (int)mod_morale_alien);
+    write_call(0x595E61, (int)mod_morale_alien);
+    write_call(0x5C0E6D, (int)mod_morale_alien);
 
     if (cf->autosave_interval > 0) {
         write_jump(0x5ABD20, (int)mod_auto_save);
@@ -644,7 +725,8 @@ bool patch_setup(Config* cf) {
     }
 
     /*
-    Remove refugees event from base capture when both human and alien factions are involved.
+    Fix diplomacy dialog issues when both human and alien factions are involved
+    in a base capture by removing the event that spawns additional colony pods.
     */
     {
         const byte old_bytes[] = {0x0F,0x84};
@@ -767,9 +849,7 @@ bool patch_setup(Config* cf) {
     }
     {
         // Skip default randomize faction leader personalities code
-        const byte old_bytes[] = {0x74};
-        const byte new_bytes[] = {0xEB};
-        write_bytes(0x5B1254, old_bytes, new_bytes, sizeof(new_bytes));
+        short_jump(0x5B1254); // setup_player
     }
     if (cf->alien_early_start) {
         const byte old_bytes[] = {0x75,0x1A};
@@ -788,14 +868,15 @@ bool patch_setup(Config* cf) {
         write_bytes(0x5AE3E9, old_bytes, NULL, sizeof(old_bytes));
     }
     if (cf->ignore_reactor_power) {
-        const byte old_bytes[] = {0x7C};
-        const byte new_bytes[] = {0xEB};
-        write_bytes(0x506F90, old_bytes, new_bytes, sizeof(new_bytes));
-        write_bytes(0x506FF6, old_bytes, new_bytes, sizeof(new_bytes));
+        short_jump(0x506F90);
+        short_jump(0x506FF6);
         // Adjust combat odds confirmation dialog to match new odds
         write_call(0x506D07, (int)mod_best_defender);
         write_call(0x5082AF, (int)battle_fight_parse_num);
         write_call(0x5082B7, (int)battle_fight_parse_num);
+    }
+    if (cf->modify_unit_morale) {
+        write_jump(0x5C0E40, (int)mod_morale_veh);
     }
     if (cf->simple_cost_factor) {
         write_jump(0x4E4430, (int)mod_cost_factor);
@@ -845,7 +926,7 @@ bool patch_setup(Config* cf) {
         write_call(0x598673, (int)mod_base_kill); // order_veh
     }
     if (cf->simple_hurry_cost) {
-        memset((void*)0x41900F, 0x90, 2);
+        short_jump(0x41900D);
     }
     if (cf->eco_damage_fix) {
         const byte old_bytes[] = {0x84,0x05,0xE8,0x64,0x9A,0x00,0x74,0x24};
@@ -868,21 +949,21 @@ bool patch_setup(Config* cf) {
     }
     if (!cf->spawn_spore_launchers) {
         /* Patch the game to spawn Mind Worms instead. */
-        *(byte*)0x4F73DB = 0xEB;
-        *(byte*)0x4F74D3 = 0xEB;
-        *(byte*)0x522808 = 0xEB;
-        *(byte*)0x522A9C = 0xEB;
-        *(byte*)0x522B8B = 0xEB;
-        *(byte*)0x522D8B = 0xEB;
-        *(byte*)0x57C804 = 0xEB;
-        *(byte*)0x57C99A = 0xEB;
-        *(byte*)0x5956FC = 0xEB;
+        short_jump(0x4F73DB);
+        short_jump(0x4F74D3);
+        short_jump(0x522808);
+        short_jump(0x522A9C);
+        short_jump(0x522B8B);
+        short_jump(0x522D8B);
+        short_jump(0x57C804);
+        short_jump(0x57C99A);
+        short_jump(0x5956FC);
     }
     if (!cf->spawn_sealurks) {
-        *(byte*)0x522777 = 0xEB;
+        short_jump(0x522777);
     }
     if (!cf->spawn_battle_ogres) {
-        *(byte*)0x57BC90 = 0xEB;
+        short_jump(0x57BC90);
     }
     if (cf->collateral_damage_value != 3) {
         const byte old_bytes[] = {0xB2, 0x03};
@@ -903,9 +984,7 @@ bool patch_setup(Config* cf) {
         write_bytes(0x5060ED, old_bytes, NULL, sizeof(old_bytes));
     }
     if (!cf->alien_guaranteed_techs) {
-        const byte old_bytes[] = {0x74};
-        const byte new_bytes[] = {0xEB};
-        write_bytes(0x5B29F8, old_bytes, new_bytes, sizeof(new_bytes));
+        short_jump(0x5B29F8);
     }
     if (cf->natives_weak_until_turn >= 0) {
         const byte old_bytes[] = {0x83, 0x3D, 0xD4, 0x64, 0x9A, 0x00, 0x0F};
@@ -933,9 +1012,9 @@ bool patch_setup(Config* cf) {
         write_call(0x4EA56D, (int)base_psych_content_pop);
     }
     if (cf->rare_supply_pods) {
-        *(byte*)0x592085 = 0xEB; // bonus_at
-        *(byte*)0x5920E9 = 0xEB; // bonus_at
-        *(byte*)0x5921C8 = 0xEB; // goody_at
+        short_jump(0x592085); // bonus_at
+        short_jump(0x5920E9); // bonus_at
+        short_jump(0x5921C8); // goody_at
     }
 
     if (lm & LM_JUNGLE) remove_call(0x5C88A0);

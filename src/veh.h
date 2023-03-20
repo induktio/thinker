@@ -11,13 +11,7 @@ int __cdecl proto_speed(int unit_id);
 int __cdecl veh_speed(int veh_id, bool skip_morale);
 int __cdecl veh_speed(int veh_id);
 int __cdecl veh_cargo(int veh_id);
-
-int __cdecl mod_get_basic_offense(int veh_id_atk, int veh_id_def, int psi_combat_type, bool is_bombard, bool unk_tgl);
-int __cdecl mod_get_basic_defense(int veh_id_def, int veh_id_atk, int psi_combat_type, bool is_bombard);
-int __cdecl psi_factor(int value, int faction_id, bool is_attack, bool is_fungal_twr);
-int __cdecl neural_amplifier_bonus(int value);
-int __cdecl dream_twister_bonus(int value);
-int __cdecl fungal_tower_bonus(int value);
+int __cdecl mod_veh_cost(int unit_id, int base_id, bool* has_proto_cost);
 
 int __cdecl mod_veh_init(int unit_id, int faction, int x, int y);
 int __cdecl mod_veh_kill(int veh_id);

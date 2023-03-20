@@ -9,7 +9,7 @@ static Points goodtiles;
 
 MAP* mapsq(int x, int y) {
     if (x >= 0 && y >= 0 && x < *map_axis_x && y < *map_axis_y && !((x + y)&1)) {
-        return &((*MapPtr)[ x/2 + (*map_half_x) * y ]);
+        return &((*MapTiles)[ x/2 + (*map_half_x) * y ]);
     } else {
         return NULL;
     }
@@ -17,10 +17,15 @@ MAP* mapsq(int x, int y) {
 
 int wrap(int x) {
     if (!map_is_flat()) {
-        return (x < 0 ? x + *map_axis_x : x % *map_axis_x);
-    } else {
-        return x;
+        if (x >= 0) {
+            if (x >= *map_axis_x) {
+                x -= *map_axis_x;
+            }
+        } else {
+            x += *map_axis_x;
+        }
     }
+    return x;
 }
 
 int map_range(int x1, int y1, int x2, int y2) {
@@ -92,8 +97,100 @@ int __cdecl region_at(int x, int y) {
     return sq ? sq->region : 0;
 }
 
-int __cdecl mod_hex_cost(int unit_id, int faction, int x1, int y1, int x2, int y2, int a7) {
-    int value = hex_cost(unit_id, faction, x1, y1, x2, y2, a7);
+/*
+This version never calls rebuild_base_bits on failed searches.
+*/
+int __cdecl base_at(int x, int y) {
+    MAP* sq = mapsq(x, y);
+    if (sq && sq->is_base()) {
+        for (int i = 0; i < *total_num_bases; ++i) {
+            if (Bases[i].x == x && Bases[i].y == y) {
+                return i;
+            }
+        }
+        assert(0); // Removed debug code from here
+    }
+    return -1;
+}
+
+int __cdecl x_dist(int x1, int x2) {
+    int dist = abs(x1 - x2);
+    if (!map_is_flat() && dist > *map_half_x) {
+        dist = *map_axis_x - dist;
+    }
+    return dist;
+}
+
+int __cdecl base_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, int y2, bool toggle) {
+    MAP* sq_dst = mapsq(x2, y2);
+    uint32_t bit_dst = (sq_dst ? sq_dst->items : 0);
+    if (is_ocean(sq_dst)) {
+        if (bit_dst & BIT_FUNGUS
+        && sq_dst->alt_level() == ALT_OCEAN_SHELF
+        && Units[unit_id].triad() == TRIAD_SEA
+        && unit_id != BSC_SEALURK // Bug fix
+        && unit_id != BSC_ISLE_OF_THE_DEEP
+        && !has_project(FAC_XENOEMPATHY_DOME, faction_id)) {
+            return Rules->move_rate_roads * 3;
+        }
+        return Rules->move_rate_roads;
+    }
+    MAP* sq_src = mapsq(x1, y1);
+    uint32_t bit_src = (sq_src ? sq_src->items : 0);
+    if (is_ocean(sq_src)) {
+        return Rules->move_rate_roads;
+    }
+    if (unit_id >= 0 && Units[unit_id].triad() != TRIAD_LAND) {
+        return Rules->move_rate_roads;
+    }
+    // Land only conditions
+    if (bit_src & (BIT_MAGTUBE | BIT_BASE_IN_TILE) && bit_dst & (BIT_MAGTUBE | BIT_BASE_IN_TILE)
+    && faction_id) {
+        return 0;
+    }
+    if ((bit_src & (BIT_ROAD | BIT_BASE_IN_TILE) || (bit_src & BIT_FUNGUS && faction_id > 0
+    && has_project(FAC_XENOEMPATHY_DOME, faction_id))) && bit_dst & (BIT_ROAD | BIT_BASE_IN_TILE)
+    && faction_id) {
+        return 1;
+    }
+    if (faction_id >= 0 && (has_project(FAC_XENOEMPATHY_DOME, faction_id) || !faction_id
+    || unit_id == BSC_MIND_WORMS || unit_id == BSC_SPORE_LAUNCHER) && bit_dst & BIT_FUNGUS) {
+        return 1;
+    }
+    if (bit_src & BIT_RIVER && bit_dst & BIT_RIVER && x_dist(x1, x2) == 1
+    && abs(y1 - y2) == 1 && faction_id) {
+        return 1;
+    }
+    if (Units[unit_id].chassis_id == CHS_HOVERTANK
+    || has_abil(unit_id, ABL_ANTIGRAV_STRUTS)) {
+        return Rules->move_rate_roads;
+    }
+    int cost = Rules->move_rate_roads;
+    if (sq_dst->is_rocky() && !toggle) {
+        cost += Rules->move_rate_roads;
+    }
+    if (bit_dst & BIT_FOREST && !toggle) {
+        cost += Rules->move_rate_roads;
+    }
+    if (faction_id && bit_dst & BIT_FUNGUS && (unit_id >= MaxProtoFactionNum
+    || Units[unit_id].offense_value() >= 0)) {
+        int plan = Units[unit_id].plan;
+        if (plan != PLAN_TERRAFORMING && plan != PLAN_ALIEN_ARTIFACT
+        && Factions[faction_id].SE_planet <= 0) {
+            return cost + Rules->move_rate_roads * 2;
+        }
+        int value = speed_proto(unit_id);
+        if (cost <= value) {
+            return value;
+        }
+    }
+    return cost;
+}
+
+int __cdecl mod_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, int y2, int toggle) {
+    int value = base_hex_cost(unit_id, faction_id, x1, y1, x2, y2, toggle);
+    assert(value == hex_cost(unit_id, faction_id, x1, y1, x2, y2, toggle));
+
     if (conf.magtube_movement_rate < 1 && conf.fast_fungus_movement < 1) {
         return value;
     }

@@ -1604,17 +1604,17 @@ typedef Palette CPalette;
 //CImage
 //CMainWnd
 
-static_assert(sizeof(CHitBox) == 24, "");
-static_assert(sizeof(CHitBoxList) == 12, "");
-static_assert(sizeof(CFont) == 40, "");
-static_assert(sizeof(CTimer) == 40, "");
-static_assert(sizeof(CSprite) == 44, "");
-static_assert(sizeof(CMainArrayItem) == 608, "");
-static_assert(sizeof(CWinBase) == 1092, "");
-static_assert(sizeof(CCanvas) == 1416, "");
-static_assert(sizeof(CMainMenu) == 2916, "");
-static_assert(sizeof(CWinBuffed) == 2580, "");
-static_assert(sizeof(CMap) == 137832, "");
-static_assert(sizeof(CMain) == 149412, "");
+static_assert(sizeof(SpotInternal) == 24, "");
+static_assert(sizeof(Spot) == 12, "");
+static_assert(sizeof(Font) == 40, "");
+static_assert(sizeof(Time) == 40, "");
+static_assert(sizeof(Sprite) == 44, "");
+static_assert(sizeof(TextureStore) == 608, "");
+static_assert(sizeof(Win) == 1092, "");
+static_assert(sizeof(Buffer) == 1416, "");
+static_assert(sizeof(Menu) == 2916, "");
+static_assert(sizeof(GraphicWin) == 2580, "");
+static_assert(sizeof(MapWin_Alt) == 137832, "");
+static_assert(sizeof(Console) == 149412, "");
 
 

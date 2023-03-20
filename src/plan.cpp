@@ -153,7 +153,7 @@ int satellite_goal(int faction, int fac_id) {
     Faction& f = Factions[faction];
     int goal = plans[faction].satellite_goal;
     if (fac_id == FAC_ORBITAL_DEFENSE_POD) {
-        if (plans[faction].enemy_factions > 0) {
+        if (plans[faction].enemy_odp > 0 || plans[faction].enemy_sat > 0) {
             goal = clamp(goal/4, 0, 4) + clamp(f.base_count/8 + 2, 2, 8);
         } else {
             goal = clamp(goal/4, 0, 4) + clamp(f.base_count/8, 2, 4);
@@ -236,6 +236,7 @@ void plans_upkeep(int faction) {
         plans[i].enemy_nukes = 0;
         plans[i].enemy_bases = 0;
         plans[i].enemy_odp = 0;
+        plans[i].enemy_sat = 0;
         plans[i].enemy_mil_factor = 0;
         plans[i].land_combat_units = 0;
         plans[i].sea_combat_units = 0;
@@ -294,6 +295,9 @@ void plans_upkeep(int faction) {
                     plans[i].enemy_factions++;
                     plans[i].enemy_nukes += Factions[j].planet_busters;
                     plans[i].enemy_odp += Factions[j].satellites_ODP;
+                    plans[i].enemy_sat += Factions[j].satellites_nutrient;
+                    plans[i].enemy_sat += Factions[j].satellites_mineral;
+                    plans[i].enemy_sat += Factions[j].satellites_energy;
                 }
                 float factor = min(8.0f, (is_human(j) ? 2.0f : 1.0f)
                     * (has_treaty(i, j, DIPLO_COMMLINK) ? 1.0f : 0.5f)

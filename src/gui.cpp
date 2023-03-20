@@ -1160,7 +1160,7 @@ void __thiscall Console_editor_fungus(Console* UNUSED(This))
     if (v1 >= 0) {
         int v2 = 0;
         if (!v1 || (v2 = X_pop7("FUNGMOTIZE", PopDialogBtnCancel, 0)) > 0) {
-            MAP* sq = *MapPtr;
+            MAP* sq = *MapTiles;
             for (int i = 0; i < *map_area_tiles; ++i, ++sq) {
                 sq->items &= ~BIT_FUNGUS;
                 // Update visible tile items

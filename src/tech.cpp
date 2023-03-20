@@ -13,7 +13,7 @@ int __cdecl mod_tech_value(int tech, int faction, int flag) {
         || tech == Rules->tech_preq_allow_3_energy_sq
         || tech == Rules->tech_preq_allow_3_minerals_sq
         || tech == Rules->tech_preq_allow_3_nutrients_sq) {
-            value += 40;
+            value += 50;
         }
     }
     debug("tech_value %d %d value: %3d tech: %2d %s\n",

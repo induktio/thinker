@@ -179,7 +179,7 @@ void print_veh(int id) {
         "state: %08x flags: %04x vis: %02x mor: %d iter: %d angle: %d\n",
         Units[v->unit_id].name, v->unit_id, id, v->faction_id,
         v->order, (v->status_icon ? v->status_icon : ' '),
-        v->x, v->y, v->waypoint_1_x, v->waypoint_1_y, moves - v->road_moves_spent, moves,
+        v->x, v->y, v->waypoint_1_x, v->waypoint_1_y, moves - v->moves_spent, moves,
         v->damage_taken, v->state, v->flags, v->visibility, v->morale,
         v->iter_count, v->rotate_angle);
 }

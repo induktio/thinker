@@ -417,66 +417,6 @@ void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool sea_b
     }
 }
 
-static int current_atk_veh_id = -1;
-static int current_def_veh_id = -1;
-
-int __cdecl mod_best_defender(int def_veh_id, int atk_veh_id, int bombardment)
-{
-    // store variables for modified odds dialog unless bombardment
-    int best_id = best_defender(def_veh_id, atk_veh_id, bombardment);
-    if (bombardment) {
-        current_atk_veh_id = -1;
-        current_def_veh_id = -1;
-    } else {
-        current_atk_veh_id = atk_veh_id;
-        current_def_veh_id = best_id;
-    }
-    return best_id;
-}
-
-int __cdecl battle_fight_parse_num(int index, int value)
-{
-    if (index > 9) {
-        return 3;
-    }
-    ParseNumTable[index] = value;
-
-    if (conf.ignore_reactor_power && index == 1
-    && current_atk_veh_id >= 0 && current_def_veh_id >= 0) {
-        VEH* v1 = &Vehicles[current_atk_veh_id];
-        VEH* v2 = &Vehicles[current_def_veh_id];
-        UNIT* u1 = &Units[v1->unit_id];
-        UNIT* u2 = &Units[v2->unit_id];
-        // calculate attacker and defender power
-        // artifact gets 1 HP regardless of reactor
-        int attackerPower = (u1->is_artifact() ? 1 :
-                             u1->reactor_id * 10 - v1->damage_taken);
-        int defenderPower = (u2->is_artifact() ? 1 :
-                             u2->reactor_id * 10 - v2->damage_taken);
-        // calculate firepower
-        int attackerFP = u2->reactor_id;
-        int defenderFP = u1->reactor_id;
-        // calculate hitpoints
-        int attackerHP = (attackerPower + (defenderFP - 1)) / defenderFP;
-        int defenderHP = (defenderPower + (attackerFP - 1)) / attackerFP;
-        // calculate correct odds
-        if (Weapon[u1->weapon_id].offense_value >= 0
-        && Armor[u2->armor_id].defense_value >= 0) {
-            // psi combat odds are already correct
-            // reverse engineer conventional combat odds in case of ignored reactor
-            int attackerOdds = ParseNumTable[0] * attackerHP * defenderPower;
-            int defenderOdds = ParseNumTable[1] * defenderHP * attackerPower;
-            int gcd = std::__gcd(attackerOdds, defenderOdds);
-            attackerOdds /= gcd;
-            defenderOdds /= gcd;
-            // reparse their odds into dialog
-            ParseNumTable[0] = attackerOdds;
-            ParseNumTable[1] = defenderOdds;
-        }
-    }
-    return 0;
-}
-
 int probe_roll_value(int faction)
 {
     int techs = 0;

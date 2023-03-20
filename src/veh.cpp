@@ -90,7 +90,7 @@ Renamed from veh_at. This version never calls rebuild_vehicle_bits on failed sea
 */
 int __cdecl veh_stack(int x, int y) {
     MAP* sq = mapsq(x, y);
-    if (!sq || !(sq->items & BIT_VEH_IN_TILE)) {
+    if (!sq || !sq->veh_in_tile()) {
         return -1; // invalid or empty map tile
     }
     for (int veh_id = 0; veh_id < *total_num_vehicles; veh_id++) {
@@ -161,9 +161,9 @@ int __cdecl veh_speed(int veh_id, bool skip_morale) {
     if (triad == TRIAD_SEA && has_project(FAC_MARITIME_CONTROL_CENTER, Vehs[veh_id].faction_id)) {
         speed_val += Rules->move_rate_roads * 2;
     }
-    if (!skip_morale && morale_veh(veh_id, true, 0) == MORALE_ELITE
+    if (!skip_morale && mod_morale_veh(veh_id, true, 0) == MORALE_ELITE
     && (unit_id >= MaxProtoFactionNum || u->offense_value() >= 0)) {
-        speed_val += Rules->move_rate_roads; // Non-PSI elite units only
+        speed_val += Rules->move_rate_roads; // Non-native elite units only
     }
     if (Vehs[veh_id].damage_taken && triad != TRIAD_AIR) {
         int moves = speed_val / Rules->move_rate_roads;
@@ -201,170 +201,30 @@ int __cdecl veh_cargo(int veh_id) {
 }
 
 /*
-Get the basic offense value for an attacking unit with an optional defender unit parameter.
+Calculate the specified prototype's mineral row cost to build. Optional output parameter
+whether there is an associated 1st time prototype cost (true) or just the base (false).
 */
-int __cdecl mod_get_basic_offense(int veh_id_atk, int veh_id_def, int psi_combat_type, bool is_bombard, bool unk_tgl) {
-    // unk_tgl is only set to true in battle_compute when veh_id_atk and veh_id_def are switched places.
-    int faction_id_atk = Vehs[veh_id_atk].faction_id;
-    int unit_id_atk = Vehs[veh_id_atk].unit_id;
-    int morale = faction_id_atk ? morale_veh(veh_id_atk, true, 0)
-        : morale_alien(veh_id_atk, veh_id_def >= 0 ? Vehs[veh_id_def].faction_id : -1);
-    int base_id_atk = base_at(Vehs[veh_id_atk].x, Vehs[veh_id_atk].y);
-    if (base_id_atk >= 0) {
-        if (has_fac_built(FAC_CHILDREN_CRECHE, base_id_atk)) {
-            morale++;
-            int morale_active = clamp(Factions[faction_id_atk].SE_morale, -4, 4);
-            if (morale_active <= -2) {
-                morale_active++;
-            }
-            morale -= morale_active;
-        } else if (has_fac_built(FAC_BROOD_PIT, base_id_atk) && unit_id_atk < MaxProtoFactionNum
-        && (Units[unit_id_atk].offense_value() < 0 || unit_id_atk == BSC_SPORE_LAUNCHER)) {
-            morale++;
-            int morale_active = clamp(Factions[faction_id_atk].SE_morale, -4, 4);
-            if (morale_active <= -2) {
-                morale_active++;
-            }
-            morale -= morale_active;
-        }
-        if (unk_tgl) {
-            int morale_pending = Factions[faction_id_atk].SE_morale_pending;
-            if (morale_pending >= 2 && morale_pending <= 3) {
-                morale++;
-            }
-            if (veh_id_def >= 0) {
-                if (Vehs[veh_id_def].faction_id) {
-                    if ((unit_id_atk >= MaxProtoFactionNum
-                    || (Units[unit_id_atk].offense_value() >= 0
-                    && unit_id_atk != BSC_SPORE_LAUNCHER))
-                    && !has_abil(unit_id_atk, ABL_DISSOCIATIVE_WAVE)
-                    && has_abil(Vehs[veh_id_def].unit_id, ABL_SOPORIFIC_GAS)) {
-                        morale -= 2;
-                    }
-                } else {
-                    morale++;
-                }
-            }
-        }
+int __cdecl mod_veh_cost(int unit_id, int base_id, bool* has_proto_cost) {
+    int cost = Units[unit_id].cost;
+    if (base_id >= 0 && unit_id < MaxProtoFactionNum // Fix: added base_id bounds check
+    && (Units[unit_id].offense_value() < 0 || unit_id == BSC_SPORE_LAUNCHER)
+    && has_fac_built(FAC_BROOD_PIT, base_id)) {
+        cost = (cost * 3) / 4; // Decrease the cost of alien units by 25%
     }
-    if (unk_tgl) {
-        morale = clamp(morale, 1, 6);
+    if (Units[unit_id].plan == PLAN_COLONIZATION && base_id >= 0) {
+        cost = clamp(cost, 1, 999);
     }
-    VehBasicBattleMorale[unk_tgl != 0] = morale; // shifted up from original
-    morale += 6;
-    int offense = offense_proto(unit_id_atk, veh_id_def, is_bombard);
-    if (psi_combat_type) {
-        offense = psi_factor(offense, faction_id_atk, true, false);
+    int proto_cost_first = 0;
+    if (unit_id >= MaxProtoFactionNum && !Units[unit_id].is_prototyped()) {
+        proto_cost_first = (base_id >= 0 && has_fac_built(FAC_SKUNKWORKS, base_id))
+            ? 0 : (prototype_factor(unit_id) * base_cost(unit_id) + 50) / 100; // moved checks up
+        cost += proto_cost_first;
     }
-    offense = offense * morale * 4;
-    assert(offense == get_basic_offense(veh_id_atk, veh_id_def, psi_combat_type, is_bombard, unk_tgl));
-    return offense;
-}
-
-/*
-Get the basic defense value for a defending unit with an optional attacker unit parameter.
-*/
-int __cdecl mod_get_basic_defense(int veh_id_def, int veh_id_atk, int psi_combat_type, bool is_bombard) {
-    int faction_id_def = Vehs[veh_id_def].faction_id;
-    int unit_id_def = Vehs[veh_id_def].unit_id;
-    int base_id_def = base_at(Vehs[veh_id_def].x, Vehs[veh_id_def].y);
-    int morale = faction_id_def ? morale_veh(veh_id_def, true, 0)
-        : morale_alien(veh_id_def, veh_id_atk >= 0 ? Vehs[veh_id_atk].faction_id : -1);
-
-    if (base_id_def >= 0) {
-        if (has_fac_built(FAC_CHILDREN_CRECHE, base_id_def)) {
-            morale++;
-            int morale_active = clamp(Factions[faction_id_def].SE_morale, -4, 0);
-            if (morale_active <= -2) {
-                morale_active++;
-            }
-            morale -= morale_active;
-        } else if (has_fac_built(FAC_BROOD_PIT, base_id_def)
-        && unit_id_def < MaxProtoFactionNum
-        && (Units[unit_id_def].offense_value() < 0 || unit_id_def == BSC_SPORE_LAUNCHER)) {
-            morale++;
-            int morale_active = clamp(Factions[faction_id_def].SE_morale, -4, 4);
-            if (morale_active <= -2) {
-                morale_active++;
-            }
-            morale -= morale_active;
-        }
-        // Fix: manual has "Units in a headquarters base automatically gain +1 Morale when defending."
-        if (has_fac_built(FAC_HEADQUARTERS, base_id_def)) {
-            morale++;
-        }
-        int morale_pending = Factions[faction_id_def].SE_morale_pending;
-        if (morale_pending >= 2 && morale_pending <= 3) {
-            morale++;
-        }
-        if (veh_id_atk >= 0 && !Vehs[veh_id_atk].faction_id) {
-            morale++;
-        }
+    if (has_proto_cost) {
+        *has_proto_cost = proto_cost_first != 0;
     }
-    if (veh_id_atk >= 0 && Vehs[veh_id_atk].faction_id && (unit_id_def >= MaxProtoFactionNum
-    || (Units[unit_id_def].offense_value() >= 0 && unit_id_def != BSC_SPORE_LAUNCHER))
-    && !has_abil(unit_id_def, ABL_DISSOCIATIVE_WAVE)
-    && has_abil(Vehs[veh_id_atk].unit_id, ABL_SOPORIFIC_GAS)) {
-        morale -= 2;
-    }
-    morale = clamp(morale, 1, 6);
-    VehBasicBattleMorale[1] = morale;
-    morale += 6;
-    int plan_def = Units[unit_id_def].plan;
-    if (plan_def == PLAN_ALIEN_ARTIFACT) {
-        return 1;
-    }
-    // Fix: added veh_id_atk bounds check to prevent potential read outside array
-    if (plan_def == PLAN_INFO_WARFARE && Units[unit_id_def].defense_value() == 1
-    && (veh_id_atk < 0 || Units[Vehs[veh_id_atk].unit_id].plan != PLAN_INFO_WARFARE)) {
-        return 1;
-    }
-    int defense = armor_proto(unit_id_def, veh_id_atk, is_bombard);
-    if (psi_combat_type) {
-        defense = psi_factor(defense, faction_id_def, false, unit_id_def == BSC_FUNGAL_TOWER);
-    }
-    defense *= morale;
-    assert(has_fac_built(FAC_HEADQUARTERS, base_id_def)
-        || defense == get_basic_defense(veh_id_def, veh_id_atk, psi_combat_type, is_bombard));
-    return defense;
-}
-
-/*
-Calculate the psi combat factor for an attacking or defending unit.
-*/
-int __cdecl psi_factor(int value, int faction_id, bool is_attack, bool is_fungal_twr) {
-    int rule_psi = MFactions[faction_id].rule_psi;
-    if (rule_psi) {
-        value = ((rule_psi + 100) * value) / 100;
-    }
-    if (is_attack) {
-        if (has_project(FAC_DREAM_TWISTER, faction_id)) {
-            value += value * conf.dream_twister_bonus / 100;
-        }
-    } else {
-        if (has_project(FAC_NEURAL_AMPLIFIER, faction_id)) {
-            value += value * conf.neural_amplifier_bonus / 100;
-        }
-        if (is_fungal_twr) {
-            value += value * conf.fungal_tower_bonus / 100;
-        }
-    }
-    return value;
-}
-
-/*
-Bonus functions are only used to patch more features on get_basic_offense or get_basic_defense.
-*/
-int __cdecl neural_amplifier_bonus(int value) {
-    return value * conf.neural_amplifier_bonus / 100;
-}
-
-int __cdecl dream_twister_bonus(int value) {
-    return value * conf.dream_twister_bonus / 100;
-}
-
-int __cdecl fungal_tower_bonus(int value) {
-    return value * conf.fungal_tower_bonus / 100;
+    assert(cost == veh_cost(unit_id, base_id, 0));
+    return cost;
 }
 
 int __cdecl mod_veh_init(int unit_id, int faction, int x, int y) {
@@ -384,13 +244,17 @@ int __cdecl mod_veh_kill(int veh_id) {
     return veh_kill(veh_id);
 }
 
+/*
+Skip vehicle turn by adjusting spent moves to maximum available moves.
+Fix: due to limited size of moves_spent, speeds over 255 will be incorrect.
+*/
 int __cdecl mod_veh_skip(int veh_id) {
     VEH* veh = &Vehicles[veh_id];
-    int moves = veh_speed(veh_id);
+    int moves = clamp(veh_speed(veh_id), 0, 255);
 
     if (is_human(veh->faction_id)) {
         if (conf.activate_skipped_units) {
-            if (!veh->road_moves_spent && veh->order < ORDER_FARM && !(veh->state & VSTATE_HAS_MOVED)) {
+            if (!veh->moves_spent && veh->order < ORDER_FARM && !(veh->state & VSTATE_HAS_MOVED)) {
                 veh->flags |= VFLAG_FULL_MOVE_SKIPPED;
             } else {
                 veh->flags &= ~VFLAG_FULL_MOVE_SKIPPED;
@@ -407,21 +271,21 @@ int __cdecl mod_veh_skip(int veh_id) {
             }
         }
     }
-    veh->road_moves_spent = moves;
+    veh->moves_spent = moves;
     return moves;
 }
 
 int __cdecl mod_veh_wake(int veh_id) {
     VEH* veh = &Vehicles[veh_id];
     if (veh->order >= ORDER_FARM && veh->order < ORDER_MOVE_TO && !(veh->state & VSTATE_CRAWLING)) {
-        veh->road_moves_spent = veh_speed(veh_id) - Rules->move_rate_roads;
+        veh->moves_spent = veh_speed(veh_id) - Rules->move_rate_roads;
         if (veh->terraforming_turns) {
             int turns = veh->terraforming_turns - contribution(veh_id, veh->order - 4);
             veh->terraforming_turns = max(0, turns);
         }
     }
     if (veh->state & VSTATE_ON_ALERT && !(veh->state & VSTATE_HAS_MOVED) && veh->order_auto_type == ORDERA_ON_ALERT) {
-        veh->road_moves_spent = 0;
+        veh->moves_spent = 0;
     }
     /*
     Formers are a special case since they might not move but can build items immediately.
@@ -429,7 +293,7 @@ int __cdecl mod_veh_wake(int veh_id) {
     */
     if (conf.activate_skipped_units) {
         if (veh->flags & VFLAG_FULL_MOVE_SKIPPED && !(veh->state & VSTATE_HAS_MOVED)) {
-            veh->road_moves_spent = 0;
+            veh->moves_spent = 0;
         }
         veh->flags &= ~VFLAG_FULL_MOVE_SKIPPED;
     }
