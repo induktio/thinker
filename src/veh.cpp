@@ -20,7 +20,7 @@ bool __cdecl can_arty(int unit_id, bool allow_sea_arty) {
     return has_abil(unit_id, ABL_ARTILLERY); // TRIAD_LAND
 }
 
-bool __cdecl has_abil(int unit_id, VehAbilityFlag ability) {
+bool __cdecl has_abil(int unit_id, VehAblFlag ability) {
     int faction_id = unit_id / MaxProtoFactionNum;
     // workaround fix for legacy base_build that may incorrectly use negative unit_id
     if (unit_id < 0) {
@@ -54,7 +54,7 @@ bool __cdecl has_abil(int unit_id, VehAbilityFlag ability) {
     return false;
 }
 
-bool has_ability(int faction, VehAbility abl, VehChassis chs, VehWeapon wpn) {
+bool has_ability(int faction, VehAbl abl, VehChassis chs, VehWeapon wpn) {
     int F = Ability[abl].flags;
     int triad = Chassis[chs].triad;
 
@@ -102,7 +102,7 @@ int __cdecl veh_stack(int x, int y) {
 }
 
 /*
-Renamed from speed_proto. Calculate the speed of the specified prototype on roads.
+Renamed from speed_proto. Calculate the road move speed for specified prototype.
 */
 int __cdecl proto_speed(int unit_id) {
     if (unit_id == BSC_FUNGAL_TOWER) {
@@ -149,6 +149,7 @@ int __cdecl proto_speed(int unit_id) {
 Renamed from speed. Calculate the speed of a unit on roads taking into consideration
 various factors. The skip_morale parameter seems to only be set to true
 for certain combat calculations in battle_fight().
+Fix: due to limited size of moves_spent, speeds over 255 will be incorrect.
 */
 int __cdecl veh_speed(int veh_id, bool skip_morale) {
     int unit_id = Vehs[veh_id].unit_id;
@@ -156,6 +157,8 @@ int __cdecl veh_speed(int veh_id, bool skip_morale) {
     if (unit_id == BSC_FUNGAL_TOWER) {
         return 0; // cannot move
     }
+    // Maximum speed is rounded down to nearest full movement point
+    int max_speed = 255 - (255 % Rules->move_rate_roads);
     int speed_val = proto_speed(unit_id);
     int triad = u->triad();
     if (triad == TRIAD_SEA && has_project(FAC_MARITIME_CONTROL_CENTER, Vehs[veh_id].faction_id)) {
@@ -179,12 +182,7 @@ int __cdecl veh_speed(int veh_id, bool skip_morale) {
             + speed_val - 1) / speed_val;
         speed_val = clamp(speed_val, (triad == TRIAD_SEA) ? 2 : 1, 999) * Rules->move_rate_roads;
     }
-    assert(speed_val == speed(veh_id, skip_morale));
-    return speed_val;
-}
-
-int __cdecl veh_speed(int veh_id) {
-    return veh_speed(veh_id, 0);
+    return min(max_speed, speed_val);
 }
 
 /*
@@ -203,8 +201,9 @@ int __cdecl veh_cargo(int veh_id) {
 /*
 Calculate the specified prototype's mineral row cost to build. Optional output parameter
 whether there is an associated 1st time prototype cost (true) or just the base (false).
+Note that has_proto_cost is treated as int32_t variable in the game engine.
 */
-int __cdecl mod_veh_cost(int unit_id, int base_id, bool* has_proto_cost) {
+int __cdecl mod_veh_cost(int unit_id, int base_id, int* has_proto_cost) {
     int cost = Units[unit_id].cost;
     if (base_id >= 0 && unit_id < MaxProtoFactionNum // Fix: added base_id bounds check
     && (Units[unit_id].offense_value() < 0 || unit_id == BSC_SPORE_LAUNCHER)
@@ -246,11 +245,10 @@ int __cdecl mod_veh_kill(int veh_id) {
 
 /*
 Skip vehicle turn by adjusting spent moves to maximum available moves.
-Fix: due to limited size of moves_spent, speeds over 255 will be incorrect.
 */
 int __cdecl mod_veh_skip(int veh_id) {
     VEH* veh = &Vehicles[veh_id];
-    int moves = clamp(veh_speed(veh_id), 0, 255);
+    int moves = veh_speed(veh_id, 0);
 
     if (is_human(veh->faction_id)) {
         if (conf.activate_skipped_units) {
@@ -278,7 +276,7 @@ int __cdecl mod_veh_skip(int veh_id) {
 int __cdecl mod_veh_wake(int veh_id) {
     VEH* veh = &Vehicles[veh_id];
     if (veh->order >= ORDER_FARM && veh->order < ORDER_MOVE_TO && !(veh->state & VSTATE_CRAWLING)) {
-        veh->moves_spent = veh_speed(veh_id) - Rules->move_rate_roads;
+        veh->moves_spent = veh_speed(veh_id, 0) - Rules->move_rate_roads;
         if (veh->terraforming_turns) {
             int turns = veh->terraforming_turns - contribution(veh_id, veh->order - 4);
             veh->terraforming_turns = max(0, turns);
@@ -336,6 +334,91 @@ int __cdecl probe_return_base(int UNUSED(x), int UNUSED(y), int veh_id) {
     return find_return_base(veh_id);
 }
 
+void parse_abl_name(char* buf, uint32_t abls) {
+    buf[0] = '\0';
+    for (int i = 0; i < MaxAbilityNum; i++) {
+        // Skip empty abbreviation names (Deep Radar)
+        if (abls & (1 << i) && strlen(Ability[i].abbreviation)) {
+            strncat(buf, Ability[i].abbreviation, MaxProtoNameLen);
+            strncat(buf, " ", 2);
+        }
+    }
+}
+
+void parse_arm_name(char* buf, VehArmor arm) {
+    const char* name = Armor[arm].name_short;
+    if (strlen(name) >= 8) {
+        strncat(buf, name, 4);
+        strncat(buf, " ", 2);
+        return;
+    }
+    strncat(buf, name, MaxProtoNameLen);
+    strncat(buf, " ", 2);
+}
+
+void parse_chs_name(char* buf, VehChassis chs) {
+    const char* name1 = Chassis[chs].offsv1_name;
+    const char* name2 = Chassis[chs].offsv2_name;
+    if (strlen(name1) >= 7 && strlen(name1) > strlen(name2) && strlen(name2)) {
+        // Convert Speeder to Rover (short form)
+        strncat(buf, name2, MaxProtoNameLen);
+        strncat(buf, " ", 2);
+        return;
+    }
+    strncat(buf, name1, MaxProtoNameLen);
+    strncat(buf, " ", 2);
+}
+
+void parse_wpn_name(char* buf, VehWeapon wpn) {
+    const char* name = Weapon[wpn].name_short;
+    if (strlen(buf) + strlen(name) >= MaxProtoNameLen*3/4) {
+        for (size_t i = 0; i < strlen(name); i++) {
+            if (name[i] == ' ') {
+                strncat(buf, name, i+1);
+                return;
+            }
+        }
+    }
+    strncat(buf, name, MaxProtoNameLen);
+}
+
+int __cdecl mod_name_proto(char* name, int unit_id, int faction_id,
+VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
+    char buf[256];
+
+    if (conf.new_unit_names || !is_human(faction_id)) {
+        if (Weapon[wpn].mode == WMODE_INFOWAR
+        || Weapon[wpn].mode == WMODE_CONVOY
+        || Weapon[wpn].mode == WMODE_TERRAFORMER
+        || Weapon[wpn].mode == WMODE_TRANSPORT
+        || Weapon[wpn].mode == WMODE_COLONIST) {
+            parse_abl_name(buf, abls);
+            if (arm != ARM_NO_ARMOR) {
+                parse_arm_name(buf, arm);
+            }
+            if (chs != CHS_INFANTRY) {
+                parse_chs_name(buf, chs);
+            }
+            parse_wpn_name(buf, wpn);
+            if (Weapon[wpn].mode != WMODE_INFOWAR && rec > REC_FISSION
+            && strlen(buf) + 5 <= MaxProtoNameLen) {
+                snprintf(name, MaxProtoNameLen, "%s Mk%d", buf, rec);
+                return 0;
+            }
+            strncpy(name, buf, MaxProtoNameLen);
+            name[MaxProtoNameLen - 1] = '\0';
+            return 0;
+        }
+    }
+    if (unit_id < 0) {
+        if (name) {
+            name[0] = '\0';
+        }
+        return 0;
+    }
+    return name_proto(name, unit_id, faction_id, chs, wpn, arm, abls, rec);
+}
+
 VehArmor best_armor(int faction, bool cheap) {
     int ci = ARM_NO_ARMOR;
     int cv = 4;
@@ -343,8 +426,9 @@ VehArmor best_armor(int faction, bool cheap) {
         if (has_tech(Armor[i].preq_tech, faction)) {
             int val = Armor[i].defense_value;
             int cost = Armor[i].cost;
-            if (cheap && (cost > 5 || cost > val))
+            if (cheap && (cost > 5 || cost > val)) {
                 continue;
+            }
             int iv = val * (i >= ARM_PULSE_3_ARMOR ? 5 : 4);
             if (iv > cv) {
                 cv = iv;

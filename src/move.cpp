@@ -1881,7 +1881,7 @@ bool allow_conv_missile(VEH* veh, VEH* enemy, MAP* sq) {
     }
     if (!enemy->faction_id) {
         return sq->owner == veh->faction_id
-            && pm_enemy[enemy->x][enemy->y] >= 2 + random(6);
+            && pm_enemy[enemy->x][enemy->y] >= 2 + random(10);
     }
     if (!enemy->is_combat_unit() && !enemy->is_armored()) {
         // Missiles can attack probes inside our own territory
@@ -2262,16 +2262,17 @@ int aircraft_move(const int id) {
     bool at_base = sq->is_base();
     bool missile = u->chassis_id == CHS_MISSILE;
     int faction = veh->faction_id;
-    int moves = veh_speed(id) - veh->moves_spent;
+    int moves = veh_speed(id, 0) - veh->moves_spent;
     int max_range = max(0, moves / Rules->move_rate_roads);
     int max_dist = max_range; // can be modified during search
 
     if (!veh->at_target()) {
         return VEH_SYNC;
     }
-    if (u->chassis_id == CHS_NEEDLEJET || missile) {
+    // Needlejets may end the turn outside base, in that case they have to refuel
+    if (u->chassis_id == CHS_NEEDLEJET) {
         if (veh->iter_count == 0 && ++veh->iter_count && !at_base) {
-            return move_to_base(id, true); // Need refuel
+            return move_to_base(id, true);
         }
     }
     if (u->chassis_id == CHS_COPTER && !at_base && veh->mid_damage()) {
@@ -2283,6 +2284,8 @@ int aircraft_move(const int id) {
     int i = 0;
     int tx = -1;
     int ty = -1;
+    int bx = -1;
+    int by = -1;
     int id2 = -1;
     double best_odds = 1.2 - 0.004 * min(100, p.air_combat_units);
     TileSearch ts;
@@ -2294,6 +2297,10 @@ int aircraft_move(const int id) {
             if (!sq->is_base() && veh2->chassis_type() == CHS_NEEDLEJET
             && !has_abil(veh->unit_id, ABL_AIR_SUPERIORITY)) {
                 continue;
+            }
+            if (missile && bx < 0 && ts.dist == 1) {
+                bx = ts.rx;
+                by = ts.ry;
             }
             if (missile && !allow_conv_missile(veh, veh2, sq)) {
                 continue;
@@ -2319,9 +2326,14 @@ int aircraft_move(const int id) {
             return set_move_to(id, ts.rx, ts.ry);
         }
     }
+    if (!at_base && tx < 0 && bx >= 0 && max_range <= 1) {
+        // Adjacent tile backup attack choice
+        debug("aircraft_change %2d %2d -> %2d %2d\n", veh->x, veh->y, bx, by);
+        return set_move_to(id, bx, by);
+    }
     if (tx >= 0) {
         int range = map_range(veh->x, veh->y, tx, ty);
-        if (range > 1) {
+        if (range > 1 && (!missile || veh->moves_spent)) {
             for (auto& m : iterate_tiles(veh->x, veh->y, 1, 9)) {
                 if (!m.sq->is_base() && !non_ally_in_tile(m.x, m.y, faction)
                 && map_range(m.x, m.y, tx, ty) < range) {
@@ -2335,34 +2347,45 @@ int aircraft_move(const int id) {
     if (at_base && veh->mid_damage()) {
         return mod_veh_skip(id);
     }
-    if (p.naval_airbase_x >= 0 && invasion_unit(id)
-    && map_range(veh->x, veh->y, p.naval_airbase_x, p.naval_airbase_y) >= 20) {
-        debug("aircraft_invade %2d %2d -> %2d %2d\n",
-            veh->x, veh->y, p.naval_airbase_x, p.naval_airbase_y);
-        return set_move_to(id, p.naval_airbase_x, p.naval_airbase_y);
+    bool move_naval = p.naval_airbase_x >= 0 && invasion_unit(id)
+        && map_range(veh->x, veh->y, p.naval_airbase_x, p.naval_airbase_y) >= 20;
+    bool move_other = (*current_turn + id) % 8 < 3;
+    int score;
+    int best_score = INT_MIN;
+    // Missiles have to always end their turn inside base
+    max_dist = max_range * (missile || veh->mid_damage() ? 1 : 2);
+
+    if (move_naval && !missile && (u->chassis_id != CHS_COPTER || !veh->mid_damage())) {
+        debug("aircraft_invade %2d %2d -> %2d %2d\n", veh->x, veh->y, tx, ty);
+        return set_move_to(id, tx, ty);
     }
-    if ((*current_turn + id) % 3 == 0) {
-        int best_score = INT_MIN;
-        for (i = 0; i < *total_num_bases; i++) {
-            BASE* base = &Bases[i];
-            if (base->faction_id == faction && (missile || base->defend_goal >= 3)) {
-                int base_range = map_range(veh->x, veh->y, base->x, base->y);
-                if (missile && base_range  > max_range) {
-                    continue;
-                }
-                int score = base->defend_goal * (missile ? 5 : 10)
-                     - base_range + random(8);
-                if (score > best_score) {
-                    tx = base->x;
-                    ty = base->y;
-                    best_score = score;
-                }
+    for (i = 0; i < *total_num_bases && (move_naval || move_other); i++) {
+        BASE* base = &Bases[i];
+        if (base->faction_id == faction || has_pact(faction, base->faction_id)) {
+            int base_value = clamp((base->faction_id == faction ? base->defend_goal : 2), 1, 4);
+            int base_range = map_range(veh->x, veh->y, base->x, base->y);
+            if (base_range > max_dist) {
+                continue;
+            }
+            if (move_naval) {
+                score = random(8) + min(6, arty_value(base->x, base->y)/8)
+                    - map_range(base->x, base->y, p.naval_airbase_x, p.naval_airbase_y)
+                    * (base->faction_id == faction ? 1 : 2);
+            } else {
+                score = random(8) + base_value * (missile ? 4 : 8)
+                    + min(6, arty_value(base->x, base->y)/8)
+                    - base_range * (base->faction_id == faction ? 1 : 2);
+            }
+            if (score > best_score) {
+                tx = base->x;
+                ty = base->y;
+                best_score = score;
             }
         }
-        if (tx >= 0 && !(veh->x == tx && veh->y == ty)) {
-            debug("aircraft_rebase %2d %2d -> %2d %2d\n", veh->x, veh->y, tx, ty);
-            return set_move_to(id, tx, ty);
-        }
+    }
+    if (tx >= 0 && !(veh->x == tx && veh->y == ty)) {
+        debug("aircraft_rebase %2d %2d -> %2d %2d score: %d\n", veh->x, veh->y, tx, ty, best_score);
+        return set_move_to(id, tx, ty);
     }
     if (!at_base && (u->chassis_id != CHS_GRAVSHIP || !random(8))) {
         return move_to_base(id, true);
@@ -2459,7 +2482,7 @@ int combat_move(const int id) {
     AIPlans& p = plans[veh->faction_id];
     int faction = veh->faction_id;
     int triad = veh->triad();
-    int moves = veh_speed(id) - veh->moves_spent;
+    int moves = veh_speed(id, 0) - veh->moves_spent;
     int defenders = 0;
     assert(veh->is_combat_unit() || veh->is_probe());
     assert(triad == TRIAD_LAND || triad == TRIAD_SEA);
@@ -2724,34 +2747,34 @@ int combat_move(const int id) {
     if (!veh->at_target() && veh->iter_count > 2 && at_base) {
         return mod_veh_skip(id);
     }
-    if (at_base && !veh->moves_spent && !random(4)) {
-        best_score = 0;
+    if (at_base && !veh->moves_spent && !random(4)) { // PSI Gate moves
         int source = -1;
         int target = -1;
-        for (i=0; source < 0 && i < *total_num_bases; i++) {
-            BASE* b = &Bases[i];
-            if (b->faction_id == veh->faction_id && b->x == veh->x && b->y == veh->y) {
-                if (can_use_teleport(i)) {
-                    source = i;
-                    best_score = 80*b->defend_goal - pm_safety[b->x][b->y];
-                }
-            }
+        int base_id = base_at(veh->x, veh->y);
+        BASE* b = &Bases[base_id];
+
+        if (base_id >= 0 && b->faction_id == veh->faction_id && can_use_teleport(base_id)) {
+            source = base_id;
+            best_score = 128*b->defend_goal - pm_safety[b->x][b->y] + random(256);
         }
-        for (i=0; source >= 0 && i < *total_num_bases; i++) {
-            BASE* b = &Bases[i];
-            if (b->faction_id == veh->faction_id && source != i && can_use_teleport(i)) {
-                int score = 80*b->defend_goal - pm_safety[b->x][b->y];
+        for (base_id = 0; source >= 0 && base_id < *total_num_bases; base_id++) {
+            b = &Bases[base_id];
+            if (b->faction_id == veh->faction_id
+            && source != base_id && has_fac_built(FAC_PSI_GATE, base_id)) {
+                int score = 128*b->defend_goal - pm_safety[b->x][b->y]
+                    - 32*pm_target[b->x][b->y];
                 if (triad == TRIAD_SEA && !coast_tiles(b->x, b->y)) {
                     continue;
                 }
                 if (score > best_score) {
                     best_score = score;
-                    target = i;
+                    target = base_id;
                 }
             }
         }
         if (target >= 0) {
             debug("action_gate %2d %2d %s -> %s\n", veh->x, veh->y, veh->name(), Bases[target].name);
+            pm_target[ Bases[target].x ][ Bases[target].y ]++;
             return action_gate(id, target);
         }
     }

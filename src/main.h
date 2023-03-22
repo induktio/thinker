@@ -124,6 +124,7 @@ const int MaxMightNum = 7;
 const int MaxBonusNameNum = 41;
 
 const int MaxEnemyRange = 50;
+const int StrBufLen = 256;
 
 /*
 Config parsed from thinker.ini. Alpha Centauri.ini related options
@@ -143,7 +144,8 @@ struct Config {
     int render_probe_labels = 1;
     int foreign_treaty_popup = 0;
     int editor_free_units = 1;
-    int new_base_names = 0;
+    int new_base_names = 1;
+    int new_unit_names = 1;
     int windowed = 0;
     int window_width = 1024;
     int window_height = 768;

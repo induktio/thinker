@@ -118,9 +118,8 @@ int __cdecl MapWin_gen_terrain_nearby_fungus(int x, int y) {
 
 int __cdecl mod_read_basic_rules() {
     // read_basic_rules may be called multiple times
-    static bool loaded = false;
     int value = read_basic_rules();
-    if (value == 0 && conf.magtube_movement_rate > 0 && !loaded) {
+    if (DEBUG && value == 0 && conf.magtube_movement_rate > 0) {
         int reactor_value = REC_FISSION;
         for (VehReactor r : {REC_FUSION, REC_QUANTUM, REC_SINGULARITY}) {
             if (Reactor[r - 1].preq_tech != TECH_Disable) {
@@ -133,7 +132,6 @@ int __cdecl mod_read_basic_rules() {
             }
             int multiplier = Rules->move_rate_roads * conf.magtube_movement_rate;
             int base_speed = Chassis[i].speed + 1; // elite bonus
-            loaded = true;
             if (Chassis[i].triad == TRIAD_AIR) {
                 base_speed += 2*reactor_value; // triad bonus
                 if (!Chassis[i].missile) {
@@ -150,18 +148,13 @@ int __cdecl mod_read_basic_rules() {
             } else {
                 base_speed += 1; // antigrav struts
             }
-            if (base_speed * multiplier > 255) {
-                MessageBoxA(0, "Due to possible overflow issues with high speed units "
-                    "magtube_movement_rate feature will be disabled.", MOD_VERSION, MB_OK | MB_ICONWARNING);
-                conf.magtube_movement_rate = 0;
-                debug("chassis_speed %d %d %s\n", i, base_speed * multiplier, Chassis[i].offsv1_name);
-                return value;
-            }
+            debug("chassis_speed %d %d %d %s\n",
+                i, base_speed, base_speed * multiplier, Chassis[i].offsv1_name);
         }
-        if (loaded) {
-            conf.road_movement_rate = conf.magtube_movement_rate;
-            Rules->move_rate_roads *= conf.magtube_movement_rate;
-        }
+    }
+    if (value == 0 && conf.magtube_movement_rate > 0) {
+        conf.road_movement_rate = conf.magtube_movement_rate;
+        Rules->move_rate_roads *= conf.magtube_movement_rate;
     }
     return value;
 }
@@ -291,6 +284,9 @@ void write_jump(int addr, int func) {
     *(int*)(addr + 1) = func - addr - 5;
 }
 
+/*
+Modify conditional short jump such that it is always taken.
+*/
 void short_jump(int addr) {
     if (*(byte*)addr == 0x74 || *(byte*)addr == 0x75
     || *(byte*)addr == 0x7C || *(byte*)addr == 0x7D) {
@@ -307,11 +303,11 @@ void write_call(int addr, int func) {
     *(int*)(addr+1) = func - addr - 5;
 }
 
-void write_offset(int addr, const void* ofs) {
-    if (*(byte*)addr != 0x68 || *(int*)(addr+1) < (int)AC_IMAGE_BASE || ofs < AC_IMAGE_BASE) {
+void write_offset(int addr, const void* offset) {
+    if (*(byte*)addr != 0x68 || *(int*)(addr+1) < (int)AC_IMAGE_BASE || offset < AC_IMAGE_BASE) {
         exit_fail(addr);
     }
-    *(int*)(addr+1) = (int)ofs;
+    *(int*)(addr+1) = (int)offset;
 }
 
 
@@ -374,6 +370,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x592250, (int)mod_say_loc);
     write_jump(0x5C1D20, (int)mod_veh_skip);
     write_jump(0x5C1D70, (int)mod_veh_wake);
+    write_jump(0x5C1540, (int)veh_speed);
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
     write_call(0x415F35, (int)mod_base_reset);
@@ -436,6 +433,14 @@ bool patch_setup(Config* cf) {
     write_call(0x59FBA7, (int)set_treaty);
     write_call(0x559E21, (int)map_draw_strcmp); // veh_draw
     write_call(0x55B5E1, (int)map_draw_strcmp); // base_draw
+    write_call(0x4364FB, (int)mod_name_proto);
+    write_call(0x4383B2, (int)mod_name_proto);
+    write_call(0x4383DE, (int)mod_name_proto);
+    write_call(0x43BE8F, (int)mod_name_proto);
+    write_call(0x43E06E, (int)mod_name_proto);
+    write_call(0x43E663, (int)mod_name_proto);
+    write_call(0x581044, (int)mod_name_proto);
+    write_call(0x5B301E, (int)mod_name_proto);
     write_jump(0x6262F0, (int)log_say);
     write_jump(0x626250, (int)log_say2);
     write_jump(0x6263F0, (int)log_say_hex);
@@ -734,9 +739,6 @@ bool patch_setup(Config* cf) {
         write_bytes(0x50D67A, old_bytes, new_bytes, sizeof(new_bytes));
     }
 
-    /*
-    Additional combat bonus options (including PSI).
-    */
     if (cf->modify_unit_morale) {
         write_jump(0x5C0E40, (int)mod_morale_veh);
         write_call(0x50211F, (int)mod_get_basic_offense);
@@ -744,7 +746,9 @@ bool patch_setup(Config* cf) {
         write_call(0x5044EB, (int)mod_get_basic_offense);
         write_call(0x502A69, (int)mod_get_basic_defense);
     }
-    // These options below should be always enabled
+    /*
+    Additional combat bonus options for PSI effects.
+    */
     {
         const byte old_bytes[] = {0x8B,0xC7,0x99,0x2B,0xC2,0xD1,0xF8};
         const byte new_bytes[] = {0x57,0xE8,0x00,0x00,0x00,0x00,0x5F};

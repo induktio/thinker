@@ -12,11 +12,10 @@ const int RegisterClassImport = 0x66929C;
 const int GetSystemMetricsImport = 0x669334;
 const int GetPrivateProfileStringAImport = 0x669108;
 
-const int StrBufLen = 256;
-
 void write_jump(int addr, int func);
+void short_jump(int addr);
 void write_call(int addr, int func);
-void write_offset(int addr, const void* ofs);
+void write_offset(int addr, const void* offset);
 void write_bytes(int addr, const byte* old_bytes, const byte* new_bytes, int len);
 void remove_call(int addr);
 bool patch_setup(Config* cf);

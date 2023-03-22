@@ -142,7 +142,7 @@ enum VehPlan {
     PLAN_AUTO_CALCULATE = -1,
 };
 
-enum VehAbility {
+enum VehAbl {
     ABL_ID_SUPER_TERRAFORMER = 0,
     ABL_ID_DEEP_RADAR = 1,
     ABL_ID_CLOAKED = 2,
@@ -174,7 +174,7 @@ enum VehAbility {
     ABL_ID_ALGO_ENHANCEMENT = 28,
 };
 
-enum VehAbilityFlag {
+enum VehAblFlag {
     ABL_NONE = 0,
     ABL_SUPER_TERRAFORMER = 0x1,
     ABL_DEEP_RADAR = 0x2,
@@ -207,7 +207,7 @@ enum VehAbilityFlag {
     ABL_ALGO_ENHANCEMENT = 0x10000000,
 };
 
-enum VehAbilityRules {
+enum VehAblRules {
     AFLAG_ALLOWED_LAND_UNIT = 0x1,
     AFLAG_ALLOWED_SEA_UNIT = 0x2,
     AFLAG_ALLOWED_AIR_UNIT = 0x4,

@@ -66,6 +66,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->editor_free_units = atoi(value);
     } else if (MATCH("thinker", "new_base_names")) {
         cf->new_base_names = atoi(value);
+    } else if (MATCH("thinker", "new_unit_names")) {
+        cf->new_unit_names = atoi(value);
     } else if (MATCH("thinker", "windowed")) {
         cf->windowed = atoi(value);
     } else if (MATCH("thinker", "window_width")) {

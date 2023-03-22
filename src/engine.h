@@ -310,15 +310,15 @@ extern char** Repute;
 
 
 typedef int(__cdecl *Fbattle_fight_1)(int veh_id, int offset, bool use_table_offset, int v1, int v2);
-typedef int(__cdecl *Fpropose_proto)(int faction, VehChassis chassis, VehWeapon weapon, VehArmor armor,
+typedef int(__cdecl *Fpropose_proto)(int faction_id, VehChassis chassis, VehWeapon weapon, VehArmor armor,
     int abilities, VehReactor reactor, VehPlan ai_plan, const char* name);
 typedef int(__cdecl *Fact_airdrop)(int veh_id, int x, int y, int veh_attack_flags);
 typedef int(__cdecl *Fact_destroy)(int veh_id, int flags, int x, int y);
 typedef int(__cdecl *Fact_gate)(int veh_id, int base_id);
 typedef int(__cdecl *Fhas_abil)(int unit_id, int ability_flag);
 typedef int(__cdecl *Fparse_says)(int index, const char* text, int v1, int v2);
-typedef int(__cdecl *Fhex_cost)(int unit_id, int faction, int x1, int y1, int x2, int y2, int a7);
-typedef void(__cdecl *Fname_base)(int faction, char* name, bool save_offset, bool sea_base);
+typedef int(__cdecl *Fhex_cost)(int unit_id, int faction_id, int x1, int y1, int x2, int y2, int a7);
+typedef void(__cdecl *Fname_base)(int faction_id, char* name, bool save_offset, bool sea_base);
 typedef int(__cdecl *Fveh_cost)(int item_id, int base_id, int* ptr);
 typedef int (__cdecl *Fsave_daemon)(const char* filename);
 typedef int(__cdecl *Fbase_at)(int x, int y);
@@ -328,6 +328,8 @@ typedef int (__cdecl *FX_pop)(const char* filename, const char* label, int a3, i
 typedef int (__cdecl *FX_pops)(const char* filename, const char* label,
     int a3, int a4, int a5, int a6, int a7, int a8, int a9);
 typedef int(__cdecl *Fpop_ask_number)(const char *filename, const char* label, int value, int a4);
+typedef int(__cdecl *Fname_proto)(char* name, int unit_id, int faction_id,
+VehChassis chassis, VehWeapon weapon, VehArmor armor, VehAblFlag abls, VehReactor reactor);
 
 typedef int(__thiscall *FMapWin_pixel_to_tile)(Console* This, int x, int y, long* px, long* py);
 typedef int(__thiscall *FMapWin_tile_to_pixel)(Console* This, int x, int y, long* px, long* py);
@@ -721,7 +723,7 @@ extern fp_3int say_stats;
 extern fp_1int clear_bunglist;
 extern fp_2int sub_57DF30;
 extern fp_6int is_bunged;
-extern fp_8int name_proto;
+extern Fname_proto name_proto;
 //extern fp_1int best_reactor;
 extern fp_3int pick_chassis;
 extern fp_3int weapon_budget;

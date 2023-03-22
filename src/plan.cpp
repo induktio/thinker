@@ -3,11 +3,13 @@
 
 
 void create_proto(int faction, VehChassis chassis, VehWeapon weapon, VehArmor armor,
-int abilities, VehReactor reactor, VehPlan ai_plan, const char* name)
+VehAblFlag abls, VehReactor reactor, VehPlan ai_plan)
 {
+    char name[256];
+    mod_name_proto(name, -1, faction, chassis, weapon, armor, abls, reactor);
     debug("propose_proto %d %d chs: %d rec: %d wpn: %2d arm: %2d plan: %2d %08X %s\n",
-    *current_turn, faction, chassis, reactor, weapon, armor, ai_plan, abilities, name);
-    propose_proto(faction, chassis, weapon, armor, abilities, reactor, ai_plan, name);
+        *current_turn, faction, chassis, reactor, weapon, armor, ai_plan, abls, name);
+    propose_proto(faction, chassis, weapon, armor, abls, reactor, ai_plan, (strlen(name) ? name : NULL));
 }
 
 void design_units(int faction) {
@@ -20,38 +22,32 @@ void design_units(int faction) {
         (has_chassis(i, CHS_SPEEDER) ? CHS_SPEEDER : CHS_INFANTRY);
     VehChassis chs_ship = has_chassis(i, CHS_CRUISER) ? CHS_CRUISER :
         (has_chassis(i, CHS_FOIL) ? CHS_FOIL : CHS_INFANTRY);
-    VehAbility DefendAbls[] =
+    VehAbl DefendAbls[] =
         {ABL_ID_AAA, ABL_ID_COMM_JAMMER, ABL_ID_POLICE_2X, ABL_ID_TRANCE, ABL_ID_TRAINED};
     bool twoabl = has_tech(Rules->tech_preq_allow_2_spec_abil, i);
-    char buf[256];
 
     if (has_weapon(i, WPN_PROBE_TEAM)) {
         if (chs_ship != CHS_INFANTRY) {
             VehChassis ship = (rec == REC_FISSION && has_chassis(i, CHS_FOIL) ? CHS_FOIL : chs_ship);
-            int algo = has_ability(i, ABL_ID_ALGO_ENHANCEMENT, chs_ship, WPN_PROBE_TEAM)
+            VehAblFlag algo = has_ability(i, ABL_ID_ALGO_ENHANCEMENT, chs_ship, WPN_PROBE_TEAM)
                 ? ABL_ALGO_ENHANCEMENT : ABL_NONE;
-            char* name = parse_str(buf, MaxProtoNameLen,
-                Armor[(rec >= REC_FUSION ? arm : ARM_NO_ARMOR)].name_short,
-                Chassis[ship].offsv1_name, "Probe", NULL);
             create_proto(i, ship, WPN_PROBE_TEAM,
-                (rec >= REC_FUSION ? arm : ARM_NO_ARMOR), algo, rec, PLAN_INFO_WARFARE, name);
+                (rec >= REC_FUSION ? arm : ARM_NO_ARMOR), algo, rec, PLAN_INFO_WARFARE);
         }
         if (arm != ARM_NO_ARMOR && rec >= REC_FUSION) {
-            int algo = has_ability(i, ABL_ID_ALGO_ENHANCEMENT, chs_land, WPN_PROBE_TEAM)
+            VehAblFlag algo = has_ability(i, ABL_ID_ALGO_ENHANCEMENT, chs_land, WPN_PROBE_TEAM)
                 ? ABL_ALGO_ENHANCEMENT : ABL_NONE;
-            char* name = parse_str(buf, MaxProtoNameLen, Armor[arm].name_short,
-                Chassis[chs_land].offsv1_name, "Probe", NULL);
-            create_proto(i, chs_land, WPN_PROBE_TEAM, arm, algo, rec, PLAN_INFO_WARFARE, name);
+            create_proto(i, chs_land, WPN_PROBE_TEAM, arm, algo, rec, PLAN_INFO_WARFARE);
         }
     }
     if (chs_ship != CHS_INFANTRY && Weapon[wpn].offense_value >= 4) {
         VehArmor arm_ship = Weapon[wpn].offense_value >= 10 || rec >= REC_FUSION ? arm_cheap : ARM_NO_ARMOR;
-        create_proto(i, chs_ship, wpn, arm_ship, ABL_NONE, rec, PLAN_OFFENSIVE, NULL);
+        create_proto(i, chs_ship, wpn, arm_ship, ABL_NONE, rec, PLAN_OFFENSIVE);
     }
     if (arm != ARM_NO_ARMOR) {
         int abls = 0;
         int num = 0;
-        for (VehAbility v : DefendAbls) {
+        for (VehAbl v : DefendAbls) {
             if (v == ABL_ID_POLICE_2X && !need_police(i)) {
                 continue;
             }
@@ -66,22 +62,22 @@ void design_units(int faction) {
                 break;
             }
         }
-        create_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, abls, rec, PLAN_DEFENSIVE, NULL);
+        create_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, (VehAblFlag)abls, rec, PLAN_DEFENSIVE);
 
         if (~abls & ABL_POLICE_2X && need_police(i)
         && has_ability(i, ABL_ID_POLICE_2X, CHS_INFANTRY, WPN_HAND_WEAPONS)) {
-            create_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, ABL_POLICE_2X, rec, PLAN_DEFENSIVE, NULL);
+            create_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, ABL_POLICE_2X, rec, PLAN_DEFENSIVE);
         }
     }
     if (has_chassis(i, CHS_NEEDLEJET)) {
         if (has_ability(i, ABL_ID_AIR_SUPERIORITY, CHS_NEEDLEJET, wpn)) {
             int abls = ABL_AIR_SUPERIORITY
-                | (twoabl && has_ability(i, ABL_ID_DEEP_RADAR, CHS_NEEDLEJET, wpn) ? ABL_DEEP_RADAR : 0);
-            create_proto(i, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, abls, rec, PLAN_AIR_SUPERIORITY, NULL);
+                | (twoabl && has_ability(i, ABL_ID_DEEP_RADAR, CHS_NEEDLEJET, wpn) ? ABL_DEEP_RADAR : ABL_NONE);
+            create_proto(i, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, (VehAblFlag)abls, rec, PLAN_AIR_SUPERIORITY);
         }
         if (has_ability(i, ABL_ID_DISSOCIATIVE_WAVE, CHS_NEEDLEJET, wpn)
         && has_ability(i, ABL_ID_AAA, CHS_INFANTRY, wpn)) {
-            create_proto(i, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, ABL_DISSOCIATIVE_WAVE, rec, PLAN_OFFENSIVE, NULL);
+            create_proto(i, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, ABL_DISSOCIATIVE_WAVE, rec, PLAN_OFFENSIVE);
         }
     }
     if (has_weapon(i, WPN_TERRAFORMING_UNIT) && rec >= REC_FUSION) {
@@ -91,13 +87,11 @@ void design_units(int faction) {
             ? ABL_SUPER_TERRAFORMER : ABL_NONE)
             | (twoabl && !grav && has_ability(i, ABL_ID_FUNGICIDAL, chs, WPN_TERRAFORMING_UNIT)
             ? ABL_FUNGICIDAL : ABL_NONE);
-        create_proto(i, chs, WPN_TERRAFORMING_UNIT, ARM_NO_ARMOR, abls,
-            REC_FUSION, PLAN_TERRAFORMING, NULL);
+        create_proto(i, chs, WPN_TERRAFORMING_UNIT, ARM_NO_ARMOR, (VehAblFlag)abls,
+            REC_FUSION, PLAN_TERRAFORMING);
     }
     if (has_weapon(i, WPN_SUPPLY_TRANSPORT) && rec >= REC_FUSION && arm_cheap != ARM_NO_ARMOR) {
-        char* name = parse_str(buf, MaxProtoNameLen, Reactor[REC_FUSION-1].name_short,
-            Armor[arm_cheap].name_short, "Supply", NULL);
-        create_proto(i, CHS_INFANTRY, WPN_SUPPLY_TRANSPORT, arm_cheap, ABL_NONE, REC_FUSION, PLAN_DEFENSIVE, name);
+        create_proto(i, CHS_INFANTRY, WPN_SUPPLY_TRANSPORT, arm_cheap, ABL_NONE, REC_FUSION, PLAN_DEFENSIVE);
     }
 }
 
@@ -229,21 +223,9 @@ void plans_upkeep(int faction) {
         int population[MaxBaseNum];
         Faction* f = &Factions[i];
 
-        plans[i].unknown_factions = 0;
-        plans[i].contacted_factions = 0;
-        plans[i].enemy_factions = 0;
-        plans[i].diplo_flags = 0;
-        plans[i].enemy_nukes = 0;
-        plans[i].enemy_bases = 0;
-        plans[i].enemy_odp = 0;
-        plans[i].enemy_sat = 0;
-        plans[i].enemy_mil_factor = 0;
-        plans[i].land_combat_units = 0;
-        plans[i].sea_combat_units = 0;
-        plans[i].air_combat_units = 0;
-        plans[i].probe_units = 0;
-        plans[i].missile_units = 0;
-        plans[i].transport_units = 0;
+        memset((void*)&plans[i], 0, sizeof(AIPlans));
+        assert(!plans[i].main_region);
+        assert(plans[(i+1)&7].main_region);
         update_main_region(faction);
         former_plans(faction);
 

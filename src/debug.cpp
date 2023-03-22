@@ -174,7 +174,7 @@ void print_map(int x, int y) {
 
 void print_veh(int id) {
     VEH* v = &Vehicles[id];
-    int moves = veh_speed(id);
+    int moves = veh_speed(id, 0);
     debug("VEH %24s %3d %3d %d order: %2d %c %3d %3d -> %3d %3d moves: %2d speed: %2d damage: %d "
         "state: %08x flags: %04x vis: %02x mor: %d iter: %d angle: %d\n",
         Units[v->unit_id].name, v->unit_id, id, v->faction_id,

@@ -179,7 +179,7 @@ int __cdecl base_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, i
         && Factions[faction_id].SE_planet <= 0) {
             return cost + Rules->move_rate_roads * 2;
         }
-        int value = speed_proto(unit_id);
+        int value = proto_speed(unit_id);
         if (cost <= value) {
             return value;
         }
@@ -209,7 +209,7 @@ int __cdecl mod_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, in
     }
     if (conf.fast_fungus_movement > 0) {
         if (!is_ocean(sq_b) && sq_b->is_fungus()) {
-            value = min(max(speed_proto(unit_id), Rules->move_rate_roads), value);
+            value = min(max(proto_speed(unit_id), Rules->move_rate_roads), value);
         }
     }
     return value;

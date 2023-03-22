@@ -439,7 +439,7 @@ bool base_pop_boom(int base_id) {
 }
 
 bool can_use_teleport(int base_id) {
-    return has_facility(FAC_PSI_GATE, base_id)
+    return has_fac_built(FAC_PSI_GATE, base_id)
         && ~Bases[base_id].state_flags & BSTATE_PSI_GATE_USED;
 }
 

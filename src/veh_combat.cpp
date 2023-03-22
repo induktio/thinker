@@ -101,8 +101,11 @@ int __cdecl mod_morale_veh(int veh_id, bool check_drone_riot, int faction_id_vs_
     int unit_id = Vehs[veh_id].unit_id;
     int home_base_id = Vehs[veh_id].home_base_id;
     int value;
+    if (!conf.modify_unit_morale) {
+        return morale_veh(veh_id, check_drone_riot, faction_id_vs_native);
+    }
     if (!faction_id) {
-        return morale_alien(veh_id, faction_id_vs_native);
+        return mod_morale_alien(veh_id, faction_id_vs_native);
     }
     if (Units[unit_id].plan == PLAN_INFO_WARFARE) {
         int probe_morale = clamp(Factions[faction_id].SE_probe, 0, 3);
@@ -134,20 +137,9 @@ int __cdecl mod_morale_veh(int veh_id, bool check_drone_riot, int faction_id_vs_
     /*
     Fix: Removed checks for Children's Creche and Brood Pit in home_base_id.
     CC is not supposed to affect units outside base tile according to the manual.
-    Brood Pit implementation is bugged in the game engine and the check for BP in
-    this location is never reached due to above 'Basic Psi Veh' checks.
-    BP still affects native unit lifecycle when they are created.
+    Brood Pit implementation is bugged in the game engine and the original check
+    for BP in this location is never reached due to above 'Basic Psi Veh' checks.
     */
-//    if (home_base_id >= 0) { // home base countering negative effects
-//        if (morale_modifier < 0 && has_fac_built(FAC_CHILDREN_CRECHE, home_base_id)) {
-//            morale_modifier /= 2;
-//        }
-//        if (has_fac_built(FAC_BROOD_PIT, home_base_id) && unit_id < MaxProtoFactionNum
-//        && (Units[unit_id].offense_value() < 0 || unit_id == BSC_SPORE_LAUNCHER)
-//        && morale_modifier < 0) {
-//            morale_modifier /= 2;
-//        }
-//    }
     if (rule_morale > 0) {
         morale_modifier += rule_morale;
     }
@@ -173,7 +165,7 @@ int __cdecl mod_get_basic_offense(int veh_id_atk, int veh_id_def, int psi_combat
     int unit_id_atk = Vehs[veh_id_atk].unit_id;
     int morale;
     if (faction_id_atk) {
-        morale = (conf.modify_unit_morale ? mod_morale_veh(veh_id_atk, true, 0) : morale_veh(veh_id_atk, true, 0));
+        morale = mod_morale_veh(veh_id_atk, true, 0);
     } else {
         morale = mod_morale_alien(veh_id_atk, veh_id_def >= 0 ? Vehs[veh_id_def].faction_id : -1);
     }
@@ -191,12 +183,12 @@ int __cdecl mod_get_basic_offense(int veh_id_atk, int veh_id_def, int psi_combat
             if (!native_unit) {
                 morale -= morale_active;
             }
-        } else if (has_fac_built(FAC_BROOD_PIT, base_id_atk) && native_unit) {
+        } else if (native_unit && has_fac_built(FAC_BROOD_PIT, base_id_atk)) {
             morale++;
         }
         if (unk_tgl) {
             int morale_pending = Factions[faction_id_atk].SE_morale_pending;
-            if (morale_pending >= 2 && morale_pending <= 3) {
+            if (!native_unit && morale_pending >= 2 && morale_pending <= 3) {
                 morale++;
             }
             if (veh_id_def >= 0) {
@@ -236,7 +228,7 @@ int __cdecl mod_get_basic_defense(int veh_id_def, int veh_id_atk, int psi_combat
     int base_id_def = base_at(Vehs[veh_id_def].x, Vehs[veh_id_def].y);
     int morale;
     if (faction_id_def) {
-        morale = (conf.modify_unit_morale ? mod_morale_veh(veh_id_def, true, 0) : morale_veh(veh_id_def, true, 0));
+        morale = mod_morale_veh(veh_id_def, true, 0);
     } else {
         morale = mod_morale_alien(veh_id_def, veh_id_atk >= 0 ? Vehs[veh_id_atk].faction_id : -1);
     }
@@ -253,7 +245,7 @@ int __cdecl mod_get_basic_defense(int veh_id_def, int veh_id_atk, int psi_combat
             if (!native_unit) {
                 morale -= morale_active;
             }
-        } else if (has_fac_built(FAC_BROOD_PIT, base_id_def) && native_unit) {
+        } else if (native_unit && has_fac_built(FAC_BROOD_PIT, base_id_def)) {
             morale++;
         }
         // Fix: manual has "Units in a headquarters base automatically gain +1 Morale when defending."
@@ -261,7 +253,7 @@ int __cdecl mod_get_basic_defense(int veh_id_def, int veh_id_atk, int psi_combat
             morale++;
         }
         int morale_pending = Factions[faction_id_def].SE_morale_pending;
-        if (morale_pending >= 2 && morale_pending <= 3) {
+        if (!native_unit && morale_pending >= 2 && morale_pending <= 3) {
             morale++;
         }
         if (veh_id_atk >= 0 && !Vehs[veh_id_atk].faction_id) {
