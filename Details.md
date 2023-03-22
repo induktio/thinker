@@ -110,17 +110,18 @@ Another notable change is the introduction of reduced unit healing rates. In the
 
 Related to combat mechanics, it is also possible to adjust movement speeds on magtubes with `magtube_movement_rate` setting. By default this setting allows zero cost movement on magtubes but it can be changed for example to allow twice as fast movement compared to normal roads.
 
-Setting magtube movement rate too high (non-zero) may cause potential variable overflow issues for fast aircraft units with special abilities that extend the range. In this case the mod will display an error message and disable the feature.
+Setting magtube movement rate higher than 3 is not recommended because it may cause variable overflow issues for fast aircraft units. In this case the game will limit the maximum allowed speed for such units.
 
 When bases are captured from another faction, the captured base extra drone psych effect is shown separately on the psych window. While in vanilla game this period was always 50 turns, in the modded version this depends on the population size and facilities in the captured base, and it can range from 20 to 50 turns. This makes it somewhat easier to assimilate smaller bases while larger bases will still take a long time to switch previous owner.
 
 In the original game, combat morale calculation contained numerous bugs and contradictions with the game manual. These issues particularly with Children's Creche and Brood Pit are further described in [this article](https://alphacentauri2.info/wiki/Morale_(Advanced)).
 
-In the patched version enabled by default, units in a headquarters base automatically gain +1 Morale when defending as mentioned in the manual.
-When the unit's home base is experiencing drone riots, this always applies -1 Morale unless the faction has a special rule for ignoring negative morale modifiers. For independent units drone riots have no effect.
+In the patched version enabled by default, units in the headquarters base automatically gain +1 morale when defending as mentioned in the manual.
+For non-native units, when the home base is experiencing drone riots, this always applies -1 morale unless the faction has a special rule for ignoring negative morale modifiers.
+For independent units drone riots have no effect.
 
-When either unit involved in combat is inside the base tile, Children's Creche grants +1 Morale and cancels penalties from negative SE Morale rating.
-For native units inside the base tile and in the absence of Creche, Brood Pit grants +1 Lifecycle. This effect does not stack with Creche and has no effect on non-native units.
+When the unit involved in combat is inside the base tile, Children's Creche grants +1 morale for all units and cancels penalties from negative SE morale rating for non-native units.
+For native units inside the base tile and in the absence of Creche, Brood Pit grants +1 lifecycle. This effect does not stack with Creche and has no effect on non-native units.
 Neither Creche nor Brood Pit affects combat outside the base tile even if the unit's home base contains such facilities. Like before, Brood Pit still affects native unit lifecycle when they are built.
 
 
