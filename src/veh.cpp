@@ -57,29 +57,31 @@ bool __cdecl has_abil(int unit_id, VehAblFlag ability) {
 bool has_ability(int faction, VehAbl abl, VehChassis chs, VehWeapon wpn) {
     int F = Ability[abl].flags;
     int triad = Chassis[chs].triad;
+    bool is_combat = Weapon[wpn].offense_value != 0;
+    bool is_former = Weapon[wpn].mode == WMODE_TERRAFORMER;
+    bool is_probe = Weapon[wpn].mode == WMODE_INFOWAR;
 
     if ((triad == TRIAD_LAND && ~F & AFLAG_ALLOWED_LAND_UNIT)
     || (triad == TRIAD_SEA && ~F & AFLAG_ALLOWED_SEA_UNIT)
     || (triad == TRIAD_AIR && ~F & AFLAG_ALLOWED_AIR_UNIT)) {
         return false;
     }
-    if ((~F & AFLAG_ALLOWED_COMBAT_UNIT && wpn <= WPN_PSI_ATTACK)
-    || (~F & AFLAG_ALLOWED_TERRAFORM_UNIT && wpn == WPN_TERRAFORMING_UNIT)
-    || (~F & AFLAG_ALLOWED_NONCOMBAT_UNIT
-    && wpn > WPN_PSI_ATTACK && wpn != WPN_TERRAFORMING_UNIT)) {
+    if ((~F & AFLAG_ALLOWED_COMBAT_UNIT && is_combat)
+    || (~F & AFLAG_ALLOWED_TERRAFORM_UNIT && is_former)
+    || (~F & AFLAG_ALLOWED_NONCOMBAT_UNIT && !is_combat && !is_former)) {
         return false;
     }
-    if ((F & AFLAG_NOT_ALLOWED_PROBE_TEAM && wpn == WPN_PROBE_TEAM)
-    || (F & AFLAG_ONLY_PROBE_TEAM && wpn != WPN_PROBE_TEAM)) {
+    if ((F & AFLAG_NOT_ALLOWED_PROBE_TEAM && is_probe)
+    || (F & AFLAG_ONLY_PROBE_TEAM && !is_probe)) {
         return false;
     }
-    if (F & AFLAG_TRANSPORT_ONLY_UNIT && wpn != WPN_TROOP_TRANSPORT) {
+    if (F & AFLAG_TRANSPORT_ONLY_UNIT && Weapon[wpn].mode != WMODE_TRANSPORT) {
         return false;
     }
     if (F & AFLAG_NOT_ALLOWED_FAST_UNIT && Chassis[chs].speed > 1) {
         return false;
     }
-    if (F & AFLAG_NOT_ALLOWED_PSI_UNIT && wpn == WPN_PSI_ATTACK) {
+    if (F & AFLAG_NOT_ALLOWED_PSI_UNIT && Weapon[wpn].offense_value < 0) {
         return false;
     }
     return has_tech(Ability[abl].preq_tech, faction);
@@ -199,6 +201,140 @@ int __cdecl veh_cargo(int veh_id) {
 }
 
 /*
+Calculates cost of the prototype based on various factors. Optimized logic flow from
+the original without any differences to the final calculation.
+*/
+int __cdecl mod_proto_cost(VehChassis chassis_id, VehWeapon weapon_id,
+VehArmor armor_id, VehAblFlag ability, VehReactor reactor_id) {
+    uint8_t weap_cost = Weapon[weapon_id].cost;
+    // PB check: moved to start vs after 1st triad checks in original > no difference in logic
+    if (Chassis[chassis_id].missile && Weapon[weapon_id].offense_value >= 99) {
+        return weap_cost;
+    }
+    uint8_t triad = Chassis[chassis_id].triad;
+    uint32_t armor_cost = Armor[armor_id].cost;
+    uint32_t speed_cost = Chassis[chassis_id].cost;
+    int abil_modifier = 0;
+    int flags_modifier = 0;
+    if (ability) {
+        for (int i = 0; i < MaxAbilityNum; i++) {
+            if ((1 << i) & ability) {
+                if (abil_modifier) {
+                    abil_modifier++; // Increased cost with more than one ability
+                }
+                int factor = Ability[i].cost;
+                if (factor > 0) { // 1+ = Straight Cost; 25% increase per unit of cost
+                    abil_modifier += factor;
+                } else {
+                    switch (factor) {
+                      case 0: // None
+                      default:
+                        break;
+                        // Increases w/ ratio of weapon to armor: 0, 1, or 2. Rounded DOWN.
+                        // Never higher than 2.
+                      case -1:
+                        // fixed potential crash: will never trigger in vanilla but could with mods
+                        if (armor_cost) {
+                            abil_modifier += clamp(weap_cost / armor_cost, 0u, 2u);
+                        }
+                        break;
+                      case -2: // Increases w/ weapon value
+                        abil_modifier += weap_cost - 1;
+                        break;
+                      case -3: // Increases w/ armor value
+                        abil_modifier += armor_cost - 1;
+                        break;
+                      case -4: // Increases w/ speed value
+                        abil_modifier += speed_cost - 1;
+                        break;
+                      case -5: // Increases w/ weapon+armor value
+                        abil_modifier += weap_cost + armor_cost - 2;
+                        break;
+                      case -6: // Increases w/ weapon+speed value
+                        abil_modifier += weap_cost + speed_cost - 2;
+                        break;
+                      case -7: // Increases w/ armor+speed value
+                        abil_modifier += armor_cost + speed_cost - 2;
+                        break;
+                    }
+                }
+                // 010000000000 - Cost increased for land units; Deep Radar
+                // Shifted flag check into main ability loop rather than its
+                // own loop at 1st triad checks
+                if (Ability[i].flags & AFLAG_COST_INC_LAND_UNIT && triad == TRIAD_LAND) {
+                    // separate variable keeps logic same (two abilities, both with cost 0,
+                    // one with cost increase flag will trigger above "if (abil_modifier)" if
+                    // this is directly abil_modifier++)
+                    flags_modifier++;
+                }
+            }
+        }
+        abil_modifier += flags_modifier; // adding here keeps logic consistent after optimization
+    }
+    if (triad == TRIAD_SEA) {
+        armor_cost /= 2;
+        speed_cost += reactor_id;
+    } else if (triad == TRIAD_AIR) {
+        if (armor_cost > 1) {
+            armor_cost *= reactor_id * 2;
+        }
+        speed_cost += reactor_id * 2;
+    } // TRIAD_LAND ability flag check moved into ability loop above
+    uint32_t combat_mod = armor_cost / 2 + 1;
+    if (combat_mod < weap_cost) { // which ever is greater
+        combat_mod = weap_cost;
+    }
+    int proto_mod;
+    // shifted this check to top vs at end > no difference in logic
+    if (combat_mod == 1 && armor_cost == 1 && speed_cost == 1 && reactor_id == REC_FISSION) {
+        proto_mod = 1;
+    } else {
+        // (2 << n) == 2^(n + 1) ; (2 << n) / 2 == 2 ^ n;
+        // will crash if reactor_id is 0xFF > divide by zero; not putting in error checking
+        // since this is unlikely even with modding however noting for future
+        proto_mod = ((speed_cost + armor_cost) * combat_mod + ((2 << reactor_id) / 2))
+            / (2 << reactor_id);
+        if (speed_cost == 1) {
+            proto_mod = (proto_mod / 2) + 1;
+        }
+        if (weap_cost > 1 && Armor[armor_id].cost > 1) {
+            proto_mod++;
+            // moved inside nested check vs separate triad checks below > no difference in logic
+            if (triad == TRIAD_LAND && speed_cost > 1) {
+                proto_mod++;
+            }
+        }
+        // excludes sea probes
+        if (triad == TRIAD_SEA && Weapon[weapon_id].mode != WMODE_INFOWAR) {
+            proto_mod = (proto_mod + 1) / 2;
+        } else if (triad == TRIAD_AIR) {
+            proto_mod /= (Weapon[weapon_id].mode > WMODE_MISSILE) ? 2 : 4; // Non-combat : Combat
+        }
+        int reactor_mod = (reactor_id * 3 + 1) / 2;
+        if (proto_mod < reactor_mod) { // which ever is greater
+            proto_mod = reactor_mod;
+        }
+    }
+    int cost = (proto_mod * (abil_modifier + 4) + 2) / 4;
+//    debug("proto_cost %d %d %d %d %d cost: %d\n",
+//        chassis_id, weapon_id, armor_id, ability, reactor_id, cost);
+    assert(cost == proto_cost(chassis_id, weapon_id, armor_id, ability, reactor_id));
+    return cost;
+}
+
+/*
+Calculates the base cost of the specified unit (without prototype modifiers).
+*/
+int __cdecl mod_base_cost(int unit_id) {
+    return mod_proto_cost(
+        (VehChassis)Units[unit_id].chassis_id,
+        (VehWeapon)Units[unit_id].weapon_id,
+        (VehArmor)Units[unit_id].armor_id,
+        ABL_NONE,
+        (VehReactor)Units[unit_id].reactor_id);
+}
+
+/*
 Calculate the specified prototype's mineral row cost to build. Optional output parameter
 whether there is an associated 1st time prototype cost (true) or just the base (false).
 Note that has_proto_cost is treated as int32_t variable in the game engine.
@@ -216,13 +352,38 @@ int __cdecl mod_veh_cost(int unit_id, int base_id, int* has_proto_cost) {
     int proto_cost_first = 0;
     if (unit_id >= MaxProtoFactionNum && !Units[unit_id].is_prototyped()) {
         proto_cost_first = (base_id >= 0 && has_fac_built(FAC_SKUNKWORKS, base_id))
-            ? 0 : (prototype_factor(unit_id) * base_cost(unit_id) + 50) / 100; // moved checks up
+            ? 0 : (prototype_factor(unit_id) * mod_base_cost(unit_id) + 50) / 100; // moved checks up
         cost += proto_cost_first;
     }
     if (has_proto_cost) {
         *has_proto_cost = proto_cost_first != 0;
     }
     assert(cost == veh_cost(unit_id, base_id, 0));
+    return cost;
+}
+
+/*
+Calculate unit upgrade cost in mineral rows. This version modifies crawler upgrade costs.
+*/
+int __cdecl mod_upgrade_cost(int faction, int new_unit_id, int old_unit_id) {
+    UNIT* old_unit = &Units[old_unit_id];
+    UNIT* new_unit = &Units[new_unit_id];
+    int modifier = new_unit->cost;
+
+    if (old_unit->is_supply()) {
+        return 4*max(1, new_unit->cost - old_unit->cost);
+    }
+    if (new_unit_id >= MaxProtoFactionNum && !new_unit->is_prototyped()) {
+        modifier = ((new_unit->cost + 1) / 2 + new_unit->cost)
+            * ((new_unit->cost + 1) / 2 + new_unit->cost + 1);
+    }
+    int cost = max(0, new_unit->speed() - old_unit->speed())
+        + max(0, new_unit->armor_cost() - old_unit->armor_cost())
+        + max(0, new_unit->weapon_cost() - old_unit->weapon_cost())
+        + modifier;
+    if (has_project(FAC_NANO_FACTORY, faction)) {
+        cost /= 2;
+    }
     return cost;
 }
 
@@ -334,20 +495,50 @@ int __cdecl probe_return_base(int UNUSED(x), int UNUSED(y), int veh_id) {
     return find_return_base(veh_id);
 }
 
-void parse_abl_name(char* buf, uint32_t abls) {
-    buf[0] = '\0';
-    for (int i = 0; i < MaxAbilityNum; i++) {
-        // Skip empty abbreviation names (Deep Radar)
-        if (abls & (1 << i) && strlen(Ability[i].abbreviation)) {
-            strncat(buf, Ability[i].abbreviation, MaxProtoNameLen);
-            strncat(buf, " ", 2);
+void parse_abl_name(char* buf, const char* name, bool reduce) {
+    const int len = min(strlen(name), (size_t)MaxProtoNameLen);
+    // Skip empty abbreviation names (Deep Radar)
+    if (!len) {
+        return;
+    }
+    for (int i = 0; i < len; i++) {
+        if (i >= 3 && reduce && (len >= 8 || !isalpha(name[i]))) {
+            strncat(buf, name, i+1);
+            if (!isspace(name[i]) && name[i] != '-') {
+                strncat(buf, " ", 2);
+            }
+            return;
         }
+    }
+    strncat(buf, name, len);
+    if (!isspace(name[len-1]) && name[len-1] != '-') {
+        strncat(buf, " ", 2);
     }
 }
 
-void parse_arm_name(char* buf, VehArmor arm) {
+void parse_wpn_name(char* buf, VehWeapon wpn, bool reduce) {
+    const char* name = Weapon[wpn].name_short;
+    const int len = min(strlen(name), (size_t)MaxProtoNameLen);
+    if (reduce) {
+        for (int i = 0; i < len; i++) {
+            if (isspace(name[i])) {
+                strncat(buf, name, i+1);
+                return;
+            }
+        }
+    }
+    if (reduce && strlen(name) >= 10) {
+        strncat(buf, name, 8);
+        strncat(buf, " ", 2);
+        return;
+    }
+    strncat(buf, name, MaxProtoNameLen);
+    strncat(buf, " ", 2);
+}
+
+void parse_arm_name(char* buf, VehArmor arm, bool reduce) {
     const char* name = Armor[arm].name_short;
-    if (strlen(name) >= 8) {
+    if (reduce && strlen(name) >= 8) {
         strncat(buf, name, 4);
         strncat(buf, " ", 2);
         return;
@@ -356,11 +547,9 @@ void parse_arm_name(char* buf, VehArmor arm) {
     strncat(buf, " ", 2);
 }
 
-void parse_chs_name(char* buf, VehChassis chs) {
-    const char* name1 = Chassis[chs].offsv1_name;
-    const char* name2 = Chassis[chs].offsv2_name;
+void parse_chs_name(char* buf, const char* name1, const char* name2) {
+    // Convert Speeder to Rover (short form)
     if (strlen(name1) >= 7 && strlen(name1) > strlen(name2) && strlen(name2)) {
-        // Convert Speeder to Rover (short form)
         strncat(buf, name2, MaxProtoNameLen);
         strncat(buf, " ", 2);
         return;
@@ -369,60 +558,143 @@ void parse_chs_name(char* buf, VehChassis chs) {
     strncat(buf, " ", 2);
 }
 
-void parse_wpn_name(char* buf, VehWeapon wpn) {
-    const char* name = Weapon[wpn].name_short;
-    if (strlen(buf) + strlen(name) >= MaxProtoNameLen*3/4) {
-        for (size_t i = 0; i < strlen(name); i++) {
-            if (name[i] == ' ') {
-                strncat(buf, name, i+1);
-                return;
-            }
-        }
-    }
+void parse_chs_name(char* buf, const char* name) {
     strncat(buf, name, MaxProtoNameLen);
+    strncat(buf, " ", 2);
 }
 
 int __cdecl mod_name_proto(char* name, int unit_id, int faction_id,
 VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
     char buf[256];
-
-    if (conf.new_unit_names || !is_human(faction_id)) {
-        if (Weapon[wpn].mode == WMODE_INFOWAR
-        || Weapon[wpn].mode == WMODE_CONVOY
+    bool noncombat = Weapon[wpn].mode == WMODE_CONVOY
+        || Weapon[wpn].mode == WMODE_INFOWAR
         || Weapon[wpn].mode == WMODE_TERRAFORMER
         || Weapon[wpn].mode == WMODE_TRANSPORT
-        || Weapon[wpn].mode == WMODE_COLONIST) {
-            parse_abl_name(buf, abls);
-            if (arm != ARM_NO_ARMOR) {
-                parse_arm_name(buf, arm);
+        || Weapon[wpn].mode == WMODE_COLONIST;
+    bool combat = Weapon[wpn].offense_value != 0
+        && Armor[arm].defense_value != 0 && !Chassis[chs].missile;
+    int triad = Chassis[chs].triad;
+    int spd_v = Chassis[chs].speed;
+    int wpn_v = (Weapon[wpn].offense_value < 0 ? 2 : Weapon[wpn].offense_value);
+    int arm_v = (Armor[arm].defense_value < 0 ? 2 : Armor[arm].defense_value);
+    bool arty = abls & ABL_ARTILLERY;
+    bool marine = abls & ABL_AMPHIBIOUS;
+    bool intercept = abls & ABL_AIR_SUPERIORITY && triad == TRIAD_AIR;
+    bool garrison = combat && !arty && !marine && wpn_v < arm_v && spd_v < 2;
+    uint32_t prefix_abls = abls & ~(ABL_ARTILLERY | ABL_AMPHIBIOUS | ABL_NERVE_GAS
+        | (intercept ? ABL_AIR_SUPERIORITY : 0)); // SAM for ground units
+    const char* mk_label = (*TextLabels)[919]; // Mk (reactors)
+
+    if ((!combat && !noncombat) || (!conf.new_unit_names && (!noncombat || is_human(faction_id)))) {
+        if (unit_id < 0) {
+            if (name) {
+                name[0] = '\0';
             }
-            if (chs != CHS_INFANTRY) {
-                parse_chs_name(buf, chs);
-            }
-            parse_wpn_name(buf, wpn);
-            if (Weapon[wpn].mode != WMODE_INFOWAR && rec > REC_FISSION
-            && strlen(buf) + 5 <= MaxProtoNameLen) {
-                snprintf(name, MaxProtoNameLen, "%s Mk%d", buf, rec);
-                return 0;
-            }
-            strncpy(name, buf, MaxProtoNameLen);
-            name[MaxProtoNameLen - 1] = '\0';
             return 0;
         }
+        return name_proto(name, unit_id, faction_id, chs, wpn, arm, abls, rec);
     }
-    if (unit_id < 0) {
-        if (name) {
-            name[0] = '\0';
+    for (int i = 0; i < 2; i++) {
+        buf[0] = '\0';
+        if (arm_v != 1 && !(combat && wpn_v >= 4*arm_v && arm_v < 4)) {
+            parse_arm_name(buf, arm, i > 0 || abls || rec > REC_FISSION);
         }
-        return 0;
+        if (abls & ABL_NERVE_GAS) {
+            parse_abl_name(buf, Ability[ABL_ID_NERVE_GAS].abbreviation, i > 0);
+        }
+        for (int j = 0; j < MaxAbilityNum; j++) {
+            if (prefix_abls & (1 << j)) {
+                parse_abl_name(buf, Ability[j].abbreviation, i > 0);
+            }
+        }
+        if (combat) {
+            if (!garrison) {
+                if (wpn_v < 2) {
+                    if (spd_v > 1) {
+                        strncat(buf, (*TextLabels)[182], 16); // Recon
+                    } else {
+                        strncat(buf, (*TextLabels)[146], 16); // Scout
+                    }
+                    strncat(buf, " ", 2);
+                } else {
+                    parse_wpn_name(buf, wpn, i > 0);
+                }
+            }
+            if ((!arty && !marine && !intercept) || (arty && spd_v > 1)) {
+                int toggle = (wpn_v + arm_v + 3) & 4;
+                int value = wpn_v - arm_v;
+                if (value <= -1) { // Defensive
+                    if (arm_v >= 8 && wpn_v*2 >= arm_v) {
+                        parse_chs_name(buf, Chassis[chs].defsv_name_lrg);
+                    } else if (toggle) {
+                        parse_chs_name(buf, Chassis[chs].defsv1_name);
+                    } else {
+                        parse_chs_name(buf, Chassis[chs].defsv2_name);
+                    }
+                } else if (value >= 1 || triad == TRIAD_AIR) { // Offensive
+                    if (wpn_v >= 8 && arm_v*2 >= wpn_v) {
+                        parse_chs_name(buf, Chassis[chs].offsv_name_lrg);
+                    } else if (toggle) {
+                        parse_chs_name(buf, Chassis[chs].offsv1_name);
+                    } else {
+                        parse_chs_name(buf, Chassis[chs].offsv2_name);
+                    }
+                } else if ((wpn_v + arm_v + spd_v) & 1) { // Recon units
+                    parse_chs_name(buf, Chassis[chs].offsv1_name);
+                } else {
+                    parse_chs_name(buf, Chassis[chs].offsv2_name);
+                }
+            }
+            if (arty) {
+                if ((wpn_v + arm_v) & 4) {
+                    strncat(buf, (*TextLabels)[543], 16); // Artillery
+                } else {
+                    strncat(buf, (*TextLabels)[544], 16); // Battery
+                }
+                strncat(buf, " ", 2);
+            }
+            if (marine) {
+                if ((wpn_v + arm_v) & 4) {
+                    strncat(buf, (*TextLabels)[614], 16); // Marines
+                } else {
+                    strncat(buf, (*TextLabels)[615], 16); // Invaders
+                }
+                strncat(buf, " ", 2);
+            }
+            if (intercept) {
+                if ((wpn_v + arm_v) & 4) {
+                    parse_chs_name(buf, Chassis[chs].defsv1_name);
+                } else {
+                    parse_chs_name(buf, Chassis[chs].defsv2_name);
+                }
+            }
+        } else {
+            if (spd_v > 1) {
+                parse_chs_name(buf, Chassis[chs].offsv1_name, Chassis[chs].offsv2_name);
+            }
+            parse_wpn_name(buf, wpn, 1);
+        }
+        if (Weapon[wpn].mode != WMODE_INFOWAR && rec > REC_FISSION) {
+            if (strlen(buf) + strlen(mk_label) + 3 <= MaxProtoNameLen) {
+                snprintf(buf, MaxProtoNameLen, "%s%s%d", buf, mk_label, rec);
+            } else if (i == 0) {
+                continue;
+            }
+        }
+        strtrail(buf);
+        if (strlen(buf) + 4 <= MaxProtoNameLen) {
+            break;
+        }
     }
-    return name_proto(name, unit_id, faction_id, chs, wpn, arm, abls, rec);
+    strncpy(name, buf, MaxProtoNameLen);
+    name[MaxProtoNameLen - 1] = '\0';
+    return 0;
 }
 
 VehArmor best_armor(int faction, bool cheap) {
     int ci = ARM_NO_ARMOR;
-    int cv = 4;
-    for (int i=ARM_SYNTHMETAL_ARMOR; i<=ARM_RESONANCE_8_ARMOR; i++) {
+    int cv = 0;
+    for (int i = ARM_NO_ARMOR; i <= ARM_RESONANCE_8_ARMOR; i++) {
         if (has_tech(Armor[i].preq_tech, faction)) {
             int val = Armor[i].defense_value;
             int cost = Armor[i].cost;
@@ -441,8 +713,8 @@ VehArmor best_armor(int faction, bool cheap) {
 
 VehWeapon best_weapon(int faction) {
     int ci = WPN_HAND_WEAPONS;
-    int cv = 4;
-    for (int i=WPN_LASER; i<=WPN_STRING_DISRUPTOR; i++) {
+    int cv = 0;
+    for (int i = WPN_HAND_WEAPONS; i <= WPN_STRING_DISRUPTOR; i++) {
         if (has_tech(Weapon[i].preq_tech, faction)) {
             int iv = Weapon[i].offense_value *
                 (i == WPN_RESONANCE_LASER || i == WPN_RESONANCE_BOLT ? 5 : 4);
@@ -464,16 +736,22 @@ VehReactor best_reactor(int faction) {
     return REC_FISSION;
 }
 
-int offense_value(UNIT* u) {
+int offense_value(int unit_id) {
+    assert(unit_id >= 0 && unit_id < MaxProtoNum);
+    UNIT* u = &Units[unit_id];
     int w = (conf.ignore_reactor_power ? (int)REC_FISSION : u->reactor_id);
-    if (u->weapon_id == WPN_CONVENTIONAL_PAYLOAD) {
-        int wpn = best_weapon(*active_faction);
-        return max(1, Weapon[wpn].offense_value * w);
+    if (u->is_missile() && !u->is_planet_buster()) {
+        // Conv missiles might have nominally low attack rating
+        int faction = unit_id / MaxProtoFactionNum;
+        int max_value = max(1, (int)Weapon[best_weapon(faction)].offense_value);
+        return max_value * w;
     }
     return Weapon[u->weapon_id].offense_value * w;
 }
 
-int defense_value(UNIT* u) {
+int defense_value(int unit_id) {
+    assert(unit_id >= 0 && unit_id < MaxProtoNum);
+    UNIT* u = &Units[unit_id];
     int w = (conf.ignore_reactor_power ? (int)REC_FISSION : u->reactor_id);
     return Armor[u->armor_id].defense_value * w;
 }

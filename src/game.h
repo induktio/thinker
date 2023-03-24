@@ -14,7 +14,6 @@ bool valid_triad(int triad);
 int __cdecl game_year(int n);
 void __cdecl bitmask(uint32_t input, uint32_t* offset, uint32_t* mask);
 int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id);
-int __cdecl mod_upgrade_cost(int faction, int new_unit_id, int old_unit_id);
 
 void init_save_game(int faction);
 void __cdecl mod_auto_save();

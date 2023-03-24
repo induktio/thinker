@@ -1,6 +1,8 @@
 #pragma once
 #pragma pack(push, 1)
 
+extern const int MaxProtoFactionNum;
+
 
 enum Triad {
     TRIAD_NONE = -1, // Thinker variable
@@ -410,6 +412,9 @@ struct UNIT {
     bool is_combat_unit() { // include PSI units
         return Weapon[weapon_id].offense_value != 0;
     }
+    bool is_psi_unit() { // only include PSI attack
+        return Weapon[weapon_id].offense_value < 0;
+    }
     bool is_garrison_unit() {
         return triad() == TRIAD_LAND && Weapon[weapon_id].offense_value != 0
             && (Armor[armor_id].defense_value >= Weapon[weapon_id].offense_value
@@ -523,9 +528,7 @@ struct VEH {
         return Units[unit_id].is_garrison_unit();
     }
     bool is_native_unit() {
-        return unit_id == BSC_MIND_WORMS || unit_id == BSC_ISLE_OF_THE_DEEP
-            || unit_id == BSC_LOCUSTS_OF_CHIRON || unit_id == BSC_SEALURK
-            || unit_id == BSC_SPORE_LAUNCHER || unit_id == BSC_FUNGAL_TOWER;
+        return unit_id < MaxProtoFactionNum && Units[unit_id].is_psi_unit();
     }
     bool is_colony() {
         return Units[unit_id].is_colony();

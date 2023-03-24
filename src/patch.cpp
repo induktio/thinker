@@ -479,6 +479,25 @@ bool patch_setup(Config* cf) {
     write_call(0x59C105, (int)mod_hex_cost);
 
     // Redirected but not modified from vanilla game logic
+    write_call(0x436ADD, (int)mod_proto_cost);
+    write_call(0x43704C, (int)mod_proto_cost);
+    write_call(0x5817C9, (int)mod_proto_cost);
+    write_call(0x581833, (int)mod_proto_cost);
+    write_call(0x581BB3, (int)mod_proto_cost);
+    write_call(0x581BCB, (int)mod_proto_cost);
+    write_call(0x582339, (int)mod_proto_cost);
+    write_call(0x582359, (int)mod_proto_cost);
+    write_call(0x582378, (int)mod_proto_cost);
+    write_call(0x582398, (int)mod_proto_cost);
+    write_call(0x5823B0, (int)mod_proto_cost);
+    write_call(0x582482, (int)mod_proto_cost);
+    write_call(0x58249A, (int)mod_proto_cost);
+    write_call(0x58254A, (int)mod_proto_cost);
+    write_call(0x5827E4, (int)mod_proto_cost);
+    write_call(0x582EC5, (int)mod_proto_cost);
+    write_call(0x582FEC, (int)mod_proto_cost);
+    write_call(0x5A5D35, (int)mod_proto_cost);
+    write_call(0x5A5F15, (int)mod_proto_cost);
     write_call(0x40E666, (int)mod_veh_cost);
     write_call(0x40E9C6, (int)mod_veh_cost);
     write_call(0x418F75, (int)mod_veh_cost);

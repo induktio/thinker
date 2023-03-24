@@ -906,11 +906,13 @@ int find_project(int base_id) {
 Return true if unit2 is strictly better than unit1 in all circumstances (non PSI).
 Disable random chance in prototype choices in these instances.
 */
-bool unit_is_better(UNIT* u1, UNIT* u2) {
+bool unit_is_better(int unit_id1, int unit_id2) {
+    UNIT* u1 = &Units[unit_id1];
+    UNIT* u2 = &Units[unit_id2];
     bool val = (u1->cost >= u2->cost
-        && offense_value(u1) >= 0
-        && offense_value(u1) <= offense_value(u2)
-        && defense_value(u1) <= defense_value(u2)
+        && offense_value(unit_id1) >= 0
+        && offense_value(unit_id1) <= offense_value(unit_id2)
+        && defense_value(unit_id1) <= defense_value(unit_id2)
         && Chassis[u1->chassis_id].speed <= Chassis[u2->chassis_id].speed
         && (Chassis[u2->chassis_id].triad != TRIAD_AIR || u1->chassis_id == u2->chassis_id)
         && !((u1->ability_flags & u2->ability_flags) ^ u1->ability_flags))
@@ -927,7 +929,7 @@ int unit_score(int id, int faction, int cfactor, int minerals, int accumulated, 
         {ABL_AAA, 4},
         {ABL_AIR_SUPERIORITY, 2},
         {ABL_ALGO_ENHANCEMENT, 5},
-        {ABL_AMPHIBIOUS, -3},
+        {ABL_AMPHIBIOUS, -2},
         {ABL_ARTILLERY, -1},
         {ABL_DROP_POD, 3},
         {ABL_EMPATH, 2},
@@ -942,7 +944,7 @@ int unit_score(int id, int faction, int cfactor, int minerals, int accumulated, 
         {ABL_SUPER_TERRAFORMER, 8},
     };
     UNIT* u = &Units[id];
-    int v = 18 * (defend ? defense_value(u) : offense_value(u));
+    int v = 18 * (defend ? defense_value(id) : offense_value(id));
     if (v < 0) {
         v = (defend ? Armor[best_armor(faction, false)].defense_value
             : Weapon[best_weapon(faction)].offense_value)
@@ -951,8 +953,8 @@ int unit_score(int id, int faction, int cfactor, int minerals, int accumulated, 
     }
     if (u->triad() != TRIAD_AIR) {
         v += (defend ? 12 : 32) * u->speed();
-        if (u->triad() == TRIAD_SEA && u->weapon_id <= WPN_PSI_ATTACK
-        && defense_value(u) > offense_value(u)) {
+        if (u->triad() == TRIAD_SEA && u->is_combat_unit()
+        && defense_value(id) > offense_value(id)) {
             v -= 20;
         }
     }
@@ -969,7 +971,7 @@ int unit_score(int id, int faction, int cfactor, int minerals, int accumulated, 
     }
     int turns = max(0, u->cost * cfactor - accumulated) / max(2, minerals);
     int score = v - turns * (u->is_colony() ? 6 : 3)
-        * (max(3, 8 - *current_turn/10) + (minerals < 6 ? 2 : 0));
+        * (max(2, 7 - *current_turn/16) + max(0, 2 - minerals/4));
     debug("unit_score %s cfactor: %d minerals: %d cost: %d turns: %d score: %d\n",
         u->name, cfactor, minerals, u->cost, turns, score);
     return score;
@@ -1014,20 +1016,20 @@ int find_proto(int base_id, Triad triad, VehWeaponMode mode, bool defend) {
             if ((!combat && Weapon[u->weapon_id].mode != mode)
             || (combat && Weapon[u->weapon_id].offense_value == 0)
             || (combat && defend && u->chassis_id != CHS_INFANTRY)
-            || (u->weapon_id == WPN_PSI_ATTACK && plans[faction].psi_score < 1)
+            || (u->is_psi_unit() && plans[faction].psi_score < 1)
             || (is_human(faction) && u->obsolete_factions & (1 << faction))
             || (is_human(faction) && !u->is_prototyped() && ~b->governor_flags & GOV_MAY_PROD_PROTOTYPE)
             || u->is_planet_buster()) {
                 continue;
             }
             if (mode == WMODE_COMBAT && best_id != basic
-            && ((defend && offense_value(u) > defense_value(u))
-            || (!defend && offense_value(u) < defense_value(u)))) {
+            && ((defend && offense_value(id) > defense_value(id))
+            || (!defend && offense_value(id) < defense_value(id)))) {
                 continue;
             }
             int val = unit_score(
                 id, faction, cfactor, b->mineral_surplus, b->minerals_accumulated, defend);
-            if (unit_is_better(&Units[best_id], u) || random(100) > 50 + best_val - val) {
+            if (unit_is_better(best_id, id) || random(100) > 50 + best_val - val) {
                 best_id = id;
                 best_val = val;
                 debug("===> %s\n", Units[best_id].name);

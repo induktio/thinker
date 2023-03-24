@@ -366,7 +366,7 @@ Transzendentes Denken,      TranT,   0, 2, 0, 0, Thresh,  ConSing, 000000000
 ; Voraus.    = Erforderliche Technologie (siehe TECHNOLOGIE)
 ;
 #CHASSIS
-Infanterie,F1,     Truppe,F1,       Wachen,F2,         Garnison,F1,    1, 0, 0, 0, 1, 1, None,     STOSSTRUPPEN,F2,      Elite-Garde,F1,
+Infanterie,F1,     Truppe,F1,       Wachen,F2,         Garnison,F1,    1, 0, 0, 0, 1, 1, None,     Stosstruppen,F2,      Elite-Garde,F1,
 Speeder,M1,        Rover,M1,        Defensive,F1,      Skirmisher,M1,  2, 0, 0, 0, 1, 2, Mobile,   Dragon,M1,            Enforcer,M1,
 Schwebepanzer,M1,  Panzer,M1,       Skimmer,M1,        Ausweichen,N1,  3, 0, 0, 0, 1, 3, NanoMin,  Behemoth,M1,          Guardian,M1,
 Tragflügelboot,N1, Schwebeboot,N1,  Luftkissenboot,N1, Küste,F1,       4, 1, 0, 0, 2, 4, DocFlex,  Mega-TFB,M1,          Super-TFB,M1,
@@ -502,30 +502,30 @@ Resonanz 8- Panzer,        8-Res,              8, 1, 11, SentRes,
 Super-Former,            1,  EcoEng2, Super-,       000000010111, Terraformrate verdoppelt
 Tiefenradar,             0,  MilAlg,  ,             010000111111, Sieht 2 Felder weit
 Tarngerät,               1,  Surface, Tarn-,        000001111001, Unsichtbar; Ignoriert Kontrollzonen
-Amphibienmodul,          1,  DocInit, Amphib.,      000000001001, Greift v. Schiffen an
+Amphibienmodul,          1,  DocInit, Amphib,       000000001001, Greift v. Schiffen an
 Abwurfmodule,            2,  MindMac, Abwurf-,      000000111001, Luftlandungen
 Luftüberlegenheit,       1,  DocAir,  SAM-,         000000001111, Greift Luft-Einheiten an
 Starker Druckrumpf,      1,  Metal,   Sub-,         000000111010, Operiert unter Wasser
 Trägerdeck,              1,  Metal,   Träger-,      000101101010, Mobiler Luftstützpunkt
 Flak-Peilung,            1,  MilAlg,  Flak-,        000010001011, x2 gegen Luftangriffe
-Funkstörgerät,           -1, Subat,   GEGENMASSN.-, 000010111001, +50% gegen schnelle Einheiten
-Antigrav-Stützen,        1,  Gravity, Grav.-,       000000111101, +1 Bewegungsrate (oder +Reaktor*2 für Luft-Einheiten)
+Funkstörgerät,           -1, Subat,   Gegenmassn-,  000010111001, +50% gegen schnelle Einheiten
+Antigrav-Stützen,        1,  Gravity, Grav-,        000000111101, +1 Bewegungsrate (oder +Reaktor*2 für Luft-Einheiten)
 Empath-Lied,             2,  CentEmp, Empath-,      000010001111, +50% Angriff gegen PSI
-Polymorphe Codierung,    1,  Algor,   Codiert.,     000000111111, x2 Kosten für Unterwanderung
+Polymorphe Codierung,    1,  Algor,   Codiert,      000000111111, x2 Kosten für Unterwanderung
 Fungizid-Tanks,          1,  Fossil,  Fungizid-,    000000010111, Beseitigt Fungus doppelt so schnell
-Hohe Gruppenmoral,       1,  Integ,   Ausgebil.,    000000001111, Steigert Moral
+Hohe Gruppenmoral,       1,  Integ,   Ausgebil,     000000001111, Steigert Moral
 Schwere Artillerie,      -7, Poly,    Artillerie-,  000010001001, Bombardiert
-Autonomer Reaktor,       2,  BioEng,  Autonom.,     000001111111, Braucht keine Unterstützung
-Mini-Teleporter,         1,  Matter,  Mini-Tele.-,  000000001111, Umgeht Basisabwehr
+Autonomer Reaktor,       2,  BioEng,  Autonom,      000001111111, Braucht keine Unterstützung
+Mini-Teleporter,         1,  Matter,  Mini-Tele-,   000000001111, Umgeht Basisabwehr
 Hypnotische Trance,      -1, Brain,   Trance-,      000010111111, +50% Abwehr gegen PSI
 Schwerer Transporter,    1,  Disable, Schwer,       000100100111, +50% Transportkapazität
 Nervengasbehälter,       1,  Chemist, X,            000011001101, Erhöht Offensive +50% (Greueltat)
 Reparaturbereich,        1,  Metal,   Reparatur-,   000100100111, Repariert Boden-Einheiten an Bord
 Gewaltarme Methoden,     1,  Integ,   Polizei-,     000000001001, x2 Polizeimacht
-Langsame Einheit,        0,  Disable, Langsam.,     000000111111, -1 Bewegungen
+Langsame Einheit,        0,  Disable, Langsam,      000000111111, -1 Bewegungen
 Soporifische Gaskapsel,  1,  Bioadap, Gas-,         000001001101, -2 Feindmoral geg. Nicht-Einheimische
 Dissoziative Welle,      2,  CentPsi, Wellen-,      000000111111, Macht Spezialfähigkeiten unwirksam
-Marineinf.- Abt.,        1,  AdapDoc, Marineinf.-,  000001001010, Kann Feindschiffe erobern
+Marineinf.- Abt.,        1,  AdapDoc, Marineinf-,   000001001010, Kann Feindschiffe erobern
 Treibstoff- Nanozellen,  1,  MatComp, Nanozellen-,  000000111100, Erhöht die Luftreichweite
 Algorithm. Verbesserung, 1,  NanoMin, Aufrüstung-,  100000111111, Halbiert die Mißerfolge der Sondierteams
 

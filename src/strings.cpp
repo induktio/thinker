@@ -61,6 +61,21 @@ char* parse_str(char* buf, size_t len, const char* s1, const char* s2, const cha
     return NULL;
 }
 
+char* strtrail(char* s) {
+    size_t size;
+    char* end;
+    size = strlen(s);
+    if (!size) {
+        return s;
+    }
+    end = s + size - 1;
+    while (end >= s && isspace(*end)) {
+        end--;
+    }
+    *(end + 1) = '\0';
+    return s;
+}
+
 char* strstrip(char* s) {
     size_t size;
     char* end;
