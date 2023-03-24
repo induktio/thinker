@@ -1,6 +1,21 @@
 
 # Thinker mod release changelog
 
+## Version 3.6 (2023-03-24)
+* Game will now create more accurate prototype names for all unit types (new_unit_names).
+* Combat morale effects are updated to reflect manual more closely, most notably with Children's Creche and Brood Pit (modify_unit_morale).
+* Fix missing defender bonus mentioned in the manual "Units in a headquarters base automatically gain +1 Morale when defending".
+* Fix some issues where the AI didn't determine correctly if it had enhanced probe teams available.
+* Base build priorities are reworked to start Aerospace Complex and satellite production sooner.
+* Secret projects hurried by the AI will display notifications even during sunspots if the commlink is active.
+* If magtube movement rate is set very high (non-zero), the game will limit maximum unit speeds selectively to avoid issues.
+* Thinker AI now handles also conventional missiles.
+* AI sometimes builds needlejets with dissociative wave special ability when AAA ability is also available.
+* AI is capable of longer range orbital insertions whenever the tech or Space Elevator is available.
+* AI tries to make sure each base has a suitable armored garrison unit present.
+* AI builds Tachyon Fields in border bases more often.
+
+
 ## Version 3.5 (2023-03-04)
 * Nerve staple turns and upcoming drone riots warning are shown on the bottom right side corner on base screen.
 * If any satellites are active, bonuses from satellites are shown on the left corner on base screen.

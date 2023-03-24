@@ -7,6 +7,7 @@
 ; If BASESB is not defined, the game uses only names from BASESA list.
 
 #BASESA
+Barrier
 Bastion
 Block
 Bunker
@@ -18,6 +19,7 @@ Complex
 Depot
 Gateway
 Grid
+Habitat
 Hideout
 Horizon
 Junction
@@ -52,12 +54,16 @@ Phi
 Chi
 Psi
 Omega
+Commons
+Fields
 Flats
 Grounds
+Heights
 Hills
 Line
 Park
 Pass
 Point
+Ridge
 Zero
 #END
