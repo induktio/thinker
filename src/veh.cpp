@@ -585,7 +585,7 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
         | (intercept ? ABL_AIR_SUPERIORITY : 0)); // SAM for ground units
     const char* mk_label = (*TextLabels)[919]; // Mk (reactors)
 
-    if ((!combat && !noncombat) || (!conf.new_unit_names && (!noncombat || is_human(faction_id)))) {
+    if ((!combat && !noncombat) || !conf.new_unit_names) {
         if (unit_id < 0) {
             if (name) {
                 name[0] = '\0';
@@ -596,8 +596,9 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
     }
     for (int i = 0; i < 2; i++) {
         buf[0] = '\0';
-        if (arm_v != 1 && !(combat && wpn_v >= 4*arm_v && arm_v < 4)) {
-            parse_arm_name(buf, arm, i > 0 || abls || rec > REC_FISSION);
+        if (arm_v != 1 && !(combat && wpn_v >= 4*arm_v)) {
+            parse_arm_name(buf, arm, i > 0 || abls || rec > REC_FISSION
+                || (noncombat && strlen(Weapon[wpn].name_short) >= 10));
         }
         if (abls & ABL_NERVE_GAS) {
             parse_abl_name(buf, Ability[ABL_ID_NERVE_GAS].abbreviation, i > 0);
@@ -672,7 +673,7 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
             if (spd_v > 1) {
                 parse_chs_name(buf, Chassis[chs].offsv1_name, Chassis[chs].offsv2_name);
             }
-            parse_wpn_name(buf, wpn, 1);
+            parse_wpn_name(buf, wpn, i > 0);
         }
         if (Weapon[wpn].mode != WMODE_INFOWAR && rec > REC_FISSION) {
             if (strlen(buf) + strlen(mk_label) + 3 <= MaxProtoNameLen) {
