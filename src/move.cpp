@@ -2264,11 +2264,11 @@ int aircraft_move(const int id) {
     MAP* sq = mapsq(veh->x, veh->y);
     UNIT* u = &Units[veh->unit_id];
     AIPlans& p = plans[veh->faction_id];
-    bool at_base = sq->is_base();
-    bool missile = u->chassis_id == CHS_MISSILE;
-    int faction = veh->faction_id;
-    int moves = veh_speed(id, 0) - veh->moves_spent;
-    int max_range = max(0, moves / Rules->move_rate_roads);
+    const bool at_base = sq->is_base();
+    const bool missile = u->chassis_id == CHS_MISSILE;
+    const int faction = veh->faction_id;
+    const int moves = veh_speed(id, 0) - veh->moves_spent;
+    const int max_range = max(0, moves / Rules->move_rate_roads);
     int max_dist = max_range; // can be modified during search
 
     if (!veh->at_target()) {

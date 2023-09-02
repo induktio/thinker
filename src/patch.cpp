@@ -765,6 +765,18 @@ bool patch_setup(Config* cf) {
         write_call(0x5044EB, (int)mod_get_basic_offense);
         write_call(0x502A69, (int)mod_get_basic_defense);
     }
+
+    /*
+    Fix issue where TECHSHARE faction ability always skips the checks for
+    various infiltration conditions while smac_only mode is activated.
+    Meeting at least one of the checks is a requirement for granting new techs.
+    */
+    {
+        const byte old_bytes[] = {0x74,0x51};
+        const byte new_bytes[] = {0x90,0x90};
+        write_bytes(0x5BC386, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+
     /*
     Additional combat bonus options for PSI effects.
     */

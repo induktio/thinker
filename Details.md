@@ -320,6 +320,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 33. Fix diplomacy dialog issues when both human and alien factions are involved in a base capture by removing the event that spawns additional colony pods.
 34. Fix missing defender bonus mentioned in the manual "Units in a headquarters base automatically gain +1 Morale when defending".
 35. Fix multiple issues in unit morale calculation, see more details in "Improved combat mechanics" section (modify_unit_morale).
+36. Fix issue where TECHSHARE faction ability always skips the checks for various infiltration conditions while smac_only mode is activated. Meeting at least one of the checks is a requirement for granting new techs.
 
 
 Scient's patch
