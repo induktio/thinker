@@ -160,6 +160,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->skip_drone_revolts = atoi(value);
     } else if (MATCH("thinker", "activate_skipped_units")) {
         cf->activate_skipped_units = atoi(value);
+    } else if (MATCH("thinker", "nerve_staple_mod")) {
+        cf->nerve_staple_mod = atoi(value);
     } else if (MATCH("thinker", "counter_espionage")) {
         cf->counter_espionage = atoi(value);
     } else if (MATCH("thinker", "ignore_reactor_power")) {

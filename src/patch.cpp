@@ -30,6 +30,17 @@ int __cdecl base_governor_crop_yield(int faction, int base_id, int x, int y, int
     return value;
 }
 
+int __cdecl mod_base_upkeep(int base_id) {
+    BASE* base = &Bases[base_id];
+    int value = base_upkeep(base_id);
+    if (!value // non-zero values indicate special cases (exited early)
+    && base->nerve_staple_turns_left > 0
+    && Factions[base->faction_id].SE_police_pending < conf.nerve_staple_mod) {
+        --base->nerve_staple_turns_left;
+    }
+    return value;
+}
+
 /*
 These functions (first base_growth and then drone_riot)
 will only get called from production_phase > base_upkeep.
@@ -442,6 +453,7 @@ bool patch_setup(Config* cf) {
     write_call(0x581044, (int)mod_name_proto);
     write_call(0x5B301E, (int)mod_name_proto);
     write_call(0x506ADE, (int)mod_battle_fight_2);
+    write_call(0x527039, (int)mod_base_upkeep);
     write_jump(0x6262F0, (int)log_say);
     write_jump(0x626250, (int)log_say2);
     write_jump(0x6263F0, (int)log_say_hex);
