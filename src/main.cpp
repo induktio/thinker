@@ -152,6 +152,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->fast_fungus_movement = atoi(value);
     } else if (MATCH("thinker", "magtube_movement_rate")) {
         cf->magtube_movement_rate = atoi(value);
+    } else if (MATCH("thinker", "chopper_attack_rate")) {
+        cf->chopper_attack_rate = atoi(value);
     } else if (MATCH("thinker", "delay_drone_riots")) {
         cf->delay_drone_riots = atoi(value);
     } else if (MATCH("thinker", "skip_drone_revolts")) {

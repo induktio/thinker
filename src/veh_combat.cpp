@@ -347,3 +347,25 @@ int __cdecl battle_fight_parse_num(int index, int value) {
     }
     return 0;
 }
+
+/*
+This function is only called from battle_fight_1 and not when combat results are simulated.
+*/
+int __cdecl mod_battle_fight_2(int veh_id, int offset, int tx, int ty, int is_table_offset, int a6, int a7)
+{
+    VEH* veh = &Vehs[veh_id];
+    UNIT* u = &Units[veh->unit_id];
+    if (conf.chopper_attack_rate > 1 && conf.chopper_attack_rate <= 100) {
+        if (u->triad() == TRIAD_AIR && u->range() == 1 && !u->is_missile()) {
+            // This avoids overflow issues with vehicle speed
+            int all_moves = speed(veh_id, 0);
+            int mod_moves = veh->moves_spent + (conf.chopper_attack_rate - 1)*Rules->move_rate_roads;
+            if (mod_moves < all_moves) {
+                veh->moves_spent = mod_moves;
+            }
+        }
+    }
+    int value = battle_fight_2(veh_id, offset, tx, ty, is_table_offset, a6, a7);
+    return value;
+}
+

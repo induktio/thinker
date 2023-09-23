@@ -382,6 +382,9 @@ struct UNIT {
     uint8_t speed() { // does not take into account any other speed modifiers
         return Chassis[chassis_id].speed;
     }
+    uint8_t range() { // range in turns from base for air units
+        return Chassis[chassis_id].range;
+    }
     uint8_t armor_cost() {
         return Armor[armor_id].cost;
     }

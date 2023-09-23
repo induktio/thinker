@@ -12,6 +12,7 @@ int __cdecl mod_morale_veh(int veh_id, bool check_drone_riot, int faction_id_vs_
 int __cdecl mod_get_basic_offense(int veh_id_atk, int veh_id_def, int psi_combat_type, bool is_bombard, bool unk_tgl);
 int __cdecl mod_get_basic_defense(int veh_id_def, int veh_id_atk, int psi_combat_type, bool is_bombard);
 
+int __cdecl mod_battle_fight_2(int veh_id, int offset, int tx, int ty, int is_table_offset, int a6, int a7);
 int __cdecl mod_best_defender(int veh_id_def, int veh_id_atk, bool check_arty);
 int __cdecl battle_fight_parse_num(int index, int value);
 

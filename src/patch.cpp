@@ -441,6 +441,7 @@ bool patch_setup(Config* cf) {
     write_call(0x43E663, (int)mod_name_proto);
     write_call(0x581044, (int)mod_name_proto);
     write_call(0x5B301E, (int)mod_name_proto);
+    write_call(0x506ADE, (int)mod_battle_fight_2);
     write_jump(0x6262F0, (int)log_say);
     write_jump(0x626250, (int)log_say2);
     write_jump(0x6263F0, (int)log_say_hex);
