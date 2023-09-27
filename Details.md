@@ -108,9 +108,10 @@ In Alpha Centauri, Fusion reactor technology was extremely important for militar
 
 Another notable change is the introduction of reduced unit healing rates. In the vanilla game, units were often able to fully heal in a single turn inside a base but this is no longer the case. Prolonged offensives are no longer trivially easy against opponents since units may have to stop healing for multiple turns. The healing rate can be significantly increased by building Command Centers and similar facilities though.
 
-Related to combat mechanics, it is also possible to adjust movement speeds on magtubes with `magtube_movement_rate` setting. By default this setting allows zero cost movement on magtubes but it can be changed for example to allow twice as fast movement compared to normal roads.
+Previously Choppers were the most important air unit due to their fast attack rate. To balance air units, the mod changes each Chopper attack to expend two movement points instead of only one like previously. Chopper range is also reduced to be slightly less than Needlejet range. Ranges for all air units can still be increased by using better reactors, building Cloudbase Academy or including Antigrav Struts/Full Nanocells special abilities.
 
-Setting magtube movement rate higher than 3 is not recommended because it may cause variable overflow issues for fast aircraft units. In this case the game will limit the maximum allowed speed for such units.
+Related to combat mechanics, it is also possible to adjust movement speeds on magtubes with `magtube_movement_rate` setting. By default this setting allows zero cost movement on magtubes but it can be changed for example to allow twice as fast movement compared to normal roads.
+Setting magtube movement rate higher than 3 is not recommended because it may cause variable overflow issues for fast aircraft units. In this case the game will limit the maximum speed allowed for such units.
 
 When bases are captured from another faction, the captured base extra drone psych effect is shown separately on the psych window. While in vanilla game this period was always 50 turns, in the modded version this depends on the population size and facilities in the captured base, and it can range from 20 to 50 turns. This makes it somewhat easier to assimilate smaller bases while larger bases will still take a long time to switch previous owner.
 
@@ -228,10 +229,10 @@ These edits will introduce fairly minimal differences to the vanilla game mechan
 7. Add new predefined units Trance Scout Patrol and Police Garrison.
 8. Plasma Shard weapon strength is raised to 14.
 9. Secret project priorities are adjusted for the AI to start important projects first.
-10. Copter range is reduced to 8 (fission reactor).
+10. Chopper range is reduced to 8 (fission reactor).
 11. Missile range is increased to 18 (fission reactor).
-12. Crawler, Needlejet, Copter and Gravship chassis costs are slightly increased overall. This results in about 10 mineral increase for most prototypes. For example the default Supply Crawler prototype costs 40 minerals.
-13. When using SMAC in SMACX mod, in-game help files will contain additional information about some game engine limitations and known bugs.
+12. Crawler, Needlejet, Chopper and Gravship chassis costs are slightly increased overall. This results in about 10 mineral increase for most prototypes. For example the default Supply Crawler prototype costs 40 minerals.
+13. When using SMAC in SMACX mod, the documentation displayed in the game will contain additional information about game engine limitations, and many bugs are marked with KNOWN BUG tag.
 14. The amount of techs that grant automatic morale boosts for probe teams is reduced from five to two. These techs are now Pre-Sentient Algorithms and Digital Sentience. This makes it much harder to build elite-level probe teams.
 
 
@@ -256,7 +257,7 @@ See below for some custom faction sets. The factions can be played in both game 
 
 Compatibility with other mods
 =============================
-It should be possible to run both Thinker and [PRACX](https://github.com/DrazharLn/pracx) graphics enhancement patch at the same time. For easiest installation, download [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). However this combination of patches will not receive the same testing than the normal configuration, so some issues are likely.
+It should be possible to run both Thinker and [PRACX](https://github.com/DrazharLn/pracx) graphics enhancement patch at the same time. For easiest installation, download [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). However this combination of patches will not receive as much testing as the normal configuration, so some issues might occur.
 
 When PRACX is loaded at the same time, Thinker's config menu shortcut changes to `ALT+H`. If any issues are encountered, first check if they occur with the vanilla game and/or Thinker without additional mods.
 Also some optional features provided by Thinker will be disabled while running PRACX because they would patch conflicting areas of the game binary. These disabled feature include:
@@ -320,7 +321,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 33. Fix diplomacy dialog issues when both human and alien factions are involved in a base capture by removing the event that spawns additional colony pods.
 34. Fix missing defender bonus mentioned in the manual "Units in a headquarters base automatically gain +1 Morale when defending".
 35. Fix multiple issues in unit morale calculation, see more details in "Improved combat mechanics" section (modify_unit_morale).
-36. Fix issue where TECHSHARE faction ability always skips the checks for various infiltration conditions while smac_only mode is activated. Meeting at least one of the checks is a requirement for granting new techs.
+36. Fix issue where TECHSHARE faction ability always skips the checks for infiltration conditions while smac_only mode is activated. Spying by probe team, pact, governor or Empath Guild is required.
 
 
 Scient's patch
@@ -391,6 +392,7 @@ Source code provided by following people has been incorporated into Thinker Mod 
 * Brendan Casey for [OpenSMACX](https://github.com/b-casey/OpenSMACX) related insights into the game engine and Scient's patch.
 * Tim Nevolin's [Will To Power Mod](https://github.com/tnevolin/thinker-doer) for unit healing and reactor power patch and various other game engine config options.
 * PlotinusRedux's [PRACX Patch](https://github.com/DrazharLn/pracx) for additional graphics rendering code.
+* DrazharLn's [SMAC in SMACX Mod](https://github.com/DrazharLn/smac-in-smax) for modified txt files.
 * Pianoslum for German language translation of alphax.txt.
 * Markus Hartung for additional cross-platform build scripts for MinGW.
 

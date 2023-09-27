@@ -358,7 +358,7 @@ int __cdecl mod_battle_fight_2(int veh_id, int offset, int tx, int ty, int is_ta
     if (conf.chopper_attack_rate > 1 && conf.chopper_attack_rate <= 100) {
         if (u->triad() == TRIAD_AIR && u->range() == 1 && !u->is_missile()) {
             // This avoids overflow issues with vehicle speed
-            int all_moves = speed(veh_id, 0);
+            int all_moves = veh_speed(veh_id, 0);
             int mod_moves = veh->moves_spent + (conf.chopper_attack_rate - 1)*Rules->move_rate_roads;
             if (mod_moves < all_moves) {
                 veh->moves_spent = mod_moves;

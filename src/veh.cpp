@@ -149,9 +149,9 @@ int __cdecl proto_speed(int unit_id) {
 
 /*
 Renamed from speed. Calculate the speed of a unit on roads taking into consideration
-various factors. The skip_morale parameter seems to only be set to true
-for certain combat calculations in battle_fight().
-Fix: due to limited size of moves_spent, speeds over 255 will be incorrect.
+various factors. Parameter skip_morale should be normally set to false and
+seems to be only set to true for certain combat calculations in battle_fight.
+Fix: due to limited size of moves_spent field, speeds over 255 are not allowed.
 */
 int __cdecl veh_speed(int veh_id, bool skip_morale) {
     int unit_id = Vehs[veh_id].unit_id;

@@ -382,6 +382,14 @@ bool patch_setup(Config* cf) {
     write_jump(0x5C1D20, (int)mod_veh_skip);
     write_jump(0x5C1D70, (int)mod_veh_wake);
     write_jump(0x5C1540, (int)veh_speed);
+    write_jump(0x6262F0, (int)log_say);
+    write_jump(0x626250, (int)log_say2);
+    write_jump(0x6263F0, (int)log_say_hex);
+    write_jump(0x626350, (int)log_say_hex2);
+    write_jump(0x634BE0, (int)FileBox_init);
+    write_jump(0x634C20, (int)FileBox_close);
+    write_jump(0x645460, (int)limit_strcpy);
+    write_jump(0x645470, (int)limit_strcat);
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
     write_call(0x415F35, (int)mod_base_reset);
@@ -454,14 +462,6 @@ bool patch_setup(Config* cf) {
     write_call(0x5B301E, (int)mod_name_proto);
     write_call(0x506ADE, (int)mod_battle_fight_2);
     write_call(0x527039, (int)mod_base_upkeep);
-    write_jump(0x6262F0, (int)log_say);
-    write_jump(0x626250, (int)log_say2);
-    write_jump(0x6263F0, (int)log_say_hex);
-    write_jump(0x626350, (int)log_say_hex2);
-    write_jump(0x634BE0, (int)FileBox_init);
-    write_jump(0x634C20, (int)FileBox_close);
-    write_jump(0x645460, (int)limit_strcpy);
-    write_jump(0x645470, (int)limit_strcat);
     write_offset(0x50F421, (void*)mod_turn_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);
     write_offset(0x64576E, (void*)mod_except_handler3);
@@ -780,9 +780,9 @@ bool patch_setup(Config* cf) {
     }
 
     /*
-    Fix issue where TECHSHARE faction ability always skips the checks for
-    various infiltration conditions while smac_only mode is activated.
-    Meeting at least one of the checks is a requirement for granting new techs.
+    Fix issue where TECHSHARE faction ability always skips the checks
+    for infiltration conditions while smac_only mode is activated.
+    Spying by probe team, pact, governor or Empath Guild is required.
     */
     {
         const byte old_bytes[] = {0x74,0x51};
@@ -822,6 +822,26 @@ bool patch_setup(Config* cf) {
         const byte old_tachyon[] = {0x83,0xC6,0x02};
         const byte new_tachyon[] = {0x83,0xC6,(byte)cf->tachyon_field_bonus};
         write_bytes(0x503506, old_tachyon, new_tachyon, sizeof(new_tachyon));
+    }
+
+    /*
+    Initial content base population before psych modifiers.
+    */
+    {
+        const byte old_bytes[] = {
+            0x74,0x19,0x8B,0xD3,0xC1,0xE2,0x06,0x03,0xD3,0x8D,
+            0x04,0x53,0x8D,0x0C,0xC3,0x8D,0x14,0x4B,0x8B,0x04,
+            0x95,0xE8,0xC9,0x96,0x00,0xEB,0x05,0xB8,0x03,0x00,
+            0x00,0x00,0xBE,0x06,0x00,0x00,0x00,0x2B,0xF0
+        };
+        const byte new_bytes[] = {
+            0xE8,0x00,0x00,0x00,0x00,0x89,0xC6,0x90,0x90,0x90,
+            0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,
+            0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,
+            0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90
+        };
+        write_bytes(0x4EA56D, old_bytes, new_bytes, sizeof(new_bytes));
+        write_call(0x4EA56D, (int)base_psych_content_pop);
     }
 
     if (cf->smac_only) {
@@ -1039,25 +1059,6 @@ bool patch_setup(Config* cf) {
         const byte new_bytes[] = {0x83, 0x3D, 0xD4, 0x64, 0x9A, 0x00,
             (byte)cf->natives_weak_until_turn};
         write_bytes(0x507C22, old_bytes, new_bytes, sizeof(new_bytes));
-    }
-    /*
-    Content base population config options.
-    */
-    {
-        const byte old_bytes[] = {
-            0x74,0x19,0x8B,0xD3,0xC1,0xE2,0x06,0x03,0xD3,0x8D,
-            0x04,0x53,0x8D,0x0C,0xC3,0x8D,0x14,0x4B,0x8B,0x04,
-            0x95,0xE8,0xC9,0x96,0x00,0xEB,0x05,0xB8,0x03,0x00,
-            0x00,0x00,0xBE,0x06,0x00,0x00,0x00,0x2B,0xF0
-        };
-        const byte new_bytes[] = {
-            0xE8,0x00,0x00,0x00,0x00,0x89,0xC6,0x90,0x90,0x90,
-            0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,
-            0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,
-            0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90
-        };
-        write_bytes(0x4EA56D, old_bytes, new_bytes, sizeof(new_bytes));
-        write_call(0x4EA56D, (int)base_psych_content_pop);
     }
     if (cf->rare_supply_pods) {
         short_jump(0x592085); // bonus_at
