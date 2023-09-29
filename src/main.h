@@ -216,6 +216,7 @@ struct Config {
     int spawn_battle_ogres = 1;
     int collateral_damage_value = 3;
     int planetpearls = 1;
+    int time_warp_add_projects = 1;
     int aquatic_bonus_minerals = 1;
     int alien_guaranteed_techs = 1;
     int alien_early_start = 0;

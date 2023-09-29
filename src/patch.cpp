@@ -462,6 +462,7 @@ bool patch_setup(Config* cf) {
     write_call(0x5B301E, (int)mod_name_proto);
     write_call(0x506ADE, (int)mod_battle_fight_2);
     write_call(0x527039, (int)mod_base_upkeep);
+    write_call(0x5B41E9, (int)mod_time_warp);
     write_offset(0x50F421, (void*)mod_turn_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);
     write_offset(0x64576E, (void*)mod_except_handler3);
@@ -607,6 +608,16 @@ bool patch_setup(Config* cf) {
         const byte old_bytes[] = {0x75,0x07};
         const byte new_bytes[] = {0x75,0x16};
         write_bytes(0x4CA44E, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+
+    /*
+    Remove old code for selecting secret projects in time_warp.
+    */
+    if (*(uint16_t*)0x5AF56D == 0xCB83 && *(uint16_t*)0x5AF5B5 == 0x4D8B) {
+        *(uint16_t*)0x5AF56D = 0x43EB; // jmp short loc_5AF5B2
+        *(uint16_t*)0x5AF5B5 = 0x08EB; // jmp short loc_5AF5BF
+    } else {
+        assert(0);
     }
 
     /*

@@ -868,6 +868,11 @@ extern fp_void ascending;
 extern fp_1int rankings;
 extern fp_4int compute_score;
 
+extern fp_1int crash_landing;
+extern fp_void time_warp;
+extern fp_void balance;
+extern fp_void scenario_setup;
+extern fp_1int sub_5B0D70;
 extern fp_3int setup_player;
 extern fp_2int eliminate_player;
 extern fp_void clear_scenario;

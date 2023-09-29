@@ -15,3 +15,10 @@ const T& pick_random(const std::set<T,C>& s) {
     return *it;
 }
 
+template <class T>
+const T& pick_random(const std::set<T>& s) {
+    auto it = std::begin(s);
+    std::advance(it, random(s.size()));
+    return *it;
+}
+

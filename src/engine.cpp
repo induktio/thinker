@@ -690,6 +690,11 @@ fp_void ascending                = (fp_void)0x5AC680;
 fp_1int rankings                 = (fp_1int)0x5AC690;
 fp_4int compute_score            = (fp_4int)0x5ACBE0;
 
+fp_1int crash_landing            = (fp_1int)0x5AE120;
+fp_void time_warp                = (fp_void)0x5AEDE0;
+fp_void balance                  = (fp_void)0x5B0420;
+fp_void scenario_setup           = (fp_void)0x5B0A30;
+fp_1int sub_5B0D70               = (fp_1int)0x5B0D70;
 fp_3int setup_player             = (fp_3int)0x5B0E00;
 fp_2int eliminate_player         = (fp_2int)0x5B3380;
 fp_void clear_scenario           = (fp_void)0x5B38D0;

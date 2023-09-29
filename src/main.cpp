@@ -194,6 +194,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->collateral_damage_value = clamp(atoi(value), 0, 127);
     } else if (MATCH("thinker", "planetpearls")) {
         cf->planetpearls = atoi(value);
+    } else if (MATCH("thinker", "time_warp_add_projects")) {
+        cf->time_warp_add_projects = atoi(value);
     } else if (MATCH("thinker", "aquatic_bonus_minerals")) {
         cf->aquatic_bonus_minerals = atoi(value);
     } else if (MATCH("thinker", "alien_guaranteed_techs")) {

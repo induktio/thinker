@@ -995,3 +995,57 @@ void world_generate(uint32_t seed) {
     flushlog();
 }
 
+void set_project_owner(FacilityId item_id, int faction_id) {
+    for (int i = 0; i < *total_num_bases; i++) {
+        if (Bases[i].faction_id == faction_id) {
+            SecretProjects[item_id - SP_ID_First] = i;
+            break;
+        }
+    }
+}
+
+void __cdecl mod_time_warp() {
+    const FacilityId projects[] = {
+        FAC_CITIZENS_DEFENSE_FORCE,
+        FAC_COMMAND_NEXUS,
+        FAC_HUMAN_GENOME_PROJ,
+        FAC_MERCHANT_EXCHANGE,
+        FAC_PLANETARY_TRANS_SYS,
+        FAC_VIRTUAL_WORLD,
+        FAC_WEATHER_PARADIGM,
+    };
+    std::set<int32_t> selected = {};
+    std::set<int32_t> choices = {};
+    time_warp();
+    if (!conf.time_warp_add_projects) {
+        return;
+    }
+    for (const FacilityId item_id : projects) {
+        choices.clear();
+        for (int i = 1; i < MaxPlayerNum; i++) {
+            if (selected.count(i)
+            || (item_id == FAC_COMMAND_NEXUS && has_free_facility(FAC_COMMAND_CENTER, i))
+            || (item_id == FAC_CITIZENS_DEFENSE_FORCE && has_free_facility(FAC_PERIMETER_DEFENSE, i))) {
+                // skip faction
+            } else {
+                choices.insert(i);
+            }
+        }
+        if (!choices.size()) {
+            for (int i = 1; i < MaxPlayerNum; i++) {
+                if (!selected.count(i)) {
+                    choices.insert(i);
+                }
+            }
+        }
+        if (choices.size()) {
+            int32_t choice = pick_random(choices);
+            set_project_owner(item_id, choice);
+            selected.insert(choice);
+            debug("time_warp %s %s\n", MFactions[choice].filename, Facility[item_id].name);
+        } else {
+            assert(0);
+        }
+    }
+}
+

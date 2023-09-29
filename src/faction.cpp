@@ -62,6 +62,19 @@ bool has_project(FacilityId item_id, int faction) {
     return i >= 0 && (faction < 0 || Bases[i].faction_id == faction);
 }
 
+bool has_free_facility(FacilityId item_id, int faction) {
+    MFaction& m = MFactions[faction];
+    for (int i=0; i < m.faction_bonus_count; i++) {
+        if (m.faction_bonus_val1[i] == item_id
+        && (m.faction_bonus_id[i] == FCB_FREEFAC
+        || (m.faction_bonus_id[i] == FCB_FREEFAC_PREQ
+        && has_tech(Facility[item_id].preq_tech, faction)))) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int facility_count(FacilityId item_id, int faction) {
     assert(valid_player(faction) && item_id < SP_ID_First);
     int n = 0;
@@ -91,7 +104,6 @@ int prod_count(int item_id, int faction, int base_skip_id) {
     }
     return n;
 }
-
 
 /*
 Determine if the specified faction is controlled by a human player or computer AI.
