@@ -5,7 +5,7 @@ Thinker has several advanced planning routines that enhance the base game AI to 
 
 Alpha Centauri was known for its immersive lore and story telling. As a general design principle, Thinker will attempt to improve gameplay mechanics and AI while leaving most of the lore as it is. Any instances where adding a feature or patch would be controversial with the original game narrative should be avoided, unless this is necessary for gameplay balance reasons. Hopefully players will find that this combination of changes will represent the original game faithfully while also improving the gameplay experience and fixing many balance issues.
 
-For the most part, Thinker uses the same production bonuses as the vanilla difficulty levels would grant the AI normally. There should be no extra resources received by the AI unless this is chosen in the configuration file. The main goal is to make the AI play better given any game config options, so generally the mod will not attempt to adjust vanilla game design choices, unless there's balance reasons for doing so.
+For the most part, Thinker uses the same production bonuses as the vanilla difficulty levels would grant the AI normally. There should be no extra resources received by the AI unless this is chosen in the configuration file. The main goal is to make the AI play better given any game config options, so generally the mod will not attempt to adjust most vanilla game design choices.
 
 **For a mostly exhaustive list of all features provided by this mod, refer to both this file and `thinker.ini`.** Enabling Thinker Mod will affect many AI behaviors and also introduce some new game mechanics into Alpha Centauri. Generally most of the new features in the mod will have their own specific config options to choose either vanilla or modded behavior. Items listed under "Other patches included" and "Scient's Patch" in this file are an exception to this, since they will always be applied regardless of config options unless mentioned otherwise.
 
@@ -16,7 +16,7 @@ Note that in `thinker.ini` config file, for binary settings **only zero values a
 
 User interface additions
 ========================
-Thinker's in-game menu can be opened by pressing `ALT+T`. It shows the mod version information and provides statistics about the factions and spent game time if a game is loaded. In addition, some Thinker config options can be adjusted from its sub menu.
+Thinker's in-game menu can be opened by pressing `ALT+T` (or `ALT+H` when used with PRACX). It shows the mod version information and provides statistics about the factions and spent game time if a game is loaded. In addition, some Thinker config options can be adjusted from its sub menu.
 
 Statistics feature calculates mineral and energy production numbers after multiplier facility effects are applied. However the mineral output bonus provided by Space Elevator is ignored in this step. Energy calculation also does not substract inefficiency from the final number.
 
@@ -37,7 +37,7 @@ To ease calculations, base hurry dialog will now display the minimum required hu
 
 Summary of AI changes
 =====================
-Thinker fully controls the movement of most units, combat and non-combat alike, to manage the base placement and production much more effectively than usual. AI code for land, sea and air combat units has been almost entirely rewritten. The only major exception here are any units with the missile chassis which are still handled by the default AI. Note that the interceptor behavior for AI air units is not implemented, so they will not activate needlejets to intercept enemy units during the other factions turn.
+Thinker fully controls the movement of most units, combat and non-combat alike, to manage the base placement and production much more effectively than usual. AI code for land, sea and air combat units has been almost entirely rewritten. Note that the interceptor behavior for AI air units is not implemented, so they will not activate needlejets to intercept enemy units during the other factions turn.
 
 New combat routines for land-based units will attempt to counter-attack nearby enemy units more often. If the odds are good enough, hasty attacks are executed more often than usual. The AI will fight the native units more aggressively, and it will also try to heal its units at monoliths.
 
@@ -155,13 +155,13 @@ In the original game, research costs were mainly decided by how many techs a fac
 
 The config option `revised_tech_cost` attempts to remake this mechanic so that the research cost for any particular tech is fixed and depends mainly on the level of the tech. This follows the game design choices that were also made in later Civilization games. Enabling this feature should delay the tech race in mid to late game.
 
-Optionally it is possible to choose `cheap_early_tech` so the tech cost is somewhat between the old and new version. In this case, each tech known to the faction, including starting techs, will increase all tech costs slightly.
+Optionally it is possible to choose `cheap_early_tech` so the tech cost is somewhat between the old and new version. In this case, each tech known to the faction, including starting techs, will increase all tech costs slightly. Also the costs for first 10 techs are discounted, with every starting tech counting against the limit.
 
 For example, in the default tech tree, Social Psych is level 1 and Transcendent Thought is level 16. See also [a helpful chart](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAkyzALX76aWAOc363a7mgpa/resources?dl=0&lst=) of the standard tech tree. The base cost for any particular tech is determined by this formula.
 
     5 * Level^3 + 75 * Level
 
-When `cheap_early_tech` is enabled, the formula changes to the following, and also the costs for first 8 techs are discounted.
+When `cheap_early_tech` is enabled, the formula changes to the following.
 
     5 * Level^3 + 25 * Level + 15 * KnownTechs
 

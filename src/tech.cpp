@@ -57,7 +57,7 @@ int tech_cost(int faction, int tech) {
 
     if (conf.cheap_early_tech) {
         cost_base = (5 * pow(level, 3) + 25 * level + 15 * our_techs)
-            * clamp(our_techs + 8, 8, 16) / 16.0;
+            * clamp(our_techs + 6, 6, 16) / 16.0;
     } else {
         cost_base = (5 * pow(level, 3) + 75 * level);
     }
