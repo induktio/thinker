@@ -1,6 +1,16 @@
 
 # Thinker mod release changelog
 
+## Version 3.7 (2023-09-30)
+* Option chopper_attack_rate adjusts how many movement points choppers will expend upon every attack, default is two points.
+* Option nerve_staple_mod makes nerve staple effects expire twice as fast when SE Police rating is below a certain value, default is Police < 0.
+* Add options time_warp_mod, time_warp_techs, time_warp_projects to choose modded Accelerated Start features for the game.
+* Cheap early tech discount is changed to apply for the first 10 techs discovered.
+* Small adjustments to name generation rules in new_unit_names option.
+* Fix issue with TECHSHARE faction ability ignoring infiltration status when used with smac_only mode.
+* Fix issue where Accelerated Start option may sometimes freeze the game when selecting a random secret project for Hive.
+
+
 ## Version 3.6 (2023-03-24)
 * Game will now create more accurate prototype names for all unit types (new_unit_names).
 * Combat morale effects are updated to reflect manual more closely, most notably with Children's Creche and Brood Pit (modify_unit_morale).
