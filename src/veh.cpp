@@ -572,11 +572,13 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
         || Weapon[wpn].mode == WMODE_TRANSPORT
         || Weapon[wpn].mode == WMODE_COLONIST;
     bool combat = Weapon[wpn].offense_value != 0
-        && Armor[arm].defense_value != 0 && !Chassis[chs].missile;
+        && Armor[arm].defense_value != 0;
+    bool psi_arm = Armor[arm].defense_value < 0;
+    bool psi_wpn = Weapon[wpn].offense_value < 0;
+    int wpn_v = (psi_wpn ? 2 : Weapon[wpn].offense_value);
+    int arm_v = (psi_arm ? 2 : Armor[arm].defense_value);
     int triad = Chassis[chs].triad;
     int spd_v = Chassis[chs].speed;
-    int wpn_v = (Weapon[wpn].offense_value < 0 ? 2 : Weapon[wpn].offense_value);
-    int arm_v = (Armor[arm].defense_value < 0 ? 2 : Armor[arm].defense_value);
     bool arty = abls & ABL_ARTILLERY;
     bool marine = abls & ABL_AMPHIBIOUS;
     bool intercept = abls & ABL_AIR_SUPERIORITY && triad == TRIAD_AIR;
@@ -585,7 +587,7 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
         | (intercept ? ABL_AIR_SUPERIORITY : 0)); // SAM for ground units
     const char* mk_label = (*TextLabels)[919]; // Mk (reactors)
 
-    if ((!combat && !noncombat) || !conf.new_unit_names) {
+    if (!conf.new_unit_names || (!combat && !noncombat) || Chassis[chs].missile) {
         if (unit_id < 0) {
             if (name) {
                 name[0] = '\0';
@@ -596,8 +598,8 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
     }
     for (int i = 0; i < 2; i++) {
         buf[0] = '\0';
-        if (arm_v != 1 && !(combat && wpn_v >= 4*arm_v)) {
-            parse_arm_name(buf, arm, i > 0 || abls || rec > REC_FISSION
+        if (arm_v != 1 && !(combat && !psi_arm && wpn_v >= 4*arm_v)) {
+            parse_arm_name(buf, arm, i > 0 || abls || rec > REC_FISSION || spd_v > 1
                 || (noncombat && strlen(Weapon[wpn].name_short) >= 10));
         }
         if (abls & ABL_NERVE_GAS) {
@@ -622,12 +624,11 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
                 }
             }
             if ((!arty && !marine && !intercept) || (arty && spd_v > 1)) {
-                int toggle = (wpn_v + arm_v + 3) & 4;
                 int value = wpn_v - arm_v;
                 if (value <= -1) { // Defensive
                     if (arm_v >= 8 && wpn_v*2 >= arm_v) {
                         parse_chs_name(buf, Chassis[chs].defsv_name_lrg);
-                    } else if (toggle) {
+                    } else if ((wpn_v >= 2) == (spd_v < 2)) {
                         parse_chs_name(buf, Chassis[chs].defsv1_name);
                     } else {
                         parse_chs_name(buf, Chassis[chs].defsv2_name);
@@ -635,7 +636,7 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
                 } else if (value >= 1 || triad == TRIAD_AIR) { // Offensive
                     if (wpn_v >= 8 && arm_v*2 >= wpn_v) {
                         parse_chs_name(buf, Chassis[chs].offsv_name_lrg);
-                    } else if (toggle) {
+                    } else if ((arm_v >= 2) == (spd_v < 2)) {
                         parse_chs_name(buf, Chassis[chs].offsv1_name);
                     } else {
                         parse_chs_name(buf, Chassis[chs].offsv2_name);

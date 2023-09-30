@@ -45,7 +45,7 @@ void design_units(int faction) {
         create_proto(i, chs_ship, wpn, arm_ship, ABL_NONE, rec, PLAN_OFFENSIVE);
     }
     if (arm != ARM_NO_ARMOR) {
-        int abls = 0;
+        uint32_t abls = 0;
         int num = 0;
         for (VehAbl v : DefendAbls) {
             if (v == ABL_ID_POLICE_2X && !need_police(i)) {
@@ -70,20 +70,22 @@ void design_units(int faction) {
         }
     }
     if (has_chassis(i, CHS_NEEDLEJET)) {
+        uint32_t addon = twoabl && has_ability(i, ABL_ID_DEEP_RADAR, CHS_NEEDLEJET, wpn)
+            ? ABL_DEEP_RADAR : ABL_NONE;
         if (has_ability(i, ABL_ID_AIR_SUPERIORITY, CHS_NEEDLEJET, wpn)) {
-            int abls = ABL_AIR_SUPERIORITY
-                | (twoabl && has_ability(i, ABL_ID_DEEP_RADAR, CHS_NEEDLEJET, wpn) ? ABL_DEEP_RADAR : ABL_NONE);
+            uint32_t abls = ABL_AIR_SUPERIORITY | addon;
             create_proto(i, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, (VehAblFlag)abls, rec, PLAN_AIR_SUPERIORITY);
         }
         if (has_ability(i, ABL_ID_DISSOCIATIVE_WAVE, CHS_NEEDLEJET, wpn)
         && has_ability(i, ABL_ID_AAA, CHS_INFANTRY, wpn)) {
-            create_proto(i, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, ABL_DISSOCIATIVE_WAVE, rec, PLAN_OFFENSIVE);
+            uint32_t abls = ABL_DISSOCIATIVE_WAVE | addon;
+            create_proto(i, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, (VehAblFlag)abls, rec, PLAN_OFFENSIVE);
         }
     }
     if (has_weapon(i, WPN_TERRAFORMING_UNIT) && rec >= REC_FUSION) {
         bool grav = has_chassis(i, CHS_GRAVSHIP);
         VehChassis chs = (grav ? CHS_GRAVSHIP : chs_land);
-        int abls = (has_ability(i, ABL_ID_SUPER_TERRAFORMER, chs, WPN_TERRAFORMING_UNIT)
+        uint32_t abls = (has_ability(i, ABL_ID_SUPER_TERRAFORMER, chs, WPN_TERRAFORMING_UNIT)
             ? ABL_SUPER_TERRAFORMER : ABL_NONE)
             | (twoabl && !grav && has_ability(i, ABL_ID_FUNGICIDAL, chs, WPN_TERRAFORMING_UNIT)
             ? ABL_FUNGICIDAL : ABL_NONE);

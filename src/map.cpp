@@ -1005,6 +1005,7 @@ void set_project_owner(FacilityId item_id, int faction_id) {
 }
 
 void __cdecl mod_time_warp() {
+    int* dword_945F44 = (int*)0x945F44;
     const FacilityId projects[] = {
         FAC_CITIZENS_DEFENSE_FORCE,
         FAC_COMMAND_NEXUS,
@@ -1016,8 +1017,71 @@ void __cdecl mod_time_warp() {
     };
     std::set<int32_t> selected = {};
     std::set<int32_t> choices = {};
-    time_warp();
-    if (!conf.time_warp_add_projects) {
+    const int num = clamp(*map_area_tiles / 3200 + 2, 2, 4);
+
+    if (conf.time_warp_mod) {
+        for (int i = 1; i < MaxPlayerNum; i++) {
+            *dword_945F44 = 1; // Disable splash screen
+            for (int j = 0; j < conf.time_warp_techs; j++) {
+                tech_advance(i);
+            }
+            Factions[i].energy_credits += num * 50;
+            consider_designs(i);
+
+            int base_id = find_hq(i);
+            if (base_id >= 0) {
+                BASE* base = &Bases[base_id];
+                base->pop_size = 4;
+                bool ocean = is_ocean(base);
+                if (!ocean) {
+                    set_fac(FAC_RECYCLING_TANKS, base_id, 1);
+                }
+                set_fac(FAC_RECREATION_COMMONS, base_id, 1);
+                set_fac(FAC_PERIMETER_DEFENSE, base_id, 1);
+                set_fac(FAC_NETWORK_NODE, base_id, 1);
+
+                for (int j = 0; j < num; j++) {
+                    if (ocean) {
+                        mod_veh_init(j&1 ? BSC_UNITY_GUNSHIP : BSC_UNITY_FOIL, i, base->x, base->y);
+                    } else {
+                        mod_veh_init(j&1 ? BSC_UNITY_ROVER : BSC_SCOUT_PATROL, i, base->x, base->y);
+                    }
+                }
+                for (int j = 0; j < num; j++) {
+                    mod_veh_init(ocean ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD, i, base->x, base->y);
+                }
+                for (int j = 0; j < num; j++) {
+                    mod_veh_init(ocean ? BSC_SEA_FORMERS : BSC_FORMERS, i, base->x, base->y);
+                }
+                int items = 0;
+                for (auto& m : iterate_tiles(base->x, base->y, 0, 81)) {
+                    if ((base->x != m.x || base->y != m.y)
+                    && items < 2 && m.sq->owner == i && !m.sq->is_rocky()
+                    && !(m.sq->items & (BIT_BASE_IN_TILE | BIT_VEH_IN_TILE | BIT_THERMAL_BORE | BIT_MONOLITH))
+                    && !goody_at(m.x, m.y) && !random(4)) {
+                        if (is_ocean(m.sq)) {
+                            m.sq->items |= BIT_FARM;
+                        } else {
+                            m.sq->items |= BIT_FOREST;
+                        }
+                        m.sq->items &= ~BIT_FUNGUS;
+                        items++;
+                    }
+                    m.sq->visibility |= (1 << i);
+                    synch_bit(m.x, m.y, i);
+                }
+                // Set initial production for the first turn
+                set_base(base_id);
+                base_compute(1);
+                base_change(base_id, select_production(base_id));
+            }
+            *dword_945F44 = 0;
+        }
+        *current_turn = 50;
+    } else {
+        time_warp();
+    }
+    if (!conf.time_warp_projects) {
         return;
     }
     for (const FacilityId item_id : projects) {

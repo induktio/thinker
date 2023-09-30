@@ -183,6 +183,9 @@ struct Config {
     int modified_landmarks = 0;
     int map_mirror_x = 0;
     int map_mirror_y = 0;
+    int time_warp_mod = 1;
+    int time_warp_techs = 5;
+    int time_warp_projects = 1;
     int faction_placement = 1;
     int nutrient_bonus = 0;
     int rare_supply_pods = 0;
@@ -216,7 +219,6 @@ struct Config {
     int spawn_battle_ogres = 1;
     int collateral_damage_value = 3;
     int planetpearls = 1;
-    int time_warp_add_projects = 1;
     int aquatic_bonus_minerals = 1;
     int alien_guaranteed_techs = 1;
     int alien_early_start = 0;
