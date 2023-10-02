@@ -1156,57 +1156,54 @@ bool can_build_base(int x, int y, int faction, int triad) {
     return false;
 }
 
-int base_tile_score(int x1, int y1, int range, int triad) {
+int base_tile_score(int x, int y, int range, int triad) {
     const int priority[][2] = {
         {BIT_FUNGUS, -2},
         {BIT_FARM, 2},
         {BIT_FOREST, 2},
         {BIT_MONOLITH, 4},
     };
-    MAP* sq = mapsq(x1, y1);
-    int score = min(20, 40 - 80*abs(*map_axis_y/2 - y1)/(*map_axis_y));
+    MAP* sq = mapsq(x, y);
+    int score = min(20, 40 - 80*abs(*map_axis_y/2 - y)/(*map_axis_y));
     int land = 0;
 
     if (!is_ocean(sq)) {
-        score += (ocean_coast_tiles(x1, y1) ? 14 : 0);
+        score += (ocean_coast_tiles(x, y) ? 14 : 0);
         score += (sq->items & BIT_RIVER ? 5 : 0);
     }
-    for (int i=1; i <= 20; i++) {
-        int x2 = wrap(x1 + TableOffsetX[i]);
-        int y2 = y1 + TableOffsetY[i];
-        if (!(sq = mapsq(x2, y2))) {
-            continue;
-        }
-        if (!sq->is_base()) {
-            assert(map_range(x1, y1, x2, y2) == 1 + (i > 8));
-            score += (bonus_at(x2, y2) ? 6 : 0);
-            if (sq->landmarks && !(sq->landmarks & (LM_DUNES | LM_SARGASSO | LM_UNITY))) {
-                score += (sq->landmarks & LM_JUNGLE ? 3 : 2);
+    for (const auto& m : iterate_tiles(x, y, 1, 21)) {
+        assert(map_range(x, y, m.x, m.y) == 1 + (m.i > 8));
+        if (!m.sq->is_base()) {
+            score += (bonus_at(m.x, m.y) ? 6 : 0);
+            if (m.sq->landmarks && !(m.sq->landmarks & (LM_DUNES | LM_SARGASSO | LM_UNITY))) {
+                score += (m.sq->landmarks & LM_JUNGLE ? 3 : 2);
             }
-            if (i <= 8) { // Only adjacent tiles
-                if (triad == TRIAD_SEA && sq->is_land_region()
-                && Continents[sq->region].tile_count >= 20 && ++land < 3) {
-                    score += (!sq->is_owned() ? 20 : 3);
+            if (m.i <= 8) { // Only adjacent tiles
+                if (triad == TRIAD_SEA && m.sq->is_land_region()
+                && Continents[m.sq->region].tile_count >= 20 && ++land < 3) {
+                    score += (!m.sq->is_owned() ? 20 : 3);
                 }
-                if (is_ocean_shelf(sq)) {
+                if (is_ocean_shelf(m.sq)) {
                     score += (triad == TRIAD_SEA ? 3 : 2);
                 }
             }
-            if (!is_ocean(sq)) {
-                if (sq->is_rainy()) {
+            if (!is_ocean(m.sq)) {
+                if (m.sq->is_rainy()) {
                     score += 2;
                 }
-                if (sq->is_moist() && sq->is_rolling()) {
+                if (m.sq->is_moist() && m.sq->is_rolling()) {
                     score += 2;
                 }
-                if (sq->items & BIT_RIVER) {
+                if (m.sq->items & BIT_RIVER) {
                     score++;
                 }
             }
-            for (const int* p : priority) if (sq->items & p[0]) score += p[1];
+            for (const int* p : priority) {
+                if (m.sq->items & p[0]) score += p[1];
+            }
         }
     }
-    return score - 2*range + min(0, (int)pm_safety[x1][y1]);
+    return score - 2*range + min(0, (int)pm_safety[x][y]);
 }
 
 int colony_move(const int id) {
@@ -1842,7 +1839,7 @@ bool allow_probe(int faction1, int faction2, bool is_enhanced) {
         if (!(diplo & DIPLO_COMMLINK)) {
             return true;
         }
-        if (!is_enhanced && has_project(FAC_HUNTER_SEEKER_ALGO, faction2)) {
+        if (!is_enhanced && has_project(FAC_HUNTER_SEEKER_ALGORITHM, faction2)) {
             return false;
         }
         if (at_war(faction1, faction2)) {
@@ -1884,6 +1881,7 @@ bool allow_conv_missile(int veh_id, int enemy_veh_id, MAP* sq) {
         return false;
     }
     if (!enemy->faction_id) {
+        // Native life can be attacked but only rarely
         return sq->owner == veh->faction_id
             && !plans[veh->faction_id].enemy_factions
             && mod_morale_alien(enemy_veh_id, veh->faction_id) > random(32);

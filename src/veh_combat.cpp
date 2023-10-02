@@ -350,18 +350,19 @@ int __cdecl battle_fight_parse_num(int index, int value) {
 
 /*
 This function is only called from battle_fight_1 and not when combat results are simulated.
+When chopper attack rate is modified, one full movement point is always reserved for the attack.
+This avoids overflow issues with vehicle speed and incorrect hasty penalties for air units.
 */
 int __cdecl mod_battle_fight_2(int veh_id, int offset, int tx, int ty, int is_table_offset, int a6, int a7)
 {
     VEH* veh = &Vehs[veh_id];
     UNIT* u = &Units[veh->unit_id];
-    if (conf.chopper_attack_rate > 1 && conf.chopper_attack_rate <= 100) {
+    if (conf.chopper_attack_rate > 1 && conf.chopper_attack_rate < 256) {
         if (u->triad() == TRIAD_AIR && u->range() == 1 && !u->is_missile()) {
-            // This avoids overflow issues with vehicle speed
-            int all_moves = veh_speed(veh_id, 0);
-            int mod_moves = veh->moves_spent + (conf.chopper_attack_rate - 1)*Rules->move_rate_roads;
-            if (mod_moves < all_moves) {
-                veh->moves_spent = mod_moves;
+            int moves = veh_speed(veh_id, 0) - veh->moves_spent - Rules->move_rate_roads;
+            int addon = (conf.chopper_attack_rate - 1) * Rules->move_rate_roads;
+            if (moves > 0 && addon > 0) {
+                veh->moves_spent += min(moves, addon);
             }
         }
     }

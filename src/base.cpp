@@ -764,7 +764,7 @@ bool redundant_project(int faction, int fac_id) {
         }
         return n < 8 && n < f->base_count/3;
     }
-    if (fac_id == FAC_HUNTER_SEEKER_ALGO) {
+    if (fac_id == FAC_HUNTER_SEEKER_ALGORITHM) {
         return f->SE_probe >= 3;
     }
     if (fac_id == FAC_LIVING_REFINERY) {

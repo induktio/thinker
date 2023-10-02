@@ -25,6 +25,7 @@ typedef struct char256 { char str[256]; } char256;
 struct MapTile {
     int x;
     int y;
+    int i;
     MAP* sq;
 };
 
@@ -223,6 +224,8 @@ extern int* ControlTurnC;
 extern int* ControlRedraw;
 extern int* ControlUpkeepA;
 extern int* ControlWaitLoop;
+extern int* SkipTechScreenA;
+extern int* SkipTechScreenB;
 extern int* WorldAddTemperature;
 extern int* WorldSkipTerritory;
 extern int* WinModalState;

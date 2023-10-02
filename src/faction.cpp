@@ -427,7 +427,7 @@ int robust, int immunity, int impunity, int penalty) {
     if (vals[MOR] >= 1 && vals[MOR] + w_morale >= 4) {
         sc += 10;
     }
-    if (vals[PRO] >= 3 && !has_project(FAC_HUNTER_SEEKER_ALGO, faction)) {
+    if (vals[PRO] >= 3 && !has_project(FAC_HUNTER_SEEKER_ALGORITHM, faction)) {
         sc += 4 * max(0, 4 - range/8);
     }
     sc += max(2, 2 + 4*f->AI_wealth + 3*f->AI_tech - f->AI_fight)

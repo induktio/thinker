@@ -100,7 +100,7 @@ std::vector<MapTile> iterate_tiles(int x, int y, size_t start_index, size_t end_
         int y2 = y + TableOffsetY[i];
         MAP* sq = mapsq(x2, y2);
         if (sq) {
-            tiles.push_back({x2, y2, sq});
+            tiles.push_back({x2, y2, (int)i, sq});
         }
     }
     return tiles;

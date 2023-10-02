@@ -599,7 +599,7 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
     for (int i = 0; i < 2; i++) {
         buf[0] = '\0';
         if (arm_v != 1 && !(combat && !psi_arm && wpn_v >= 4*arm_v)) {
-            parse_arm_name(buf, arm, i > 0 || abls || rec > REC_FISSION || spd_v > 1
+            parse_arm_name(buf, arm, i > 0 || abls || spd_v > 1 || wpn_v > arm_v
                 || (noncombat && strlen(Weapon[wpn].name_short) >= 10));
         }
         if (abls & ABL_NERVE_GAS) {
@@ -612,12 +612,11 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
         }
         if (combat) {
             if (!garrison) {
-                if (wpn_v < 2) {
-                    if (spd_v > 1) {
-                        strncat(buf, (*TextLabels)[182], 16); // Recon
-                    } else {
-                        strncat(buf, (*TextLabels)[146], 16); // Scout
-                    }
+                if (triad == TRIAD_LAND && Weapon[wpn].offense_value == 1) {
+                    strncat(buf, (*TextLabels)[146], 16); // Scout
+                    strncat(buf, " ", 2);
+                } else if (triad == TRIAD_LAND && Weapon[wpn].offense_value == 2 && spd_v > 1) {
+                    strncat(buf, (*TextLabels)[182], 16); // Recon
                     strncat(buf, " ", 2);
                 } else {
                     parse_wpn_name(buf, wpn, i > 0);
@@ -628,20 +627,22 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
                 if (value <= -1) { // Defensive
                     if (arm_v >= 8 && wpn_v*2 >= arm_v) {
                         parse_chs_name(buf, Chassis[chs].defsv_name_lrg);
-                    } else if ((wpn_v >= 2) == (spd_v < 2)) {
+                    } else if (wpn_v >= 2) {
                         parse_chs_name(buf, Chassis[chs].defsv1_name);
                     } else {
                         parse_chs_name(buf, Chassis[chs].defsv2_name);
                     }
-                } else if (value >= 1 || triad == TRIAD_AIR) { // Offensive
+                } else if (value >= 1) { // Offensive
                     if (wpn_v >= 8 && arm_v*2 >= wpn_v) {
                         parse_chs_name(buf, Chassis[chs].offsv_name_lrg);
-                    } else if ((arm_v >= 2) == (spd_v < 2)) {
+                    } else if (triad != TRIAD_AIR && arm_v >= 2) {
+                        parse_chs_name(buf, Chassis[chs].offsv1_name);
+                    } else if (triad == TRIAD_AIR && !((wpn_v + arm_v) & 4)) {
                         parse_chs_name(buf, Chassis[chs].offsv1_name);
                     } else {
                         parse_chs_name(buf, Chassis[chs].offsv2_name);
                     }
-                } else if ((wpn_v + arm_v + spd_v) & 1) { // Recon units
+                } else if (triad != LAND || spd_v == 1) { // Scout units
                     parse_chs_name(buf, Chassis[chs].offsv1_name);
                 } else {
                     parse_chs_name(buf, Chassis[chs].offsv2_name);

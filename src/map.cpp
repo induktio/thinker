@@ -533,48 +533,44 @@ bool valid_start(int faction, int iter, int x, int y, bool need_bonus) {
             yd++;
         }
     }
-    for (int i = 0; i < 45; i++) {
-        int x2 = wrap(x + TableOffsetX[i]);
-        int y2 = y + TableOffsetY[i];
-        if ((sq = mapsq(x2, y2))) {
-            int bonus = bonus_at(x2, y2);
-            if (is_ocean(sq)) {
-                if (!is_ocean_shelf(sq)) {
-                    sc--;
-                } else if (aquatic) {
-                    sc += 4;
-                }
-                sea++;
-            } else {
-                sc += (sq->is_rainy_or_moist() ? 3 : 1);
-                if (sq->items & BIT_RIVER) {
-                    sc += 5;
-                }
-                if (sq->items & BIT_FOREST) {
-                    sc += 4;
-                }
-                if (sq->is_rolling()) {
-                    sc += 1;
-                }
+    for (auto& m : iterate_tiles(x, y, 0, 45)) {
+        int bonus = bonus_at(m.x, m.y);
+        if (is_ocean(m.sq)) {
+            if (!is_ocean_shelf(m.sq)) {
+                sc--;
+            } else if (aquatic) {
+                sc += 4;
             }
-            if (bonus != RES_NONE) {
-                if (i <= 20 && bonus == RES_NUTRIENT && !is_ocean(sq)) {
-                    pods++;
-                }
-                sc += (i <= 20 ? 15 : 10);
+            sea++;
+        } else {
+            sc += (m.sq->is_rainy_or_moist() ? 3 : 1);
+            if (m.sq->items & BIT_RIVER) {
+                sc += 5;
             }
-            if (goody_at(x2, y2) > 0) {
-                sc += 15;
-                if (!is_ocean(sq)) {
-                    pods++;
-                }
+            if (m.sq->items & BIT_FOREST) {
+                sc += 4;
             }
-            if (sq->items & BIT_FUNGUS) {
-                sc -= (i <= 20 ? 4 : 2) * (is_ocean(sq) ? 1 : 2);
+            if (m.sq->is_rolling()) {
+                sc += 1;
             }
-            if (sq->items & BIT_MONOLITH) {
-                sc += 8;
+        }
+        if (bonus != RES_NONE) {
+            if (m.i <= 20 && bonus == RES_NUTRIENT && !is_ocean(m.sq)) {
+                pods++;
             }
+            sc += (m.i <= 20 ? 15 : 10);
+        }
+        if (goody_at(m.x, m.y) > 0) {
+            sc += 15;
+            if (!is_ocean(m.sq)) {
+                pods++;
+            }
+        }
+        if (m.sq->items & BIT_FUNGUS) {
+            sc -= (m.i <= 20 ? 4 : 2) * (is_ocean(m.sq) ? 1 : 2);
+        }
+        if (m.sq->items & BIT_MONOLITH) {
+            sc += 8;
         }
     }
     debug("find_score %d %d x: %3d y: %3d xd: %d yd: %d pods: %d min: %d score: %d\n",
@@ -602,26 +598,30 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
     int nutrient = 0;
     int num = 0;
 
-    for (int i = 0; i < 45; i++) {
-        int x2 = wrap(*x + TableOffsetX[i]);
-        int y2 = *y + TableOffsetY[i];
-        if ((sq = mapsq(x2, y2)) && !is_ocean(sq) && (i <= 20 || pods.size() < 2)) {
-            int bonus = bonus_at(x2, y2);
-            if (goody_at(x2, y2) > 0) {
-                pods.insert({x2, y2});
+    for (auto& m : iterate_tiles(*x, *y, 0, 45)) {
+        if (!is_ocean(m.sq) && (m.i <= 20 || pods.size() < 2)) {
+            int bonus = bonus_at(m.x, m.y);
+            if (goody_at(m.x, m.y) > 0) {
+                pods.insert({m.x, m.y});
             } else if (bonus == RES_MINERAL || bonus == RES_ENERGY) {
                 if (nutrient + pods.size() < 2) {
-                    pods.insert({x2, y2});
+                    pods.insert({m.x, m.y});
                 }
             } else if (bonus == RES_NUTRIENT) {
+                if (nutrient < 2 && m.sq->items & BIT_FUNGUS) {
+                    m.sq->items &= ~BIT_FUNGUS;
+                }
+                if (m.sq->is_rocky()) {
+                    rocky_set(m.x, m.y, 1); // rolling rockiness
+                }
                 nutrient++;
-            } else if (sq->items & BIT_RIVER) {
-                if (i == 0) {
+            } else if (m.sq->items & BIT_RIVER) {
+                if (m.i == 0) {
                     adjust = false;
                 }
-                if (adjust && i <= 20 && sq->region == region_at(*x, *y)
-                && can_build_base(x2, y2, faction, TRIAD_LAND)) {
-                    rivers.insert({x2, y2});
+                if (adjust && m.i <= 20 && m.sq->region == region_at(*x, *y)
+                && can_build_base(m.x, m.y, faction, TRIAD_LAND)) {
+                    rivers.insert({m.x, m.y});
                 }
             }
         }
@@ -632,9 +632,13 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
         pods.erase(t);
         sq->items &= ~(BIT_FUNGUS | BIT_MINERAL_RES | BIT_ENERGY_RES);
         sq->items |= (BIT_SUPPLY_REMOVE | BIT_BONUS_RES | BIT_NUTRIENT_RES);
+        if (sq->is_rocky()) {
+            rocky_set(t.x, t.y, 1); // rolling rockiness
+        }
         num++;
     }
-    if (rivers.size() > 0 && *map_area_sq_root > 30) { // Adjust position to adjacent river
+    // Adjust position to adjacent river if currently not on river
+    if (rivers.size() > 0 && *map_area_tiles >= 800) {
         auto t = pick_random(rivers);
         *x = t.x;
         *y = t.y;
@@ -1005,13 +1009,14 @@ void set_project_owner(FacilityId item_id, int faction_id) {
 }
 
 void __cdecl mod_time_warp() {
-    int* dword_945F44 = (int*)0x945F44;
+    const uint32_t BIT_SKIP_BONUS = (BIT_BASE_IN_TILE | BIT_VEH_IN_TILE
+        | BIT_THERMAL_BORE | BIT_MONOLITH | BIT_MINE | BIT_SOLAR);
     const FacilityId projects[] = {
         FAC_CITIZENS_DEFENSE_FORCE,
         FAC_COMMAND_NEXUS,
-        FAC_HUMAN_GENOME_PROJ,
+        FAC_HUMAN_GENOME_PROJECT,
         FAC_MERCHANT_EXCHANGE,
-        FAC_PLANETARY_TRANS_SYS,
+        FAC_PLANETARY_TRANSIT_SYSTEM,
         FAC_VIRTUAL_WORLD,
         FAC_WEATHER_PARADIGM,
     };
@@ -1020,8 +1025,8 @@ void __cdecl mod_time_warp() {
     const int num = clamp(*map_area_tiles / 3200 + 2, 2, 4);
 
     if (conf.time_warp_mod) {
+        *SkipTechScreenB = 1;
         for (int i = 1; i < MaxPlayerNum; i++) {
-            *dword_945F44 = 1; // Disable splash screen
             for (int j = 0; j < conf.time_warp_techs; j++) {
                 tech_advance(i);
             }
@@ -1053,30 +1058,44 @@ void __cdecl mod_time_warp() {
                 for (int j = 0; j < num; j++) {
                     mod_veh_init(ocean ? BSC_SEA_FORMERS : BSC_FORMERS, i, base->x, base->y);
                 }
-                int items = 0;
+                int fixed = 0;
+                int added = 0;
                 for (auto& m : iterate_tiles(base->x, base->y, 0, 81)) {
                     if ((base->x != m.x || base->y != m.y)
-                    && items < 2 && m.sq->owner == i && !m.sq->is_rocky()
-                    && !(m.sq->items & (BIT_BASE_IN_TILE | BIT_VEH_IN_TILE | BIT_THERMAL_BORE | BIT_MONOLITH))
-                    && !goody_at(m.x, m.y) && !random(4)) {
-                        if (is_ocean(m.sq)) {
-                            m.sq->items |= BIT_FARM;
-                        } else {
-                            m.sq->items |= BIT_FOREST;
+                    && (m.sq->owner < 0 || m.sq->owner == i)
+                    && !(m.sq->landmarks & LM_VOLCANO)
+                    && !(m.sq->items & BIT_SKIP_BONUS)) {
+                        // Improve resources/remove fungus near start
+                        int bonus = bonus_at(m.x, m.y);
+                        if (!goody_at(m.x, m.y) && !m.sq->is_rocky() && added < 4 && !random(4)) {
+                            if (is_ocean(m.sq)) {
+                                m.sq->items &= ~TerraformRules[FORMER_FARM][1];
+                                m.sq->items |= BIT_FARM;
+                            } else {
+                                m.sq->items &= ~TerraformRules[FORMER_FOREST][1];
+                                m.sq->items |= BIT_FOREST;
+                            }
+                            m.sq->items &= ~BIT_FUNGUS;
+                            added++;
                         }
-                        m.sq->items &= ~BIT_FUNGUS;
-                        items++;
+                        if (m.sq->items & BIT_FUNGUS && bonus != RES_NONE && fixed < 4) {
+                            m.sq->items &= ~BIT_FUNGUS;
+                            fixed++;
+                        }
+                        if (bonus == RES_NUTRIENT && m.sq->is_rocky()) {
+                            rocky_set(m.x, m.y, 1); // rolling rockiness
+                        }
                     }
                     m.sq->visibility |= (1 << i);
                     synch_bit(m.x, m.y, i);
                 }
-                // Set initial production for the first turn
+                // Set initial production, turn advances once before player turn begins
                 set_base(base_id);
                 base_compute(1);
                 base_change(base_id, select_production(base_id));
             }
-            *dword_945F44 = 0;
         }
+        *SkipTechScreenB = 0;
         *current_turn = 50;
     } else {
         time_warp();
