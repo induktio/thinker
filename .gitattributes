@@ -1,5 +1,13 @@
 # normalize source files to use lf
-text eol=lf
+* eol=lf
+*.c eol=lf
+*.cc eol=lf
+*.cpp eol=lf
+*.h eol=lf
+*.hh eol=lf
+*.hpp eol=lf
+*.rc eol=lf
+*.manifest eol=lf
 
 # text files should have windows encoding
 *.txt eol=crlf
