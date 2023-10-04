@@ -598,10 +598,6 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
     }
     for (int i = 0; i < 2; i++) {
         buf[0] = '\0';
-        if (arm_v != 1 && !(combat && !psi_arm && wpn_v >= 4*arm_v)) {
-            parse_arm_name(buf, arm, i > 0 || abls || spd_v > 1 || wpn_v > arm_v
-                || (noncombat && strlen(Weapon[wpn].name_short) >= 10));
-        }
         if (abls & ABL_NERVE_GAS) {
             parse_abl_name(buf, Ability[ABL_ID_NERVE_GAS].abbreviation, i > 0);
         }
@@ -609,6 +605,10 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
             if (prefix_abls & (1 << j)) {
                 parse_abl_name(buf, Ability[j].abbreviation, i > 0);
             }
+        }
+        if (arm_v != 1 && !(combat && !psi_arm && wpn_v >= 4*arm_v)) {
+            parse_arm_name(buf, arm, i > 0 || abls || spd_v > 1 || wpn_v > arm_v
+                || (noncombat && strlen(Weapon[wpn].name_short) >= 10));
         }
         if (combat) {
             if (!garrison) {

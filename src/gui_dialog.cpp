@@ -159,6 +159,10 @@ int __cdecl mod_base_swap(int faction1, int faction2)
     }
     if (*diplo_counter_proposal_id == DiploCounterEnergyPayment
     || *diplo_counter_proposal_id == DiploCounterNameAPrice) {
+        if (cost_ask > 5000 + clamp(*current_turn, 0, 500)*40) {
+            X_dialog("NOBASESWAP2", faction2);
+            return 0;
+        }
         if (8*f_plr.energy_credits < cost_ask) {
             X_dialog("NOBASESWAP2", faction2);
             return 0;

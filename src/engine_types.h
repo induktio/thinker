@@ -268,6 +268,9 @@ struct MFaction {
     bool is_aquatic() {
         return rule_flags & RFLAG_AQUATIC;
     }
+    bool is_alien() {
+        return rule_flags & RFLAG_ALIEN;
+    }
 };
 
 struct Goal {

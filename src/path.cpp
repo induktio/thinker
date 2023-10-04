@@ -25,7 +25,7 @@ int path_distance(int x1, int y1, int x2, int y2, int unit_id, int faction_id) {
     memset(pm_overlay, 0, sizeof(pm_overlay));
 
     while (dist < MaxMapH && val >= 0) {
-        pm_overlay[px][py]++;
+        pm_overlay[px][py] = dist;
         if (px == x2 && py == y2) {
             return dist;
         }

@@ -1022,11 +1022,18 @@ void __cdecl mod_time_warp() {
     };
     std::set<int32_t> selected = {};
     std::set<int32_t> choices = {};
-    const int num = clamp(*map_area_tiles / 3200 + 2, 2, 4);
+    const int num = clamp(*map_area_tiles / 3200 + 2, 2, 5);
+    /*
+    Aquatic factions always spawn with extra Sea Colony Pod and Unity Gunship.
+    Alien factions spawn with extra Colony Pod and Battle Ogre Mk1.
+    These units are added in setup_player regardless of other conditions.
+    */
 
     if (conf.time_warp_mod) {
         *SkipTechScreenB = 1;
         for (int i = 1; i < MaxPlayerNum; i++) {
+            bool ocean = MFactions[i].is_aquatic();
+            bool alien = MFactions[i].is_alien();
             for (int j = 0; j < conf.time_warp_techs; j++) {
                 tech_advance(i);
             }
@@ -1037,8 +1044,7 @@ void __cdecl mod_time_warp() {
             if (base_id >= 0) {
                 BASE* base = &Bases[base_id];
                 base->pop_size = 4;
-                bool ocean = is_ocean(base);
-                if (!ocean) {
+                if (!has_fac_built(FAC_PRESSURE_DOME, base_id)) {
                     set_fac(FAC_RECYCLING_TANKS, base_id, 1);
                 }
                 set_fac(FAC_RECREATION_COMMONS, base_id, 1);
@@ -1047,12 +1053,12 @@ void __cdecl mod_time_warp() {
 
                 for (int j = 0; j < num; j++) {
                     if (ocean) {
-                        mod_veh_init(j&1 ? BSC_UNITY_GUNSHIP : BSC_UNITY_FOIL, i, base->x, base->y);
+                        mod_veh_init(j&1 ? BSC_UNITY_GUNSHIP : BSC_TRANSPORT_FOIL, i, base->x, base->y);
                     } else {
                         mod_veh_init(j&1 ? BSC_UNITY_ROVER : BSC_SCOUT_PATROL, i, base->x, base->y);
                     }
                 }
-                for (int j = 0; j < num; j++) {
+                for (int j = 0; j < num - ocean - alien; j++) {
                     mod_veh_init(ocean ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD, i, base->x, base->y);
                 }
                 for (int j = 0; j < num; j++) {
@@ -1090,6 +1096,9 @@ void __cdecl mod_time_warp() {
                     synch_bit(m.x, m.y, i);
                 }
                 // Set initial production, turn advances once before player turn begins
+                if (!base->nerve_staple_turns_left) {
+                    ++base->nerve_staple_turns_left;
+                }
                 set_base(base_id);
                 base_compute(1);
                 base_change(base_id, select_production(base_id));

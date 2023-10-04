@@ -7,7 +7,7 @@ Alpha Centauri was known for its immersive lore and story telling. As a general 
 
 For the most part, Thinker uses the same production bonuses as the vanilla difficulty levels would grant the AI normally. There should be no extra resources received by the AI unless this is chosen in the configuration file. The main goal is to make the AI play better given any game config options, so generally the mod will not attempt to adjust most vanilla game design choices.
 
-**For a mostly exhaustive list of all features provided by this mod, refer to both this file and `thinker.ini`.** Enabling Thinker Mod will affect many AI behaviors and also introduce some new game mechanics into Alpha Centauri. Generally most of the new features in the mod will have their own specific config options to choose either vanilla or modded behavior. Items listed under "Other patches included" and "Scient's Patch" in this file are an exception to this, since they will always be applied regardless of config options unless mentioned otherwise.
+**For a mostly exhaustive list of all features provided by this mod, refer to both this file and `thinker.ini`.** Enabling Thinker Mod will affect many AI behaviors and also introduce some new game mechanics into Alpha Centauri. Generally most of the new features in the mod will have their own specific config options to choose either vanilla or modded behavior. Items listed under "Other patches included" and "Scient's Patch" in this file will always be applied unless there is a config option available to toggle them.
 
 Thinker does not have any special save game format, so it's possible to open an old save and have the factions switch to the new AI and vice-versa. None of the `thinker.ini` config options are preserved in the save game either, but the units or resources spawned at the game start will remain.
 
@@ -31,8 +31,6 @@ Whenever the player instructs a former to build an improvement that replaces any
 When building or capturing a new base, the mod will automatically copy the saved build queue from **Template 1** to the new base. At maximum 8 items can be saved to the template, and the first item from the template will be automatically moved to current production choice when a new base is built or captured. Only the template saved to the first slot is checked, any other saved templates are ignored.
 
 To save the current queue to template, open a base and **right click** on the queue and select **Save current list to template**. This feature works in conjunction with the simple hurry cost option so that it's easy to start hurrying base production on the first turn without worrying about double cost mineral thresholds.
-
-To ease calculations, base hurry dialog will now display the minimum required hurry cost to complete the item on the next turn. This assumes the mineral surplus does not decrease, so take it into account if adjusting the workers. When entering a partial payment, this minimal amount will be the default choice in the dialog, instead of the full hurry cost like previously.
 
 
 Summary of AI changes
@@ -104,6 +102,15 @@ When `nutrient_bonus` setting is enabled, the placement algorithm tries to ensur
 Another optional setting `rare_supply_pods` is not dependent on faction placement, instead it affects the whole map by reducing the frequency of random supply pods significantly. Thematically it never made much sense that the supply pods would be excessively abundant across the whole planet surface, while the Unity spaceship would supposedly only have limited space for extra supplies.
 
 
+Accelerated start feature
+=========================
+Accelerated start option will use a modified initial start when `time_warp_mod` is enabled. Previously the game auto-generated additional bases with random improvements. In this version each faction starts with one HQ base and much more additional units, including colony pods, formers and scout units. The amount of starting units and credits depends on the map size, with more being granted on larger maps.
+
+Time Warp should give each faction an equal number of starting colony pods, even if the faction is Alien or Aquatic. The amount of techs being granted or receiving an initial secret project can be adjusted from config. Keep in mind that any additional techs will increase later research costs in the default tech cost rules.
+
+In the nascent days of Alpha Centauri colonization, pioneers faced an arid, unforgiving landscape. Determined to thrive, they embarked on an audacious endeavor, planting forests and cultivating kelp farms. Through relentless effort they transformed the desolation into a thriving oasis. Terraformers worked meticulously to remove fungus from nearby important bonus resources, and this fueled more growth on the initial settlement. After years of studying the local ecosystem and building industrial capacity, it is now time to go for more expansion.
+
+
 Improved combat mechanics
 =========================
 In Alpha Centauri, Fusion reactor technology was extremely important for military purposes as it cheapens the reactor cost almost by half and doubles the unit's combat strength. This made the tech extremely unbalanced for most purposes, and there's no good way around this if the tech tree is to have any advanced reactors at all. By default Thinker's `ignore_reactor_power` option keeps all reactors available, but ignores their power for combat calculation purposes. More advanced reactors still provide their usual cost discounts and also planet busters are unaffacted by this feature.
@@ -144,6 +151,8 @@ Hurry and upgrade formulas
 To ease calculations, `simple_hurry_cost` option removes the double cost penalty from production hurrying when the accumulated minerals are less than the Retool penalty set in alphax.txt. Otherwise the hurry cost formula is equal to the vanilla game mechanics.
 
 In both cases, rushing facilities cost 2 credits per mineral and secret projects cost 4 credits per mineral. In addition secret projects have a second double cost penalty if the accumulated minerals are less than 40.
+
+Base window hurry dialog will now display the minimum required hurry cost to complete the item on the next turn. This assumes the mineral surplus does not decrease, so take it into account when adjusting the workers. When entering a partial payment, this minimal amount will be the default choice in the dialog, instead of the full hurry cost like previously.
 
 All crawler units have a special ability that enables them to disband their full mineral cost towards secret projects. Thinker patches the upgrade cost for crawlers such that it is always equal to the mineral row cost difference between two prototypes multiplied by 40.
 Nano Factory does not lower crawler upgrade costs anymore. This means crawlers can be used to rush projects like previously, but it will confer no advantage beyond bypassing the initial 40 mineral double cost threshold.

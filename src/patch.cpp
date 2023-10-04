@@ -171,6 +171,19 @@ int __cdecl mod_read_basic_rules() {
 }
 
 /*
+This is called from enemy_strategy to upgrade prototypes marked with obsolete_factions flag.
+Early upgrades are disabled to prevent unnecessary costs for any starting units.
+*/
+int __stdcall enemy_strategy_upgrade(int veh_id) {
+    typedef int (__stdcall *std_int)(int);
+    std_int Console_upgrade = (std_int)0x4D06C0;
+    if (*current_turn < (*game_rules & RULES_TIME_WARP ? 80 : 40)) {
+        return 1; // skip upgrade
+    }
+    return Console_upgrade(veh_id);
+}
+
+/*
 Draw Hive faction labels with a more visible high contrast text color.
 */
 int __cdecl map_draw_strcmp(const char* s1, const char* UNUSED(s2))
@@ -463,6 +476,7 @@ bool patch_setup(Config* cf) {
     write_call(0x506ADE, (int)mod_battle_fight_2);
     write_call(0x527039, (int)mod_base_upkeep);
     write_call(0x5B41E9, (int)mod_time_warp);
+    write_call(0x561948, (int)enemy_strategy_upgrade);
     write_offset(0x50F421, (void*)mod_turn_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);
     write_offset(0x64576E, (void*)mod_except_handler3);
