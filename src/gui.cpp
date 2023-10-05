@@ -920,6 +920,7 @@ int show_mod_config() {
         AutoBases = 128,
         AutoUnits = 256,
         FormerReplace = 512,
+        TreatyPopup = 1024,
     };
     *DialogChoices = 0
         | (conf.new_world_builder ? MapGen : 0)
@@ -931,7 +932,8 @@ int show_mod_config() {
         | (conf.render_base_info ? MapBaseInfo : 0)
         | (conf.manage_player_bases ? AutoBases : 0)
         | (conf.manage_player_units ? AutoUnits : 0)
-        | (conf.warn_on_former_replace ? FormerReplace : 0);
+        | (conf.warn_on_former_replace ? FormerReplace : 0)
+        | (conf.foreign_treaty_popup ? TreatyPopup : 0);
 
     // Return value is equal to choices bitfield if OK pressed, -1 otherwise.
     int value = X_pop("modmenu", "OPTIONS", -1, 0, PopDialogCheckbox|PopDialogBtnCancel, 0);
@@ -977,6 +979,10 @@ int show_mod_config() {
     conf.warn_on_former_replace = !!(value & FormerReplace);
     WritePrivateProfileStringA(ModAppName, "warn_on_former_replace",
         (conf.warn_on_former_replace ? "1" : "0"), GameIniFile);
+
+    conf.foreign_treaty_popup = !!(value & TreatyPopup);
+    WritePrivateProfileStringA(ModAppName, "foreign_treaty_popup",
+        (conf.foreign_treaty_popup ? "1" : "0"), GameIniFile);
 
     draw_map(1);
     return 0;
@@ -1133,7 +1139,8 @@ void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, 
 /*
 Refresh base window workers properly after nerve staple is done.
 */
-void __cdecl BaseWin_action_staple(int base_id) {
+void __cdecl BaseWin_action_staple(int base_id)
+{
     set_base(base_id);
     action_staple(base_id);
     base_compute(1);
@@ -1144,7 +1151,8 @@ void __cdecl BaseWin_action_staple(int base_id) {
 This is called when ReportWin is closing and is used to refresh base labels
 on any bases where workers have been adjusted from the base list window.
 */
-int __thiscall ReportWin_close_handler(void* This) {
+int __thiscall ReportWin_close_handler(void* This)
+{
     SubInterface_release_iface_mode(This);
     return draw_map(1);
 }
@@ -1249,12 +1257,16 @@ void __cdecl reset_netmsg_status()
 
 int __thiscall mod_NetMsg_pop(void* This, char* label, int delay, int a4, void* a5)
 {
+    if (!conf.foreign_treaty_popup) {
+        return NetMsg_pop(This, label, delay, a4, a5);
+    }
     if (!strcmp(label, "GOTMYPROBE")) {
         return NetMsg_pop(This, label, -1, a4, a5);
     }
     if (!strcmp(label, netmsg_label)
     && !strcmp((char*)&ParseStrBuffer[0], netmsg_item0)
     && !strcmp((char*)&ParseStrBuffer[1], netmsg_item1)) {
+        // Skip additional popup windows
         return NetMsg_pop(This, label, delay, a4, a5);
     }
     strncpy(netmsg_label, label, StrBufLen);

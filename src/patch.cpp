@@ -554,6 +554,13 @@ bool patch_setup(Config* cf) {
     write_call(0x595E61, (int)mod_morale_alien);
     write_call(0x5C0E6D, (int)mod_morale_alien);
 
+    // Redirect functions for foreign_treaty_popup option
+    write_call(0x55DC00, (int)mod_NetMsg_pop); // enemies_treaty
+    write_call(0x55DF04, (int)mod_NetMsg_pop); // enemies_treaty
+    write_call(0x55E364, (int)mod_NetMsg_pop); // enemies_treaty
+    write_call(0x55CB33, (int)mod_NetMsg_pop); // enemies_war
+    write_call(0x597141, (int)mod_NetMsg_pop); // order_veh
+
     if (cf->autosave_interval > 0) {
         write_jump(0x5ABD20, (int)mod_auto_save);
     }
@@ -923,13 +930,6 @@ bool patch_setup(Config* cf) {
         write_call(0x4CFF47, (int)mod_name_base);
         write_call(0x4E4CFC, (int)mod_name_base);
         write_call(0x4F7E18, (int)mod_name_base);
-    }
-    if (cf->foreign_treaty_popup) {
-        write_call(0x55DC00, (int)mod_NetMsg_pop); // enemies_treaty
-        write_call(0x55DF04, (int)mod_NetMsg_pop); // enemies_treaty
-        write_call(0x55E364, (int)mod_NetMsg_pop); // enemies_treaty
-        write_call(0x55CB33, (int)mod_NetMsg_pop); // enemies_war
-        write_call(0x597141, (int)mod_NetMsg_pop); // order_veh
     }
     if (cf->faction_placement) {
         const byte asm_find_start[] = {

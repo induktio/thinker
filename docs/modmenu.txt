@@ -54,6 +54,7 @@ Show additional base details on world map.
 Thinker manages player base governors.
 Thinker manages player colony pods/formers.
 Warn when manually replacing tile improvements.
+Show foreign treaty changes on popup window.
 
 #HURRY
 #xs 400
