@@ -97,7 +97,7 @@ The new map generator is entirely different from the vanilla version, so it does
 
 Thinker's `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on Huge map sizes.
 
-When `nutrient_bonus` setting is enabled, the placement algorithm tries to ensure each spawn location has at least two nutrient bonus resources for land-based factions. The placement also strongly favors spawns on river tiles for easier movement in the early game.
+When `nutrient_bonus` setting is enabled, the placement algorithm tries to ensure each spawn location has at least two nutrient bonus resources. The placement also strongly favors spawns on river tiles for easier movement in the early game.
 
 Another optional setting `rare_supply_pods` is not dependent on faction placement, instead it affects the whole map by reducing the frequency of random supply pods significantly. Thematically it never made much sense that the supply pods would be excessively abundant across the whole planet surface, while the Unity spaceship would supposedly only have limited space for extra supplies.
 
@@ -108,7 +108,7 @@ Accelerated start option will use a modified initial start when `time_warp_mod` 
 
 Time Warp should give each faction an equal number of starting colony pods, even if the faction is Alien or Aquatic. The amount of techs being granted or receiving an initial secret project can be adjusted from config. Keep in mind that any additional techs will increase later research costs in the default tech cost rules.
 
-In the nascent days of Alpha Centauri colonization, pioneers faced an arid, unforgiving landscape. Determined to thrive, they embarked on an audacious endeavor, planting forests and cultivating kelp farms. Through relentless effort they transformed the desolation into a thriving oasis. Terraformers worked meticulously to remove fungus from nearby important bonus resources, and this fueled more growth on the initial settlement. After years of studying the local ecosystem and building industrial capacity, it is now time to go for more expansion.
+In the nascent days of Alpha Centauri colonization, pioneers faced an arid, unforgiving landscape. Determined to thrive, they started planting forests and cultivating kelp farms. Through steady effort, they transformed the desolation into a thriving oasis. Terraformers worked meticulously to remove fungus from nearby important bonus resources, and this fueled more growth on the initial settlement. After years of studying the local ecosystem and building industrial capacity, it is now time to go for more expansion.
 
 
 Improved combat mechanics

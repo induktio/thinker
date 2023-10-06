@@ -50,10 +50,10 @@ __Add modified landmarks on random maps.
 __Add polar caps on random maps.
 __Mirror maps along X axis.
 __Mirror maps along Y axis.
-Show additional base details on world map.
 Thinker manages player base governors.
 Thinker manages player colony pods/formers.
 Warn when manually replacing tile improvements.
+Show additional base details on world map.
 Show foreign treaty changes on popup window.
 
 #HURRY

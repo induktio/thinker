@@ -177,7 +177,7 @@ Early upgrades are disabled to prevent unnecessary costs for any starting units.
 int __stdcall enemy_strategy_upgrade(int veh_id) {
     typedef int (__stdcall *std_int)(int);
     std_int Console_upgrade = (std_int)0x4D06C0;
-    if (*current_turn < (*game_rules & RULES_TIME_WARP ? 80 : 40)) {
+    if (*current_turn <= 30 + (*game_rules & RULES_TIME_WARP ? TimeWarpStartTurn : 0)) {
         return 1; // skip upgrade
     }
     return Console_upgrade(veh_id);

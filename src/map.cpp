@@ -216,13 +216,13 @@ int __cdecl mod_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, in
 }
 
 /*
-Purpose: Determine if the tile has a resource bonus.
+Determine if the tile has a resource bonus.
 Return Value: 0 (no bonus), 1 (nutrient), 2 (mineral), 3 (energy)
 */
 int __cdecl mod_bonus_at(int x, int y) {
     MAP* sq = mapsq(x, y);
     uint32_t bit = sq->items;
-    uint32_t alt = sq->climate >> 5;
+    uint32_t alt = sq->alt_level();
     bool has_rsc_bonus = bit & BIT_BONUS_RES;
     if (!has_rsc_bonus && (!*map_random_seed || (alt >= ALT_SHORE_LINE
     && !conf.rare_supply_pods && !(*game_rules & RULES_NO_UNITY_SCATTERING)))) {
@@ -248,12 +248,13 @@ int __cdecl mod_bonus_at(int x, int y) {
 }
 
 /*
-Purpose: Determine if the tile has a supply pod and if so what type.
+Determine if the tile has a supply pod and if so what type.
 Return Value: 0 (no supply pod), 1 (standard supply pod), 2 (unity pod?)
 */
 int __cdecl mod_goody_at(int x, int y) {
     MAP* sq = mapsq(x, y);
     uint32_t bit = sq->items;
+    uint32_t alt = sq->alt_level();
     if (bit & (BIT_SUPPLY_REMOVE | BIT_MONOLITH)) {
         return 0; // nothing, supply pod already opened or monolith
     }
@@ -269,7 +270,7 @@ int __cdecl mod_goody_at(int x, int y) {
     int avg = (x + y) >> 1;
     int x_diff = x - avg;
     int cmp = (avg & 3) + 4 * (x_diff & 3);
-    if (!conf.rare_supply_pods && !is_ocean(sq)) {
+    if (!conf.rare_supply_pods && alt >= ALT_SHORE_LINE) {
         if (cmp == ((-5 * (avg >> 2) - 3 * (x_diff >> 2) + *map_random_seed) & 0xF)) {
             return 2;
         }
@@ -491,7 +492,7 @@ void process_map(int faction, int k) {
 bool valid_start(int faction, int iter, int x, int y, bool need_bonus) {
     MAP* sq = mapsq(x, y);
     bool aquatic = MFactions[faction].is_aquatic();
-    int limit = (*map_area_sq_root < 40 ? max(5, 8 - iter/50) : 8);
+    int limit = max((*map_area_tiles < 1600 ? 5 : 7), 8 - iter/80);
     int min_sc = 80 - iter/4;
     int pods = 0;
     int sea = 0;
@@ -562,7 +563,7 @@ bool valid_start(int faction, int iter, int x, int y, bool need_bonus) {
         }
         if (goody_at(m.x, m.y) > 0) {
             sc += 15;
-            if (!is_ocean(m.sq)) {
+            if (is_ocean(m.sq) == aquatic) {
                 pods++;
             }
         }
@@ -594,39 +595,46 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
     MAP* sq;
     Points pods;
     Points rivers;
-    bool adjust = true;
+    const int limit = 2;
+    bool aquatic = MFactions[faction].is_aquatic();
+    int adjust = (aquatic ? 0 : 8);
     int nutrient = 0;
     int num = 0;
 
     for (auto& m : iterate_tiles(*x, *y, 0, 45)) {
-        if (!is_ocean(m.sq) && (m.i <= 20 || pods.size() < 2)) {
+        if (is_ocean(m.sq) == aquatic && (m.i <= 20 || pods.size() < limit)) {
             int bonus = bonus_at(m.x, m.y);
-            if (goody_at(m.x, m.y) > 0) {
-                pods.insert({m.x, m.y});
-            } else if (bonus == RES_MINERAL || bonus == RES_ENERGY) {
-                if (nutrient + pods.size() < 2) {
-                    pods.insert({m.x, m.y});
-                }
-            } else if (bonus == RES_NUTRIENT) {
-                if (nutrient < 2 && m.sq->items & BIT_FUNGUS) {
+            if (bonus == RES_NUTRIENT) {
+                if (nutrient < limit && m.sq->items & BIT_FUNGUS) {
                     m.sq->items &= ~BIT_FUNGUS;
                 }
                 if (m.sq->is_rocky()) {
                     rocky_set(m.x, m.y, 1); // rolling rockiness
                 }
                 nutrient++;
-            } else if (m.sq->items & BIT_RIVER) {
-                if (m.i == 0) {
-                    adjust = false;
+            } else if (bonus == RES_MINERAL || bonus == RES_ENERGY) {
+                if (pods.size() < limit) {
+                    pods.insert({m.x, m.y});
                 }
-                if (adjust && m.i <= 20 && m.sq->region == region_at(*x, *y)
-                && can_build_base(m.x, m.y, faction, TRIAD_LAND)) {
+            } else if (goody_at(m.x, m.y) > 0) {
+                if (pods.size() < limit) {
+                    pods.insert({m.x, m.y});
+                }
+            } else if (adjust > 0 && m.sq->items & BIT_RIVER) {
+                if (m.i > 8 && !rivers.size()) {
+                    adjust = 20;
+                }
+                if (m.i == 0) {
+                    adjust = 0;
+                } else if (m.i <= adjust && m.sq->region == region_at(*x, *y)
+                && can_build_base(m.x, m.y, faction, TRIAD_LAND)
+                && min_range(spawns, m.x, m.y) >= 8) {
                     rivers.insert({m.x, m.y});
                 }
             }
         }
     }
-    while (pods.size() > 0 && nutrient + num < 2) {
+    while (pods.size() > 0 && nutrient + num < limit) {
         auto t = pick_random(pods);
         sq = mapsq(t.x, t.y);
         pods.erase(t);
@@ -638,7 +646,7 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
         num++;
     }
     // Adjust position to adjacent river if currently not on river
-    if (rivers.size() > 0 && *map_area_tiles >= 800) {
+    if (adjust > 0 && rivers.size() > 0) {
         auto t = pick_random(rivers);
         *x = t.x;
         *y = t.y;
@@ -647,14 +655,14 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
 
 void __cdecl find_start(int faction, int* tx, int* ty) {
     bool aquatic = MFactions[faction].is_aquatic();
-    bool need_bonus = !aquatic && conf.nutrient_bonus > is_human(faction);
+    bool need_bonus = conf.nutrient_bonus > is_human(faction);
     int x = 0;
     int y = 0;
     int i = 0;
     int k = (*map_axis_y < 80 ? 4 : 8);
     process_map(faction, k/2);
 
-    while (++i <= 300) {
+    while (++i <= 400) {
         if (!aquatic && goodtiles.size() > 0 && i <= 200) {
             auto t = pick_random(goodtiles);
             y = t.y;
@@ -667,6 +675,12 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
         if (valid_start(faction, i, x, y, need_bonus)) {
             if (need_bonus) {
                 apply_nutrient_bonus(faction, &x, &y);
+            }
+            // No unity scattering can normally spawn pods at two tile range from the start
+            if (*game_rules & RULES_NO_UNITY_SCATTERING && conf.rare_supply_pods > 1) {
+                for (auto& m : iterate_tiles(x, y, 0, 25)) {
+                    m.sq->items |= BIT_SUPPLY_REMOVE;
+                }
             }
             *tx = x;
             *ty = y;
@@ -1074,15 +1088,17 @@ void __cdecl mod_time_warp() {
                         // Improve resources/remove fungus near start
                         int bonus = bonus_at(m.x, m.y);
                         if (!goody_at(m.x, m.y) && !m.sq->is_rocky() && added < 4 && !random(4)) {
-                            if (is_ocean(m.sq)) {
-                                m.sq->items &= ~TerraformRules[FORMER_FARM][1];
-                                m.sq->items |= BIT_FARM;
-                            } else {
+                            if (!is_ocean(m.sq)) {
                                 m.sq->items &= ~TerraformRules[FORMER_FOREST][1];
+                                m.sq->items &= ~BIT_FUNGUS;
                                 m.sq->items |= BIT_FOREST;
+                                added++;
+                            } else if (is_ocean_shelf(m.sq)) {
+                                m.sq->items &= ~TerraformRules[FORMER_FARM][1];
+                                m.sq->items &= ~BIT_FUNGUS;
+                                m.sq->items |= BIT_FARM;
+                                added++;
                             }
-                            m.sq->items &= ~BIT_FUNGUS;
-                            added++;
                         }
                         if (m.sq->items & BIT_FUNGUS && bonus != RES_NONE && fixed < 4) {
                             m.sq->items &= ~BIT_FUNGUS;
@@ -1105,7 +1121,7 @@ void __cdecl mod_time_warp() {
             }
         }
         *SkipTechScreenB = 0;
-        *current_turn = 50;
+        *current_turn = TimeWarpStartTurn;
     } else {
         time_warp();
     }

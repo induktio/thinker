@@ -123,8 +123,9 @@ const int MaxReputeNum = 8;
 const int MaxMightNum = 7;
 const int MaxBonusNameNum = 41;
 
-const int MaxEnemyRange = 50;
 const int StrBufLen = 256;
+const int MaxEnemyRange = 50;
+const int TimeWarpStartTurn = 50;
 
 /*
 Config parsed from thinker.ini. Alpha Centauri.ini related options

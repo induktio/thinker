@@ -916,10 +916,10 @@ int show_mod_config() {
         MapPolarCaps = 8,
         MapMirrorX = 16,
         MapMirrorY = 32,
-        MapBaseInfo = 64,
-        AutoBases = 128,
-        AutoUnits = 256,
-        FormerReplace = 512,
+        AutoBases = 64,
+        AutoUnits = 128,
+        FormerReplace = 256,
+        MapBaseInfo = 512,
         TreatyPopup = 1024,
     };
     *DialogChoices = 0
@@ -929,10 +929,10 @@ int show_mod_config() {
         | (conf.world_polar_caps ? MapPolarCaps: 0)
         | (conf.map_mirror_x ? MapMirrorX : 0)
         | (conf.map_mirror_y ? MapMirrorY : 0)
-        | (conf.render_base_info ? MapBaseInfo : 0)
         | (conf.manage_player_bases ? AutoBases : 0)
         | (conf.manage_player_units ? AutoUnits : 0)
         | (conf.warn_on_former_replace ? FormerReplace : 0)
+        | (conf.render_base_info ? MapBaseInfo : 0)
         | (conf.foreign_treaty_popup ? TreatyPopup : 0);
 
     // Return value is equal to choices bitfield if OK pressed, -1 otherwise.
@@ -964,10 +964,6 @@ int show_mod_config() {
     WritePrivateProfileStringA(ModAppName, "map_mirror_y",
         (conf.map_mirror_y ? "1" : "0"), GameIniFile);
 
-    conf.render_base_info = !!(value & MapBaseInfo);
-    WritePrivateProfileStringA(ModAppName, "render_base_info",
-        (conf.render_base_info ? "1" : "0"), GameIniFile);
-
     conf.manage_player_bases = !!(value & AutoBases);
     WritePrivateProfileStringA(ModAppName, "manage_player_bases",
         (conf.manage_player_bases ? "1" : "0"), GameIniFile);
@@ -979,6 +975,10 @@ int show_mod_config() {
     conf.warn_on_former_replace = !!(value & FormerReplace);
     WritePrivateProfileStringA(ModAppName, "warn_on_former_replace",
         (conf.warn_on_former_replace ? "1" : "0"), GameIniFile);
+
+    conf.render_base_info = !!(value & MapBaseInfo);
+    WritePrivateProfileStringA(ModAppName, "render_base_info",
+        (conf.render_base_info ? "1" : "0"), GameIniFile);
 
     conf.foreign_treaty_popup = !!(value & TreatyPopup);
     WritePrivateProfileStringA(ModAppName, "foreign_treaty_popup",
