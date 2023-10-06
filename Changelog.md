@@ -1,6 +1,16 @@
 
 # Thinker mod release changelog
 
+## Version 3.8 (2023-10-06)
+* Option rare_supply_pods=2 now removes all supply pods from the start when No Unity Scattering is selected.
+* Option nutrient_bonus is now applied by default on aquatic and player controlled factions.
+* Foreign treaty popup option can also be toggled from the mod config menu.
+* Modified time warp creates additional forests or kelp farms near the start location and sometimes removes fungus.
+* Number of colony pods on time warp is now equalized across all factions even if they are alien or aquatic.
+* Fix issue where AI sometimes lost extra credits by doing unnecessary upgrades during accelerated start.
+* Fix issue with chopper_attack_rate calculation with higher values.
+
+
 ## Version 3.7 (2023-09-30)
 * Option chopper_attack_rate adjusts how many movement points choppers will expend upon every attack, default is two points.
 * Option nerve_staple_mod makes nerve staple effects expire twice as fast when SE Police rating is below a certain value, default is Police < 0.
