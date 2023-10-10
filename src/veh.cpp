@@ -607,7 +607,7 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
             }
         }
         if (arm_v != 1 && !(combat && !psi_arm && wpn_v >= 4*arm_v)) {
-            parse_arm_name(buf, arm, i > 0 || abls || spd_v > 1 || wpn_v > arm_v
+            parse_arm_name(buf, arm, i > 0 || abls || spd_v > 1 || wpn_v >= arm_v
                 || (noncombat && strlen(Weapon[wpn].name_short) >= 10));
         }
         if (combat) {

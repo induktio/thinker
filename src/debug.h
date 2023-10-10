@@ -13,6 +13,7 @@ Additional custom non-engine debugging functions.
 */
 void check_zeros(uint8_t* ptr, size_t len);
 void print_map(int x, int y);
+void print_veh_stack(int x, int y);
 void print_veh(int id);
 void print_base(int id);
 

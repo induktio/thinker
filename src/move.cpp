@@ -185,6 +185,12 @@ int __cdecl mod_enemy_move(const int id) {
         }
     } else if (conf.manage_player_units && is_human(veh->faction_id)
     && (veh->is_colony() || veh->is_former())) {
+        if (!*current_base_ptr) {
+            int base_id = mod_base_find3(veh->x, veh->y, veh->faction_id, -1, -1, -1);
+            if (base_id >= 0) {
+                set_base(base_id);
+            }
+        }
         if (upkeep_faction != veh->faction_id) {
             former_plans(veh->faction_id);
             move_upkeep(veh->faction_id, M_Player);
@@ -2209,7 +2215,8 @@ double battle_priority(int id1, int id2, int dist, int moves, MAP* sq) {
     assert(id1 >= 0 && id1 < *total_num_vehicles);
     assert(id2 >= 0 && id2 < *total_num_vehicles);
     assert(veh1->faction_id != veh2->faction_id);
-    assert((dist == 0) != (map_range(veh1->x, veh1->y, veh2->x, veh2->y) > 1));
+    assert(veh1->offense_value() != 0 || veh1->is_probe());
+    assert(map_range(veh1->x, veh1->y, veh2->x, veh2->y) > 0);
     UNIT* u1 = &Units[veh1->unit_id];
     UNIT* u2 = &Units[veh2->unit_id];
     bool non_psi = veh1->offense_value() >= 0 && veh2->defense_value() >= 0;

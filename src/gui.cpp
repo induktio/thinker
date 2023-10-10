@@ -990,8 +990,7 @@ int show_mod_config() {
 
 int show_mod_menu() {
     parse_says(0, MOD_VERSION, -1, -1);
-    parse_says(1, MOD_VERSION, -1, -1);
-    parse_says(2, MOD_DATE, -1, -1);
+    parse_says(1, MOD_DATE, -1, -1);
 
     if (*GameHalted) {
         int ret = popp("modmenu", "MAINMENU", 0, "stars_sm.pcx", 0);

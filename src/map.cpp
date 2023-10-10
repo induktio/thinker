@@ -286,7 +286,7 @@ int __cdecl mod_base_find3(int x, int y, int faction1, int region, int faction2,
     int result = -1;
     bool border_fix = conf.territory_border_fix && region >= MaxRegionNum/2;
 
-    for (int i=0; i<*total_num_bases; ++i) {
+    for (int i = 0; i < *total_num_bases; i++) {
         BASE* base = &Bases[i];
         MAP* bsq = mapsq(base->x, base->y);
 
@@ -602,7 +602,8 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
     int num = 0;
 
     for (auto& m : iterate_tiles(*x, *y, 0, 45)) {
-        if (is_ocean(m.sq) == aquatic && (m.i <= 20 || pods.size() < limit)) {
+        if (((aquatic && is_ocean_shelf(m.sq)) || (!aquatic && !is_ocean(m.sq)))
+        && (m.i < 25 || pods.size() < limit)) {
             int bonus = bonus_at(m.x, m.y);
             if (bonus == RES_NUTRIENT) {
                 if (nutrient < limit && m.sq->items & BIT_FUNGUS) {
@@ -612,21 +613,22 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
                     rocky_set(m.x, m.y, 1); // rolling rockiness
                 }
                 nutrient++;
-            } else if (bonus == RES_MINERAL || bonus == RES_ENERGY) {
-                if (pods.size() < limit) {
-                    pods.insert({m.x, m.y});
+            }
+            else if (bonus == RES_MINERAL || bonus == RES_ENERGY) {
+                pods.insert({m.x, m.y});
+            }
+            else if (goody_at(m.x, m.y) > 0) {
+                pods.insert({m.x, m.y});
+            }
+            else if (adjust > 0 && m.sq->items & BIT_RIVER) {
+                if (m.i == 0) {
+                    adjust = 0;
                 }
-            } else if (goody_at(m.x, m.y) > 0) {
-                if (pods.size() < limit) {
-                    pods.insert({m.x, m.y});
-                }
-            } else if (adjust > 0 && m.sq->items & BIT_RIVER) {
                 if (m.i > 8 && !rivers.size()) {
                     adjust = 20;
                 }
-                if (m.i == 0) {
-                    adjust = 0;
-                } else if (m.i <= adjust && m.sq->region == region_at(*x, *y)
+                if (m.i > 0 && m.i <= adjust
+                && m.sq->region == region_at(*x, *y)
                 && can_build_base(m.x, m.y, faction, TRIAD_LAND)
                 && min_range(spawns, m.x, m.y) >= 8) {
                     rivers.insert({m.x, m.y});
@@ -1117,7 +1119,7 @@ void __cdecl mod_time_warp() {
                 }
                 set_base(base_id);
                 base_compute(1);
-                base_change(base_id, select_production(base_id));
+                base_change(base_id, select_build(base_id));
             }
         }
         *SkipTechScreenB = 0;

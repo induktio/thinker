@@ -453,7 +453,7 @@ int robust, int immunity, int impunity, int penalty) {
 
         int drone_score = 3 + (m->rule_drone > 0) - (m->rule_talent > 0)
             - (has_tech(Facility[FAC_PUNISHMENT_SPHERE].preq_tech, faction) ? 1 : 0);
-        if (*SunspotDuration > 5 && *diff_level >= DIFF_LIBRARIAN
+        if (*SunspotDuration > 1 && *diff_level >= DIFF_LIBRARIAN
         && un_charter() && vals[POL] >= 0) {
             sc += 3*drone_score;
         }

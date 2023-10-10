@@ -43,14 +43,14 @@ int __cdecl mod_base_build(int base_id, bool has_gov) {
     }
     if (base.state_flags & BSTATE_PRODUCTION_DONE || has_gov) {
         debug("BUILD NEW\n");
-        choice = select_production(base_id);
+        choice = select_build(base_id);
         base.state_flags &= ~BSTATE_PRODUCTION_DONE;
     } else if (base.item() >= 0 && !can_build_unit(base_id, base.item())) {
         debug("BUILD FACILITY\n");
-        choice = select_production(base_id);
+        choice = select_build(base_id);
     } else if (base.item() < 0 && !can_build(base_id, abs(base.item()))) {
         debug("BUILD CHANGE\n");
-        choice = select_production(base_id);
+        choice = select_build(base_id);
     } else if ((base.item() < 0 || !Units[base.item()].is_garrison_unit())
     && !has_defenders(base.x, base.y, base.faction_id)) {
         debug("BUILD DEFENSE\n");
@@ -1126,7 +1126,7 @@ int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships) 
     return find_proto(base_id, TRIAD_LAND, WMODE_COMBAT, (sea_base || !random(5) ? DEF : ATT));
 }
 
-int select_production(int base_id) {
+int select_build(int base_id) {
     BASE* base = &Bases[base_id];
     int faction = base->faction_id;
     Faction* f = &Factions[faction];
@@ -1214,7 +1214,7 @@ int select_production(int base_id) {
         + min(1.0, 1.5 * f->base_count / *map_area_sq_root) * (f->AI_fight * 0.2 + 0.8);
     double threat = 1 - (1 / (1 + max(0.0, w1 * w2)));
 
-    debug("select_prod %d %d %2d %2d def: %d frm: %d prb: %d crw: %d pods: %d expand: %d "\
+    debug("select_build %d %d %2d %2d def: %d frm: %d prb: %d crw: %d pods: %d expand: %d "\
         "scouts: %d min: %2d res: %2d limit: %2d mil: %.4f threat: %.4f\n",
         *current_turn, faction, base->x, base->y,
         defenders, formers, landprobes+seaprobes, all_crawlers, pods, build_pods,

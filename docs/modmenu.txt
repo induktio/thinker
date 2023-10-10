@@ -6,9 +6,9 @@
 ;
 #MAINMENU
 #xs 400
-#caption $MSG0
-^^Mod Version: {$MSG1}
-^^Mod Build Date: {$MSG2}
+#caption Thinker Mod
+^^Mod Version: {$MSG0}
+^^Mod Build Date: {$MSG1}
 
 Close Dialog
 Change Mod Options
@@ -16,9 +16,9 @@ Open Project Homepage
 
 #GAMEMENU
 #xs 400
-#caption $MSG0
-^^Mod Version: {$MSG1}
-^^Mod Build Date: {$MSG2}
+#caption Thinker Mod
+^^Mod Version: {$MSG0}
+^^Mod Build Date: {$MSG1}
 ^^Game Time Spent: {$NUM0} hours, {$NUM1} minutes, {$NUM2} seconds.
 
 Close Dialog
