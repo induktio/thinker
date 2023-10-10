@@ -803,14 +803,6 @@ bool patch_setup(Config* cf) {
         write_bytes(0x50D67A, old_bytes, new_bytes, sizeof(new_bytes));
     }
 
-    if (cf->modify_unit_morale) {
-        write_jump(0x5C0E40, (int)mod_morale_veh);
-        write_call(0x50211F, (int)mod_get_basic_offense);
-        write_call(0x50274A, (int)mod_get_basic_offense);
-        write_call(0x5044EB, (int)mod_get_basic_offense);
-        write_call(0x502A69, (int)mod_get_basic_defense);
-    }
-
     /*
     Fix issue where TECHSHARE faction ability always skips the checks
     for infiltration conditions while smac_only mode is activated.
@@ -971,8 +963,15 @@ bool patch_setup(Config* cf) {
         write_call(0x5082AF, (int)battle_fight_parse_num);
         write_call(0x5082B7, (int)battle_fight_parse_num);
     }
-    if (cf->simple_cost_factor) {
-        write_jump(0x4E4430, (int)mod_cost_factor);
+    if (cf->modify_unit_morale) {
+        write_jump(0x5C0E40, (int)mod_morale_veh);
+        write_call(0x50211F, (int)mod_get_basic_offense);
+        write_call(0x50274A, (int)mod_get_basic_offense);
+        write_call(0x5044EB, (int)mod_get_basic_offense);
+        write_call(0x502A69, (int)mod_get_basic_defense);
+    }
+    if (cf->skip_default_balance) {
+        remove_call(0x5B41F5);
     }
     if (cf->early_research_start) {
         /* Remove labs start delay from factions with negative RESEARCH value. */
@@ -987,6 +986,9 @@ bool patch_setup(Config* cf) {
     if (cf->territory_border_fix || DEBUG) {
         write_call(0x523ED7, (int)mod_base_find3);
         write_call(0x52417F, (int)mod_base_find3);
+    }
+    if (cf->simple_cost_factor) {
+        write_jump(0x4E4430, (int)mod_cost_factor);
     }
     if (cf->revised_tech_cost) {
         write_call(0x4452D5, (int)mod_tech_rate);

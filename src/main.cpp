@@ -174,6 +174,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->ignore_reactor_power = atoi(value);
     } else if (MATCH("thinker", "modify_unit_morale")) {
         cf->modify_unit_morale = atoi(value);
+    } else if (MATCH("thinker", "skip_default_balance")) {
+        cf->skip_default_balance = atoi(value);
     } else if (MATCH("thinker", "early_research_start")) {
         cf->early_research_start = atoi(value);
     } else if (MATCH("thinker", "facility_capture_fix")) {

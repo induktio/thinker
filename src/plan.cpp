@@ -181,33 +181,12 @@ void former_plans(int faction) {
 }
 
 void plans_upkeep(int faction) {
-    bool governor = is_human(faction) && conf.manage_player_bases;
+    const bool governor = is_human(faction) && conf.manage_player_bases;
+    const int i = faction;
     if (!faction || !is_alive(faction)) {
         return;
     }
     if (!is_human(faction)) {
-        /*
-        Remove bugged prototypes from the savegame.
-        */
-        for (int j = 0; j < MaxProtoFactionNum; j++) {
-            int unit_id = faction*MaxProtoFactionNum + j;
-            UNIT* u = &Units[unit_id];
-            if (strlen(u->name) >= MaxProtoNameLen
-            || u->chassis_id < CHS_INFANTRY
-            || u->chassis_id > CHS_MISSILE) {
-                for (int k = *total_num_vehicles-1; k >= 0; k--) {
-                    if (Vehicles[k].unit_id == unit_id) {
-                        veh_kill(k);
-                    }
-                }
-                for (int k=0; k < *total_num_bases; k++) {
-                    if (Bases[k].queue_items[0] == unit_id) {
-                        Bases[k].queue_items[0] = -FAC_STOCKPILE_ENERGY;
-                    }
-                }
-                memset(u, 0, sizeof(UNIT));
-            }
-        }
         if (conf.design_units) {
             design_units(faction);
         }
@@ -220,7 +199,6 @@ void plans_upkeep(int faction) {
         last_turn = *current_turn;
     }
     if (thinker_enabled(faction) || governor) {
-        const int i = faction;
         int minerals[MaxBaseNum];
         int population[MaxBaseNum];
         Faction* f = &Factions[i];

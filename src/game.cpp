@@ -98,6 +98,9 @@ int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id) {
 void init_save_game(int faction) {
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
+    if (!faction) {
+        return;
+    }
     if (m->thinker_header != THINKER_HEADER) {
         // Clear old save game storage locations
         if (f->old_thinker_header == THINKER_HEADER) {
@@ -111,6 +114,50 @@ void init_save_game(int faction) {
         m->thinker_last_mc_turn = 0;
     }
     m->thinker_unused = 0;
+    /*
+    Remove invalid prototypes from the savegame.
+    This also attempts to repair invalid vehicle stacks to prevent game crashes.
+    Stack iterators should never contain infinite loops or vehicles from multiple tiles.
+    */
+    for (int i = 0; i < MaxProtoFactionNum; i++) {
+        int unit_id = faction*MaxProtoFactionNum + i;
+        UNIT* u = &Units[unit_id];
+        if (strlen(u->name) >= MaxProtoNameLen
+        || u->chassis_id < CHS_INFANTRY
+        || u->chassis_id > CHS_MISSILE) {
+            for (int j = *total_num_vehicles-1; j >= 0; j--) {
+                if (Vehicles[j].unit_id == unit_id) {
+                    veh_kill(j);
+                }
+            }
+            for (int j = 0; j < *total_num_bases; j++) {
+                if (Bases[j].queue_items[0] == unit_id) {
+                    Bases[j].queue_items[0] = -FAC_STOCKPILE_ENERGY;
+                }
+            }
+            memset(u, 0, sizeof(UNIT));
+        }
+    }
+    for (int i = 0; i < *total_num_vehicles; i++) {
+        VEH* veh = &Vehs[i];
+        int prev_id = veh->prev_veh_id_stack;
+        int next_id = veh->next_veh_id_stack;
+        bool adjust = false;
+
+        if (prev_id == i || (prev_id >= 0 && (Vehs[prev_id].x != veh->x || Vehs[prev_id].y != veh->y))) {
+            print_veh_stack(veh->x, veh->y);
+            veh->prev_veh_id_stack = -1;
+            adjust = true;
+        }
+        if (next_id == i || (next_id >= 0 && (Vehs[next_id].x != veh->x || Vehs[next_id].y != veh->y))) {
+            print_veh_stack(veh->x, veh->y);
+            veh->next_veh_id_stack = -1;
+            adjust = true;
+        }
+        if (adjust) {
+            stack_fix(i);
+        }
+    }
 }
 
 int __cdecl mod_turn_upkeep() {
@@ -168,14 +215,13 @@ int __cdecl mod_faction_upkeep(int faction) {
         *ControlTurnA = 1; // Return to main menu
         *ControlTurnB = 1;
     }
-    if (faction > 0) {
-        init_save_game(faction);
-        plans_upkeep(faction);
-        reset_netmsg_status();
-    }
+    init_save_game(faction);
+    plans_upkeep(faction);
+    reset_netmsg_status();
     *ControlUpkeepA = 1;
     social_upkeep(faction);
     do_all_non_input();
+
     if (conf.activate_skipped_units) {
         for (int i = 0; i < *total_num_vehicles; i++) {
             if (Vehs[i].faction_id == faction) {
