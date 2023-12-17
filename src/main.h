@@ -151,12 +151,12 @@ struct Config {
     int window_width = 1024;
     int window_height = 768;
     int smac_only = 0;
-    int player_free_units = 0;
-    int free_formers = 0;
-    int free_colony_pods = 0;
-    int satellites_nutrient = 0;
-    int satellites_mineral = 0;
-    int satellites_energy = 0;
+    int player_colony_pods = 0;
+    int computer_colony_pods = 0;
+    int player_formers = 0;
+    int computer_formers = 0;
+    int player_satellites[3] = {0,0,0};
+    int computer_satellites[3] = {0,0,0};
     int design_units = 1;
     int factions_enabled = 7;
     int social_ai = 1;
@@ -207,7 +207,7 @@ struct Config {
     int counter_espionage = 0;
     int ignore_reactor_power = 0;
     int modify_unit_morale = 1; // unlisted option
-    int skip_default_balance = 0; // unlisted option
+    int skip_default_balance = 1; // unlisted option
     int early_research_start = 1; // unlisted option
     int facility_capture_fix = 1; // unlisted option
     int territory_border_fix = 1;

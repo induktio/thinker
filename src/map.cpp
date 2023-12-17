@@ -189,13 +189,17 @@ int __cdecl base_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, i
 
 int __cdecl mod_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, int y2, int toggle) {
     int value = base_hex_cost(unit_id, faction_id, x1, y1, x2, y2, toggle);
-    assert(value == hex_cost(unit_id, faction_id, x1, y1, x2, y2, toggle));
+    MAP* sq_a = mapsq(x1, y1);
+    MAP* sq_b = mapsq(x2, y2);
+
+    if (DEBUG && sq_b && (!is_ocean(sq_b) || Units[unit_id].triad() != TRIAD_SEA
+    || !sq_b->is_fungus() || sq_b->alt_level() != ALT_OCEAN_SHELF)) {
+        assert(value == hex_cost(unit_id, faction_id, x1, y1, x2, y2, toggle));
+    }
 
     if (conf.magtube_movement_rate < 1 && conf.fast_fungus_movement < 1) {
         return value;
     }
-    MAP* sq_a = mapsq(x1, y1);
-    MAP* sq_b = mapsq(x2, y2);
 
     if (conf.magtube_movement_rate > 0) {
         if (!is_ocean(sq_a) && !is_ocean(sq_b)) {
@@ -556,10 +560,10 @@ bool valid_start(int faction, int iter, int x, int y, bool need_bonus) {
             }
         }
         if (bonus != RES_NONE) {
-            if (m.i <= 20 && bonus == RES_NUTRIENT && !is_ocean(m.sq)) {
+            if (m.i < StartBonusTiles && is_ocean(m.sq) == aquatic) {
                 pods++;
             }
-            sc += (m.i <= 20 ? 15 : 10);
+            sc += (m.i < StartBonusTiles ? 15 : 10);
         }
         if (goody_at(m.x, m.y) > 0) {
             sc += 15;
@@ -577,7 +581,7 @@ bool valid_start(int faction, int iter, int x, int y, bool need_bonus) {
     debug("find_score %d %d x: %3d y: %3d xd: %d yd: %d pods: %d min: %d score: %d\n",
         faction, iter, x, y, xd, yd, pods, min_sc, sc);
 
-    if (need_bonus && pods < 2 && iter < 150 && ~*game_rules & RULES_NO_UNITY_SCATTERING) {
+    if (need_bonus && pods < StartBonusCount && iter < 150 && !(*game_rules & RULES_NO_UNITY_SCATTERING)) {
         return false;
     }
     if (!aquatic && iter < 100) { // Avoid spawns without sufficient land nearby
@@ -595,7 +599,6 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
     MAP* sq;
     Points pods;
     Points rivers;
-    const int limit = 2;
     bool aquatic = MFactions[faction].is_aquatic();
     int adjust = (aquatic ? 0 : 8);
     int nutrient = 0;
@@ -603,10 +606,10 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
 
     for (auto& m : iterate_tiles(*x, *y, 0, 45)) {
         if (((aquatic && is_ocean_shelf(m.sq)) || (!aquatic && !is_ocean(m.sq)))
-        && (m.i < 25 || pods.size() < limit)) {
+        && (m.i < StartBonusTiles || pods.size() < StartBonusCount)) {
             int bonus = bonus_at(m.x, m.y);
             if (bonus == RES_NUTRIENT) {
-                if (nutrient < limit && m.sq->items & BIT_FUNGUS) {
+                if (nutrient < StartBonusCount && m.sq->items & BIT_FUNGUS) {
                     m.sq->items &= ~BIT_FUNGUS;
                 }
                 if (m.sq->is_rocky()) {
@@ -624,9 +627,6 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
                 if (m.i == 0) {
                     adjust = 0;
                 }
-                if (m.i > 8 && !rivers.size()) {
-                    adjust = 20;
-                }
                 if (m.i > 0 && m.i <= adjust
                 && m.sq->region == region_at(*x, *y)
                 && can_build_base(m.x, m.y, faction, TRIAD_LAND)
@@ -636,7 +636,7 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
             }
         }
     }
-    while (pods.size() > 0 && nutrient + num < limit) {
+    while (pods.size() > 0 && nutrient + num < StartBonusCount) {
         auto t = pick_random(pods);
         sq = mapsq(t.x, t.y);
         pods.erase(t);
@@ -707,8 +707,8 @@ void __cdecl mod_world_monsoon() {
     MAP* sq;
     int i = 0, j = 0, x = 0, y = 0, x2 = 0, y2 = 0, num = 0;
     const int w = *map_axis_x;
-    const int y_a = *map_axis_y*3/8;
-    const int y_b = *map_axis_y*5/8;
+    const int y_a = *map_axis_y * 5/16;
+    const int y_b = *map_axis_y * 11/16;
     const int limit = max(1024, *map_area_tiles) * (3 + *MapCloudCover) / 120;
 
     for (y = 0; y < *map_axis_y; y++) {
@@ -716,13 +716,10 @@ void __cdecl mod_world_monsoon() {
             if (!(sq = mapsq(x, y))) {
                 continue;
             }
-            if (is_ocean(sq)) {
-                tiles[w*y + x].sea = Continents[sq->region].tile_count > 15;
-                continue;
-            }
-            if (sq->alt_level() == ALT_SHORE_LINE || sq->alt_level() == ALT_ONE_ABOVE_SEA) {
-                tiles[w*y + x].valid = !sq->landmarks;
-            }
+            tiles[w*y + x].sea = sq->alt_level() < ALT_SHORE_LINE
+                && Continents[sq->region].tile_count > 15;
+            tiles[w*y + x].valid = !sq->landmarks
+                && (sq->alt_level() == ALT_SHORE_LINE || sq->alt_level() == ALT_ONE_ABOVE_SEA);
         }
     }
     for (y = 0; y < *map_axis_y; y++) {
@@ -758,7 +755,7 @@ void __cdecl mod_world_monsoon() {
             if (y2 >= y_a && y2 <= y_b && tiles[w*y2 + x2].valid
             && tiles[w*y2 + x2].valid_near > 8 - i/32) {
                 for (auto& p : iterate_tiles(x2, y2, 0, 21)) {
-                    if (tiles[w*p.y + p.x].valid && ~p.sq->landmarks & LM_JUNGLE) {
+                    if (tiles[w*p.y + p.x].valid && !(p.sq->landmarks & LM_JUNGLE)) {
                         assert(!is_ocean(p.sq));
                         bit2_set(p.x, p.y, LM_JUNGLE, 1);
                         code_set(p.x, p.y, num % 121);

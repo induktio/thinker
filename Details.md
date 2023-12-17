@@ -290,6 +290,8 @@ Currently the features listed here may not be fully supported or may have issues
 4. Some custom scenario rules in "Edit Scenario Rules" menus are not supported fully. This will not affect randomly generated maps. However these rules are supported: `No terraforming`, `No colony pods can be built`, `No secret projects can be built` and `No technological advances`.
 5. While `collateral_damage_value` is set to 0, the game might still display messages about collateral damage being inflicted on units on the stack, but none of them will actually take any damage.
 6. Maximum supported map size by Thinker is 256x256. This is a compile time constant, but it is also the largest map that the game interface will allow selecting.
+7. DirectDraw mode is not supported while using thinker.exe launcher. In this case the game may fail to start properly unless `DirectDraw=0` config option is used.
+8. In rare cases needlejets that are set to automated air defense may disappear after ending their turn outside the base. This should not happen if the units are moved manually.
 
 
 Other patches included
@@ -334,6 +336,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 35. Fix multiple issues in unit morale calculation, see more details in "Improved combat mechanics" section (modify_unit_morale).
 36. Fix issue where TECHSHARE faction ability always skips the checks for infiltration conditions while smac_only mode is activated. Spying by probe team, pact, governor or Empath Guild is required.
 37. Fix issue where Accelerated Start option may sometimes freeze the game when selecting a random secret project for Hive. Patched version will not assign Citizens Defense Force or Command Nexus for a faction that already has those facilities for free, unless all other choices among the first seven projects have been exhausted, also Empath Guild is always skipped.
+38. Disable legacy game startup code that spawned additional colony pods for factions if the difficulty level matched pre-defined rules. The same starting units can now be selected from the config file for all difficulty levels (skip_default_balance).
 
 
 Scient's patch

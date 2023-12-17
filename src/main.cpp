@@ -76,18 +76,18 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->window_height = max(600, atoi(value));
     } else if (MATCH("thinker", "smac_only")) {
         cf->smac_only = atoi(value);
-    } else if (MATCH("thinker", "player_free_units")) {
-        cf->player_free_units = atoi(value);
-    } else if (MATCH("thinker", "free_formers")) {
-        cf->free_formers = max(0, atoi(value));
-    } else if (MATCH("thinker", "free_colony_pods")) {
-        cf->free_colony_pods = max(0, atoi(value));
-    } else if (MATCH("thinker", "satellites_nutrient")) {
-        cf->satellites_nutrient = max(0, atoi(value));
-    } else if (MATCH("thinker", "satellites_mineral")) {
-        cf->satellites_mineral = max(0, atoi(value));
-    } else if (MATCH("thinker", "satellites_energy")) {
-        cf->satellites_energy = max(0, atoi(value));
+    } else if (MATCH("thinker", "player_colony_pods")) {
+        cf->player_colony_pods = atoi(value);
+    } else if (MATCH("thinker", "computer_colony_pods")) {
+        cf->computer_colony_pods = atoi(value);
+    } else if (MATCH("thinker", "player_formers")) {
+        cf->player_formers = atoi(value);
+    } else if (MATCH("thinker", "computer_formers")) {
+        cf->computer_formers = atoi(value);
+    } else if (MATCH("thinker", "player_satellites")) {
+        opt_list_parse(cf->player_satellites, buf, 3, 0);
+    } else if (MATCH("thinker", "computer_satellites")) {
+        opt_list_parse(cf->computer_satellites, buf, 3, 0);
     } else if (MATCH("thinker", "design_units")) {
         cf->design_units = atoi(value);
     } else if (MATCH("thinker", "factions_enabled")) {

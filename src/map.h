@@ -3,6 +3,9 @@
 #include "main.h"
 #include "lib/FastNoiseLite.h"
 
+const int StartBonusCount = 2;
+const int StartBonusTiles = 25;
+
 MAP* mapsq(int x, int y);
 int wrap(int x);
 int map_range(int x1, int y1, int x2, int y2);

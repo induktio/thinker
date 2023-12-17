@@ -452,7 +452,7 @@ int probe_roll_value(int faction)
 
 int probe_active_turns(int faction1, int faction2)
 {
-    int value = clamp(15 + probe_roll_value(faction1) - probe_roll_value(faction2), 4, 50);
+    int value = clamp(15 + probe_roll_value(faction1) - probe_roll_value(faction2), 5, 50);
     value = value * (4 + (*map_area_tiles >= 4000) + (*map_area_tiles >= 7000)) / 4;
     value = value * (4 + (*diff_level < DIFF_TRANSCEND) + (*diff_level < DIFF_THINKER)) / 4;
     return clamp(value, 5, 50);

@@ -320,25 +320,32 @@ int __cdecl mod_setup_player(int faction, int a2, int a3) {
     }
     setup_player(faction, a2, a3);
 
-    if (!is_human(faction) || conf.player_free_units > 0) {
-        for (int i = 0; i < *total_num_vehicles; i++) {
-            VEH* veh = &Vehicles[i];
-            if (veh->faction_id == faction) {
-                MAP* sq = mapsq(veh->x, veh->y);
-                int former = (is_ocean(sq) ? BSC_SEA_FORMERS : BSC_FORMERS);
-                int colony = (is_ocean(sq) ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
-                for (int j = 0; j < conf.free_formers; j++) {
-                    mod_veh_init(former, faction, veh->x, veh->y);
-                }
-                for (int j = 0; j < conf.free_colony_pods; j++) {
-                    mod_veh_init(colony, faction, veh->x, veh->y);
-                }
-                break;
+    int num_colony = is_human(faction) ? conf.player_colony_pods : conf.computer_colony_pods;
+    int num_former = is_human(faction) ? conf.player_formers : conf.computer_formers;
+
+    for (int i = 0; i < *total_num_vehicles; i++) {
+        VEH* veh = &Vehicles[i];
+        if (veh->faction_id == faction) {
+            MAP* sq = mapsq(veh->x, veh->y);
+            int colony = (is_ocean(sq) ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
+            int former = (is_ocean(sq) ? BSC_SEA_FORMERS : BSC_FORMERS);
+            for (int j = 0; j < num_colony; j++) {
+                mod_veh_init(colony, faction, veh->x, veh->y);
             }
+            for (int j = 0; j < num_former; j++) {
+                mod_veh_init(former, faction, veh->x, veh->y);
+            }
+            break;
         }
-        Factions[faction].satellites_nutrient = conf.satellites_nutrient;
-        Factions[faction].satellites_mineral = conf.satellites_mineral;
-        Factions[faction].satellites_energy = conf.satellites_energy;
+    }
+    if (is_human(faction)) {
+        Factions[faction].satellites_nutrient = conf.player_satellites[0];
+        Factions[faction].satellites_mineral = conf.player_satellites[1];
+        Factions[faction].satellites_energy = conf.player_satellites[2];
+    } else {
+        Factions[faction].satellites_nutrient = conf.computer_satellites[0];
+        Factions[faction].satellites_mineral = conf.computer_satellites[1];
+        Factions[faction].satellites_energy = conf.computer_satellites[2];
     }
     return 0;
 }
