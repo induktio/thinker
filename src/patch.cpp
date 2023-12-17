@@ -449,6 +449,7 @@ bool patch_setup(Config* cf) {
     write_call(0x41B771, (int)BaseWin_action_staple);
     write_call(0x41916B, (int)BaseWin_popup_start);
     write_call(0x4195A6, (int)BaseWin_ask_number);
+    write_call(0x48CDA4, (int)popb_action_staple);
     write_call(0x51D1C2, (int)Console_editor_fungus);
     write_call(0x4AED04, (int)SocialWin_social_ai);
     write_call(0x54814D, (int)mod_diplomacy_caption);

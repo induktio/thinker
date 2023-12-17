@@ -395,6 +395,18 @@ bool can_build_unit(int base_id, int unit_id) {
     return *total_num_vehicles < MaxVehNum * 15 / 16;
 }
 
+bool can_build_ships(int base_id) {
+    BASE* b = &Bases[base_id];
+    int k = *map_area_sq_root + 20;
+    return has_ships(b->faction_id) && nearby_tiles(b->x, b->y, TS_TRIAD_SEA, k);
+}
+
+bool can_staple(int base_id) {
+    int faction_id = Bases[base_id].faction_id;
+    return base_id >= 0 && conf.nerve_staple > is_human(faction_id)
+        && Factions[faction_id].SE_police >= 0;
+}
+
 /*
 Check if the base might riot on the next turn, usually after a population increase.
 Used only for rendering additional details about base psych status.
@@ -411,12 +423,6 @@ bool maybe_riot(int base_id) {
             || (b->nutrients_accumulated + b->nutrient_surplus >= cost));
     }
     return b->drone_total > b->talent_total;
-}
-
-bool can_build_ships(int base_id) {
-    BASE* b = &Bases[base_id];
-    int k = *map_area_sq_root + 20;
-    return has_ships(b->faction_id) && nearby_tiles(b->x, b->y, TS_TRIAD_SEA, k);
 }
 
 bool base_can_riot(int base_id, bool allow_staple) {
@@ -534,10 +540,10 @@ bool satellite_bonus(int base_id, int* nutrient, int* mineral, int* energy) {
 
 int consider_staple(int base_id) {
     BASE* b = &Bases[base_id];
-    Faction* f = &Factions[b->faction_id];
-    if (b->nerve_staple_count < 3
+    if (can_staple(base_id)
     && (!un_charter() || (*SunspotDuration > 1 && *diff_level >= DIFF_LIBRARIAN))
-    && base_can_riot(base_id, true) && f->SE_police >= 0
+    && b->nerve_staple_count < 3
+    && base_can_riot(base_id, true)
     && (b->drone_total > b->talent_total || b->state_flags & BSTATE_DRONE_RIOTS_ACTIVE)
     && b->pop_size / 4 >= b->nerve_staple_count
     && (b->faction_id == b->faction_id_former || want_revenge(b->faction_id, b->faction_id_former))) {

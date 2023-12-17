@@ -1140,10 +1140,22 @@ Refresh base window workers properly after nerve staple is done.
 */
 void __cdecl BaseWin_action_staple(int base_id)
 {
-    set_base(base_id);
-    action_staple(base_id);
-    base_compute(1);
-    BaseWin_on_redraw(BaseWin);
+    if (can_staple(base_id)) {
+        set_base(base_id);
+        action_staple(base_id);
+        base_compute(1);
+        BaseWin_on_redraw(BaseWin);
+    }
+}
+
+/*
+Separate case where nerve stapling is done from another popup.
+*/
+void __cdecl popb_action_staple(int base_id)
+{
+    if (can_staple(base_id)) {
+        action_staple(base_id);
+    }
 }
 
 /*

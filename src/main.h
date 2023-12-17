@@ -200,10 +200,11 @@ struct Config {
     int magtube_movement_rate = 0;
     int road_movement_rate = 1; // internal variable
     int chopper_attack_rate = 1;
+    int nerve_staple = 2;
+    int nerve_staple_mod = -10;
     int delay_drone_riots = 0;
     int skip_drone_revolts = 1; // unlisted option
     int activate_skipped_units = 1; // unlisted option
-    int nerve_staple_mod = -10;
     int counter_espionage = 0;
     int ignore_reactor_power = 0;
     int modify_unit_morale = 1; // unlisted option

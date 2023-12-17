@@ -21,6 +21,7 @@ int unused_space(int base_id);
 bool can_build(int base_id, int fac_id);
 bool can_build_unit(int base_id, int unit_id);
 bool can_build_ships(int base_id);
+bool can_staple(int base_id);
 bool maybe_riot(int base_id);
 bool base_can_riot(int base_id, bool allow_staple);
 bool base_pop_boom(int base_id);
