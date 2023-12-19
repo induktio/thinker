@@ -384,6 +384,7 @@ bool patch_setup(Config* cf) {
     extra_setup(cf);
 
     write_jump(0x4688E0, (int)MapWin_gen_overlays);
+    write_jump(0x4E3EF0, (int)mod_whose_territory);
     write_jump(0x4F6510, (int)fac_maint);
     write_jump(0x579A30, (int)add_goal);
     write_jump(0x579B70, (int)add_site);

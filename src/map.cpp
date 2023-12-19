@@ -323,6 +323,29 @@ int __cdecl mod_base_find3(int x, int y, int faction1, int region, int faction2,
     return result;
 }
 
+int __cdecl mod_whose_territory(int faction_id, int x, int y, int* base_id, int ignore_comm) {
+    MAP* sq = mapsq(x, y);
+    if (!sq || sq->owner <= 0) { // Fix: invalid coordinates return -1 (no owner)
+        return -1;
+    }
+    if (faction_id != sq->owner) {
+        if (!ignore_comm
+        && !(*game_state & STATE_OMNISCIENT_VIEW)
+        && (!has_treaty(faction_id, sq->owner, DIPLO_COMMLINK)
+        || !has_treaty(faction_id, sq->owner, DIPLO_UNK_8000000))) {
+            return -1;
+        }
+        if (base_id) {
+            if (conf.territory_border_fix) {
+                *base_id = mod_base_find3(x, y, -1, sq->region, -1, -1);
+            } else {
+                *base_id = base_find3(x, y, -1, sq->region, -1, -1);
+            }
+        }
+    }
+    return sq->owner;
+}
+
 int total_yield(int x, int y, int faction) {
     return crop_yield(faction, -1, x, y, 0)
         + mine_yield(faction, -1, x, y, 0)
