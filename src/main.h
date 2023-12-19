@@ -220,7 +220,6 @@ struct Config {
     int spawn_spore_launchers = 1;
     int spawn_sealurks = 1;
     int spawn_battle_ogres = 1;
-    int collateral_damage_value = 3;
     int planetpearls = 1;
     int aquatic_bonus_minerals = 1;
     int alien_guaranteed_techs = 1;
@@ -232,6 +231,7 @@ struct Config {
     int fungal_tower_bonus = 50;
     int perimeter_defense_bonus = 2;
     int tachyon_field_bonus = 2;
+    int collateral_damage_value = 3;
     int content_pop_player[MaxDiffNum] = {6,5,4,3,2,1};
     int content_pop_computer[MaxDiffNum] = {3,3,3,3,3,3};
     int repair_minimal = 1;

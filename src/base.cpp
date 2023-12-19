@@ -404,7 +404,7 @@ bool can_build_ships(int base_id) {
 bool can_staple(int base_id) {
     int faction_id = Bases[base_id].faction_id;
     return base_id >= 0 && conf.nerve_staple > is_human(faction_id)
-        && Factions[faction_id].SE_police >= 0;
+        && Factions[faction_id].SE_police + 2 * has_fac_built(FAC_BROOD_PIT, base_id) >= 0;
 }
 
 /*

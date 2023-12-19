@@ -23,6 +23,7 @@ void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, 
 void __cdecl BaseWin_draw_psych_strcat(char* buffer, char* source);
 void __cdecl BaseWin_action_staple(int base_id);
 void __cdecl popb_action_staple(int base_id);
+int __thiscall BaseWin_staple(void* This);
 int __thiscall ReportWin_close_handler(void* This);
 void __thiscall Console_editor_fungus(Console* UNUSED(This));
 void __cdecl mod_say_loc(char* dest, int x, int y, int a4, int a5, int a6);

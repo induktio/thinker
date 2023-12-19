@@ -1158,6 +1158,16 @@ void __cdecl popb_action_staple(int base_id)
     }
 }
 
+int __thiscall BaseWin_staple(void* This)
+{
+    tc_1int BaseWin_staple_the_bastards = (tc_1int)0x41B4F0;
+    int base_id = ((int32_t*)This)[66243];
+    if (base_id >= 0 && conf.nerve_staple > is_human(Bases[base_id].faction_id)) {
+        return BaseWin_staple_the_bastards(This);
+    }
+    return 0;
+}
+
 /*
 This is called when ReportWin is closing and is used to refresh base labels
 on any bases where workers have been adjusted from the base list window.
