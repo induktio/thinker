@@ -312,8 +312,8 @@ void write_jump(int addr, int func) {
 Modify conditional short jump such that it is always taken.
 */
 void short_jump(int addr) {
-    if (*(byte*)addr == 0x74 || *(byte*)addr == 0x75
-    || *(byte*)addr == 0x7C || *(byte*)addr == 0x7D) {
+    if (*(byte*)addr == 0x74 || *(byte*)addr == 0x75 || *(byte*)addr == 0x7C
+    || *(byte*)addr == 0x7D || *(byte*)addr == 0x7E) {
         *(byte*)addr = 0xEB;
     } else if (*(byte*)addr != 0xEB) {
         exit_fail(addr);
@@ -1080,6 +1080,19 @@ bool patch_setup(Config* cf) {
             0x8B,0x06,0xD1,0xE1,0x03,0xC1,0x89,0x06
         };
         write_bytes(0x5060ED, old_bytes, NULL, sizeof(old_bytes));
+    }
+    if (!cf->event_perihelion) {
+        short_jump(0x51F481);
+    }
+    if (cf->event_sunspots > 0) {
+        const byte old_bytes[] = {0x83,0xC0,0x0A,0x6A,0x14};
+        const byte new_bytes[] = {0x83,0xC0,
+            (byte)cf->event_sunspots,0x6A,(byte)(cf->event_sunspots+10)};
+        write_bytes(0x520651, old_bytes, new_bytes, sizeof(new_bytes));
+    } else {
+        const byte old_bytes[] = {0x0F, 0x8C};
+        const byte new_bytes[] = {0x90, 0xE9};
+        write_bytes(0x520615, old_bytes, new_bytes, sizeof(new_bytes));
     }
     if (!cf->alien_guaranteed_techs) {
         short_jump(0x5B29F8);

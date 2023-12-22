@@ -221,6 +221,8 @@ struct Config {
     int spawn_sealurks = 1;
     int spawn_battle_ogres = 1;
     int planetpearls = 1;
+    int event_perihelion = 1;
+    int event_sunspots = 10;
     int aquatic_bonus_minerals = 1;
     int alien_guaranteed_techs = 1;
     int alien_early_start = 0;

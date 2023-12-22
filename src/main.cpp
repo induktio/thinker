@@ -202,6 +202,10 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->spawn_battle_ogres = atoi(value);
     } else if (MATCH("thinker", "planetpearls")) {
         cf->planetpearls = atoi(value);
+    } else if (MATCH("thinker", "event_perihelion")) {
+        cf->event_perihelion = atoi(value);
+    } else if (MATCH("thinker", "event_sunspots")) {
+        cf->event_sunspots = clamp(atoi(value), 0, 100);
     } else if (MATCH("thinker", "aquatic_bonus_minerals")) {
         cf->aquatic_bonus_minerals = atoi(value);
     } else if (MATCH("thinker", "alien_guaranteed_techs")) {
