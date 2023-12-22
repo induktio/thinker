@@ -1,6 +1,16 @@
 
 # Thinker mod release changelog
 
+## Version 3.9 (2023-12-22)
+* Add options nerve_staple, event_sunspots, event_perihelion to alter more game rules.
+* Nerve staple dialog is now hidden if it is always disallowed by config. When Police rating is insufficient, this will display a separate dialog as usual.
+* All the parameters related to starting unit and satellite spawning are renamed. Updated definitions are listed in thinker.ini.
+* The game now by default spawns each faction with 2 colony pods on all difficulty levels. Alien factions receive one extra colony pod.
+* Fix rare issue where vanilla movement AI sometimes crashed the game during turn processing.
+* Fix another issue where the game might create corrupted unit stacks possibly causing the game to freeze.
+* Fix visual issues where the game sometimes did not update the map properly when recentering it offscreen on native resolution mode.
+
+
 ## Version 3.8 (2023-10-06)
 * Option rare_supply_pods=2 now removes all supply pods from the start when No Unity Scattering is selected.
 * Option nutrient_bonus is now applied by default on aquatic and player controlled factions.
