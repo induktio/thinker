@@ -124,7 +124,7 @@ Setting magtube movement rate higher than 3 is not recommended because it may ca
 
 When bases are captured from another faction, the captured base extra drone psych effect is shown separately on the psych window. While in vanilla game this period was always 50 turns, in the modded version this depends on the population size and facilities in the captured base, and it can range from 20 to 50 turns. This makes it somewhat easier to assimilate smaller bases while larger bases will still take a long time to switch previous owner.
 
-In the original game, combat morale calculation contained numerous bugs and contradictions with the game manual. These issues particularly with Children's Creche and Brood Pit are further described in [this article](https://alphacentauri2.info/wiki/Morale_(Advanced)).
+In the original game, combat morale calculation contained numerous bugs and contradictions with the game manual. These issues particularly with Children's Creche and Brood Pit are further described in [this article](https://web.archive.org/web/20201016221232/https://alphacentauri2.info/wiki/Morale_(Advanced)).
 
 In the patched version enabled by default, units in the headquarters base automatically gain +1 morale when defending as mentioned in the manual.
 For non-native units, when the home base is experiencing drone riots, this always applies -1 morale unless the faction has a special rule for ignoring negative morale modifiers.
@@ -315,7 +315,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 14. Fix visual bug where population icons in base window would randomly switch their type when clicking on them.
 15. Patch AIs to initiate much less diplomacy dialogs when the player captures their bases. Previously this happened at least once for every turn the AI loses any bases and would repeat the same dialog every time if the player didn't agree to the peace terms. The patch makes the initiation of dialog more dependent on random chance unless the AI would finally accept surrender terms.
 16. Patch genetic warfare probe team action to cause much less damage for any units defending the base. In vanilla game mechanics even one attack instantly inflicted almost 80% damage. In the patched version population loss mechanic is unaffected, but even multiple attacks should do substantially less damage for defender units.
-17. Patch terrain drawing engine to render more detailed tiles when zooming out from the default level. Previously the tiles were replaced with blocky, less detailed versions on almost every zoom out level.
+17. Patch terrain drawing engine to render more detailed tiles when zooming out from the default level instead of the blocky, less detailed versions on almost every zoom out level. Fix visual issues where the game sometimes did not update the map properly when recentering it offscreen on native resolution mode (render_high_detail).
 18. Modify multiplayer setup screen to use average values for each of the random map generator settings, instead of the highest possible like previously.
 19. Fix potential crash when a game is loaded after using Edit Map > Generate/Remove Fungus > No Fungus.
 20. Fix foreign base names being visible in unexplored tiles when issuing move to or patrol orders to the tiles.

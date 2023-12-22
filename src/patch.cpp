@@ -752,6 +752,21 @@ bool patch_setup(Config* cf) {
             }
         }
     }
+    /*
+    Fix visual issues where the game sometimes did not update the map properly
+    when recentering it offscreen on native resolution mode.
+    */
+    if (cf->render_high_detail && !cf->directdraw) {
+        write_call(0x4BE697, (int)mod_MapWin_focus); // TutWin::tut_map
+        write_call(0x51094C, (int)mod_MapWin_focus); // Console::focus
+        write_call(0x51096D, (int)mod_MapWin_focus); // Console::focus
+        write_call(0x510C81, (int)mod_MapWin_focus); // sub_510B70
+        write_call(0x51A7B4, (int)mod_MapWin_focus); // Console::on_key_click
+        write_call(0x51B594, (int)mod_MapWin_focus); // Console::on_key_click
+        write_call(0x51C7BC, (int)mod_MapWin_focus); // Console::iface_click
+        write_call(0x522504, (int)mod_MapWin_focus); // alien_fauna
+        write_call(0x5583ED, (int)mod_MapWin_focus); // communicate
+    }
 
     /*
     Find nearest base for returned probes in order_veh and probe functions.

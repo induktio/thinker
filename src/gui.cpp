@@ -1168,6 +1168,16 @@ int __thiscall BaseWin_staple(void* This)
     return 0;
 }
 
+int __thiscall mod_MapWin_focus(Console* This, int x, int y)
+{
+    // Return value is non-zero when the map is recentered offscreen
+    if (MapWin_focus(This, x, y)) {
+        MapWin_clear_terrain(MapWin);
+        draw_map(1);
+    }
+    return 0;
+}
+
 /*
 This is called when ReportWin is closing and is used to refresh base labels
 on any bases where workers have been adjusted from the base list window.

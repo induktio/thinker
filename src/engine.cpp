@@ -194,6 +194,7 @@ FMapWin_tile_to_pixel MapWin_tile_to_pixel   = (FMapWin_tile_to_pixel )0x462F00;
 FMapWin_pixel_to_tile MapWin_pixel_to_tile   = (FMapWin_pixel_to_tile )0x463040;
 FMapWin_gen_map MapWin_gen_map               = (FMapWin_gen_map       )0x469CA0;
 FMapWin_draw_map MapWin_draw_map             = (FMapWin_draw_map      )0x46A550;
+FMapWin_focus MapWin_focus                   = (FMapWin_focus         )0x46B310;
 fp_void draw_cursor                          = (fp_void               )0x46AE00;
 fp_3int draw_tile                            = (fp_3int               )0x46AF40;
 fp_1int draw_map                             = (fp_1int               )0x46B190;
