@@ -228,6 +228,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->tachyon_field_bonus = clamp(atoi(value), 0, 127);
     } else if (MATCH("thinker", "collateral_damage_value")) {
         cf->collateral_damage_value = clamp(atoi(value), 0, 127);
+    } else if (MATCH("thinker", "planet_defense_bonus")) {
+        cf->planet_defense_bonus = atoi(value);
     } else if (MATCH("thinker", "cost_factor")) {
         opt_list_parse(CostRatios, buf, MaxDiffNum, 1);
     } else if (MATCH("thinker", "tech_cost_factor")) {

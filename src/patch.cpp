@@ -480,6 +480,9 @@ bool patch_setup(Config* cf) {
     write_call(0x527039, (int)mod_base_upkeep);
     write_call(0x5B41E9, (int)mod_time_warp);
     write_call(0x561948, (int)enemy_strategy_upgrade);
+    write_call(0x50474C, (int)mod_battle_compute); // best_defender
+    write_call(0x506EA6, (int)mod_battle_compute); // battle_fight_2
+    write_call(0x5085E0, (int)mod_battle_compute); // battle_fight_2
     write_offset(0x50F421, (void*)mod_turn_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);
     write_offset(0x64576E, (void*)mod_except_handler3);
@@ -830,6 +833,17 @@ bool patch_setup(Config* cf) {
         const byte old_bytes[] = {0x74,0x51};
         const byte new_bytes[] = {0x90,0x90};
         write_bytes(0x5BC386, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+
+    /*
+    Prevent the AI from making unnecessary trades where it sells their techs for maps
+    owned by the player. The patch removes TRADETECH4 / TRADETECH5 dialogue paths
+    making the AI usually demand a credit payment for any techs.
+    */
+    {
+        const byte old_bytes[] = {0x0F,0x8D};
+        const byte new_bytes[] = {0x90,0xE9};
+        write_bytes(0x5414AA, old_bytes, new_bytes, sizeof(new_bytes));
     }
 
     /*

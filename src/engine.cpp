@@ -25,11 +25,6 @@ int* current_turn = (int*)0x9A64D4;
 int* active_faction = (int*)0x9A6820;
 int* total_num_bases = (int*)0x9A64CC;
 int* total_num_vehicles = (int*)0x9A64C8;
-int* VehDropLiftVehID = (int*)0x9B2280;
-int* VehLiftX = (int*)0x9B2278;
-int* VehLiftY = (int*)0x9B2284;
-int* VehBitError = (int*)0x9B228C;
-int* VehBasicBattleMorale = (int*)0x912420; // [2] ; [0] offense, [1] defense?
 int* map_random_seed = (int*)0x949878;
 int* map_toggle_flat = (int*)0x94988C;
 int* map_area_tiles = (int*)0x949884;
@@ -100,6 +95,18 @@ int* WorldAddTemperature = (int*)0x9B22E8;
 int* WorldSkipTerritory = (int*)0x9B22EC;
 int* WinModalState = (int*)0x9B7AE4;
 int* PopupDialogState = (int*)0x6A721C; // Non-zero when most popups are visible
+
+int* VehDropLiftVehID = (int*)0x9B2280;
+int* VehLiftX = (int*)0x9B2278;
+int* VehLiftY = (int*)0x9B2284;
+int* VehBitError = (int*)0x9B228C;
+int* VehBasicBattleMorale = (int*)0x912420; // [2] ; [0] offense, [1] defense
+// Battle related globals
+int* VehBattleModCount = (int*)0x915614; // [2] ; [0] offense, [1] defense
+int* VehBattleUnkTgl = (int*)0x91561C; // [2] ; planet_busting() + boom() + timers
+int (*VehBattleModifier)[4] = (int (*)[4])0x9155F0; // [2][4]
+char (*VehBattleDisplay)[4][80] = (char (*)[4][80])0x90F554; // [2][4][80]
+char* VehBattleDisplayTerrain;
 
 uint8_t* TechOwners = (uint8_t*)0x9A6670;
 int* SecretProjects = (int*)0x9A6514;
@@ -328,7 +335,7 @@ fp_2int morale_alien             = (fp_2int)0x501350;
 fp_4int psi_factor               = (fp_4int)0x501500;
 fp_5int get_basic_offense        = (fp_5int)0x5015B0;
 fp_4int get_basic_defense        = (fp_4int)0x501940;
-fp_5int battle_compute           = (fp_5int)0x501DA0;
+Fbattle_compute battle_compute = (Fbattle_compute)0x501DA0;
 fp_3int best_defender            = (fp_3int)0x5044D0;
 fp_3int boom                     = (fp_3int)0x504AA0;
 fp_void sub_505D40               = (fp_void)0x505D40;

@@ -370,3 +370,33 @@ int __cdecl mod_battle_fight_2(int veh_id, int offset, int tx, int ty, int is_ta
     return value;
 }
 
+void __cdecl add_bat(int type, int modifier, char* display_str) {
+    int offset = VehBattleModCount[type];
+    if (modifier && offset >= 0 && offset < 4 && (type == 0 || type == 1)) {
+        strncpy(VehBattleDisplay[type][offset], display_str, 80);
+        VehBattleDisplay[type][offset][79] = '\0';
+        VehBattleModifier[type][offset] = modifier;
+        VehBattleModCount[type]++;
+    }
+}
+
+void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out, int* defense_out, int combat_type)
+{
+    battle_compute(veh_id_atk, veh_id_def, offense_out, defense_out, combat_type);
+
+    VEH* v1 = &Vehs[veh_id_atk];
+    VEH* v2 = &Vehs[veh_id_def];
+
+    if (conf.planet_defense_bonus && v2->faction_id > 0
+    && (v1->offense_value() < 0 || v2->defense_value() < 0)) {
+        int planet_value = Factions[v2->faction_id].SE_planet;
+        int combat_bonus = clamp(planet_value * Rules->combat_psi_bonus_per_planet / 2, -50, 50);
+        if (combat_bonus != 0) {
+            *defense_out = *defense_out * (100 + combat_bonus) / 100;
+            add_bat(1, combat_bonus, (*TextLabels)[625]); // Planet
+        }
+    }
+}
+
+
+

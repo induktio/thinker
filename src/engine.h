@@ -154,11 +154,6 @@ extern int* current_turn;
 extern int* active_faction;
 extern int* total_num_bases;
 extern int* total_num_vehicles;
-extern int* VehDropLiftVehID;
-extern int* VehLiftX;
-extern int* VehLiftY;
-extern int* VehBitError;
-extern int* VehBasicBattleMorale;
 extern int* map_random_seed;
 extern int* map_toggle_flat;
 extern int* map_area_tiles;
@@ -230,6 +225,17 @@ extern int* WorldAddTemperature;
 extern int* WorldSkipTerritory;
 extern int* WinModalState;
 extern int* PopupDialogState;
+
+extern int* VehDropLiftVehID;
+extern int* VehLiftX;
+extern int* VehLiftY;
+extern int* VehBitError;
+extern int* VehBasicBattleMorale;
+extern int* VehBattleModCount;
+extern int* VehBattleUnkTgl;
+extern int (*VehBattleModifier)[4];
+extern char (*VehBattleDisplay)[4][80];
+extern char* VehBattleDisplayTerrain;
 
 extern uint8_t* TechOwners;
 extern int* SecretProjects;
@@ -333,6 +339,8 @@ typedef int (__cdecl *FX_pops)(const char* filename, const char* label,
 typedef int(__cdecl *Fpop_ask_number)(const char *filename, const char* label, int value, int a4);
 typedef int(__cdecl *Fname_proto)(char* name, int unit_id, int faction_id,
 VehChassis chassis, VehWeapon weapon, VehArmor armor, VehAblFlag abls, VehReactor reactor);
+typedef void(__cdecl *Fbattle_compute)(int veh_id_atk, int veh_id_def,
+    int* offense_out, int* defense_out, int combat_type);
 
 typedef int(__thiscall *FMapWin_pixel_to_tile)(Console* This, int x, int y, long* px, long* py);
 typedef int(__thiscall *FMapWin_tile_to_pixel)(Console* This, int x, int y, long* px, long* py);
@@ -508,7 +516,7 @@ extern fp_2int morale_alien;
 //extern fp_4int psi_factor;
 extern fp_5int get_basic_offense;
 extern fp_4int get_basic_defense;
-extern fp_5int battle_compute;
+extern Fbattle_compute battle_compute;
 extern fp_3int best_defender;
 extern fp_3int boom;
 extern fp_void sub_505D40;

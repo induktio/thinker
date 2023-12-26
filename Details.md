@@ -337,6 +337,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 36. Fix issue where TECHSHARE faction ability always skips the checks for infiltration conditions while smac_only mode is activated. Spying by probe team, pact, governor or Empath Guild is required.
 37. Fix issue where Accelerated Start option may sometimes freeze the game when selecting a random secret project for Hive. Patched version will not assign Citizens Defense Force or Command Nexus for a faction that already has those facilities for free, unless all other choices among the first seven projects have been exhausted, also Empath Guild is always skipped.
 38. Disable legacy game startup code that spawned additional colony pods for factions if the difficulty level matched pre-defined rules. The same starting units can now be selected from the config file for all difficulty levels (skip_default_balance).
+39. Prevent the AI from making unnecessary trades where it sells their techs for maps owned by the player. The patch removes TRADETECH4 / TRADETECH5 dialogue paths making the AI usually demand a credit payment for any techs.
 
 
 Scient's patch

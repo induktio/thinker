@@ -2200,7 +2200,7 @@ int flank_score(int x, int y, MAP* sq) {
 double battle_eval(int id1, int id2, int moves, int mov_rate) {
     int s1;
     int s2;
-    battle_compute(id1, id2, (int)&s1, (int)&s2, 0);
+    mod_battle_compute(id1, id2, &s1, &s2, 0);
     int v1 = combat_value(id1, s1, moves, mov_rate);
     int v2 = combat_value(id2, s2, mov_rate, mov_rate);
     return 1.0*v1/v2;

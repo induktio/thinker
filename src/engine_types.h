@@ -567,9 +567,9 @@ struct CRules {
     int combat_penalty_non_combat_vs_combat;
     int combat_comm_jammer_vs_mobile;
     int combat_bonus_vs_ship_port;
-    int combat_AAA_bonus_vs_air;
+    int combat_aaa_bonus_vs_air;
     int combat_defend_sensor;
-    int combat_psi_bonus_per_PLANET;
+    int combat_psi_bonus_per_planet;
     int retool_strictness;
     int retool_penalty_prod_change;
     int retool_exemption;
