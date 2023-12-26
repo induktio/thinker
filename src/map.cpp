@@ -1143,7 +1143,7 @@ void __cdecl mod_time_warp() {
             }
         }
         *SkipTechScreenB = 0;
-        *current_turn = TimeWarpStartTurn;
+        *current_turn = conf.time_warp_start_turn;
     } else {
         time_warp();
     }

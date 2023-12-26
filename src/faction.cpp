@@ -320,8 +320,7 @@ int __cdecl mod_setup_player(int faction, int a2, int a3) {
     }
     setup_player(faction, a2, a3);
 
-    int num_colony = (is_human(faction) ? conf.player_colony_pods : conf.computer_colony_pods)
-        - MFactions[faction].is_aquatic(); // setup_player spawns extra sea colony pod
+    int num_colony = is_human(faction) ? conf.player_colony_pods : conf.computer_colony_pods;
     int num_former = is_human(faction) ? conf.player_formers : conf.computer_formers;
 
     for (int i = 0; i < *total_num_vehicles; i++) {

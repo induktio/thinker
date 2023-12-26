@@ -61,17 +61,19 @@ int __cdecl mod_morale_alien(int veh_id, int faction_id_vs_native) {
         }
         morale -= 2;
     } else { // everything else
-        if (*current_turn < 45) {
+        if (*current_turn < conf.native_lifecycle_levels[0]) {
             morale = 0;
-        } else if (*current_turn < 90) {
+        } else if (*current_turn < conf.native_lifecycle_levels[1]) {
             morale = 1;
-        } else if (*current_turn < 170) {
+        } else if (*current_turn < conf.native_lifecycle_levels[2]) {
             morale = 2;
-        } else if (*current_turn < 250) {
+        } else if (*current_turn < conf.native_lifecycle_levels[3]) {
             morale = 3;
-        } else if (*current_turn < 330) {
+        } else if (*current_turn < conf.native_lifecycle_levels[4]) {
             morale = 4;
-        } else { // 330+
+        } else if (*current_turn < conf.native_lifecycle_levels[5]) {
+            morale = 5;
+        } else {
             morale = 6;
         }
         if (faction_id_vs_native > 0) {
@@ -89,7 +91,7 @@ int __cdecl mod_morale_alien(int veh_id, int faction_id_vs_native) {
         }
     }
     morale = clamp(morale, 0, 6);
-    assert(morale == morale_alien(veh_id, faction_id_vs_native));
+//    assert(morale == morale_alien(veh_id, faction_id_vs_native));
     return morale;
 }
 

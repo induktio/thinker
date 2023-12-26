@@ -177,7 +177,7 @@ Early upgrades are disabled to prevent unnecessary costs for any starting units.
 int __stdcall enemy_strategy_upgrade(int veh_id) {
     typedef int (__stdcall *std_int)(int);
     std_int Console_upgrade = (std_int)0x4D06C0;
-    if (*current_turn <= 30 + (*game_rules & RULES_TIME_WARP ? TimeWarpStartTurn : 0)) {
+    if (*current_turn <= 30 + (*game_rules & RULES_TIME_WARP ? conf.time_warp_start_turn : 0)) {
         return 1; // skip upgrade
     }
     return Console_upgrade(veh_id);
@@ -970,6 +970,12 @@ bool patch_setup(Config* cf) {
     {
         // Skip default randomize faction leader personalities code
         short_jump(0x5B1254); // setup_player
+
+        // Remove aquatic faction extra sea colony pod in setup_player
+        const byte old_bytes[] = {0x66,0x89,0xB1,0x56,0x28,0x95,0x00};
+        write_bytes(0x5B3060, old_bytes, NULL, sizeof(old_bytes));
+        remove_call(0x5B3052);
+        remove_call(0x5B3067);
     }
     if (cf->alien_early_start) {
         const byte old_bytes[] = {0x75,0x1A};
@@ -1116,9 +1122,10 @@ bool patch_setup(Config* cf) {
     if (cf->event_sunspots > 0) {
         const byte old_bytes[] = {0x83,0xC0,0x0A,0x6A,0x14};
         const byte new_bytes[] = {0x83,0xC0,
-            (byte)cf->event_sunspots,0x6A,(byte)(cf->event_sunspots+10)};
+            (byte)cf->event_sunspots,0x6A,(byte)(cf->event_sunspots)};
+        write_call(0x52064C, (int)zero_value);
         write_bytes(0x520651, old_bytes, new_bytes, sizeof(new_bytes));
-    } else {
+    } else if (!cf->event_sunspots) {
         const byte old_bytes[] = {0x0F, 0x8C};
         const byte new_bytes[] = {0x90, 0xE9};
         write_bytes(0x520615, old_bytes, new_bytes, sizeof(new_bytes));

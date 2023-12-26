@@ -140,6 +140,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->time_warp_techs = atoi(value);
     } else if (MATCH("thinker", "time_warp_projects")) {
         cf->time_warp_projects = atoi(value);
+    } else if (MATCH("thinker", "time_warp_start_turn")) {
+        cf->time_warp_start_turn = clamp(atoi(value), 0, 500);
     } else if (MATCH("thinker", "faction_placement")) {
         cf->faction_placement = atoi(value);
     } else if (MATCH("thinker", "nutrient_bonus")) {
@@ -216,20 +218,22 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->cult_early_start = atoi(value);
     } else if (MATCH("thinker", "natives_weak_until_turn")) {
         cf->natives_weak_until_turn = clamp(atoi(value), 0, 127);
+    } else if (MATCH("thinker", "native_lifecycle_levels")) {
+        opt_list_parse(cf->native_lifecycle_levels, buf, 6, 0);
     } else if (MATCH("thinker", "neural_amplifier_bonus")) {
         cf->neural_amplifier_bonus = clamp(atoi(value), 0, 1000);
     } else if (MATCH("thinker", "dream_twister_bonus")) {
         cf->dream_twister_bonus = clamp(atoi(value), 0, 1000);
     } else if (MATCH("thinker", "fungal_tower_bonus")) {
         cf->fungal_tower_bonus = clamp(atoi(value), 0, 1000);
+    } else if (MATCH("thinker", "planet_defense_bonus")) {
+        cf->planet_defense_bonus = atoi(value);
     } else if (MATCH("thinker", "perimeter_defense_bonus")) {
         cf->perimeter_defense_bonus = clamp(atoi(value), 0, 127);
     } else if (MATCH("thinker", "tachyon_field_bonus")) {
         cf->tachyon_field_bonus = clamp(atoi(value), 0, 127);
     } else if (MATCH("thinker", "collateral_damage_value")) {
         cf->collateral_damage_value = clamp(atoi(value), 0, 127);
-    } else if (MATCH("thinker", "planet_defense_bonus")) {
-        cf->planet_defense_bonus = atoi(value);
     } else if (MATCH("thinker", "cost_factor")) {
         opt_list_parse(CostRatios, buf, MaxDiffNum, 1);
     } else if (MATCH("thinker", "tech_cost_factor")) {

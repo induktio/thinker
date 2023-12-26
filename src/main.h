@@ -125,7 +125,6 @@ const int MaxBonusNameNum = 41;
 
 const int StrBufLen = 256;
 const int MaxEnemyRange = 50;
-const int TimeWarpStartTurn = 50;
 
 /*
 Config parsed from thinker.ini. Alpha Centauri.ini related options
@@ -187,6 +186,7 @@ struct Config {
     int time_warp_mod = 1;
     int time_warp_techs = 5;
     int time_warp_projects = 1;
+    int time_warp_start_turn = 50;
     int faction_placement = 1;
     int nutrient_bonus = 0;
     int rare_supply_pods = 0;
@@ -222,19 +222,20 @@ struct Config {
     int spawn_battle_ogres = 1;
     int planetpearls = 1;
     int event_perihelion = 1;
-    int event_sunspots = 10;
+    int event_sunspots = -1;
     int aquatic_bonus_minerals = 1;
     int alien_guaranteed_techs = 1;
     int alien_early_start = 0;
     int cult_early_start = 0;
     int natives_weak_until_turn = -1;
+    int native_lifecycle_levels[6] = {40,80,120,160,200,240};
     int neural_amplifier_bonus = 50;
     int dream_twister_bonus = 50;
     int fungal_tower_bonus = 50;
+    int planet_defense_bonus = 1;
     int perimeter_defense_bonus = 2;
     int tachyon_field_bonus = 2;
     int collateral_damage_value = 3;
-    int planet_defense_bonus = 0;
     int content_pop_player[MaxDiffNum] = {6,5,4,3,2,1};
     int content_pop_computer[MaxDiffNum] = {3,3,3,3,3,3};
     int repair_minimal = 1;
