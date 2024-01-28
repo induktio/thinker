@@ -483,6 +483,8 @@ bool patch_setup(Config* cf) {
     write_call(0x50474C, (int)mod_battle_compute); // best_defender
     write_call(0x506EA6, (int)mod_battle_compute); // battle_fight_2
     write_call(0x5085E0, (int)mod_battle_compute); // battle_fight_2
+    write_call(0x4F7D13, (int)base_upkeep_rand);
+
     write_offset(0x50F421, (void*)mod_turn_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);
     write_offset(0x64576E, (void*)mod_except_handler3);

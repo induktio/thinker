@@ -262,8 +262,8 @@ Thinker also adds support for custom factions that are not aliens while using th
 
 See below for some custom faction sets. The factions can be played in both game modes and they are also fairly balanced overall.
 
-* [Sigma Faction Set](https://alphacentauri2.info/index.php?action=downloads;sa=view;down=264)
-* [Tayta's Dystopian Faction Set](https://alphacentauri2.info/index.php?topic=21515)
+* [Sigma Faction Set](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAG16eQBuaX45fGFENKWq48a/factions/Sigma_Faction_Set_2014-06-19.zip?dl=0)
+* [Dystopian Faction Set](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAA0kNw0tk5sESLZQ3eDMEeFa/factions/Tayta_Custom_Factions_v4.zip?dl=0)
 
 
 Compatibility with other mods
@@ -338,6 +338,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 37. Fix issue where Accelerated Start option may sometimes freeze the game when selecting a random secret project for Hive. Patched version will not assign Citizens Defense Force or Command Nexus for a faction that already has those facilities for free, unless all other choices among the first seven projects have been exhausted, also Empath Guild is always skipped.
 38. Disable legacy game startup code that spawned additional colony pods for factions if the difficulty level matched pre-defined rules. The same starting units can now be selected from the config file for all difficulty levels (skip_default_balance).
 39. Prevent the AI from making unnecessary trades where it sells their techs for maps owned by the player. The patch removes TRADETECH4 / TRADETECH5 dialogue paths making the AI usually demand a credit payment for any techs.
+40. Patch the AI to rename captured bases only after they are fully assimilated. This means the captured base extra drone effect must also be elapsed.
 
 
 Scient's patch

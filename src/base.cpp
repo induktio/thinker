@@ -222,6 +222,15 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
     return 0;
 }
 
+/*
+Replaces rand() call in base_upkeep to decide if the AI should rename a captured base
+when the return value equals zero.
+*/
+int __cdecl base_upkeep_rand() {
+    return !(*current_base_id >= 0 && !Bases[*current_base_id].assimilation_turns_left
+        && (*current_base_id + *current_turn) & 1);
+}
+
 char* prod_name(int item_id) {
     if (item_id >= 0) {
         return Units[item_id].name;
