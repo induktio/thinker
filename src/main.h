@@ -186,7 +186,7 @@ struct Config {
     int time_warp_mod = 1;
     int time_warp_techs = 5;
     int time_warp_projects = 1;
-    int time_warp_start_turn = 50;
+    int time_warp_start_turn = 40;
     int faction_placement = 1;
     int nutrient_bonus = 0;
     int rare_supply_pods = 0;

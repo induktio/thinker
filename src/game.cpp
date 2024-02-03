@@ -1,6 +1,9 @@
 
 #include "game.h"
 
+static uint32_t custom_game_rules = 0;
+static uint32_t custom_more_rules = 0;
+
 
 bool un_charter() {
     return *un_charter_repeals <= *un_charter_reinstates;
@@ -95,6 +98,27 @@ int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id) {
     }
 }
 
+void init_world_config() {
+    if (conf.ignore_reactor_power) {
+        *game_preferences &= ~PREF_BSC_AUTO_DESIGN_VEH;
+        *game_more_preferences &= ~MPREF_BSC_AUTO_PRUNE_OBS_VEH;
+    }
+    ThinkerVars->game_time_spent = 0;
+    // Adjust Special Scenario Rules if any are selected from the mod menu
+    if (custom_game_rules || custom_more_rules) {
+        *game_rules = (*game_rules & GAME_RULES_MASK) | custom_game_rules;
+        *game_more_rules = (*game_more_rules & GAME_MRULES_MASK) | custom_more_rules;
+    }
+}
+
+void show_rules_menu() {
+    *game_rules = (*game_rules & GAME_RULES_MASK) | custom_game_rules;
+    *game_more_rules = (*game_more_rules & GAME_MRULES_MASK) | custom_more_rules;
+    Console_editor_scen_rules(MapWin);
+    custom_game_rules = *game_rules & ~GAME_RULES_MASK;
+    custom_more_rules = *game_more_rules & ~GAME_MRULES_MASK;
+}
+
 void init_save_game(int faction) {
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
@@ -161,6 +185,10 @@ void init_save_game(int faction) {
 }
 
 int __cdecl mod_turn_upkeep() {
+    // Turn number is incremented in turn_upkeep
+    if (*current_turn == 0) {
+        init_world_config();
+    }
     turn_upkeep();
     debug("turn_upkeep %d bases: %d vehicles: %d\n",
         *current_turn, *total_num_bases, *total_num_vehicles);
@@ -174,13 +202,6 @@ int __cdecl mod_turn_upkeep() {
         } else {
             *game_state &= ~STATE_DEBUG_MODE;
         }
-    }
-    if (*current_turn == 1 && conf.ignore_reactor_power) {
-        *game_preferences &= ~PREF_BSC_AUTO_DESIGN_VEH;
-        *game_more_preferences &= ~MPREF_BSC_AUTO_PRUNE_OBS_VEH;
-    }
-    if (*current_turn == 1) {
-        ThinkerVars->game_time_spent = 0;
     }
     snprintf(ThinkerVars->build_date, 12, MOD_DATE);
     return 0;

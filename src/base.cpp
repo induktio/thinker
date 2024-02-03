@@ -227,8 +227,7 @@ Replaces rand() call in base_upkeep to decide if the AI should rename a captured
 when the return value equals zero.
 */
 int __cdecl base_upkeep_rand() {
-    return !(*current_base_id >= 0 && !Bases[*current_base_id].assimilation_turns_left
-        && (*current_base_id + *current_turn) & 1);
+    return !(*current_base_id >= 0 && !Bases[*current_base_id].assimilation_turns_left);
 }
 
 char* prod_name(int item_id) {
@@ -380,6 +379,12 @@ bool can_build(int base_id, int fac_id) {
             || b->item() == -FAC_FLECHETTE_DEFENSE_SYS)) {
                 return false;
             }
+        }
+    }
+    if (*game_rules & RULES_SCN_NO_TECH_ADVANCES) {
+        if (fac_id == FAC_RESEARCH_HOSPITAL || fac_id == FAC_NANOHOSPITAL
+        || fac_id == FAC_FUSION_LAB || fac_id == FAC_QUANTUM_LAB) {
+            return false;
         }
     }
     /* Rare special case if the game engine reaches the global unit limit. */

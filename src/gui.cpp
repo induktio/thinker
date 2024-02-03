@@ -998,6 +998,9 @@ int show_mod_menu() {
             show_mod_config();
         }
         else if (ret == 2) {
+            show_rules_menu();
+        }
+        else if (ret == 3) {
             popup_homepage();
         }
         return 0; // Close dialog

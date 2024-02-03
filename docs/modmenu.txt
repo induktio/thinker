@@ -12,6 +12,7 @@
 
 Close Dialog
 Change Mod Options
+Change Scenario Rules
 Open Project Homepage
 
 #GAMEMENU

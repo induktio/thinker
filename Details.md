@@ -16,7 +16,7 @@ Note that in `thinker.ini` config file, for binary settings **only zero values a
 
 User interface additions
 ========================
-Thinker's in-game menu can be opened by pressing `ALT+T` (or `ALT+H` when used with PRACX). It shows the mod version information and provides statistics about the factions and spent game time if a game is loaded. In addition, some Thinker config options can be adjusted from its sub menu.
+Thinker's in-game menu can be opened by pressing `ALT+T` (or `ALT+H` when used with PRACX). It shows the mod version information and provides statistics about the factions and spent game time if a game is loaded. In addition, some Thinker config options can be adjusted from its sub menu. When the game is in the main menu, it is also possible to adjust Special Scenario Rules for new random maps started from there.
 
 Statistics feature calculates mineral and energy production numbers after multiplier facility effects are applied. However the mineral output bonus provided by Space Elevator is ignored in this step. Energy calculation also does not substract inefficiency from the final number.
 
@@ -287,7 +287,7 @@ Currently the features listed here may not be fully supported or may have issues
 1. Network multiplayer TCP/IP and PBEM should be supported, however this receives less testing than the singleplayer configuration, so some issues might occur. In case of network problems, refer to other manuals on how to configure firewalls and open the necessary ports for multiplayer.
 2. Most notable limits in the game engine are 8 factions (one for native life), 512 bases, 2048 units, and 64 prototypes for each faction. These limits were fixed in the game binary at compilation time and are not feasible to change without a full open source port.
 3. Faction selection dialog in the game setup is limited to showing only the first 24 factions even if installed factions in alphax.txt exceed this number.
-4. Some custom scenario rules in "Edit Scenario Rules" menus are not supported fully. This will not affect randomly generated maps. However these rules are supported: `No terraforming`, `No colony pods can be built`, `No secret projects can be built` and `No technological advances`.
+4. Most custom settings in "Special Scenario Rules" should be supported even when starting new random maps. However these rules may cause inconsistent behaviour when used from the main menu: `No native life--fungus, mind worms, Planet, etc`, `Force current difficulty level`, and `Force player to play current faction`.
 5. While `collateral_damage_value` is set to 0, the game might still display messages about collateral damage being inflicted on units on the stack, but none of them will actually take any damage.
 6. Maximum supported map size by Thinker is 256x256. This is a compile time constant, but it is also the largest map that the game interface will allow selecting.
 7. DirectDraw mode is not supported while using thinker.exe launcher. In this case the game may fail to start properly unless `DirectDraw=0` config option is used.
@@ -329,7 +329,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 28. Bases that have sufficient drone control facilities before the growth phase can grow without triggering possible drone riots on the same turn (delay_drone_riots).
 29. Disable drone revolt event which sometimes caused rioting player-owned bases to join other factions while this did not happen on AI factions (skip_drone_revolts).
 30. Whenever additional units are added in the editor mode, these are set as independent units requiring no support by default (editor_free_units).
-31. Patch captured base extra drone effect to last a variable time from 20 to 50 turns depending on the captured base size.
+31. Patch captured base extra drone effect to last a variable time from 20 to 50 turns depending on the captured base size. The AI will also rename captured bases only after they are fully assimilated.
 32. When a base is captured that was previously owned by active third faction and the time to assimilate the base was more than 10 turns, the previous owner is preserved after capture.
 33. Fix diplomacy dialog issues when both human and alien factions are involved in a base capture by removing the event that spawns additional colony pods.
 34. Fix missing defender bonus mentioned in the manual "Units in a headquarters base automatically gain +1 Morale when defending".
@@ -338,7 +338,6 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 37. Fix issue where Accelerated Start option may sometimes freeze the game when selecting a random secret project for Hive. Patched version will not assign Citizens Defense Force or Command Nexus for a faction that already has those facilities for free, unless all other choices among the first seven projects have been exhausted, also Empath Guild is always skipped.
 38. Disable legacy game startup code that spawned additional colony pods for factions if the difficulty level matched pre-defined rules. The same starting units can now be selected from the config file for all difficulty levels (skip_default_balance).
 39. Prevent the AI from making unnecessary trades where it sells their techs for maps owned by the player. The patch removes TRADETECH4 / TRADETECH5 dialogue paths making the AI usually demand a credit payment for any techs.
-40. Patch the AI to rename captured bases only after they are fully assimilated. This means the captured base extra drone effect must also be elapsed.
 
 
 Scient's patch

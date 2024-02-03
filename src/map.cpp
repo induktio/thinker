@@ -1060,8 +1060,8 @@ void __cdecl mod_time_warp() {
     std::set<int32_t> choices = {};
     const int num = clamp(*map_area_tiles / 3200 + 2, 2, 5);
     /*
-    Aquatic factions always spawn with extra Sea Colony Pod and Unity Gunship.
-    Alien factions spawn with extra Colony Pod and Battle Ogre Mk1.
+    Aquatic factions always spawn with extra an extra Unity Gunship.
+    Alien factions spawn with an extra Colony Pod and Battle Ogre Mk1.
     These units are added in setup_player regardless of other conditions.
     */
 
@@ -1147,6 +1147,7 @@ void __cdecl mod_time_warp() {
     } else {
         time_warp();
     }
+    init_world_config();
     if (!conf.time_warp_projects) {
         return;
     }

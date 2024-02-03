@@ -251,7 +251,7 @@ enum TechFlags {
     TFLAG_INC_NUTRIENT_FUNGUS = 0x100,
 };
 
-enum probe_action {
+enum ProbeAction {
     PRB_INFILTRATE_DATALINKS = 0,
     PRB_PROCURE_RESEARCH_DATA = 1,
     PRB_ACTIVATE_SABOTAGE_VIRUS = 2,
@@ -264,7 +264,7 @@ enum probe_action {
     PRB_MIND_CONTROL_UNIT = -1,
 };
 
-enum game_state {
+enum GameState {
     STATE_GAME_DONE = 0x1,
     STATE_UNK_2 = 0x2,
     STATE_UNK_4 = 0x4,
@@ -299,7 +299,7 @@ enum game_state {
     STATE_SCN_VICT_CREDITS_COUNT_OBJ = 0x80000000,
 };
 
-enum game_rules {
+enum GameRules {
     RULES_DO_OR_DIE = 0x1,
     RULES_VICTORY_CONQUEST = 0x2,
     RULES_VICTORY_ECONOMIC = 0x4,
@@ -334,7 +334,14 @@ enum game_rules {
     RULES_SCN_NO_BUILDING_SP = 0x80000000,
 };
 
-enum GameBaseWarningsBitfield {
+enum GameMoreRules {
+    MRULES_SCN_UNITY_PODS_NO_VEHICLES = 0x1,
+    MRULES_SCN_UNITY_PODS_NO_TECH = 0x2,
+    MRULES_NO_PLANETARY_COUNCIL = 0x4,
+    MRULES_NO_SOCIAL_ENGINEERING = 0x8,
+};
+
+enum GameWarnings {
     WARN_STOP_NEW_FAC_BUILT = 0x1,
     WARN_STOP_NON_COMBAT_VEH_BUILT = 0x2,
     WARN_STOP_PROTOTYPE_COMPLETE = 0x4,
@@ -355,7 +362,7 @@ enum GameBaseWarningsBitfield {
     WARN_STOP_RANDOM_EVENT = 0x20000,
 };
 
-enum GamePreferencesBitfield {
+enum GamePreferences {
     PREF_BSC_PAUSE_END_TURN = 0x1,
     PREF_BSC_AUTOSAVE_EACH_TURN = 0x2,
     PREF_BSC_DONT_QUICK_MOVE_ENEMY_VEH = 0x4, // flag set when unchecked
@@ -392,7 +399,7 @@ enum GamePreferencesBitfield {
     PREF_AUTO_WAKE_VEH_TRANS_REACH_LAND = 0x80000000,
 };
 
-enum GameMorePreferencesBitfield {
+enum GameMorePreferences {
     MPREF_MAP_SHOW_FOG_WAR = 0x1,
     //
     MPREF_ADV_ZOOM_BASE_NO_RECENTER_MAP = 0x4,
@@ -422,7 +429,7 @@ enum GameMorePreferencesBitfield {
     MPREF_MAP_HIDE_ACTIVE_VEH_GOTO_PATH = 0x2000000, // flag set when unchecked
 };
 
-enum game_diff_level {
+enum DiffLevel {
     DIFF_CITIZEN = 0,
     DIFF_SPECIALIST = 1,
     DIFF_TALENT = 2,
@@ -431,7 +438,7 @@ enum game_diff_level {
     DIFF_TRANSCEND = 5,
 };
 
-enum faction_bonus_type {
+enum FactionBonusType {
     FCB_FREETECH = 0,
     FCB_FREEUNIT = 1,
     FCB_FREEFAC = 2,
@@ -453,7 +460,7 @@ enum faction_bonus_type {
     FCB_OFFENSE = 18,
 };
 
-enum faction_rule_flags {
+enum FactionRuleFlags {
     RFLAG_TECHSTEAL = 0x10,
     RFLAG_TECHSHARE = 0x20,
     RFLAG_WORMPOLICE = 0x40,
@@ -468,7 +475,7 @@ enum faction_rule_flags {
     RFLAG_MORALE = 0x8000,
 };
 
-enum diplo_status {
+enum DiploStatus {
     DIPLO_PACT = 0x1,
     DIPLO_TREATY = 0x2,
     DIPLO_TRUCE = 0x4,
@@ -503,7 +510,7 @@ enum diplo_status {
     DIPLO_UNK_80000000 = 0x80000000,
 };
 
-enum diplo_agenda {
+enum DiploAgenda {
     AGENDA_UNK_1 = 0x1,
     AGENDA_UNK_2 = 0x2,
     AGENDA_UNK_4 = 0x4,
@@ -522,7 +529,7 @@ enum diplo_agenda {
     AGENDA_UNK_8000 = 0x8000,
 };
 
-enum player_flags {
+enum PlayerFlags {
     PLR_SELF_AWARE_COLONY_LOST_MAINT = 0x20, // used to even out lossy integer division
     PLR_MAP_REVEALED = 0x200,
     PLR_GENETIC_PLAGUE_INTRO = 0x400, // +1 to defense against after 1st time faction experiences
@@ -542,7 +549,7 @@ enum player_flags {
     PLR_STRAT_ATK_OBJECTIVES = 0x80000000,
 };
 
-enum player_flags_extended {
+enum PlayerFlagsExtended {
     PLR_EXT_STRAT_LOTS_COLONY_PODS = 0x1,
     PLR_EXT_STRAT_LOTS_TERRAFORMERS = 0x2,
     PLR_EXT_STRAT_LOTS_SEA_BASES = 0x4,
@@ -552,7 +559,7 @@ enum player_flags_extended {
     PLR_EXT_STRAT_LOTS_ARTILLERY = 0x40,
 };
 
-enum base_state_flags {
+enum BaseState {
     BSTATE_UNK_1 = 0x1,
     BSTATE_DRONE_RIOTS_ACTIVE = 0x2,
     BSTATE_GOLDEN_AGE_ACTIVE = 0x4,
@@ -587,7 +594,7 @@ enum base_state_flags {
     BSTATE_UNK_8000000000 = 0x80000000,
 };
 
-enum base_event_flags {
+enum BaseEvent {
     BEVENT_UNK_100 = 0x100,
     BEVENT_BUMPER = 0x200,
     BEVENT_FAMINE = 0x400,
@@ -598,7 +605,7 @@ enum base_event_flags {
     BEVENT_OBJECTIVE = 0x8000,
 };
 
-enum base_governor_flags {
+enum BaseGovernor {
     GOV_MANAGES_PRODUCTION = 0x1,
     // 0x2
     // 0x4
@@ -720,7 +727,7 @@ enum MapLandmark {
     LM_FOSSIL = 0x8000,
 };
 
-enum terrain_altitude {
+enum TerrainAltitude {
     ALT_OCEAN_TRENCH = 0,
     ALT_OCEAN = 1,
     ALT_OCEAN_SHELF = 2,
@@ -731,7 +738,7 @@ enum terrain_altitude {
     ALT_FOUR_ABOVE_SEA = 7,
 };
 
-enum terrain_basic_flags {
+enum TerrainFlags {
     TILE_MOIST = 0x8,
     TILE_RAINY = 0x10,
     TILE_ROLLING = 0x40,
@@ -764,7 +771,7 @@ enum AIGoal {
     Thinker_Goal_ID_First = AI_GOAL_RAISE_LAND,
 };
 
-enum social_effect {
+enum SocialEffect {
     SE_ECONOMY = 0,
     SE_EFFIC = 1,
     SE_SUPPORT = 2,
@@ -778,14 +785,14 @@ enum social_effect {
     SE_RESEARCH = 10,
 };
 
-enum social_category_types {
+enum SocialCategory {
     SOCIAL_C_POLITICS = 0,
     SOCIAL_C_ECONOMICS = 1,
     SOCIAL_C_VALUES = 2,
     SOCIAL_C_FUTURE = 3,
 };
 
-enum social_model_types {
+enum SocialModel {
     SOCIAL_M_FRONTIER = 0,
     SOCIAL_M_POLICE_STATE = 1,
     SOCIAL_M_DEMOCRATIC = 2,
@@ -807,7 +814,7 @@ enum social_model_types {
     SOCIAL_M_THOUGHT_CONTROL = 3,
 };
 
-enum CouncilProposals {
+enum CouncilProposal {
     PROP_ELECT_PLANETARY_GOVERNOR = 0,
     PROP_UNITE_SUPREME_LEADER = 1,
     PROP_SALVAGE_UNITY_CORE = 2,
@@ -820,7 +827,7 @@ enum CouncilProposals {
     PROP_REINSTATE_UN_CHARTER = 9,
 };
 
-enum mapwin_state {
+enum MapwinState {
     MAPWIN_DRAW_TRANSLUCENT = 0x2, // render translucent sprites, farms/forests excl. fungus
     MAPWIN_DRAW_SITES = 0x4, // debug overlay
     MAPWIN_UNK_10 = 0x10, // render some random yellow sprites
