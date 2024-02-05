@@ -19,7 +19,8 @@ int __thiscall BaseWin_popup_start(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
 int __cdecl BaseWin_ask_number(const char* label, int value, int a3);
 void __thiscall Basewin_draw_farm_set_font(Buffer* This, Font* font, int a3, int a4, int a5);
-void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, int a6);
+void __thiscall BaseWin_draw_energy_set_text_color(Buffer* This, int a2, int a3, int a4, int a5);
+void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, int opts);
 void __cdecl BaseWin_draw_psych_strcat(char* buffer, char* source);
 void __cdecl BaseWin_action_staple(int base_id);
 void __cdecl popb_action_staple(int base_id);

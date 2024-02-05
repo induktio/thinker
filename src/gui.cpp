@@ -2,13 +2,18 @@
 #include "gui.h"
 
 
-const int* color_nutrient = (int*)0x8C6CC4;
-const int* color_mineral = (int*)0x8C6CD4;
-const int* color_energy = (int*)0x8C6CB4;
-const int* color_nutrient_light = (int*)0x8C6CCC;
-const int* color_mineral_light = (int*)0x8C6CDC;
-const int* color_energy_light = (int*)0x8C6D5C;
-const int* color_inefficiency = (int*)0x8C6D14;
+const int32_t* color_nutrient = (int32_t*)0x8C6CC4;
+const int32_t* color_mineral = (int32_t*)0x8C6CD4;
+const int32_t* color_energy = (int32_t*)0x8C6CB4;
+const int32_t* color_nutrient_light = (int32_t*)0x8C6CCC;
+const int32_t* color_mineral_light = (int32_t*)0x8C6CDC;
+const int32_t* color_energy_light = (int32_t*)0x8C6D5C;
+const int32_t* color_inefficiency = (int32_t*)0x8C6D14;
+const int32_t* color_intake_surplus = (int32_t*)0x8C6CAC;
+const int32_t* color_prod_name = (int32_t*)0x8C6D2C;
+const int32_t* color_labs_alloc = (int32_t*)0x8C6D64;
+const int32_t* color_psych_alloc = (int32_t*)0x8C6D6C;
+
 
 static int minimal_cost = 0;
 static bool filebox_visible = false;
@@ -566,7 +571,8 @@ int __cdecl mod_blink_timer() {
     return 0;
 }
 
-LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
     static int iDeltaAccum = 0;
     bool tools = DEBUG && !*GameHalted;
     POINT p;
@@ -836,7 +842,8 @@ void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
     }
 }
 
-void __cdecl mod_turn_timer() {
+void __cdecl mod_turn_timer()
+{
     /*
     Timer calls this function every 500ms.
     Used for multiplayer related screen updates in turn_timer().
@@ -859,11 +866,13 @@ void __cdecl mod_turn_timer() {
     }
 }
 
-void popup_homepage() {
+void popup_homepage()
+{
     ShellExecute(NULL, "open", "https://github.com/induktio/thinker", NULL, NULL, SW_SHOWNORMAL);
 }
 
-void show_mod_stats() {
+void show_mod_stats()
+{
     int total_pop = 0,
         total_minerals = 0,
         total_energy = 0,
@@ -908,7 +917,8 @@ void show_mod_stats() {
     popp("modmenu", "STATS", 0, "markbm_sm.pcx", 0);
 }
 
-int show_mod_config() {
+int show_mod_config()
+{
     enum {
         MapGen = 1,
         MapContinents = 2,
@@ -988,7 +998,8 @@ int show_mod_config() {
     return 0;
 }
 
-int show_mod_menu() {
+int show_mod_menu()
+{
     parse_says(0, MOD_VERSION, -1, -1);
     parse_says(1, MOD_DATE, -1, -1);
 
@@ -1067,12 +1078,6 @@ void __thiscall Basewin_draw_farm_set_font(Buffer* This, Font* font, int a3, int
             Buffer_set_text_color(This, *color_energy, 0, 1, 1);
             Buffer_write_right_l2(This, buf, x2 - 2, y2 - 35, 50);
         }
-        else if (base_can_riot(base_id, false) && base->talent_total < base->drone_total) {
-            // DRONE RIOTS
-            snprintf(buf, 256, "%s", (*TextLabels)[705]);
-            Buffer_set_text_color(This, *color_inefficiency, 0, 1, 1);
-            Buffer_write_right_l2(This, buf, x2 - 2, y2 - 35, 50);
-        }
         if (satellite_bonus(base_id, &N, &M, &E)) {
             snprintf(buf, 256, "N +%d", N);
             Buffer_set_text_color(This, *color_nutrient, 0, 1, 1);
@@ -1100,35 +1105,56 @@ void __cdecl BaseWin_draw_psych_strcat(char* buffer, char* source)
     snprintf(buffer, StrBufLen, "%s", source);
 }
 
-void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, int a6)
+void __thiscall BaseWin_draw_energy_set_text_color(Buffer* This, int a2, int a3, int a4, int a5)
+{
+    if (conf.render_base_info && *current_base_id >= 0) {
+        BASE* base = &Bases[*current_base_id];
+        char buf[256] = {};
+        int workers = base->pop_size - base->talent_total - base->drone_total - base->specialist_total;
+        int color;
+
+        if (maybe_riot(*current_base_id)) {
+            color = *color_inefficiency;
+        } else if (base->golden_age()) {
+            color = *color_energy;
+        } else {
+            color = *color_intake_surplus;
+        }
+        Buffer_set_text_color(This, color, a3, a4, a5);
+        snprintf(buf, 256, "%s: %d / %d / %d / %d", (*TextLabels)[265], // Pop
+            base->talent_total, workers, base->drone_total, base->specialist_total);
+        Buffer_write_right_l2(This, buf, 690, 423, 50);
+    }
+    Buffer_set_text_color(This, a2, a3, a4, a5);
+}
+
+void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, int opts)
 {
     int color = -1;
     int width = 1;
-    BASE* b = &Bases[base_id];
-    base_draw((int)buffer, base_id, x, y, zoom, a6);
+    BASE* base = &Bases[base_id];
+    base_draw(buffer, base_id, x, y, zoom, opts);
 
-    if (conf.render_base_info > 0 && zoom >= -8) {
+    if (conf.render_base_info && zoom >= -8) {
         if (has_facility(FAC_HEADQUARTERS, base_id)) {
             color = 255;
             width = 2;
         }
-        if (has_facility(FAC_GEOSYNC_SURVEY_POD, base_id)
-        || has_facility(FAC_FLECHETTE_DEFENSE_SYS, base_id)) {
+        if (has_fac_built(FAC_GEOSYNC_SURVEY_POD, base_id)
+        || has_fac_built(FAC_FLECHETTE_DEFENSE_SYS, base_id)) {
             color = 254;
         }
-        if (b->faction_id == MapWin->cOwner && b->state_flags & BSTATE_GOLDEN_AGE_ACTIVE) {
-            color = 251;
+        if (base->faction_id == MapWin->cOwner && base->golden_age()) {
+            color = *color_energy;
         }
-        if (b->faction_id == MapWin->cOwner && maybe_riot(base_id)) {
-            color = 249;
+        if (base->faction_id == MapWin->cOwner && maybe_riot(base_id)) {
+            color = *color_inefficiency;
         }
         if (color < 0) {
             return;
         }
         // Game engine uses this way to determine the population label width
-        const char* s1 = "8";
-        const char* s2 = "88";
-        int w = Font_width(*MapLabelFont, (int)(b->pop_size >= 10 ? s2 : s1)) + 5;
+        int w = Font_width(*MapLabelFont, (int)(base->pop_size >= 10 ? "88" : "8")) + 5;
         int h = (*MapLabelFont)->iHeight + 4;
 
         for (int i = 1; i <= width; i++) {

@@ -95,6 +95,9 @@ struct BASE {
     bool item_is_unit() {
         return queue_items[0] >= 0;
     }
+    bool golden_age() {
+        return !drone_total && talent_total * 2 >= pop_size;
+    }
 };
 
 struct MAP {

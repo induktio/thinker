@@ -270,8 +270,9 @@ extern Win* DatalinkWin;
 extern Win* DesignWin;
 extern Win* DiploWin;
 extern Win* FameWin;
-extern Win* StringBox;
 extern Win* InfoWin;
+extern Win* MainInterface;
+extern Win* StringBox;
 extern Win* BaseMapWin;
 extern Win* MessageWin;
 extern Win* MonuWin;
@@ -343,6 +344,7 @@ typedef int(__cdecl *Fname_proto)(char* name, int unit_id, int faction_id,
 VehChassis chassis, VehWeapon weapon, VehArmor armor, VehAblFlag abls, VehReactor reactor);
 typedef void(__cdecl *Fbattle_compute)(int veh_id_atk, int veh_id_def,
     int* offense_out, int* defense_out, int combat_type);
+typedef int(__cdecl *Fbase_draw)(Buffer* buffer, int base_id, int x, int y, int zoom, int opts);
 
 typedef int(__thiscall *FMapWin_pixel_to_tile)(Console* This, int x, int y, long* px, long* py);
 typedef int(__thiscall *FMapWin_tile_to_pixel)(Console* This, int x, int y, long* px, long* py);
@@ -370,6 +372,8 @@ typedef int(__thiscall *FWinGeneric)(Win* This);
 typedef int(__thiscall *FGeneric)(void* This);
 typedef int(__cdecl *FNetMsg_pop2)(char* label, void* a2);
 typedef int(__thiscall *FNetMsg_pop)(void* This, char* label, int delay, int a4, void* a5);
+typedef int(__thiscall *FGraphicWin_soft_update)(Win* This, int* values);
+typedef int(__thiscall *FGraphicWin_update2)(Win* This, int* values, int opts);
 
 #pragma GCC diagnostic pop
 
@@ -403,6 +407,8 @@ extern Fhex_cost hex_cost;
 //extern Fhas_abil has_abil;
 extern FX_pop X_pop;
 extern FX_pops X_pops;
+extern FGraphicWin_soft_update GraphicWin_soft_update;
+extern FGraphicWin_update2 GraphicWin_update2;
 extern FBuffer_set_font Buffer_set_font;
 extern FBuffer_set_text_color Buffer_set_text_color;
 extern FBuffer_write_l Buffer_write_l;
@@ -658,7 +664,7 @@ extern fp_1int commlink_attempt;
 extern fp_1int pick_top_veh;
 extern fp_7int veh_draw;
 extern fp_5int sub_55A150;
-extern fp_6int base_draw;
+extern Fbase_draw base_draw;
 extern fp_3int treaty_off;
 extern fp_3int agenda_off;
 extern fp_3int treaty_on;

@@ -447,6 +447,7 @@ bool patch_setup(Config* cf) {
     write_call(0x58DDD8, (int)mod_world_build);
     write_call(0x408DBD, (int)BaseWin_draw_psych_strcat);
     write_call(0x40F8F8, (int)Basewin_draw_farm_set_font);
+    write_call(0x4129E5, (int)BaseWin_draw_energy_set_text_color);
     write_call(0x41B771, (int)BaseWin_action_staple);
     write_call(0x41916B, (int)BaseWin_popup_start);
     write_call(0x4195A6, (int)BaseWin_ask_number);
@@ -711,6 +712,8 @@ bool patch_setup(Config* cf) {
         const byte new_bytes[] = {0xE8,0x00,0x00,0x00,0x00,0x90};
         write_bytes(0x414B81, old_bytes, new_bytes, sizeof(new_bytes));
         write_call(0x414B81, (int)basewin_random_seed); // BaseWin_draw_pop
+        write_bytes(0x49D57B, old_bytes, new_bytes, sizeof(new_bytes));
+        write_call(0x49D57B, (int)basewin_random_seed); // ReportWin_draw_ops
         memset((void*)0x414D52, 0x90, 5); // Superdrone icons, aliens
         memset((void*)0x414EE2, 0x90, 7); // Superdrone icons, humans
     }
