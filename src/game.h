@@ -7,7 +7,7 @@ This header includes the main turn processing functions and
 various other game features that don't clearly belong elsewhere.
 */
 
-// Exclude settings that are not set in Special Scenario Rules
+// Select only those settings that are not set in Special Scenario Rules
 const uint32_t GAME_RULES_MASK = 0x7808FFFF;
 const uint32_t GAME_MRULES_MASK = 0xFFFFFFF0;
 

@@ -104,7 +104,10 @@ void init_world_config() {
         *game_more_preferences &= ~MPREF_BSC_AUTO_PRUNE_OBS_VEH;
     }
     ThinkerVars->game_time_spent = 0;
-    // Adjust Special Scenario Rules if any are selected from the mod menu
+    /*
+    Adjust Special Scenario Rules if any are selected from the mod menu.
+    This also overrides settings for any scenarions unless all custom options are left empty.
+    */
     if (custom_game_rules || custom_more_rules) {
         *game_rules = (*game_rules & GAME_RULES_MASK) | custom_game_rules;
         *game_more_rules = (*game_more_rules & GAME_MRULES_MASK) | custom_more_rules;

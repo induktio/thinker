@@ -169,6 +169,11 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
     bool destroy_base = base->pop_size < 2;
     assert(base_id >= 0 && base_id < *total_num_bases);
     assert(valid_player(faction) && faction != old_faction);
+    /*
+    Fix possible issues with inconsistent captured base facilities
+    when some of the factions have free facilities defined for them.
+    */
+    set_base(base_id);
 
     if (is_probe) {
         MFactions[old_faction].thinker_last_mc_turn = *current_turn;
@@ -178,7 +183,7 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
     }
     if (!destroy_base && base->faction_id_former >= 0
     && is_alive(base->faction_id_former)
-    && base->assimilation_turns_left > 10) {
+    && base->assimilation_turns_left >= 10) {
         prev_owner = base->faction_id_former;
     }
     base->defend_goal = 0;
@@ -194,7 +199,7 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
                 num++;
             }
         }
-        base->assimilation_turns_left = clamp((num + base->pop_size) * 5 + 15, 20, 50);
+        base->assimilation_turns_left = clamp((num + base->pop_size) * 5 + 10, 20, 50);
         base->faction_id_former = prev_owner;
     }
     /*
