@@ -39,6 +39,26 @@ void reader_file(vec_str_t& lines, const char* filename, const char* section, si
     reader_path(lines, filename_txt, section, max_len);
 }
 
+void parse_format_args(char* buf, const char* src, int args_count, size_t max_len) {
+    if (count_format_args(src) == args_count) {
+        strncpy(buf, src, max_len);
+        buf[max_len-1] = '\0';
+    }
+}
+
+int count_format_args(const char* buf) {
+    int num = 0;
+    int len = strlen(buf);
+    int i;
+
+    for (i = 0; i < len - 1; i++) {
+        if (buf[i] == '%' && buf[i + 1] != '%') {
+            num++;
+        }
+    }
+    return num;
+}
+
 char* parse_str(char* buf, size_t len, const char* s1, const char* s2, const char* s3, const char* s4) {
     buf[0] = '\0';
     strncat(buf, s1, len);

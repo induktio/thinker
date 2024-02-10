@@ -145,7 +145,7 @@ Win*         DesignWin        = (Win*)0x71F2B0;
 Win*         DiploWin         = (Win*)0x73ACD8;
 Win*         FameWin          = (Win*)0x74DAF8;
 Win*         InfoWin          = (Win*)0x7AD2A0;
-Win*         MainInterface    = (Win*)0x7AE820;
+Win*         MainWin          = (Win*)0x7AE820;
 Win*         StringBox        = (Win*)0x7CD2EC;
 Win*         BaseMapWin       = (Win*)0x7D4060; // Additional base terrain view
 Win*         MessageWin       = (Win*)0x7F67F8;
@@ -196,6 +196,7 @@ char**          Repute        = (char**)0x946A30;
 
 
 FPopup_start Popup_start                       = (FPopup_start           )0x406380;
+FWinGeneric BaseWin_nerve_staple               = (FWinGeneric            )0x41B4F0;
 FWinGeneric BaseWin_on_redraw                  = (FWinGeneric            )0x41E790;
 FWinGeneric GraphicWin_redraw                  = (FWinGeneric            )0x5D5A70;
 FGeneric SubInterface_release_iface_mode       = (FGeneric               )0x45D380;

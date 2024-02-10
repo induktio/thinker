@@ -271,7 +271,7 @@ extern Win* DesignWin;
 extern Win* DiploWin;
 extern Win* FameWin;
 extern Win* InfoWin;
-extern Win* MainInterface;
+extern Win* MainWin;
 extern Win* StringBox;
 extern Win* BaseMapWin;
 extern Win* MessageWin;
@@ -379,6 +379,7 @@ typedef int(__thiscall *FGraphicWin_update2)(Win* This, int* values, int opts);
 
 
 extern FPopup_start Popup_start;
+extern FWinGeneric BaseWin_nerve_staple;
 extern FWinGeneric BaseWin_on_redraw;
 extern FWinGeneric GraphicWin_redraw;
 extern FGeneric SubInterface_release_iface_mode;

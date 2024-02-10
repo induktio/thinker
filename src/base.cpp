@@ -208,16 +208,16 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
     */
     if (vendetta && is_human(faction) && !is_human(old_faction)
     && last_spoke < 10 && !*diplo_value_93FA98 && !*diplo_value_93FA24) {
-        int lost = 0;
+        int lost_bases = 0;
         for (int i = 0; i < *total_num_bases; i++) {
             BASE* b = &Bases[i];
             if (b->faction_id == faction && b->faction_id_former == old_faction) {
-                lost++;
+                lost_bases++;
             }
         }
-        int div = max(2, 6 - last_spoke/2) + max(0, 4 - lost/2)
+        int value = max(2, 6 - last_spoke) + max(0, 6 - lost_bases)
             + (want_revenge(old_faction, faction) ? 4 : 0);
-        if (random(div) > 0) {
+        if (random(value) > 0) {
             set_treaty(faction, old_faction, DIPLO_WANT_TO_TALK, 0);
             set_treaty(old_faction, faction, DIPLO_WANT_TO_TALK, 0);
         }
@@ -286,7 +286,7 @@ int hurry_cost(int base_id, int item_id, int hurry_mins) {
     return 0;
 }
 
-int unused_space(int base_id) {
+int base_unused_space(int base_id) {
     BASE* base = &Bases[base_id];
     int limit_mod = (has_project(FAC_ASCETIC_VIRTUES, base->faction_id) ? 2 : 0)
         - MFactions[base->faction_id].rule_population;
@@ -297,7 +297,12 @@ int unused_space(int base_id) {
     if (!has_facility(FAC_HABITATION_DOME, base_id)) {
         return max(0, Rules->pop_limit_wo_hab_dome + limit_mod - base->pop_size);
     }
-    return max(0, 24 - base->pop_size);
+    return max(0, MaxBasePopSize - base->pop_size);
+}
+
+int base_growth_goal(int base_id) {
+    BASE* base = &Bases[base_id];
+    return clamp(24 - base->pop_size, 0, base_unused_space(base_id));
 }
 
 bool can_build(int base_id, int fac_id) {
@@ -430,13 +435,13 @@ bool can_staple(int base_id) {
 Check if the base might riot on the next turn, usually after a population increase.
 Used only for rendering additional details about base psych status.
 */
-bool maybe_riot(int base_id) {
+bool base_maybe_riot(int base_id) {
     BASE* b = &Bases[base_id];
 
     if (!base_can_riot(base_id, true)) {
         return false;
     }
-    if (!conf.delay_drone_riots && unused_space(base_id) > 0 && b->drone_total <= b->talent_total) {
+    if (!conf.delay_drone_riots && base_unused_space(base_id) > 0 && b->drone_total <= b->talent_total) {
         int cost = (b->pop_size + 1) * cost_factor(b->faction_id, 0, base_id);
         return b->drone_total + 1 > b->talent_total && (base_pop_boom(base_id)
             || (b->nutrients_accumulated + b->nutrient_surplus >= cost));
@@ -448,7 +453,7 @@ bool base_can_riot(int base_id, bool allow_staple) {
     BASE* b = &Bases[base_id];
     return (!allow_staple || !b->nerve_staple_turns_left)
         && !has_project(FAC_TELEPATHIC_MATRIX, b->faction_id)
-        && !has_facility(FAC_PUNISHMENT_SPHERE, base_id);
+        && !has_fac_built(FAC_PUNISHMENT_SPHERE, base_id);
 }
 
 bool base_pop_boom(int base_id) {
@@ -459,7 +464,7 @@ bool base_pop_boom(int base_id) {
     }
     return has_project(FAC_CLONING_VATS, b->faction_id)
         || f->SE_growth_pending
-        + (has_facility(FAC_CHILDREN_CRECHE, base_id) ? 2 : 0)
+        + (has_fac_built(FAC_CHILDREN_CRECHE, base_id) ? 2 : 0)
         + (b->state_flags & BSTATE_GOLDEN_AGE_ACTIVE ? 2 : 0) > 5;
 }
 
@@ -725,10 +730,10 @@ int consider_hurry() {
         || t == -FAC_PUNISHMENT_SPHERE || t == -FAC_HEADQUARTERS) {
             return hurry_item(b, mins, cost);
         }
-        if (t == -FAC_CHILDREN_CRECHE && unused_space(base_id) > 2) {
+        if (t == -FAC_CHILDREN_CRECHE && base_unused_space(base_id) > 2) {
             return hurry_item(b, mins, cost);
         }
-        if (t == -FAC_HAB_COMPLEX && unused_space(base_id) == 0) {
+        if (t == -FAC_HAB_COMPLEX && base_unused_space(base_id) == 0) {
             return hurry_item(b, mins, cost);
         }
         if (t == -FAC_PERIMETER_DEFENSE && b->defend_goal > 2 && p->enemy_factions > 0) {
@@ -757,7 +762,7 @@ int consider_hurry() {
         }
         if (Units[t].is_colony() && cost < f->energy_credits/16
         && (b->state_flags & BSTATE_DRONE_RIOTS_ACTIVE
-        || (!unused_space(base_id) && turns > 3))) {
+        || (!base_unused_space(base_id) && turns > 3))) {
             return hurry_item(b, mins, cost);
         }
     }
@@ -1444,9 +1449,9 @@ int select_build(int base_id) {
             continue;
         if (t == FAC_TACHYON_FIELD && base->defend_goal < 4 && turns > (allow_units ? 2 : 4))
             continue;
-        if (t == FAC_HAB_COMPLEX && unused_space(base_id) > 0)
+        if (t == FAC_HAB_COMPLEX && base_unused_space(base_id) > 0)
             continue;
-        if (t == FAC_HABITATION_DOME && unused_space(base_id) > 0)
+        if (t == FAC_HABITATION_DOME && base_unused_space(base_id) > 0)
             continue;
         if (t == FAC_PSI_GATE && facility_count(FAC_PSI_GATE, faction) >= f->base_count/2)
             continue;

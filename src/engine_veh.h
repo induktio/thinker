@@ -308,8 +308,8 @@ enum VehFlags {
     VFLAG_UNK_1 = 0x1, // used in repair_phase
     VFLAG_UNK_2 = 0x2, // used in repair_phase, if not set, VFLAG_UNK_1 gets cleared instead
     VFLAG_PROBE_PACT_OPERATIONS = 0x4,
-    VFLAG_UNK_8 = 0x8, // used by morale_alien
-    VFLAG_UNK_10 = 0x10, // used by morale_alien
+    VFLAG_ADD_ONE_MORALE = 0x8, // used by morale_alien
+    VFLAG_ADD_TWO_MORALE = 0x10, // used by morale_alien
     VFLAG_IS_OBJECTIVE = 0x20,
     VFLAG_LURKER = 0x40,
     VFLAG_START_RAND_LOCATION = 0x80,

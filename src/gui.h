@@ -2,9 +2,33 @@
 
 #include "main.h"
 
+// Translation labels for the user interface
+extern char label_pop_size[StrBufLen];
+extern char label_pop_boom[StrBufLen];
+extern char label_nerve_staple[StrBufLen];
+extern char label_captured_base[StrBufLen];
+
 // Bottom middle UI console size in pixels
 const int ConsoleHeight = 219;
 const int ConsoleWidth = 1024;
+
+const int ColorNutrient = 152;
+const int ColorMineral = 223;
+const int ColorEnergy = 98;
+const int ColorNutrientLight = 150;
+const int ColorMineralLight = 222;
+const int ColorEnergyLight = 95;
+const int ColorIntakeSurplus = 169;
+const int ColorProdName = 154;
+const int ColorLabsAlloc = 155;
+const int ColorPsychAlloc = 204;
+const int ColorRed = 249;
+const int ColorGreen = 250;
+const int ColorYellow = 251;
+const int ColorBlue = 252;
+const int ColorMagenta = 253;
+const int ColorCyan = 254;
+const int ColorWhite = 255;
 
 LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 int show_mod_menu();
@@ -24,7 +48,7 @@ void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, 
 void __cdecl BaseWin_draw_psych_strcat(char* buffer, char* source);
 void __cdecl BaseWin_action_staple(int base_id);
 void __cdecl popb_action_staple(int base_id);
-int __thiscall BaseWin_staple(void* This);
+int __thiscall BaseWin_click_staple(Win* This);
 int __thiscall mod_MapWin_focus(Console* This, int x, int y);
 int __thiscall ReportWin_close_handler(void* This);
 void __thiscall Console_editor_fungus(Console* UNUSED(This));

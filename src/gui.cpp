@@ -1,19 +1,10 @@
 
 #include "gui.h"
 
-
-const int32_t* color_nutrient = (int32_t*)0x8C6CC4;
-const int32_t* color_mineral = (int32_t*)0x8C6CD4;
-const int32_t* color_energy = (int32_t*)0x8C6CB4;
-const int32_t* color_nutrient_light = (int32_t*)0x8C6CCC;
-const int32_t* color_mineral_light = (int32_t*)0x8C6CDC;
-const int32_t* color_energy_light = (int32_t*)0x8C6D5C;
-const int32_t* color_inefficiency = (int32_t*)0x8C6D14;
-const int32_t* color_intake_surplus = (int32_t*)0x8C6CAC;
-const int32_t* color_prod_name = (int32_t*)0x8C6D2C;
-const int32_t* color_labs_alloc = (int32_t*)0x8C6D64;
-const int32_t* color_psych_alloc = (int32_t*)0x8C6D6C;
-
+char label_pop_size[StrBufLen] = "Pop: %d / %d / %d / %d";
+char label_pop_boom[StrBufLen] = "Population Boom";
+char label_nerve_staple[StrBufLen] = "Nerve Staple: %d turns";
+char label_captured_base[StrBufLen] = "Captured Base: %d turns";
 
 static int minimal_cost = 0;
 static bool filebox_visible = false;
@@ -794,27 +785,27 @@ void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
                     switch (goal.type) {
                         case AI_GOAL_ATTACK:
                             buf[1] = 'a';
-                            color = 249;
+                            color = ColorRed;
                             break;
                         case AI_GOAL_DEFEND:
                             buf[1] = 'd';
-                            color = 251;
+                            color = ColorYellow;
                             break;
                         case AI_GOAL_SCOUT:
                             buf[1] = 's';
-                            color = 253;
+                            color = ColorMagenta;
                             break;
                         case AI_GOAL_UNK_1:
                             buf[1] = 'n';
-                            color = 252;
+                            color = ColorBlue;
                             break;
                         case AI_GOAL_COLONIZE:
                             buf[1] = 'c';
-                            color = 254;
+                            color = ColorCyan;
                             break;
                         case AI_GOAL_TERRAFORM_LAND:
                             buf[1] = 'f';
-                            color = 250;
+                            color = ColorGreen;
                             break;
                         case AI_GOAL_UNK_4:
                             buf[1] = '^';
@@ -831,7 +822,7 @@ void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
             }
         }
         if (!found && value != 0) {
-            color = (value >= 0 ? 255 : 251);
+            color = (value >= 0 ? ColorWhite : ColorYellow);
             _itoa(value, buf, 10);
         }
         if (found || value) {
@@ -1055,38 +1046,29 @@ int __cdecl BaseWin_ask_number(const char* label, int value, int a3)
 
 void __thiscall Basewin_draw_farm_set_font(Buffer* This, Font* font, int a3, int a4, int a5)
 {
-    int base_id = *current_base_id;
-    BASE* base = &Bases[base_id];
     char buf[256] = {};
     // Base resource window coordinates including button row
-    int x1 = ((int*)BaseWin)[66275];
-    int y1 = ((int*)BaseWin)[66276];
-    int x2 = ((int*)BaseWin)[66277];
-    int y2 = ((int*)BaseWin)[66278];
+    int x1 = ((int32_t*)BaseWin)[66275];
+    int y1 = ((int32_t*)BaseWin)[66276];
+    int x2 = ((int32_t*)BaseWin)[66277];
+    int y2 = ((int32_t*)BaseWin)[66278];
     int N = 0;
     int M = 0;
     int E = 0;
     Buffer_set_font(This, font, a3, a4, a5);
 
-    if (base_id < 0 || x1 < 0 || y1 < 0 || x2 < 0 || y2 < 0) {
+    if (*current_base_id < 0 || x1 < 0 || y1 < 0 || x2 < 0 || y2 < 0) {
         assert(0);
     } else if (conf.render_base_info) {
-        if (base->nerve_staple_turns_left > 0) {
-            // Nerve Staple: N turns
-            snprintf(buf, 256, "%s: %d %s",
-                (*TextLabels)[662], base->nerve_staple_turns_left, (*TextLabels)[49]);
-            Buffer_set_text_color(This, *color_energy, 0, 1, 1);
-            Buffer_write_right_l2(This, buf, x2 - 2, y2 - 35, 50);
-        }
-        if (satellite_bonus(base_id, &N, &M, &E)) {
-            snprintf(buf, 256, "N +%d", N);
-            Buffer_set_text_color(This, *color_nutrient, 0, 1, 1);
+        if (satellite_bonus(*current_base_id, &N, &M, &E)) {
+            snprintf(buf, 256, "%c +%d", (*TextLabels)[41][0], N);
+            Buffer_set_text_color(This, ColorNutrient, 0, 1, 1);
             Buffer_write_l(This, buf, x1 + 4, y2 - 35 - 28, 50);
-            snprintf(buf, 256, "M +%d", M);
-            Buffer_set_text_color(This, *color_mineral, 0, 1, 1);
+            snprintf(buf, 256, "%c +%d", (*TextLabels)[40][0], M);
+            Buffer_set_text_color(This, ColorMineral, 0, 1, 1);
             Buffer_write_l(This, buf, x1 + 4, y2 - 35 - 14, 50);
-            snprintf(buf, 256, "E +%d", E);
-            Buffer_set_text_color(This, *color_energy, 0, 1, 1);
+            snprintf(buf, 256, "%c +%d", (*TextLabels)[36][0], E);
+            Buffer_set_text_color(This, ColorEnergy, 0, 1, 1);
             Buffer_write_l(This, buf, x1 + 4, y2 - 35     , 50);
         }
     }
@@ -1094,11 +1076,11 @@ void __thiscall Basewin_draw_farm_set_font(Buffer* This, Font* font, int a3, int
 
 void __cdecl BaseWin_draw_psych_strcat(char* buffer, char* source)
 {
-    if (!strcmp(source, (*TextLabels)[970]) && *current_base_id >= 0) {
+    if (conf.render_base_info && *current_base_id >= 0
+    && !strcmp(source, (*TextLabels)[970])) { // Captured Base
         int turns = Bases[*current_base_id].assimilation_turns_left;
         if (turns > 0) {
-            // Captured Base: N turns
-            snprintf(buffer, StrBufLen, "%s: %d %s", source, turns, (*TextLabels)[49]);
+            snprintf(buffer, StrBufLen, label_captured_base, turns);
             return;
         }
     }
@@ -1107,23 +1089,35 @@ void __cdecl BaseWin_draw_psych_strcat(char* buffer, char* source)
 
 void __thiscall BaseWin_draw_energy_set_text_color(Buffer* This, int a2, int a3, int a4, int a5)
 {
+    BASE* base = &Bases[*current_base_id];
+    char buf[256] = {};
     if (conf.render_base_info && *current_base_id >= 0) {
-        BASE* base = &Bases[*current_base_id];
-        char buf[256] = {};
         int workers = base->pop_size - base->talent_total - base->drone_total - base->specialist_total;
         int color;
 
-        if (maybe_riot(*current_base_id)) {
-            color = *color_inefficiency;
+        if (base_maybe_riot(*current_base_id)) {
+            color = ColorRed;
         } else if (base->golden_age()) {
-            color = *color_energy;
+            color = ColorEnergy;
         } else {
-            color = *color_intake_surplus;
+            color = ColorIntakeSurplus;
         }
         Buffer_set_text_color(This, color, a3, a4, a5);
-        snprintf(buf, 256, "%s: %d / %d / %d / %d", (*TextLabels)[265], // Pop
+        snprintf(buf, 256, label_pop_size,
             base->talent_total, workers, base->drone_total, base->specialist_total);
-        Buffer_write_right_l2(This, buf, 690, 423, 50);
+        Buffer_write_right_l2(This, buf, 690, 423 - 42, 50);
+
+        if (base_pop_boom(*current_base_id) && base_unused_space(*current_base_id) > 0) {
+            Buffer_set_text_color(This, ColorNutrient, a3, a4, a5);
+            snprintf(buf, 256, "%s", label_pop_boom);
+            Buffer_write_right_l2(This, buf, 690, 423 - 21, 50);
+        }
+
+        if (base->nerve_staple_turns_left > 0) {
+            snprintf(buf, 256, label_nerve_staple, base->nerve_staple_turns_left);
+            Buffer_set_text_color(This, ColorEnergy, a3, a4, a5);
+            Buffer_write_right_l2(This, buf, 690, 423, 50);
+        }
     }
     Buffer_set_text_color(This, a2, a3, a4, a5);
 }
@@ -1136,19 +1130,19 @@ void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, 
     base_draw(buffer, base_id, x, y, zoom, opts);
 
     if (conf.render_base_info && zoom >= -8) {
-        if (has_facility(FAC_HEADQUARTERS, base_id)) {
-            color = 255;
+        if (has_fac_built(FAC_HEADQUARTERS, base_id)) {
+            color = ColorWhite;
             width = 2;
         }
         if (has_fac_built(FAC_GEOSYNC_SURVEY_POD, base_id)
         || has_fac_built(FAC_FLECHETTE_DEFENSE_SYS, base_id)) {
-            color = 254;
+            color = ColorCyan;
         }
         if (base->faction_id == MapWin->cOwner && base->golden_age()) {
-            color = *color_energy;
+            color = ColorEnergy;
         }
-        if (base->faction_id == MapWin->cOwner && maybe_riot(base_id)) {
-            color = *color_inefficiency;
+        if (base->faction_id == MapWin->cOwner && base_maybe_riot(base_id)) {
+            color = ColorRed;
         }
         if (color < 0) {
             return;
@@ -1187,12 +1181,11 @@ void __cdecl popb_action_staple(int base_id)
     }
 }
 
-int __thiscall BaseWin_staple(void* This)
+int __thiscall BaseWin_click_staple(Win* This)
 {
-    tc_1int BaseWin_staple_the_bastards = (tc_1int)0x41B4F0;
     int base_id = ((int32_t*)This)[66243];
     if (base_id >= 0 && conf.nerve_staple > is_human(Bases[base_id].faction_id)) {
-        return BaseWin_staple_the_bastards(This);
+        return BaseWin_nerve_staple(This);
     }
     return 0;
 }

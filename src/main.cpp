@@ -271,8 +271,16 @@ int option_handler(void* user, const char* section, const char* name, const char
         if (atoi(value) > 0) {
             cf->skip_random_factions |= 1 << (atoi(value) - 1);
         }
+    } else if (MATCH("thinker", "label_pop_size")) {
+        parse_format_args(label_pop_size, value, 4, StrBufLen);
+    } else if (MATCH("thinker", "label_pop_boom")) {
+        parse_format_args(label_pop_boom, value, 0, StrBufLen);
+    } else if (MATCH("thinker", "label_nerve_staple")) {
+        parse_format_args(label_nerve_staple, value, 1, StrBufLen);
+    } else if (MATCH("thinker", "label_captured_base")) {
+        parse_format_args(label_captured_base, value, 1, StrBufLen);
     } else {
-        for (int i=0; i<16; i++) {
+        for (int i = 0; i < 16; i++) {
             if (MATCH("thinker", landmark_params[i])) {
                 cf->landmarks &= ~((atoi(value) ? 0 : 1) << i);
                 return 1;

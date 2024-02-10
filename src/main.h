@@ -122,6 +122,7 @@ const int MaxMoodNum = 9;
 const int MaxReputeNum = 8;
 const int MaxMightNum = 7;
 const int MaxBonusNameNum = 41;
+const int MaxBasePopSize = 127;
 
 const int StrBufLen = 256;
 const int MaxEnemyRange = 50;

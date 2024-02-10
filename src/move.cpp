@@ -1008,7 +1008,7 @@ ResType want_convoy(int base_id, int x, int y, int* score) {
         int M = mine_yield(base->faction_id, base_id, x, y, 0);
         int E = energy_yield(base->faction_id, base_id, x, y, 0);
 
-        int Nw = (base->nutrient_surplus < 0 ? 8 : min(8, 2 + unused_space(base_id)))
+        int Nw = (base->nutrient_surplus < 0 ? 8 : min(8, 2 + base_growth_goal(base_id)))
             - max(0, base->nutrient_surplus - 14);
         int Mw = max(3, (45 - base->mineral_intake_2) / 5);
 
