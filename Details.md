@@ -14,17 +14,28 @@ Thinker does not have any special save game format, so it's possible to open an 
 Note that in `thinker.ini` config file, for binary settings **only zero values are treated as disabled**, any non-zero value usually enables the option. Whenever Thinker options are changed in the GUI, they are also saved to `thinker.ini` in the game folder.
 
 
+Command line options
+====================
+    -smac       Activate SMAC-in-SMACX mod. Implies smac_only=1 config option.
+    -windowed   Start the game in borderless windowed mode. Uses resolution set in the mod config.
+
+
+Keyboard shortcuts
+==================
+    ALT+T   Show Thinker's version and options menu (use ALT+H when PRACX is enabled).
+    ALT+R   Toggle tile information update under cursor if smooth_scrolling is enabled.
+    ALT+O   Enter a new value for random map generator when scenario editor mode is active.
+
+
 User interface additions
 ========================
-Thinker's in-game menu can be opened by pressing `ALT+T` (or `ALT+H` when used with PRACX). It shows the mod version information and provides statistics about the factions and spent game time if a game is loaded. In addition, some Thinker config options can be adjusted from its sub menu. When the game is in the main menu, it is also possible to adjust Special Scenario Rules for new random maps started from there.
+Thinker's in-game menu shows the mod version information and provides statistics about the factions and spent game time if a game is loaded. In addition, some Thinker config options can be adjusted from its sub menu. When the game is in the main menu, it is also possible to adjust Special Scenario Rules for new random maps started from there. Selecting any special rules will override all rules even when starting a new scenario, so leave all the choices in the dialog empty to use preset scenario rules.
 
 Statistics feature calculates mineral and energy production numbers after multiplier facility effects are applied. However the mineral output bonus provided by Space Elevator is ignored in this step. Energy calculation also does not substract inefficiency from the final number.
 
-Render base info feature draws colored labels around various bases to identify them more easily and shows more details on the base resource window. HQ bases are highlighted with a white label. Bases in golden age are highlighted with a yellow label. Bases that have Flechette Defense System or Geo Survey Pods are highlighted with a blue label.
+Render base info feature draws colored labels around various bases to identify them more easily and shows more details on the base window. HQ bases are highlighted with a white label. Player-owned bases that are about to drone riot or enter the golden age are highlighted with colored labels. Bases that have Flechette Defense System or Geo Survey Pods are highlighted with a blue label.
 
-If a base might riot on the next turn due to population increase or already has too many drones, it will be highlighted with a red label. This is not always entirely accurate due to the complexity of psych calculations.
-
-When a base has been nerve stapled, the remaining turns for the staple effect are shown near the base resource window. Previously this value was not shown in the user interface.
+Base window will also show additional details that were previously not directly visible on the user interface. The game will show population counts for talents, workers, drones and specialists. Bases that are about to drone riot, enter the golden age or pop boom on the next turn are highlighted with colored labels. When a base has been nerve stapled, the remaining turns for the staple effect are shown on the bottom right corner. Any satellite production bonuses are also shown on the base resource view.
 
 Whenever the player instructs a former to build an improvement that replaces any other item in the tile, the game will display a warning dialog. This dialog can be skipped by toggling the option here (warn_on_former_replace).
 
@@ -270,8 +281,7 @@ Compatibility with other mods
 =============================
 It should be possible to run both Thinker and [PRACX](https://github.com/DrazharLn/pracx) graphics enhancement patch at the same time. For easiest installation, download [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). However this combination of patches will not receive as much testing as the normal configuration, so some issues might occur.
 
-When PRACX is loaded at the same time, Thinker's config menu shortcut changes to `ALT+H`. If any issues are encountered, first check if they occur with the vanilla game and/or Thinker without additional mods.
-Also some optional features provided by Thinker will be disabled while running PRACX because they would patch conflicting areas of the game binary. These disabled feature include:
+If any issues are encountered, first check if they occur with the vanilla game and/or Thinker without additional mods. Also some optional features provided by Thinker will be disabled while running PRACX because they would patch conflicting areas of the game binary. These disabled feature include:
 
 * Smooth scrolling config option.
 * Windowed mode config option.

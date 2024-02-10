@@ -11,22 +11,22 @@ Thinker keyboard shortcuts
 
 These shortcuts are always available whether debug build is available or not.
 
-    Alt-T   Show Thinker's version menu and options.
-    Alt-R   Toggle tile information update under cursor if smooth_scrolling is enabled.
-    Alt-O   Enter a new value for random map generator when scenario editor mode is active.
+    Alt+T   Show Thinker's version and options menu (use Alt+H when PRACX is enabled).
+    Alt+R   Toggle tile information update under cursor if smooth_scrolling is enabled.
+    Alt+O   Enter a new value for random map generator when scenario editor mode is active.
 
 These developer mode shortcuts are only available if Thinker is using debug build.
 Some of these options require extended debug mode.
 
-    Alt-D   Toggle extended debug mode.
-    Alt-V   Iterate various TileSearch instances for the selected map tile.
-    Alt-F   Iterate various move_upkeep overlays.
-    Alt-Y   Toggle faction diplomacy treaty matrix display.
-    Alt-X   Run pathfinding between two previous map tiles.
-    Alt-Z   Print debug information for the selected map tile.
-    Shift-4 Toggle world site priority display for the legacy AI.
-    Shift-5 Toggle goals overlay display on the map.
-    Shift-* Toggle faction border display on the map.
+    Alt+D   Toggle extended debug mode.
+    Alt+V   Iterate various TileSearch instances for the selected map tile.
+    Alt+F   Iterate various move_upkeep overlays.
+    Alt+Y   Toggle faction diplomacy treaty matrix display.
+    Alt+X   Run pathfinding between two previous map tiles.
+    Alt+Z   Print debug information for the selected map tile.
+    Shift+4 Toggle world site priority display for the legacy AI.
+    Shift+5 Toggle goals overlay display on the map.
+    Shift+* Toggle faction border display on the map.
 
 As a general troubleshooting feature, all Thinker builds also include a custom crash handler that
 writes output to `debug.txt` in the game folder if the game happens to crash for any reason.
