@@ -606,3 +606,203 @@ int __cdecl mod_social_ai(int faction, int a2, int a3, int a4, int a5, int a6) {
     return 0;
 }
 
+/*
+Determine if the specified faction wants to attack the target faction.
+Lower values of modifier will make the faction more likely to attack.
+*/
+static bool __cdecl evaluate_attack(int faction_id, int faction_id_tgt, int faction_id_unk) {
+    int32_t peace_faction_id = 0;
+    bool common_enemy = false; // Target faction is at war with a human faction we are allied with
+    if (MFactions[faction_id].is_alien() && MFactions[faction_id_tgt].is_alien()) {
+        return true;
+    }
+    if (has_treaty(faction_id, faction_id_tgt, DIPLO_WANT_REVENGE | DIPLO_UNK_40 | DIPLO_ATROCITY_VICTIM)) {
+        return true;
+    }
+    if (Factions[faction_id_tgt].major_atrocities && Factions[faction_id].major_atrocities) {
+        return true;
+    }
+    if (has_treaty(faction_id, faction_id_tgt, DIPLO_UNK_4000000)) {
+        return false;
+    }
+    // Modify attacks to be less likely when AI has only few bases
+    if (Factions[faction_id].base_count
+    <= 1 + (*CurrentTurn + faction_id) % (*map_area_tiles >= 3200 ? 8 : 4)) {
+        return false;
+    }
+    if (!is_human(faction_id_tgt) && Factions[faction_id].player_flags & PFLAG_TEAM_UP_VS_HUMAN) {
+        return false;
+    }
+    int32_t modifier = 0;
+    for (int i = 1; i < MaxPlayerNum; i++) {
+        if (i != faction_id && i != faction_id_tgt) {
+            if (has_treaty(faction_id, i, DIPLO_HAVE_SURRENDERED | DIPLO_PACT)) {
+                peace_faction_id = i;
+            }
+            if (has_treaty(faction_id, i, DIPLO_VENDETTA)
+            && !has_treaty(faction_id_tgt, i, DIPLO_PACT)) {
+                modifier++;
+                if (Factions[i].mil_strength_1
+                    > ((Factions[faction_id_tgt].mil_strength_1 * 3) / 2)) {
+                    modifier++;
+                }
+            }
+            if (great_beelzebub(i, false)
+            && (*CurrentTurn >= 100 || *GameRules & RULES_INTENSE_RIVALRY)) {
+                if (has_treaty(faction_id_tgt, i, DIPLO_VENDETTA)) {
+                    modifier++;
+                }
+                if (has_treaty(faction_id_tgt, i, DIPLO_COMMLINK)
+                && has_treaty(faction_id, i, DIPLO_COMMLINK)) {
+                    modifier++;
+                }
+            }
+            if (has_treaty(faction_id, i, DIPLO_PACT) && is_human(i)) {
+                if (has_treaty(faction_id_tgt, i, DIPLO_PACT)) {
+                    modifier += 2;
+                }
+                bool has_surrender = has_treaty(faction_id, i, DIPLO_HAVE_SURRENDERED);
+                if (has_surrender && has_treaty(i, faction_id_tgt, DIPLO_PACT | DIPLO_TREATY)) {
+                    return false;
+                }
+                if (has_treaty(faction_id_tgt, i, DIPLO_VENDETTA)) {
+                    common_enemy = true;
+                    modifier -= (has_surrender ? 4 : 2);
+                }
+            }
+        }
+    }
+    if (peace_faction_id) {
+        if (has_treaty(faction_id_tgt, peace_faction_id, DIPLO_VENDETTA)) {
+            return true;
+        }
+        if (has_treaty(faction_id_tgt, peace_faction_id, DIPLO_PACT | DIPLO_TREATY)) {
+            return false;
+        }
+    }
+    if (Factions[faction_id].AI_fight < 0 && !common_enemy && FactionRankings[7] != faction_id_tgt) {
+        return false;
+    }
+    // Fix: initialize array to zero, original doesn't and compares arbitrary data on stack
+    uint32_t region_top_base_count[MaxPlayerNum] = {};
+    for (int region = 1; region < MaxRegionLandNum; region++) {
+        for (int i = 1; i < MaxPlayerNum; i++) {
+            uint32_t total_bases = Factions[i].region_total_bases[region];
+            if (total_bases > region_top_base_count[i]) {
+                region_top_base_count[i] = total_bases;
+            }
+        }
+    }
+    for (int i = 1; i < MaxPlayerNum; i++) {
+        region_top_base_count[i] -= (region_top_base_count[i] / 4);
+    }
+    int32_t region_target_hq = -1;
+    int32_t region_hq = -1;
+    for (int i = 0; i < *BaseCount; i++) {
+        if (has_fac_built(FAC_HEADQUARTERS, i)) {
+            if (Bases[i].faction_id == faction_id) {
+                region_hq = region_at(Bases[i].x, Bases[i].y);
+            } else if (Bases[i].faction_id == faction_id_tgt) {
+                region_target_hq = region_at(Bases[i].x, Bases[i].y);
+            }
+        }
+    }
+    int32_t factor_force_rating = 0;
+    int32_t factor_count = 0;
+    int32_t factor_unk = 1;
+    for (int region = 1; region < MaxRegionLandNum; region++) {
+        uint32_t force_rating = Factions[faction_id].region_force_rating[region];
+        if (!bad_reg(region) && force_rating) {
+            uint32_t total_cmbt_vehs = Factions[faction_id_tgt].region_total_combat_units[region];
+            uint32_t total_bases_tgt = Factions[faction_id_tgt].region_total_bases[region];
+
+            if (total_cmbt_vehs || total_bases_tgt) {
+                if (Factions[faction_id].region_total_bases[region]
+                >= ((region_top_base_count[faction_id] / 4) * 3) || region == region_hq) {
+                    int32_t compare = force_rating +
+                        Factions[faction_id].region_total_combat_units[region] +
+                        (faction_id_unk > 0
+                            ? Factions[faction_id_unk].region_force_rating[region] / 4 : 0);
+                    if (Factions[faction_id_tgt].region_force_rating[region] > compare) {
+                        return false;
+                    }
+                }
+                if (total_bases_tgt) {
+                    factor_force_rating += force_rating + (faction_id_unk > 0
+                        ? Factions[faction_id_unk].region_force_rating[region] / 2 : 0);
+                }
+                if ((total_bases_tgt >= ((region_top_base_count[faction_id_tgt] / 4) * 3)
+                || region == region_target_hq) && force_rating > total_cmbt_vehs) {
+                    factor_force_rating += force_rating + (faction_id_unk > 0
+                        ? Factions[faction_id_unk].region_force_rating[region] / 2 : 0);
+                }
+                factor_unk += total_cmbt_vehs
+                    + (Factions[faction_id].region_total_bases[region]
+                    ? Factions[faction_id_tgt].region_force_rating[region] / 2 : 0);
+                if (Factions[faction_id].region_total_bases[region]) {
+                    factor_count++;
+                }
+            }
+        }
+    }
+    modifier -= Factions[faction_id].AI_fight * 2;
+    int32_t tech_comm_bonus = Factions[faction_id].tech_commerce_bonus;
+    int32_t tech_comm_bonus_target = Factions[faction_id_tgt].tech_commerce_bonus;
+    int32_t best_armor_target = Factions[faction_id_tgt].best_armor_value;
+    int32_t best_weapon = Factions[faction_id_tgt].best_weapon_value;
+
+    if (tech_comm_bonus > ((tech_comm_bonus_target * 3) / 2)) {
+        modifier++;
+    }
+    if (tech_comm_bonus < ((tech_comm_bonus_target * 2) / 3)) {
+        modifier--;
+    }
+    if (best_weapon > (best_armor_target * 2)) {
+        modifier--;
+    }
+    if (best_weapon <= best_armor_target) {
+        modifier++;
+    }
+    if (!has_treaty(faction_id, faction_id_tgt, DIPLO_VENDETTA)) {
+        modifier++;
+    }
+    if (!has_treaty(faction_id, faction_id_tgt, DIPLO_PACT)) {
+        modifier++;
+    }
+    if (faction_id_unk > 0 && !great_satan(faction_id_unk, false)) {
+        modifier--;
+    }
+    if (has_agenda(faction_id, faction_id_tgt, AGENDA_UNK_200)
+    && *GameRules & RULES_INTENSE_RIVALRY) {
+        modifier--;
+    }
+    modifier -= clamp((Factions[faction_id_tgt].integrity_blemishes
+        - Factions[faction_id].integrity_blemishes + 2) / 3, 0, 2);
+    int32_t morale_factor = clamp(Factions[faction_id].SE_morale_pending, -4, 4)
+        + MFactions[faction_id].rule_morale + 16;
+    int32_t morale_divisor = factor_unk * (clamp(Factions[faction_id_tgt].SE_morale_pending, -4, 4)
+        + MFactions[faction_id_tgt].rule_morale + 16);
+
+    if (!morale_divisor) {
+        assert(0);
+        return false;
+    }
+    if ((factor_count || modifier > 0 || has_treaty(faction_id, faction_id_tgt, DIPLO_UNK_20000000))
+    && ((morale_factor * factor_force_rating * 6) / morale_divisor) < (modifier + 6)) {
+        return false;
+    }
+    return true;
+}
+
+bool __cdecl mod_wants_to_attack(int faction_id, int faction_id_tgt, int faction_id_unk) {
+    if (!thinker_enabled(faction_id)) {
+        return wants_to_attack(faction_id, faction_id_tgt, faction_id_unk);
+    }
+    bool value = evaluate_attack(faction_id, faction_id_tgt, faction_id_unk);
+
+    debug("wants_to_attack turn: %d factions: %d %d %d value: %d\n",
+        *CurrentTurn, faction_id, faction_id_tgt, faction_id_unk, value);
+    return value;
+}
+
+

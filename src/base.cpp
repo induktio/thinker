@@ -1360,7 +1360,8 @@ int select_build(int base_id) {
                 int num = 0;
                 int sea = 0;
                 for (auto& m : iterate_tiles(base->x, base->y, 1, 21)) {
-                    if (m.sq->owner == faction && select_item(m.x, m.y, faction, m.sq) >= 0) {
+                    if (m.sq->owner == faction
+                    && select_item(m.x, m.y, faction, FM_AUTO_FULL, m.sq) >= 0) {
                         num++;
                         sea += is_ocean(m.sq);
                     }

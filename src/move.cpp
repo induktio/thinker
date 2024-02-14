@@ -1534,7 +1534,7 @@ bool can_magtube(int x, int y, int faction, MAP* sq) {
         && (~sq->items & BIT_FUNGUS || has_tech(Rules->tech_preq_build_road_fungus, faction));
 }
 
-int select_item(int x, int y, int faction, MAP* sq) {
+int select_item(int x, int y, int faction, FormerAuto mode, MAP* sq) {
     assert(valid_player(faction));
     assert(mapsq(x, y));
     const int items = sq->items;
@@ -1546,10 +1546,10 @@ int select_item(int x, int y, int faction, MAP* sq) {
     int bonus = bonus_at(x, y);
     bool road = can_road(x, y, faction, sq);
 
-    if (can_magtube(x, y, faction, sq)) {
+    if (mode != FM_AUTO_ROADS && can_magtube(x, y, faction, sq)) {
         return FORMER_MAGTUBE;
     }
-    if (sq->owner == faction && can_bridge(x, y, faction, sq)) {
+    if (mode == FM_AUTO_FULL && sq->owner == faction && can_bridge(x, y, faction, sq)) {
         if (mapnodes.count({x, y, NODE_RAISE_LAND})
         || terraform_cost(x, y, faction) < Factions[faction].energy_credits/8) {
             return (road ? FORMER_ROAD : FORMER_RAISE_LAND);
@@ -1557,6 +1557,9 @@ int select_item(int x, int y, int faction, MAP* sq) {
     }
     if (sq->owner != faction || road || ~items & BIT_BASE_RADIUS || items & BIT_MONOLITH) {
         return (road ? FORMER_ROAD : FORMER_NONE);
+    }
+    if (mode != FM_AUTO_FULL) {
+        return FORMER_NONE;
     }
     if (can_river(x, y, faction, sq)) {
         return FORMER_AQUIFER;
@@ -1729,6 +1732,7 @@ int former_move(const int id) {
     int faction = veh->faction_id;
     int item;
     int choice;
+    FormerAuto mode = FM_AUTO_FULL;
     if (sq->owner != faction && pm_roads[veh->x][veh->y] < 1) {
         return move_to_base(id, false);
     }
@@ -1748,6 +1752,13 @@ int former_move(const int id) {
         }
         return mod_veh_skip(id);
     }
+    if (is_human(faction) && has_terra(faction, FORMER_ROAD, is_ocean(sq))) {
+        if (veh->order_auto_type == ORDERA_TERRA_AUTO_MAGTUBE) {
+            mode = FM_AUTO_TUBES;
+        } else if (veh->order_auto_type == ORDERA_TERRA_AUTO_ROAD) {
+            mode = FM_AUTO_ROADS;
+        }
+    }
     int turns = (veh->order >= ORDER_FARM && veh->order < ORDER_MOVE_TO ?
         Terraform[veh->order - 4].rate : 0);
 
@@ -1760,7 +1771,7 @@ int former_move(const int id) {
         && !can_magtube(veh->x, veh->y, faction, sq)) {
             return VEH_SYNC;
         }
-        item = select_item(veh->x, veh->y, faction, sq);
+        item = select_item(veh->x, veh->y, faction, mode, sq);
         if (item >= 0) {
             int cost = 0;
             pm_former[veh->x][veh->y] -= 2;
@@ -1800,7 +1811,7 @@ int former_move(const int id) {
         }
         int score = 2*former_tile_score(ts.rx, ts.ry, faction, sq)
             - map_range(bx, by, ts.rx, ts.ry);
-        if (score > best_score && (choice = select_item(ts.rx, ts.ry, faction, sq)) >= 0) {
+        if (score > best_score && (choice = select_item(ts.rx, ts.ry, faction, mode, sq)) >= 0) {
             tx = ts.rx;
             ty = ts.ry;
             best_score = score;

@@ -37,4 +37,5 @@ void __cdecl set_agenda(int faction1, int faction2, uint32_t agenda, bool add);
 int __cdecl mod_setup_player(int faction, int a2, int a3);
 int __cdecl SocialWin_social_ai(int faction, int a2, int a3, int a4, int a5, int a6);
 int __cdecl mod_social_ai(int faction, int a2, int a3, int a4, int a5, int a6);
+bool __cdecl mod_wants_to_attack(int faction_id, int faction_id_tgt, int faction_id_unk);
 

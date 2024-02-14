@@ -96,7 +96,7 @@ struct BASE {
         return queue_items[0] >= 0;
     }
     bool golden_age() {
-        return !drone_total && talent_total * 2 >= pop_size;
+        return !drone_total && pop_size > 2 && talent_total >= (pop_size + 1) / 2;
     }
 };
 
@@ -461,15 +461,15 @@ struct Faction {
     All of these are indexed by the region value in MAP struct.
     These are updated in enemy_strategy and mainly only used by the legacy vanilla AI.
     */
-    short region_total_combat_units[128];
+    uint16_t region_total_combat_units[128];
     byte region_total_bases[128];
     byte region_total_offensive_units[128];
-    short region_force_rating[128]; // Combined offensive/morale rating of all units in the area
-    short region_flags[128]; // Movement planning flags
-    short region_territory_tiles[128];
-    short region_visible_tiles[128];
-    short region_good_tiles[128];
-    short region_unk_5[128]; // Unknown reset_territory/enemy_move counter
+    uint16_t region_force_rating[128]; // Combined offensive/morale rating of all units in the area
+    uint16_t region_flags[128]; // Movement planning flags
+    uint16_t region_territory_tiles[128];
+    uint16_t region_visible_tiles[128];
+    uint16_t region_good_tiles[128];
+    uint16_t region_unk_5[128]; // Unknown reset_territory/enemy_move counter
     byte region_unk_6[128]; // Unknown enemy_strategy state
     byte region_territory_pods[128];
     byte region_base_plan[128]; // visible in map UI with omni view + debug mode under base name

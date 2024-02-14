@@ -349,6 +349,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 38. Disable legacy game startup code that spawned additional colony pods for factions if the difficulty level matched pre-defined rules. The same starting units can now be selected from the config file for all difficulty levels (skip_default_balance).
 39. Prevent the AI from making unnecessary trades where it sells their techs for maps owned by the player. The patch removes TRADETECH4 / TRADETECH5 dialogue paths making the AI usually demand a credit payment for any techs.
 40. Fix possible issues with inconsistent captured base facilities when some of the factions have free facilities defined for them.
+41. Fix some issues where AI declared war based on calculations using incorrect variables. AI is also less likely to declare war at early stages when it has only few bases built.
 
 
 Scient's patch

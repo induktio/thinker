@@ -17,6 +17,12 @@ enum RegionFlag {
     PM_PROBE = 2,
 };
 
+enum FormerAuto {
+    FM_AUTO_FULL = 0,
+    FM_AUTO_ROADS = 1,
+    FM_AUTO_TUBES = 2,
+};
+
 const uint32_t BIT_SIMPLE = (BIT_FARM | BIT_MINE | BIT_SOLAR | BIT_FOREST);
 const uint32_t BIT_ADVANCED = (BIT_CONDENSER | BIT_THERMAL_BORE);
 const uint32_t BIT_BASE_DISALLOWED = (BIT_BASE_IN_TILE | BIT_MONOLITH | BIT_FUNGUS | BIT_THERMAL_BORE);
@@ -28,6 +34,7 @@ extern int base_enemy_range[MaxBaseNum];
 int arty_value(int x, int y);
 int base_tile_score(int x, int y, int range, int triad);
 int former_tile_score(int x, int y, int faction, MAP* sq);
+int select_item(int x, int y, int faction, FormerAuto mode, MAP* sq);
 bool allow_probe(int faction1, int faction2, bool is_enhanced_probe);
 bool invasion_unit(const int id);
 
@@ -40,7 +47,6 @@ bool allow_move(int x, int y, int faction, int triad);
 bool allow_civ_move(int x, int y, int faction, int triad);
 bool can_build_base(int x, int y, int faction, int triad);
 bool has_base_sites(int x, int y, int faction, int triad);
-int select_item(int x, int y, int faction, MAP* sq);
 int crawler_move(const int id);
 int colony_move(const int id);
 int former_move(const int id);

@@ -502,6 +502,29 @@ bool patch_setup(Config* cf) {
     write_offset(0x64A3C0, (void*)mod_except_handler3);
     write_offset(0x64D947, (void*)mod_except_handler3);
 
+    write_call(0x52B0E1, (int)mod_wants_to_attack); // wants_prop
+    write_call(0x52B0F4, (int)mod_wants_to_attack); // wants_prop
+    write_call(0x52B21A, (int)mod_wants_to_attack); // wants_prop
+    write_call(0x52B229, (int)mod_wants_to_attack); // wants_prop
+    write_call(0x53BED6, (int)mod_wants_to_attack); // diplomacy_check
+    write_call(0x54648E, (int)mod_wants_to_attack); // propose_attack
+    write_call(0x54649D, (int)mod_wants_to_attack); // propose_attack
+    write_call(0x54685A, (int)mod_wants_to_attack); // propose_attack
+    write_call(0x546881, (int)mod_wants_to_attack); // propose_attack
+    write_call(0x549DF1, (int)mod_wants_to_attack); // threaten
+    write_call(0x549E0A, (int)mod_wants_to_attack); // threaten
+    write_call(0x54C352, (int)mod_wants_to_attack); // call_off_vendetta
+    write_call(0x552566, (int)mod_wants_to_attack); // communicate
+    write_call(0x5527E8, (int)mod_wants_to_attack); // communicate
+    write_call(0x553325, (int)mod_wants_to_attack); // communicate
+    write_call(0x553334, (int)mod_wants_to_attack); // communicate
+    write_call(0x55EB3F, (int)mod_wants_to_attack); // encounter
+    write_call(0x55EB4E, (int)mod_wants_to_attack); // encounter
+    write_call(0x562D0A, (int)mod_wants_to_attack); // enemy_strategy
+    write_call(0x562D19, (int)mod_wants_to_attack); // enemy_strategy
+    write_call(0x5BCC70, (int)mod_wants_to_attack); // tech_val
+    write_call(0x5BCC85, (int)mod_wants_to_attack); // tech_val
+
     // Magtube and fungus movement speed patches
     write_call(0x587424, (int)mod_read_basic_rules);
     write_call(0x467711, (int)mod_hex_cost);
