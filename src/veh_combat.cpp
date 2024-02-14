@@ -61,17 +61,17 @@ int __cdecl mod_morale_alien(int veh_id, int faction_id_vs_native) {
         }
         morale -= 2;
     } else { // everything else
-        if (*current_turn < conf.native_lifecycle_levels[0]) {
+        if (*CurrentTurn < conf.native_lifecycle_levels[0]) {
             morale = 0;
-        } else if (*current_turn < conf.native_lifecycle_levels[1]) {
+        } else if (*CurrentTurn < conf.native_lifecycle_levels[1]) {
             morale = 1;
-        } else if (*current_turn < conf.native_lifecycle_levels[2]) {
+        } else if (*CurrentTurn < conf.native_lifecycle_levels[2]) {
             morale = 2;
-        } else if (*current_turn < conf.native_lifecycle_levels[3]) {
+        } else if (*CurrentTurn < conf.native_lifecycle_levels[3]) {
             morale = 3;
-        } else if (*current_turn < conf.native_lifecycle_levels[4]) {
+        } else if (*CurrentTurn < conf.native_lifecycle_levels[4]) {
             morale = 4;
-        } else if (*current_turn < conf.native_lifecycle_levels[5]) {
+        } else if (*CurrentTurn < conf.native_lifecycle_levels[5]) {
             morale = 5;
         } else {
             morale = 6;

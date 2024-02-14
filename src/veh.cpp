@@ -95,7 +95,7 @@ int __cdecl veh_stack(int x, int y) {
     if (!sq || !sq->veh_in_tile()) {
         return -1; // invalid or empty map tile
     }
-    for (int veh_id = 0; veh_id < *total_num_vehicles; veh_id++) {
+    for (int veh_id = 0; veh_id < *VehCount; veh_id++) {
         if (Vehs[veh_id].x == x && Vehs[veh_id].y == y) {
             return veh_top(veh_id);
         }
@@ -475,7 +475,7 @@ int __cdecl find_return_base(int veh_id) {
     int min_dist = INT_MAX;
     int base_id = -1;
     bool sea = region > MaxRegionLandNum;
-    for (int i = 0; i < *total_num_bases; i++) {
+    for (int i = 0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];
         if (base->faction_id == veh->faction_id) {
             int base_region = region_at(base->x, base->y);
@@ -832,7 +832,7 @@ int set_board_to(int veh_id, int trans_veh_id) {
 
 int cargo_loaded(int veh_id) {
     int n=0;
-    for (int i=0; i < *total_num_vehicles; i++) {
+    for (int i=0; i < *VehCount; i++) {
         VEH* veh = &Vehicles[i];
         if (veh->order == ORDER_SENTRY_BOARD && veh->waypoint_1_x == veh_id) {
             n++;

@@ -46,12 +46,12 @@ These functions (first base_growth and then drone_riot)
 will only get called from production_phase > base_upkeep.
 */
 int __cdecl mod_base_growth() {
-    BASE* base = *current_base_ptr;
+    BASE* base = *CurrentBase;
     delay_base_riot = base->talent_total >= base->drone_total
         && ~base->state_flags & BSTATE_DRONE_RIOTS_ACTIVE;
     int cur_pop = base->pop_size;
     int value = base_growth();
-    assert(*current_base_ptr == base);
+    assert(*CurrentBase == base);
     delay_base_riot = delay_base_riot && base->pop_size > cur_pop;
     return value;
 }
@@ -60,7 +60,7 @@ void __cdecl mod_drone_riot() {
     if (!delay_base_riot) {
         drone_riot();
     } else {
-        assert(!((*current_base_ptr)->state_flags & BSTATE_DRONE_RIOTS_ACTIVE));
+        assert(!((*CurrentBase)->state_flags & BSTATE_DRONE_RIOTS_ACTIVE));
     }
 }
 
@@ -81,16 +81,16 @@ int __cdecl probe_veh_health(int veh_id) {
 }
 
 int __cdecl base_psych_content_pop() {
-    int faction = (*current_base_ptr)->faction_id;
+    int faction = (*CurrentBase)->faction_id;
     assert(valid_player(faction));
     if (is_human(faction)) {
-        return conf.content_pop_player[*diff_level];
+        return conf.content_pop_player[*DiffLevel];
     }
-    return conf.content_pop_computer[*diff_level];
+    return conf.content_pop_computer[*DiffLevel];
 }
 
 int __cdecl basewin_random_seed() {
-    return *current_base_id ^ *map_random_seed;
+    return *CurrentBaseID ^ *map_random_seed;
 }
 
 int __cdecl zero_value() {
@@ -177,7 +177,7 @@ Early upgrades are disabled to prevent unnecessary costs for any starting units.
 int __stdcall enemy_strategy_upgrade(int veh_id) {
     typedef int (__stdcall *std_int)(int);
     std_int Console_upgrade = (std_int)0x4D06C0;
-    if (*current_turn <= 30 + (*game_rules & RULES_TIME_WARP ? conf.time_warp_start_turn : 0)) {
+    if (*CurrentTurn <= 30 + (*GameRules & RULES_TIME_WARP ? conf.time_warp_start_turn : 0)) {
         return 1; // skip upgrade
     }
     return Console_upgrade(veh_id);

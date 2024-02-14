@@ -11,7 +11,7 @@ bool un_charter() {
 
 bool victory_done() {
     // TODO: Check for scenario victory conditions
-    return *game_state & (STATE_VICTORY_CONQUER | STATE_VICTORY_DIPLOMATIC | STATE_VICTORY_ECONOMIC)
+    return *GameState & (STATE_VICTORY_CONQUER | STATE_VICTORY_DIPLOMATIC | STATE_VICTORY_ECONOMIC)
         || has_project(FAC_ASCENT_TO_TRANSCENDENCE, -1);
 }
 
@@ -48,7 +48,7 @@ int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id) {
     if (is_human(faction_id)) {
         value = multiplier;
     } else {
-        value = multiplier * CostRatios[*diff_level] / 10;
+        value = multiplier * CostRatios[*DiffLevel] / 10;
     }
 
     if (*MapSizePlanet == 0) {
@@ -100,8 +100,8 @@ int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id) {
 
 void init_world_config() {
     if (conf.ignore_reactor_power) {
-        *game_preferences &= ~PREF_BSC_AUTO_DESIGN_VEH;
-        *game_more_preferences &= ~MPREF_BSC_AUTO_PRUNE_OBS_VEH;
+        *GamePreferences &= ~PREF_BSC_AUTO_DESIGN_VEH;
+        *GameMorePreferences &= ~MPREF_BSC_AUTO_PRUNE_OBS_VEH;
     }
     ThinkerVars->game_time_spent = 0;
     /*
@@ -109,17 +109,17 @@ void init_world_config() {
     This also overrides settings for any scenarions unless all custom options are left empty.
     */
     if (custom_game_rules || custom_more_rules) {
-        *game_rules = (*game_rules & GAME_RULES_MASK) | custom_game_rules;
-        *game_more_rules = (*game_more_rules & GAME_MRULES_MASK) | custom_more_rules;
+        *GameRules = (*GameRules & GAME_RULES_MASK) | custom_game_rules;
+        *GameMoreRules = (*GameMoreRules & GAME_MRULES_MASK) | custom_more_rules;
     }
 }
 
 void show_rules_menu() {
-    *game_rules = (*game_rules & GAME_RULES_MASK) | custom_game_rules;
-    *game_more_rules = (*game_more_rules & GAME_MRULES_MASK) | custom_more_rules;
+    *GameRules = (*GameRules & GAME_RULES_MASK) | custom_game_rules;
+    *GameMoreRules = (*GameMoreRules & GAME_MRULES_MASK) | custom_more_rules;
     Console_editor_scen_rules(MapWin);
-    custom_game_rules = *game_rules & ~GAME_RULES_MASK;
-    custom_more_rules = *game_more_rules & ~GAME_MRULES_MASK;
+    custom_game_rules = *GameRules & ~GAME_RULES_MASK;
+    custom_more_rules = *GameMoreRules & ~GAME_MRULES_MASK;
 }
 
 void init_save_game(int faction) {
@@ -152,12 +152,12 @@ void init_save_game(int faction) {
         if (strlen(u->name) >= MaxProtoNameLen
         || u->chassis_id < CHS_INFANTRY
         || u->chassis_id > CHS_MISSILE) {
-            for (int j = *total_num_vehicles-1; j >= 0; j--) {
+            for (int j = *VehCount-1; j >= 0; j--) {
                 if (Vehicles[j].unit_id == unit_id) {
                     veh_kill(j);
                 }
             }
-            for (int j = 0; j < *total_num_bases; j++) {
+            for (int j = 0; j < *BaseCount; j++) {
                 if (Bases[j].queue_items[0] == unit_id) {
                     Bases[j].queue_items[0] = -FAC_STOCKPILE_ENERGY;
                 }
@@ -165,7 +165,7 @@ void init_save_game(int faction) {
             memset(u, 0, sizeof(UNIT));
         }
     }
-    for (int i = 0; i < *total_num_vehicles; i++) {
+    for (int i = 0; i < *VehCount; i++) {
         VEH* veh = &Vehs[i];
         int prev_id = veh->prev_veh_id_stack;
         int next_id = veh->next_veh_id_stack;
@@ -189,21 +189,21 @@ void init_save_game(int faction) {
 
 int __cdecl mod_turn_upkeep() {
     // Turn number is incremented in turn_upkeep
-    if (*current_turn == 0) {
+    if (*CurrentTurn == 0) {
         init_world_config();
     }
     turn_upkeep();
     debug("turn_upkeep %d bases: %d vehicles: %d\n",
-        *current_turn, *total_num_bases, *total_num_vehicles);
+        *CurrentTurn, *BaseCount, *VehCount);
 
     if (DEBUG) {
         if (conf.debug_mode) {
-            *game_state |= STATE_DEBUG_MODE;
-            *game_preferences |= PREF_ADV_FAST_BATTLE_RESOLUTION;
-            *game_more_preferences |=
+            *GameState |= STATE_DEBUG_MODE;
+            *GamePreferences |= PREF_ADV_FAST_BATTLE_RESOLUTION;
+            *GameMorePreferences |=
                 (MPREF_ADV_QUICK_MOVE_VEH_ORDERS | MPREF_ADV_QUICK_MOVE_ALL_VEH);
         } else {
-            *game_state &= ~STATE_DEBUG_MODE;
+            *GameState &= ~STATE_DEBUG_MODE;
         }
     }
     snprintf(ThinkerVars->build_date, 12, MOD_DATE);
@@ -214,11 +214,11 @@ int __cdecl mod_turn_upkeep() {
 Original Offset: 005ABD20
 */
 void __cdecl mod_auto_save() {
-    if ((!*pbem_active || *multiplayer_active)
-    && (!(*game_rules & RULES_IRONMAN) || *game_state & STATE_SCENARIO_EDITOR)) {
-        if (conf.autosave_interval > 0 && !(*current_turn % conf.autosave_interval)) {
+    if ((!*PbemActive || *MultiplayerActive)
+    && (!(*GameRules & RULES_IRONMAN) || *GameState & STATE_SCENARIO_EDITOR)) {
+        if (conf.autosave_interval > 0 && !(*CurrentTurn % conf.autosave_interval)) {
             char buf[256];
-            snprintf(buf, sizeof(buf), "saves/auto/Autosave_%d.sav", game_year(*current_turn));
+            snprintf(buf, sizeof(buf), "saves/auto/Autosave_%d.sav", game_year(*CurrentTurn));
             save_daemon(buf);
         }
     }
@@ -230,7 +230,7 @@ Original Offset: 00527290
 int __cdecl mod_faction_upkeep(int faction) {
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
-    debug("faction_upkeep %d %d\n", *current_turn, faction);
+    debug("faction_upkeep %d %d\n", *CurrentTurn, faction);
 
     if (conf.factions_enabled > 0 && (*map_axis_x > MaxMapW || *map_axis_y > MaxMapH)) {
         parse_says(0, MOD_VERSION, -1, -1);
@@ -247,7 +247,7 @@ int __cdecl mod_faction_upkeep(int faction) {
     do_all_non_input();
 
     if (conf.activate_skipped_units) {
-        for (int i = 0; i < *total_num_vehicles; i++) {
+        for (int i = 0; i < *VehCount; i++) {
             if (Vehs[i].faction_id == faction) {
                 Vehs[i].flags &= ~VFLAG_FULL_MOVE_SKIPPED;
             }
@@ -257,7 +257,7 @@ int __cdecl mod_faction_upkeep(int faction) {
     do_all_non_input();
     production_phase(faction);
     do_all_non_input();
-    if (!(*game_state & STATE_GAME_DONE) || *game_state & STATE_FINAL_SCORE_DONE) {
+    if (!(*GameState & STATE_GAME_DONE) || *GameState & STATE_FINAL_SCORE_DONE) {
         allocate_energy(faction);
         do_all_non_input();
         enemy_diplomacy(faction);
@@ -279,8 +279,8 @@ int __cdecl mod_faction_upkeep(int faction) {
             int cost = corner_market(faction);
             if (!victory_done() && f->energy_credits > cost && f->corner_market_active < 1
             && has_tech(Rules->tech_preq_economic_victory, faction)
-            && *game_rules & RULES_VICTORY_ECONOMIC) {
-                f->corner_market_turn = *current_turn + Rules->turns_corner_global_energy_market;
+            && *GameRules & RULES_VICTORY_ECONOMIC) {
+                f->corner_market_turn = *CurrentTurn + Rules->turns_corner_global_energy_market;
                 f->corner_market_active = cost;
                 f->energy_credits -= cost;
 
@@ -296,7 +296,7 @@ int __cdecl mod_faction_upkeep(int faction) {
             }
         }
     }
-    for (int i=0; i<*total_num_bases; i++) {
+    for (int i = 0; i<*BaseCount; i++) {
         BASE* base = &Bases[i];
         if (base->faction_id == faction) {
             base->state_flags &= ~(BSTATE_UNK_1 | BSTATE_HURRY_PRODUCTION);
@@ -314,18 +314,18 @@ int __cdecl mod_faction_upkeep(int faction) {
     Path->xDst = -1;
     Path->yDst = -1;
 
-    if (!(*game_state & STATE_GAME_DONE) || *game_state & STATE_FINAL_SCORE_DONE) {
+    if (!(*GameState & STATE_GAME_DONE) || *GameState & STATE_FINAL_SCORE_DONE) {
         if (faction == MapWin->cOwner
-        && !(*game_state & (STATE_COUNCIL_HAS_CONVENED | STATE_DISPLAYED_COUNCIL_AVAIL_MSG))
-        && can_call_council(faction, 0) && !(*game_state & STATE_GAME_DONE)) {
-            *game_state |= STATE_DISPLAYED_COUNCIL_AVAIL_MSG;
+        && !(*GameState & (STATE_COUNCIL_HAS_CONVENED | STATE_DISPLAYED_COUNCIL_AVAIL_MSG))
+        && can_call_council(faction, 0) && !(*GameState & STATE_GAME_DONE)) {
+            *GameState |= STATE_DISPLAYED_COUNCIL_AVAIL_MSG;
             popp("SCRIPT", "COUNCILOPEN", 0, "council_sm.pcx", 0);
         }
         if (!is_human(faction)) {
             call_council(faction);
         }
     }
-    if (!*multiplayer_active && *game_preferences & PREF_BSC_AUTOSAVE_EACH_TURN
+    if (!*MultiplayerActive && *GamePreferences & PREF_BSC_AUTOSAVE_EACH_TURN
     && faction == MapWin->cOwner) {
         auto_save();
     }
@@ -370,7 +370,7 @@ void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool sea_b
     strlwr(file_name_1);
     strlwr(file_name_2);
 
-    for (int i = 0; i < *total_num_bases; i++) {
+    for (int i = 0; i < *BaseCount; i++) {
         if (Bases[i].faction_id == faction) {
             all_names.insert(Bases[i].name);
         }
@@ -418,7 +418,7 @@ void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool sea_b
             }
         }
     }
-    for (int i = 0; i < *total_num_bases; i++) {
+    for (int i = 0; i < *BaseCount; i++) {
         all_names.insert(Bases[i].name);
     }
     uint32_t x = 0;
@@ -449,7 +449,7 @@ void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool sea_b
             return;
         }
     }
-    int i = *total_num_bases;
+    int i = *BaseCount;
     while (i < 2*MaxBaseNum) {
         i++;
         name[0] = '\0';
@@ -478,7 +478,7 @@ int probe_active_turns(int faction1, int faction2)
 {
     int value = clamp(15 + probe_roll_value(faction1) - probe_roll_value(faction2), 5, 50);
     value = value * (4 + (*map_area_tiles >= 4000) + (*map_area_tiles >= 7000)) / 4;
-    value = value * (4 + (*diff_level < DIFF_TRANSCEND) + (*diff_level < DIFF_THINKER)) / 4;
+    value = value * (4 + (*DiffLevel < DIFF_TRANSCEND) + (*DiffLevel < DIFF_THINKER)) / 4;
     return clamp(value, 5, 50);
 }
 
@@ -498,9 +498,9 @@ int probe_upkeep(int faction1)
             if (has_treaty(faction2, faction1, DIPLO_HAVE_INFILTRATOR)) {
                 if (!MFactions[faction2].thinker_probe_end_turn[faction1]) {
                     MFactions[faction2].thinker_probe_end_turn[faction1] =
-                        *current_turn + probe_active_turns(faction2, faction1);
+                        *CurrentTurn + probe_active_turns(faction2, faction1);
                 }
-                if (MFactions[faction2].thinker_probe_end_turn[faction1] <= *current_turn) {
+                if (MFactions[faction2].thinker_probe_end_turn[faction1] <= *CurrentTurn) {
                     set_treaty(faction2, faction1, DIPLO_HAVE_INFILTRATOR, 0);
                     MFactions[faction2].thinker_probe_lost |= (1 << faction1);
                     if (faction1 == MapWin->cOwner) {
@@ -514,7 +514,7 @@ int probe_upkeep(int faction1)
     for (int faction2 = 1; faction2 < MaxPlayerNum; faction2++) {
         if (faction1 != faction2 && is_alive(faction2)) {
             debug("probe_upkeep %3d %d %d spying: %d ends: %d\n",
-                *current_turn, faction1, faction2,
+                *CurrentTurn, faction1, faction2,
                 has_treaty(faction1, faction2, DIPLO_HAVE_INFILTRATOR),
                 MFactions[faction1].thinker_probe_end_turn[faction2]
             );
@@ -533,10 +533,10 @@ int probe_upkeep(int faction1)
 
 int __thiscall probe_popup_start(Win* This, int veh_id1, int base_id, int a4, int a5, int a6, int a7)
 {
-    if (base_id >= 0 && base_id < *total_num_bases) {
+    if (base_id >= 0 && base_id < *BaseCount) {
         int faction1 = Vehs[veh_id1].faction_id;
         int faction2 = Bases[base_id].faction_id;
-        int turns = MFactions[faction1].thinker_probe_end_turn[faction2] - *current_turn;
+        int turns = MFactions[faction1].thinker_probe_end_turn[faction2] - *CurrentTurn;
         bool always_active = faction1 == *GovernorFaction || has_project(FAC_EMPATH_GUILD, faction1);
 
         if (!always_active) {

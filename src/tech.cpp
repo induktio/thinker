@@ -17,7 +17,7 @@ int __cdecl mod_tech_value(int tech, int faction, int flag) {
         }
     }
     debug("tech_value %d %d value: %3d tech: %2d %s\n",
-        *current_turn, faction, value, tech, Tech[tech].name);
+        *CurrentTurn, faction, value, tech, Tech[tech].name);
     return value;
 }
 
@@ -52,7 +52,7 @@ int tech_cost(int faction, int tech) {
             our_techs++;
         }
     }
-    double diff_factor = (is_human(faction) ? 1.0 : conf.tech_cost_factor[*diff_level] / 100.0);
+    double diff_factor = (is_human(faction) ? 1.0 : conf.tech_cost_factor[*DiffLevel] / 100.0);
     double cost_base;
 
     if (conf.cheap_early_tech) {
@@ -65,13 +65,13 @@ int tech_cost(int faction, int tech) {
         * diff_factor
         * *map_area_sq_root / 56.0
         * m->rule_techcost / 100.0
-        * (*game_rules & RULES_TECH_STAGNATION ? conf.tech_stagnate_rate / 100.0 : 1.0)
+        * (*GameRules & RULES_TECH_STAGNATION ? conf.tech_stagnate_rate / 100.0 : 1.0)
         * 100.0 / max(1, Rules->rules_tech_discovery_rate)
         * (1.0 - 0.05*min(6, owners));
 
     debug("tech_cost %d %d base: %8.4f diff: %8.4f cost: %8.4f "
     "level: %d our_techs: %d owners: %d tech: %2d %s\n",
-    *current_turn, faction, cost_base, diff_factor, cost,
+    *CurrentTurn, faction, cost_base, diff_factor, cost,
     level, our_techs, owners, tech, (tech >= 0 ? Tech[tech].name : NULL));
 
     return max(2, (int)cost);

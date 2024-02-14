@@ -45,7 +45,7 @@ bool has_orbital_drops(int faction) {
 bool has_terra(int faction, FormerItem act, bool ocean) {
     int preq_tech = (ocean ? Terraform[act].preq_tech_sea : Terraform[act].preq_tech);
     if ((act == FORMER_RAISE_LAND || act == FORMER_LOWER_LAND)
-    && *game_rules & RULES_SCN_NO_TERRAFORMING) {
+    && *GameRules & RULES_SCN_NO_TERRAFORMING) {
         return false;
     }
     if (act >= FORMER_CONDENSER && act <= FORMER_LOWER_LAND
@@ -78,7 +78,7 @@ bool has_free_facility(FacilityId item_id, int faction) {
 int facility_count(FacilityId item_id, int faction) {
     assert(valid_player(faction) && item_id < SP_ID_First);
     int n = 0;
-    for (int i=0; i < *total_num_bases; i++) {
+    for (int i=0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];
         if (base->faction_id == faction && has_fac_built(item_id, i)) {
             n++;
@@ -94,7 +94,7 @@ int prod_count(int item_id, int faction, int base_skip_id) {
         || item_id/MaxProtoFactionNum == 0
         || item_id/MaxProtoFactionNum == faction);
     int n = 0;
-    for (int i=0; i < *total_num_bases; i++) {
+    for (int i=0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];
         if (base->faction_id == faction
         && base->item() == item_id
@@ -123,7 +123,7 @@ bool is_alive(int faction) {
 Determine if the specified faction is a Progenitor faction (Caretakers / Usurpers).
 */
 bool is_alien(int faction) {
-    return *expansion_enabled && MFactions[faction].rule_flags & RFLAG_ALIEN;
+    return *ExpansionEnabled && MFactions[faction].rule_flags & RFLAG_ALIEN;
 }
 
 /*
@@ -159,8 +159,8 @@ bool want_revenge(int faction1, int faction2) {
 
 bool allow_expand(int faction) {
     int bases = 0;
-    if (*game_rules & RULES_SCN_NO_COLONY_PODS || !has_wmode(faction, WMODE_COLONIST)
-    || *total_num_bases >= MaxBaseNum * 19 / 20) {
+    if (*GameRules & RULES_SCN_NO_COLONY_PODS || !has_wmode(faction, WMODE_COLONIST)
+    || *BaseCount >= MaxBaseNum * 19 / 20) {
         return false;
     }
     for (int i=1; i < MaxPlayerNum && conf.expansion_autoscale > 0; i++) {
@@ -177,7 +177,7 @@ bool allow_expand(int faction) {
 
 bool has_transport(int x, int y, int faction) {
     assert(valid_player(faction));
-    for (int i = 0; i < *total_num_vehicles; i++) {
+    for (int i = 0; i < *VehCount; i++) {
         VEH* veh = &Vehicles[i];
         if (veh->faction_id == faction && veh->x == x && veh->y == y
         && veh->is_transport()) {
@@ -189,7 +189,7 @@ bool has_transport(int x, int y, int faction) {
 
 bool has_defenders(int x, int y, int faction) {
     assert(valid_player(faction));
-    for (int i = 0; i < *total_num_vehicles; i++) {
+    for (int i = 0; i < *VehCount; i++) {
         VEH* veh = &Vehicles[i];
         if (veh->faction_id == faction && veh->x == x && veh->y == y
         && (veh->is_combat_unit() || veh->is_armored())
@@ -201,7 +201,7 @@ bool has_defenders(int x, int y, int faction) {
 }
 
 bool has_colony_pods(int faction) {
-    for (int i = 0; i < *total_num_vehicles; i++) {
+    for (int i = 0; i < *VehCount; i++) {
         VEH* veh = &Vehicles[i];
         if (veh->faction_id == faction && veh->is_colony()) {
             return true;
@@ -211,7 +211,7 @@ bool has_colony_pods(int faction) {
 }
 
 int find_hq(int faction) {
-    for(int i=0; i < *total_num_bases; i++) {
+    for(int i = 0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];
         if (base->faction_id == faction && has_fac_built(FAC_HEADQUARTERS, i)) {
             return i;
@@ -246,7 +246,7 @@ void __cdecl set_treaty(int faction1, int faction2, uint32_t treaty, bool add) {
         }
         if (treaty & DIPLO_HAVE_INFILTRATOR && conf.counter_espionage) {
             int turns = probe_active_turns(faction1, faction2);
-            MFactions[faction1].thinker_probe_end_turn[faction2] = *current_turn + turns;
+            MFactions[faction1].thinker_probe_end_turn[faction2] = *CurrentTurn + turns;
             Factions[faction1].diplo_status[faction2] |= DIPLO_RENEW_INFILTRATOR;
             if (faction1 == MapWin->cOwner) {
                 ParseNumTable[0] = turns;
@@ -276,9 +276,9 @@ int __cdecl mod_setup_player(int faction, int a2, int a3) {
     Fix issue with randomized faction agendas where they might be given agendas
     that are their opposition social models.
     */
-    if (*game_state & STATE_RAND_FAC_LEADER_SOCIAL_AGENDA && !*current_turn) {
+    if (*GameState & STATE_RAND_FAC_LEADER_SOCIAL_AGENDA && !*CurrentTurn) {
         int active_factions = 0;
-        for (int i = 0; i < *total_num_vehicles; i++) {
+        for (int i = 0; i < *VehCount; i++) {
             active_factions |= (1 << Vehs[i].faction_id);
         }
         for (int i = 0; i < 1000; i++) {
@@ -301,7 +301,7 @@ int __cdecl mod_setup_player(int faction, int a2, int a3) {
             break;
         }
     }
-    if (*game_state & STATE_RAND_FAC_LEADER_PERSONALITIES && !*current_turn) {
+    if (*GameState & STATE_RAND_FAC_LEADER_PERSONALITIES && !*CurrentTurn) {
         m->AI_fight = random(3) - 1;
         m->AI_tech = 0;
         m->AI_power = 0;
@@ -323,7 +323,7 @@ int __cdecl mod_setup_player(int faction, int a2, int a3) {
     int num_colony = is_human(faction) ? conf.player_colony_pods : conf.computer_colony_pods;
     int num_former = is_human(faction) ? conf.player_formers : conf.computer_formers;
 
-    for (int i = 0; i < *total_num_vehicles; i++) {
+    for (int i = 0; i < *VehCount; i++) {
         VEH* veh = &Vehicles[i];
         if (veh->faction_id == faction) {
             MAP* sq = mapsq(veh->x, veh->y);
@@ -361,7 +361,7 @@ int robust, int immunity, int impunity, int penalty) {
     double base_ratio = min(1.0, f->base_count / min(40.0, *map_area_sq_root * 0.5));
     int w_morale = (has_project(FAC_COMMAND_NEXUS, faction) ? 2 : 0)
         + (has_project(FAC_CYBORG_FACTORY, faction) ? 2 : 0);
-    int w_probe = (range < 25 && *current_turn - m->thinker_last_mc_turn < 8 ? 5 : 0);
+    int w_probe = (range < 25 && *CurrentTurn - m->thinker_last_mc_turn < 8 ? 5 : 0);
     int sc = 0;
     int vals[11];
 
@@ -460,7 +460,7 @@ int robust, int immunity, int impunity, int penalty) {
 
         int drone_score = 3 + (m->rule_drone > 0) - (m->rule_talent > 0)
             - (has_tech(Facility[FAC_PUNISHMENT_SPHERE].preq_tech, faction) ? 1 : 0);
-        if (*SunspotDuration > 1 && *diff_level >= DIFF_LIBRARIAN
+        if (*SunspotDuration > 1 && *DiffLevel >= DIFF_LIBRARIAN
         && un_charter() && vals[POL] >= 0) {
             sc += 3*drone_score;
         }
@@ -485,9 +485,9 @@ int robust, int immunity, int impunity, int penalty) {
         + (has_project(FAC_MANIFOLD_HARMONICS, faction) ? 6 : 0)) * clamp(vals[PLA], -3, 3);
     sc += max(2, 5 - range/8 + w_probe + 2*f->AI_power + 2*f->AI_fight)
         * clamp(vals[PRO], -2, 3);
-    sc += 8 * clamp(vals[IND], -3, 8 - *diff_level);
+    sc += 8 * clamp(vals[IND], -3, 8 - *DiffLevel);
 
-    if (~*game_rules & RULES_SCN_NO_TECH_ADVANCES) {
+    if (!(*GameRules & RULES_SCN_NO_TECH_ADVANCES)) {
         sc += max(2, 3 + 4*f->AI_tech + 2*(f->AI_wealth - f->AI_fight))
             * clamp(vals[RES], -5, 5);
     }
@@ -555,7 +555,7 @@ int __cdecl mod_social_ai(int faction, int a2, int a3, int a4, int a5, int a6) {
             | (1 << (4*SOCIAL_C_FUTURE + SOCIAL_M_THOUGHT_CONTROL));
 
     } else if (has_tech(Facility[FAC_CHILDREN_CRECHE].preq_tech, faction)) {
-        for (int i=0; i<*total_num_bases; i++) {
+        for (int i=0; i<*BaseCount; i++) {
             BASE* b = &Bases[i];
             if (b->faction_id == faction) {
                 want_pop += (pop_goal(i) - b->pop_size)
@@ -568,9 +568,9 @@ int __cdecl mod_social_ai(int faction, int a2, int a3, int a4, int a5, int a6) {
         }
     }
     debug("social_params %d %d %8s range: %2d has_nexus: %d pop_boom: %d want_pop: %3d pop_total: %3d "\
-        "robust: %04x immunity: %04x impunity: %04x penalty: %04x\n", *current_turn, faction, m->filename,
+        "robust: %04x immunity: %04x impunity: %04x penalty: %04x\n", *CurrentTurn, faction, m->filename,
         range, has_nexus, pop_boom, want_pop, pop_total, robust, immunity, impunity, penalty);
-    int score_diff = 1 + (*current_turn + 11*faction) % 6;
+    int score_diff = 1 + (*CurrentTurn + 11*faction) % 6;
     int sf = -1;
     int sm2 = -1;
 
@@ -598,7 +598,7 @@ int __cdecl mod_social_ai(int faction, int a2, int a3, int a4, int a5, int a6) {
         f->energy_credits -= cost;
         f->SE_upheaval_cost_paid += cost;
         debug("social_change %d %d %8s cost: %2d score_diff: %2d %s -> %s\n",
-            *current_turn, faction, m->filename,
+            *CurrentTurn, faction, m->filename,
             cost, score_diff, Social[sf].soc_name[sm1], Social[sf].soc_name[sm2]);
     }
     social_set(faction);

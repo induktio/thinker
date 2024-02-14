@@ -5,6 +5,9 @@ char label_pop_size[StrBufLen] = "Pop: %d / %d / %d / %d";
 char label_pop_boom[StrBufLen] = "Population Boom";
 char label_nerve_staple[StrBufLen] = "Nerve Staple: %d turns";
 char label_captured_base[StrBufLen] = "Captured Base: %d turns";
+char label_sat_nutrient[StrBufLen] = "N +%d";
+char label_sat_mineral[StrBufLen] = "M +%d";
+char label_sat_energy[StrBufLen] = "E +%d";
 
 static int minimal_cost = 0;
 static bool filebox_visible = false;
@@ -536,11 +539,11 @@ int __cdecl mod_blink_timer() {
         PlanWin_blink(PlanWin);
         StringBox_clip_ids(StringBox, 150);
 
-        if ((!MapWin->field_23BE8 && (!*multiplayer_active || !(*game_state & STATE_UNK_2))) || *ControlTurnA) {
+        if ((!MapWin->field_23BE8 && (!*MultiplayerActive || !(*GameState & STATE_UNK_2))) || *ControlTurnA) {
             MapWin->field_23BFC = 0;
             return 0;
         }
-        if (MapWin->field_23BE4 || (*multiplayer_active && *game_state & STATE_UNK_2)) {
+        if (MapWin->field_23BE4 || (*MultiplayerActive && *GameState & STATE_UNK_2)) {
             MapWin->field_23BF8 = !MapWin->field_23BF8;
             draw_cursor();
             bool mouse_btn_down = GetAsyncKeyState(VK_LBUTTON) < 0;
@@ -550,7 +553,7 @@ int __cdecl mod_blink_timer() {
                 && MapWin->field_23D84 != -1
                 && MapWin->field_23D88 != -1
                 && MapWin->field_23D8C != -1) {
-                    if (*game_preferences & PREF_BSC_MOUSE_EDGE_SCROLL_VIEW || mouse_btn_down || *WinModalState != 0) {
+                    if (*GamePreferences & PREF_BSC_MOUSE_EDGE_SCROLL_VIEW || mouse_btn_down || *WinModalState != 0) {
                         CState.ScreenSize.x = *screen_width;
                         CState.ScreenSize.y = *screen_height;
                         check_scroll();
@@ -638,7 +641,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         show_mod_menu();
 
     } else if (msg == WM_CHAR && wParam == 'o' && alt_key_down() && !*GameHalted
-    && *game_state & STATE_SCENARIO_EDITOR && *game_state & STATE_OMNISCIENT_VIEW) {
+    && *GameState & STATE_SCENARIO_EDITOR && *GameState & STATE_OMNISCIENT_VIEW) {
         uint32_t seed = ThinkerVars->map_random_value;
         if (!seed) {
             seed = random_next(GetTickCount()) >> 16;
@@ -658,12 +661,12 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     memset(f.sites, 0, sizeof(f.sites));
                 }
             }
-            *game_state |= STATE_DEBUG_MODE;
-            *game_preferences |= PREF_ADV_FAST_BATTLE_RESOLUTION;
-            *game_more_preferences |=
+            *GameState |= STATE_DEBUG_MODE;
+            *GamePreferences |= PREF_ADV_FAST_BATTLE_RESOLUTION;
+            *GameMorePreferences |=
                 (MPREF_ADV_QUICK_MOVE_VEH_ORDERS | MPREF_ADV_QUICK_MOVE_ALL_VEH);
         } else {
-            *game_state &= ~STATE_DEBUG_MODE;
+            *GameState &= ~STATE_DEBUG_MODE;
         }
         if (!*GameHalted) {
             MapWin_draw_map(MapWin, 0);
@@ -686,7 +689,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         draw_diplo = !draw_diplo;
         if (draw_diplo) {
             MapWin->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_DIPLO_STATE;
-            *game_state |= STATE_DEBUG_MODE;
+            *GameState |= STATE_DEBUG_MODE;
         } else {
             MapWin->oMap.iWhatToDrawFlags &= ~MAPWIN_DRAW_DIPLO_STATE;
         }
@@ -736,7 +739,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             print_base(base_id);
         }
         print_map(x, y);
-        for (int k=0; k < *total_num_vehicles; k++) {
+        for (int k=0; k < *VehCount; k++) {
             VEH* veh = &Vehicles[k];
             if (veh->x == x && veh->y == y) {
                 Vehicles[k].state |= VSTATE_UNK_40000;
@@ -759,7 +762,7 @@ void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
 {
     Buffer* Canvas = (Buffer*)0x939888;
     RECT rt;
-    if (*game_state & STATE_OMNISCIENT_VIEW && MapWin->oMap.iWhatToDrawFlags & MAPWIN_DRAW_GOALS)
+    if (*GameState & STATE_OMNISCIENT_VIEW && MapWin->oMap.iWhatToDrawFlags & MAPWIN_DRAW_GOALS)
     {
         MapWin_tile_to_pixel(This, x, y, &rt.left, &rt.top);
         rt.right = rt.left + This->oMap.iPixelsPerTileX;
@@ -873,7 +876,7 @@ void show_mod_stats()
         faction_energy = 0;
 
     Faction* f = &Factions[MapWin->cOwner];
-    for (int i = 0; i < *total_num_bases; ++i) {
+    for (int i = 0; i < *BaseCount; ++i) {
         BASE* b = &Bases[i];
         int mindiv = (has_project(FAC_SPACE_ELEVATOR, b->faction_id)
              && (b->item() == -FAC_ORBITAL_DEFENSE_POD
@@ -889,14 +892,14 @@ void show_mod_stats()
         total_minerals += b->mineral_intake_2 / mindiv;
         total_energy += b->energy_intake_2;
     }
-    for (int i = 0; i < *total_num_vehicles; i++) {
+    for (int i = 0; i < *VehCount; i++) {
         VEH* v = &Vehicles[i];
         if (v->faction_id == MapWin->cOwner) {
             faction_units++;
         }
     }
-    ParseNumTable[0] = *total_num_bases;
-    ParseNumTable[1] = *total_num_vehicles;
+    ParseNumTable[0] = *BaseCount;
+    ParseNumTable[1] = *VehCount;
     ParseNumTable[2] = total_pop;
     ParseNumTable[3] = total_minerals;
     ParseNumTable[4] = total_energy;
@@ -1013,7 +1016,7 @@ int show_mod_menu()
     ParseNumTable[2] = seconds % 60;
     int ret = popp("modmenu", "GAMEMENU", 0, "stars_sm.pcx", 0);
 
-    if (ret == 1 && !*pbem_active && !*multiplayer_active) {
+    if (ret == 1 && !*PbemActive && !*MultiplayerActive) {
         show_mod_stats();
     }
     else if (ret == 2) {
@@ -1028,11 +1031,11 @@ int show_mod_menu()
 int __thiscall BaseWin_popup_start(Win* This,
 const char* UNUSED(filename), const char* UNUSED(label), int a4, int a5, int a6, int a7)
 {
-    BASE* base = *current_base_ptr;
+    BASE* base = *CurrentBase;
     Faction* f = &Factions[base->faction_id];
-    int mins = mineral_cost(*current_base_id, base->queue_items[0])
+    int mins = mineral_cost(*CurrentBaseID, base->queue_items[0])
         - base->minerals_accumulated - base->mineral_surplus;
-    minimal_cost = hurry_cost(*current_base_id, base->queue_items[0], mins);
+    minimal_cost = hurry_cost(*CurrentBaseID, base->queue_items[0], mins);
     ParseNumTable[1] = minimal_cost;
     ParseNumTable[2] = f->energy_credits - f->energy_cost;
     return Popup_start(This, "modmenu", "HURRY", a4, a5, a6, a7);
@@ -1046,7 +1049,7 @@ int __cdecl BaseWin_ask_number(const char* label, int value, int a3)
 
 void __thiscall Basewin_draw_farm_set_font(Buffer* This, Font* font, int a3, int a4, int a5)
 {
-    char buf[256] = {};
+    char buf[StrBufLen] = {};
     // Base resource window coordinates including button row
     int x1 = ((int32_t*)BaseWin)[66275];
     int y1 = ((int32_t*)BaseWin)[66276];
@@ -1057,28 +1060,30 @@ void __thiscall Basewin_draw_farm_set_font(Buffer* This, Font* font, int a3, int
     int E = 0;
     Buffer_set_font(This, font, a3, a4, a5);
 
-    if (*current_base_id < 0 || x1 < 0 || y1 < 0 || x2 < 0 || y2 < 0) {
+    if (*CurrentBaseID < 0 || x1 < 0 || y1 < 0 || x2 < 0 || y2 < 0) {
         assert(0);
     } else if (conf.render_base_info) {
-        if (satellite_bonus(*current_base_id, &N, &M, &E)) {
-            snprintf(buf, 256, "%c +%d", (*TextLabels)[41][0], N);
+        if (satellite_bonus(*CurrentBaseID, &N, &M, &E)) {
+            snprintf(buf, StrBufLen, label_sat_nutrient, N);
             Buffer_set_text_color(This, ColorNutrient, 0, 1, 1);
-            Buffer_write_l(This, buf, x1 + 4, y2 - 35 - 28, 50);
-            snprintf(buf, 256, "%c +%d", (*TextLabels)[40][0], M);
+            Buffer_write_l(This, buf, x1 + 4, y2 - 35 - 28, LineBufLen);
+
+            snprintf(buf, StrBufLen, label_sat_mineral, M);
             Buffer_set_text_color(This, ColorMineral, 0, 1, 1);
-            Buffer_write_l(This, buf, x1 + 4, y2 - 35 - 14, 50);
-            snprintf(buf, 256, "%c +%d", (*TextLabels)[36][0], E);
+            Buffer_write_l(This, buf, x1 + 4, y2 - 35 - 14, LineBufLen);
+
+            snprintf(buf, StrBufLen, label_sat_energy, E);
             Buffer_set_text_color(This, ColorEnergy, 0, 1, 1);
-            Buffer_write_l(This, buf, x1 + 4, y2 - 35     , 50);
+            Buffer_write_l(This, buf, x1 + 4, y2 - 35     , LineBufLen);
         }
     }
 }
 
 void __cdecl BaseWin_draw_psych_strcat(char* buffer, char* source)
 {
-    if (conf.render_base_info && *current_base_id >= 0
+    if (conf.render_base_info && *CurrentBaseID >= 0
     && !strcmp(source, (*TextLabels)[970])) { // Captured Base
-        int turns = Bases[*current_base_id].assimilation_turns_left;
+        int turns = Bases[*CurrentBaseID].assimilation_turns_left;
         if (turns > 0) {
             snprintf(buffer, StrBufLen, label_captured_base, turns);
             return;
@@ -1089,13 +1094,13 @@ void __cdecl BaseWin_draw_psych_strcat(char* buffer, char* source)
 
 void __thiscall BaseWin_draw_energy_set_text_color(Buffer* This, int a2, int a3, int a4, int a5)
 {
-    BASE* base = &Bases[*current_base_id];
-    char buf[256] = {};
-    if (conf.render_base_info && *current_base_id >= 0) {
+    BASE* base = &Bases[*CurrentBaseID];
+    char buf[StrBufLen] = {};
+    if (conf.render_base_info && *CurrentBaseID >= 0) {
         int workers = base->pop_size - base->talent_total - base->drone_total - base->specialist_total;
         int color;
 
-        if (base_maybe_riot(*current_base_id)) {
+        if (base_maybe_riot(*CurrentBaseID)) {
             color = ColorRed;
         } else if (base->golden_age()) {
             color = ColorEnergy;
@@ -1103,20 +1108,20 @@ void __thiscall BaseWin_draw_energy_set_text_color(Buffer* This, int a2, int a3,
             color = ColorIntakeSurplus;
         }
         Buffer_set_text_color(This, color, a3, a4, a5);
-        snprintf(buf, 256, label_pop_size,
+        snprintf(buf, StrBufLen, label_pop_size,
             base->talent_total, workers, base->drone_total, base->specialist_total);
-        Buffer_write_right_l2(This, buf, 690, 423 - 42, 50);
+        Buffer_write_right_l2(This, buf, 690, 423 - 42, LineBufLen);
 
-        if (base_pop_boom(*current_base_id) && base_unused_space(*current_base_id) > 0) {
+        if (base_pop_boom(*CurrentBaseID) && base_unused_space(*CurrentBaseID) > 0) {
             Buffer_set_text_color(This, ColorNutrient, a3, a4, a5);
-            snprintf(buf, 256, "%s", label_pop_boom);
-            Buffer_write_right_l2(This, buf, 690, 423 - 21, 50);
+            snprintf(buf, StrBufLen, "%s", label_pop_boom);
+            Buffer_write_right_l2(This, buf, 690, 423 - 21, LineBufLen);
         }
 
         if (base->nerve_staple_turns_left > 0) {
-            snprintf(buf, 256, label_nerve_staple, base->nerve_staple_turns_left);
+            snprintf(buf, StrBufLen, label_nerve_staple, base->nerve_staple_turns_left);
             Buffer_set_text_color(This, ColorEnergy, a3, a4, a5);
-            Buffer_write_right_l2(This, buf, 690, 423, 50);
+            Buffer_write_right_l2(This, buf, 690, 423, LineBufLen);
         }
     }
     Buffer_set_text_color(This, a2, a3, a4, a5);
@@ -1253,7 +1258,7 @@ void __cdecl mod_say_loc(char* dest, int x, int y, int a4, int a5, int a6)
     MAP* sq;
 
     if ((sq = mapsq(x, y)) && sq->is_base()
-    && (*game_state & STATE_SCENARIO_EDITOR || sq->is_visible(MapWin->cOwner))) {
+    && (*GameState & STATE_SCENARIO_EDITOR || sq->is_visible(MapWin->cOwner))) {
         base_id = base_at(x, y);
     }
     if (a4 != 0 && base_id < 0) {

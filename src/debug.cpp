@@ -174,7 +174,7 @@ void print_map(int x, int y) {
 
 void print_veh_stack(int x, int y) {
     if (DEBUG) {
-        for (int i = 0; i < *total_num_vehicles; i++) {
+        for (int i = 0; i < *VehCount; i++) {
             if (Vehs[i].x == x && Vehs[i].y == y) {
                 print_veh(i);
             }
@@ -201,7 +201,7 @@ void print_base(int id) {
     int prod = base->item();
     debug("[ turn: %d faction: %d base: %2d x: %2d y: %2d "\
         "pop: %d tal: %d dro: %d spe: %d min: %2d acc: %2d | %08x | %3d %s | %s ]\n",
-        *current_turn, base->faction_id, id, base->x, base->y,
+        *CurrentTurn, base->faction_id, id, base->x, base->y,
         base->pop_size, base->talent_total, base->drone_total, base->specialist_total,
         base->mineral_surplus, base->minerals_accumulated,
         base->state_flags, prod, prod_name(prod), (char*)&(base->name));

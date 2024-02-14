@@ -61,7 +61,7 @@ void __cdecl add_goal(int faction, int type, int priority, int x, int y, int bas
 Original Offset: 00579B70
 */
 void __cdecl add_site(int faction, int type, int priority, int x, int y) {
-    if ((x ^ y) & 1 && *game_state & STATE_DEBUG_MODE) {
+    if ((x ^ y) & 1 && *GameState & STATE_DEBUG_MODE) {
         debug("Bad SITE %d %d %d\n", x, y, type);
     }
     if (thinker_enabled(faction)) {

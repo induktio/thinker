@@ -8,7 +8,7 @@ VehAblFlag abls, VehReactor reactor, VehPlan ai_plan)
     char name[256];
     mod_name_proto(name, -1, faction, chassis, weapon, armor, abls, reactor);
     debug("propose_proto %d %d chs: %d rec: %d wpn: %2d arm: %2d plan: %2d %08X %s\n",
-        *current_turn, faction, chassis, reactor, weapon, armor, ai_plan, abls, name);
+        *CurrentTurn, faction, chassis, reactor, weapon, armor, ai_plan, abls, name);
     propose_proto(faction, chassis, weapon, armor, abls, reactor, ai_plan, (strlen(name) ? name : NULL));
 }
 
@@ -193,10 +193,10 @@ void plans_upkeep(int faction) {
     }
     if (governor) {
         static int last_turn = 0;
-        if (last_turn == *current_turn) {
+        if (last_turn == *CurrentTurn) {
             return;
         }
-        last_turn = *current_turn;
+        last_turn = *CurrentTurn;
     }
     if (thinker_enabled(faction) || governor) {
         int minerals[MaxBaseNum];
@@ -212,7 +212,7 @@ void plans_upkeep(int faction) {
         for (int j=1; j < MaxPlayerNum; j++) {
             plans[j].mil_strength = 0;
         }
-        for (int j=0; j < *total_num_vehicles; j++) {
+        for (int j=0; j < *VehCount; j++) {
             VEH* veh = &Vehicles[j];
             int triad = veh->triad();
             if (veh->faction_id > 0) {
@@ -242,7 +242,7 @@ void plans_upkeep(int faction) {
             }
         }
         debug("plans_totals %d %d bases: %3d land: %3d sea: %3d air: %3d "\
-            "probe: %3d missile: %3d transport: %3d\n", *current_turn, i, f->base_count,
+            "probe: %3d missile: %3d transport: %3d\n", *CurrentTurn, i, f->base_count,
             plans[i].land_combat_units, plans[i].sea_combat_units, plans[i].air_combat_units,
             plans[i].probe_units, plans[i].missile_units, plans[i].transport_units);
 
@@ -274,7 +274,7 @@ void plans_upkeep(int faction) {
         memset(base_enemy_range, 0, sizeof(base_enemy_range));
         float enemy_sum = 0;
         int n = 0;
-        for (int j=0; j < *total_num_bases; j++) {
+        for (int j=0; j < *BaseCount; j++) {
             BASE* base = &Bases[j];
             MAP* sq = mapsq(base->x, base->y);
             if (base->faction_id == faction) {
@@ -284,7 +284,7 @@ void plans_upkeep(int faction) {
                 // Update enemy base threat distances
                 int base_region = (sq ? sq->region : 0);
                 float enemy_range = 10*MaxEnemyRange;
-                for (int k=0; k < *total_num_bases; k++) {
+                for (int k=0; k < *BaseCount; k++) {
                     BASE* b = &Bases[k];
                     if (faction != b->faction_id
                     && !has_pact(faction, b->faction_id)
@@ -327,7 +327,7 @@ void plans_upkeep(int faction) {
 
         debug("plans_upkeep %d %d proj_limit: %2d sat_goal: %2d psi: %2d keep_fungus: %d "\
             "plant_fungus: %d enemy_bases: %2d enemy_mil: %.4f enemy_range: %.4f\n",
-            *current_turn, i, plans[i].project_limit, plans[i].satellite_goal,
+            *CurrentTurn, i, plans[i].project_limit, plans[i].satellite_goal,
             plans[i].psi_score, plans[i].keep_fungus, plans[i].plant_fungus,
             plans[i].enemy_bases, plans[i].enemy_mil_factor, plans[i].enemy_base_range);
     }

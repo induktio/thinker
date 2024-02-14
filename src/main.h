@@ -125,6 +125,7 @@ const int MaxBonusNameNum = 41;
 const int MaxBasePopSize = 127;
 
 const int StrBufLen = 256;
+const int LineBufLen = 128;
 const int MaxEnemyRange = 50;
 
 /*
@@ -366,6 +367,7 @@ extern NodeSet mapnodes;
 extern AIPlans plans[MaxPlayerNum];
 
 DLL_EXPORT DWORD ThinkerModule();
+int opt_handle_error(const char* section, const char* name);
 int opt_list_parse(int* ptr, char* buf, int len, int min_val);
 
 

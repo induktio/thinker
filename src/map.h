@@ -19,6 +19,7 @@ bool is_ocean_shelf(MAP* sq);
 bool is_shore_level(MAP* sq);
 bool map_is_flat();
 
+bool __cdecl bad_reg(int region);
 int __cdecl region_at(int x, int y);
 int __cdecl base_at(int x, int y);
 int __cdecl x_dist(int x1, int x2);

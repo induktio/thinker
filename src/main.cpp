@@ -32,274 +32,287 @@ const char* landmark_params[] = {
 };
 
 int option_handler(void* user, const char* section, const char* name, const char* value) {
-    static bool unknown_option = false;
-    char buf[INI_MAX_LINE+2] = {};
+    #define MATCH(n) strcmp(name, n) == 0
+    char buf[INI_MAX_LINE] = {};
     Config* cf = (Config*)user;
     strncpy(buf, value, INI_MAX_LINE);
-    #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
+    buf[INI_MAX_LINE-1] = '\0';
 
-    if (MATCH("thinker", "DirectDraw")) {
+    if (strcmp(section, "thinker") != 0) {
+        return opt_handle_error(section, name);
+    } else if (MATCH("DirectDraw")) {
         cf->directdraw = atoi(value);
-    } else if (MATCH("thinker", "DisableOpeningMovie")) {
+    } else if (MATCH("DisableOpeningMovie")) {
         cf->disable_opening_movie = atoi(value);
-    } else if (MATCH("thinker", "autosave_interval")) {
+    } else if (MATCH("autosave_interval")) {
         cf->autosave_interval = atoi(value);
-    } else if (MATCH("thinker", "smooth_scrolling")) {
+    } else if (MATCH("smooth_scrolling")) {
         cf->smooth_scrolling = atoi(value);
-    } else if (MATCH("thinker", "scroll_area")) {
+    } else if (MATCH("scroll_area")) {
         cf->scroll_area = max(0, atoi(value));
-    } else if (MATCH("thinker", "render_base_info")) {
+    } else if (MATCH("render_base_info")) {
         cf->render_base_info = atoi(value);
-    } else if (MATCH("thinker", "render_high_detail")) {
+    } else if (MATCH("render_high_detail")) {
         cf->render_high_detail = atoi(value);
-    } else if (MATCH("thinker", "manage_player_bases")) {
+    } else if (MATCH("manage_player_bases")) {
         cf->manage_player_bases = atoi(value);
-    } else if (MATCH("thinker", "manage_player_units")) {
+    } else if (MATCH("manage_player_units")) {
         cf->manage_player_units = atoi(value);
-    } else if (MATCH("thinker", "warn_on_former_replace")) {
+    } else if (MATCH("warn_on_former_replace")) {
         cf->warn_on_former_replace = atoi(value);
-    } else if (MATCH("thinker", "render_probe_labels")) {
+    } else if (MATCH("render_probe_labels")) {
         cf->render_probe_labels = atoi(value);
-    } else if (MATCH("thinker", "foreign_treaty_popup")) {
+    } else if (MATCH("foreign_treaty_popup")) {
         cf->foreign_treaty_popup = atoi(value);
-    } else if (MATCH("thinker", "editor_free_units")) {
+    } else if (MATCH("editor_free_units")) {
         cf->editor_free_units = atoi(value);
-    } else if (MATCH("thinker", "new_base_names")) {
+    } else if (MATCH("new_base_names")) {
         cf->new_base_names = atoi(value);
-    } else if (MATCH("thinker", "new_unit_names")) {
+    } else if (MATCH("new_unit_names")) {
         cf->new_unit_names = atoi(value);
-    } else if (MATCH("thinker", "windowed")) {
+    } else if (MATCH("windowed")) {
         cf->windowed = atoi(value);
-    } else if (MATCH("thinker", "window_width")) {
+    } else if (MATCH("window_width")) {
         cf->window_width = max(800, atoi(value));
-    } else if (MATCH("thinker", "window_height")) {
+    } else if (MATCH("window_height")) {
         cf->window_height = max(600, atoi(value));
-    } else if (MATCH("thinker", "smac_only")) {
+    } else if (MATCH("smac_only")) {
         cf->smac_only = atoi(value);
-    } else if (MATCH("thinker", "player_colony_pods")) {
+    } else if (MATCH("player_colony_pods")) {
         cf->player_colony_pods = atoi(value);
-    } else if (MATCH("thinker", "computer_colony_pods")) {
+    } else if (MATCH("computer_colony_pods")) {
         cf->computer_colony_pods = atoi(value);
-    } else if (MATCH("thinker", "player_formers")) {
+    } else if (MATCH("player_formers")) {
         cf->player_formers = atoi(value);
-    } else if (MATCH("thinker", "computer_formers")) {
+    } else if (MATCH("computer_formers")) {
         cf->computer_formers = atoi(value);
-    } else if (MATCH("thinker", "player_satellites")) {
+    } else if (MATCH("player_satellites")) {
         opt_list_parse(cf->player_satellites, buf, 3, 0);
-    } else if (MATCH("thinker", "computer_satellites")) {
+    } else if (MATCH("computer_satellites")) {
         opt_list_parse(cf->computer_satellites, buf, 3, 0);
-    } else if (MATCH("thinker", "design_units")) {
+    } else if (MATCH("design_units")) {
         cf->design_units = atoi(value);
-    } else if (MATCH("thinker", "factions_enabled")) {
+    } else if (MATCH("factions_enabled")) {
         cf->factions_enabled = atoi(value);
-    } else if (MATCH("thinker", "social_ai")) {
+    } else if (MATCH("social_ai")) {
         cf->social_ai = atoi(value);
-    } else if (MATCH("thinker", "social_ai_bias")) {
+    } else if (MATCH("social_ai_bias")) {
         cf->social_ai = clamp(atoi(value), 0, 1000);
-    } else if (MATCH("thinker", "tech_balance")) {
+    } else if (MATCH("tech_balance")) {
         cf->tech_balance = atoi(value);
-    } else if (MATCH("thinker", "base_hurry")) {
+    } else if (MATCH("base_hurry")) {
         cf->base_hurry = atoi(value);
-    } else if (MATCH("thinker", "base_spacing")) {
+    } else if (MATCH("base_spacing")) {
         cf->base_spacing = clamp(atoi(value), 2, 8);
-    } else if (MATCH("thinker", "base_nearby_limit")) {
+    } else if (MATCH("base_nearby_limit")) {
         cf->base_nearby_limit = atoi(value);
-    } else if (MATCH("thinker", "expansion_limit")) {
+    } else if (MATCH("expansion_limit")) {
         cf->expansion_limit = atoi(value);
-    } else if (MATCH("thinker", "expansion_autoscale")) {
+    } else if (MATCH("expansion_autoscale")) {
         cf->expansion_autoscale = atoi(value);
-    } else if (MATCH("thinker", "conquer_priority")) {
+    } else if (MATCH("conquer_priority")) {
         cf->conquer_priority = clamp(atoi(value), 1, 10000);
-    } else if (MATCH("thinker", "crawler_priority")) {
+    } else if (MATCH("crawler_priority")) {
         cf->crawler_priority = clamp(atoi(value), 1, 10000);
-    } else if (MATCH("thinker", "max_satellites")) {
+    } else if (MATCH("max_satellites")) {
         cf->max_satellites = max(0, atoi(value));
-    } else if (MATCH("thinker", "new_world_builder")) {
+    } else if (MATCH("new_world_builder")) {
         cf->new_world_builder = atoi(value);
-    } else if (MATCH("thinker", "world_continents")) {
+    } else if (MATCH("world_continents")) {
         cf->world_continents = atoi(value);
-    } else if (MATCH("thinker", "world_polar_caps")) {
+    } else if (MATCH("world_polar_caps")) {
         cf->world_polar_caps = atoi(value);
-    } else if (MATCH("thinker", "world_hills_mod")) {
+    } else if (MATCH("world_hills_mod")) {
         cf->world_hills_mod = clamp(atoi(value), 0, 100);
-    } else if (MATCH("thinker", "world_ocean_mod")) {
+    } else if (MATCH("world_ocean_mod")) {
         cf->world_ocean_mod = clamp(atoi(value), 0, 100);
-    } else if (MATCH("thinker", "world_islands_mod")) {
+    } else if (MATCH("world_islands_mod")) {
         cf->world_islands_mod = atoi(value);
-    } else if (MATCH("thinker", "modified_landmarks")) {
+    } else if (MATCH("modified_landmarks")) {
         cf->modified_landmarks = atoi(value);
-    } else if (MATCH("thinker", "map_mirror_x")) {
+    } else if (MATCH("map_mirror_x")) {
         cf->map_mirror_x = atoi(value);
-    } else if (MATCH("thinker", "map_mirror_y")) {
+    } else if (MATCH("map_mirror_y")) {
         cf->map_mirror_y = atoi(value);
-    } else if (MATCH("thinker", "world_sea_levels")) {
+    } else if (MATCH("world_sea_levels")) {
         opt_list_parse(cf->world_sea_levels, buf, 3, 0);
-    } else if (MATCH("thinker", "time_warp_mod")) {
+    } else if (MATCH("time_warp_mod")) {
         cf->time_warp_mod = atoi(value);
-    } else if (MATCH("thinker", "time_warp_techs")) {
+    } else if (MATCH("time_warp_techs")) {
         cf->time_warp_techs = atoi(value);
-    } else if (MATCH("thinker", "time_warp_projects")) {
+    } else if (MATCH("time_warp_projects")) {
         cf->time_warp_projects = atoi(value);
-    } else if (MATCH("thinker", "time_warp_start_turn")) {
+    } else if (MATCH("time_warp_start_turn")) {
         cf->time_warp_start_turn = clamp(atoi(value), 0, 500);
-    } else if (MATCH("thinker", "faction_placement")) {
+    } else if (MATCH("faction_placement")) {
         cf->faction_placement = atoi(value);
-    } else if (MATCH("thinker", "nutrient_bonus")) {
+    } else if (MATCH("nutrient_bonus")) {
         cf->nutrient_bonus = atoi(value);
-    } else if (MATCH("thinker", "rare_supply_pods")) {
+    } else if (MATCH("rare_supply_pods")) {
         cf->rare_supply_pods = atoi(value);
-    } else if (MATCH("thinker", "simple_cost_factor")) {
+    } else if (MATCH("simple_cost_factor")) {
         cf->simple_cost_factor = atoi(value);
-    } else if (MATCH("thinker", "revised_tech_cost")) {
+    } else if (MATCH("revised_tech_cost")) {
         cf->revised_tech_cost = atoi(value);
-    } else if (MATCH("thinker", "cheap_early_tech")) {
+    } else if (MATCH("cheap_early_tech")) {
         cf->cheap_early_tech = atoi(value);
-    } else if (MATCH("thinker", "tech_stagnate_rate")) {
+    } else if (MATCH("tech_stagnate_rate")) {
         cf->tech_stagnate_rate = max(1, atoi(value));
-    } else if (MATCH("thinker", "fast_fungus_movement")) {
+    } else if (MATCH("fast_fungus_movement")) {
         cf->fast_fungus_movement = atoi(value);
-    } else if (MATCH("thinker", "magtube_movement_rate")) {
+    } else if (MATCH("magtube_movement_rate")) {
         cf->magtube_movement_rate = atoi(value);
-    } else if (MATCH("thinker", "chopper_attack_rate")) {
+    } else if (MATCH("chopper_attack_rate")) {
         cf->chopper_attack_rate = atoi(value);
-    } else if (MATCH("thinker", "nerve_staple")) {
+    } else if (MATCH("nerve_staple")) {
         cf->nerve_staple = atoi(value);
-    } else if (MATCH("thinker", "nerve_staple_mod")) {
+    } else if (MATCH("nerve_staple_mod")) {
         cf->nerve_staple_mod = atoi(value);
-    } else if (MATCH("thinker", "delay_drone_riots")) {
+    } else if (MATCH("delay_drone_riots")) {
         cf->delay_drone_riots = atoi(value);
-    } else if (MATCH("thinker", "skip_drone_revolts")) {
+    } else if (MATCH("skip_drone_revolts")) {
         cf->skip_drone_revolts = atoi(value);
-    } else if (MATCH("thinker", "activate_skipped_units")) {
+    } else if (MATCH("activate_skipped_units")) {
         cf->activate_skipped_units = atoi(value);
-    } else if (MATCH("thinker", "counter_espionage")) {
+    } else if (MATCH("counter_espionage")) {
         cf->counter_espionage = atoi(value);
-    } else if (MATCH("thinker", "ignore_reactor_power")) {
+    } else if (MATCH("ignore_reactor_power")) {
         cf->ignore_reactor_power = atoi(value);
-    } else if (MATCH("thinker", "modify_unit_morale")) {
+    } else if (MATCH("modify_unit_morale")) {
         cf->modify_unit_morale = atoi(value);
-    } else if (MATCH("thinker", "skip_default_balance")) {
+    } else if (MATCH("skip_default_balance")) {
         cf->skip_default_balance = atoi(value);
-    } else if (MATCH("thinker", "early_research_start")) {
+    } else if (MATCH("early_research_start")) {
         cf->early_research_start = atoi(value);
-    } else if (MATCH("thinker", "facility_capture_fix")) {
+    } else if (MATCH("facility_capture_fix")) {
         cf->facility_capture_fix = atoi(value);
-    } else if (MATCH("thinker", "territory_border_fix")) {
+    } else if (MATCH("territory_border_fix")) {
         cf->territory_border_fix = atoi(value);
-    } else if (MATCH("thinker", "auto_relocate_hq")) {
+    } else if (MATCH("auto_relocate_hq")) {
         cf->auto_relocate_hq = atoi(value);
-    } else if (MATCH("thinker", "simple_hurry_cost")) {
+    } else if (MATCH("simple_hurry_cost")) {
         cf->simple_hurry_cost = atoi(value);
-    } else if (MATCH("thinker", "eco_damage_fix")) {
+    } else if (MATCH("eco_damage_fix")) {
         cf->eco_damage_fix = atoi(value);
-    } else if (MATCH("thinker", "clean_minerals")) {
+    } else if (MATCH("clean_minerals")) {
         cf->clean_minerals = clamp(atoi(value), 0, 127);
-    } else if (MATCH("thinker", "spawn_fungal_towers")) {
+    } else if (MATCH("spawn_fungal_towers")) {
         cf->spawn_fungal_towers = atoi(value);
-    } else if (MATCH("thinker", "spawn_spore_launchers")) {
+    } else if (MATCH("spawn_spore_launchers")) {
         cf->spawn_spore_launchers = atoi(value);
-    } else if (MATCH("thinker", "spawn_sealurks")) {
+    } else if (MATCH("spawn_sealurks")) {
         cf->spawn_sealurks = atoi(value);
-    } else if (MATCH("thinker", "spawn_battle_ogres")) {
+    } else if (MATCH("spawn_battle_ogres")) {
         cf->spawn_battle_ogres = atoi(value);
-    } else if (MATCH("thinker", "planetpearls")) {
+    } else if (MATCH("planetpearls")) {
         cf->planetpearls = atoi(value);
-    } else if (MATCH("thinker", "event_perihelion")) {
+    } else if (MATCH("event_perihelion")) {
         cf->event_perihelion = atoi(value);
-    } else if (MATCH("thinker", "event_sunspots")) {
+    } else if (MATCH("event_sunspots")) {
         cf->event_sunspots = clamp(atoi(value), 0, 100);
-    } else if (MATCH("thinker", "aquatic_bonus_minerals")) {
+    } else if (MATCH("aquatic_bonus_minerals")) {
         cf->aquatic_bonus_minerals = atoi(value);
-    } else if (MATCH("thinker", "alien_guaranteed_techs")) {
+    } else if (MATCH("alien_guaranteed_techs")) {
         cf->alien_guaranteed_techs = atoi(value);
-    } else if (MATCH("thinker", "alien_early_start")) {
+    } else if (MATCH("alien_early_start")) {
         cf->alien_early_start = atoi(value);
-    } else if (MATCH("thinker", "cult_early_start")) {
+    } else if (MATCH("cult_early_start")) {
         cf->cult_early_start = atoi(value);
-    } else if (MATCH("thinker", "natives_weak_until_turn")) {
+    } else if (MATCH("natives_weak_until_turn")) {
         cf->natives_weak_until_turn = clamp(atoi(value), 0, 127);
-    } else if (MATCH("thinker", "native_lifecycle_levels")) {
+    } else if (MATCH("native_lifecycle_levels")) {
         opt_list_parse(cf->native_lifecycle_levels, buf, 6, 0);
-    } else if (MATCH("thinker", "neural_amplifier_bonus")) {
+    } else if (MATCH("neural_amplifier_bonus")) {
         cf->neural_amplifier_bonus = clamp(atoi(value), 0, 1000);
-    } else if (MATCH("thinker", "dream_twister_bonus")) {
+    } else if (MATCH("dream_twister_bonus")) {
         cf->dream_twister_bonus = clamp(atoi(value), 0, 1000);
-    } else if (MATCH("thinker", "fungal_tower_bonus")) {
+    } else if (MATCH("fungal_tower_bonus")) {
         cf->fungal_tower_bonus = clamp(atoi(value), 0, 1000);
-    } else if (MATCH("thinker", "planet_defense_bonus")) {
+    } else if (MATCH("planet_defense_bonus")) {
         cf->planet_defense_bonus = atoi(value);
-    } else if (MATCH("thinker", "perimeter_defense_bonus")) {
+    } else if (MATCH("perimeter_defense_bonus")) {
         cf->perimeter_defense_bonus = clamp(atoi(value), 0, 127);
-    } else if (MATCH("thinker", "tachyon_field_bonus")) {
+    } else if (MATCH("tachyon_field_bonus")) {
         cf->tachyon_field_bonus = clamp(atoi(value), 0, 127);
-    } else if (MATCH("thinker", "collateral_damage_value")) {
+    } else if (MATCH("collateral_damage_value")) {
         cf->collateral_damage_value = clamp(atoi(value), 0, 127);
-    } else if (MATCH("thinker", "cost_factor")) {
+    } else if (MATCH("cost_factor")) {
         opt_list_parse(CostRatios, buf, MaxDiffNum, 1);
-    } else if (MATCH("thinker", "tech_cost_factor")) {
+    } else if (MATCH("tech_cost_factor")) {
         opt_list_parse(cf->tech_cost_factor, buf, MaxDiffNum, 1);
-    } else if (MATCH("thinker", "content_pop_player")) {
+    } else if (MATCH("content_pop_player")) {
         opt_list_parse(cf->content_pop_player, buf, MaxDiffNum, 0);
-    } else if (MATCH("thinker", "content_pop_computer")) {
+    } else if (MATCH("content_pop_computer")) {
         opt_list_parse(cf->content_pop_computer, buf, MaxDiffNum, 0);
-    } else if (MATCH("thinker", "repair_minimal")) {
+    } else if (MATCH("repair_minimal")) {
         cf->repair_minimal = clamp(atoi(value), 0, 10);
-    } else if (MATCH("thinker", "repair_fungus")) {
+    } else if (MATCH("repair_fungus")) {
         cf->repair_fungus = clamp(atoi(value), 0, 10);
-    } else if (MATCH("thinker", "repair_friendly")) {
+    } else if (MATCH("repair_friendly")) {
         cf->repair_friendly = atoi(value);
-    } else if (MATCH("thinker", "repair_airbase")) {
+    } else if (MATCH("repair_airbase")) {
         cf->repair_airbase = atoi(value);
-    } else if (MATCH("thinker", "repair_bunker")) {
+    } else if (MATCH("repair_bunker")) {
         cf->repair_bunker = atoi(value);
-    } else if (MATCH("thinker", "repair_base")) {
+    } else if (MATCH("repair_base")) {
         cf->repair_base = clamp(atoi(value), 0, 10);
-    } else if (MATCH("thinker", "repair_base_native")) {
+    } else if (MATCH("repair_base_native")) {
         cf->repair_base_native = clamp(atoi(value), 0, 10);
-    } else if (MATCH("thinker", "repair_base_facility")) {
+    } else if (MATCH("repair_base_facility")) {
         cf->repair_base_facility = clamp(atoi(value), 0, 10);
-    } else if (MATCH("thinker", "repair_nano_factory")) {
+    } else if (MATCH("repair_nano_factory")) {
         cf->repair_nano_factory = clamp(atoi(value), 0, 10);
-    } else if (MATCH("thinker", "cpu_idle_fix")) {
+    } else if (MATCH("cpu_idle_fix")) {
         cf->cpu_idle_fix = atoi(value);
-    } else if (MATCH("thinker", "minimal_popups")) {
+    } else if (MATCH("minimal_popups")) {
         if (DEBUG) {
             cf->minimal_popups = atoi(value);
             cf->debug_verbose = !atoi(value);
         }
-    } else if (MATCH("thinker", "skip_faction")) {
+    } else if (MATCH("skip_faction")) {
         if (atoi(value) > 0) {
             cf->skip_random_factions |= 1 << (atoi(value) - 1);
         }
-    } else if (MATCH("thinker", "label_pop_size")) {
+    } else if (MATCH("label_pop_size")) {
         parse_format_args(label_pop_size, value, 4, StrBufLen);
-    } else if (MATCH("thinker", "label_pop_boom")) {
+    } else if (MATCH("label_pop_boom")) {
         parse_format_args(label_pop_boom, value, 0, StrBufLen);
-    } else if (MATCH("thinker", "label_nerve_staple")) {
+    } else if (MATCH("label_nerve_staple")) {
         parse_format_args(label_nerve_staple, value, 1, StrBufLen);
-    } else if (MATCH("thinker", "label_captured_base")) {
+    } else if (MATCH("label_captured_base")) {
         parse_format_args(label_captured_base, value, 1, StrBufLen);
+    } else if (MATCH("label_sat_nutrient")) {
+        parse_format_args(label_sat_nutrient, value, 1, StrBufLen);
+    } else if (MATCH("label_sat_mineral")) {
+        parse_format_args(label_sat_mineral, value, 1, StrBufLen);
+    } else if (MATCH("label_sat_energy")) {
+        parse_format_args(label_sat_energy, value, 1, StrBufLen);
     } else {
         for (int i = 0; i < 16; i++) {
-            if (MATCH("thinker", landmark_params[i])) {
+            if (MATCH(landmark_params[i])) {
                 cf->landmarks &= ~((atoi(value) ? 0 : 1) << i);
                 return 1;
             }
         }
-        if (!unknown_option) {
-            char msg[1024] = {};
-            snprintf(msg, sizeof(msg),
-                "Unknown configuration option detected in thinker.ini.\n"
-                "Game might not work as intended.\n"
-                "Header: %s\n"
-                "Option: %s\n",
-                section, name);
-            MessageBoxA(0, msg, MOD_VERSION, MB_OK | MB_ICONWARNING);
-        }
-        unknown_option = true;
-        return 0;  /* unknown section/name, error */
+        return opt_handle_error(section, name);
     }
     return 1;
+}
+
+int opt_handle_error(const char* section, const char* name) {
+    static bool unknown_option = false;
+    char msg[1024] = {};
+    if (!unknown_option) {
+        snprintf(msg, sizeof(msg),
+            "Unknown configuration option detected in thinker.ini.\n"
+            "Game might not work as intended.\n"
+            "Header: %s\n"
+            "Option: %s\n",
+            section, name);
+        MessageBoxA(0, msg, MOD_VERSION, MB_OK | MB_ICONWARNING);
+    }
+    unknown_option = true;
+    return 0;
 }
 
 int opt_list_parse(int* ptr, char* buf, int len, int min_val) {

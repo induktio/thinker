@@ -92,6 +92,13 @@ bool map_is_flat() {
     return *map_toggle_flat & 1;
 }
 
+/*
+Validate region bounds. Bad regions include: 0, 63, 64, 127, 128.
+*/
+bool __cdecl bad_reg(int region) {
+    return (region & RegionBounds) == RegionBounds || !(region & RegionBounds);
+}
+
 int __cdecl region_at(int x, int y) {
     MAP* sq = mapsq(x, y);
     return sq ? sq->region : 0;
@@ -103,7 +110,7 @@ This version never calls rebuild_base_bits on failed searches.
 int __cdecl base_at(int x, int y) {
     MAP* sq = mapsq(x, y);
     if (sq && sq->is_base()) {
-        for (int i = 0; i < *total_num_bases; ++i) {
+        for (int i = 0; i < *BaseCount; ++i) {
             if (Bases[i].x == x && Bases[i].y == y) {
                 return i;
             }
@@ -229,7 +236,7 @@ int __cdecl mod_bonus_at(int x, int y) {
     uint32_t alt = sq->alt_level();
     bool has_rsc_bonus = bit & BIT_BONUS_RES;
     if (!has_rsc_bonus && (!*map_random_seed || (alt >= ALT_SHORE_LINE
-    && !conf.rare_supply_pods && !(*game_rules & RULES_NO_UNITY_SCATTERING)))) {
+    && !conf.rare_supply_pods && !(*GameRules & RULES_NO_UNITY_SCATTERING)))) {
         return 0;
     }
     int avg = (x + y) >> 1;
@@ -262,7 +269,7 @@ int __cdecl mod_goody_at(int x, int y) {
     if (bit & (BIT_SUPPLY_REMOVE | BIT_MONOLITH)) {
         return 0; // nothing, supply pod already opened or monolith
     }
-    if (*game_rules & RULES_NO_UNITY_SCATTERING) {
+    if (*GameRules & RULES_NO_UNITY_SCATTERING) {
         return (bit & (BIT_UNK_4000000 | BIT_UNK_8000000)) ? 2 : 0; // ?
     }
     if (bit & BIT_SUPPLY_POD) {
@@ -290,7 +297,7 @@ int __cdecl mod_base_find3(int x, int y, int faction1, int region, int faction2,
     int result = -1;
     bool border_fix = conf.territory_border_fix && region >= MaxRegionNum/2;
 
-    for (int i = 0; i < *total_num_bases; i++) {
+    for (int i = 0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];
         MAP* bsq = mapsq(base->x, base->y);
 
@@ -330,7 +337,7 @@ int __cdecl mod_whose_territory(int faction_id, int x, int y, int* base_id, int 
     }
     if (faction_id != sq->owner) {
         if (!ignore_comm
-        && !(*game_state & STATE_OMNISCIENT_VIEW)
+        && !(*GameState & STATE_OMNISCIENT_VIEW)
         && (!has_treaty(faction_id, sq->owner, DIPLO_COMMLINK)
         || !has_treaty(faction_id, sq->owner, DIPLO_UNK_8000000))) {
             return -1;
@@ -500,7 +507,7 @@ void process_map(int faction, int k) {
             }
         }
     }
-    for (int i = 0; i < *total_num_vehicles; i++) {
+    for (int i = 0; i < *VehCount; i++) {
         VEH* v = &Vehicles[i];
         if (v->faction_id == 0) {
             natives.insert({v->x, v->y});
@@ -604,7 +611,7 @@ bool valid_start(int faction, int iter, int x, int y, bool need_bonus) {
     debug("find_score %d %d x: %3d y: %3d xd: %d yd: %d pods: %d min: %d score: %d\n",
         faction, iter, x, y, xd, yd, pods, min_sc, sc);
 
-    if (need_bonus && pods < StartBonusCount && iter < 150 && !(*game_rules & RULES_NO_UNITY_SCATTERING)) {
+    if (need_bonus && pods < StartBonusCount && iter < 150 && !(*GameRules & RULES_NO_UNITY_SCATTERING)) {
         return false;
     }
     if (!aquatic && iter < 100) { // Avoid spawns without sufficient land nearby
@@ -702,7 +709,7 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
                 apply_nutrient_bonus(faction, &x, &y);
             }
             // No unity scattering can normally spawn pods at two tile range from the start
-            if (*game_rules & RULES_NO_UNITY_SCATTERING && conf.rare_supply_pods > 1) {
+            if (*GameRules & RULES_NO_UNITY_SCATTERING && conf.rare_supply_pods > 1) {
                 for (auto& m : iterate_tiles(x, y, 0, 25)) {
                     m.sq->items |= BIT_SUPPLY_REMOVE;
                 }
@@ -801,15 +808,15 @@ float world_fractal(FastNoiseLite& noise, int x, int y) {
 }
 
 void console_world_generate(uint32_t seed) {
-    if (*game_state & STATE_SCENARIO_EDITOR && *game_state & STATE_OMNISCIENT_VIEW) {
-        *total_num_vehicles = 0;
-        *total_num_bases = 0;
+    if (*GameState & STATE_SCENARIO_EDITOR && *GameState & STATE_OMNISCIENT_VIEW) {
+        *VehCount = 0;
+        *BaseCount = 0;
         MapWin->fUnitNotViewMode = 0;
         MapWin->iUnit = -1;
-        *game_state |= STATE_UNK_4;
-        *game_state &= ~STATE_OMNISCIENT_VIEW;
+        *GameState |= STATE_UNK_4;
+        *GameState &= ~STATE_OMNISCIENT_VIEW;
         world_generate(seed);
-        *game_state |= STATE_OMNISCIENT_VIEW;
+        *GameState |= STATE_OMNISCIENT_VIEW;
         draw_map(1);
         GraphicWin_redraw(WorldWin);
     }
@@ -829,7 +836,7 @@ void __cdecl mod_world_build() {
 void world_generate(uint32_t seed) {
     if (DEBUG) {
         memset(pm_overlay, 0, sizeof(pm_overlay));
-        *game_state |= STATE_DEBUG_MODE;
+        *GameState |= STATE_DEBUG_MODE;
     }
     MAP* sq;
     memcpy(AltNatural, AltNaturalDefault, 0x2Cu);
@@ -843,7 +850,7 @@ void world_generate(uint32_t seed) {
         }
     }
     map_wipe();
-    if (*game_state & STATE_OMNISCIENT_VIEW) {
+    if (*GameState & STATE_OMNISCIENT_VIEW) {
         MapWin_clear_terrain(MapWin);
         draw_map(1);
     }
@@ -1011,7 +1018,7 @@ void world_generate(uint32_t seed) {
     Manifold Nexus and Borehole Cluster were also added to vanilla SMAC
     in the patches, even though those landmarks are technically expansion content.
     */
-    if (*expansion_enabled) {
+    if (*ExpansionEnabled) {
         if (lm & LM_UNITY) world_unity(-1, -1);
         if (lm & LM_FOSSIL) world_fossil(-1, -1);
     }
@@ -1036,7 +1043,7 @@ void world_generate(uint32_t seed) {
 }
 
 void set_project_owner(FacilityId item_id, int faction_id) {
-    for (int i = 0; i < *total_num_bases; i++) {
+    for (int i = 0; i < *BaseCount; i++) {
         if (Bases[i].faction_id == faction_id) {
             SecretProjects[item_id - SP_ID_First] = i;
             break;
@@ -1143,7 +1150,7 @@ void __cdecl mod_time_warp() {
             }
         }
         *SkipTechScreenB = 0;
-        *current_turn = conf.time_warp_start_turn;
+        *CurrentTurn = conf.time_warp_start_turn;
     } else {
         time_warp();
     }
