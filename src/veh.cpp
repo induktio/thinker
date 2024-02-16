@@ -401,7 +401,8 @@ int __cdecl mod_veh_init(int unit_id, int faction, int x, int y) {
 int __cdecl mod_veh_kill(int veh_id) {
     VEH* veh = &Vehicles[veh_id];
     debug("disband %2d %2d %s\n", veh->x, veh->y, veh->name());
-    return veh_kill(veh_id);
+    veh_kill(veh_id);
+    return VEH_SKIP;
 }
 
 /*
@@ -766,7 +767,9 @@ int set_move_to(int veh_id, int x, int y) {
     veh->waypoint_1_y = y;
     veh->order = ORDER_MOVE_TO;
     veh->status_icon = 'G';
-    veh->terraforming_turns = 0;
+    if (veh->is_former()) {
+        veh->terraforming_turns = 0;
+    }
     mapnodes.erase({x, y, NODE_PATROL});
     mapnodes.erase({x, y, NODE_COMBAT_PATROL});
     if (veh->x == x && veh->y == y) {

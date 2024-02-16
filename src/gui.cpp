@@ -221,8 +221,8 @@ ULONGLONG get_ms_count() {
 
 bool do_scroll(double x, double y) {
     bool fScrolled = false;
-    int mx = *map_axis_x;
-    int my = *map_axis_y;
+    int mx = *MapAreaX;
+    int my = *MapAreaY;
     int i;
     int d;
     if (x && pMain->oMap.iMapTilesEvenX + pMain->oMap.iMapTilesOddX < mx) {
@@ -411,7 +411,7 @@ void check_scroll() {
         for (int i = 1; i < 8; i++) {
             if (ppMain[i] && ppMain[i]->oMap.field_1DD74 &&
             (!fLeftButtonDown || ppMain[i]->oMap.field_1DD80) &&
-            ppMain[i]->oMap.iMapTilesOddX + ppMain[i]->oMap.iMapTilesEvenX < *map_axis_x) {
+            ppMain[i]->oMap.iMapTilesOddX + ppMain[i]->oMap.iMapTilesEvenX < *MapAreaX) {
                 MapWin_set_center(ppMain[i], pMain->oMap.iTileX, pMain->oMap.iTileY, 1);
             }
         }
@@ -439,8 +439,8 @@ int __thiscall mod_gen_map(Console* This, int iOwner, int fUnitsOnly) {
         int iMapTilesEvenX = This->oMap.iMapTilesEvenX;
         int iMapTilesEvenY = This->oMap.iMapTilesEvenY;
         // These are just aliased to save typing and are not modified
-        int mx = *map_axis_x;
-        int my = *map_axis_y;
+        int mx = *MapAreaX;
+        int my = *MapAreaY;
 
         if (iMapTilesOddX + iMapTilesEvenX < mx && !map_is_flat()) {
             if (iMapPixelLeft > 0) {
@@ -518,7 +518,7 @@ int __thiscall mod_calc_dim(Console* This) {
                 This->oMap.iMapPixelLeft = dx;
             }
             if (!This->oMap.iMapPixelTop && fy && dy > -ptScale.y * 2 && dy < ptScale.y * 2
-            && (dy + *screen_height) / ptScale.y < (*map_axis_y - This->oMap.iMapTileTop) / 2) {
+            && (dy + *ScreenHeight) / ptScale.y < (*MapAreaY - This->oMap.iMapTileTop) / 2) {
                 This->oMap.iMapPixelTop = dy;
             }
         }
@@ -554,8 +554,8 @@ int __cdecl mod_blink_timer() {
                 && MapWin->field_23D88 != -1
                 && MapWin->field_23D8C != -1) {
                     if (*GamePreferences & PREF_BSC_MOUSE_EDGE_SCROLL_VIEW || mouse_btn_down || *WinModalState != 0) {
-                        CState.ScreenSize.x = *screen_width;
-                        CState.ScreenSize.y = *screen_height;
+                        CState.ScreenSize.x = *ScreenWidth;
+                        CState.ScreenSize.y = *ScreenHeight;
                         check_scroll();
                     }
                 }
@@ -588,7 +588,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         bool zoom_in = (iDelta >= 0);
         iDelta = labs(iDelta);
 
-        if (map_is_visible() && *map_axis_x) {
+        if (map_is_visible() && *MapAreaX) {
             int iZoomType = (zoom_in ? 515 : 516);
             for (int i = 0; i < iDelta; i++) {
                 if (MapWin->oMap.iZoomFactor > -8 || zoom_in) {
@@ -716,7 +716,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         memset(pm_overlay, 0, sizeof(pm_overlay));
         MAP* sq = mapsq(MapWin->oMap.iTileX, MapWin->oMap.iTileY);
         if (sq && sq->is_owned()) {
-            move_upkeep(sq->owner, M_Visual);
+            move_upkeep(sq->owner, UM_Visual);
             MapWin_draw_map(MapWin, 0);
             InvalidateRect(hwnd, NULL, false);
         }
@@ -848,7 +848,7 @@ void __cdecl mod_turn_timer()
     if (++iter & 1) {
         return;
     }
-    if (*GameHalted && !*map_random_seed) {
+    if (*GameHalted && !*MapRandomSeed) {
         ThinkerVars->game_time_spent = 0;
         prev_time = 0;
     } else {
@@ -1066,15 +1066,15 @@ void __thiscall Basewin_draw_farm_set_font(Buffer* This, Font* font, int a3, int
         if (satellite_bonus(*CurrentBaseID, &N, &M, &E)) {
             snprintf(buf, StrBufLen, label_sat_nutrient, N);
             Buffer_set_text_color(This, ColorNutrient, 0, 1, 1);
-            Buffer_write_l(This, buf, x1 + 4, y2 - 35 - 28, LineBufLen);
+            Buffer_write_l(This, buf, x1 + 5, y2 - 36 - 28, LineBufLen);
 
             snprintf(buf, StrBufLen, label_sat_mineral, M);
             Buffer_set_text_color(This, ColorMineral, 0, 1, 1);
-            Buffer_write_l(This, buf, x1 + 4, y2 - 35 - 14, LineBufLen);
+            Buffer_write_l(This, buf, x1 + 5, y2 - 36 - 14, LineBufLen);
 
             snprintf(buf, StrBufLen, label_sat_energy, E);
             Buffer_set_text_color(This, ColorEnergy, 0, 1, 1);
-            Buffer_write_l(This, buf, x1 + 4, y2 - 35     , LineBufLen);
+            Buffer_write_l(This, buf, x1 + 5, y2 - 36     , LineBufLen);
         }
     }
 }
@@ -1188,8 +1188,9 @@ void __cdecl popb_action_staple(int base_id)
 
 int __thiscall BaseWin_click_staple(Win* This)
 {
+    // SE_Police value is checked before calling this function
     int base_id = ((int32_t*)This)[66243];
-    if (base_id >= 0 && conf.nerve_staple > is_human(Bases[base_id].faction_id)) {
+    if (base_id >= 0 && conf.nerve_staple > Bases[base_id].plr_owner()) {
         return BaseWin_nerve_staple(This);
     }
     return 0;
@@ -1227,7 +1228,7 @@ void __thiscall Console_editor_fungus(Console* UNUSED(This))
         int v2 = 0;
         if (!v1 || (v2 = X_pop7("FUNGMOTIZE", PopDialogBtnCancel, 0)) > 0) {
             MAP* sq = *MapTiles;
-            for (int i = 0; i < *map_area_tiles; ++i, ++sq) {
+            for (int i = 0; i < *MapAreaTiles; ++i, ++sq) {
                 sq->items &= ~BIT_FUNGUS;
                 // Update visible tile items
                 for (int j = 1; j < 8; ++j) {

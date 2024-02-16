@@ -3,6 +3,7 @@
 
 extern const int MaxProtoFactionNum;
 
+bool is_human(int faction);
 
 enum Triad {
     TRIAD_NONE = -1, // Thinker variable
@@ -290,7 +291,7 @@ enum VehOrderAutoType {
     ORDERA_TERRA_FARM_SOLAR_ROAD = 4,
     ORDERA_TERRA_FARM_MINE_ROAD = 5, // displayed incorrectly as 'Mine+Solar+Road' (labels.txt:L411)
     ORDERA_TERRA_AUTO_FUNGUS_REM = 6,
-    ORDERA_TERRA_AUTOMATIC_SENSOR = 7,
+    ORDERA_TERRA_AUTO_SENSOR = 7,
     // 8 unused?
     // 9 unused?
     ORDERA_BOMBING_RUN = 10, // air units only
@@ -559,6 +560,9 @@ struct VEH {
     }
     bool is_visible(int faction) {
         return visibility & (1 << faction);
+    }
+    bool plr_owner() {
+        return is_human(faction_id);
     }
     bool at_target() {
         return order == ORDER_NONE || (waypoint_1_x < 0 && waypoint_1_y < 0)

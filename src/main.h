@@ -87,8 +87,8 @@ const bool ATT = false;
 const bool SEA = true;
 const bool LAND = false;
 
-const int MaxMapW = 512;
-const int MaxMapH = 256;
+const int MaxMapAreaX = 512;
+const int MaxMapAreaY = 256;
 const int MaxNaturalNum = 16;
 const int MaxLandmarkNum = 64;
 const int RegionBounds = 63;

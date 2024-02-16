@@ -17,7 +17,7 @@ struct Filemap {
 struct Heap {
     int iFlags;
     int pszStart;
-    char *pszPosition;
+    char* pszPosition;
     int iSize;
     int iSpaceLeft;
 };
@@ -34,28 +34,28 @@ struct SpotInternal {
 };
 
 struct Spot {
-    SpotInternal *paHitBoxes;
+    SpotInternal* paHitBoxes;
     int iArraySize;
     int iCount;
 };
 
 struct CListItem {
     int field_0;
-    void *pItem;
+    void* pItem;
     int p4Alloced;
-    CListItem *pPrev;
-    CListItem *pNext;
+    CListItem* pPrev;
+    CListItem* pNext;
     int field_14;
     int field_18;
 };
 
 struct CList {
     int vtbl;
-    CListItem *pFirst;
-    CListItem *pCurrent;
+    CListItem* pFirst;
+    CListItem* pCurrent;
     int iCount;
     int iCurrent;
-    Heap *poMemAllocator;
+    Heap* poMemAllocator;
 };
 
 struct Font {
@@ -68,7 +68,7 @@ struct Font {
     int iAscent;
     int iDescent;
     int field_20;
-    char *pszFileName;
+    char* pszFileName;
 };
 
 struct Time {
@@ -87,12 +87,12 @@ struct Time {
 struct PaletteInternal
 {
     int field_0;
-    Time *ptrTime;
+    Time* ptrTime;
     BYTE field_8;
     BYTE field_9;
     BYTE field_A;
     BYTE field_B;
-    void *field_C;
+    void* field_C;
 };
 
 struct Palette { // PRACX version did not have seed and paletteInternal
@@ -803,19 +803,19 @@ struct Caviar
 };
 
 struct Buffer {
-    void *vtblCPCX;
-    Win *poOwner;
-    int (__cdecl *pfcnScrollText)(char *pszText, int x, int y, int iCharsToScroll);
+    void* vtblCPCX;
+    Win* poOwner;
+    int (__cdecl *pfcnScrollText)(char* pszText, int x, int y, int iCharsToScroll);
     int dwordC;
     int dword10;
     int dword14;
     int dword18;
     int iFlags;
-    void *pstRect[12];
-    char *pcSurfaceBits;
-    char *pcDIBBits;
-    void **ppddsSurface;
-    void **ppddcClipper;
+    void* pstRect[12];
+    char* pcSurfaceBits;
+    char* pcDIBBits;
+    void** ppddsSurface;
+    void** ppddcClipper;
     HDC hdcSurface;
     HDC hdcCompatible;
     int iHdcSurfaceRefCounter;
@@ -828,7 +828,7 @@ struct Buffer {
     int lPitch;
     int iHyperlinkCount;
     Spot oHitBoxList;
-    void *apHeapMem[20];
+    void* apHeapMem[20];
     int dword50C;
     int dword510;
     int dword514;
@@ -837,10 +837,10 @@ struct Buffer {
     int dword520;
     int dword524;
     int dword528;
-    Font *font1;
-    Font *font2;
-    Font *font3;
-    Font *font4;
+    Font* font1;
+    Font* font2;
+    Font* font3;
+    Font* font4;
     int colorVal1;
     int color2Val1;
     int color3Val1;
@@ -859,12 +859,12 @@ struct Buffer {
     int colorhyperVal4;
     int fHasPalette;
     int cPaletteOffset;
-    Palette *pPalette;
+    Palette* pPalette;
 };
 
 struct Sprite {
-    void *ppszFileName;
-    char *pcBits;
+    void* ppszFileName;
+    char* pcBits;
     BYTE cTransparentIndex;
     BYTE f9[3];
     int iSpriteWidth2;
@@ -878,7 +878,7 @@ struct Sprite {
 };
 
 struct AutoSound {
-    void *vtbl;
+    void* vtbl;
     int field_4;
     int field_8;
     int field_C;
@@ -924,16 +924,16 @@ struct Win {
     int iSomeFlag;
     int field_A0;
     int field_A4;
-    Win *poWinBase;
+    Win* poWinBase;
     int iVertScaleDenom;
     int iVertScaleNum;
-    Buffer *buffer1;
-    Buffer *buffer2;
-    Buffer *buffer3;
-    Buffer *buffer4;
-    Win *poParent;
+    Buffer* buffer1;
+    Buffer* buffer2;
+    Buffer* buffer3;
+    Buffer* buffer4;
+    Win* poParent;
     CList oChildList;
-    char *pszCaption;
+    char* pszCaption;
     int field_E4;
     int field_E8;
     int field_EC;
@@ -952,7 +952,7 @@ struct Win {
     int iBorderColor1;
     int iBorderColor2;
     int field_128;
-    Buffer *pCanvasBackBuffer;
+    Buffer* pCanvasBackBuffer;
     int field_130;
     int iMinPosLeft;
     int iMinPosTop;
@@ -969,14 +969,14 @@ struct Win {
     int field_17C;
     int field_180;
     int field_184;
-    Sprite *sprtCursor;
+    Sprite* sprtCursor;
     int field_18C;
     int field_190;
-    HCURSOR *phCursor;
+    HCURSOR* phCursor;
     int nCursorName;
     int field_19C;
     int iSomeFlag2;
-    Win *apoChildren[150];
+    Win* apoChildren[150];
     int iChildCount;
     int field_400;
     int field_404;
@@ -993,8 +993,8 @@ struct Win {
     int field_430;
     int field_434;
     int field_438;
-    Scroll *scroll_vert;
-    Scroll *scroll_horz;
+    Scroll* scroll_vert;
+    Scroll* scroll_horz;
 };
 
 struct GraphicWin {
@@ -1015,13 +1015,13 @@ struct GraphicWin {
     int field_9FC;
     int field_A00;
     int field_A04;
-    Buffer *poCanvas;
+    Buffer* poCanvas;
     int field_A0C;
     int field_A10;
 };
 
 struct CImage {
-    char *pcBits;
+    char* pcBits;
     int iWidth;
     int iHeight;
     int dwordC;
@@ -1084,15 +1084,15 @@ struct CClass3ArrayItem {
     int pszCaption;
     int iFlags;
     int field_C;
-    CWinFonted *poWinFonted;
+    CWinFonted* poWinFonted;
 };
 
 struct CMainWnd {
     HWND hwndScreen;
-    void **ppddDirectDraw;
+    void** ppddDirectDraw;
     int dword_9C6B20;
-    void **ppdsSurface;
-    RECT *prScreenRect;
+    void** ppdsSurface;
+    RECT* prScreenRect;
 };
 
 struct CWinFonted {
@@ -1109,7 +1109,7 @@ struct CWinFonted {
 
 struct MapVtbl {
     int field_0;
-    GraphicWin *iOffsetofoClass2;
+    GraphicWin* iOffsetofoClass2;
 };
 
 struct TTilePos {
@@ -1134,8 +1134,8 @@ struct TextureStore {
 };
 
 struct MapWin_Alt {
-    MapVtbl *vtbl;
-    TTilePos *paTilePos;
+    MapVtbl* vtbl;
+    TTilePos* paTilePos;
     int field_8;
     TextureStore aoMainArrayItem1[4];
     TextureStore aoMainArrayItem2[196];
@@ -1236,7 +1236,7 @@ struct BaseButton
     int field_A9C;
     int field_AA0;
     int field_AA4;
-    ButtonGroup *btnGroup;
+    ButtonGroup* btnGroup;
     int field_AAC;
     int field_AB0;
     int field_AB4;
@@ -1244,7 +1244,7 @@ struct BaseButton
 
 struct ButtonGroup
 {
-    BaseButton *buttons[32];
+    BaseButton* buttons[32];
     int btnCount;
     int field_84;
     int field_88;
@@ -1265,7 +1265,7 @@ struct FlatButton
     int field_AD4;
     int field_AD8;
     int field_ADC;
-    Sprite *sprite0;
+    Sprite* sprite0;
     int field_AE4;
     int field_AE8;
     int field_AEC;
@@ -1277,9 +1277,9 @@ struct FlatButton
     int field_B04;
     int field_B08;
     int field_B0C;
-    Sprite *sprite1;
-    Sprite *sprite2;
-    Sprite *sprite3;
+    Sprite* sprite1;
+    Sprite* sprite2;
+    Sprite* sprite3;
     int field_B1C;
     int field_B20;
     int field_B24;
@@ -1317,21 +1317,21 @@ struct Scroll
     int bar_thickness2;
     int color;
     int bar_thickness3;
-    Buffer *buffer;
+    Buffer* buffer;
     int bevel_thickness;
     int bevel_upper;
     int bevel_lower;
     int field_A74;
-    Sprite *field_A78;
-    Sprite *sprite_left1;
-    Sprite *sprite_left2;
-    Sprite *sprite_left3;
+    Sprite* field_A78;
+    Sprite* sprite_left1;
+    Sprite* sprite_left2;
+    Sprite* sprite_left3;
     int field_A88;
     int field_A8C;
     int field_A90;
-    Sprite *sprite_right1;
-    Sprite *sprite_right2;
-    Sprite *sprite_right3;
+    Sprite* sprite_right1;
+    Sprite* sprite_right2;
+    Sprite* sprite_right3;
     int field_AA0;
     int field_AA4;
     int field_AA8;
@@ -1370,7 +1370,7 @@ struct CMainMenuItem {
     int pszCaption;
     int iFlags;
     int pszHotKey;
-    CMenu *poSubMenu;
+    CMenu* poSubMenu;
 };
 
 struct CClass5 {
@@ -1381,7 +1381,7 @@ struct CClass5 {
 
 struct CKeyFileIndex {
     char szFileName[256];
-    char *pszSections;
+    char* pszSections;
     int field_104;
     int iSectionCount;
     int field_10C;
@@ -1392,9 +1392,9 @@ struct CKeyFileIndex {
 struct CKeyFile {
     char szFileName[80];
     char szSomeString[256];
-    char *pszValues;
-    FILE *pFile;
-    char *pszFileBuffer;
+    char* pszValues;
+    FILE* pFile;
+    char* pszFileBuffer;
     int pszNextValue;
 };
 

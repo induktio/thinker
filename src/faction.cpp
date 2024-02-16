@@ -78,7 +78,7 @@ bool has_free_facility(FacilityId item_id, int faction) {
 int facility_count(FacilityId item_id, int faction) {
     assert(valid_player(faction) && item_id < SP_ID_First);
     int n = 0;
-    for (int i=0; i < *BaseCount; i++) {
+    for (int i = 0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];
         if (base->faction_id == faction && has_fac_built(item_id, i)) {
             n++;
@@ -94,7 +94,7 @@ int prod_count(int item_id, int faction, int base_skip_id) {
         || item_id/MaxProtoFactionNum == 0
         || item_id/MaxProtoFactionNum == faction);
     int n = 0;
-    for (int i=0; i < *BaseCount; i++) {
+    for (int i = 0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];
         if (base->faction_id == faction
         && base->item() == item_id
@@ -211,7 +211,7 @@ bool has_colony_pods(int faction) {
 }
 
 int find_hq(int faction) {
-    for(int i = 0; i < *BaseCount; i++) {
+    for (int i = 0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];
         if (base->faction_id == faction && has_fac_built(FAC_HEADQUARTERS, i)) {
             return i;
@@ -221,8 +221,8 @@ int find_hq(int faction) {
 }
 
 int manifold_nexus_owner() {
-    for (int y=0; y < *map_axis_y; y++) {
-        for (int x=y&1; x < *map_axis_x; x += 2) {
+    for (int y=0; y < *MapAreaY; y++) {
+        for (int x=y&1; x < *MapAreaX; x += 2) {
             MAP* sq = mapsq(x, y);
             /* First Manifold Nexus tile must also be visible to the owner. */
             if (sq && sq->landmarks & LM_NEXUS && sq->art_ref_id == 0) {
@@ -358,12 +358,12 @@ int robust, int immunity, int impunity, int penalty) {
     enum {ECO, EFF, SUP, TAL, MOR, POL, GRW, PLA, PRO, IND, RES};
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
-    double base_ratio = min(1.0, f->base_count / min(40.0, *map_area_sq_root * 0.5));
+    double base_ratio = min(1.0, f->base_count / min(40.0, *MapAreaSqRoot * 0.5));
     int w_morale = (has_project(FAC_COMMAND_NEXUS, faction) ? 2 : 0)
         + (has_project(FAC_CYBORG_FACTORY, faction) ? 2 : 0);
     int w_probe = (range < 25 && *CurrentTurn - m->thinker_last_mc_turn < 8 ? 5 : 0);
     int sc = 0;
-    int vals[11];
+    int vals[MaxSocialEffectNum];
 
     if ((&f->SE_Politics)[sf] == sm) {
         /* Evaluate the current active social model. */
@@ -372,9 +372,9 @@ int robust, int immunity, int impunity, int penalty) {
         /* Take the faction base social values and apply all modifiers. */
         memcpy(vals, &f->SE_economy_base, sizeof(vals));
 
-        for (int i=0; i<4; i++) {
+        for (int i = 0; i < MaxSocialCatNum; i++) {
             int j = (sf == i ? sm : (&f->SE_Politics)[i]);
-            for (int k=0; k<11; k++) {
+            for (int k = 0; k < MaxSocialEffectNum; k++) {
                 int val = Social[i].effects[j][k];
                 if ((1 << (i*4 + j)) & impunity) {
                     val = max(0, val);
@@ -396,7 +396,7 @@ int robust, int immunity, int impunity, int penalty) {
             }
             vals[PLA]++;
         }
-        for (int k=0; k<11; k++) {
+        for (int k = 0; k < MaxSocialEffectNum; k++) {
             if ((1 << k) & immunity) {
                 vals[k] = max(0, vals[k]);
             } else if ((1 << k) & robust && vals[k] < 0) {
@@ -531,7 +531,7 @@ int __cdecl mod_social_ai(int faction, int a2, int a3, int a4, int a5, int a6) {
     bool has_nexus = (manifold_nexus_owner() == faction);
     assert(!memcmp(&f->SE_Politics, &f->SE_Politics_pending, 16));
 
-    for (int i=0; i<m->faction_bonus_count; i++) {
+    for (int i = 0; i < m->faction_bonus_count; i++) {
         if (m->faction_bonus_id[i] == FCB_ROBUST) {
             robust |= (1 << m->faction_bonus_val1[i]);
         }
@@ -555,7 +555,7 @@ int __cdecl mod_social_ai(int faction, int a2, int a3, int a4, int a5, int a6) {
             | (1 << (4*SOCIAL_C_FUTURE + SOCIAL_M_THOUGHT_CONTROL));
 
     } else if (has_tech(Facility[FAC_CHILDREN_CRECHE].preq_tech, faction)) {
-        for (int i=0; i<*BaseCount; i++) {
+        for (int i = 0; i < *BaseCount; i++) {
             BASE* b = &Bases[i];
             if (b->faction_id == faction) {
                 want_pop += (pop_goal(i) - b->pop_size)
@@ -574,11 +574,11 @@ int __cdecl mod_social_ai(int faction, int a2, int a3, int a4, int a5, int a6) {
     int sf = -1;
     int sm2 = -1;
 
-    for (int i=0; i<4; i++) {
+    for (int i = 0; i < MaxSocialCatNum; i++) {
         int sm1 = (&f->SE_Politics)[i];
         int sc1 = social_score(faction, i, sm1, range, pop_boom, has_nexus, robust, immunity, impunity, penalty);
 
-        for (int j=0; j<4; j++) {
+        for (int j = 0; j < MaxSocialModelNum; j++) {
             if (j == sm1 || !has_tech(Social[i].soc_preq_tech[j], faction) ||
             (i == m->soc_opposition_category && j == m->soc_opposition_model)) {
                 continue;
@@ -627,7 +627,7 @@ static bool __cdecl evaluate_attack(int faction_id, int faction_id_tgt, int fact
     }
     // Modify attacks to be less likely when AI has only few bases
     if (Factions[faction_id].base_count
-    <= 1 + (*CurrentTurn + faction_id) % (*map_area_tiles >= 3200 ? 8 : 4)) {
+    <= 1 + (*CurrentTurn + faction_id) % (*MapAreaTiles >= 3200 ? 8 : 4)) {
         return false;
     }
     if (!is_human(faction_id_tgt) && Factions[faction_id].player_flags & PFLAG_TEAM_UP_VS_HUMAN) {
@@ -795,9 +795,6 @@ static bool __cdecl evaluate_attack(int faction_id, int faction_id_tgt, int fact
 }
 
 bool __cdecl mod_wants_to_attack(int faction_id, int faction_id_tgt, int faction_id_unk) {
-    if (!thinker_enabled(faction_id)) {
-        return wants_to_attack(faction_id, faction_id_tgt, faction_id_unk);
-    }
     bool value = evaluate_attack(faction_id, faction_id_tgt, faction_id_unk);
 
     debug("wants_to_attack turn: %d factions: %d %d %d value: %d\n",

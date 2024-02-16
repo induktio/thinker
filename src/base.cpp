@@ -11,10 +11,10 @@ void __cdecl mod_base_reset(int base_id, bool has_gov) {
     assert(base_id >= 0 && base_id < *BaseCount);
     assert(base.defend_goal >= 0 && base.defend_goal <= 5);
     print_base(base_id);
-    if (is_human(base.faction_id) && !governor_enabled(base_id)) {
+    if (base.plr_owner() && !governor_enabled(base_id)) {
         debug("skipping human base\n");
         base_reset(base_id, has_gov);
-    } else if (!is_human(base.faction_id) && !thinker_enabled(base.faction_id)) {
+    } else if (!base.plr_owner() && !thinker_enabled(base.faction_id)) {
         debug("skipping computer base\n");
         base_reset(base_id, has_gov);
     } else {
@@ -33,7 +33,7 @@ int __cdecl mod_base_build(int base_id, bool has_gov) {
     set_base(base_id);
     base_compute(1);
 
-    if (is_human(base.faction_id)) {
+    if (base.plr_owner()) {
         // Unimplemented settings
         base.governor_flags &= ~(GOV_MAY_PROD_SP|GOV_MAY_HURRY_PRODUCTION
             |GOV_PRIORITY_BUILD|GOV_PRIORITY_CONQUER|GOV_PRIORITY_DISCOVER|GOV_PRIORITY_EXPLORE);
@@ -69,7 +69,7 @@ void __cdecl base_first(int base_id) {
     Faction& f = Factions[base.faction_id];
     base.queue_items[0] = find_proto(base_id, TRIAD_LAND, WMODE_COMBAT, DEF);
 
-    if (is_human(base.faction_id)) {
+    if (base.plr_owner()) {
         int num = f.saved_queue_size[0];
         if (num > 0 && num < 10) {
             for (int i = 0; i < num; i++) {
@@ -421,13 +421,13 @@ bool can_build_unit(int base_id, int unit_id) {
 
 bool can_build_ships(int base_id) {
     BASE* b = &Bases[base_id];
-    int k = *map_area_sq_root + 20;
+    int k = *MapAreaSqRoot + 20;
     return has_ships(b->faction_id) && nearby_tiles(b->x, b->y, TS_TRIAD_SEA, k);
 }
 
 bool can_staple(int base_id) {
     int faction_id = Bases[base_id].faction_id;
-    return base_id >= 0 && conf.nerve_staple > is_human(faction_id)
+    return base_id >= 0 && conf.nerve_staple > Bases[base_id].plr_owner()
         && Factions[faction_id].SE_police + 2 * has_fac_built(FAC_BROOD_PIT, base_id) >= 0;
 }
 
@@ -465,7 +465,7 @@ bool base_pop_boom(int base_id) {
     return has_project(FAC_CLONING_VATS, b->faction_id)
         || f->SE_growth_pending
         + (has_fac_built(FAC_CHILDREN_CRECHE, base_id) ? 2 : 0)
-        + (b->state_flags & BSTATE_GOLDEN_AGE_ACTIVE ? 2 : 0) > 5;
+        + (b->golden_age() ? 2 : 0) > 5;
 }
 
 bool can_use_teleport(int base_id) {
@@ -1047,8 +1047,8 @@ int find_proto(int base_id, Triad triad, VehWeaponMode mode, bool defend) {
             || (combat && Weapon[u->weapon_id].offense_value == 0)
             || (combat && defend && u->chassis_id != CHS_INFANTRY)
             || (u->is_psi_unit() && plans[faction].psi_score < 1)
-            || (is_human(faction) && u->obsolete_factions & (1 << faction))
-            || (is_human(faction) && !u->is_prototyped() && ~b->governor_flags & GOV_MAY_PROD_PROTOTYPE)
+            || (b->plr_owner() && u->obsolete_factions & (1 << faction))
+            || (b->plr_owner() && !u->is_prototyped() && ~b->governor_flags & GOV_MAY_PROD_PROTOTYPE)
             || u->is_planet_buster()) {
                 continue;
             }
@@ -1110,10 +1110,11 @@ int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships) 
     int faction = base->faction_id;
     Faction* f = &Factions[faction];
     // AI bases are not limited by governor settings
-    int gov = (is_human(faction) ? base->governor_flags : ~0);
+    int gov = (base->plr_owner() ? base->governor_flags : ~0);
     int w1 = 4*plans[faction].air_combat_units < f->base_count ? 2 : 5;
     int w2 = (plans[faction].transport_units < 2
         || 5*plans[faction].transport_units < f->base_count ? 2 : 5);
+
     bool need_ships = 6*plans[faction].sea_combat_units < plans[faction].land_combat_units;
     bool reserve = base->mineral_surplus >= base->mineral_intake_2/2;
     bool probes = has_wmode(faction, WMODE_INFOWAR) && gov & GOV_MAY_PROD_PROBES;
@@ -1161,11 +1162,11 @@ int select_build(int base_id) {
     int faction = base->faction_id;
     Faction* f = &Factions[faction];
     AIPlans* p = &plans[faction];
-    int gov = (is_human(faction) ? base->governor_flags : ~0);
+    int gov = (base->plr_owner() ? base->governor_flags : ~0);
     int minerals = base->mineral_surplus + base->minerals_accumulated/10;
     int cfactor = cost_factor(faction, 1, -1);
     int reserve = max(2, base->mineral_intake_2 / 2);
-    int content_pop_value = (is_human(faction) ? conf.content_pop_player[*DiffLevel]
+    int content_pop_value = (base->plr_owner() ? conf.content_pop_player[*DiffLevel]
         : conf.content_pop_computer[*DiffLevel]);
     bool sea_base = is_ocean(base);
     bool core_base = minerals >= plans[faction].project_limit;
@@ -1228,7 +1229,7 @@ int select_build(int base_id) {
             }
         }
     }
-    if (is_human(faction)) {
+    if (base->plr_owner()) {
         p->target_land_region = 0;
         plans_upkeep(faction);
     }
@@ -1241,7 +1242,7 @@ int select_build(int base_id) {
         && p->main_region != p->target_land_region ? 4 : 1);
     double w2 = 2.0 * p->enemy_mil_factor / (p->enemy_base_range * 0.1 + 0.1)
         + 0.8 * p->enemy_bases + min(0.4, *CurrentTurn/400.0)
-        + min(1.0, 1.5 * f->base_count / *map_area_sq_root) * (f->AI_fight * 0.2 + 0.8);
+        + min(1.0, 1.5 * f->base_count / *MapAreaSqRoot) * (f->AI_fight * 0.2 + 0.8);
     double threat = 1 - (1 / (1 + max(0.0, w1 * w2)));
 
     debug("select_build %d %d %2d %2d def: %d frm: %d prb: %d crw: %d pods: %d expand: %d "\
@@ -1361,7 +1362,7 @@ int select_build(int base_id) {
                 int sea = 0;
                 for (auto& m : iterate_tiles(base->x, base->y, 1, 21)) {
                     if (m.sq->owner == faction
-                    && select_item(m.x, m.y, faction, FM_AUTO_FULL, m.sq) >= 0) {
+                    && select_item(m.x, m.y, faction, FM_Auto_Full, m.sq) >= 0) {
                         num++;
                         sea += is_ocean(m.sq);
                     }
@@ -1440,7 +1441,7 @@ int select_build(int base_id) {
         && base->pop_size < content_pop_value + 1
         && !base->drone_total && base->specialist_total < 2)
             continue;
-        if (t == FAC_PRESSURE_DOME && (*climate_future_change <= 0 || !is_shore_level(mapsq(base->x, base->y))))
+        if (t == FAC_PRESSURE_DOME && (*ClimateFutureChange <= 0 || !is_shore_level(mapsq(base->x, base->y))))
             continue;
         if (t == FAC_HEADQUARTERS && (conf.auto_relocate_hq || !valid_relocate_base(base_id)))
             continue;

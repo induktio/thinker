@@ -6,7 +6,7 @@ static uint32_t custom_more_rules = 0;
 
 
 bool un_charter() {
-    return *un_charter_repeals <= *un_charter_reinstates;
+    return *UNCharterRepeals <= *UNCharterReinstates;
 }
 
 bool victory_done() {
@@ -21,6 +21,11 @@ bool valid_player(int faction) {
 
 bool valid_triad(int triad) {
     return (triad == TRIAD_LAND || triad == TRIAD_SEA || triad == TRIAD_AIR);
+}
+
+int __cdecl game_start_turn() {
+    // TODO: If config is changed, may return incorrect start turn
+    return min(*CurrentTurn, (*GameRules & RULES_TIME_WARP ? conf.time_warp_start_turn : 0));
 }
 
 int __cdecl game_year(int n) {
@@ -232,7 +237,7 @@ int __cdecl mod_faction_upkeep(int faction) {
     MFaction* m = &MFactions[faction];
     debug("faction_upkeep %d %d\n", *CurrentTurn, faction);
 
-    if (conf.factions_enabled > 0 && (*map_axis_x > MaxMapW || *map_axis_y > MaxMapH)) {
+    if (conf.factions_enabled > 0 && (*MapAreaX > MaxMapAreaX || *MapAreaY > MaxMapAreaY)) {
         parse_says(0, MOD_VERSION, -1, -1);
         parse_says(1, "This map exceeds Thinker's maximum supported map size.", -1, -1);
         popp("modmenu", "GENERIC", 0, 0, 0);
@@ -272,7 +277,7 @@ int __cdecl mod_faction_upkeep(int faction) {
         */
         mod_social_ai(faction, -1, -1, -1, -1, 0);
         probe_upkeep(faction);
-        move_upkeep(faction, M_Full);
+        move_upkeep(faction, UM_Full);
         do_all_non_input();
 
         if (!is_human(faction)) {
@@ -338,7 +343,7 @@ uint32_t offset_next(int32_t faction, uint32_t position, uint32_t amount) {
         return 0;
     }
     uint32_t loop = 0;
-    uint32_t offset = ((*map_random_seed + faction) & 0xFE) | 1;
+    uint32_t offset = ((*MapRandomSeed + faction) & 0xFE) | 1;
     do {
         if (offset & 1) {
             offset ^= 0x170;
@@ -435,7 +440,7 @@ void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool sea_b
     }
 
     for (int i = 0; i < 2*MaxBaseNum && land_names.size() > 0; i++) {
-        x = pair_hash(faction + 8*f.base_name_offset, *map_random_seed + i);
+        x = pair_hash(faction + 8*f.base_name_offset, *MapRandomSeed + i);
         a = ((x & 0xffff) * land_names.size()) >> 16;
         name[0] = '\0';
 
@@ -477,7 +482,7 @@ int probe_roll_value(int faction)
 int probe_active_turns(int faction1, int faction2)
 {
     int value = clamp(15 + probe_roll_value(faction1) - probe_roll_value(faction2), 5, 50);
-    value = value * (4 + (*map_area_tiles >= 4000) + (*map_area_tiles >= 7000)) / 4;
+    value = value * (4 + (*MapAreaTiles >= 4000) + (*MapAreaTiles >= 7000)) / 4;
     value = value * (4 + (*DiffLevel < DIFF_TRANSCEND) + (*DiffLevel < DIFF_THINKER)) / 4;
     return clamp(value, 5, 50);
 }

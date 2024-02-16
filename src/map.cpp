@@ -8,8 +8,8 @@ static Points goodtiles;
 
 
 MAP* mapsq(int x, int y) {
-    if (x >= 0 && y >= 0 && x < *map_axis_x && y < *map_axis_y && !((x + y)&1)) {
-        return &((*MapTiles)[ x/2 + (*map_half_x) * y ]);
+    if (x >= 0 && y >= 0 && x < *MapAreaX && y < *MapAreaY && !((x + y)&1)) {
+        return &((*MapTiles)[ x/2 + (*MapHalfX) * y ]);
     } else {
         return NULL;
     }
@@ -18,11 +18,11 @@ MAP* mapsq(int x, int y) {
 int wrap(int x) {
     if (!map_is_flat()) {
         if (x >= 0) {
-            if (x >= *map_axis_x) {
-                x -= *map_axis_x;
+            if (x >= *MapAreaX) {
+                x -= *MapAreaX;
             }
         } else {
-            x += *map_axis_x;
+            x += *MapAreaX;
         }
     }
     return x;
@@ -31,8 +31,8 @@ int wrap(int x) {
 int map_range(int x1, int y1, int x2, int y2) {
     int dx = abs(x1 - x2);
     int dy = abs(y1 - y2);
-    if (!map_is_flat() && dx > *map_half_x) {
-        dx = *map_axis_x - dx;
+    if (!map_is_flat() && dx > *MapHalfX) {
+        dx = *MapAreaX - dx;
     }
     return (dx + dy)/2;
 }
@@ -40,14 +40,14 @@ int map_range(int x1, int y1, int x2, int y2) {
 int vector_dist(int x1, int y1, int x2, int y2) {
     int dx = abs(x1 - x2);
     int dy = abs(y1 - y2);
-    if (!map_is_flat() && dx > *map_half_x) {
-        dx = *map_axis_x - dx;
+    if (!map_is_flat() && dx > *MapHalfX) {
+        dx = *MapAreaX - dx;
     }
     return max(dx, dy) - ((((dx + dy) / 2) - min(dx, dy) + 1) / 2);
 }
 
 int min_range(const Points& S, int x, int y) {
-    int z = MaxMapW;
+    int z = MaxMapAreaX;
     for (auto& p : S) {
         z = min(z, map_range(x, y, p.x, p.y));
     }
@@ -55,7 +55,7 @@ int min_range(const Points& S, int x, int y) {
 }
 
 int min_vector(const Points& S, int x, int y) {
-    int z = MaxMapW;
+    int z = MaxMapAreaX;
     for (auto& p : S) {
         z = min(z, vector_dist(x, y, p.x, p.y));
     }
@@ -89,7 +89,7 @@ bool is_shore_level(MAP* sq) {
 }
 
 bool map_is_flat() {
-    return *map_toggle_flat & 1;
+    return *MapToggleFlat & 1;
 }
 
 /*
@@ -122,8 +122,8 @@ int __cdecl base_at(int x, int y) {
 
 int __cdecl x_dist(int x1, int x2) {
     int dist = abs(x1 - x2);
-    if (!map_is_flat() && dist > *map_half_x) {
-        dist = *map_axis_x - dist;
+    if (!map_is_flat() && dist > *MapHalfX) {
+        dist = *MapAreaX - dist;
     }
     return dist;
 }
@@ -235,14 +235,14 @@ int __cdecl mod_bonus_at(int x, int y) {
     uint32_t bit = sq->items;
     uint32_t alt = sq->alt_level();
     bool has_rsc_bonus = bit & BIT_BONUS_RES;
-    if (!has_rsc_bonus && (!*map_random_seed || (alt >= ALT_SHORE_LINE
+    if (!has_rsc_bonus && (!*MapRandomSeed || (alt >= ALT_SHORE_LINE
     && !conf.rare_supply_pods && !(*GameRules & RULES_NO_UNITY_SCATTERING)))) {
         return 0;
     }
     int avg = (x + y) >> 1;
     x -= avg;
     int chk = (avg & 3) + 4 * (x & 3);
-    if (!has_rsc_bonus && chk != ((*map_random_seed + (-5 * (avg >> 2)) - 3 * (x >> 2)) & 0xF)) {
+    if (!has_rsc_bonus && chk != ((*MapRandomSeed + (-5 * (avg >> 2)) - 3 * (x >> 2)) & 0xF)) {
         return 0;
     }
     if (alt < ALT_OCEAN_SHELF) {
@@ -275,18 +275,18 @@ int __cdecl mod_goody_at(int x, int y) {
     if (bit & BIT_SUPPLY_POD) {
         return 1; // supply pod
     }
-    if (!*map_random_seed) {
+    if (!*MapRandomSeed) {
         return 0; // nothing
     }
     int avg = (x + y) >> 1;
     int x_diff = x - avg;
     int cmp = (avg & 3) + 4 * (x_diff & 3);
     if (!conf.rare_supply_pods && alt >= ALT_SHORE_LINE) {
-        if (cmp == ((-5 * (avg >> 2) - 3 * (x_diff >> 2) + *map_random_seed) & 0xF)) {
+        if (cmp == ((-5 * (avg >> 2) - 3 * (x_diff >> 2) + *MapRandomSeed) & 0xF)) {
             return 2;
         }
     }
-    return cmp == ((11 * (avg / 4) + 61 * (x_diff / 4) + *map_random_seed + 8) & 0x1F); // 0 or 1
+    return cmp == ((11 * (avg / 4) + 61 * (x_diff / 4) + *MapRandomSeed + 8) & 0x1F); // 0 or 1
 }
 
 /*
@@ -359,7 +359,7 @@ int total_yield(int x, int y, int faction) {
         + energy_yield(faction, -1, x, y, 0);
 }
 
-int fungus_yield(int faction, int res_type) {
+int fungus_yield(int faction, ResType res_type) {
     const int manifold[][3] = {{0,0,0}, {0,1,0}, {1,1,0}, {1,1,1}, {1,2,1}};
     Faction* f = &Factions[faction];
     int p = clamp(f->SE_planet_pending, -3, 0);
@@ -447,7 +447,7 @@ int item_yield(int x, int y, int faction, int bonus, MapItem item) {
         }
     }
     else {
-        assert(false);
+        assert(0);
     }
     if (N > 2 && bonus != RES_NUTRIENT
     && !has_tech(Rules->tech_preq_allow_3_nutrients_sq, faction)) {
@@ -481,12 +481,12 @@ void process_map(int faction, int k) {
     considered sufficiently large to be a faction starting location.
     Map area square root values: Tiny = 33, Standard = 56, Huge = 90
     */
-    int limit = clamp(*map_area_tiles, 1024, 8192) / 40;
+    int limit = clamp(*MapAreaTiles, 1024, 8192) / 40;
     size_t land_area = 0;
     MAP* sq;
 
-    for (int y = 0; y < *map_axis_y; y++) {
-        for (int x = y&1; x < *map_axis_x; x+=2) {
+    for (int y = 0; y < *MapAreaY; y++) {
+        for (int x = y&1; x < *MapAreaX; x+=2) {
             if ((sq = mapsq(x, y))) {
                 assert(sq->region >= 0 && sq->region < MaxRegionNum);
                 region_count[sq->region]++;
@@ -496,9 +496,9 @@ void process_map(int faction, int k) {
             }
         }
     }
-    for (int y = 0; y < *map_axis_y; y++) {
-        for (int x = y&1; x < *map_axis_x; x+=2) {
-            if (y < k || y >= *map_axis_y - k || !(sq = mapsq(x, y))) {
+    for (int y = 0; y < *MapAreaY; y++) {
+        for (int x = y&1; x < *MapAreaX; x+=2) {
+            if (y < k || y >= *MapAreaY - k || !(sq = mapsq(x, y))) {
                 continue;
             }
             if (!is_ocean(sq) && !sq->is_rocky() && !sq->is_fungus()
@@ -520,13 +520,13 @@ void process_map(int faction, int k) {
         goodtiles.clear();
     }
     debug("process_map x: %d y: %d sqrt: %d tiles: %d good: %d\n",
-        *map_axis_x, *map_axis_y, *map_area_sq_root, *map_area_tiles, goodtiles.size());
+        *MapAreaX, *MapAreaY, *MapAreaSqRoot, *MapAreaTiles, goodtiles.size());
 }
 
 bool valid_start(int faction, int iter, int x, int y, bool need_bonus) {
     MAP* sq = mapsq(x, y);
     bool aquatic = MFactions[faction].is_aquatic();
-    int limit = max((*map_area_tiles < 1600 ? 5 : 7), 8 - iter/80);
+    int limit = max((*MapAreaTiles < 1600 ? 5 : 7), 8 - iter/80);
     int min_sc = 80 - iter/4;
     int pods = 0;
     int sea = 0;
@@ -547,11 +547,11 @@ bool valid_start(int faction, int iter, int x, int y, bool need_bonus) {
     if (min_range(natives, x, y) < max(4, 8 - iter/32)) {
         return false;
     }
-    if (min_range(spawns, x, y) < max(limit, *map_area_sq_root/4 + 8 - iter/8)) {
+    if (min_range(spawns, x, y) < max(limit, *MapAreaSqRoot/4 + 8 - iter/8)) {
         return false;
     }
     if (aquatic) {
-        if (Continents[sq->region].tile_count < *map_area_tiles / (16 << (iter/32))) {
+        if (Continents[sq->region].tile_count < *MapAreaTiles / (16 << (iter/32))) {
             return false;
         }
     } else {
@@ -691,7 +691,7 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
     int x = 0;
     int y = 0;
     int i = 0;
-    int k = (*map_axis_y < 80 ? 4 : 8);
+    int k = (*MapAreaY < 80 ? 4 : 8);
     process_map(faction, k/2);
 
     while (++i <= 400) {
@@ -700,8 +700,8 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
             y = t.y;
             x = t.x;
         } else {
-            y = (random(*map_axis_y - k*2) + k);
-            x = (random(*map_axis_x) &~1) + (y&1);
+            y = (random(*MapAreaY - k*2) + k);
+            x = (random(*MapAreaX) &~1) + (y&1);
         }
         debug("find_iter  %d %d x: %3d y: %3d\n", faction, i, x, y);
         if (valid_start(faction, i, x, y, need_bonus)) {
@@ -731,18 +731,18 @@ void __cdecl mod_world_monsoon() {
         uint8_t sea;
         uint8_t sea_near;
     } TileInfo;
-    TileInfo* tiles = new TileInfo[*map_axis_x * *map_axis_y]{};
+    TileInfo* tiles = new TileInfo[*MapAreaX * *MapAreaY]{};
     world_rainfall();
 
     MAP* sq;
     int i = 0, j = 0, x = 0, y = 0, x2 = 0, y2 = 0, num = 0;
-    const int w = *map_axis_x;
-    const int y_a = *map_axis_y * 5/16;
-    const int y_b = *map_axis_y * 11/16;
-    const int limit = max(1024, *map_area_tiles) * (3 + *MapCloudCover) / 120;
+    const int w = *MapAreaX;
+    const int y_a = *MapAreaY * 5/16;
+    const int y_b = *MapAreaY * 11/16;
+    const int limit = max(1024, *MapAreaTiles) * (3 + *MapCloudCover) / 120;
 
-    for (y = 0; y < *map_axis_y; y++) {
-        for (x = y&1; x < *map_axis_x; x+=2) {
+    for (y = 0; y < *MapAreaY; y++) {
+        for (x = y&1; x < *MapAreaX; x+=2) {
             if (!(sq = mapsq(x, y))) {
                 continue;
             }
@@ -752,8 +752,8 @@ void __cdecl mod_world_monsoon() {
                 && (sq->alt_level() == ALT_SHORE_LINE || sq->alt_level() == ALT_ONE_ABOVE_SEA);
         }
     }
-    for (y = 0; y < *map_axis_y; y++) {
-        for (x = y&1; x < *map_axis_x; x+=2) {
+    for (y = 0; y < *MapAreaY; y++) {
+        for (x = y&1; x < *MapAreaX; x+=2) {
             if (tiles[w*y + x].valid) {
                 for (auto& p : iterate_tiles(x, y, 0, 45)) {
                     if (tiles[w*p.y + p.x].valid) {
@@ -768,7 +768,7 @@ void __cdecl mod_world_monsoon() {
     }
     for (i = 0; i < 256 && num < limit; i++) {
         y = (random(y_b - y_a) + y_a);
-        x = wrap((random(*map_axis_x) &~1) + (y&1));
+        x = wrap((random(*MapAreaX) &~1) + (y&1));
         if (!tiles[w*y + x].valid
         || tiles[w*y + x].sea_near < 8 - i/16
         || tiles[w*y + x].valid_near < 16 - i/32) {
@@ -801,8 +801,8 @@ void __cdecl mod_world_monsoon() {
 float world_fractal(FastNoiseLite& noise, int x, int y) {
     float val = 1.0f * noise.GetNoise(3.0f*x, 2.0f*y)
         + 0.3f * (2 + *MapErosiveForces) * noise.GetNoise(-6.0f*x, -4.0f*y);
-    if (x < 8 && *map_axis_x >= 32 && !map_is_flat()) {
-        val = x/8.0f * val + (1.0f - x/8.0f) * world_fractal(noise, *map_axis_x + x, y);
+    if (x < 8 && *MapAreaX >= 32 && !map_is_flat()) {
+        val = x/8.0f * val + (1.0f - x/8.0f) * world_fractal(noise, *MapAreaX + x, y);
     }
     return val;
 }
@@ -839,6 +839,13 @@ void world_generate(uint32_t seed) {
         *GameState |= STATE_DEBUG_MODE;
     }
     MAP* sq;
+    ThinkerVars->map_random_value = seed;
+    FastNoiseLite noise;
+    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
+    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+    noise.SetSeed(seed);
+    random_reseed(seed);
+
     memcpy(AltNatural, AltNaturalDefault, 0x2Cu);
     *WorldAddTemperature = 1;
     *WorldSkipTerritory = 1;
@@ -854,28 +861,22 @@ void world_generate(uint32_t seed) {
         MapWin_clear_terrain(MapWin);
         draw_map(1);
     }
-    ThinkerVars->map_random_value = seed;
-    FastNoiseLite noise;
-    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
-    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
-    noise.SetSeed(seed);
-    random_reseed(seed);
     my_srand(seed ^ 0xffff); // For game engine rand function, terrain detail placement
-    *map_random_seed = (seed % 0x7fff) + 1; // Must be non-zero, supply pod placement
+    *MapRandomSeed = (seed % 0x7fff) + 1; // Must be non-zero, supply pod placement
 
     Points conts;
-    uint32_t continents = clamp(*map_area_sq_root / 12, 4, 20);
+    uint32_t continents = clamp(*MapAreaSqRoot / 12, 4, 20);
     int levels[256] = {};
     int x = 0, y = 0, i = 0;
 
-    if (conf.world_continents && *map_axis_y >= 32) {
+    if (conf.world_continents && *MapAreaY >= 32) {
         while (++i <= 200 && conts.size() < continents) {
-            y = (random(*map_axis_y - 16) + 8);
-            x = (random(*map_axis_x) &~1) + (y&1);
-            if (i & 1 && min_vector(conts, x, y) <= *map_area_sq_root/6) {
+            y = (random(*MapAreaY - 16) + 8);
+            x = (random(*MapAreaX) &~1) + (y&1);
+            if (i & 1 && min_vector(conts, x, y) <= *MapAreaSqRoot/6) {
                 conts.insert({x, y});
             }
-            if (~i & 1 && min_vector(conts, x, y) >= *map_area_sq_root/3) {
+            if (~i & 1 && min_vector(conts, x, y) >= *MapAreaSqRoot/3) {
                 conts.insert({x, y});
             }
         }
@@ -885,12 +886,12 @@ void world_generate(uint32_t seed) {
     const float Wmid = (50 - conf.world_sea_levels[*MapOceanCoverage])*0.01f;
     const float Wsea = 0.1f + 0.01f * conf.world_ocean_mod;
     const float Wland = 0.1f + 0.01f * conf.world_hills_mod + 0.25f * (*MapErosiveForces);
-    const float Wdist = 1.0f / clamp(*map_area_sq_root * 0.1f, 1.0f, 15.0f);
+    const float Wdist = 1.0f / clamp(*MapAreaSqRoot * 0.1f, 1.0f, 15.0f);
 
-    for (y = 0; y < *map_axis_y; y++) {
-        float Wcaps = 1.0f - min(1.0f, (min(y, *map_axis_y - y) / (max(1.0f, *map_axis_y * 0.2f))));
+    for (y = 0; y < *MapAreaY; y++) {
+        float Wcaps = 1.0f - min(1.0f, (min(y, *MapAreaY - y) / (max(1.0f, *MapAreaY * 0.2f))));
 
-        for (x = y&1; x < *map_axis_x; x+=2) {
+        for (x = y&1; x < *MapAreaX; x+=2) {
             float Wcont = 1.5f - clamp(min_vector(conts, x, y) * Wdist, 0.75f, 1.5f);
             float value = world_fractal(noise, x, y) + Wmid - 0.5f*Wcaps;
             if (value > 0) {
@@ -907,27 +908,27 @@ void world_generate(uint32_t seed) {
         }
     }
     if (conf.map_mirror_x) {
-        const int ky = 2 - (*map_axis_y & 1);
-        for (y = 0; y < *map_axis_y/2; y++) {
-            for (x = y&1; x < *map_axis_x; x+=2) {
+        const int ky = 2 - (*MapAreaY & 1);
+        for (y = 0; y < *MapAreaY/2; y++) {
+            for (x = y&1; x < *MapAreaX; x+=2) {
                 MAP* src = mapsq(x, y);
-                MAP* tgt = mapsq(x, *map_axis_y - y - ky);
+                MAP* tgt = mapsq(x, *MapAreaY - y - ky);
                 tgt->contour = src->contour;
             }
         }
     }
     if (conf.map_mirror_y) {
-        const int kx = 2 - (*map_axis_x & 1);
-        for (y = 0; y < *map_axis_y; y++) {
-            for (x = y&1; x < *map_axis_x/2; x+=2) {
+        const int kx = 2 - (*MapAreaX & 1);
+        for (y = 0; y < *MapAreaY; y++) {
+            for (x = y&1; x < *MapAreaX/2; x+=2) {
                 MAP* src = mapsq(x, y);
-                MAP* tgt = mapsq(*map_axis_x - x - kx, y);
+                MAP* tgt = mapsq(*MapAreaX - x - kx, y);
                 tgt->contour = src->contour;
             }
         }
     }
-    for (y = 0; y < *map_axis_y; y++) {
-        for (x = y&1; x < *map_axis_x; x+=2) {
+    for (y = 0; y < *MapAreaY; y++) {
+        for (x = y&1; x < *MapAreaX; x+=2) {
             sq = mapsq(x, y);
             levels[sq->contour]++;
         }
@@ -936,20 +937,20 @@ void world_generate(uint32_t seed) {
     int level_mod = 0;
     for (i = 0; i < 256; i++) {
         level_sum += levels[i];
-        if (level_sum >= *map_area_tiles * conf.world_sea_levels[*MapOceanCoverage] / 100) {
+        if (level_sum >= *MapAreaTiles * conf.world_sea_levels[*MapOceanCoverage] / 100) {
             level_mod = AltNatural[ALT_SHORE_LINE] - i;
             break;
         }
     }
-    for (y = 0; y < *map_axis_y; y++) {
-        for (x = y&1; x < *map_axis_x; x+=2) {
+    for (y = 0; y < *MapAreaY; y++) {
+        for (x = y&1; x < *MapAreaX; x+=2) {
             sq = mapsq(x, y);
             sq->contour = clamp(sq->contour + level_mod, 0, 255);
         }
     }
     debug("world_build seed: %10u size: %d x: %d y: %d "\
     "ocean: %d erosion: %d cloud: %d sea_level: %d level_mod: %d\n",
-    seed, *MapSizePlanet, *map_axis_x, *map_axis_y, *MapOceanCoverage,
+    seed, *MapSizePlanet, *MapAreaX, *MapAreaY, *MapOceanCoverage,
     *MapErosiveForces, *MapCloudCover, conf.world_sea_levels[*MapOceanCoverage], level_mod);
 
     if (conf.world_polar_caps) {
@@ -960,8 +961,8 @@ void world_generate(uint32_t seed) {
     world_validate(); // Run Path::continents
     Points bridges;
 
-    for (y = 3; y < *map_axis_y - 3; y++) {
-        for (x = y&1; x < *map_axis_x; x+=2) {
+    for (y = 3; y < *MapAreaY - 3; y++) {
+        for (x = y&1; x < *MapAreaX; x+=2) {
             sq = mapsq(x, y);
             if (is_ocean(sq)) {
                 continue;
@@ -969,7 +970,7 @@ void world_generate(uint32_t seed) {
             uint64_t sea = 0;
             int land_count = Continents[sq->region].tile_count;
             if (conf.world_islands_mod > 0) {
-                if (land_count < conf.world_islands_mod && land_count < *map_area_tiles/8) {
+                if (land_count < conf.world_islands_mod && land_count < *MapAreaTiles/8) {
                     bridges.insert({x, y});
                     if (DEBUG) pm_overlay[x][y] = -1;
                     continue;
@@ -983,7 +984,7 @@ void world_generate(uint32_t seed) {
                 }
             }
             if (__builtin_popcount(sea) > 1) {
-                if (land_count > *map_area_tiles/8 || pair_hash(seed^(x/8), y/8) & 1) {
+                if (land_count > *MapAreaTiles/8 || pair_hash(seed^(x/8), y/8) & 1) {
                     bridges.insert({x, y});
                     if (DEBUG) pm_overlay[x][y] = -2;
                 }
@@ -1065,7 +1066,7 @@ void __cdecl mod_time_warp() {
     };
     std::set<int32_t> selected = {};
     std::set<int32_t> choices = {};
-    const int num = clamp(*map_area_tiles / 3200 + 2, 2, 5);
+    const int num = clamp(*MapAreaTiles / 3200 + 2, 2, 5);
     /*
     Aquatic factions always spawn with an extra Unity Gunship.
     Alien factions spawn with an extra Colony Pod and Battle Ogre Mk1.

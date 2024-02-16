@@ -90,7 +90,7 @@ int __cdecl base_psych_content_pop() {
 }
 
 int __cdecl basewin_random_seed() {
-    return *CurrentBaseID ^ *map_random_seed;
+    return *CurrentBaseID ^ *MapRandomSeed;
 }
 
 int __cdecl zero_value() {
@@ -177,7 +177,7 @@ Early upgrades are disabled to prevent unnecessary costs for any starting units.
 int __stdcall enemy_strategy_upgrade(int veh_id) {
     typedef int (__stdcall *std_int)(int);
     std_int Console_upgrade = (std_int)0x4D06C0;
-    if (*CurrentTurn <= 30 + (*GameRules & RULES_TIME_WARP ? conf.time_warp_start_turn : 0)) {
+    if (*CurrentTurn <= 20 + game_start_turn()) {
         return 1; // skip upgrade
     }
     return Console_upgrade(veh_id);
@@ -437,7 +437,7 @@ bool patch_setup(Config* cf) {
     write_call(0x5B341C, (int)mod_setup_player);
     write_call(0x5B3C03, (int)mod_setup_player);
     write_call(0x5B3C4C, (int)mod_setup_player);
-    write_call(0x5C0908, (int)log_veh_kill);
+    write_call(0x5C0984, (int)veh_kill_lift);
     write_call(0x498720, (int)ReportWin_close_handler);
     write_call(0x5A3F7D, (int)probe_veh_health);
     write_call(0x5A3F98, (int)probe_veh_health);
