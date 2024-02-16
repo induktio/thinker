@@ -1,6 +1,21 @@
 
 # Thinker mod release changelog
 
+## Version 4.0 (2024-02-16)
+* Base window notifications layout is rearranged to show various population counts, nerve staple turns, drone riots, golden age and population boom warnings on the bottom right corner. The notifications are color coded for easier reading.
+* It is now possible to adjust special scenario rules for new maps started from the main menu by using ALT+T options dialog.
+* Thinker controlled formers now also support other automated subtasks and preferences selections in addition to full automation.
+* Add option native_lifecycle_levels to change the lifecycle level for planet-owned units. By default this will increase every 40 turns making it faster than in vanilla game.
+* Add option planet_defense_bonus to adjust "Psi attack bonus/penalty per +PLANET" in alphax.txt to also affect defensive combat by half as much.
+* Add option time_warp_start_turn for the modified time warp feature.
+* Add translation labels for new user interface features in thinker.ini.
+* Modify sunspots event to always last for 10 turns as specified by event_sunspots option.
+* Prevent the AI from making unnecessary trades where it sells their techs for maps owned by the player. The patch removes two dialogue paths making the AI usually demand a credit payment for any techs.
+* AI will rename captured bases only after they are fully assimilated.
+* Fix some issues where AI declared war based on calculations using incorrect variables. AI is also less likely to declare war at early stages.
+* Fix possible issues with inconsistent captured base facilities when some of the factions have free facilities defined for them.
+
+
 ## Version 3.9 (2023-12-22)
 * Add options nerve_staple, event_sunspots, event_perihelion to alter more game rules.
 * Nerve staple dialog is now hidden if it is always disallowed by config. When Police rating is insufficient, this will display a separate dialog as usual.

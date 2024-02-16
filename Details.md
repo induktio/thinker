@@ -80,12 +80,11 @@ Base swapping dialogue has been adjusted to reject any base swaps where the AI w
 
 Player automation features
 ==========================
-It is possible to instruct Thinker to automate player-owned colony pods and formers from `ALT+T` menu options. There's also a separate option to set Thinker manage governors in player-owned bases. This automation feature is not enabled by default. Normally player base governors and unit automation would be handled by the vanilla AI.
+It is possible to instruct Thinker to automate player-owned colony pods and formers from `ALT+T` menu options. There's also a separate option to set Thinker manage governors in player-owned bases.  Normally player base governors and unit automation would be handled by the vanilla AI.
 
-When enabled, use `Shift+A` shortcut to automate any specific unit and it will follow the same colonization or terraforming strategy as the AI factions. Colony pods will attempt to travel to a suitable location autonomously and deploy a base there. If this is not required, the units can be moved manually as well.
+When enabled, use `Shift+A` shortcut to automate any specific unit and it will follow the same colonization or terraforming strategy as the AI factions. Colony pods will attempt to travel to a suitable location autonomously and deploy a base there. If this is not required, the units can be moved manually as well. Automated formers should follow the same settings listed in the Automation Preferences dialog.
 
-Beware formers automated in this way **can replace any existing improvements** on the territory if Thinker calculates the replacement would increase tile production. A notable difference compared to the AI factions is that player-automated formers will never raise/lower terrain.
-To prevent the formers from ever replacing some specific improvements, such as bunkers, they need to be placed outside the workable base radius from any friendly base. Thinker does not parse any more detailed settings in Automation Preferences, so this automation feature is an all-or-nothing approach.
+Beware formers automated in this way **can replace any existing improvements** on the territory if Thinker calculates the replacement would increase tile production. A notable difference compared to the AI factions is that player-automated formers will never raise/lower terrain. To prevent the formers from ever replacing some specific improvements, such as bunkers, they need to be placed outside the workable base radius from any friendly base.
 
 Bases managed by Thinker governors will mostly follow the same options as provided in the base governor settings, with a few exceptions. Normal explore/build/discover/conquer priorities will have no effect on production choices and they are automatically deselected in the interface.
 Thinker governors will also never attempt to start secret projects, hurry production with energy reservers, or nerve staple drones in the base. These choices are left for the player to manage.
