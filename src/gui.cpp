@@ -568,18 +568,43 @@ int __cdecl mod_blink_timer() {
 LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     static int iDeltaAccum = 0;
-    bool tools = DEBUG && !*GameHalted;
+    bool debug_active = DEBUG && !*GameHalted;
     POINT p;
 
-    if (msg == WM_ACTIVATEAPP) {
-        if (LOWORD(wParam)) {
-            ShowWindow(*phWnd, SW_RESTORE);
-        } else {
+    if (msg == WM_ACTIVATEAPP && !conf.reduced_mode) {
+        if (!LOWORD(wParam)) {
             //If window has just become inactive e.g. ALT+TAB
             //wParam is 0 if the window has become inactive.
-            //ShowWindow(*phWnd, SW_MINIMIZE);
+            set_minimised(true);
+        } else {
+            set_minimised(false);
         }
         return WinProc(hwnd, msg, wParam, lParam);
+
+    } else if (msg == WM_MOVIEOVER && !conf.reduced_mode) {
+        conf.playing_movie = false;
+        set_video_mode(1);
+
+    } else if (msg == WM_KEYDOWN && LOWORD(wParam) == VK_RETURN
+    && GetAsyncKeyState(VK_MENU) < 0 && !conf.reduced_mode) {
+        if (conf.video_mode == VM_Custom) {
+            set_windowed(true);
+        } else if (conf.video_mode == VM_Window) {
+            set_windowed(false);
+        }
+
+    } else if (msg == WM_WINDOWED && !conf.reduced_mode) {
+        RECT window_rect;
+        WINDOWPLACEMENT wp;
+        memset(&wp, 0, sizeof(wp));
+        wp.length = sizeof(wp);
+        GetWindowPlacement(*phWnd, &wp);
+        wp.flags = 0;
+        wp.showCmd = SW_SHOWNORMAL;
+        SetRect(&window_rect, 0, 0, conf.window_width, conf.window_height);
+        wp.rcNormalPosition = window_rect;
+        SetWindowPlacement(*phWnd, &wp);
+        SetWindowPos(*phWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED);
 
     } else if (msg == WM_MOUSEWHEEL && win_has_focus()) {
         int iDelta = GET_WHEEL_DELTA_WPARAM(wParam) + iDeltaAccum;
@@ -684,7 +709,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             "Verbose mode enabled." : "Verbose mode disabled."), -1, -1);
         popp("modmenu", "GENERIC", 0, 0, 0);
 
-    } else if (tools && msg == WM_CHAR && wParam == 'y' && alt_key_down()) {
+    } else if (debug_active && msg == WM_CHAR && wParam == 'y' && alt_key_down()) {
         static int draw_diplo = 0;
         draw_diplo = !draw_diplo;
         if (draw_diplo) {
@@ -696,7 +721,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         MapWin_draw_map(MapWin, 0);
         InvalidateRect(hwnd, NULL, false);
 
-    } else if (tools && msg == WM_CHAR && wParam == 'v' && alt_key_down()) {
+    } else if (debug_active && msg == WM_CHAR && wParam == 'v' && alt_key_down()) {
         MapWin->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
         memset(pm_overlay, 0, sizeof(pm_overlay));
         static int ts_type = 0;
@@ -711,7 +736,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         MapWin_draw_map(MapWin, 0);
         InvalidateRect(hwnd, NULL, false);
 
-    } else if (tools && msg == WM_CHAR && wParam == 'f' && alt_key_down()) {
+    } else if (debug_active && msg == WM_CHAR && wParam == 'f' && alt_key_down()) {
         MapWin->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
         memset(pm_overlay, 0, sizeof(pm_overlay));
         MAP* sq = mapsq(MapWin->oMap.iTileX, MapWin->oMap.iTileY);
@@ -721,7 +746,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             InvalidateRect(hwnd, NULL, false);
         }
 
-    } else if (tools && msg == WM_CHAR && wParam == 'x' && alt_key_down()) {
+    } else if (debug_active && msg == WM_CHAR && wParam == 'x' && alt_key_down()) {
         MapWin->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
         static int px = 0, py = 0;
         int x = MapWin->oMap.iTileX, y = MapWin->oMap.iTileY;
@@ -732,7 +757,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         MapWin_draw_map(MapWin, 0);
         InvalidateRect(hwnd, NULL, false);
 
-    } else if (tools && msg == WM_CHAR && wParam == 'z' && alt_key_down()) {
+    } else if (debug_active && msg == WM_CHAR && wParam == 'z' && alt_key_down()) {
         int x = MapWin->oMap.iTileX, y = MapWin->oMap.iTileY;
         int base_id;
         if ((base_id = base_at(x, y)) >= 0) {
@@ -755,8 +780,82 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
+int __cdecl mod_Win_init_class(const char* lpWindowName)
+{
+    int value = Win_init_class(lpWindowName);
+    set_video_mode(0);
+    return value;
+}
+
+void __cdecl mod_amovie_project(const char* name)
+{
+    conf.playing_movie = true;
+    amovie_project(name);
+    if (*phWnd) {
+        PostMessage(*phWnd, WM_MOVIEOVER, 0, 0);
+    }
+}
+
+void restore_video_mode()
+{
+    ChangeDisplaySettings(NULL, 0);
+}
+
+void set_video_mode(bool reset_window)
+{
+    if (conf.video_mode != VM_Window
+    && (conf.window_width != conf.screen_width || conf.window_height != conf.screen_height)) {
+        DEVMODE dv = {};
+        dv.dmPelsWidth = conf.window_width;
+        dv.dmPelsHeight = conf.window_height;
+        dv.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
+        dv.dmSize = sizeof(dv);
+        ChangeDisplaySettings(&dv, CDS_FULLSCREEN);
+    }
+    else if (conf.video_mode == VM_Window && reset_window && *phWnd) {
+        // Restore window layout after movie playback has ended
+        restore_video_mode();
+        SetWindowLong(*phWnd, GWL_STYLE, AC_WS_WINDOWED);
+        PostMessage(*phWnd, WM_WINDOWED, 0, 0);
+    }
+}
+
+void set_minimised(bool minimise)
+{
+    if (conf.minimised != minimise && *phWnd) {
+        conf.minimised = minimise;
+        if (minimise) {
+            restore_video_mode();
+            ShowWindow(*phWnd, SW_MINIMIZE);
+        } else {
+            set_video_mode(0);
+            ShowWindow(*phWnd, SW_RESTORE);
+        }
+    }
+}
+
+void set_windowed(bool windowed)
+{
+    if (!conf.playing_movie && *phWnd) {
+        if (conf.video_mode == VM_Custom && windowed) {
+            conf.video_mode = VM_Window;
+            restore_video_mode();
+            SetWindowLong(*phWnd, GWL_STYLE, AC_WS_WINDOWED);
+            PostMessage(*phWnd, WM_WINDOWED, 0, 0);
+        }
+        else if (conf.video_mode == VM_Window && !windowed) {
+            conf.video_mode = VM_Custom;
+            set_video_mode(0);
+            SetWindowLong(*phWnd, GWL_STYLE, AC_WS_FULLSCREEN);
+            SetWindowPos(*phWnd, HWND_TOPMOST, 0, 0, conf.window_height, conf.window_width,
+                         SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED);
+            ShowWindow(*phWnd, SW_RESTORE);
+        }
+    }
+}
+
 /*
-Render custom debug overlays with original goals.
+Render custom debug overlays with original and additional goals.
 */
 void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
 {
@@ -946,47 +1045,47 @@ int show_mod_config()
     }
     conf.new_world_builder = !!(value & MapGen);
     WritePrivateProfileStringA(ModAppName, "new_world_builder",
-        (conf.new_world_builder ? "1" : "0"), GameIniFile);
+        (conf.new_world_builder ? "1" : "0"), ModIniFile);
 
     conf.modified_landmarks = !!(value & MapLandmarks);
     WritePrivateProfileStringA(ModAppName, "modified_landmarks",
-        (conf.modified_landmarks ? "1" : "0"), GameIniFile);
+        (conf.modified_landmarks ? "1" : "0"), ModIniFile);
 
     conf.world_continents = !!(value & MapContinents);
     WritePrivateProfileStringA(ModAppName, "world_continents",
-        (conf.world_continents ? "1" : "0"), GameIniFile);
+        (conf.world_continents ? "1" : "0"), ModIniFile);
 
     conf.world_polar_caps = !!(value & MapPolarCaps);
     WritePrivateProfileStringA(ModAppName, "world_polar_caps",
-        (conf.world_polar_caps ? "1" : "0"), GameIniFile);
+        (conf.world_polar_caps ? "1" : "0"), ModIniFile);
 
     conf.map_mirror_x = !!(value & MapMirrorX);
     WritePrivateProfileStringA(ModAppName, "map_mirror_x",
-        (conf.map_mirror_x ? "1" : "0"), GameIniFile);
+        (conf.map_mirror_x ? "1" : "0"), ModIniFile);
 
     conf.map_mirror_y = !!(value & MapMirrorY);
     WritePrivateProfileStringA(ModAppName, "map_mirror_y",
-        (conf.map_mirror_y ? "1" : "0"), GameIniFile);
+        (conf.map_mirror_y ? "1" : "0"), ModIniFile);
 
     conf.manage_player_bases = !!(value & AutoBases);
     WritePrivateProfileStringA(ModAppName, "manage_player_bases",
-        (conf.manage_player_bases ? "1" : "0"), GameIniFile);
+        (conf.manage_player_bases ? "1" : "0"), ModIniFile);
 
     conf.manage_player_units = !!(value & AutoUnits);
     WritePrivateProfileStringA(ModAppName, "manage_player_units",
-        (conf.manage_player_units ? "1" : "0"), GameIniFile);
+        (conf.manage_player_units ? "1" : "0"), ModIniFile);
 
     conf.warn_on_former_replace = !!(value & FormerReplace);
     WritePrivateProfileStringA(ModAppName, "warn_on_former_replace",
-        (conf.warn_on_former_replace ? "1" : "0"), GameIniFile);
+        (conf.warn_on_former_replace ? "1" : "0"), ModIniFile);
 
     conf.render_base_info = !!(value & MapBaseInfo);
     WritePrivateProfileStringA(ModAppName, "render_base_info",
-        (conf.render_base_info ? "1" : "0"), GameIniFile);
+        (conf.render_base_info ? "1" : "0"), ModIniFile);
 
     conf.foreign_treaty_popup = !!(value & TreatyPopup);
     WritePrivateProfileStringA(ModAppName, "foreign_treaty_popup",
-        (conf.foreign_treaty_popup ? "1" : "0"), GameIniFile);
+        (conf.foreign_treaty_popup ? "1" : "0"), ModIniFile);
 
     draw_map(1);
     return 0;

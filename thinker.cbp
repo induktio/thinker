@@ -33,7 +33,7 @@
 				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
 				<Compiler>
-					<Add option="-O2 -fno-common -fno-strict-aliasing -fno-delete-null-pointer-checks -fno-optimize-sibling-calls" />
+					<Add option="-O2 -fno-common -fno-strict-overflow -fno-strict-aliasing -fno-delete-null-pointer-checks -fno-optimize-sibling-calls" />
 					<Add option="-DBUILD_DLL" />
 				</Compiler>
 				<Linker>
@@ -51,7 +51,7 @@
 				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
 				<Compiler>
-					<Add option="-O2 -fno-common -fno-strict-aliasing -fno-delete-null-pointer-checks -fno-optimize-sibling-calls" />
+					<Add option="-O2 -fno-common -fno-strict-overflow -fno-strict-aliasing -fno-delete-null-pointer-checks -fno-optimize-sibling-calls" />
 					<Add option="-DBUILD_DLL" />
 					<Add option="-DBUILD_REL" />
 				</Compiler>

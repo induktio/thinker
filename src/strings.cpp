@@ -53,6 +53,9 @@ int count_format_args(const char* buf) {
 
     for (i = 0; i < len - 1; i++) {
         if (buf[i] == '%' && buf[i + 1] != '%') {
+            if (buf[i + 1] != 'd') {
+                return -1;
+            }
             num++;
         }
     }

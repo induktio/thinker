@@ -70,7 +70,8 @@
 #define THINKER_HEADER (int16_t)0xACAC
 #define ModAppName "thinker"
 #define GameAppName "Alpha Centauri"
-#define GameIniFile ".\\thinker.ini"
+#define ModIniFile ".\\thinker.ini"
+#define GameIniFile ".\\Alpha Centauri.ini"
 
 #ifdef BUILD_DEBUG
 #ifdef assert
@@ -128,18 +129,32 @@ const int StrBufLen = 256;
 const int LineBufLen = 128;
 const int MaxEnemyRange = 50;
 
+enum VideoMode {
+    VM_Native = 0,
+    VM_Custom = 1,
+    VM_Window = 2,
+};
+
 /*
 Config parsed from thinker.ini. Alpha Centauri.ini related options
 can be set negative values to use the defaults from Alpha Centauri.ini.
 */
 struct Config {
+    int video_mode = VM_Native;
+    int window_width = 1024;
+    int window_height = 768;
+    int minimised = 0; // internal variable
+    int playing_movie = 0;  // internal variable
+    int screen_width = 1024; // internal variable
+    int screen_height = 768; // internal variable
     int directdraw = 0;
     int disable_opening_movie = 1;
-    int autosave_interval = 1;
+    int smac_only = 0;
     int smooth_scrolling = 0;
     int scroll_area = 40;
     int render_base_info = 1;
     int render_high_detail = 1; // unlisted option
+    int autosave_interval = 1;
     int warn_on_former_replace = 1;
     int manage_player_bases = 0;
     int manage_player_units = 0;
@@ -148,10 +163,6 @@ struct Config {
     int editor_free_units = 1;
     int new_base_names = 1;
     int new_unit_names = 1;
-    int windowed = 0;
-    int window_width = 1024;
-    int window_height = 768;
-    int smac_only = 0;
     int player_colony_pods = 0;
     int computer_colony_pods = 0;
     int player_formers = 0;

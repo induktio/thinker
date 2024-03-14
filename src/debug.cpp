@@ -21,17 +21,26 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD* rec, PVOID* frame, CONTEXT* ct
     int32_t bytes = 0;
     int32_t value = 0;
     int32_t config_num = (int32_t)sizeof(conf)/4;
+    size_t binary_size = 0;
     time_t rawtime = time(&rawtime);
     struct stat filedata;
     struct tm* now = localtime(&rawtime);
     char time_now[256] = {};
-    char time_bin[256] = {};
     char savepath[512] = {};
     char filepath[512] = {};
     char gamepath[512] = {};
     strftime(time_now, sizeof(time_now), "%Y-%m-%d %H:%M:%S", now);
     strncpy(savepath, LastSavePath, sizeof(savepath));
-    savepath[200] = '\0';
+    savepath[250] = '\0';
+
+    HMODULE handle;
+    NTSTATUS(WINAPI *RtlGetVersion)(LPOSVERSIONINFOEXW);
+    OSVERSIONINFOEXW info = {};
+    info.dwOSVersionInfoSize = sizeof(info);
+    if ((handle = GetModuleHandleA("ntdll")) != NULL
+    && (*(FARPROC*)&RtlGetVersion = GetProcAddress(handle, "RtlGetVersion")) != NULL) {
+        RtlGetVersion(&info);
+    }
 
     PBYTE pb = 0;
     MEMORY_BASIC_INFORMATION mbi;
@@ -41,8 +50,7 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD* rec, PVOID* frame, CONTEXT* ct
         if (mbi.BaseAddress == AC_IMAGE_BASE
         && GetModuleFileNameA((HINSTANCE)mbi.AllocationBase, gamepath, sizeof(gamepath)) > 0) {
             if(stat(gamepath, &filedata) == 0) {
-                now = localtime(&filedata.st_mtime);
-                strftime(time_bin, sizeof(time_bin), "%Y-%m-%d %H:%M:%S", now);
+                binary_size = filedata.st_size;
             }
         }
         if (mbi.AllocationBase != NULL
@@ -53,15 +61,16 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD* rec, PVOID* frame, CONTEXT* ct
         }
         pb += mbi.RegionSize;
     }
-    filepath[200] = '\0';
+    filepath[250] = '\0';
 
     fprintf(debug_log,
         "************************************************************\n"
         "ModVersion %s (%s)\n"
-        "BinVersion %s\n"
+        "WinVersion %lu.%lu.%lu\n"
+        "BinarySize %d\n"
         "CrashTime  %s\n"
-        "SavedGame  %s\n"
         "ModuleName %s\n"
+        "SavedGame  %s\n"
         "************************************************************\n"
         "ExceptionCode    %08x\n"
         "ExceptionFlags   %08x\n"
@@ -69,10 +78,13 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD* rec, PVOID* frame, CONTEXT* ct
         "ExceptionAddress %08x\n",
         MOD_VERSION,
         MOD_DATE,
-        time_bin,
+        info.dwMajorVersion,
+        info.dwMinorVersion,
+        info.dwBuildNumber,
+        binary_size,
         time_now,
-        savepath,
         (value > 0 ? filepath : ""),
+        savepath,
         (int)rec->ExceptionCode,
         (int)rec->ExceptionFlags,
         (int)rec->ExceptionRecord,

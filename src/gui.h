@@ -2,6 +2,11 @@
 
 #include "main.h"
 
+const uint32_t WM_WINDOWED = (WM_USER + 3);
+const uint32_t WM_MOVIEOVER = (WM_USER + 6);
+const uint32_t AC_WS_WINDOWED = (WS_OVERLAPPED | WS_CLIPCHILDREN);
+const uint32_t AC_WS_FULLSCREEN = (WS_POPUP | WS_CLIPCHILDREN);
+
 // Translation labels for the user interface
 extern char label_pop_size[StrBufLen];
 extern char label_pop_boom[StrBufLen];
@@ -34,6 +39,12 @@ const int ColorCyan = 254;
 const int ColorWhite = 255;
 
 LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+int __cdecl mod_Win_init_class(const char* lpWindowName);
+void __cdecl mod_amovie_project(const char* name);
+void restore_video_mode();
+void set_video_mode(bool reset_window);
+void set_minimised(bool minimise);
+void set_windowed(bool windowed);
 int show_mod_menu();
 int __cdecl mod_blink_timer();
 void __cdecl mod_turn_timer();

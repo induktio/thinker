@@ -241,18 +241,14 @@ LPCSTR lpDefault, LPSTR lpReturnedString, DWORD nSize, LPCSTR lpFileName)
 }
 
 /*
-Override Windows API call to give fake screensize values to SMACX while in windowed mode.
-When DirectDraw=0 is set, this allows us to force SMACX run in a borderless window, enabling
-very fast rendering and full user access to the other windows.
+Override Windows API call to give fake screensize values to SMACX to set the game resolution.
 */
 int WINAPI ModGetSystemMetrics(int nIndex) {
-    if (conf.windowed) {
-        if (nIndex == SM_CXSCREEN) {
-            return conf.window_width;
-        }
-        if (nIndex == SM_CYSCREEN) {
-            return conf.window_height;
-        }
+    if (nIndex == SM_CXSCREEN) {
+        return conf.window_width;
+    }
+    if (nIndex == SM_CYSCREEN) {
+        return conf.window_height;
     }
     return GetSystemMetrics(nIndex);
 }
@@ -342,6 +338,62 @@ void remove_call(int addr) {
     memset((void*)addr, 0x90, 5);
 }
 
+/*
+Screen dimensions must be divisible by 8 to avoid crashes in Buffer_copy.
+*/
+bool valid_resolution(Config* cf) {
+    DEVMODE dm = {};
+    dm.dmSize = sizeof(dm);
+    bool check = !(cf->window_width & 7) && !(cf->window_height & 7)
+        && cf->screen_width >= cf->window_width && cf->screen_height >= cf->window_height;
+
+    if (cf->video_mode == VM_Window) {
+        return check;
+    }
+    for (int i = 0; EnumDisplaySettings(NULL, i, &dm); i++) {
+        if (dm.dmBitsPerPel == 32
+        && (int)dm.dmPelsWidth == cf->window_width
+        && (int)dm.dmPelsHeight == cf->window_height) {
+            return check;
+        }
+    }
+    return false;
+}
+
+void init_video_config(Config* cf) {
+    cf->screen_width = GetSystemMetrics(SM_CXSCREEN);
+    cf->screen_height = GetSystemMetrics(SM_CYSCREEN);
+
+    if (cf->video_mode == VM_Native) {
+        cf->window_width = cf->screen_width;
+        cf->window_height = cf->screen_height;
+    } else {
+        cf->window_width = max(800, cf->window_width);
+        cf->window_height = max(600, cf->window_height);
+    }
+    if (!valid_resolution(cf)) {
+        DEVMODE dm = {};
+        dm.dmSize = sizeof(dm);
+        int w_width = 800;
+        int w_height = 600;
+
+        for (int i = 0; EnumDisplaySettings(NULL, i, &dm); i++) {
+            if (dm.dmBitsPerPel == 32 && dm.dmPelsWidth >= 1024 && dm.dmPelsHeight >= 768
+            && !(dm.dmPelsWidth & 7) && !(dm.dmPelsHeight & 7)
+            && ((int)dm.dmPelsWidth >= w_width || (int)dm.dmPelsHeight >= w_height)) {
+                w_width = dm.dmPelsWidth;
+                w_height = dm.dmPelsHeight;
+                if (cf->video_mode != VM_Native && w_width >= cf->window_width
+                && w_height >= cf->window_height) {
+                    break;
+                }
+            }
+        }
+        cf->window_width = w_width;
+        cf->window_height = w_height;
+    }
+}
+
 bool patch_setup(Config* cf) {
     DWORD attrs;
     DWORD oldattrs;
@@ -353,15 +405,17 @@ bool patch_setup(Config* cf) {
             MOD_VERSION, MB_OK | MB_ICONWARNING);
         cf->smooth_scrolling = 0;
     }
+    init_video_config(cf);
+    debug("patch_setup screen: %dx%d window: %dx%d\n",
+        cf->screen_width, cf->screen_height, cf->window_width, cf->window_height);
+
     if (!VirtualProtect(AC_IMPORT_BASE, AC_IMPORT_LEN, PAGE_EXECUTE_READWRITE, &oldattrs)) {
         return false;
     }
     *(int*)RegisterClassImport = (int)ModRegisterClassA;
+    *(int*)GetSystemMetricsImport = (int)ModGetSystemMetrics;
     *(int*)GetPrivateProfileStringAImport = (int)ModGetPrivateProfileStringA;
 
-    if (cf->windowed && !cf->reduced_mode) {
-        *(int*)GetSystemMetricsImport = (int)ModGetSystemMetrics;
-    }
     if (cf->cpu_idle_fix) {
         *(int*)PeekMessageImport = (int)ModPeekMessage;
     }
@@ -478,13 +532,13 @@ bool patch_setup(Config* cf) {
     write_call(0x581044, (int)mod_name_proto);
     write_call(0x5B301E, (int)mod_name_proto);
     write_call(0x506ADE, (int)mod_battle_fight_2);
+    write_call(0x4F7D13, (int)base_upkeep_rand);
     write_call(0x527039, (int)mod_base_upkeep);
     write_call(0x5B41E9, (int)mod_time_warp);
     write_call(0x561948, (int)enemy_strategy_upgrade);
     write_call(0x50474C, (int)mod_battle_compute); // best_defender
     write_call(0x506EA6, (int)mod_battle_compute); // battle_fight_2
     write_call(0x5085E0, (int)mod_battle_compute); // battle_fight_2
-    write_call(0x4F7D13, (int)base_upkeep_rand);
 
     write_offset(0x50F421, (void*)mod_turn_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);
@@ -593,23 +647,20 @@ bool patch_setup(Config* cf) {
     write_call(0x55CB33, (int)mod_NetMsg_pop); // enemies_war
     write_call(0x597141, (int)mod_NetMsg_pop); // order_veh
 
-    if (cf->autosave_interval > 0) {
-        write_jump(0x5ABD20, (int)mod_auto_save);
+    if (cf->directdraw) {
+        *(int32_t*)0x45F9EF = cf->window_width;
+        *(int32_t*)0x45F9F4 = cf->window_height;
     }
-    if (cf->skip_random_factions) {
-        const char* filename = (cf->smac_only ? ac_mod_alpha : ac_alpha);
-        vec_str_t lines;
-        reader_file(lines, filename, "#FACTIONS", 100);
-        reader_file(lines, filename, "#NEWFACTIONS", 100);
-        reader_file(lines, filename, "#CUSTOMFACTIONS", 100);
-        cf->faction_file_count = lines.size();
-        debug("faction_file_count: %d\n", cf->faction_file_count);
-
-        memset((void*)0x58B63C, 0x90, 10);
-        write_call(0x58B526, (int)zero_value); // config_game
-        write_call(0x58B539, (int)zero_value); // config_game
-        write_call(0x58B632, (int)config_game_rand); // config_game
-        write_call(0x587066, (int)config_game_rand); // read_factions
+    if (!conf.reduced_mode) {
+        write_call(0x62D3EC, (int)mod_Win_init_class);
+        write_call(0x403BD4, (int)mod_amovie_project); // amovie_project2
+        write_call(0x4F2B4B, (int)mod_amovie_project); // base_production
+        write_call(0x524D06, (int)mod_amovie_project); // end_of_game
+        write_call(0x524D28, (int)mod_amovie_project); // end_of_game
+        write_call(0x5253F5, (int)mod_amovie_project); // end_of_game
+        write_call(0x525407, (int)mod_amovie_project); // end_of_game
+        write_call(0x52AB6D, (int)mod_amovie_project); // control_game
+        write_call(0x5B3681, (int)mod_amovie_project); // eliminate_player
     }
     if (cf->smooth_scrolling) {
         write_offset(0x50F3DC, (void*)mod_blink_timer);
@@ -623,9 +674,23 @@ bool patch_setup(Config* cf) {
         write_call(0x48B91F, (int)mod_calc_dim);
         write_call(0x48BA15, (int)mod_calc_dim);
     }
-    if (cf->directdraw) {
-        *(int32_t*)0x45F9EF = cf->window_width;
-        *(int32_t*)0x45F9F4 = cf->window_height;
+    if (cf->skip_random_factions) {
+        const char* filename = (cf->smac_only ? ac_mod_alpha : ac_alpha);
+        vec_str_t lines;
+        reader_file(lines, filename, "#FACTIONS", 100);
+        reader_file(lines, filename, "#NEWFACTIONS", 100);
+        reader_file(lines, filename, "#CUSTOMFACTIONS", 100);
+        cf->faction_file_count = lines.size();
+        debug("patch_setup factions: %d\n", cf->faction_file_count);
+
+        memset((void*)0x58B63C, 0x90, 10);
+        write_call(0x58B526, (int)zero_value); // config_game
+        write_call(0x58B539, (int)zero_value); // config_game
+        write_call(0x58B632, (int)config_game_rand); // config_game
+        write_call(0x587066, (int)config_game_rand); // read_factions
+    }
+    if (cf->autosave_interval > 0) {
+        write_jump(0x5ABD20, (int)mod_auto_save);
     }
     if (cf->editor_free_units) {
         write_call(0x4DF19B, (int)mod_veh_init); // Console_editor_veh
@@ -1247,6 +1312,7 @@ bool patch_setup(Config* cf) {
     if (!VirtualProtect(AC_IMAGE_BASE, AC_IMAGE_LEN, PAGE_EXECUTE_READ, &attrs)) {
         return false;
     }
+    flushlog();
     return true;
 }
 

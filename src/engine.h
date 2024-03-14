@@ -319,6 +319,7 @@ extern char** Mood;
 extern char** Repute;
 
 
+typedef int (__cdecl *FGenString)(const char* name);
 typedef int(__cdecl *Fbattle_fight_1)(int veh_id, int offset, bool use_table_offset, int v1, int v2);
 typedef int(__cdecl *Fpropose_proto)(int faction_id, VehChassis chassis, VehWeapon weapon, VehArmor armor,
     int abilities, VehReactor reactor, VehPlan ai_plan, const char* name);
@@ -330,7 +331,6 @@ typedef int(__cdecl *Fparse_says)(int index, const char* text, int v1, int v2);
 typedef int(__cdecl *Fhex_cost)(int unit_id, int faction_id, int x1, int y1, int x2, int y2, int a7);
 typedef void(__cdecl *Fname_base)(int faction_id, char* name, bool save_offset, bool sea_base);
 typedef int(__cdecl *Fveh_cost)(int item_id, int base_id, int* ptr);
-typedef int (__cdecl *Fsave_daemon)(const char* filename);
 typedef int(__cdecl *Fbase_at)(int x, int y);
 typedef int(__cdecl *Fpopp)(const char* filename, const char* label, int v1,
     const char* pcx_filename, int v2);
@@ -344,6 +344,8 @@ typedef void(__cdecl *Fbattle_compute)(int veh_id_atk, int veh_id_def,
     int* offense_out, int* defense_out, int combat_type);
 typedef int(__cdecl *Fbase_draw)(Buffer* buffer, int base_id, int x, int y, int zoom, int opts);
 
+typedef int(__thiscall *FGenVoid)(void* This);
+typedef int(__thiscall *FGenWin)(Win* This);
 typedef int(__thiscall *FMapWin_pixel_to_tile)(Console* This, int x, int y, long* px, long* py);
 typedef int(__thiscall *FMapWin_tile_to_pixel)(Console* This, int x, int y, long* px, long* py);
 typedef int(__thiscall *FMapWin_set_center)(Console* This, int x, int y, int v1);
@@ -366,8 +368,6 @@ typedef int(__thiscall *FBuffer_write_cent_l3)(Buffer* This, char* text, RECT* r
 typedef int(__thiscall *FBuffer_box)(Buffer* This, RECT* rt, int color_h, int color_v);
 typedef int(__thiscall *FPopup_start)(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
-typedef int(__thiscall *FWinGeneric)(Win* This);
-typedef int(__thiscall *FGeneric)(void* This);
 typedef int(__cdecl *FNetMsg_pop2)(char* label, void* a2);
 typedef int(__thiscall *FNetMsg_pop)(void* This, char* label, int delay, int a4, void* a5);
 typedef int(__thiscall *FGraphicWin_soft_update)(Win* This, int* values);
@@ -376,11 +376,12 @@ typedef int(__thiscall *FGraphicWin_update2)(Win* This, int* values, int opts);
 #pragma GCC diagnostic pop
 
 
+extern FGenString amovie_project;
 extern FPopup_start Popup_start;
-extern FWinGeneric BaseWin_nerve_staple;
-extern FWinGeneric BaseWin_on_redraw;
-extern FWinGeneric GraphicWin_redraw;
-extern FGeneric SubInterface_release_iface_mode;
+extern FGenWin BaseWin_nerve_staple;
+extern FGenWin BaseWin_on_redraw;
+extern FGenWin GraphicWin_redraw;
+extern FGenVoid SubInterface_release_iface_mode;
 extern FMapWin MapWin_calculate_dimensions;
 extern FMapWin_tile_to_pixel MapWin_tile_to_pixel;
 extern FMapWin_pixel_to_tile MapWin_pixel_to_tile;
@@ -396,10 +397,10 @@ extern FMapWin MapWin_clear_terrain;
 extern FNetMsg_pop NetMsg_pop;
 extern FPlanWin_blink PlanWin_blink;
 extern Fpopp popp;
-extern FGeneric StatusWin_on_redraw;
-extern FGeneric StatusWin_redraw;
+extern FGenVoid StatusWin_on_redraw;
+extern FGenVoid StatusWin_redraw;
 extern FTutWin_draw_arrow TutWin_draw_arrow;
-extern FGeneric Console_editor_scen_rules;
+extern FGenVoid Console_editor_scen_rules;
 extern fp_void turn_timer;
 extern FConsole_zoom Console_zoom;
 extern Fhex_cost hex_cost;
@@ -866,7 +867,7 @@ extern fp_4int encrypt_read;
 extern fp_2int game_io;
 extern fp_2int game_data;
 extern fp_3int map_data;
-extern Fsave_daemon save_daemon;
+extern FGenString save_daemon;
 extern fp_void see_map_check;
 extern fp_2int load_daemon;
 extern fp_1int save_map_daemon;
@@ -1023,6 +1024,7 @@ extern fp_3int zoc_veh;
 extern fp_3int zoc_sea;
 extern fp_3int zoc_move;
 
+extern FGenString Win_init_class;
 extern fp_void wait_task;
 extern fp_void do_task;
 extern fp_void do_all_tasks;

@@ -44,8 +44,14 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->directdraw = atoi(value);
     } else if (MATCH("DisableOpeningMovie")) {
         cf->disable_opening_movie = atoi(value);
-    } else if (MATCH("autosave_interval")) {
-        cf->autosave_interval = atoi(value);
+    } else if (MATCH("video_mode")) {
+        cf->video_mode = clamp(atoi(value), 0, 2);
+    } else if (MATCH("window_width")) {
+        cf->window_width = atoi(value);
+    } else if (MATCH("window_height")) {
+        cf->window_height = atoi(value);
+    } else if (MATCH("smac_only")) {
+        cf->smac_only = atoi(value);
     } else if (MATCH("smooth_scrolling")) {
         cf->smooth_scrolling = atoi(value);
     } else if (MATCH("scroll_area")) {
@@ -54,12 +60,14 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->render_base_info = atoi(value);
     } else if (MATCH("render_high_detail")) {
         cf->render_high_detail = atoi(value);
+    } else if (MATCH("autosave_interval")) {
+        cf->autosave_interval = atoi(value);
+    } else if (MATCH("warn_on_former_replace")) {
+        cf->warn_on_former_replace = atoi(value);
     } else if (MATCH("manage_player_bases")) {
         cf->manage_player_bases = atoi(value);
     } else if (MATCH("manage_player_units")) {
         cf->manage_player_units = atoi(value);
-    } else if (MATCH("warn_on_former_replace")) {
-        cf->warn_on_former_replace = atoi(value);
     } else if (MATCH("render_probe_labels")) {
         cf->render_probe_labels = atoi(value);
     } else if (MATCH("foreign_treaty_popup")) {
@@ -70,14 +78,6 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->new_base_names = atoi(value);
     } else if (MATCH("new_unit_names")) {
         cf->new_unit_names = atoi(value);
-    } else if (MATCH("windowed")) {
-        cf->windowed = atoi(value);
-    } else if (MATCH("window_width")) {
-        cf->window_width = max(800, atoi(value));
-    } else if (MATCH("window_height")) {
-        cf->window_height = max(600, atoi(value));
-    } else if (MATCH("smac_only")) {
-        cf->smac_only = atoi(value);
     } else if (MATCH("player_colony_pods")) {
         cf->player_colony_pods = atoi(value);
     } else if (MATCH("computer_colony_pods")) {
@@ -333,7 +333,7 @@ int cmd_parse(Config* cf) {
         if (wcscmp(argv[i], L"-smac") == 0) {
             cf->smac_only = 1;
         } else if (wcscmp(argv[i], L"-windowed") == 0) {
-            cf->windowed = 1;
+            cf->video_mode = VM_Window;
         }
     }
     return 1;
