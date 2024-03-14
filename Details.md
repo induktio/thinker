@@ -22,9 +22,10 @@ Command line options
 
 Keyboard shortcuts
 ==================
-    ALT+T   Show Thinker's version and options menu (use ALT+H when PRACX is enabled).
-    ALT+R   Toggle tile information update under cursor if smooth_scrolling is enabled.
-    ALT+O   Enter a new value for random map generator when scenario editor mode is active.
+    Alt+T       Show Thinker's version and options menu (use Alt+H when PRACX is enabled).
+    Alt+R       Toggle tile information update under cursor if smooth_scrolling is enabled.
+    Alt+O       Enter a new value for random map generator when scenario editor mode is active.
+    Alt+Enter   Switch between fullscreen and windowed mode unless desktop resolution is used in fullscreen.
 
 
 User interface additions
@@ -274,6 +275,7 @@ See below for some custom faction sets. The factions can be played in both game 
 
 * [Sigma Faction Set](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAG16eQBuaX45fGFENKWq48a/factions/Sigma_Faction_Set_2014-06-19.zip?dl=0)
 * [Dystopian Faction Set](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAA0kNw0tk5sESLZQ3eDMEeFa/factions/Tayta_Custom_Factions_v4.zip?dl=0)
+* [Network Node Faction Set](https://www.dropbox.com/sh/qsps5bhz8v020o9/AACyzRqJ6ULvneh2Iz-0KPvZa/factions/NetworkNodeFactions.zip?dl=0)
 
 
 Compatibility with other mods
@@ -282,8 +284,8 @@ It should be possible to run both Thinker and [PRACX](https://github.com/Drazhar
 
 If any issues are encountered, first check if they occur with the vanilla game and/or Thinker without additional mods. Also some optional features provided by Thinker will be disabled while running PRACX because they would patch conflicting areas of the game binary. These disabled feature include:
 
+* Video mode and window size config options.
 * Smooth scrolling config option.
-* Windowed mode config option.
 
 Scient's patch is already included in the Thinker binary and does not need any additional installation steps from the user. Optionally it is possible to install the modified txt files provided by Scient's patch. 
 Any other mod that uses a custom patched binary not listed here is not supported while running Thinker. Using any other binaries may prevent the game from starting if any of Thinker's startup checks fail because of an incompatible version.

@@ -49,7 +49,7 @@ In case of startup problems, make sure the official v2.0 patch is applied on the
 from same folder with the game. Sometimes startup issues can be fixed by starting the launcher with administrator privileges.
 
 Alt-tabbing may sometimes not work by default in Alpha Centauri's GOG version. To re-enable alt-tab feature, follow these steps.
-First open a command prompt with administator privileges in Alpha Centauri's installation folder. Then enter these commands:
+First open a command prompt with administrator privileges in Alpha Centauri's installation folder. Then enter these commands:
 
     sdbinst -u game.sdb
     sdbinst -u game_add.sdb
