@@ -17,7 +17,9 @@ Note that in `thinker.ini` config file, for binary settings **only zero values a
 Command line options
 ====================
     -smac       Activate SMAC-in-SMACX mod. Implies smac_only=1 config option.
-    -windowed   Start the game in borderless windowed mode. Uses resolution set in the mod config.
+    -native     Start game in fullscreen mode using the native desktop resolution.
+    -screen     Start game in fullscreen mode using the resolution set in mod config.
+    -windowed   Start game in borderless windowed mode using the resolution set in mod config.
 
 
 Keyboard shortcuts
@@ -265,13 +267,23 @@ Thinker includes the files necessary to play a game similar to the original SMAC
 Thinker also adds support for custom factions that are not aliens while using this feature. Installing this mod doesn't require any extra steps since the files are bundled in the zip file.
 
 1. Download the latest version that includes `smac_mod` folder in the zip.
-2. Extract all the files to Alpha Centauri game folder.
+2. Extract all files to the Alpha Centauri game folder.
 3. Open `thinker.ini` and change the configuration to `smac_only=1` ***OR*** start the game with command line parameter `thinker.exe -smac`
 4. When smac_only is started properly, the main menu will change color to blue as it was in the original SMAC, instead of the SMACX green color scheme.
 5. The game reads these files from `smac_mod` folder while smac_only is enabled: alphax.txt, helpx.txt, conceptsx.txt, tutor.txt. Therefore it is possible to keep the mod installed without overwriting any of the files from the base game.
-6. To install custom factions while using this mod, just edit `smac_mod/alphax.txt` instead of the normal `alphax.txt` file and add the faction names to `#CUSTOMFACTIONS` section. Note that you only have to extract the faction definitions to the main game folder because the same files are used in smac_only mode.
 
-See below for some custom faction sets. The factions can be played in both game modes and they are also fairly balanced overall.
+
+Installing custom factions
+==========================
+First any downloaded faction txt and pcx files have to be extracted to the main game folder. There should not be any need to overwrite files unless replacing factions in the base game. Note that even when using smac_only mode, the definitions have to be extracted to the main game folder since the same files are used in both game modes. The faction definitions must not be placed in any subfolder under the main game folder.
+
+To install the factions on the game startup menu, they need to added in `alphax.txt` in the default expansion or `smac_mod/alphax.txt` when using smac_only mode. Take note of the required faction definition .txt files and add them into the `#CUSTOMFACTIONS` section without .txt suffix. For example to enable the two hidden factions in the bame game, edit the section like below.
+
+    #CUSTOMFACTIONS
+    BRIAN, BRIAN
+    SID, SID
+
+At most 10 custom factions can be listed in `#CUSTOMFACTIONS` because of limitations in the user interface. See below for some custom faction sets. The factions can be played in both game modes and they are also fairly balanced overall.
 
 * [Sigma Faction Set](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAG16eQBuaX45fGFENKWq48a/factions/Sigma_Faction_Set_2014-06-19.zip?dl=0)
 * [Dystopian Faction Set](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAA0kNw0tk5sESLZQ3eDMEeFa/factions/Tayta_Custom_Factions_v4.zip?dl=0)

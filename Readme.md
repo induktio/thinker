@@ -6,11 +6,10 @@ Thinker is an AI improvement mod for Alpha Centauri: Alien Crossfire.
 This mod increases the level of challenge in single player while providing many gameplay enhancements.
 By patching the game to use an additional DLL, many new features can be developed in C++.
 
-* Vastly improved production/terraforming AI
-* AI unit movement is rewritten to use more variety in tactics
+* Vastly improved production/movement AI
+* Visual changes on map rendering and random map generation
 * More config options for many previously fixed settings in the game engine
-* Many enhancements to random map generation/spawn locations
-* Visual changes on map rendering and other user interface additions
+* Additional options for resolution settings and other user interface features
 * Some automation features are also available for player factions
 * Mod also includes [Scient's patches](Details.md)
 
@@ -49,12 +48,17 @@ In case of startup problems, make sure the official v2.0 patch is applied on the
 from same folder with the game. Sometimes startup issues can be fixed by starting the launcher with administrator privileges.
 
 Alt-tabbing may sometimes not work by default in Alpha Centauri's GOG version. To re-enable alt-tab feature, follow these steps.
-First open a command prompt with administrator privileges in Alpha Centauri's installation folder. Then enter these commands:
+First open a command prompt with administrator privileges in Alpha Centauri's installation folder. After entering the commands
+below alt-tabbing should now work when the game is restarted.
 
     sdbinst -u game.sdb
     sdbinst -u game_add.sdb
 
-Alt-tabbing should now work when the game is restarted.
+After installing the game on Windows there might be a notification that Windows Features can't complete the requested changes.
+This might be caused by a failure to install DirectPlay. First open a command prompt with administrator privileges.
+Then after entering the command below DirectPlay should be automatically installed.
+
+    dism /online /Enable-Feature /FeatureName:DirectPlay /All
 
 
 Other mods

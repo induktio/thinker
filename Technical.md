@@ -3,7 +3,9 @@ Thinker command line options
 ============================
 
     -smac       Activate SMAC-in-SMACX mod. Implies smac_only=1 config option.
-    -windowed   Start the game in borderless windowed mode. Uses resolution set in the mod config.
+    -native     Start game in fullscreen mode using the native desktop resolution.
+    -screen     Start game in fullscreen mode using the resolution set in mod config.
+    -windowed   Start game in borderless windowed mode using the resolution set in mod config.
 
 
 Thinker keyboard shortcuts
@@ -20,6 +22,7 @@ These developer mode shortcuts are only available if Thinker is using debug buil
 Some of these options require extended debug mode.
 
     Alt+D   Toggle extended debug mode.
+    Alt+M   Toggle verbose logging mode on debug.txt.
     Alt+V   Iterate various TileSearch instances for the selected map tile.
     Alt+F   Iterate various move_upkeep overlays.
     Alt+Y   Toggle faction diplomacy treaty matrix display.
