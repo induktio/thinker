@@ -26,8 +26,8 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD* rec, PVOID* frame, CONTEXT* ct
     struct stat filedata;
     struct tm* now = localtime(&rawtime);
     char time_now[256] = {};
-    char savepath[512] = {};
-    char filepath[512] = {};
+    char savepath[256] = {};
+    char filepath[256] = {};
     char gamepath[512] = {};
     strftime(time_now, sizeof(time_now), "%Y-%m-%d %H:%M:%S", now);
     strncpy(savepath, LastSavePath, sizeof(savepath));

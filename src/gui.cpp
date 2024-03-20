@@ -156,14 +156,18 @@ Returns true only when the world map is visible and has focus
 and other large modal windows are not blocking it.
 */
 bool map_is_visible() {
+    // Changed in WorldWin_set_world_map and WorldWin_set_detail_map
+    int32_t button_group = ((int32_t*)0x7CD12C)[33];
     return !*GameHalted
-        && !*PopupDialogState // Most popup dialogs including scrollable lists
+        && !*PopupDialogState
+        && !*DiploWinState
         && !filebox_visible // Game save/load dialog
-        && Win_is_visible(WorldWin)
+        && (button_group == 1006 || button_group == 1007)
         && !Win_is_visible(BaseWin)
         && !Win_is_visible(PlanWin)
         && !Win_is_visible(FameWin)
         && !Win_is_visible(MonuWin)
+        && !Win_is_visible(DiploWin)
         && !Win_is_visible(ReportWin)
         && !Win_is_visible(SocialWin)
         && !Win_is_visible(CouncilWin)
@@ -571,7 +575,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     bool debug_active = DEBUG && !*GameHalted;
     POINT p;
 
-    if (msg == WM_ACTIVATEAPP && !conf.reduced_mode) {
+    if (msg == WM_ACTIVATEAPP && conf.auto_minimise && !conf.reduced_mode) {
         if (!LOWORD(wParam)) {
             //If window has just become inactive e.g. ALT+TAB
             //wParam is 0 if the window has become inactive.
@@ -1024,6 +1028,7 @@ int show_mod_config()
         FormerReplace = 256,
         MapBaseInfo = 512,
         TreatyPopup = 1024,
+        AutoMinimise = 2048,
     };
     *DialogChoices = 0
         | (conf.new_world_builder ? MapGen : 0)
@@ -1036,7 +1041,8 @@ int show_mod_config()
         | (conf.manage_player_units ? AutoUnits : 0)
         | (conf.warn_on_former_replace ? FormerReplace : 0)
         | (conf.render_base_info ? MapBaseInfo : 0)
-        | (conf.foreign_treaty_popup ? TreatyPopup : 0);
+        | (conf.foreign_treaty_popup ? TreatyPopup : 0)
+        | (conf.auto_minimise ? AutoMinimise : 0);
 
     // Return value is equal to choices bitfield if OK pressed, -1 otherwise.
     int value = X_pop("modmenu", "OPTIONS", -1, 0, PopDialogCheckbox|PopDialogBtnCancel, 0);
@@ -1086,6 +1092,10 @@ int show_mod_config()
     conf.foreign_treaty_popup = !!(value & TreatyPopup);
     WritePrivateProfileStringA(ModAppName, "foreign_treaty_popup",
         (conf.foreign_treaty_popup ? "1" : "0"), ModIniFile);
+
+    conf.auto_minimise = !!(value & AutoMinimise);
+    WritePrivateProfileStringA(ModAppName, "auto_minimise",
+        (conf.auto_minimise ? "1" : "0"), ModIniFile);
 
     draw_map(1);
     return 0;

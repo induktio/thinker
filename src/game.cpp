@@ -556,4 +556,53 @@ int __thiscall probe_popup_start(Win* This, int veh_id1, int base_id, int a4, in
     return Popup_start(This, ScriptFile, "PROBE", a4, a5, a6, a7);
 }
 
+/*
+Game engine uses these defaults for ambient music tracks.
+This patches load_music comparison function such that it maps
+the user config to any available music tracks.
+If none of the config values match current faction, aset1.amb is used.
+
+DEFAULT, aset1.amb
+GAIANS, gset1.amb
+HIVE, mset1.amb
+UNIV, uset2.amb
+MORGAN, mset1.amb
+SPARTANS, sset1.amb
+BELIEVE, bset1.amb
+PEACE, gset1.amb
+*/
+
+int __cdecl load_music_strcmpi(const char* UNUSED(current), const char* label)
+{
+    const char* active = MFactions[MapWin->cOwner].filename;
+    bool fallback = true;
+    char lookup[StrBufLen] = {};
+
+    for (const auto& pair : musiclabels) {
+        if (!strcmpi(pair.first.c_str(), active)) {
+            if (!strcmpi(pair.second.c_str(), "gset1.amb")) {
+                strncpy(lookup, "gaians", StrBufLen);
+            } else if (!strcmpi(pair.second.c_str(), "mset1.amb")) {
+                strncpy(lookup, "hive", StrBufLen);
+            } else if (!strcmpi(pair.second.c_str(), "uset2.amb")) {
+                strncpy(lookup, "univ", StrBufLen);
+            } else if (!strcmpi(pair.second.c_str(), "sset1.amb")) {
+                strncpy(lookup, "spartans", StrBufLen);
+            } else if (!strcmpi(pair.second.c_str(), "bset1.amb")) {
+                strncpy(lookup, "believe", StrBufLen);
+            } else {
+                break; // aset1.amb or incorrect filename is used
+            }
+            fallback = false;
+            break;
+        }
+    }
+    debug("load_music %d %s %s %s\n", fallback, active, label, lookup);
+    flushlog();
+    if (fallback) {
+        return 1; // Skip all other choices and select original fallback default
+    }
+    return strcmpi(label, lookup);
+}
+
 

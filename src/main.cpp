@@ -23,6 +23,7 @@ FILE* debug_log = NULL;
 Config conf;
 NodeSet mapnodes;
 AIPlans plans[MaxPlayerNum];
+map_str_t musiclabels;
 
 const char* landmark_params[] = {
     "crater", "volcano", "jungle", "uranium",
@@ -56,6 +57,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->smooth_scrolling = atoi(value);
     } else if (MATCH("scroll_area")) {
         cf->scroll_area = max(0, atoi(value));
+    } else if (MATCH("auto_minimise")) {
+        cf->auto_minimise = atoi(value);
     } else if (MATCH("render_base_info")) {
         cf->render_base_info = atoi(value);
     } else if (MATCH("render_high_detail")) {
@@ -287,6 +290,18 @@ int option_handler(void* user, const char* section, const char* name, const char
         parse_format_args(label_sat_mineral, value, 1, StrBufLen);
     } else if (MATCH("label_sat_energy")) {
         parse_format_args(label_sat_energy, value, 1, StrBufLen);
+    } else if (MATCH("music_label")) {
+        char *p, *s, *k, *v;
+        if ((p = strtok_r(buf, ",", &s)) != NULL) {
+            k = strstrip(p);
+            if ((p = strtok_r(NULL, ",", &s)) != NULL) {
+                v = strstrip(p);
+                if (strlen(k) && strlen(v)) {
+                    debug("music_label %s = %s\n", k, v);
+                    musiclabels[k] = v;
+                }
+            }
+        }
     } else {
         for (int i = 0; i < 16; i++) {
             if (MATCH(landmark_params[i])) {
@@ -332,6 +347,10 @@ int cmd_parse(Config* cf) {
     for (int i=1; i<argc; i++) {
         if (wcscmp(argv[i], L"-smac") == 0) {
             cf->smac_only = 1;
+        } else if (wcscmp(argv[i], L"-native") == 0) {
+            cf->video_mode = VM_Native;
+        } else if (wcscmp(argv[i], L"-screen") == 0) {
+            cf->video_mode = VM_Custom;
         } else if (wcscmp(argv[i], L"-windowed") == 0) {
             cf->video_mode = VM_Window;
         }

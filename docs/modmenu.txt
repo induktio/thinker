@@ -56,6 +56,7 @@ Thinker manages player colony pods/formers.
 Warn when manually replacing tile improvements.
 Show additional base details on world map.
 Show foreign treaty changes on popup window.
+Always minimise game window when not activated.
 
 #HURRY
 #xs 400

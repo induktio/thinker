@@ -9,6 +9,7 @@
 #include <windows.h>
 #include <algorithm>
 #include <set>
+#include <map>
 #include <list>
 #include <string>
 #include <vector>
@@ -81,6 +82,7 @@ typedef std::set<Point,PointComp> Points;
 typedef std::list<Point> PointList;
 typedef std::set<std::string> set_str_t;
 typedef std::vector<std::string> vec_str_t;
+typedef std::map<std::string, std::string> map_str_t;
 
 typedef int (__cdecl *fp_void)();
 typedef int (__cdecl *fp_1int)(int);
@@ -225,6 +227,7 @@ extern int* WorldAddTemperature;
 extern int* WorldSkipTerritory;
 extern int* WinModalState;
 extern int* PopupDialogState;
+extern int* DiploWinState;
 
 extern int* VehDropLiftVehID;
 extern int* VehLiftX;
@@ -271,6 +274,7 @@ extern Win* FameWin;
 extern Win* InfoWin;
 extern Win* MainWin;
 extern Win* StringBox;
+extern Win* DetailWin;
 extern Win* BaseMapWin;
 extern Win* MessageWin;
 extern Win* MonuWin;

@@ -152,6 +152,7 @@ struct Config {
     int smac_only = 0;
     int smooth_scrolling = 0;
     int scroll_area = 40;
+    int auto_minimise = 0;
     int render_base_info = 1;
     int render_high_detail = 1; // unlisted option
     int autosave_interval = 1;
@@ -376,6 +377,7 @@ extern FILE* debug_log;
 extern Config conf;
 extern NodeSet mapnodes;
 extern AIPlans plans[MaxPlayerNum];
+extern map_str_t musiclabels;
 
 DLL_EXPORT DWORD ThinkerModule();
 int opt_handle_error(const char* section, const char* name);

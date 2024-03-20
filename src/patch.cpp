@@ -647,11 +647,20 @@ bool patch_setup(Config* cf) {
     write_call(0x55CB33, (int)mod_NetMsg_pop); // enemies_war
     write_call(0x597141, (int)mod_NetMsg_pop); // order_veh
 
+    // Custom ambient music option
+    write_call(0x445846, (int)load_music_strcmpi);
+    write_call(0x445898, (int)load_music_strcmpi);
+    write_call(0x4458EE, (int)load_music_strcmpi);
+    write_call(0x445956, (int)load_music_strcmpi);
+    write_call(0x4459C1, (int)load_music_strcmpi);
+    write_call(0x445A2F, (int)load_music_strcmpi);
+    write_call(0x445AB2, (int)load_music_strcmpi);
+
     if (cf->directdraw) {
         *(int32_t*)0x45F9EF = cf->window_width;
         *(int32_t*)0x45F9F4 = cf->window_height;
     }
-    if (!conf.reduced_mode) {
+    if (!cf->reduced_mode) {
         write_call(0x62D3EC, (int)mod_Win_init_class);
         write_call(0x403BD4, (int)mod_amovie_project); // amovie_project2
         write_call(0x4F2B4B, (int)mod_amovie_project); // base_production
