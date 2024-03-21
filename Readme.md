@@ -65,7 +65,7 @@ Other mods
 ----------
 * [SMAC-in-SMACX mod](Details.md#smac-in-smacx-mod) can be installed to play a game similar to original SMAC while Thinker is enabled.
 * [OpenSMACX](https://github.com/b-casey/OpenSMACX) is a long-term project to decompile and create a full open source clone of SMACX.
-* Also see [compatibility with other mods](Details.md#compatibility-with-other-mods).
+* Also see [compatibility with other mods such as PRACX](Details.md#compatibility-with-other-mods).
 
 
 Compiling

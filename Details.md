@@ -3,13 +3,13 @@ Main features
 =============
 Thinker has several advanced planning routines that enhance the base game AI to manage the complexities of colony building in Alpha Centauri. In the original game, many of the AI aspects were left underdeveloped while the computer factions struggled to deal with various punitive penalties. This left the single player experience severely lacking, since the AI would have no counter to many simple strategies.
 
-Alpha Centauri was known for its immersive lore and story telling. As a general design principle, Thinker will attempt to improve gameplay mechanics and AI while leaving most of the lore as it is. Any instances where adding a feature or patch would be controversial with the original game narrative should be avoided, unless this is necessary for gameplay balance reasons. Hopefully players will find that this combination of changes will represent the original game faithfully while also improving the gameplay experience and fixing many balance issues.
+Alpha Centauri was known for its immersive lore and story telling. As a general design principle, Thinker will attempt to improve gameplay mechanics and AI while leaving most of the lore as it is. Any instances where adding a feature or patch would be controversial with the original game narrative should be avoided, unless this is necessary for gameplay balance reasons. Hopefully this combination of changes will represent the original game accurately while also improving the gameplay experience and fixing many balance issues.
 
 For the most part, Thinker uses the same production bonuses as the vanilla difficulty levels would grant the AI normally. There should be no extra resources received by the AI unless this is chosen in the configuration file. The main goal is to make the AI play better given any game config options, so generally the mod will not attempt to adjust most vanilla game design choices.
 
-**For a mostly exhaustive list of all features provided by this mod, refer to both this file and `thinker.ini`.** Enabling Thinker Mod will affect many AI behaviors and also introduce some new game mechanics into Alpha Centauri. Generally most of the new features in the mod will have their own specific config options to choose either vanilla or modded behavior. Items listed under "Other patches included" and "Scient's Patch" in this file will always be applied unless there is a config option available to toggle them.
+**For a mostly exhaustive list of all features provided by this mod, refer to both this file and `thinker.ini`.** Enabling Thinker Mod will affect many AI behaviors and also introduce some new game mechanics into Alpha Centauri. Generally most of the new features in the mod will have their own specific config options to choose either vanilla or modded behavior. Items listed under "Other patches included" and "Scient's Patch" in this file will always be applied unless there is a config option listed to toggle them.
 
-Thinker does not have any special save game format, so it's possible to open an old save and have the factions switch to the new AI and vice-versa. None of the `thinker.ini` config options are preserved in the save game either, but the units or resources spawned at the game start will remain.
+Thinker does not have any incompatible save game format, so it's possible to open an old save and have the factions switch to the new AI and vice-versa. None of the `thinker.ini` config options are preserved in the save game either, but the units or resources spawned at the game start will remain.
 
 Note that in `thinker.ini` config file, for binary settings **only zero values are treated as disabled**, any non-zero value usually enables the option. Whenever Thinker options are changed in the GUI, they are also saved to `thinker.ini` in the game folder.
 
@@ -275,9 +275,9 @@ Thinker also adds support for custom factions that are not aliens while using th
 
 Installing custom factions
 ==========================
-First any downloaded faction txt and pcx files have to be extracted to the main game folder. There should not be any need to overwrite files unless replacing factions in the base game. Note that even when using smac_only mode, the definitions have to be extracted to the main game folder since the same files are used in both game modes. The faction definitions must not be placed in any subfolder under the main game folder.
+First any downloaded faction txt and pcx files have to be extracted to the main game folder. There should not be any need to overwrite files unless replacing factions in the base game. Note that even when using smac_only mode, the definitions have to be extracted to the main game folder since the same files are used in both game modes. The faction files must not be placed in any subfolder under the main game folder.
 
-To install the factions on the game startup menu, they need to added in `alphax.txt` in the default expansion or `smac_mod/alphax.txt` when using smac_only mode. Take note of the required faction definition .txt files and add them into the `#CUSTOMFACTIONS` section without .txt suffix. For example to enable the two hidden factions in the bame game, edit the section like below.
+To install the factions on the game startup menu, they need to added in `alphax.txt` in the default expansion or `smac_mod/alphax.txt` when using smac_only mode. Take note of the required faction definition .txt files and add them into the `#CUSTOMFACTIONS` section without .txt suffix. For example to enable the two hidden factions in the base game, edit the section like below.
 
     #CUSTOMFACTIONS
     BRIAN, BRIAN
