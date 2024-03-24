@@ -1403,7 +1403,7 @@ int select_build(int base_id) {
         }
         if (t == CrawlerUnit) {
             if (allow_supply && has_wmode(faction, WMODE_CONVOY)
-            && 100 * all_crawlers < conf.crawler_priority * f->base_count) {
+            && all_crawlers < f->base_count) {
                 default_choice = find_proto(base_id, TRIAD_LAND, WMODE_CONVOY, DEF);
                 if (prod_turns(base_id, default_choice) < 10 && random(2)) {
                     return default_choice;

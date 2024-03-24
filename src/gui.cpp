@@ -132,12 +132,14 @@ CMAP_GETCORNERYOFFSET_F        pfncMapGetCornerYOffset =        (CMAP_GETCORNERY
 // End of PRACX definitions
 
 
+/*
+Called when game save/load dialog is opened.
+*/
 void __thiscall FileBox_init(void* This) {
     filebox_visible = true;
     int32_t* pa = (int32_t*)This;
     int8_t* pb = (int8_t*)This;
-    int8_t* pc = pb + 780;
-    *(pa + 260) = (int32_t)pc;
+    *(pa + 260) = (int32_t)(pb + 780);
     *pa = 0;
     *pb = 0;
     pb[260] = 0;
@@ -154,24 +156,26 @@ void __thiscall FileBox_close(void* UNUSED(This)) {
 /*
 Returns true only when the world map is visible and has focus
 and other large modal windows are not blocking it.
+WorldWin_set_world_map and WorldWin_set_detail_map (lower right map view)
+also call ButtonGroup_set for specific values. Some of the windows might be
+already excluded by button_group condition but are checked regardless.
 */
 bool map_is_visible() {
-    // Changed in WorldWin_set_world_map and WorldWin_set_detail_map
     int32_t button_group = ((int32_t*)0x7CD12C)[33];
-    return !*GameHalted
+    bool value = !*GameHalted
         && !*PopupDialogState
         && !*DiploWinState
-        && !filebox_visible // Game save/load dialog
+        && !filebox_visible
         && (button_group == 1006 || button_group == 1007)
-        && !Win_is_visible(BaseWin)
-        && !Win_is_visible(PlanWin)
+        && !Win_is_visible(ReportWin)
         && !Win_is_visible(FameWin)
         && !Win_is_visible(MonuWin)
-        && !Win_is_visible(DiploWin)
-        && !Win_is_visible(ReportWin)
+        && !Win_is_visible(BaseWin)
+        && !Win_is_visible(PlanWin)
         && !Win_is_visible(SocialWin)
         && !Win_is_visible(CouncilWin)
         && !Win_is_visible(DatalinkWin);
+    return value;
 }
 
 bool win_has_focus() {

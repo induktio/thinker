@@ -440,7 +440,7 @@ void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool sea_b
     }
 
     for (int i = 0; i < 2*MaxBaseNum && land_names.size() > 0; i++) {
-        x = pair_hash(faction + 8*f.base_name_offset, *MapRandomSeed + i);
+        x = pair_hash(faction + MaxPlayerNum*f.base_name_offset, *MapRandomSeed + i);
         a = ((x & 0xffff) * land_names.size()) >> 16;
         name[0] = '\0';
 
@@ -572,9 +572,8 @@ BELIEVE, bset1.amb
 PEACE, gset1.amb
 */
 
-int __cdecl load_music_strcmpi(const char* UNUSED(current), const char* label)
+int __cdecl load_music_strcmpi(const char* active, const char* label)
 {
-    const char* active = MFactions[MapWin->cOwner].filename;
     bool fallback = true;
     char lookup[StrBufLen] = {};
 

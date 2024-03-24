@@ -115,8 +115,6 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->expansion_autoscale = atoi(value);
     } else if (MATCH("conquer_priority")) {
         cf->conquer_priority = clamp(atoi(value), 1, 10000);
-    } else if (MATCH("crawler_priority")) {
-        cf->crawler_priority = clamp(atoi(value), 1, 10000);
     } else if (MATCH("max_satellites")) {
         cf->max_satellites = max(0, atoi(value));
     } else if (MATCH("new_world_builder")) {

@@ -148,7 +148,7 @@ struct Config {
     int screen_width = 1024; // internal variable
     int screen_height = 768; // internal variable
     int directdraw = 0;
-    int disable_opening_movie = 1;
+    int disable_opening_movie = -1;
     int smac_only = 0;
     int smooth_scrolling = 0;
     int scroll_area = 40;
@@ -183,9 +183,6 @@ struct Config {
     // Adjust how often the AIs should build new military units instead of infrastructure.
     // Unlisted option for AI tuning. Allowed values 1-10000.
     int conquer_priority = 100;
-    // Adjust how often the AIs should build new crawlers relative to the base count.
-    // Unlisted option for AI tuning. Allowed values 1-10000.
-    int crawler_priority = 100;
     int max_satellites = 20;
     int new_world_builder = 1;
     int world_sea_levels[3] = {45,57,70};

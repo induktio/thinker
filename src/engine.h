@@ -1003,7 +1003,7 @@ extern fp_void world_analysis;
 extern fp_void world_polar_caps;
 extern fp_void world_climate;
 extern fp_void world_linearize_contours;
-extern fp_2int near_landmark;
+//extern fp_2int near_landmark;
 extern fp_2int world_crater;
 extern fp_2int world_monsoon;
 extern fp_2int world_sargasso;

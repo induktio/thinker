@@ -128,6 +128,22 @@ int __cdecl x_dist(int x1, int x2) {
     return dist;
 }
 
+uint32_t __cdecl code_at(int x, int y) {
+    MAP* sq = mapsq(x, y);
+    return (sq ? sq->art_ref_id : 0);
+}
+
+bool __cdecl near_landmark(int x, int y) {
+    for (int i = 0; i < TableRange[8]; i++) {
+        int x2 = wrap(x + TableOffsetX[i]);
+        int y2 = y + TableOffsetY[i];
+        if (code_at(x2, y2)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int __cdecl base_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, int y2, bool toggle) {
     MAP* sq_dst = mapsq(x2, y2);
     uint32_t bit_dst = (sq_dst ? sq_dst->items : 0);
@@ -766,9 +782,20 @@ void __cdecl mod_world_monsoon() {
             }
         }
     }
-    for (i = 0; i < 256 && num < limit; i++) {
+    int loc_all = 0;
+    int loc_cur = random(4);
+    for (i = 0; i < 512 && num < limit; i++) {
+        if (loc_all == 15) {
+            loc_all = 0;
+            loc_cur = random(4);
+        }
+        if (i % 16 == 0 || loc_all & (1 << loc_cur)) {
+            while (loc_all & (1 << loc_cur)) {
+                loc_cur = random(4);
+            }
+        }
         y = (random(y_b - y_a) + y_a);
-        x = wrap((random(*MapAreaX) &~1) + (y&1));
+        x = wrap(((random(*MapAreaX / 4) + loc_cur * *MapAreaX / 4) &~1) + (y&1));
         if (!tiles[w*y + x].valid
         || tiles[w*y + x].sea_near < 8 - i/16
         || tiles[w*y + x].valid_near < 16 - i/32) {
@@ -782,13 +809,15 @@ void __cdecl mod_world_monsoon() {
             }
             y2 = y2 + random(8);
             x2 = wrap(((x2 + random(8)) &~1) + (y2&1));
-            if (y2 >= y_a && y2 <= y_b && tiles[w*y2 + x2].valid
+            if (y2 >= y_a && y2 <= y_b
+            && tiles[w*y2 + x2].valid
             && tiles[w*y2 + x2].valid_near > 8 - i/32) {
                 for (auto& p : iterate_tiles(x2, y2, 0, 21)) {
                     if (tiles[w*p.y + p.x].valid && !(p.sq->landmarks & LM_JUNGLE)) {
                         assert(!is_ocean(p.sq));
                         bit2_set(p.x, p.y, LM_JUNGLE, 1);
                         code_set(p.x, p.y, num % 121);
+                        loc_all |= (1 << loc_cur);
                         num++;
                     }
                 }
@@ -901,7 +930,7 @@ void world_generate(uint32_t seed) {
             }
             if (conf.world_continents && value < 0.2f) {
                 value += Wcont * Wland;
-                if (DEBUG) pm_overlay[x][y] = (int)(10*Wcont);
+//                if (DEBUG) pm_overlay[x][y] = (int)(10*Wcont);
             }
             sq = mapsq(x, y);
             sq->contour = clamp((int)(L + L*value), 0, 255);
