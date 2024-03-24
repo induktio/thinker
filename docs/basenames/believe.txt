@@ -1,16 +1,32 @@
 #BASES
+Ark of Ascension
+Ark of Unity
+Ascendant Grace
+Blessed Abode
 Blessed Valley
+Celestial Covenant
 Celestial Gate
 Cherub's Keep
+Cherubim Citadel
 City of Saints
+Covenant Crossing
 Divine Calling
+Divine Dispatch
 Divine Vision
+Eden's Embrace
 Eden's Gateway
+Eternal Beacon
 Eternal Kingdom
+Eternal Refuge
+Far Bethlehem
 Glorious Throne
 Graceful Haven
+Graceful Landing
+Great Exodus
 Great Resurrection
+Guardian's Grace
 Heavenly Abode
+Heavenly Domain
 Holy Seat
 Judgment's Edge
 Kingdom's Reign
@@ -18,17 +34,21 @@ Messiah's Path
 New Promise
 New Sanctuary
 Noah's Promise
+Providence Peak
 Purification Base
 Purity's Reign
 Redemption Refuge
 Righteous Glory
 Risen Spirit
 Sacred Serenity
+Salvation Summit
 Sanctified Ground
+Serenity's Gate
 The Divine Plan
 The Holy Mountain
 The Second Coming
 Zion's Citadel
+Zion's Vanguard
 #END
 
 #WATERBASES

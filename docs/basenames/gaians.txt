@@ -1,4 +1,7 @@
 #BASES
+Astral Blossom
+Aurora Arbor
+Aurora Grove
 Dreamland Valley
 Earthsong Enclave
 Emerald Eden
@@ -7,7 +10,9 @@ Enchanted Everglade
 Eternal Earth
 Ethereal Expanse
 Fruitful Fields
+Galactic Grove
 Hallowed Hill
+Harmony Fields
 Harmony Hill
 Haven Heights
 Heartland Haven
@@ -15,18 +20,33 @@ Humming Hollow
 Leafy Retreat
 Luminous Lagoon
 Meadow of Memories
+Moonlit Meadows
+Moonshadow Glade
 Nature's Nook
+Nebula's Reach
+Nimbus Nook
+Nova Meadow
 Planet's Embrace
 Pulsing Prairie
 Pureland Preserve
 Radiant Enclave
+Radiant Refuge
 Riverbank Retreat
 Rootbound Refuge
 Rustling Ravine
 Silvermoon Meadow
 Skywatch Sanctuary
+Solace Springs
+Solar Serenity
+Solstice Haven
+Starfall Retreat
+Starflower Garden
+Starlight Glade
 Starlight Meadow
+Stellar Blossom
+Stellar Shade
 Tranquil Terrace
+Twilight Vale
 Verdant Vista
 Wildwood Way
 #END

@@ -1,33 +1,53 @@
 #BASES
 Collective Assembly
+Collective Bastion
 Collective Chamber
+Collective Enclave
+Collective Spire
+Commonalty Core
 Communal Complex
+Communal Hub
+Communal Stronghold
 Community Core
+Cooperative Citadel
+Cooperative Spire
 Discipline Enclave
 Factory Pathways
 Factory Stronghold
 Fortress of Loyalty
 Great Cohesion
 Industrial Enclave
+Laborer's Enclave
 Laborer's Labyrinth
+Laborer's Outpost
 Loyalty Stronghold
 Manufacturing Maze
 Mental Fortress
+People's Assembly
+People's Bastion
 People's Unity
 Proletarian Gathering
 Proletarian Passage
+Social Citadel
+Social Enclave
 Social Spire
 Social Substructure
 Socialism Pathways
+Society Stronghold
 Society Synthesis
+The Commune
 The Comrade's Hold
 The Great Coalescence
 The Industry Warren
 The Loyalist's Lair
 The Unifier's Den
+Unity Bastion
 Unity Halls
+Unity Outpost
 Willpower Bastion
+Worker's Citadel
 Worker's Nexus
+Worker's Outpost
 Yang Community
 #END
 

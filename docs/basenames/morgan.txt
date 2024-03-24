@@ -1,7 +1,12 @@
 #BASES
+Morgan Agrotech
 Morgan Applications
+Morgan Aquatics
+Morgan Astrotech
 Morgan Atmospherics
 Morgan Aviation
+Morgan Biotech
+Morgan Commodities
 Morgan Communications
 Morgan Components
 Morgan Consulting
@@ -9,26 +14,41 @@ Morgan Cybernetics
 Morgan Defense
 Morgan Development
 Morgan Dynamics
+Morgan Energetics
+Morgan Exchange
+Morgan Exploration
 Morgan Finance
 Morgan Foundries
-Morgan Fusion Systems
+Morgan Galactic
+Morgan Genetech
 Morgan Geothermal
 Morgan Holdings
+Morgan Infinity
 Morgan Innovations
 Morgan Laboratories
 Morgan Logistics
 Morgan Machinery
 Morgan Manufacturing
+Morgan Minerals
+Morgan Neurotech
+Morgan Orbital
 Morgan Organics
+Morgan Photonics
 Morgan Power
 Morgan Prospecting
+Morgan Quantum
 Morgan Research
 Morgan Resources
+Morgan Security
 Morgan Services
 Morgan Software
+Morgan Solutions
 Morgan Spaceworks
+Morgan Synthetics
 Morgan Terraforming
+Morgan Trading
 Morgan Ventures
+Morgan Xenotech
 #END
 
 #WATERBASES
