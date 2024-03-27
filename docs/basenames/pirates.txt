@@ -1,55 +1,75 @@
 #BASES
 Black Pearl Hotel
 Blackbeard's Barracks
+Blackbeard's Bluff
 Booty Bay Inn
-Buccaneer's Bay
+Brigand's Burrow
+Buccaneer's Refuge
 Captain's Quarters
 Corsair's Corner
+Corsair's Cove
 Crimson Cove
 Crossed Swords Inn
+Cutlass Cove
 Cutthroat's Cove
 Galleon's Grotto
 Golden Anchor
 Harpoon Hill
+Kraken's Keep
 Kraken's Lair
 Mariner's Cove
 Mutiny Motel
 Parrot's Perch
 Pegleg Pub
-Pirate Paradise
+Pirate's Perch
+Pirate's Plunge
 Privateer's Port
+Rumrunner's Refuge
 Rumrunner's Roost
 Sailor's Retreat
 Seafarer's Retreat
+Seafarer's Sanctum
 Silver Sail Inn
 Smuggler's Den
+Smuggler's Sanctuary
 Stormy Outpost
 Supplies Point
-Swashbuckler's Saloon
 The Plank Inn
 Tortuga Tavern
-Treasure Hunters
+Treasure Hill
+Treasure Tavern
+Whispering Winds
 #END
 
 #WATERBASES
 Anchor's Rest
 Brigantine Bay
+Buccaneer's Bay
 Coral Cove
 Endless Horizon
 Fisherman's Wharf
 Harborview Haven
+Marauder's Moorings
 Neptune's Quay
 Ocean's Roost
 Oceanic View
 Port Royal
 Private Cove
+Rogue Wave Reef
+Rogue's Retreat
+Rusty Anchor
 Safe Passage
 Sea Breeze Harbor
 Seafaring Way
+Shadow Harbor
 Shipshape Shores
+Shipwreck Shore
+Skull's Cove
+Stormy Seas Inn
 Sunken Harbor
-Tidal Haven
+Tidal Treasures
 Treasure Trove
 Wavecrest Bay
+Whirlpool Wharf
 Windward Bay
 #END

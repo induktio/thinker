@@ -22,6 +22,7 @@ Valiant Vanguard
 #END
 
 #WATERBASES
+Abyssal Stronghold
 Barracuda Bay
 Crest of Destiny
 Deepwater Watch
@@ -30,7 +31,6 @@ Eternal Reach
 Fury's Wake
 Horizon : Edge
 Infinite Stronghold
-Kraken's Keep
 Leviathan's Lair
 Marine : Resonance
 Maritime Citadel

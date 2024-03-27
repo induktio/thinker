@@ -1,34 +1,54 @@
 #BASES
 Algorithm Alley
+Algorithm Base
 Augmented Avenue
 Binary Bastion
+Binary Bunker
 Bitropolis
 Byte Boulevard
+Byte Bunker
+Byte Haven
 Circuit City
+Circuit Depot
+Code Compound
+Code Crypt
+Code Nexus
+Cyber Cache
+Cyber Citadel
+Cyber Haven
 Cyber Junction
+Data Depot
 Data District
-Data Metropolis
-Digital Dominion
+Digital Bastion
+Digital District
+Digital Domain
+Encryption Empire
+Firewall Fortress
 Futuristic Niche
 Hacker's Hideaway
 Keyframe Station
 Keypad Base
-Lunar Labyrinth
+Mainframe Nexus
 Matrix Mansion
 Net Niche
 Node Nexus
+Pixel Peak
 Pixel Plaza
+Pixel Precinct
 Programmer's Precinct
 Raster Realm
 Refuge Metropolis
 Shadow Shelter
-Silicon Sanctuary
+Shadow Station
+Silicon Citadel
 System Stronghold
 Techno Commons
+Techno Tower
 Techno Zone
-The Expanse
 Transistor Terrace
-Virus Vault
+Virtual Vanguard
+Virtual Vault
+Virtual Vertex
 #END
 
 #WATERBASES

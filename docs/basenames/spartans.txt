@@ -1,16 +1,15 @@
 #BASES
-Alpha Watch
 Apex Citadel
 Apex Outpost
-Armored Citadel
 Armory Base
 Barracks of Valor
 Bastion Keep
+Bastion of Resolve
 Battlefront Base
 Command Post
 Courageous Outpost
+Defender's Den
 Defenders' Den
-Eclipse Base
 Eclipse Fortress
 Elite Stronghold
 Fighter's Folly
@@ -18,16 +17,13 @@ Fortress Triumph
 Freedom Hold
 Frontier Fortress
 Guardian Garrison
-Horizon Citadel
-Horizon Keep
-Infinity Outpost
-Infinity Stronghold
+Guardian's Redoubt
+Ironclad Garrison
 Legacy Bastion
 Legacy Fortress
+Liberty Barracks
 Martial Keep
 Military Compound
-Nova Bastion
-Nova Stronghold
 Phantom Tower
 Phoenix Citadel
 Phoenix Outpost
@@ -37,6 +33,7 @@ Rebellion Bunker
 Rifleman Ridge
 Sentinel Camp
 Sentinel Rock
+Sentinel's Hold
 Shield Barracks
 Shielded Citadel
 Siege Command Post
@@ -44,8 +41,11 @@ Soldier's Sanctuary
 Squadron Station
 Strategy Citadel
 Tactical Bunker
+Triumph Bastion
 Valor Citadel
+Valor Fortress
 Vanguard Station
+Vanguard Stronghold
 Victory Outpost
 Vigilant Keep
 Warrior's Watch

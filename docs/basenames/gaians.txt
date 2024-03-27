@@ -53,10 +53,10 @@ Wildwood Way
 
 #WATERBASES
 Aquatic Delight
+Aquatic Oasis
 Azure Waters
 Botanical Bay
 Cascading Falls
-Golden Grove
 Kelp Kingdom
 Lotus Bay
 Mossy Meadow
@@ -65,11 +65,11 @@ Neptune's Nook
 Ocean's Harvest
 Reef's Refuge
 Riverbend Retreat
-Sea Foam Fields
 Sea's Bounty
 Seashell Shores
 Seaside Garden
 Serenity at Sea
 Shimmering Seabed
 Waterfall Way
+Wavecrest Refuge
 #END

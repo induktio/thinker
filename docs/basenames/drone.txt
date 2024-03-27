@@ -1,33 +1,53 @@
 #BASES
 Assembly Grounds
+Citizen's Citadel
+Citizen's Forge
+Collective Commons
 Common Future
+Commoner's Citadel
+Commoner's Conclave
+Community District
+Craftsman Hall
+Dawn of Dignity
+Equality Emporium
+Equality Enclave
 Equality Forge
 Factory District
 Forge of Freedom
 Foundry Fortress
-Freedom Foundation
-Freedom's Forge
+Freedom Forge
+Guild District
 Guild Haven
-Hammerhead Base
 Industry Hall
 Iron Stronghold
+Labor Haven
 Labor Unity Hall
 Laborer's Citadel
+Laborer's Legacy
+Laborer's Lodge
 Laborer's Utopia
+Liberty Foundry
 Liberty Station
 Liberty Works
+Miner's District
 People's Foundry
 People's Platform
 Progress Plant
+Progress Works
+Prosperity Point
 Refinery Ridge
+Resilience Retreat
+Resource Respite
 Resource Workshop
-Steel Citadel
+Social Scaffold
 The Foundry
 Toolmaker's Den
+Unity Station
 Unity Works
+Worker's Beacon
 Worker's Commons
+Worker's Haven
 Worker's Way
-Working Rights Hub
 Wrench Works
 #END
 
