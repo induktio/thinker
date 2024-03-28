@@ -38,7 +38,7 @@ Statistics feature calculates mineral and energy production numbers after multip
 
 Render base info feature draws colored labels around various bases to identify them more easily and shows more details on the base window. HQ bases are highlighted with a white label. Player-owned bases that are about to drone riot or enter the golden age are highlighted with colored labels. Bases that have Flechette Defense System or Geo Survey Pods are highlighted with a blue label.
 
-Base window will also show additional details that were previously not directly visible on the user interface. The game will show population counts for talents, workers, drones and specialists. Bases that are about to drone riot, enter the golden age or pop boom on the next turn are highlighted with colored labels. When a base has been nerve stapled, the remaining turns for the staple effect are shown on the bottom right corner. Any satellite production bonuses are also shown on the base resource view.
+Base window will also show additional details that were previously not directly visible on the user interface. The game will show population counts for talents, workers, drones and specialists. Bases that are about to drone riot, enter the golden age or pop boom on the next turn are highlighted with colored labels. When a base has been nerve stapled, the remaining turns for the staple effect are shown on the bottom right corner. Any satellite production bonuses are also shown on the base resource view. The mod also makes it possible to switch between base window tabs by pressing `Ctrl+Left` or `Ctrl+Right`.
 
 Whenever the player instructs a former to build an improvement that replaces any other item in the tile, the game will display a warning dialog. This dialog can be skipped by toggling the option here (warn_on_former_replace).
 
@@ -363,6 +363,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 39. Prevent the AI from making unnecessary trades where it sells their techs for maps owned by the player. The patch removes TRADETECH4 / TRADETECH5 dialogue paths making the AI usually demand a credit payment for any techs.
 40. Fix possible issues with inconsistent captured base facilities when some of the factions have free facilities defined for them.
 41. Fix some issues where AI declared war based on calculations using incorrect variables. AI is also less likely to declare war at early stages when it has only few bases built.
+42. Fix issues where the game would crash on resolutions not divisible by 8. If an unsupported resolution is used, the game will attempt to automatically switch to the closest supported size.
 
 
 Scient's patch

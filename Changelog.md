@@ -1,6 +1,20 @@
 
 # Thinker mod release changelog
 
+## Version 4.1 (2024-03-28)
+* Replace older DirectDraw and windowed mode options with video_mode option which also allows to select fullscreen mode on custom resolution.
+* It is now possible to toggle between windowed and custom resolution modes by pressing Alt+Enter.
+* Add command line options -native and -screen to set specific resolution modes.
+* Add options dialog item to select if the game window is always minimised when not activated.
+* Add options to change ambient music tracks for any faction in thinker.ini. Expansion factions now use more varied music selections by default.
+* Add much more base names for most factions.
+* Planet Cult defaults to early start as with other non-alien factions.
+* Minor changes to Monsoon Jungle and Borehole Cluster placement when modified_landmarks is enabled.
+* Map mirroring config options are renamed in thinker.ini.
+* Fix minor issues with mouse wheel zooming on the world map.
+* Fix issues where the game would crash on resolutions not divisible by 8. If an unsupported resolution is used, the game will attempt to automatically switch to the closest supported size.
+
+
 ## Version 4.0 (2024-02-16)
 * Base window notifications layout is rearranged to show various population counts, nerve staple turns, drone riots, golden age and population boom warnings on the bottom right corner. The notifications are color coded for easier reading.
 * It is now possible to adjust special scenario rules for new maps started from the main menu by using ALT+T options dialog.
