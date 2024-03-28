@@ -579,6 +579,17 @@ bool patch_setup(Config* cf) {
     write_call(0x5BCC70, (int)mod_wants_to_attack); // tech_val
     write_call(0x5BCC85, (int)mod_wants_to_attack); // tech_val
 
+    write_call(0x46D368, (int)Console_go_to_init); // MapWin::right_menu
+    write_call(0x516833, (int)Console_go_to_init); // Console::cursor_key
+    write_call(0x517397, (int)Console_go_to_init); // Console::veh_key
+    write_call(0x5173FE, (int)Console_go_to_init); // Console::veh_key
+    write_call(0x51840D, (int)Console_go_to_init); // Console::on_key_click
+    write_call(0x51ABF6, (int)Console_go_to_init); // Console::on_key_click
+    write_call(0x51C68D, (int)Console_go_to_init); // Console::iface_click
+    write_call(0x51C8DC, (int)Console_go_to_init); // Console::iface_click
+    write_call(0x51CA49, (int)Console_go_to_init); // Console::iface_click
+    write_call(0x51CA73, (int)Console_go_to_init); // Console::iface_click
+
     // Magtube and fungus movement speed patches
     write_call(0x587424, (int)mod_read_basic_rules);
     write_call(0x467711, (int)mod_hex_cost);
@@ -721,6 +732,7 @@ bool patch_setup(Config* cf) {
     *(int8_t*)0x481EF5 = 1; // MapCloudCover
     *(int8_t*)0x4E3222 = NetVersion; // AlphaNet::setup
     *(int8_t*)0x52AA5C = NetVersion; // control_game
+    *(int8_t*)0x627C8B = 11; // pop_ask_number maximum length
 
     /*
     Hide unnecessary region_base_plan display next to base names in debug mode.
@@ -773,7 +785,7 @@ bool patch_setup(Config* cf) {
     }
 
     /*
-    Fixes issue where attacking other satellites doesn't work in
+    Fix issue where attacking other satellites doesn't work in
     Orbital Attack View when smac_only is activated.
     */
     {

@@ -503,13 +503,8 @@ struct Faction {
     int32_t unk_106;
     int32_t unk_107;
     int32_t unk_108;
-    /*
-    Thinker variables in the old save game format.
-    */
-    int16_t old_thinker_header;
-    int8_t old_thinker_flags;
-    int8_t old_thinker_tech_id;
-    int32_t old_thinker_tech_cost;
+    int32_t unk_109;
+    int32_t unk_110;
     int32_t unk_111;
     int32_t unk_112;
     int32_t unk_113;

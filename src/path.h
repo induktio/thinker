@@ -44,9 +44,6 @@ const int TableOffsetY[] = {
     -7,  -8,  -9, -10, -11, -12, -13, -14, -15,
 };
 
-typedef int(__thiscall *FPath_find)(
-    void* This, int x1, int y1, int x2, int y2, int unit_id, int faction_id, int flags, int unk1);
-
 class CPath {
 public:
     int* mapTable;
@@ -64,7 +61,13 @@ public:
     int find(int x1, int y1, int x2, int y2, int unit_id, int faction_id);
 };
 
+typedef int(__thiscall *FPath_find)(
+    CPath* This, int x1, int y1, int x2, int y2, int unit_id, int faction_id, int flags, int unk1);
+typedef int(__thiscall *FPath_continents)(CPath* This);
+
 extern CPath* Path;
+extern FPath_find Path_find;
+extern FPath_continents Path_continents;
 
 const int PathLimit = 80;
 const int QueueSize = 6400;

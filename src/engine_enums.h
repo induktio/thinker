@@ -745,6 +745,19 @@ enum TerrainFlags {
     TILE_ROCKY = 0x80,
 };
 
+enum TerrainType {
+    LEVEL_FLAT = 0,
+    LEVEL_ROLLING = 1,
+    LEVEL_ROCKY = 2,
+};
+
+enum ResType {
+    RES_NONE = 0,
+    RES_NUTRIENT = 1,
+    RES_MINERAL = 2,
+    RES_ENERGY = 3,
+};
+
 enum AIGoal {
     AI_GOAL_UNUSED = -1,
     AI_GOAL_ATTACK = 0, // 'a', red

@@ -225,9 +225,10 @@ extern int* SkipTechScreenA;
 extern int* SkipTechScreenB;
 extern int* WorldAddTemperature;
 extern int* WorldSkipTerritory;
+extern int* GameDrawState;
 extern int* WinModalState;
-extern int* PopupDialogState;
 extern int* DiploWinState;
+extern int* PopupDialogState;
 
 extern int* VehDropLiftVehID;
 extern int* VehLiftX;
@@ -376,6 +377,7 @@ typedef int(__cdecl *FNetMsg_pop2)(char* label, void* a2);
 typedef int(__thiscall *FNetMsg_pop)(void* This, char* label, int delay, int a4, void* a5);
 typedef int(__thiscall *FGraphicWin_soft_update)(Win* This, int* values);
 typedef int(__thiscall *FGraphicWin_update2)(Win* This, int* values, int opts);
+typedef void(__thiscall *FConsole_go_to)(Console* This, int a2, void* a3, void* a4);
 
 #pragma GCC diagnostic pop
 
@@ -404,6 +406,7 @@ extern Fpopp popp;
 extern FGenVoid StatusWin_on_redraw;
 extern FGenVoid StatusWin_redraw;
 extern FTutWin_draw_arrow TutWin_draw_arrow;
+extern FConsole_go_to Console_go_to;
 extern FGenVoid Console_editor_scen_rules;
 extern fp_void turn_timer;
 extern FConsole_zoom Console_zoom;
@@ -426,6 +429,7 @@ extern FWin_is_visible Win_is_visible;
 extern tc_2int Font_width;
 extern Fpop_ask_number pop_ask_number;
 extern FStringBox_clip_ids StringBox_clip_ids;
+extern fp_void my_rand;
 
 
 extern fp_3int terraform_cost;
@@ -782,7 +786,7 @@ extern fp_3int unlock_map;
 extern fp_3int bit_put;
 extern fp_4int bit_set;
 extern fp_4int bit2_set;
-extern fp_3int code_set;
+//extern fp_3int code_set;
 extern fp_3int synch_bit;
 extern fp_2int minerals_at;
 extern fp_2int bonus_at;

@@ -129,12 +129,12 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->world_ocean_mod = clamp(atoi(value), 0, 100);
     } else if (MATCH("world_islands_mod")) {
         cf->world_islands_mod = atoi(value);
+    } else if (MATCH("world_mirror_x")) {
+        cf->world_mirror_x = atoi(value);
+    } else if (MATCH("world_mirror_y")) {
+        cf->world_mirror_y = atoi(value);
     } else if (MATCH("modified_landmarks")) {
         cf->modified_landmarks = atoi(value);
-    } else if (MATCH("map_mirror_x")) {
-        cf->map_mirror_x = atoi(value);
-    } else if (MATCH("map_mirror_y")) {
-        cf->map_mirror_y = atoi(value);
     } else if (MATCH("world_sea_levels")) {
         opt_list_parse(cf->world_sea_levels, buf, 3, 0);
     } else if (MATCH("time_warp_mod")) {

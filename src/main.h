@@ -60,11 +60,12 @@
 #include <time.h>
 #include <math.h>
 #include <psapi.h>
-#include <algorithm>
 #include <set>
 #include <list>
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <functional>
 
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 #define THINKER_HEADER (int16_t)0xACAC
@@ -191,9 +192,10 @@ struct Config {
     int world_islands_mod = 16;
     int world_continents = 0;
     int world_polar_caps = 1;
+    int world_mirror_x = 0;
+    int world_mirror_y = 0;
     int modified_landmarks = 0;
-    int map_mirror_x = 0;
-    int map_mirror_y = 0;
+    int landmarks = 0xffff;
     int time_warp_mod = 1;
     int time_warp_techs = 5;
     int time_warp_projects = 1;
@@ -201,7 +203,6 @@ struct Config {
     int faction_placement = 1;
     int nutrient_bonus = 0;
     int rare_supply_pods = 0;
-    int landmarks = 0xffff;
     int simple_cost_factor = 0;
     int revised_tech_cost = 1;
     int tech_cost_factor[MaxDiffNum] = {116,108,100,92,84,76};
@@ -326,13 +327,6 @@ struct AIPlans {
     Important heuristic in threat calculation.
     */
     int enemy_bases = 0;
-};
-
-enum ResType {
-    RES_NONE = 0,
-    RES_NUTRIENT = 1,
-    RES_MINERAL = 2,
-    RES_ENERGY = 3,
 };
 
 enum NodesetType {

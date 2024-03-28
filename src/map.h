@@ -24,6 +24,7 @@ int __cdecl region_at(int x, int y);
 int __cdecl base_at(int x, int y);
 int __cdecl x_dist(int x1, int x2);
 uint32_t __cdecl code_at(int x, int y);
+void __cdecl code_set(int x, int y, int code);
 bool __cdecl near_landmark(int x, int y);
 int __cdecl mod_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, int y2, int toggle);
 int __cdecl mod_bonus_at(int x, int y);

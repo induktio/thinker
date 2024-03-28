@@ -134,10 +134,6 @@ void init_save_game(int faction) {
         return;
     }
     if (m->thinker_header != THINKER_HEADER) {
-        // Clear old save game storage locations
-        if (f->old_thinker_header == THINKER_HEADER) {
-            memset(&f->old_thinker_header, 0, 12);
-        }
         m->thinker_header = THINKER_HEADER;
         m->thinker_flags = 0;
         m->thinker_tech_id = f->tech_research_id;
@@ -205,8 +201,6 @@ int __cdecl mod_turn_upkeep() {
         if (conf.debug_mode) {
             *GameState |= STATE_DEBUG_MODE;
             *GamePreferences |= PREF_ADV_FAST_BATTLE_RESOLUTION;
-            *GameMorePreferences |=
-                (MPREF_ADV_QUICK_MOVE_VEH_ORDERS | MPREF_ADV_QUICK_MOVE_ALL_VEH);
         } else {
             *GameState &= ~STATE_DEBUG_MODE;
         }
@@ -468,7 +462,7 @@ void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool sea_b
 int probe_roll_value(int faction)
 {
     int techs = 0;
-    for (int i=Tech_ID_First; i <= Tech_ID_Last; i++) {
+    for (int i = Tech_ID_First; i <= Tech_ID_Last; i++) {
         if (Tech[i].preq_tech1 != TECH_Disable && has_tech(i, faction)
         && Tech[i].flags & TFLAG_IMPROVE_PROBE) {
             techs++;
@@ -482,7 +476,7 @@ int probe_roll_value(int faction)
 int probe_active_turns(int faction1, int faction2)
 {
     int value = clamp(15 + probe_roll_value(faction1) - probe_roll_value(faction2), 5, 50);
-    value = value * (4 + (*MapAreaTiles >= 4000) + (*MapAreaTiles >= 7000)) / 4;
+    value = value * (4 + (*MapAreaTiles >= 4000) + (*MapAreaTiles >= 8000)) / 4;
     value = value * (4 + (*DiffLevel < DIFF_TRANSCEND) + (*DiffLevel < DIFF_THINKER)) / 4;
     return clamp(value, 5, 50);
 }

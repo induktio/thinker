@@ -11,6 +11,7 @@ char label_sat_energy[StrBufLen] = "E +%d";
 
 static int minimal_cost = 0;
 static bool filebox_visible = false;
+static bool veh_goto_visible = false;
 
 struct ConsoleState {
     const int ScrollMin = 1;
@@ -153,6 +154,13 @@ void __thiscall FileBox_close(void* UNUSED(This)) {
     filebox_visible = false;
 }
 
+void __thiscall Console_go_to_init(Console* This, int a2, void* a3, void* a4)
+{
+    veh_goto_visible = true;
+    Console_go_to(This, a2, a3, a4);
+    veh_goto_visible = false;
+}
+
 /*
 Returns true only when the world map is visible and has focus
 and other large modal windows are not blocking it.
@@ -160,12 +168,13 @@ WorldWin_set_world_map and WorldWin_set_detail_map (lower right map view)
 also call ButtonGroup_set for specific values. Some of the windows might be
 already excluded by button_group condition but are checked regardless.
 */
-bool map_is_visible() {
+static bool map_is_visible() {
     int32_t button_group = ((int32_t*)0x7CD12C)[33];
     bool value = !*GameHalted
         && !*PopupDialogState
         && !*DiploWinState
         && !filebox_visible
+        && !veh_goto_visible
         && (button_group == 1006 || button_group == 1007)
         && !Win_is_visible(ReportWin)
         && !Win_is_visible(FameWin)
@@ -178,12 +187,16 @@ bool map_is_visible() {
     return value;
 }
 
-bool win_has_focus() {
+static bool win_has_focus() {
     return GetFocus() == *phWnd;
 }
 
-bool alt_key_down() {
+static bool alt_key_down() {
     return GetAsyncKeyState(VK_MENU) < 0;
+}
+
+static bool ctrl_key_down() {
+    return GetAsyncKeyState(VK_CONTROL) < 0;
 }
 
 void mouse_over_tile(POINT* p) {
@@ -578,6 +591,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     static int iDeltaAccum = 0;
     bool debug_active = DEBUG && !*GameHalted;
     POINT p;
+    MAP* sq;
 
     if (msg == WM_ACTIVATEAPP && conf.auto_minimise && !conf.reduced_mode) {
         if (!LOWORD(wParam)) {
@@ -612,7 +626,8 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         SetRect(&window_rect, 0, 0, conf.window_width, conf.window_height);
         wp.rcNormalPosition = window_rect;
         SetWindowPlacement(*phWnd, &wp);
-        SetWindowPos(*phWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED);
+        SetWindowPos(*phWnd, HWND_NOTOPMOST, 0, 0, 0, 0,
+            SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED);
 
     } else if (msg == WM_MOUSEWHEEL && win_has_focus()) {
         int iDelta = GET_WHEEL_DELTA_WPARAM(wParam) + iDeltaAccum;
@@ -621,7 +636,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         bool zoom_in = (iDelta >= 0);
         iDelta = labs(iDelta);
 
-        if (map_is_visible() && *MapAreaX) {
+        if (map_is_visible()) {
             int iZoomType = (zoom_in ? 515 : 516);
             for (int i = 0; i < iDelta; i++) {
                 if (MapWin->oMap.iZoomFactor > -8 || zoom_in) {
@@ -637,6 +652,17 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             }
             return 0;
         }
+
+    } else if (msg == WM_KEYDOWN && (wParam == VK_LEFT || wParam == VK_RIGHT)
+    && ctrl_key_down() && !*GameHalted && Win_is_visible(BaseWin)) {
+        int32_t value = ((int32_t*)BaseWin)[66239];
+        if (wParam == VK_LEFT) {
+            value = (value + 1) % 3;
+        } else {
+            value = (value + 2) % 3;
+        }
+        ((int32_t*)BaseWin)[66239] = value;
+        GraphicWin_redraw(BaseWin);
 
     } else if (conf.smooth_scrolling && msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) {
         if (!map_is_visible() || !win_has_focus()) {
@@ -684,6 +710,20 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             console_world_generate(ParseNumTable[0]);
         }
 
+    } else if (debug_active && msg == WM_CHAR && wParam == 'c' && alt_key_down()
+    && *GameState & STATE_SCENARIO_EDITOR && *GameState & STATE_OMNISCIENT_VIEW
+    && (sq = mapsq(MapWin->oMap.iTileX, MapWin->oMap.iTileY)) && sq->landmarks) {
+        uint32_t prev_state = MapWin->oMap.iWhatToDrawFlags;
+        MapWin->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
+        refresh_overlay(code_at);
+        int value = pop_ask_number("modmenu", "MAPGEN", sq->art_ref_id, 0);
+        if (!value) { // OK button pressed
+            sq->art_ref_id = ParseNumTable[0];
+        }
+        memset(pm_overlay, 0, sizeof(pm_overlay));
+        MapWin->oMap.iWhatToDrawFlags = prev_state;
+        draw_map(1);
+
     } else if (DEBUG && msg == WM_CHAR && wParam == 'd' && alt_key_down()) {
         conf.debug_mode = !conf.debug_mode;
         if (conf.debug_mode) {
@@ -696,8 +736,6 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             }
             *GameState |= STATE_DEBUG_MODE;
             *GamePreferences |= PREF_ADV_FAST_BATTLE_RESOLUTION;
-            *GameMorePreferences |=
-                (MPREF_ADV_QUICK_MOVE_VEH_ORDERS | MPREF_ADV_QUICK_MOVE_ALL_VEH);
         } else {
             *GameState &= ~STATE_DEBUG_MODE;
         }
@@ -744,10 +782,10 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         MapWin_draw_map(MapWin, 0);
         InvalidateRect(hwnd, NULL, false);
 
-    } else if (debug_active && msg == WM_CHAR && wParam == 'f' && alt_key_down()) {
+    } else if (debug_active && msg == WM_CHAR && wParam == 'f' && alt_key_down()
+    && (sq = mapsq(MapWin->oMap.iTileX, MapWin->oMap.iTileY))) {
         MapWin->oMap.iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
         memset(pm_overlay, 0, sizeof(pm_overlay));
-        MAP* sq = mapsq(MapWin->oMap.iTileX, MapWin->oMap.iTileY);
         if (sq && sq->is_owned()) {
             move_upkeep(sq->owner, UM_Visual);
             MapWin_draw_map(MapWin, 0);
@@ -943,6 +981,17 @@ void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
     }
 }
 
+void refresh_overlay(std::function<int32_t(int32_t, int32_t)> tile_value) {
+    if (*GameState & STATE_OMNISCIENT_VIEW && MapWin->oMap.iWhatToDrawFlags & MAPWIN_DRAW_GOALS) {
+        for (int y = 0; y < *MapAreaY; y++) {
+            for (int x = y&1; x < *MapAreaX; x+=2) {
+                pm_overlay[x][y] = tile_value(x, y);
+            }
+        }
+        draw_map(1);
+    }
+}
+
 void __cdecl mod_turn_timer()
 {
     /*
@@ -1039,8 +1088,8 @@ int show_mod_config()
         | (conf.world_continents ? MapContinents : 0)
         | (conf.modified_landmarks ? MapLandmarks : 0)
         | (conf.world_polar_caps ? MapPolarCaps: 0)
-        | (conf.map_mirror_x ? MapMirrorX : 0)
-        | (conf.map_mirror_y ? MapMirrorY : 0)
+        | (conf.world_mirror_x ? MapMirrorX : 0)
+        | (conf.world_mirror_y ? MapMirrorY : 0)
         | (conf.manage_player_bases ? AutoBases : 0)
         | (conf.manage_player_units ? AutoUnits : 0)
         | (conf.warn_on_former_replace ? FormerReplace : 0)
@@ -1069,13 +1118,13 @@ int show_mod_config()
     WritePrivateProfileStringA(ModAppName, "world_polar_caps",
         (conf.world_polar_caps ? "1" : "0"), ModIniFile);
 
-    conf.map_mirror_x = !!(value & MapMirrorX);
-    WritePrivateProfileStringA(ModAppName, "map_mirror_x",
-        (conf.map_mirror_x ? "1" : "0"), ModIniFile);
+    conf.world_mirror_x = !!(value & MapMirrorX);
+    WritePrivateProfileStringA(ModAppName, "world_mirror_x",
+        (conf.world_mirror_x ? "1" : "0"), ModIniFile);
 
-    conf.map_mirror_y = !!(value & MapMirrorY);
-    WritePrivateProfileStringA(ModAppName, "map_mirror_y",
-        (conf.map_mirror_y ? "1" : "0"), ModIniFile);
+    conf.world_mirror_y = !!(value & MapMirrorY);
+    WritePrivateProfileStringA(ModAppName, "world_mirror_y",
+        (conf.world_mirror_y ? "1" : "0"), ModIniFile);
 
     conf.manage_player_bases = !!(value & AutoBases);
     WritePrivateProfileStringA(ModAppName, "manage_player_bases",

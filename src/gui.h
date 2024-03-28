@@ -52,7 +52,9 @@ int __thiscall mod_calc_dim(Console* This);
 int __thiscall mod_gen_map(Console* This, int iOwner, int fUnitsOnly);
 void __thiscall FileBox_init(void* This);
 void __thiscall FileBox_close(void* This);
+void __thiscall Console_go_to_init(Console* This, int a2, void* a3, void* a4);
 void __thiscall MapWin_gen_overlays(Console* This, int x, int y);
+void refresh_overlay(std::function<int32_t(int32_t, int32_t)> tile_value);
 int __thiscall BaseWin_popup_start(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
 int __cdecl BaseWin_ask_number(const char* label, int value, int a3);

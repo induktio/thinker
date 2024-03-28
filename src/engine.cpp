@@ -93,9 +93,10 @@ int* SkipTechScreenA = (int*)0x945F40; // non-zero skips popups, used in tech_ac
 int* SkipTechScreenB = (int*)0x945F44; // non-zero skips popups, used in base_change and tech_advance
 int* WorldAddTemperature = (int*)0x9B22E8;
 int* WorldSkipTerritory = (int*)0x9B22EC;
+int* GameDrawState = (int*)0x90D91C;
 int* WinModalState = (int*)0x9B7AE4;
-int* PopupDialogState = (int*)0x6A721C; // Non-zero when most popups or scrollable lists are visible
 int* DiploWinState = (int*)0x93FAB4; // Non-zero when diplomacy communication active
+int* PopupDialogState = (int*)0x6A721C; // Non-zero when most popups or scrollable lists are visible
 
 int* VehDropLiftVehID = (int*)0x9B2280;
 int* VehLiftX = (int*)0x9B2278;
@@ -219,6 +220,7 @@ Fpopp popp                                     = (Fpopp                  )0x48C0
 FGenVoid StatusWin_on_redraw                   = (FGenVoid               )0x4B8890;
 FGenVoid StatusWin_redraw                      = (FGenVoid               )0x4B9EA0;
 FTutWin_draw_arrow TutWin_draw_arrow           = (FTutWin_draw_arrow     )0x4BDEA0;
+FConsole_go_to Console_go_to                   = (FConsole_go_to         )0x4D61A0;
 FGenVoid Console_editor_scen_rules             = (FGenVoid               )0x4DC520;
 fp_void turn_timer                             = (fp_void                )0x50EF10;
 FConsole_zoom Console_zoom                     = (FConsole_zoom          )0x5150D0;
@@ -241,6 +243,8 @@ FWin_is_visible Win_is_visible                 = (FWin_is_visible        )0x5F7E
 tc_2int Font_width                             = (tc_2int                )0x619280;
 Fpop_ask_number pop_ask_number                 = (Fpop_ask_number        )0x627C30;
 FStringBox_clip_ids StringBox_clip_ids         = (FStringBox_clip_ids    )0x629A70;
+fp_void my_rand                                = (fp_void                )0x64601D;
+
 
 fp_3int terraform_cost           = (fp_3int)0x4C9420;
 fp_2int action_build             = (fp_2int)0x4C96E0;

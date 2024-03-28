@@ -133,6 +133,14 @@ uint32_t __cdecl code_at(int x, int y) {
     return (sq ? sq->art_ref_id : 0);
 }
 
+void __cdecl code_set(int x, int y, int code) {
+    MAP* sq = mapsq(x, y);
+    if (sq) {
+        sq->art_ref_id = code;
+        *GameDrawState |= 4;
+    }
+}
+
 bool __cdecl near_landmark(int x, int y) {
     for (int i = 0; i < TableRange[8]; i++) {
         int x2 = wrap(x + TableOffsetX[i]);
@@ -659,7 +667,7 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
                     m.sq->items &= ~BIT_FUNGUS;
                 }
                 if (m.sq->is_rocky()) {
-                    rocky_set(m.x, m.y, 1); // rolling rockiness
+                    rocky_set(m.x, m.y, LEVEL_ROLLING);
                 }
                 nutrient++;
             }
@@ -689,7 +697,7 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
         sq->items &= ~(BIT_FUNGUS | BIT_MINERAL_RES | BIT_ENERGY_RES);
         sq->items |= (BIT_SUPPLY_REMOVE | BIT_BONUS_RES | BIT_NUTRIENT_RES);
         if (sq->is_rocky()) {
-            rocky_set(t.x, t.y, 1); // rolling rockiness
+            rocky_set(t.x, t.y, LEVEL_ROLLING);
         }
         num++;
     }
@@ -738,6 +746,29 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
     site_set(*tx, *ty, world_site(*tx, *ty, 0));
     debug("find_start %d %d x: %3d y: %3d range: %d\n", faction, i, *tx, *ty, min_range(spawns, *tx, *ty));
     flushlog();
+}
+
+bool locate_landmark(int* x, int* y) {
+    int attempts = 0;
+    if (!mapsq(*x, *y)) {
+        do {
+            if (*MapAreaY > 17) {
+                *y = random(*MapAreaY - 16) + 8;
+            } else {
+                *y = 0;
+            }
+            if (*MapAreaX > 1) {
+                *x = random(*MapAreaX);
+                *x = ((*x ^ *y) & 1) ^ *x;
+            } else {
+                *x = 0;
+            }
+            if (++attempts >= 1000) {
+                return false;
+            }
+        } while (is_ocean(mapsq(*x, *y)) || near_landmark(*x, *y));
+    }
+    return true;
 }
 
 void __cdecl mod_world_monsoon() {
@@ -827,6 +858,70 @@ void __cdecl mod_world_monsoon() {
     delete[] tiles;
 }
 
+void __cdecl mod_world_borehole(int x, int y) {
+    if (!locate_landmark(&x, &y)) {
+        return;
+    }
+    // Replace inconsistent timeGetTime() values used for seeding
+    uint32_t seed = random(256);
+    int val0 = (seed / 8) % 4;
+    int val1 = 8;
+    int val2 = ((seed % 8) / 3) + 5;
+    int val3 = 3 - ((seed % 8) % 3);
+    int val4 = -1;
+
+    if (val0 & 2) {
+        val2--;
+        val3--;
+        if (val0 & 1) {
+            val1 = 8;
+            val2++;
+            val3++;
+        } else {
+            val1 = 6;
+            val2--;
+            val3--;
+        }
+        val1 = (val1 + 8) % 8 + 1;
+        val2 = (val2 + 8) % 8 + 1;
+        val3 = (val3 + 8) % 8 + 1;
+    }
+    if (conf.modified_landmarks) {
+        val1 = 2;
+        val2 = 4;
+        val3 = 6;
+        val4 = 8;
+    }
+    for (int i = 0; i < 9; i++) {
+        int x2 = wrap(x + TableOffsetX[i]);
+        int y2 = y + TableOffsetY[i];
+        if (mapsq(x2, y2)) {
+            world_alt_set(x2, y2, ALT_SHORE_LINE, true);
+            bit_set(x2, y2, BIT_SUPPLY_REMOVE, true);
+            if (i == val1 || i == val2 || i == val3 || i == val4) {
+                bit_set(x2, y2, BIT_THERMAL_BORE, true);
+                bit2_set(x2, y2, LM_BOREHOLE, true);
+                code_set(x2, y2, i);
+            }
+        }
+    }
+    for (auto offset : {val1, val2, val3, val4}) {
+        if (offset > 0) {
+            int x2 = wrap(x + TableOffsetX[offset]);
+            int y2 = y + TableOffsetY[offset];
+            for (int i = 1; i < 9; i++) {
+                int x3 = wrap(x2 + TableOffsetX[i]);
+                int y3 = y2 + TableOffsetY[i];
+                if (mapsq(x3, y3) && is_ocean(mapsq(x3, y3))) {
+                    world_alt_set(x3, y3, ALT_SHORE_LINE, true);
+                }
+            }
+        }
+    }
+    bit2_set(x, y, LM_BOREHOLE, true);
+    new_landmark(x, y, (int)Natural[__builtin_ctz(LM_BOREHOLE)].name);
+}
+
 float world_fractal(FastNoiseLite& noise, int x, int y) {
     float val = 1.0f * noise.GetNoise(3.0f*x, 2.0f*y)
         + 0.3f * (2 + *MapErosiveForces) * noise.GetNoise(-6.0f*x, -4.0f*y);
@@ -890,7 +985,7 @@ void world_generate(uint32_t seed) {
         MapWin_clear_terrain(MapWin);
         draw_map(1);
     }
-    my_srand(seed ^ 0xffff); // For game engine rand function, terrain detail placement
+    my_srand(seed ^ 0xffff); // For my_rand function, terrain detail and landmark placement
     *MapRandomSeed = (seed % 0x7fff) + 1; // Must be non-zero, supply pod placement
 
     Points conts;
@@ -936,7 +1031,7 @@ void world_generate(uint32_t seed) {
             sq->contour = clamp((int)(L + L*value), 0, 255);
         }
     }
-    if (conf.map_mirror_x) {
+    if (conf.world_mirror_x) {
         const int ky = 2 - (*MapAreaY & 1);
         for (y = 0; y < *MapAreaY/2; y++) {
             for (x = y&1; x < *MapAreaX; x+=2) {
@@ -946,7 +1041,7 @@ void world_generate(uint32_t seed) {
             }
         }
     }
-    if (conf.map_mirror_y) {
+    if (conf.world_mirror_y) {
         const int kx = 2 - (*MapAreaX & 1);
         for (y = 0; y < *MapAreaY; y++) {
             for (x = y&1; x < *MapAreaX/2; x+=2) {
@@ -987,7 +1082,7 @@ void world_generate(uint32_t seed) {
     }
     world_linearize_contours();
     world_shorelines();
-    world_validate(); // Run Path::continents
+    Path_continents(Path);
     Points bridges;
 
     for (y = 3; y < *MapAreaY - 3; y++) {
@@ -1027,9 +1122,9 @@ void world_generate(uint32_t seed) {
     world_temperature();
     world_riverbeds();
     world_fungus();
-    world_validate();
+    Path_continents(Path);
 
-    int lm = (conf.map_mirror_x || conf.map_mirror_y ? 0 : conf.landmarks);
+    int lm = (conf.world_mirror_x || conf.world_mirror_y ? 0 : conf.landmarks);
     if (lm & LM_JUNGLE) {
         if (conf.modified_landmarks) {
             mod_world_monsoon();
@@ -1054,7 +1149,7 @@ void world_generate(uint32_t seed) {
     }
     if (lm & LM_CANYON) world_canyon_nessus(-1, -1);
     if (lm & LM_NEXUS) world_temple(-1, -1);
-    if (lm & LM_BOREHOLE) world_borehole(-1, -1);
+    if (lm & LM_BOREHOLE) mod_world_borehole(-1, -1);
     if (lm & LM_SARGASSO) world_sargasso(-1, -1);
     if (lm & LM_DUNES) world_dune(-1, -1);
     if (lm & LM_FRESH) world_fresh(-1, -1);
@@ -1164,7 +1259,7 @@ void __cdecl mod_time_warp() {
                             fixed++;
                         }
                         if (bonus == RES_NUTRIENT && m.sq->is_rocky()) {
-                            rocky_set(m.x, m.y, 1); // rolling rockiness
+                            rocky_set(m.x, m.y, LEVEL_ROLLING);
                         }
                     }
                     m.sq->visibility |= (1 << i);

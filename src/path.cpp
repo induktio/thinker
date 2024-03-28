@@ -3,6 +3,7 @@
 
 CPath* Path = (CPath*)0x945B00;
 FPath_find Path_find = (FPath_find)0x59A530;
+FPath_continents Path_continents = (FPath_continents)0x59C790;
 
 static TileSearch ts;
 

@@ -1173,6 +1173,7 @@ int base_tile_score(int x, int y, int range, int triad) {
     if (!is_ocean(sq)) {
         score += (ocean_coast_tiles(x, y) ? 14 : 0);
         score += (sq->items & BIT_RIVER ? 5 : 0);
+        score += (sq->items & BIT_DOUBLE_SEA ? 5 : 0);
     }
     for (const auto& m : iterate_tiles(x, y, 1, 21)) {
         assert(map_range(x, y, m.x, m.y) == 1 + (m.i > 8));
