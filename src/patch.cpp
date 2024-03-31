@@ -868,6 +868,12 @@ bool patch_setup(Config* cf) {
                 assert(0);
             }
         }
+        if (cf->window_width >= 1024) {
+            short_jump(0x4AE66C); // SetupWin_draw_item resolution checks
+            write_call(0x4AE6D5, (int)SetupWin_buffer_draw);
+            write_call(0x4AE710, (int)SetupWin_buffer_copy);
+            write_call(0x4AE73B, (int)SetupWin_soft_update3);
+        }
     }
     /*
     Fix visual issues where the game sometimes did not update the map properly

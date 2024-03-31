@@ -1190,8 +1190,42 @@ int show_mod_menu()
     return 0; // Close dialog
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
+int __thiscall SetupWin_buffer_draw(Buffer* src, Buffer* dst, int a3, int a4, int a5, int a6, int a7)
+{
+    const int moon_positions[][4] = {
+        {8, 287, 144, 142},
+        {221, 0, 80, 51},
+        {348, 94, 55, 57},
+    };
+    for (auto& p : moon_positions) {
+        int x = conf.window_width  * p[0] / 1024;
+        int y = conf.window_height * p[1] / 768;
+        int w = conf.window_width  * p[2] / 1024;
+        int h = conf.window_height * p[3] / 768;
+        Buffer_copy2(src, dst, p[0], p[1], p[2], p[3], x, y, w, h);
+    }
+    return 0;
+}
+
+int __thiscall SetupWin_buffer_copy(Buffer* src, Buffer* dst,
+int xSrc, int ySrc, int xDst, int yDst, int wSrc, int hSrc)
+{
+    int wDst = conf.window_width * wSrc / 1024;
+    return Buffer_copy2(src, dst, xSrc, ySrc, wSrc, hSrc,
+        conf.window_width - wDst, yDst, wDst, conf.window_height);
+}
+
+int __thiscall SetupWin_soft_update3(Win* This, int a2, int a3, int a4, int a5)
+{
+    // Update whole screen instead of partial regions
+    return GraphicWin_soft_update2(This);
+}
+
 int __thiscall BaseWin_popup_start(Win* This,
-const char* UNUSED(filename), const char* UNUSED(label), int a4, int a5, int a6, int a7)
+const char* filename, const char* label, int a4, int a5, int a6, int a7)
 {
     BASE* base = *CurrentBase;
     Faction* f = &Factions[base->faction_id];
@@ -1202,6 +1236,8 @@ const char* UNUSED(filename), const char* UNUSED(label), int a4, int a5, int a6,
     ParseNumTable[2] = f->energy_credits - f->energy_cost;
     return Popup_start(This, "modmenu", "HURRY", a4, a5, a6, a7);
 }
+
+#pragma GCC diagnostic pop
 
 int __cdecl BaseWin_ask_number(const char* label, int value, int a3)
 {

@@ -55,6 +55,10 @@ void __thiscall FileBox_close(void* This);
 void __thiscall Console_go_to_init(Console* This, int a2, void* a3, void* a4);
 void __thiscall MapWin_gen_overlays(Console* This, int x, int y);
 void refresh_overlay(std::function<int32_t(int32_t, int32_t)> tile_value);
+int __thiscall SetupWin_buffer_draw(Buffer* src, Buffer* dst, int a3, int a4, int a5, int a6, int a7);
+int __thiscall SetupWin_buffer_copy(
+    Buffer* src, Buffer* dst, int xSrc, int ySrc, int xDst, int yDst, int wSrc, int hSrc);
+int __thiscall SetupWin_soft_update3(Win* This, int a2, int a3, int a4, int a5);
 int __thiscall BaseWin_popup_start(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
 int __cdecl BaseWin_ask_number(const char* label, int value, int a3);

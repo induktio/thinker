@@ -375,9 +375,18 @@ typedef int(__thiscall *FPopup_start)(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
 typedef int(__cdecl *FNetMsg_pop2)(char* label, void* a2);
 typedef int(__thiscall *FNetMsg_pop)(void* This, char* label, int delay, int a4, void* a5);
-typedef int(__thiscall *FGraphicWin_soft_update)(Win* This, int* values);
-typedef int(__thiscall *FGraphicWin_update2)(Win* This, int* values, int opts);
 typedef void(__thiscall *FConsole_go_to)(Console* This, int a2, void* a3, void* a4);
+typedef int(__thiscall *FBuffer_draw)(Buffer* src, Buffer* dst, int a3, int a4, int a5, int a6, int a7);
+typedef int(__thiscall *FBuffer_draw2)(Buffer* src, Buffer* dst, RECT* loc, int xDst, int yDst);
+typedef int(__thiscall *FBuffer_copy)(
+    Buffer* src, Buffer* dst, int xSrc, int ySrc, int xDst, int yDst, int wSrc, int hSrc);
+typedef int(__thiscall *FBuffer_copy2)(
+    Buffer* src, Buffer* dst, int xSrc, int ySrc, int wSrc, int hSrc, int xDst, int yDst, int wDst, int hDst);
+typedef int(__thiscall *FGraphicWin_update2)(Win* This, int* values, int opts);
+typedef int(__thiscall *FGraphicWin_soft_update)(Win* This, int* values);
+typedef int(__thiscall *FGraphicWin_soft_update3)(Win* This, int a2, int a3, int a4, int a5);
+
+
 
 #pragma GCC diagnostic pop
 
@@ -414,8 +423,14 @@ extern Fhex_cost hex_cost;
 //extern Fhas_abil has_abil;
 extern FX_pop X_pop;
 extern FX_pops X_pops;
-extern FGraphicWin_soft_update GraphicWin_soft_update;
 extern FGraphicWin_update2 GraphicWin_update2;
+extern FGraphicWin_soft_update GraphicWin_soft_update;
+extern FGraphicWin_soft_update3 GraphicWin_soft_update3;
+extern FGenWin GraphicWin_soft_update2;
+extern FBuffer_draw2 Buffer_draw2;
+extern FBuffer_draw Buffer_draw;
+extern FBuffer_copy2 Buffer_copy2;
+extern FBuffer_copy Buffer_copy;
 extern FBuffer_set_font Buffer_set_font;
 extern FBuffer_set_text_color Buffer_set_text_color;
 extern FBuffer_write_l Buffer_write_l;
