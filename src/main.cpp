@@ -282,6 +282,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         parse_format_args(label_nerve_staple, value, 1, StrBufLen);
     } else if (MATCH("label_captured_base")) {
         parse_format_args(label_captured_base, value, 1, StrBufLen);
+    } else if (MATCH("label_stockpile_energy")) {
+        parse_format_args(label_stockpile_energy, value, 1, StrBufLen);
     } else if (MATCH("label_sat_nutrient")) {
         parse_format_args(label_sat_nutrient, value, 1, StrBufLen);
     } else if (MATCH("label_sat_mineral")) {

@@ -5,6 +5,7 @@ char label_pop_size[StrBufLen] = "Pop: %d / %d / %d / %d";
 char label_pop_boom[StrBufLen] = "Population Boom";
 char label_nerve_staple[StrBufLen] = "Nerve Staple: %d turns";
 char label_captured_base[StrBufLen] = "Captured Base: %d turns";
+char label_stockpile_energy[StrBufLen] = "Stockpile: %d per turn";
 char label_sat_nutrient[StrBufLen] = "N +%d";
 char label_sat_mineral[StrBufLen] = "M +%d";
 char label_sat_energy[StrBufLen] = "E +%d";
@@ -1196,7 +1197,7 @@ int show_mod_menu()
 int __thiscall SetupWin_buffer_draw(Buffer* src, Buffer* dst, int a3, int a4, int a5, int a6, int a7)
 {
     const int moon_positions[][4] = {
-        {8, 287, 144, 142},
+        {8, 287, 132, 132},
         {221, 0, 80, 51},
         {348, 94, 55, 57},
     };
@@ -1231,9 +1232,11 @@ const char* filename, const char* label, int a4, int a5, int a6, int a7)
     Faction* f = &Factions[base->faction_id];
     int mins = mineral_cost(*CurrentBaseID, base->queue_items[0])
         - base->minerals_accumulated - base->mineral_surplus;
-    minimal_cost = hurry_cost(*CurrentBaseID, base->queue_items[0], mins);
-    ParseNumTable[1] = minimal_cost;
-    ParseNumTable[2] = f->energy_credits - f->energy_cost;
+    int credits = max(0, f->energy_credits - f->energy_cost);
+    int cost = hurry_cost(*CurrentBaseID, base->queue_items[0], mins);
+    minimal_cost = min(credits, cost);
+    ParseNumTable[1] = cost;
+    ParseNumTable[2] = credits;
     return Popup_start(This, "modmenu", "HURRY", a4, a5, a6, a7);
 }
 
@@ -1256,6 +1259,7 @@ void __thiscall Basewin_draw_farm_set_font(Buffer* This, Font* font, int a3, int
     int N = 0;
     int M = 0;
     int E = 0;
+    int SE = 0;
     Buffer_set_font(This, font, a3, a4, a5);
 
     if (*CurrentBaseID < 0 || x1 < 0 || y1 < 0 || x2 < 0 || y2 < 0) {
@@ -1273,6 +1277,11 @@ void __thiscall Basewin_draw_farm_set_font(Buffer* This, Font* font, int a3, int
             snprintf(buf, StrBufLen, label_sat_energy, E);
             Buffer_set_text_color(This, ColorEnergy, 0, 1, 1);
             Buffer_write_l(This, buf, x1 + 5, y2 - 36     , LineBufLen);
+        }
+        if ((SE = stockpile_energy(*CurrentBaseID)) > 0) {
+            snprintf(buf, StrBufLen, label_stockpile_energy, SE);
+            Buffer_set_text_color(This, ColorEnergy, 0, 1, 1);
+            Buffer_write_right_l2(This, buf, x2 - 5, y2 - 36, LineBufLen);
         }
     }
 }

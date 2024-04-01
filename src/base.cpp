@@ -1,6 +1,8 @@
 
 #include "base.h"
 
+static bool delay_base_riot = false;
+
 
 bool governor_enabled(int base_id) {
     return conf.manage_player_bases && Bases[base_id].governor_flags & GOV_MANAGES_PRODUCTION;
@@ -94,6 +96,96 @@ void __cdecl base_compute(bool update_prev) {
         base_nutrient();
         base_minerals();
         base_energy();
+    }
+}
+
+int __cdecl mod_base_production() {
+    BASE* base = &Bases[*CurrentBaseID];
+    Faction* f = &Factions[base->faction_id];
+    int item_id = base->item();
+    int output = stockpile_energy(*CurrentBaseID);
+    int value = base_production();
+    if (!value) { // Non-zero indicates production was stopped
+        f->energy_credits += output;
+    }
+    debug("base_production %d %d credits: %d stockpile: %d item: %s\n",
+        *CurrentTurn, *CurrentBaseID, f->energy_credits, output, prod_name(item_id));
+    return value;
+}
+
+/*
+Remove labs start delay from factions with negative SE Research value
+or when playing on two lowest difficulty levels.
+*/
+void __cdecl mod_base_research() {
+    if (!(*GameRules & RULES_SCN_NO_TECH_ADVANCES)) {
+        int faction_id = Bases[*CurrentBaseID].faction_id;
+        int labs_total = Bases[*CurrentBaseID].labs_total;
+        Faction* f = &Factions[faction_id];
+
+        if (has_fac_built(FAC_PUNISHMENT_SPHERE, *CurrentBaseID)) {
+            labs_total /= 2;
+        }
+        if (!conf.early_research_start) {
+            if (*CurrentTurn < -5 * f->SE_research_pending) {
+                labs_total = 0;
+            }
+            if (*CurrentTurn < 5 && f->diff_level < 2) {
+                labs_total = 0;
+            }
+        }
+        f->labs_total += labs_total;
+        int v1 = 10 * labs_total * (clamp(f->SE_research_pending, -5, 5) + 10);
+        int v2 = v1 % 100 + f->net_random_event;
+        if (v2 >= 100) {
+            v1 += 100;
+            f->net_random_event = v2 - 100;
+        } else {
+            f->net_random_event = v2;
+        }
+        tech_research(faction_id, v1 / 100);
+    }
+}
+
+/*
+Replaces rand() call in base_upkeep to decide if the AI should rename a captured base
+when the return value equals zero.
+*/
+int __cdecl base_upkeep_rand() {
+    return !(*CurrentBaseID >= 0 && !Bases[*CurrentBaseID].assimilation_turns_left);
+}
+
+int __cdecl mod_base_upkeep(int base_id) {
+    BASE* base = &Bases[base_id];
+    int value = base_upkeep(base_id);
+    if (!value // non-zero values indicate special cases (exited early)
+    && base->nerve_staple_turns_left > 0
+    && Factions[base->faction_id].SE_police_pending < conf.nerve_staple_mod) {
+        --base->nerve_staple_turns_left;
+    }
+    return value;
+}
+
+/*
+These functions (first base_growth and then drone_riot)
+will only get called from production_phase > base_upkeep.
+*/
+int __cdecl mod_base_growth() {
+    BASE* base = *CurrentBase;
+    delay_base_riot = base->talent_total >= base->drone_total
+        && ~base->state_flags & BSTATE_DRONE_RIOTS_ACTIVE;
+    int cur_pop = base->pop_size;
+    int value = base_growth();
+    assert(*CurrentBase == base);
+    delay_base_riot = delay_base_riot && base->pop_size > cur_pop;
+    return value;
+}
+
+void __cdecl mod_drone_riot() {
+    if (!delay_base_riot) {
+        drone_riot();
+    } else {
+        assert(!((*CurrentBase)->state_flags & BSTATE_DRONE_RIOTS_ACTIVE));
     }
 }
 
@@ -227,14 +319,6 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
     return 0;
 }
 
-/*
-Replaces rand() call in base_upkeep to decide if the AI should rename a captured base
-when the return value equals zero.
-*/
-int __cdecl base_upkeep_rand() {
-    return !(*CurrentBaseID >= 0 && !Bases[*CurrentBaseID].assimilation_turns_left);
-}
-
 char* prod_name(int item_id) {
     if (item_id >= 0) {
         return Units[item_id].name;
@@ -303,6 +387,18 @@ int base_unused_space(int base_id) {
 int base_growth_goal(int base_id) {
     BASE* base = &Bases[base_id];
     return clamp(24 - base->pop_size, 0, base_unused_space(base_id));
+}
+
+int stockpile_energy(int base_id) {
+    BASE* base = &Bases[base_id];
+    if (base->item() == -FAC_STOCKPILE_ENERGY && base->mineral_surplus > 0) {
+        if (has_project(FAC_PLANETARY_ENERGY_GRID, base->faction_id)) {
+            return (5 * ((base->mineral_surplus + 1) / 2) + 3) / 4;
+        } else {
+            return (base->mineral_surplus + 1) / 2;
+        }
+    }
+    return 0;
 }
 
 bool can_build(int base_id, int fac_id) {
@@ -421,7 +517,7 @@ bool can_build_unit(int base_id, int unit_id) {
 
 bool can_build_ships(int base_id) {
     BASE* b = &Bases[base_id];
-    int k = *MapAreaSqRoot + 20;
+    int k = *MapAreaSqRoot + 16;
     return has_ships(b->faction_id) && nearby_tiles(b->x, b->y, TS_TRIAD_SEA, k);
 }
 
@@ -773,7 +869,7 @@ bool redundant_project(int faction, int fac_id) {
     Faction* f = &Factions[faction];
     if (fac_id == FAC_PLANETARY_DATALINKS) {
         int n = 0;
-        for (int i=0; i < MaxPlayerNum; i++) {
+        for (int i = 0; i < MaxPlayerNum; i++) {
             if (Factions[i].base_count > 0) {
                 n++;
             }
@@ -786,7 +882,7 @@ bool redundant_project(int faction, int fac_id) {
     }
     if (fac_id == FAC_MARITIME_CONTROL_CENTER) {
         int n = 0;
-        for (int i=0; i<*VehCount; i++) {
+        for (int i = 0; i<*VehCount; i++) {
             VEH* veh = &Vehicles[i];
             if (veh->faction_id == faction && veh->triad() == TRIAD_SEA) {
                 n++;
@@ -937,6 +1033,7 @@ Return true if unit2 is strictly better than unit1 in all circumstances (non PSI
 Disable random chance in prototype choices in these instances.
 */
 bool unit_is_better(int unit_id1, int unit_id2) {
+    assert(unit_id1 >= 0 && unit_id2 >= 0);
     UNIT* u1 = &Units[unit_id1];
     UNIT* u2 = &Units[unit_id2];
     bool val = (u1->cost >= u2->cost
@@ -953,8 +1050,8 @@ bool unit_is_better(int unit_id1, int unit_id2) {
     return val;
 }
 
-int unit_score(int id, int faction, int cfactor, int minerals, int accumulated, bool defend) {
-    assert(valid_player(faction) && id >= 0 && cfactor > 0);
+int unit_score(int unit_id, int faction, int cfactor, int minerals, int accumulated, bool defend) {
+    assert(valid_player(faction) && unit_id >= 0 && cfactor > 0);
     const int specials[][2] = {
         {ABL_AAA, 4},
         {ABL_AIR_SUPERIORITY, 2},
@@ -973,8 +1070,8 @@ int unit_score(int id, int faction, int cfactor, int minerals, int accumulated, 
         {ABL_DEEP_PRESSURE_HULL, 2},
         {ABL_SUPER_TERRAFORMER, 8},
     };
-    UNIT* u = &Units[id];
-    int v = 18 * (defend ? defense_value(id) : offense_value(id));
+    UNIT* u = &Units[unit_id];
+    int v = 18 * (defend ? defense_value(unit_id) : offense_value(unit_id));
     if (v < 0) {
         v = (defend ? Armor[best_armor(faction, false)].defense_value
             : Weapon[best_weapon(faction)].offense_value)
@@ -984,7 +1081,7 @@ int unit_score(int id, int faction, int cfactor, int minerals, int accumulated, 
     if (u->triad() != TRIAD_AIR) {
         v += (defend ? 12 : 32) * u->speed();
         if (u->triad() == TRIAD_SEA && u->is_combat_unit()
-        && defense_value(id) > offense_value(id)) {
+        && defense_value(unit_id) > offense_value(unit_id)) {
             v -= 20;
         }
     }
@@ -1010,37 +1107,41 @@ int unit_score(int id, int faction, int cfactor, int minerals, int accumulated, 
 /*
 Find the best prototype for base production when weighted against cost given the triad
 and type constraints. For any combat-capable unit, mode is set to WMODE_COMBAT.
+This assumes only Scout Patrol as the fallback choice for land combat units.
+For all other unit types requirements for building the prototype are always checked.
 */
 int find_proto(int base_id, Triad triad, VehWeaponMode mode, bool defend) {
     assert(base_id >= 0 && base_id < *BaseCount);
     BASE* b = &Bases[base_id];
     int faction = b->faction_id;
-    int basic = BSC_SCOUT_PATROL;
-    bool combat = (mode == WMODE_COMBAT);
     debug("find_proto faction: %d triad: %d mode: %d defend: %d\n", faction, triad, mode, defend);
 
-    if (mode == WMODE_COLONIST) {
-        basic = (triad == TRIAD_SEA ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
-    } else if (mode == WMODE_TERRAFORMER) {
-        basic = (triad == TRIAD_SEA ? BSC_SEA_FORMERS : BSC_FORMERS);
-    } else if (mode == WMODE_CONVOY) {
-        basic = BSC_SUPPLY_CRAWLER;
-    } else if (mode == WMODE_TRANSPORT) {
-        basic = BSC_TRANSPORT_FOIL;
-    } else if (mode == WMODE_INFOWAR) {
-        basic = BSC_PROBE_TEAM;
-    }
-    int best_id = basic;
+    bool prototypes = !b->plr_owner() || (b->governor_flags & GOV_MAY_PROD_PROTOTYPE)
+        || has_fac_built(FAC_SKUNKWORKS, base_id);
+    bool combat = (mode == WMODE_COMBAT);
     int cfactor = cost_factor(faction, 1, -1);
-    int best_val = (Units[best_id].is_active() ? 0 : -40)
-        + (Units[best_id].triad() == triad ? 0 : -40)
-        + unit_score(best_id, faction, cfactor, b->mineral_surplus, b->minerals_accumulated, defend);
+    int best_id;
+    int best_val;
 
-    for (int i=0; i < 2*MaxProtoFactionNum; i++) {
+    if (combat && triad == TRIAD_LAND) {
+        best_id = BSC_SCOUT_PATROL;
+        best_val = (has_tech(Units[best_id].preq_tech, faction) ? 0 : -50)
+            + unit_score(best_id, faction, cfactor,
+            b->mineral_surplus, b->minerals_accumulated, defend);
+    } else {
+        best_id = -FAC_STOCKPILE_ENERGY;
+        best_val = -10000;
+    }
+    for (int i = 0; i < 2*MaxProtoFactionNum; i++) {
         int id = (i < MaxProtoFactionNum ? i : (faction-1)*MaxProtoFactionNum + i);
         UNIT* u = &Units[id];
-        if (u->is_active() && strlen(u->name) > 0 && u->triad() == triad && id != best_id) {
+        if ((id < MaxProtoFactionNum || u->is_active())
+        && strlen(u->name) > 0 && u->triad() == triad && id != best_id) {
             if (id < MaxProtoFactionNum && !has_tech(u->preq_tech, faction)) {
+                continue;
+            }
+            if (!prototypes && id >= MaxProtoFactionNum && !u->is_prototyped()
+            && prototype_factor(id) > 0) {
                 continue;
             }
             if ((!combat && Weapon[u->weapon_id].mode != mode)
@@ -1048,18 +1149,17 @@ int find_proto(int base_id, Triad triad, VehWeaponMode mode, bool defend) {
             || (combat && defend && u->chassis_id != CHS_INFANTRY)
             || (u->is_psi_unit() && plans[faction].psi_score < 1)
             || (b->plr_owner() && u->obsolete_factions & (1 << faction))
-            || (b->plr_owner() && !u->is_prototyped() && ~b->governor_flags & GOV_MAY_PROD_PROTOTYPE)
             || u->is_planet_buster()) {
                 continue;
             }
-            if (mode == WMODE_COMBAT && best_id != basic
+            if (combat && best_id >= 0 && best_id != BSC_SCOUT_PATROL
             && ((defend && offense_value(id) > defense_value(id))
             || (!defend && offense_value(id) < defense_value(id)))) {
                 continue;
             }
             int val = unit_score(
                 id, faction, cfactor, b->mineral_surplus, b->minerals_accumulated, defend);
-            if (unit_is_better(best_id, id) || random(100) > 50 + best_val - val) {
+            if (best_id < 0 || unit_is_better(best_id, id) || random(100) > 50 + best_val - val) {
                 best_id = id;
                 best_val = val;
                 debug("===> %s\n", Units[best_id].name);
@@ -1114,18 +1214,20 @@ int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships) 
     int w1 = 4*plans[faction].air_combat_units < f->base_count ? 2 : 5;
     int w2 = (plans[faction].transport_units < 2
         || 5*plans[faction].transport_units < f->base_count ? 2 : 5);
-
+    int choice;
     bool need_ships = 6*plans[faction].sea_combat_units < plans[faction].land_combat_units;
     bool reserve = base->mineral_surplus >= base->mineral_intake_2/2;
     bool probes = has_wmode(faction, WMODE_INFOWAR) && gov & GOV_MAY_PROD_PROBES;
     bool transports = has_wmode(faction, WMODE_TRANSPORT) && gov & GOV_MAY_PROD_TRANSPORT;
-    bool aircraft = has_aircraft(faction) && gov & (GOV_MAY_PROD_AIR_COMBAT | GOV_MAY_PROD_AIR_DEFENS);
+    bool aircraft = has_aircraft(faction) && gov & (GOV_MAY_PROD_AIR_COMBAT | GOV_MAY_PROD_AIR_DEFENSE);
 
-    if (probes && (!random(num_probes*2 + 4) || !reserve)) {
-        return find_proto(base_id, (build_ships ? TRIAD_SEA : TRIAD_LAND), WMODE_INFOWAR, DEF);
+    if (probes && (!random(num_probes*2 + 4) || !reserve)
+    && (choice = find_proto(base_id, (build_ships ? TRIAD_SEA : TRIAD_LAND), WMODE_INFOWAR, DEF)) >= 0) {
+        return choice;
     }
-    if (aircraft && (f->SE_police >= -3 || !base_can_riot(base_id, true)) && !random(w1)) {
-        return find_proto(base_id, TRIAD_AIR, WMODE_COMBAT, ATT);
+    if (aircraft && (f->SE_police >= -3 || !base_can_riot(base_id, true)) && !random(w1)
+    && (choice = find_proto(base_id, TRIAD_AIR, WMODE_COMBAT, ATT)) >= 0) {
+        return choice;
     }
     if (build_ships && gov & (GOV_MAY_PROD_TRANSPORT | GOV_MAY_PROD_NAVAL_COMBAT)) {
         int min_dist = INT_MAX;
@@ -1151,7 +1253,9 @@ int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships) 
             } else {
                 mode = (!random(w2) ? WMODE_TRANSPORT : WMODE_COMBAT);
             }
-            return find_proto(base_id, TRIAD_SEA, mode, ATT);
+            if ((choice = find_proto(base_id, TRIAD_SEA, mode, ATT)) >= 0) {
+                return choice;
+            }
         }
     }
     return find_proto(base_id, TRIAD_LAND, WMODE_COMBAT, (sea_base || !random(5) ? DEF : ATT));
@@ -1187,7 +1291,7 @@ int select_build(int base_id) {
     int scouts = 0;
     int pods = 0;
 
-    for (int i=0; i < *VehCount; i++) {
+    for (int i = 0; i < *VehCount; i++) {
         VEH* veh = &Vehicles[i];
         if (veh->faction_id != faction) {
             continue;
@@ -1210,8 +1314,10 @@ int select_build(int base_id) {
             }
         }
         if (veh->is_combat_unit() && veh->triad() == TRIAD_LAND) {
-            if (map_range(base->x, base->y, veh->x, veh->y) <= 1) {
-                defenders++;
+            if (base->x == veh->x && base->y == veh->y) {
+                defenders += 2;
+            } else if (map_range(base->x, base->y, veh->x, veh->y) <= 1) {
+                defenders += 1;
             }
             if (veh->home_base_id == base_id) {
                 scouts++;
@@ -1323,7 +1429,7 @@ int select_build(int base_id) {
         int choice = 0;
 
         if (t == Satellites && minerals >= p->median_limit) {
-            if ((choice = find_satellite(base_id, defenders)) != 0) {
+            if ((choice = find_satellite(base_id, defenders/2)) != 0) {
                 return choice;
             }
         }
@@ -1338,24 +1444,28 @@ int select_build(int base_id) {
         if (t < 0 && !allow_units) {
             continue;
         }
-        if (t == DefendUnit && gov & GOV_ALLOW_COMBAT && gov & GOV_MAY_PROD_LAND_DEFENS) {
-            if (minerals > 2 && (defenders < 1 || need_scouts(base->x, base->y, faction, scouts))) {
-                return find_proto(base_id, TRIAD_LAND, WMODE_COMBAT, DEF);
+        if (t == DefendUnit && gov & GOV_ALLOW_COMBAT && gov & GOV_MAY_PROD_LAND_DEFENSE) {
+            if (minerals > 1 + (defenders > 0)
+            && (defenders < 2 || need_scouts(base->x, base->y, faction, scouts))
+            && (choice = find_proto(base_id, TRIAD_LAND, WMODE_COMBAT, DEF)) >= 0) {
+                return choice;
             }
         }
         if (t == CombatUnit && gov & GOV_ALLOW_COMBAT) {
-            if (minerals > reserve && random(100) < (int)(100 * threat)) {
-                return select_combat(base_id, landprobes+seaprobes, sea_base, build_ships);
+            if (minerals > reserve && random(256) < (int)(256 * threat)
+            && (choice = select_combat(base_id, landprobes+seaprobes,  sea_base, build_ships)) >= 0) {
+                return choice;
             }
         }
         if (t == SeaProbeUnit && gov & GOV_MAY_PROD_PROBES) {
             if (build_ships && has_wmode(faction, WMODE_INFOWAR)
             && ocean_coast_tiles(base->x, base->y) && !random(seaprobes > 0 ? 6 : 3)
-            && p->unknown_factions > 1 && p->contacted_factions < 2) {
-                return find_proto(base_id, TRIAD_SEA, WMODE_INFOWAR, DEF);
+            && p->unknown_factions > 1 && p->contacted_factions < 2
+            && (choice = find_proto(base_id, TRIAD_SEA, WMODE_INFOWAR, DEF)) >= 0) {
+                return choice;
             }
         }
-        if (t == FormerUnit && gov & GOV_MAY_PROD_TERRAFORMS) {
+        if (t == FormerUnit && gov & GOV_MAY_PROD_TERRAFORMERS) {
             if (has_wmode(faction, WMODE_TERRAFORMER)
             && formers + near_formers/2 < (base->pop_size < 4 ? 1 : 2)) {
                 int num = 0;
@@ -1368,18 +1478,18 @@ int select_build(int base_id) {
                     }
                 }
                 if (num > 3) {
-                    if (has_chassis(faction, CHS_GRAVSHIP)) {
-                        int unit_id = find_proto(base_id, TRIAD_AIR, WMODE_TERRAFORMER, DEF);
-                        if (unit_id >= 0 && Units[unit_id].triad() == TRIAD_AIR
-                        && prod_turns(base_id, unit_id) < 8) {
-                            return unit_id;
-                        }
+                    if (has_chassis(faction, CHS_GRAVSHIP)
+                    && (choice = find_proto(base_id, TRIAD_AIR, WMODE_TERRAFORMER, DEF)) >= 0
+                    && Units[choice].triad() == TRIAD_AIR && prod_turns(base_id, choice) < 8) {
+                        return choice;
                     }
-                    if ((sea*2 >= num || sea_base) && has_ships(faction)) {
-                        return find_proto(base_id, TRIAD_SEA, WMODE_TERRAFORMER, DEF);
+                    if ((sea*2 >= num || sea_base) && has_ships(faction)
+                    && (choice = find_proto(base_id, TRIAD_SEA, WMODE_TERRAFORMER, DEF)) >= 0) {
+                        return choice;
                     }
-                    if (!sea_base) {
-                        return find_proto(base_id, TRIAD_LAND, WMODE_TERRAFORMER, DEF);
+                    if (!sea_base
+                    && (choice = find_proto(base_id, TRIAD_LAND, WMODE_TERRAFORMER, DEF)) >= 0) {
+                        return choice;
                     }
                 }
             }
@@ -1387,30 +1497,31 @@ int select_build(int base_id) {
         if (t == FerryUnit && gov & GOV_MAY_PROD_TRANSPORT) {
             if (build_ships && !transports && need_ferry) {
                 for (auto& m : iterate_tiles(base->x, base->y, 1, 9)) {
-                    if (!is_ocean(m.sq) && (!m.sq->is_owned() || m.sq->owner == faction)) {
-                        return find_proto(base_id, TRIAD_SEA, WMODE_TRANSPORT, DEF);
+                    if (!is_ocean(m.sq) && (!m.sq->is_owned() || m.sq->owner == faction)
+                    && (choice = find_proto(base_id, TRIAD_SEA, WMODE_TRANSPORT, DEF)) >= 0) {
+                        return choice;
                     }
                 }
             }
         }
-        if (t == ColonyUnit && gov & GOV_MAY_PROD_COLONY_POD) {
-            if (build_pods) {
-                Triad type = select_colony(base_id, pods, build_ships);
-                if (type == TRIAD_LAND || type == TRIAD_SEA) {
-                    return find_proto(base_id, type, WMODE_COLONIST, DEF);
+        if (t == ColonyUnit && build_pods && gov & GOV_MAY_PROD_COLONY_POD) {
+            Triad type = select_colony(base_id, pods, build_ships);
+            if ((type == TRIAD_LAND || type == TRIAD_SEA)
+            && (choice = find_proto(base_id, type, WMODE_COLONIST, DEF)) >= 0) {
+                return choice;
+            }
+        }
+        if (t == CrawlerUnit && allow_supply) {
+            if (has_wmode(faction, WMODE_CONVOY) && all_crawlers < f->base_count) {
+                if ((choice = find_proto(base_id, TRIAD_LAND, WMODE_CONVOY, DEF)) >= 0) {
+                    if (prod_turns(base_id, choice) < 10 && random(2)) {
+                        return choice;
+                    }
+                    default_choice = choice;
                 }
             }
         }
-        if (t == CrawlerUnit) {
-            if (allow_supply && has_wmode(faction, WMODE_CONVOY)
-            && all_crawlers < f->base_count) {
-                default_choice = find_proto(base_id, TRIAD_LAND, WMODE_CONVOY, DEF);
-                if (prod_turns(base_id, default_choice) < 10 && random(2)) {
-                    return default_choice;
-                }
-            }
-        }
-        if (t < 0 || !can_build(base_id, t) || (t >= 0 && ~gov & GOV_MAY_PROD_FACILITIES)) {
+        if (t < 0 || !can_build(base_id, t) || (t >= 0 && !(gov & GOV_MAY_PROD_FACILITIES))) {
             continue; // Skip facility checks
         }
         if (flag & F_Default && !default_choice) {

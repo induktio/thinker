@@ -43,7 +43,7 @@ int base_enemy_range[MaxBaseNum] = {};
 
 
 void adjust_value(PMTable tbl, int x, int y, int range, int value) {
-    assert(mapsq(x, y) && range > 0);
+    assert(mapsq(x, y) && range > 0 && range < 9);
     for (const auto& m : iterate_tiles(x, y, 0, TableRange[range])) {
         int sum = tbl[m.x][m.y] + value;
         if (sum >= SHRT_MIN && sum <= SHRT_MAX) {
@@ -71,10 +71,6 @@ bool non_ally_in_tile(int x, int y, int faction) {
     return nonally.count({x, y}) > 0;
 }
 
-bool both_neutral(int faction1, int faction2) {
-    return faction1 >= 0 && faction2 >= 0
-        && Factions[faction1].diplo_status[faction2] & (DIPLO_TRUCE|DIPLO_TREATY);
-}
 
 bool allow_move(int x, int y, int faction, int triad) {
     assert(valid_player(faction));
@@ -201,9 +197,15 @@ int __cdecl mod_enemy_move(int veh_id) {
         } else if (veh->is_former()) {
             return former_move(veh_id);
         }
+    }
+    int num = *VehCount;
+    int iter = veh->iter_count;
+    int value = enemy_move(veh_id);
+    if (value == VEH_SKIP && veh->iter_count == iter && num == *VehCount) {
+        // Avoid infinite loops if enemy_move does not update the vehicle
         return VEH_SYNC;
     }
-    return enemy_move(veh_id);
+    return value;
 }
 
 int __cdecl veh_kill_lift(int veh_id) {
@@ -810,10 +812,11 @@ void move_upkeep(int faction, UpdateMode mode) {
         if (k<3) {
             for (int y = 0; y < *MapAreaY; y++) {
                 for (int x = y&1; x < *MapAreaX; x+=2) {
+                    sq = mapsq(x, y);
                     if (k==0) {
-                        pm_overlay[x][y] = base_tile_score(x, y, 0, TRIAD_SEA);
+                        pm_overlay[x][y] = base_tile_score(x, y, faction, sq);
                     } else if (k==1) {
-                        pm_overlay[x][y] = former_tile_score(x, y, faction, mapsq(x, y));
+                        pm_overlay[x][y] = former_tile_score(x, y, faction, sq);
                     } else if (k==2) {
                         pm_overlay[x][y] = arty_value(x, y);
                     }
@@ -1131,8 +1134,7 @@ bool can_build_base(int x, int y, int faction, int triad) {
         return false;
     }
     // Allow base building on smaller maps in owned territory if a new faction is spawning.
-    if (sq->is_owned() && faction != sq->owner && !at_war(faction, sq->owner)
-    && Factions[faction].base_count > 0) {
+    if (both_non_enemy(faction, sq->owner) && Factions[faction].base_count > 0) {
         return false;
     }
     if (non_ally_in_tile(x, y, faction)) {
@@ -1159,37 +1161,41 @@ bool can_build_base(int x, int y, int faction, int triad) {
     return false;
 }
 
-int base_tile_score(int x, int y, int range, int triad) {
+int base_tile_score(int x, int y, int faction, MAP* sq) {
     const int priority[][2] = {
         {BIT_FUNGUS, -2},
         {BIT_FARM, 2},
         {BIT_FOREST, 2},
         {BIT_MONOLITH, 4},
     };
-    MAP* sq = mapsq(x, y);
+    bool sea_colony = is_ocean(sq);
     int score = min(20, 40 - 80*abs(*MapAreaY/2 - y)/(*MapAreaY));
     int land = 0;
-
-    if (!is_ocean(sq)) {
-        score += (ocean_coast_tiles(x, y) ? 14 : 0);
+    score += (sq->items & BIT_SENSOR ? 8 : 0);
+    if (!sea_colony) {
+        score += (ocean_coast_tiles(x, y) ? 12 : 0);
         score += (sq->items & BIT_RIVER ? 5 : 0);
-        score += (sq->items & BIT_DOUBLE_SEA ? 5 : 0);
     }
     for (const auto& m : iterate_tiles(x, y, 1, 21)) {
         assert(map_range(x, y, m.x, m.y) == 1 + (m.i > 8));
         if (!m.sq->is_base()) {
             score += (bonus_at(m.x, m.y) ? 6 : 0);
-            if (m.sq->landmarks && !(m.sq->landmarks & (LM_DUNES | LM_SARGASSO | LM_UNITY))) {
+            if (m.sq->landmarks & ~(LM_DUNES|LM_SARGASSO|LM_UNITY)) {
                 score += (m.sq->landmarks & LM_JUNGLE ? 3 : 2);
             }
             if (m.i <= 8) { // Only adjacent tiles
-                if (triad == TRIAD_SEA && m.sq->is_land_region()
-                && Continents[m.sq->region].tile_count >= 20 && ++land < 3) {
-                    score += (!m.sq->is_owned() ? 20 : 3);
+                if (sea_colony && m.sq->is_land_region()
+                && Continents[m.sq->region].tile_count >= 20
+                && (!m.sq->is_owned() || m.sq->owner == faction) && ++land < 3) {
+                    score += (!m.sq->is_owned() ? 20 : 4);
                 }
                 if (is_ocean_shelf(m.sq)) {
-                    score += (triad == TRIAD_SEA ? 3 : 2);
+                    score += (sea_colony ? 3 : 2);
                 }
+            }
+            if (sea_colony != is_ocean(m.sq)
+            && both_non_enemy(faction, m.sq->owner)) {
+                score -= 5;
             }
             if (!is_ocean(m.sq)) {
                 if (m.sq->is_rainy()) {
@@ -1207,7 +1213,7 @@ int base_tile_score(int x, int y, int range, int triad) {
             }
         }
     }
-    return score - 2*range + min(0, (int)pm_safety[x][y]);
+    return score + min(0, (int)pm_safety[x][y]);
 }
 
 int colony_move(const int id) {
@@ -1271,7 +1277,7 @@ int colony_move(const int id) {
         || !safe_path(ts, faction)) {
             continue;
         }
-        int score = base_tile_score(ts.rx, ts.ry, ts.dist, triad);
+        int score = base_tile_score(ts.rx, ts.ry, faction, sq) - 2*ts.dist;
         k++;
         if (score > best_score) {
             tx = ts.rx;
@@ -1568,7 +1574,7 @@ bool can_magtube(int x, int y, int faction, MAP* sq) {
     || sq->items & (BIT_MAGTUBE | BIT_BASE_IN_TILE)) {
         return false;
     }
-    if (sq->owner != faction && both_neutral(faction, sq->owner)) {
+    if (both_neutral(faction, sq->owner)) {
         return false;
     }
     if (is_human(faction) && *GameMorePreferences & MPREF_AUTO_FORMER_CANT_BUILD_ROADS) {

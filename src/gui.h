@@ -12,6 +12,7 @@ extern char label_pop_size[StrBufLen];
 extern char label_pop_boom[StrBufLen];
 extern char label_nerve_staple[StrBufLen];
 extern char label_captured_base[StrBufLen];
+extern char label_stockpile_energy[StrBufLen];
 extern char label_sat_nutrient[StrBufLen];
 extern char label_sat_mineral[StrBufLen];
 extern char label_sat_energy[StrBufLen];

@@ -25,16 +25,48 @@ bool has_wmode(int faction, VehWeaponMode mode) {
             return true;
         }
     }
+    for (int i = 0; i < MaxProtoFactionNum; i++) {
+        UNIT* u = &Units[i];
+        if (u->is_active() && u->weapon_mode() == mode
+        && strlen(u->name) > 0 && has_tech(u->preq_tech, faction)) {
+            return true;
+        }
+    }
     return false;
 }
 
 bool has_aircraft(int faction) {
-    return has_chassis(faction, CHS_NEEDLEJET) || has_chassis(faction, CHS_COPTER)
-        || has_chassis(faction, CHS_GRAVSHIP);
+    for (int i = 0; i < MaxChassisNum; i++) {
+        if (Chassis[i].triad == TRIAD_AIR && !Chassis[i].missile
+        && has_tech(Chassis[i].preq_tech, faction)) {
+            return true;
+        }
+    }
+    for (int i = 0; i < MaxProtoFactionNum; i++) {
+        UNIT* u = &Units[i];
+        if (u->is_active() && u->triad() == TRIAD_AIR && !Chassis[i].missile
+        && strlen(u->name) > 0 && has_tech(u->preq_tech, faction)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool has_ships(int faction) {
-    return has_chassis(faction, CHS_FOIL) || has_chassis(faction, CHS_CRUISER);
+    for (int i = 0; i < MaxChassisNum; i++) {
+        if (Chassis[i].triad == TRIAD_SEA
+        && has_tech(Chassis[i].preq_tech, faction)) {
+            return true;
+        }
+    }
+    for (int i = 0; i < MaxProtoFactionNum; i++) {
+        UNIT* u = &Units[i];
+        if (u->is_active() && u->triad() == TRIAD_SEA
+        && strlen(u->name) > 0 && has_tech(u->preq_tech, faction)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool has_orbital_drops(int faction) {
@@ -153,14 +185,23 @@ bool has_agenda(int faction1, int faction2, uint32_t agenda) {
         && Factions[faction1].diplo_agenda[faction2] & agenda;
 }
 
+bool both_neutral(int faction1, int faction2) {
+    return faction1 >= 0 && faction2 >= 0 && faction1 != faction2
+        && !(Factions[faction1].diplo_status[faction2] & (DIPLO_PACT|DIPLO_VENDETTA));
+}
+
+bool both_non_enemy(int faction1, int faction2) {
+    return faction1 >= 0 && faction2 >= 0 && faction1 != faction2
+        && !(Factions[faction1].diplo_status[faction2] & DIPLO_VENDETTA);
+}
+
 bool want_revenge(int faction1, int faction2) {
     return Factions[faction1].diplo_status[faction2] & (DIPLO_ATROCITY_VICTIM | DIPLO_WANT_REVENGE);
 }
 
 bool allow_expand(int faction) {
     int bases = 0;
-    if (*GameRules & RULES_SCN_NO_COLONY_PODS || !has_wmode(faction, WMODE_COLONIST)
-    || *BaseCount >= MaxBaseNum * 19 / 20) {
+    if (*GameRules & RULES_SCN_NO_COLONY_PODS || *BaseCount >= MaxBaseNum * 19 / 20) {
         return false;
     }
     for (int i=1; i < MaxPlayerNum && conf.expansion_autoscale > 0; i++) {

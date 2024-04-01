@@ -27,10 +27,16 @@ extern PMTable pm_overlay;
 extern int base_enemy_range[MaxBaseNum];
 
 int arty_value(int x, int y);
-int base_tile_score(int x, int y, int range, int triad);
+int base_tile_score(int x, int y, int faction, MAP* sq);
 int former_tile_score(int x, int y, int faction, MAP* sq);
 int select_item(int x, int y, int faction, FormerMode mode, MAP* sq);
-bool allow_probe(int faction1, int faction2, bool is_enhanced_probe);
+bool allow_scout(int faction, MAP* sq);
+bool allow_probe(int faction1, int faction2, bool is_enhanced);
+bool allow_attack(int faction1, int faction2, bool is_probe, bool is_enhanced);
+bool allow_conv_missile(int veh_id, int enemy_veh_id, MAP* sq);
+int garrison_goal(int x, int y, int faction, int triad);
+int garrison_count(int x, int y);
+int defender_count(int x, int y, int veh_skip_id);
 
 int __cdecl mod_enemy_move(int veh_id);
 int __cdecl veh_kill_lift(int veh_id);

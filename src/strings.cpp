@@ -40,7 +40,8 @@ void reader_file(vec_str_t& lines, const char* filename, const char* section, si
 }
 
 void parse_format_args(char* buf, const char* src, int args_count, size_t max_len) {
-    if (count_format_args(src) == args_count) {
+    int num = count_format_args(src);
+    if (num >= 0 && num <= args_count) {
         strncpy(buf, src, max_len);
         buf[max_len-1] = '\0';
     }
@@ -53,7 +54,7 @@ int count_format_args(const char* buf) {
 
     for (i = 0; i < len - 1; i++) {
         if (buf[i] == '%' && buf[i + 1] != '%') {
-            if (buf[i + 1] != 'd') {
+            if (buf[i + 1] != 'd' && buf[i + 1] != 'i' && buf[i + 1] != 'u') {
                 return -1;
             }
             num++;

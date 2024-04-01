@@ -7,7 +7,7 @@ Alpha Centauri was known for its immersive lore and story telling. As a general 
 
 For the most part, Thinker uses the same production bonuses as the vanilla difficulty levels would grant the AI normally. There should be no extra resources received by the AI unless this is chosen in the configuration file. The main goal is to make the AI play better given any game config options, so generally the mod will not attempt to adjust most vanilla game design choices.
 
-**For a mostly exhaustive list of all features provided by this mod, refer to both this file and `thinker.ini`.** Enabling Thinker Mod will affect many AI behaviors and also introduce some new game mechanics into Alpha Centauri. Generally most of the new features in the mod will have their own specific config options to choose either vanilla or modded behavior. Items listed under "Other patches included" and "Scient's Patch" in this file will always be applied unless there is a config option listed to toggle them.
+For the most complete list of all features provided by this mod, refer to both this file and `thinker.ini`. If something is not mentioned in these files, it is probably not implemented. Thinker Mod will affect many AI behaviors and also introduce some new game mechanics into Alpha Centauri. Generally most of the new features in the mod will have their own specific config options to choose either vanilla or modded behavior. Items listed under "Other patches included" and "Scient's Patch" in this file will always be applied unless there is a config option listed to toggle them.
 
 Thinker does not have any incompatible save game format, so it's possible to open an old save and have the factions switch to the new AI and vice-versa. None of the `thinker.ini` config options are preserved in the save game either, but the units or resources spawned at the game start will remain.
 
@@ -36,11 +36,13 @@ Thinker's in-game menu shows the mod version information and provides statistics
 
 Statistics feature calculates mineral and energy production numbers after multiplier facility effects are applied. However the mineral output bonus provided by Space Elevator is ignored in this step. Energy calculation also does not substract inefficiency from the final number.
 
-Render base info feature draws colored labels around various bases to identify them more easily and shows more details on the base window. HQ bases are highlighted with a white label. Player-owned bases that are about to drone riot or enter the golden age are highlighted with colored labels. Bases that have Flechette Defense System or Geo Survey Pods are highlighted with a blue label.
+Render base info feature draws colored labels around various bases to identify them more easily and shows more details on the world map. HQ bases are highlighted with a white label. Player-owned bases that are about to drone riot or enter the golden age are highlighted with colored labels. Bases that have Flechette Defense System or Geo Survey Pods are highlighted with a blue label.
 
-Base window will also show additional details that were previously not directly visible on the user interface. The game will show population counts for talents, workers, drones and specialists. Bases that are about to drone riot, enter the golden age or pop boom on the next turn are highlighted with colored labels. When a base has been nerve stapled, the remaining turns for the staple effect are shown on the bottom right corner. Any satellite production bonuses are also shown on the base resource view. The mod also makes it possible to switch between base window tabs by pressing `Ctrl+Left` or `Ctrl+Right`.
+Base window will also show additional details that were previously not directly visible on the user interface. Any satellite production bonuses are also shown in the base resource view. When the base is producing Stockpile Energy, the extra credits gained per turn is shown in the base resource view. It is also possible to switch between base window tabs by pressing `Ctrl+Left` or `Ctrl+Right`.
 
-Whenever the player instructs a former to build an improvement that replaces any other item in the tile, the game will display a warning dialog. This dialog can be skipped by toggling the option here (warn_on_former_replace).
+The game will show population counts for talents, workers, drones and specialists. Bases that are about to drone riot, enter the golden age or pop boom on the next turn are highlighted with colored labels. When a base has been nerve stapled, the remaining turns for the staple effect are shown on the bottom right corner.
+
+Whenever the player instructs a former to build an improvement that replaces any other item in the tile, the game will display a warning dialog. This dialog can be skipped by toggling the warning option (warn_on_former_replace).
 
 When building or capturing a new base, the mod will automatically copy the saved build queue from **Template 1** to the new base. At maximum 8 items can be saved to the template, and the first item from the template will be automatically moved to current production choice when a new base is built or captured. Only the template saved to the first slot is checked, any other saved templates are ignored.
 
@@ -103,8 +105,9 @@ This feature supports all the world settings chosen from the game menus such as 
 
 From the menu options it is also possible to choose the random map style from larger or smaller continents. Note that this has only significant impact if the ocean coverage is at least average, since at low levels all generated maps will tend towards pangaea layouts.
 
-All landmarks that are placed on random maps can also be configured from `thinker.ini`. Nessus Canyon is available but disabled by default. When new map generator is enabled, `modified_landmarks` option replaces the default Monsoon Jungle landmark with multiple smaller jungles dispersed across the equator area.
-Planet rainfall level will determine how many jungle tiles are placed. When playing on smaller maps, it might make more sense to disable some additional landmarks, as otherwise the maps might appear cluttered.
+All landmarks that are placed on random maps can also be configured from `thinker.ini`. Nessus Canyon is available but disabled by default. When new map generator is enabled, `modified_landmarks` option replaces the default Monsoon Jungle landmark with multiple smaller jungles dispersed across the equator area, and Borehole Cluster is also expanded to four tiles. Planet rainfall level will determine how many jungle tiles are placed.
+
+When playing on smaller maps, it might make more sense to disable some additional landmarks, as otherwise the map generator may skip placing some landmarks due to not having enough space.
 
 The new map generator is entirely different from the vanilla version, so it does not parse the variables specified in `alphax.txt` WorldBuilder section. Only in limited cases, such as fungus placement, WorldBuilder variables might be used by the game engine when the new map generator is enabled.
 
@@ -331,14 +334,14 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 7. Disable legacy upkeep code in the game engine that might cause AI formers to be reassigned to nearby bases that are owned by other factions.
 8. Patch the game engine to use significantly less CPU time by using a method similar to [smac-cpu-fix](https://github.com/vinceho/smac-cpu-fix/). Normally the game uses 100% of CPU time which can be be a problem on laptop devices (cpu_idle_fix).
 9. When capturing a base, Recycling Tanks and Recreation Commons are not always destroyed unlike previously. They are sometimes randomly destroyed like other facilities (facility_capture_fix).
-10. Patch any faction with negative research rating to start accumulating labs on the first turn. In vanilla rules each negative point results in an additional 5 turn delay before the faction starts accumulating labs, for example Believers had a 10 turn delay (early_research_start).
+10. Patch any faction with negative research rating to start accumulating labs on the first turn. In vanilla rules each negative point results in an additional 5 turn delay before the faction starts accumulating labs, for example Believers had a 10 turn delay. Players on two lowest difficulty levels will also start accumulating labs immediately instead of 5 turns later (early_research_start).
 11. Fix faction graphics bug that appears when Alpha Centauri.ini has a different set of faction filenames than the loaded scenario file. The patch will make sure the correct graphics set is loaded when opening the scenario. This bug only happened with scenario files, while regular save games were unaffected.
 12. Patch the game to use the Command Center maintenance cost that is set in alphax.txt. Normally the game would ignore this value and make the cost dependent on faction's best reactor value which is inconsistent with the other settings for facilities in alphax.txt.
 13. Sometimes the base window population row would display superdrones even though they would be suppressed by psych-related effects. The patch removes superdrone icons from the main population row and uses regular worker/drone/talent icons if applicable, so any drones should not be displayed there if they are suppressed by psych effects. To check the superdrone status, open the psych sub window.
 14. Fix visual bug where population icons in base window would randomly switch their type when clicking on them.
 15. Patch AIs to initiate much less diplomacy dialogs when the player captures their bases. Previously this happened at least once for every turn the AI loses any bases and would repeat the same dialog every time if the player didn't agree to the peace terms. The patch makes the initiation of dialog more dependent on random chance unless the AI would finally accept surrender terms.
 16. Patch genetic warfare probe team action to cause much less damage for any units defending the base. In vanilla game mechanics even one attack instantly inflicted almost 80% damage. In the patched version population loss mechanic is unaffected, but even multiple attacks should do substantially less damage for defender units.
-17. Patch terrain drawing engine to render more detailed tiles when zooming out from the default level instead of the blocky, less detailed versions on almost every zoom out level. Fix visual issues where the game sometimes did not update the map properly when recentering it offscreen on native resolution mode (render_high_detail).
+17. Patch terrain drawing engine to render more detailed tiles when zooming out from the default level instead of the blocky, less detailed versions on almost every zoom out level. Fix visual issues where the game sometimes did not update the map properly when recentering it offscreen on native resolution mode. Main menu setup screen will update the planet preview on all resolutions (render_high_detail).
 18. Modify multiplayer setup screen to use average values for each of the random map generator settings, instead of the highest possible like previously.
 19. Fix potential crash when a game is loaded after using Edit Map > Generate/Remove Fungus > No Fungus.
 20. Fix foreign base names being visible in unexplored tiles when issuing move to or patrol orders to the tiles.
@@ -364,6 +367,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 40. Fix possible issues with inconsistent captured base facilities when some of the factions have free facilities defined for them.
 41. Fix some issues where AI declared war based on calculations using incorrect variables. AI is also less likely to declare war at early stages when it has only few bases built.
 42. Fix issues where the game would crash on resolutions not divisible by 8. If an unsupported resolution is used, the game will attempt to automatically switch to the closest supported size.
+43. Fix Stockpile Energy when it enabled double production if the base produces one item and then switches to Stockpile Energy on the same turn gaining additional credits.
 
 
 Scient's patch

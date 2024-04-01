@@ -23,6 +23,8 @@ bool at_war(int faction1, int faction2);
 bool has_pact(int faction1, int faction2);
 bool has_treaty(int faction1, int faction2, uint32_t treaty);
 bool has_agenda(int faction1, int faction2, uint32_t agenda);
+bool both_neutral(int faction1, int faction2);
+bool both_non_enemy(int faction1, int faction2);
 bool want_revenge(int faction1, int faction2);
 bool allow_expand(int faction);
 bool has_colony_pods(int faction);

@@ -152,6 +152,24 @@ bool __cdecl near_landmark(int x, int y) {
     return false;
 }
 
+/*
+Reset the map to a blank state. Original doesn't wipe unk_1 and owner fields.
+This is simplified by zeroing all fields first and then setting specific fields.
+*/
+void __cdecl mod_map_wipe() {
+    *MapSeaLevel = 0;
+    *MapSeaLevelCouncil = 0;
+    *MapLandmarkCount = 0;
+    *MapRandomSeed = random(0x7FFF) + 1;
+    memset(*MapTiles, 0, *MapAreaTiles * sizeof(MAP));
+    for (int i = 0; i < *MapAreaTiles; i++) {
+        (*MapTiles)[i].climate = 0x20;
+        (*MapTiles)[i].contour = 20;
+        (*MapTiles)[i].val2 = 0xF;
+        (*MapTiles)[i].owner = -1;
+    }
+}
+
 int __cdecl base_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, int y2, bool toggle) {
     MAP* sq_dst = mapsq(x2, y2);
     uint32_t bit_dst = (sq_dst ? sq_dst->items : 0);
@@ -485,9 +503,11 @@ int item_yield(int x, int y, int faction, int bonus, MapItem item) {
     && !has_tech(Rules->tech_preq_allow_3_energy_sq, faction)) {
         E = 2;
     }
-    debug("item_yield %2d %2d %08X faction: %d bonus: %d planet: %d N: %d M: %d E: %d prev: %d\n",
+    if (conf.debug_verbose) {
+        debug("item_yield %2d %2d %08X faction: %d bonus: %d planet: %d N: %d M: %d E: %d prev: %d\n",
         x, y, item, faction, bonus, Factions[faction].SE_planet_pending,
         N, M, E, total_yield(x, y, faction));
+    }
     return N+M+E;
 }
 
@@ -963,6 +983,7 @@ void world_generate(uint32_t seed) {
         *GameState |= STATE_DEBUG_MODE;
     }
     MAP* sq;
+    mod_map_wipe();
     ThinkerVars->map_random_value = seed;
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
@@ -973,14 +994,23 @@ void world_generate(uint32_t seed) {
     memcpy(AltNatural, AltNaturalDefault, 0x2Cu);
     *WorldAddTemperature = 1;
     *WorldSkipTerritory = 1;
-    *MapOceanCoverage = clamp(*MapOceanCoverage, 0, 2);
-    *MapErosiveForces = clamp(*MapErosiveForces, 0, 2);
+    /*
+    MapSizePlanet (this should not be unset, but checked regardless)
+    MapOceanCoverage
+    MapLandCoverage
+    MapErosiveForces
+    MapPlanetaryOrbit
+    MapCloudCover
+    MapNativeLifeForms
+    */
     for (int i = 0; i < 7; i++) {
         if (MapSizePlanet[i] < 0) {
             MapSizePlanet[i] = random(3);
         }
+        if (i > 0) {
+            MapSizePlanet[i] = clamp(MapSizePlanet[i], 0, 2);
+        }
     }
-    map_wipe();
     if (*GameState & STATE_OMNISCIENT_VIEW) {
         MapWin_clear_terrain(MapWin);
         draw_map(1);
@@ -1147,9 +1177,9 @@ void world_generate(uint32_t seed) {
         if (lm & LM_UNITY) world_unity(-1, -1);
         if (lm & LM_FOSSIL) world_fossil(-1, -1);
     }
-    if (lm & LM_CANYON) world_canyon_nessus(-1, -1);
     if (lm & LM_NEXUS) world_temple(-1, -1);
     if (lm & LM_BOREHOLE) mod_world_borehole(-1, -1);
+    if (lm & LM_CANYON) world_canyon_nessus(-1, -1);
     if (lm & LM_SARGASSO) world_sargasso(-1, -1);
     if (lm & LM_DUNES) world_dune(-1, -1);
     if (lm & LM_FRESH) world_fresh(-1, -1);
@@ -1241,7 +1271,7 @@ void __cdecl mod_time_warp() {
                     && !(m.sq->items & BIT_SKIP_BONUS)) {
                         // Improve resources/remove fungus near start
                         int bonus = bonus_at(m.x, m.y);
-                        if (!goody_at(m.x, m.y) && !m.sq->is_rocky() && added < 4 && !random(4)) {
+                        if (!goody_at(m.x, m.y) && !m.sq->is_rocky() && added < 5 && !random(4)) {
                             if (!is_ocean(m.sq)) {
                                 m.sq->items &= ~TerraformRules[FORMER_FOREST][1];
                                 m.sq->items &= ~BIT_FUNGUS;

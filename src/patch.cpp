@@ -13,8 +13,6 @@ const char* ac_movlist_txt = "movlist.txt";
 const char* ac_movlistx_txt = "movlistx.txt";
 const int8_t NetVersion = (DEBUG ? 64 : 10);
 
-static bool delay_base_riot = false;
-
 
 bool FileExists(const char* path) {
     return GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES;
@@ -28,40 +26,6 @@ int __cdecl base_governor_crop_yield(int faction, int base_id, int x, int y, int
         value++;
     }
     return value;
-}
-
-int __cdecl mod_base_upkeep(int base_id) {
-    BASE* base = &Bases[base_id];
-    int value = base_upkeep(base_id);
-    if (!value // non-zero values indicate special cases (exited early)
-    && base->nerve_staple_turns_left > 0
-    && Factions[base->faction_id].SE_police_pending < conf.nerve_staple_mod) {
-        --base->nerve_staple_turns_left;
-    }
-    return value;
-}
-
-/*
-These functions (first base_growth and then drone_riot)
-will only get called from production_phase > base_upkeep.
-*/
-int __cdecl mod_base_growth() {
-    BASE* base = *CurrentBase;
-    delay_base_riot = base->talent_total >= base->drone_total
-        && ~base->state_flags & BSTATE_DRONE_RIOTS_ACTIVE;
-    int cur_pop = base->pop_size;
-    int value = base_growth();
-    assert(*CurrentBase == base);
-    delay_base_riot = delay_base_riot && base->pop_size > cur_pop;
-    return value;
-}
-
-void __cdecl mod_drone_riot() {
-    if (!delay_base_riot) {
-        drone_riot();
-    } else {
-        assert(!((*CurrentBase)->state_flags & BSTATE_DRONE_RIOTS_ACTIVE));
-    }
 }
 
 /*
@@ -539,6 +503,7 @@ bool patch_setup(Config* cf) {
     write_call(0x50474C, (int)mod_battle_compute); // best_defender
     write_call(0x506EA6, (int)mod_battle_compute); // battle_fight_2
     write_call(0x5085E0, (int)mod_battle_compute); // battle_fight_2
+    write_call(0x4F7B82, (int)mod_base_research); // base_upkeep
 
     write_offset(0x50F421, (void*)mod_turn_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);
@@ -967,6 +932,15 @@ bool patch_setup(Config* cf) {
     }
 
     /*
+    Fix Stockpile Energy when it enabled double production if the base produces one item
+    and then switches to Stockpile Energy on the same turn gaining additional credits.
+    */
+    {
+        short_jump(0x4EC33D); // base_energy skip stockpile energy
+        write_call(0x4F7A2F, (int)mod_base_production); // base_upkeep
+    }
+
+    /*
     Additional combat bonus options for PSI effects.
     */
     {
@@ -1130,12 +1104,6 @@ bool patch_setup(Config* cf) {
     }
     if (cf->skip_default_balance) {
         remove_call(0x5B41F5);
-    }
-    if (cf->early_research_start) {
-        /* Remove labs start delay from factions with negative RESEARCH value. */
-        const byte old_bytes[] = {0x33, 0xFF};
-        const byte new_bytes[] = {0x90, 0x90};
-        write_bytes(0x4F4F17, old_bytes, new_bytes, sizeof(new_bytes));
     }
     if (cf->facility_capture_fix) {
         remove_call(0x50D06A);

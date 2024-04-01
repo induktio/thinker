@@ -87,7 +87,8 @@ int __cdecl mod_morale_alien(int veh_id, int faction_id_vs_native) {
             if (Vehs[veh_id].unit_id == BSC_LOCUSTS_OF_CHIRON) {
                 morale++;
             }
-            morale += (Vehs[veh_id].flags >> 3) & 3; // 0x8|0x10 > +1, +2, or +3; TODO: id unk flags
+            morale += (Vehs[veh_id].flags & VFLAG_ADD_ONE_MORALE ? 1 : 0);
+            morale += (Vehs[veh_id].flags & VFLAG_ADD_TWO_MORALE ? 2 : 0);
         }
     }
     morale = clamp(morale, 0, 6);
