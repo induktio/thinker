@@ -1,17 +1,16 @@
 #BASES
 Black Pearl Hotel
-Blackbeard's Barracks
 Blackbeard's Bluff
 Booty Bay Inn
 Brigand's Burrow
 Buccaneer's Refuge
 Captain's Quarters
-Corsair's Corner
 Corsair's Cove
 Crimson Cove
 Crossed Swords Inn
 Cutlass Cove
 Cutthroat's Cove
+Freebooter's Folly
 Galleon's Grotto
 Golden Anchor
 Harpoon Hill
@@ -23,10 +22,11 @@ Parrot's Perch
 Pegleg Pub
 Pirate's Perch
 Pirate's Plunge
-Privateer's Port
+Plunderer's Perch
+Privateer's Point
 Rumrunner's Refuge
-Rumrunner's Roost
 Sailor's Retreat
+Scourge's Shelter
 Seafarer's Retreat
 Seafarer's Sanctum
 Silver Sail Inn
@@ -50,6 +50,7 @@ Endless Horizon
 Fisherman's Wharf
 Harborview Haven
 Marauder's Moorings
+Mutineer's Haven
 Neptune's Quay
 Ocean's Roost
 Oceanic View
@@ -62,8 +63,7 @@ Safe Passage
 Sea Breeze Harbor
 Seafaring Way
 Shadow Harbor
-Shipshape Shores
-Shipwreck Shore
+Shipwreck Shores
 Skull's Cove
 Stormy Seas Inn
 Sunken Harbor

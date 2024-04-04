@@ -5,7 +5,7 @@ Thinker has several advanced planning routines that enhance the base game AI to 
 
 Alpha Centauri was known for its immersive lore and story telling. As a general design principle, Thinker will attempt to improve gameplay mechanics and AI while leaving most of the lore as it is. Any instances where adding a feature or patch would be controversial with the original game narrative should be avoided, unless this is necessary for gameplay balance reasons. Hopefully this combination of changes will represent the original game accurately while also improving the gameplay experience and fixing many balance issues.
 
-For the most part, Thinker uses the same production bonuses as the vanilla difficulty levels would grant the AI normally. There should be no extra resources received by the AI unless this is chosen in the configuration file. The main goal is to make the AI play better given any game config options, so generally the mod will not attempt to adjust most vanilla game design choices.
+With minor exceptions, Thinker uses the same production bonuses as the vanilla difficulty levels would grant the AI normally. There should be no extra resources received by the AI unless this is chosen in the configuration file. The main goal is to make the AI play better given any game config options, so generally the mod will not attempt to adjust most vanilla game design choices.
 
 For the most complete list of all features provided by this mod, refer to both this file and `thinker.ini`. If something is not mentioned in these files, it is probably not implemented. Thinker Mod will affect many AI behaviors and also introduce some new game mechanics into Alpha Centauri. Generally most of the new features in the mod will have their own specific config options to choose either vanilla or modded behavior. Items listed under "Other patches included" and "Scient's Patch" in this file will always be applied unless there is a config option listed to toggle them.
 
@@ -160,6 +160,62 @@ This list is not complete, but it details the most important bonuses granted for
 3. Content (non-drone) base population for each difficulty level can be adjusted with `content_pop_player` and `content_pop_computer` variables. By default these have the same values than vanilla game mechanics.
 4. AI pays reduced maintenance for facilities on two highest difficulty levels. Transcend level has 1/3 and Thinker level 2/3 maintenance from the normal amounts.
 5. AI pays no retooling costs whenever it changes production from one item to another.
+6. AI bases will not trigger sea level rise events unless the difficulty is Thinker or Transcend.
+
+
+Difficulty level effects
+========================
+This list details the most important changes on different difficulty levels for player factions in the original game.
+For AI factions, difficulty in some calculations is treated as a fixed value. Any changes made by the mod are mentioned separately.
+
+Easier Diplomacy. At lower levels, computer players will be more likely to "go easy"
+on players in diplomacy, unless the "Intense Rivalry" option is enabled, in which
+case they always use maximum ruthlessness.
+
+Delayed Gang Tackles. In particular, the tendency for computer players to "gang up on"
+the human player is controlled by the difficulty level and current turn thresholds.
+With Intense Rivalry enabled, difficulty is treated as Transcend.
+
+Also computer players will not gang up until the player's overall "dominance bar" is
+significantly higher than the dominance bar of the second-place player: it need only be
+20% higher with Intense Rivalry, but otherwise it needs to be 50% higher at Librarian,
+Thinker and Transcend levels, twice as high at Talent level, and never happens at Citizen
+and Specialist levels.
+
+No Mind Control. At Citizen, Specialist and Talent levels, computer players will not
+use Mind Control against player bases.
+
+Secret Projects. At Talent and below, the other factions can't start work on a Secret
+Project until the player has its prerequisite tech, even if they already have the tech
+in question (this restriction is removed in the mod).
+
+Colony Pod. At Citizen and Specialist levels, building a colony pod at a size 1 base does
+not eliminate the base.
+
+No Early Research. At Citizen and Specialist levels, all research points accumulated
+during the first 5 turns are ignored (removed by early_research_start).
+
+Command Center Maintenance. The Maintenance cost of the Command Center facility is equal
+to the best Reactor level that is available (1 to 4), but never more than half of DIFF
+rounded up. In the mod Command Center only uses the maintenance cost set in alphax.txt.
+
+No Power Overloads. At Citizen and Specialist levels. Base facilities do not experience
+power overloads when running out of energy to pay maintenance.
+
+No Pop Lost to Attack. At Citizen level, the bases never lose population points
+when they are attacked.
+
+Random Events do not occur before Turn `75 - (DIFF * 10)`.
+
+No Prototype Cost. At Citizen and Specialist levels, players do not have to pay for "prototypes" of units.
+
+No Retooling Penalty. At Citizen and Specialist levels, there is no penalty for switching production in progress at a base.
+
+Cost to Change Society. The cost to change social engineering is affected by the difficulty level:
+
+    CHANGE = (the number of social areas changed in a turn) + 1
+
+    Upheaval Cost = CHANGE * CHANGE * CHANGE * DIFF
 
 
 Hurry and upgrade formulas
@@ -350,7 +406,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 23. Patch crawler upgrade cost so that it depends only on the mineral row cost difference between the prototypes multiplied by 40. Nano Factory does not affect crawler upgrades anymore.
 24. Fix issue with randomized faction agendas where they might be given agendas that are their opposition social models. Additionally randomized leader personalities option now always selects 1 or 2 AI priorities.
 25. Fix bug that prevents the turn from advancing after force-ending the turn while any player-owned needlejet in flight has moves left.
-26. Patch Energy Market Crash event to reduce energy reserves only by 1/4 instead of 3/4.
+26. Patch Energy Market Crash event to reduce energy reserves only by 1/2 instead of 3/4. Optionally the event can also be disabled entirely (event_market_crash).
 27. Game will now allow reselecting units that have already skipped their turns if they have full movement points available (activate_skipped_units).
 28. Bases that have sufficient drone control facilities before the growth phase can grow without triggering possible drone riots on the same turn (delay_drone_riots).
 29. Disable drone revolt event which sometimes caused rioting player-owned bases to join other factions while this did not happen on AI factions (skip_drone_revolts).
