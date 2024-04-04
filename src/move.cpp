@@ -417,13 +417,13 @@ void invasion_plan(int faction) {
     find_priority_goal(faction, AI_GOAL_NAVAL_END, &px, &py);
     find_priority_goal(faction, AI_GOAL_NAVAL_SCOUT, &p.naval_scout_x, &p.naval_scout_y);
 
-    for (int i=0; i < *BaseCount; i++) {
+    for (int i = 0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];
         if (!(sq = mapsq(base->x, base->y))) {
             continue;
         }
         if (sq->region == p.main_region && base->faction_id == faction
-        && ocean_coast_tiles(base->x, base->y)) {
+        && coast_tiles(base->x, base->y)) {
             path.push_back({base->x, base->y});
 
         } else if (at_war(faction, base->faction_id) && !is_ocean(sq)) {
@@ -446,34 +446,34 @@ void invasion_plan(int faction) {
         return;
     }
     ts.init(path, TS_SEA_AND_SHORE, 0);
+    int best_score = -1000;
     i = 0;
     while (++i < QueueSize && (sq = ts.get_next()) != NULL) {
         PathNode& prev = ts.paths[ts.paths[ts.current].prev];
         if (sq->is_land_region()
         && pm_enemy_dist[ts.rx][ts.ry] > 0
         && pm_enemy_dist[ts.rx][ts.ry] < 10
-        && ocean_coast_tiles(ts.rx, ts.ry)
         && allow_move(prev.x, prev.y, faction, TRIAD_SEA)
         && allow_move(ts.rx, ts.ry, faction, TRIAD_LAND)) {
             ts.get_route(path);
-
             if (sq->region == p.main_region
-            && (ts.dist < 8 || sq->owner == faction
+            && (ts.dist < 6 || sq->owner == faction
             || map_range(ts.rx, ts.ry, path.begin()->x, path.begin()->y) + 1 < ts.dist)) {
                 continue;
             }
             int score = min(0, pm_safety[ts.rx][ts.ry] / 2)
                 + target_priority(ts.rx, ts.ry, faction, sq)
-                + (ocean_coast_tiles(prev.x, prev.y) < 7 ? 100 : 0)
-                + (sq->region == p.main_region ? 0 : 300)
-                - 30*pm_enemy_dist[ts.rx][ts.ry]
+                + (coast_tiles(prev.x, prev.y) < 7 ? 200 : 0)
+                + (ocean_coast_tiles(prev.x, prev.y) > 0 ? 600 : 0)
+                + (sq->region == p.main_region ? 0 : 400)
+                - 32*pm_enemy_dist[ts.rx][ts.ry]
                 - 16*ts.dist + random(32);
             if (px >= 0) {
                 score -= 4*map_range(px, py, prev.x, prev.y);
             }
-            if (score > p.naval_score) {
+            if (score > best_score) {
+                best_score = score;
                 p.target_land_region = sq->region;
-                p.naval_score = score;
                 p.naval_start_x = path.begin()->x;
                 p.naval_start_y = path.begin()->y;
                 p.naval_end_x = prev.x;
@@ -481,9 +481,10 @@ void invasion_plan(int faction) {
                 p.naval_beach_x = ts.rx;
                 p.naval_beach_y = ts.ry;
 
-                debug("invasion %d -> %d start: %2d %2d end: %2d %2d ocean: %d dist: %2d score: %d\n",
-                    faction, sq->owner, path.begin()->x, path.begin()->y, ts.rx, ts.ry,
-                    ocean_coast_tiles(prev.x, prev.y), ts.dist, score);
+                debug("invasion %d -> %d start: %2d %2d end: %2d %2d "\
+                "coast: %d ocean: %d dist: %2d score: %d\n",
+                faction, sq->owner, path.begin()->x, path.begin()->y, ts.rx, ts.ry,
+                coast_tiles(prev.x, prev.y), ocean_coast_tiles(prev.x, prev.y), ts.dist, score);
             }
         }
         if (p.naval_scout_x < 0 && sq->is_land_region() && sq->owner == scout_target
@@ -527,7 +528,6 @@ void update_main_region(int faction) {
             p.prioritize_naval = 0;
             p.main_sea_region = 0;
             p.target_land_region = 0;
-            p.naval_score = -1000;
             p.naval_scout_x = -1;
             p.naval_scout_y = -1;
             p.naval_airbase_x = -1;
@@ -617,13 +617,12 @@ void move_upkeep(int faction, UpdateMode mode) {
                 tile_count[sq->region]++;
                 if (is_ocean(sq)) {
                     adjust_value(pm_shore, x, y, 1, 1);
-                    pm_shore[x][y]--;
                     if (tile_count[sq->region] > tile_count[p.main_sea_region]) {
                         p.main_sea_region = sq->region;
                     }
                 }
                 // Note linear tile iteration order
-                assert(pm_shore[x][y] <= 5);
+                assert(pm_shore[x][y] <= 6);
             }
             if (sq->owner == faction && ((!build_tubes && sq->items & BIT_ROAD)
             || (build_tubes && sq->items & BIT_MAGTUBE))) {
@@ -1266,7 +1265,7 @@ int colony_move(const int id) {
     int tx = -1;
     int ty = -1;
     TileSearch ts;
-    if (triad == TRIAD_SEA && invasion_unit(id) && ocean_coast_tiles(veh->x, veh->y)) {
+    if (triad == TRIAD_SEA && invasion_unit(id)) {
         ts.init(plans[faction].naval_end_x, plans[faction].naval_end_y, triad, 2);
     } else {
         ts.init(veh->x, veh->y, triad, 2);
@@ -2089,7 +2088,8 @@ bool invasion_unit(const int id) {
     }
     if (veh->triad() == TRIAD_SEA) {
         return (id % 16) > (p.prioritize_naval ? 8 : 11)
-            && ocean_coast_tiles(veh->x, veh->y);
+            && (ocean_coast_tiles(veh->x, veh->y)
+            || region_at(veh->x, veh->y) == region_at(p.naval_end_x, p.naval_end_y));
     }
     return (id % 16) > (p.prioritize_naval ? 8 : 11) + (p.enemy_bases ? 2 : 0)
         && sq->region == p.main_region

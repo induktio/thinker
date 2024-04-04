@@ -53,8 +53,13 @@ int __cdecl base_psych_content_pop() {
     return conf.content_pop_computer[*DiffLevel];
 }
 
-int __cdecl basewin_random_seed() {
+int __cdecl BaseWin_random_seed() {
     return *CurrentBaseID ^ *MapRandomSeed;
+}
+
+int __cdecl ProdPicker_calculate_itoa(int UNUSED(value), char* buf, int UNUSED(base)) {
+    snprintf(buf, 16, "%d", stockpile_energy(*CurrentBaseID));
+    return 0;
 }
 
 int __cdecl zero_value() {
@@ -218,14 +223,17 @@ int WINAPI ModGetSystemMetrics(int nIndex) {
 }
 
 ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass) {
+    debug("register %x %x = ", (int)pstWndClass, (int)pstWndClass->lpfnWndProc);
     if (conf.reduced_mode) {
         WinProc = (FWinProc)pstWndClass->lpfnWndProc;
     }
     pstWndClass->lpfnWndProc = ModWinProc;
-    return RegisterClassA(pstWndClass);
+    int value = RegisterClassA(pstWndClass);
+    debug("%d\n", value);
+    return value;
 }
 
-void exit_fail(int addr) {
+void exit_fail(int32_t addr) {
     char buf[512];
     snprintf(buf, sizeof(buf),
         "Error while patching address %08X in the game binary.\n"
@@ -239,8 +247,8 @@ Replaces old byte sequence with a new byte sequence at address.
 Checks that the address contains old values before replacing.
 If new_bytes is a null pointer, replace old_bytes with NOP code instead.
 */
-void write_bytes(int addr, const byte* old_bytes, const byte* new_bytes, int len) {
-    if (addr < (int)AC_IMAGE_BASE || addr + len > (int)AC_IMAGE_BASE + (int)AC_IMAGE_LEN) {
+void write_bytes(int32_t addr, const byte* old_bytes, const byte* new_bytes, int32_t len) {
+    if (addr < (int32_t)AC_IMAGE_BASE || addr + len > (int32_t)AC_IMAGE_BASE + (int32_t)AC_IMAGE_LEN) {
         exit_fail(addr);
     }
     for (int i = 0; i < len; i++) {
@@ -260,18 +268,18 @@ void write_bytes(int addr, const byte* old_bytes, const byte* new_bytes, int len
 /*
 Check before patching that the locations contain expected data.
 */
-void write_jump(int addr, int func) {
-    if ((addr & 0xF) != 0 && *(uint8_t*)(addr) != 0xE9) {
+void write_jump(int32_t addr, int32_t func) {
+    if ((addr & 0xF) != 0 && *(byte*)(addr) != 0xE9) {
         exit_fail(addr);
     }
     *(byte*)addr = 0xE9;
-    *(int*)(addr + 1) = func - addr - 5;
+    *(int32_t*)(addr + 1) = func - addr - 5;
 }
 
 /*
 Modify conditional short jump such that it is always taken.
 */
-void short_jump(int addr) {
+void short_jump(int32_t addr) {
     if (*(byte*)addr == 0x74 || *(byte*)addr == 0x75 || *(byte*)addr == 0x7C
     || *(byte*)addr == 0x7D || *(byte*)addr == 0x7E) {
         *(byte*)addr = 0xEB;
@@ -280,23 +288,26 @@ void short_jump(int addr) {
     }
 }
 
-void write_call(int addr, int func) {
-    if (*(byte*)addr != 0xE8 || *(int*)(addr+1) + addr < (int)AC_IMAGE_BASE) {
+void write_call(int32_t addr, int32_t func) {
+    if (*(uint16_t*)addr == 0x15FF && *(int32_t*)(addr+2) + addr >= (int32_t)AC_IMAGE_BASE) {
+        *(uint16_t*)addr = 0xE890;
+        *(int32_t*)(addr+2) = func - addr - 6; // offset decreased by one
+    } else if (*(byte*)addr == 0xE8 && *(int32_t*)(addr+1) + addr >= (int32_t)AC_IMAGE_BASE) {
+        *(int32_t*)(addr+1) = func - addr - 5;
+    } else {
         exit_fail(addr);
     }
-    *(int*)(addr+1) = func - addr - 5;
 }
 
-void write_offset(int addr, const void* offset) {
-    if (*(byte*)addr != 0x68 || *(int*)(addr+1) < (int)AC_IMAGE_BASE || offset < AC_IMAGE_BASE) {
+void write_offset(int32_t addr, const void* offset) {
+    if (*(byte*)addr != 0x68 || *(int32_t*)(addr+1) < (int32_t)AC_IMAGE_BASE || offset < AC_IMAGE_BASE) {
         exit_fail(addr);
     }
-    *(int*)(addr+1) = (int)offset;
+    *(int32_t*)(addr+1) = (int32_t)offset;
 }
 
-
-void remove_call(int addr) {
-    if (*(byte*)addr != 0xE8 || *(int*)(addr+1) + addr < (int)AC_IMAGE_BASE) {
+void remove_call(int32_t addr) {
+    if (*(byte*)addr != 0xE8 || *(int32_t*)(addr+1) + addr < (int32_t)AC_IMAGE_BASE) {
         exit_fail(addr);
     }
     memset((void*)addr, 0x90, 5);
@@ -376,10 +387,12 @@ bool patch_setup(Config* cf) {
     if (!VirtualProtect(AC_IMPORT_BASE, AC_IMPORT_LEN, PAGE_EXECUTE_READWRITE, &oldattrs)) {
         return false;
     }
-    *(int*)RegisterClassImport = (int)ModRegisterClassA;
     *(int*)GetSystemMetricsImport = (int)ModGetSystemMetrics;
     *(int*)GetPrivateProfileStringAImport = (int)ModGetPrivateProfileStringA;
 
+    if (cf->reduced_mode) {
+        *(int*)RegisterClassImport = (int)ModRegisterClassA;
+    }
     if (cf->cpu_idle_fix) {
         *(int*)PeekMessageImport = (int)ModPeekMessage;
     }
@@ -401,6 +414,9 @@ bool patch_setup(Config* cf) {
     }
     extra_setup(cf);
 
+    if (!cf->reduced_mode) {
+        write_call(0x5F028E, (int)ModRegisterClassA);
+    }
     write_jump(0x4688E0, (int)MapWin_gen_overlays);
     write_jump(0x4E3EF0, (int)mod_whose_territory);
     write_jump(0x4F6510, (int)fac_maint);
@@ -410,6 +426,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x527290, (int)mod_faction_upkeep);
     write_jump(0x5BF310, (int)X_pop2);
     write_jump(0x4E4AA0, (int)base_first);
+    write_jump(0x591040, (int)mod_map_wipe);
     write_jump(0x592250, (int)mod_say_loc);
     write_jump(0x5C1D20, (int)mod_veh_skip);
     write_jump(0x5C1D70, (int)mod_veh_wake);
@@ -418,8 +435,6 @@ bool patch_setup(Config* cf) {
     write_jump(0x626250, (int)log_say2);
     write_jump(0x6263F0, (int)log_say_hex);
     write_jump(0x626350, (int)log_say_hex2);
-    write_jump(0x634BE0, (int)FileBox_init);
-    write_jump(0x634C20, (int)FileBox_close);
     write_jump(0x645460, (int)limit_strcpy);
     write_jump(0x645470, (int)limit_strcat);
     write_call(0x52768A, (int)mod_turn_upkeep);
@@ -471,8 +486,9 @@ bool patch_setup(Config* cf) {
     write_call(0x4195A6, (int)BaseWin_ask_number);
     write_call(0x41D99D, (int)BaseWin_click_staple);
     write_call(0x48CDA4, (int)popb_action_staple);
-    write_call(0x51D1C2, (int)Console_editor_fungus);
+    write_call(0x4936F4, (int)ProdPicker_calculate_itoa);
     write_call(0x4AED04, (int)SocialWin_social_ai);
+    write_call(0x51D1C2, (int)Console_editor_fungus);
     write_call(0x54814D, (int)mod_diplomacy_caption);
     write_call(0x4D0ECF, (int)mod_upgrade_cost);
     write_call(0x4D16D9, (int)mod_upgrade_cost);
@@ -543,17 +559,6 @@ bool patch_setup(Config* cf) {
     write_call(0x562D19, (int)mod_wants_to_attack); // enemy_strategy
     write_call(0x5BCC70, (int)mod_wants_to_attack); // tech_val
     write_call(0x5BCC85, (int)mod_wants_to_attack); // tech_val
-
-    write_call(0x46D368, (int)Console_go_to_init); // MapWin::right_menu
-    write_call(0x516833, (int)Console_go_to_init); // Console::cursor_key
-    write_call(0x517397, (int)Console_go_to_init); // Console::veh_key
-    write_call(0x5173FE, (int)Console_go_to_init); // Console::veh_key
-    write_call(0x51840D, (int)Console_go_to_init); // Console::on_key_click
-    write_call(0x51ABF6, (int)Console_go_to_init); // Console::on_key_click
-    write_call(0x51C68D, (int)Console_go_to_init); // Console::iface_click
-    write_call(0x51C8DC, (int)Console_go_to_init); // Console::iface_click
-    write_call(0x51CA49, (int)Console_go_to_init); // Console::iface_click
-    write_call(0x51CA73, (int)Console_go_to_init); // Console::iface_click
 
     // Magtube and fungus movement speed patches
     write_call(0x587424, (int)mod_read_basic_rules);
@@ -782,12 +787,8 @@ bool patch_setup(Config* cf) {
     Also initialize Random::Random with base-specific constant instead of timeGetTime.
     */
     {
-        const byte old_bytes[] = {0xFF,0x15,0x68,0x93,0x66,0x00};
-        const byte new_bytes[] = {0xE8,0x00,0x00,0x00,0x00,0x90};
-        write_bytes(0x414B81, old_bytes, new_bytes, sizeof(new_bytes));
-        write_call(0x414B81, (int)basewin_random_seed); // BaseWin_draw_pop
-        write_bytes(0x49D57B, old_bytes, new_bytes, sizeof(new_bytes));
-        write_call(0x49D57B, (int)basewin_random_seed); // ReportWin_draw_ops
+        write_call(0x414B81, (int)BaseWin_random_seed); // BaseWin_draw_pop
+        write_call(0x49D57B, (int)BaseWin_random_seed); // ReportWin_draw_ops
         memset((void*)0x414D52, 0x90, 5); // Superdrone icons, aliens
         memset((void*)0x414EE2, 0x90, 7); // Superdrone icons, humans
     }
@@ -888,15 +889,6 @@ bool patch_setup(Config* cf) {
         const byte old_bytes[] = {0x3B,0xC8,0x0F,0x8C,0x65,0x01,0x00,0x00};
         const byte new_bytes[] = {0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90};
         write_bytes(0x5259CE, old_bytes, new_bytes, sizeof(new_bytes));
-    }
-
-    /*
-    Patch Energy Market Crash event to reduce energy reserves only by 1/4 instead of 3/4.
-    */
-    {
-        const byte old_bytes[] = {0x99,0x83,0xE2,0x03,0x03,0xC2,0xC1,0xF8,0x02};
-        const byte new_bytes[] = {0xC1,0xF8,0x02,0x6B,0xC0,0x03,0x90,0x90,0x90};
-        write_bytes(0x520725, old_bytes, new_bytes, sizeof(new_bytes));
     }
 
     /*
@@ -1213,10 +1205,19 @@ bool patch_setup(Config* cf) {
             (byte)cf->event_sunspots,0x6A,(byte)(cf->event_sunspots)};
         write_call(0x52064C, (int)zero_value);
         write_bytes(0x520651, old_bytes, new_bytes, sizeof(new_bytes));
-    } else if (!cf->event_sunspots) {
+    } else if (!cf->event_sunspots) { // Remove event
         const byte old_bytes[] = {0x0F, 0x8C};
         const byte new_bytes[] = {0x90, 0xE9};
         write_bytes(0x520615, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+    if (cf->event_market_crash > 0) { // Reduce reserves only by 1/2 instead of 3/4
+        const byte old_bytes[] = {0x99,0x83,0xE2,0x03,0x03,0xC2,0xC1,0xF8};
+        const byte new_bytes[] = {0xD1,0xF8,0x90,0x90,0x90,0x90,0x90,0x90};
+        write_bytes(0x520725, old_bytes, new_bytes, sizeof(new_bytes));
+    } else if (!cf->event_market_crash) { // Remove event
+        const byte old_bytes[] = {0x75,0x0C,0x81,0xFE,0xD0};
+        const byte new_bytes[] = {0xE9,0x02,0x1A,0x00,0x00};
+        write_bytes(0x52070F, old_bytes, new_bytes, sizeof(new_bytes));
     }
     if (!cf->alien_guaranteed_techs) {
         short_jump(0x5B29F8);

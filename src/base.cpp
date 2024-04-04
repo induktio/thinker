@@ -103,7 +103,7 @@ int __cdecl mod_base_production() {
     BASE* base = &Bases[*CurrentBaseID];
     Faction* f = &Factions[base->faction_id];
     int item_id = base->item();
-    int output = stockpile_energy(*CurrentBaseID);
+    int output = stockpile_energy_active(*CurrentBaseID);
     int value = base_production();
     if (!value) { // Non-zero indicates production was stopped
         f->energy_credits += output;
@@ -354,16 +354,19 @@ int hurry_cost(int base_id, int item_id, int hurry_mins) {
     BASE* b = &Bases[base_id];
     MFaction* m = &MFactions[b->faction_id];
     assert(base_id >= 0 && base_id < *BaseCount);
-
-    bool cheap = conf.simple_hurry_cost || b->minerals_accumulated >= Rules->retool_exemption;
-    int project_factor = (item_id > -SP_ID_First ? 1 :
-        2 * (b->minerals_accumulated < 4*cost_factor(b->faction_id, 1, -1) ? 2 : 1));
     int mins = max(0, mineral_cost(base_id, item_id) - b->minerals_accumulated);
-    int cost = (item_id < 0 ? 2*mins : mins*mins/20 + 2*mins)
-        * project_factor
-        * (cheap ? 1 : 2)
-        * (has_project(FAC_VOICE_OF_PLANET, -1) ? 2 : 1)
-        * m->rule_hurry / 100;
+    int cost = (item_id < 0 ? 2*mins : mins*mins/20 + 2*mins);
+
+    if (!conf.simple_hurry_cost && b->minerals_accumulated < Rules->retool_exemption) {
+        cost *= 2;
+    }
+    if (item_id <= -SP_ID_First) {
+        cost *= (b->minerals_accumulated < 4*cost_factor(b->faction_id, 1, -1) ? 4 : 2);
+    }
+    if (has_project(FAC_VOICE_OF_PLANET, -1)) {
+        cost *= 2;
+    }
+    cost = cost * m->rule_hurry / 100;
     if (hurry_mins > 0 && mins > 0) {
         return hurry_mins * cost / mins + (((hurry_mins * cost) % mins) != 0);
     }
@@ -391,12 +394,20 @@ int base_growth_goal(int base_id) {
 
 int stockpile_energy(int base_id) {
     BASE* base = &Bases[base_id];
-    if (base->item() == -FAC_STOCKPILE_ENERGY && base->mineral_surplus > 0) {
+    if (base_id >= 0 && base->mineral_surplus > 0) {
         if (has_project(FAC_PLANETARY_ENERGY_GRID, base->faction_id)) {
             return (5 * ((base->mineral_surplus + 1) / 2) + 3) / 4;
         } else {
             return (base->mineral_surplus + 1) / 2;
         }
+    }
+    return 0;
+}
+
+int stockpile_energy_active(int base_id) {
+    BASE* base = &Bases[base_id];
+    if (base_id >= 0 && base->item() == -FAC_STOCKPILE_ENERGY) {
+        return stockpile_energy(base_id);
     }
     return 0;
 }

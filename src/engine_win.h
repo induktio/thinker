@@ -877,7 +877,7 @@ struct Sprite {
     int fObj1Exists;
 };
 
-struct AutoSound {
+struct Win {
     void* vtbl;
     int field_4;
     int field_8;
@@ -916,10 +916,6 @@ struct AutoSound {
     int field_8C;
     int field_90;
     int field_94;
-};
-
-struct Win {
-    AutoSound oClass0A;
     int iFlags;
     int iSomeFlag;
     int field_A0;
@@ -1453,7 +1449,7 @@ struct Console {
     int field_23D84;
     int field_23D88;
     int field_23D8C;
-    GraphicWin oClass2_2;
+    GraphicWin oMainWin;
 };
 
 struct StatusWin {
@@ -1584,7 +1580,6 @@ typedef Sprite CSprite;
 typedef Spot CHitBoxList;
 typedef SpotInternal CHitBox;
 typedef Heap CMemAllocator;
-typedef AutoSound CClass0A;
 typedef Filemap CFile;
 typedef Strings CLabelAllocator;
 typedef Palette CPalette;

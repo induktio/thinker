@@ -26,6 +26,7 @@ int hurry_cost(int base_id, int item_id, int hurry_mins);
 int base_unused_space(int base_id);
 int base_growth_goal(int base_id);
 int stockpile_energy(int base_id);
+int stockpile_energy_active(int base_id);
 bool can_build(int base_id, int fac_id);
 bool can_build_unit(int base_id, int unit_id);
 bool can_build_ships(int base_id);

@@ -1,6 +1,8 @@
 
 #include "gui.h"
 
+const int32_t MainWinHandle = (int32_t)(&MapWin->oMainWin.oWinBase.field_4); // 0x939444
+
 char label_pop_size[StrBufLen] = "Pop: %d / %d / %d / %d";
 char label_pop_boom[StrBufLen] = "Population Boom";
 char label_nerve_staple[StrBufLen] = "Nerve Staple: %d turns";
@@ -11,8 +13,6 @@ char label_sat_mineral[StrBufLen] = "M +%d";
 char label_sat_energy[StrBufLen] = "E +%d";
 
 static int minimal_cost = 0;
-static bool filebox_visible = false;
-static bool veh_goto_visible = false;
 
 struct ConsoleState {
     const int ScrollMin = 1;
@@ -134,57 +134,22 @@ CMAP_GETCORNERYOFFSET_F        pfncMapGetCornerYOffset =        (CMAP_GETCORNERY
 // End of PRACX definitions
 
 
-/*
-Called when game save/load dialog is opened.
-*/
-void __thiscall FileBox_init(void* This) {
-    filebox_visible = true;
-    int32_t* pa = (int32_t*)This;
-    int8_t* pb = (int8_t*)This;
-    *(pa + 260) = (int32_t)(pb + 780);
-    *pa = 0;
-    *pb = 0;
-    pb[260] = 0;
-    pb[520] = 0;
-    pb[781] = 0;
-    pb[1044] = 0;
-    pb[1048] = 0;
-}
-
-void __thiscall FileBox_close(void* UNUSED(This)) {
-    filebox_visible = false;
-}
-
-void __thiscall Console_go_to_init(Console* This, int a2, void* a3, void* a4)
-{
-    veh_goto_visible = true;
-    Console_go_to(This, a2, a3, a4);
-    veh_goto_visible = false;
+bool __thiscall Win_is_visible(Win* This) {
+    bool value = (This->iSomeFlag & WIN_VISIBLE)
+        && (!This->poParent || Win_is_visible(This->poParent));
+    return value;
 }
 
 /*
 Returns true only when the world map is visible and has focus
 and other large modal windows are not blocking it.
-WorldWin_set_world_map and WorldWin_set_detail_map (lower right map view)
-also call ButtonGroup_set for specific values. Some of the windows might be
-already excluded by button_group condition but are checked regardless.
+Other modal windows with the exception of BaseWin are already
+covered by checking Win_get_key_window condition.
 */
 static bool map_is_visible() {
-    int32_t button_group = ((int32_t*)0x7CD12C)[33];
     bool value = !*GameHalted
-        && !*PopupDialogState
-        && !*DiploWinState
-        && !filebox_visible
-        && !veh_goto_visible
-        && (button_group == 1006 || button_group == 1007)
-        && !Win_is_visible(ReportWin)
-        && !Win_is_visible(FameWin)
-        && !Win_is_visible(MonuWin)
-        && !Win_is_visible(BaseWin)
-        && !Win_is_visible(PlanWin)
-        && !Win_is_visible(SocialWin)
-        && !Win_is_visible(CouncilWin)
-        && !Win_is_visible(DatalinkWin);
+        && Win_get_key_window() == MainWinHandle
+        && !Win_is_visible(BaseWin);
     return value;
 }
 
@@ -1278,7 +1243,7 @@ void __thiscall Basewin_draw_farm_set_font(Buffer* This, Font* font, int a3, int
             Buffer_set_text_color(This, ColorEnergy, 0, 1, 1);
             Buffer_write_l(This, buf, x1 + 5, y2 - 36     , LineBufLen);
         }
-        if ((SE = stockpile_energy(*CurrentBaseID)) > 0) {
+        if ((SE = stockpile_energy_active(*CurrentBaseID)) > 0) {
             snprintf(buf, StrBufLen, label_stockpile_energy, SE);
             Buffer_set_text_color(This, ColorEnergy, 0, 1, 1);
             Buffer_write_right_l2(This, buf, x2 - 5, y2 - 36, LineBufLen);

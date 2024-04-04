@@ -28,7 +28,7 @@
     #define MOD_DATE __DATE__ " " __TIME__
     #define DEBUG 1
     #define debug(...) fprintf(debug_log, __VA_ARGS__);
-    #define debugf(...) { fprintf(debug_log, __VA_ARGS__); \
+    #define debugw(...) { fprintf(debug_log, __VA_ARGS__); \
         fflush(debug_log); }
     #define flushlog() fflush(debug_log);
 #else
@@ -36,7 +36,7 @@
     #define DEBUG 0
     #define NDEBUG /* Disable assertions */
     #define debug(...) /* Nothing */
-    #define debugf(...) /* Nothing */
+    #define debugw(...) /* Nothing */
     #define flushlog()
     #ifdef __GNUC__
     #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -93,9 +93,9 @@ const int MaxMapAreaX = 512;
 const int MaxMapAreaY = 256;
 const int MaxNaturalNum = 16;
 const int MaxLandmarkNum = 64;
-const int RegionBounds = 63;
 const int MaxRegionNum = 128;
 const int MaxRegionLandNum = 64;
+const int RegionBounds = 63;
 
 const int MaxDiffNum = 6;
 const int MaxPlayerNum = 8;
@@ -107,6 +107,7 @@ const int MaxProtoNum = 512;
 const int MaxProtoFactionNum = 64;
 const int MaxBaseNameLen = 25;
 const int MaxProtoNameLen = 32;
+const int MaxBasePopSize = 127;
 
 const int MaxTechnologyNum = 89;
 const int MaxChassisNum = 9;
@@ -124,7 +125,6 @@ const int MaxMoodNum = 9;
 const int MaxReputeNum = 8;
 const int MaxMightNum = 7;
 const int MaxBonusNameNum = 41;
-const int MaxBasePopSize = 127;
 
 const int StrBufLen = 256;
 const int LineBufLen = 128;
@@ -234,7 +234,8 @@ struct Config {
     int spawn_battle_ogres = 1;
     int planetpearls = 1;
     int event_perihelion = 1;
-    int event_sunspots = -1;
+    int event_sunspots = 10;
+    int event_market_crash = 1;
     int aquatic_bonus_minerals = 1;
     int alien_guaranteed_techs = 1;
     int alien_early_start = 0;
@@ -279,7 +280,6 @@ struct AIPlans {
     int main_sea_region = -1;
     int target_land_region = 0;
     int prioritize_naval = 0;
-    int naval_score = INT_MIN;
     int naval_scout_x = -1;
     int naval_scout_y = -1;
     int naval_airbase_x = -1;

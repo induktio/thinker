@@ -211,6 +211,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->event_perihelion = atoi(value);
     } else if (MATCH("event_sunspots")) {
         cf->event_sunspots = clamp(atoi(value), 0, 100);
+    } else if (MATCH("event_market_crash")) {
+        cf->event_market_crash = atoi(value);
     } else if (MATCH("aquatic_bonus_minerals")) {
         cf->aquatic_bonus_minerals = atoi(value);
     } else if (MATCH("alien_guaranteed_techs")) {

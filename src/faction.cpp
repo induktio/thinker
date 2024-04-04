@@ -141,6 +141,7 @@ int prod_count(int item_id, int faction, int base_skip_id) {
 Determine if the specified faction is controlled by a human player or computer AI.
 */
 bool is_human(int faction) {
+    assert(faction >= 0);
     return FactionStatus[0] & (1 << faction);
 }
 
@@ -148,6 +149,7 @@ bool is_human(int faction) {
 Determine if the specified faction is alive or whether they've been eliminated.
 */
 bool is_alive(int faction) {
+    assert(faction >= 0);
     return FactionStatus[1] & (1 << faction);
 }
 
@@ -155,6 +157,7 @@ bool is_alive(int faction) {
 Determine if the specified faction is a Progenitor faction (Caretakers / Usurpers).
 */
 bool is_alien(int faction) {
+    assert(faction >= 0);
     return *ExpansionEnabled && MFactions[faction].rule_flags & RFLAG_ALIEN;
 }
 
