@@ -348,11 +348,11 @@ typedef int(__cdecl *Fhex_cost)(int unit_id, int faction_id, int x1, int y1, int
 typedef void(__cdecl *Fname_base)(int faction_id, char* name, bool save_offset, bool sea_base);
 typedef int(__cdecl *Fveh_cost)(int item_id, int base_id, int* ptr);
 typedef int(__cdecl *Fbase_at)(int x, int y);
-typedef int(__cdecl *Fpopp)(const char* filename, const char* label, int v1,
-    const char* pcx_filename, int v2);
+typedef int(__cdecl *Fpopp)(
+    const char* filename, const char* label, int v1, const char* pcx_filename, int v2);
 typedef int (__cdecl *FX_pop)(const char* filename, const char* label, int a3, int a4, int a5, int a6);
-typedef int (__cdecl *FX_pops)(const char* filename, const char* label,
-    int a3, int a4, int a5, int a6, int a7, int a8, int a9);
+typedef int (__cdecl *FX_pops)(
+    const char* filename, const char* label, int a3, int a4, int a5, int a6, int a7, int a8, int a9);
 typedef int(__cdecl *Fpop_ask_number)(const char *filename, const char* label, int value, int a4);
 typedef int(__cdecl *Fname_proto)(char* name, int unit_id, int faction_id,
 VehChassis chassis, VehWeapon weapon, VehArmor armor, VehAblFlag abls, VehReactor reactor);
@@ -362,47 +362,20 @@ typedef int(__cdecl *Fbase_draw)(Buffer* buffer, int base_id, int x, int y, int 
 
 typedef int(__thiscall *FGenVoid)(void* This);
 typedef int(__thiscall *FGenWin)(Win* This);
-typedef int(__thiscall *FMapWin_pixel_to_tile)(Console* This, int x, int y, long* px, long* py);
-typedef int(__thiscall *FMapWin_tile_to_pixel)(Console* This, int x, int y, long* px, long* py);
-typedef int(__thiscall *FMapWin_set_center)(Console* This, int x, int y, int v1);
 typedef int(__thiscall *FMapWin)(Console* This);
 typedef int(__thiscall *FWin_is_visible)(Win* This);
 typedef int(__thiscall *FTutWin_draw_arrow)(Win* This);
 typedef int(__thiscall *FPlanWin_blink)(Win* This);
 typedef int(__thiscall *FStringBox_clip_ids)(Win* This, int len);
-typedef int(__thiscall *FMapWin_gen_map)(Console* This, int owner, int units_only);
-typedef int(__thiscall *FMapWin_draw_map)(Console* This, int v1);
-typedef int(__thiscall *FMapWin_focus)(Console* This, int x, int y);
-typedef int(__stdcall *FWinProc)(HWND, int, WPARAM, LPARAM);
+typedef int(__stdcall *FWinProc)(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 typedef int(__stdcall *FConsole_zoom)(int zoom_type, int v1);
 typedef int(__cdecl *FWin_update_screen)(RECT* rc, int v1);
 typedef int(__cdecl *FWin_flip)(RECT* rc);
-typedef int(__thiscall *FBuffer_set_text_color)(Buffer* This, int color, int a3, int a4, int a5);
-typedef int(__thiscall *FBuffer_set_font)(Buffer* This, Font* font, int a3, int a4, int a5);
-typedef int(__thiscall *FBuffer_write_l)(Buffer* This, char* text, int x, int y, int max_len);
-typedef int(__thiscall *FBuffer_write_cent_l3)(Buffer* This, char* text, RECT* rc, int max_len);
-typedef int(__thiscall *FBuffer_box)(Buffer* This, RECT* rc, int color_h, int color_v);
-typedef int(__thiscall *FBuffer_fill)(Buffer* This, int x, int y, int w, int h, int a6);
-typedef int(__thiscall *FBuffer_fill3)(Buffer* This, RECT* rc, int a3);
 typedef int(__thiscall *FPopup_start)(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
 typedef int(__cdecl *FNetMsg_pop2)(char* label, void* a2);
 typedef int(__thiscall *FNetMsg_pop)(void* This, char* label, int delay, int a4, void* a5);
 typedef void(__thiscall *FConsole_go_to)(Console* This, int a2, void* a3, void* a4);
-typedef int(__thiscall *FBuffer_draw)(Buffer* src, Buffer* dst, int a3, int a4, int a5, int a6, int a7);
-typedef int(__thiscall *FBuffer_draw2)(Buffer* src, Buffer* dst, RECT* loc, int xDst, int yDst);
-typedef int(__thiscall *FBuffer_copy)(
-    Buffer* src, Buffer* dst, int xSrc, int ySrc, int xDst, int yDst, int wSrc, int hSrc);
-typedef int(__thiscall *FBuffer_copy2)(
-    Buffer* src, Buffer* dst, int xSrc, int ySrc, int wSrc, int hSrc, int xDst, int yDst, int wDst, int hDst);
-typedef int(__thiscall *FGraphicWin_update2)(Win* This, int* values, int opts);
-typedef int(__thiscall *FGraphicWin_soft_update)(Win* This, int* values);
-typedef int(__thiscall *FGraphicWin_soft_update3)(Win* This, int a2, int a3, int a4, int a5);
-
-
-
-#pragma GCC diagnostic pop
-
 
 extern FGenString amovie_project;
 extern FPopup_start Popup_start;
@@ -410,18 +383,9 @@ extern FGenWin BaseWin_nerve_staple;
 extern FGenWin BaseWin_on_redraw;
 extern FGenWin GraphicWin_redraw;
 extern FGenVoid SubInterface_release_iface_mode;
-extern FMapWin MapWin_calculate_dimensions;
-extern FMapWin_tile_to_pixel MapWin_tile_to_pixel;
-extern FMapWin_pixel_to_tile MapWin_pixel_to_tile;
-extern FMapWin_gen_map MapWin_gen_map;
-extern FMapWin_draw_map MapWin_draw_map;
-extern FMapWin_focus MapWin_focus;
 extern fp_void draw_cursor;
 extern fp_3int draw_tile;
 extern fp_1int draw_map;
-extern FMapWin_set_center MapWin_set_center;
-extern fp_void MapWin_main_caption;
-extern FMapWin MapWin_clear_terrain;
 extern FNetMsg_pop NetMsg_pop;
 extern FPlanWin_blink PlanWin_blink;
 extern Fpopp popp;
@@ -436,22 +400,6 @@ extern Fhex_cost hex_cost;
 //extern Fhas_abil has_abil;
 extern FX_pop X_pop;
 extern FX_pops X_pops;
-extern FGraphicWin_update2 GraphicWin_update2;
-extern FGraphicWin_soft_update GraphicWin_soft_update;
-extern FGraphicWin_soft_update3 GraphicWin_soft_update3;
-extern FGenWin GraphicWin_soft_update2;
-extern FBuffer_fill Buffer_fill;
-extern FBuffer_draw2 Buffer_draw2;
-extern FBuffer_draw Buffer_draw;
-extern FBuffer_copy2 Buffer_copy2;
-extern FBuffer_copy Buffer_copy;
-extern FBuffer_set_font Buffer_set_font;
-extern FBuffer_set_text_color Buffer_set_text_color;
-extern FBuffer_write_l Buffer_write_l;
-extern FBuffer_write_l Buffer_write_right_l2;
-extern FBuffer_fill3 Buffer_fill3;
-extern FBuffer_write_cent_l3 Buffer_write_cent_l3;
-extern FBuffer_box Buffer_box;
 extern FWin_flip Win_flip;
 extern FWinProc WinProc;
 extern fp_void Win_get_key_window;
@@ -462,6 +410,181 @@ extern Fpop_ask_number pop_ask_number;
 extern FStringBox_clip_ids StringBox_clip_ids;
 extern fp_void my_rand;
 
+typedef int(__thiscall *FMapWin_clear)(Console* This, int a2);
+typedef int(__thiscall *FMapWin_tile_to_pixel)(Console* This, int x, int y, long* px, long* py);
+typedef int(__thiscall *FMapWin_pixel_to_tile)(Console* This, int x, int y, long* px, long* py);
+typedef int(__thiscall *FMapWin_gen_terrain_poly)(
+    Console* This, int a2, int zoom, int faction, int a5, int a6, int x, int y, int px, int py);
+typedef int(__thiscall *FMapWin_compute_clip)(Console* This, int a2, int a3, int a4, LPRECT lprcDst);
+typedef int(__thiscall *FMapWin_gen_radius)(Console* This, int x, int y, int a4, int faction, int a);
+typedef int(__thiscall *FMapWin_gen_map)(Console* This, int faction, int units_only);
+typedef int(__thiscall *FMapWin_draw_radius)(Console* This, int x, int y, int flag, int v1);
+typedef int(__thiscall *FMapWin_draw_tile)(Console* This, int a2, int a3, int a4);
+typedef int(__thiscall *FMapWin_draw_map)(Console* This, int a2);
+typedef int(__thiscall *FMapWin_draw_cursor)(Console* This);
+typedef int(__thiscall *FMapWin_set_center)(Console* This, int x, int y, int flag);
+typedef int(__thiscall *FMapWin_focus)(Console* This, int x, int y);
+typedef int(__thiscall *FMapWin_clear_alt)(Console* This, int a2, int a3, int a4);
+typedef int(__thiscall *FMapWin_clear_terrain)(Console* This);
+typedef int(__thiscall *FMapWin_get_relative_alt)(Console* This, int a2, int a3, int a4);
+typedef int(__thiscall *FMapWin_get_alt)(Console* This, int a2, int a3, int a4);
+
+extern FMapWin_clear MapWin_clear;
+extern FMapWin MapWin_calculate_dimensions;
+extern FMapWin_pixel_to_tile MapWin_pixel_to_tile;
+extern FMapWin_tile_to_pixel MapWin_tile_to_pixel;
+extern FMapWin_gen_terrain_poly MapWin_gen_terrain_poly;
+extern FMapWin_compute_clip MapWin_compute_clip;
+extern FMapWin_gen_radius MapWin_gen_radius;
+extern FMapWin_gen_map MapWin_gen_map;
+extern FMapWin_draw_radius MapWin_draw_radius;
+extern FMapWin_draw_tile MapWin_draw_tile;
+extern FMapWin_draw_map MapWin_draw_map;
+extern FMapWin_draw_cursor MapWin_draw_cursor;
+extern FMapWin_set_center MapWin_set_center;
+extern FMapWin_focus MapWin_focus;
+extern fp_void MapWin_main_caption;
+extern FMapWin_clear_alt MapWin_clear_alt;
+extern FMapWin_clear_terrain MapWin_clear_terrain;
+extern FMapWin_get_relative_alt MapWin_get_relative_alt;
+extern FMapWin_get_alt MapWin_get_alt;
+
+typedef int(__thiscall *FGraphicWin_fill)(Win* This, int a2);
+typedef int(__thiscall *FGraphicWin_fill2)(Win* This, RECT* a2, int a3);
+typedef int(__thiscall *FGraphicWin_fill3)(Win* This, int x, int y, int a4, int a5, int a6);
+typedef int(__thiscall *FGraphicWin_load_pcx)(Win* This, char* a1, int a2, int a3, int a4, int a5);
+typedef int(__thiscall *FGraphicWin_resize)(Win* This, int a2, int a3, int a4);
+typedef int(__thiscall *FGraphicWin_update3)(Win* This, int a2, int a3, int a4, int a5, int a6);
+typedef int(__thiscall *FGraphicWin_update2)(Win* This, LONG* a2, int a3);
+typedef int(__thiscall *FGraphicWin_update)(Win* This, int a2);
+typedef int(__thiscall *FGraphicWin_soft_update3)(Win* This, LONG a2, LONG a3, int a4, int a5);
+typedef int(__thiscall *FGraphicWin_soft_update2)(Win* This);
+typedef int(__thiscall *FGraphicWin_soft_update)(Win* This, LONG* a2);
+typedef int(__thiscall *FGraphicWin_redraw)(Win* This);
+
+extern FGraphicWin_fill GraphicWin_fill;
+extern FGraphicWin_fill2 GraphicWin_fill2;
+extern FGraphicWin_fill3 GraphicWin_fill3;
+extern FGraphicWin_load_pcx GraphicWin_load_pcx;
+extern FGraphicWin_resize GraphicWin_resize;
+extern FGraphicWin_update3 GraphicWin_update3;
+extern FGraphicWin_update2 GraphicWin_update2;
+extern FGraphicWin_update GraphicWin_update;
+extern FGraphicWin_soft_update3 GraphicWin_soft_update3;
+extern FGraphicWin_soft_update2 GraphicWin_soft_update2;
+extern FGraphicWin_soft_update GraphicWin_soft_update;
+extern FGraphicWin_redraw GraphicWin_redraw;
+
+typedef int(__thiscall *FBuffer_resize)(Buffer* This, int a2, int a3);
+typedef int(__stdcall *FBuffer_load_pcx)(char* a1, int a2, int a3, int a4);
+typedef int(__thiscall *FBuffer_set_clip)(Buffer* This, LONG* a2);
+typedef int(__thiscall *FBuffer_set_clip_)(Buffer* This, int xLeft, int yTop, int a4, int a5);
+typedef int(__thiscall *FBuffer_fill)(Buffer* This, int x, int y, int w, int h, int a6);
+typedef int(__thiscall *FBuffer_draw2)(Buffer* src, Buffer* dst, RECT* rc, int xDst, int yDst);
+typedef int(__thiscall *FBuffer_draw)(Buffer* src, Buffer* dst, int a3, int a4, int a5, int a6, int a7);
+typedef int(__thiscall *FBuffer_draw_mono)(Buffer* This, int a2, int a3, int a4, int a5, int a6, int a7, int a8);
+typedef int(__thiscall *FBuffer_draw_0)(Buffer* This, int a2, int a3, int a4, int a5, int a6, int a7, int a8);
+typedef int(__thiscall *FBuffer_draw_multi_table_dest)(
+    Buffer* This, int a2, int a3, int a4, int a5, int a6, int a7, int a8);
+typedef int(__stdcall *FBuffer_copy4)(Buffer* This, int a1, int a2, int a3, int a4, int a5);
+typedef int(__stdcall *FBuffer_copy3)(Buffer* This, int a1, DWORD* a2);
+typedef int(__thiscall *FBuffer_copy2)(
+    Buffer* src, Buffer* dst, int xSrc, int ySrc, int wSrc, int hSrc, int xDst, int yDst, int wDst, int hDst);
+typedef int(__thiscall *FBuffer_set_font)(Buffer* This, Font* font, int a3, int a4, int a5);
+typedef int(__thiscall *FBuffer_set_text_color)(Buffer* This, int color, int a3, int a4, int a5);
+typedef int(__thiscall *FBuffer_set_text_color2)(Buffer* This, int a2, int a3, int a4, int a5);
+typedef int(__thiscall *FBuffer_set_text_color3)(Buffer* This, int a2, int a3, int a4, int a5);
+typedef int(__thiscall *FBuffer_set_text_color_hyper)(Buffer* This, int a2, int a3, int a4, int a5);
+typedef int(__thiscall *FBuffer_write_strings_height)(Buffer* This, DWORD* a2, int a3, int a4);
+typedef int(__thiscall *FBuffer_write_strings)(Buffer* This, int a2, int a3, int y, int a5, char a6);
+typedef int(__thiscall *FBuffer_write_l)(Buffer* This, LPCSTR lpString, int x, int y, int max_len);
+typedef int(__thiscall *FBuffer_write_l2)(Buffer* This, LPCSTR lpString, RECT* rc, int max_len);
+typedef int(__thiscall *FBuffer_write_cent_l)(Buffer* This, LPCSTR lpString, int x, int y, int w, int max_len);
+typedef int(__thiscall *FBuffer_write_cent_l2)(Buffer* This, LPCSTR lpString, int a3, int a4, int a5, int a6, int max_len);
+typedef int(__thiscall *FBuffer_write_cent_l3)(Buffer* This, LPCSTR lpString, RECT* rc, int max_len);
+typedef int(__thiscall *FBuffer_write_cent_l4)(Buffer* This, LPCSTR lpString, int x, int y, int max_len);
+typedef int(__thiscall *FBuffer_write_right_l)(Buffer* This, LPCSTR lpString, int x, int y, int a5, int a6);
+typedef int(__thiscall *FBuffer_write_right_l2)(Buffer* This, LPCSTR lpString, int x, int y, int max_len);
+typedef int(__thiscall *FBuffer_write_right_l3)(Buffer* This, LPCSTR lpString, int a3, int a4);
+typedef int(__thiscall *FBuffer_wrap)(Buffer* This, LPCSTR lpString, int a3);
+typedef int(__thiscall *FBuffer_wrap2)(Buffer* This, LPCSTR lpString, int x, int y, int a5);
+typedef int(__thiscall *FBuffer_wrap_cent)(Buffer* This, LPCSTR lpString, int a3, int y, int a5);
+typedef int(__thiscall *FBuffer_wrap_cent3)(Buffer* This, LPCSTR lpString, int a3);
+typedef int(__thiscall *FBuffer_change_color)(Buffer* This, char a2, char a3);
+typedef int(__thiscall *FBuffer_sync_to_palette)(Buffer* This, Palette* a2);
+typedef int(__thiscall *FBuffer_clear_links)(Buffer* This);
+typedef int(__thiscall *FBuffer_write_pcx)(Buffer* This, char* a2);
+typedef int(__thiscall *FBuffer_fill2)(Buffer* This, int a2);
+typedef int(__thiscall *FBuffer_fill3)(Buffer* This, RECT* rc, int a3);
+typedef int(__thiscall *FBuffer_copy)(
+    Buffer* src, Buffer* dst, int xSrc, int ySrc, int xDst, int yDst, int wSrc, int hSrc);
+typedef int(__thiscall *FBuffer_line)(
+    Buffer* This, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, int a10);
+typedef int(__thiscall *FBuffer_line_0)(Buffer* This, int x1, int y1, int x2, int y2, int color);
+typedef int(__thiscall *FBuffer_hline)(Buffer* This, int x1, int x2, int y1, int color);
+typedef int(__thiscall *FBuffer_vline)(Buffer* This, int a2, int a3, int a4, char color);
+typedef int(__thiscall *FBuffer_dotted_vline)(Buffer* This, int a2, int a3, int a4, char a5);
+typedef int(__thiscall *FBuffer_get_pixel)(Buffer* This, int a2, int a3);
+typedef int(__cdecl *FBuffer_get_pcx_dimensions)(char* a1, int a2, int a3);
+typedef int(__thiscall *FBuffer_load_pcx2)(Buffer* This, char* a2, int a3, int a4, int a5, int a6);
+typedef int(__thiscall *FBuffer_copy_mask)(
+    Buffer* This, const RECT* rc, int a3, int a4, LONG a5, LONG a6, int a7, int a8, char a9);
+typedef int(__thiscall *FBuffer_box_sprite)(Buffer* This, int* a2, DWORD* a3);
+typedef int(__thiscall *FBuffer_box)(Buffer* This, RECT* rc, int color_h, int color_v);
+
+extern FBuffer_resize Buffer_resize;
+extern FBuffer_load_pcx Buffer_load_pcx;
+extern FBuffer_set_clip Buffer_set_clip;
+extern FBuffer_set_clip_ Buffer_set_clip_;
+extern FBuffer_fill Buffer_fill;
+extern FBuffer_draw2 Buffer_draw2;
+extern FBuffer_draw Buffer_draw;
+extern FBuffer_draw_mono Buffer_draw_mono;
+extern FBuffer_draw_0 Buffer_draw_0;
+extern FBuffer_draw_multi_table_dest Buffer_draw_multi_table_dest;
+extern FBuffer_copy4 Buffer_copy4;
+extern FBuffer_copy3 Buffer_copy3;
+extern FBuffer_copy2 Buffer_copy2;
+extern FBuffer_set_font Buffer_set_font;
+extern FBuffer_set_text_color Buffer_set_text_color;
+extern FBuffer_set_text_color2 Buffer_set_text_color2;
+extern FBuffer_set_text_color3 Buffer_set_text_color3;
+extern FBuffer_set_text_color_hyper Buffer_set_text_color_hyper;
+extern FBuffer_write_strings_height Buffer_write_strings_height;
+extern FBuffer_write_strings Buffer_write_strings;
+extern FBuffer_write_l Buffer_write_l;
+extern FBuffer_write_l2 Buffer_write_l2;
+extern FBuffer_write_cent_l Buffer_write_cent_l;
+extern FBuffer_write_cent_l2 Buffer_write_cent_l2;
+extern FBuffer_write_cent_l3 Buffer_write_cent_l3;
+extern FBuffer_write_cent_l4 Buffer_write_cent_l4;
+extern FBuffer_write_right_l Buffer_write_right_l;
+extern FBuffer_write_right_l2 Buffer_write_right_l2;
+extern FBuffer_write_right_l3 Buffer_write_right_l3;
+extern FBuffer_wrap Buffer_wrap;
+extern FBuffer_wrap2 Buffer_wrap2;
+extern FBuffer_wrap_cent Buffer_wrap_cent;
+extern FBuffer_wrap_cent3 Buffer_wrap_cent3;
+extern FBuffer_change_color Buffer_change_color;
+extern FBuffer_sync_to_palette Buffer_sync_to_palette;
+extern FBuffer_clear_links Buffer_clear_links;
+extern FBuffer_write_pcx Buffer_write_pcx;
+extern FBuffer_fill2 Buffer_fill2;
+extern FBuffer_fill3 Buffer_fill3;
+extern FBuffer_copy Buffer_copy;
+extern FBuffer_line Buffer_line;
+extern FBuffer_line_0 Buffer_line_0;
+extern FBuffer_hline Buffer_hline;
+extern FBuffer_vline Buffer_vline;
+extern FBuffer_dotted_vline Buffer_dotted_vline;
+extern FBuffer_get_pixel Buffer_get_pixel;
+extern FBuffer_get_pcx_dimensions Buffer_get_pcx_dimensions;
+extern FBuffer_load_pcx2 Buffer_load_pcx2;
+extern FBuffer_copy_mask Buffer_copy_mask;
+extern FBuffer_box_sprite Buffer_box_sprite;
+extern FBuffer_box Buffer_box;
+
+#pragma GCC diagnostic pop
 
 extern fp_3int terraform_cost;
 extern fp_2int action_build;

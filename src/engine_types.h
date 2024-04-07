@@ -11,6 +11,7 @@ struct UNIT;
 extern UNIT* Units;
 struct VEH;
 extern VEH* Vehicles;
+extern int* GameState;
 
 bool is_human(int faction);
 
@@ -102,6 +103,9 @@ struct BASE {
     }
     bool plr_owner() {
         return is_human(faction_id);
+    }
+    bool is_objective() {
+        return (*GameState & STATE_IS_SCENARIO) && (event_flags & BEVENT_OBJECTIVE);
     }
 };
 

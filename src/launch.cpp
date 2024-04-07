@@ -43,7 +43,7 @@ void ExitFail() {
         StrBufSize,
         (code == ERROR_ELEVATION_REQUIRED ?
             TEXT("Game is unable to start due to an error.\n"\
-                "Starting the game in this folder might need administrator privileges.\n"\
+                "Starting the game in this folder might need additional privileges.\n"\
                 "Error code %d: %s") :
             TEXT("Game is unable to start due to an error.\n"\
                 "Error code %d: %s")),
@@ -51,6 +51,13 @@ void ExitFail() {
 
     MessageBox(0, (LPCTSTR)displayBuf, MOD_VERSION, MB_OK|MB_ICONSTOP);
     exit(EXIT_FAILURE);
+}
+
+void ExitFail(PROCESS_INFORMATION& pi) {
+    TerminateProcess(pi.hProcess, ~0u);
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+    ExitFail();
 }
 
 int main(int argc, char* argv[]) {
@@ -72,14 +79,14 @@ int main(int argc, char* argv[]) {
     si.cb = sizeof(si);
     char cmdline[StrBufSize] = GameExeFile;
 
-    for (int i=1; i<argc; i++) {
+    for (int i = 1; i < argc; i++) {
         if (strlen(cmdline) + strlen(argv[i]) >= sizeof(cmdline)-4) {
             break;
         }
         strncat(cmdline, " ", 2);
         strncat(cmdline, argv[i], sizeof(cmdline)-4);
     }
-    debug("cmdline: %s\n", cmdline);
+    debug("CommandLine: %s\n", cmdline);
 
     BOOL createValue = CreateProcess(
         GameExeFile, cmdline, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &si, &pi);
@@ -88,34 +95,38 @@ int main(int argc, char* argv[]) {
     }
     LPVOID loadAddr = (LPVOID)GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
     if (loadAddr == NULL) {
-        ExitFail();
+        ExitFail(pi);
     }
     LPVOID arg = VirtualAllocEx(
         pi.hProcess, NULL, HookBufSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     if (arg == NULL) {
-        ExitFail();
+        ExitFail(pi);
     }
     BOOL writeValue = WriteProcessMemory(pi.hProcess, arg, ModDllFile, HookBufSize, NULL);
     if (!writeValue) {
-        ExitFail();
+        ExitFail(pi);
     }
     HANDLE hThread = CreateRemoteThread(
         pi.hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)loadAddr, arg, NULL, NULL);
     if (hThread == NULL) {
-        ExitFail();
+        ExitFail(pi);
     }
     /*
-    This should avoid race conditions because CreateRemoteThread begins executing
-    immediately while the game process is still in suspended state.
-    DLL initialization routines are serialized within a process and the main thread
-    does not begin execution until all the DLL initialization is done.
-    Sleep calls added nevertheless for compatibility reasons.
+    When CreateRemoteThread is called, it begins DLL initialization immediately
+    while the game process is still in suspended state. We need to still avoid
+    any race conditions by making sure DLL initialization function returns first.
+    Normally this should not return WAIT_TIMEOUT but terminating the game process
+    in that case should not be required.
     */
-    Sleep(100);
-    if (!ResumeThread(pi.hThread)) {
-        ExitFail();
+    DWORD waitValue = WaitForSingleObject(hThread, 5000);
+    debug("WaitForSingleObject: %lu\n", waitValue);
+
+    if (waitValue != WAIT_OBJECT_0 && waitValue != WAIT_TIMEOUT) {
+        ExitFail(pi);
     }
-    WaitForSingleObject(pi.hProcess, 100);
+    if (!ResumeThread(pi.hThread)) {
+        ExitFail(pi);
+    }
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
 

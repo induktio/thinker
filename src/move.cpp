@@ -358,6 +358,10 @@ int target_priority(int x, int y, int faction, MAP* sq) {
             score += 400;
         }
         if (sq->is_base()) {
+            int base_id = base_at(x, y);
+            if (base_id >= 0 && Bases[base_id].is_objective()) {
+                score += 250;
+            }
             score += (pm_roads[x][y] ? 150 : 0);
             return score;
         }
@@ -380,7 +384,7 @@ int pick_scout_target(int faction) {
     if (p.enemy_mil_factor > 2 || p.enemy_factions > 1) {
         return 0;
     }
-    for (int i=1; i < MaxPlayerNum; i++) {
+    for (int i = 1; i < MaxPlayerNum; i++) {
         if (i != faction && Factions[i].base_count) {
             int score = random(16)
                 + (has_treaty(faction, i, DIPLO_PACT|DIPLO_TREATY) ? -10 : 0)
@@ -448,7 +452,7 @@ void invasion_plan(int faction) {
     ts.init(path, TS_SEA_AND_SHORE, 0);
     int best_score = -1000;
     i = 0;
-    while (++i < QueueSize && (sq = ts.get_next()) != NULL) {
+    while (++i <= QueueSize && (sq = ts.get_next()) != NULL) {
         PathNode& prev = ts.paths[ts.paths[ts.current].prev];
         if (sq->is_land_region()
         && pm_enemy_dist[ts.rx][ts.ry] > 0
@@ -641,7 +645,7 @@ void move_upkeep(int faction, UpdateMode mode) {
             assert(bonus_at(x, y) == mod_bonus_at(x, y));
         }
     }
-    for (int i=0; i < *VehCount; i++) {
+    for (int i = 0; i < *VehCount; i++) {
         VEH* veh = &Vehicles[i];
         int triad = veh->triad();
 
@@ -710,7 +714,7 @@ void move_upkeep(int faction, UpdateMode mode) {
     TileSearch ts;
     PointList main_bases;
     bool enemy = false;
-    for (int i=0; i < *BaseCount; i++) {
+    for (int i = 0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];
         if (!(sq = mapsq(base->x, base->y))) {
             continue;
@@ -776,7 +780,8 @@ void move_upkeep(int faction, UpdateMode mode) {
             BASE* base = &Bases[i];
             if (base->faction_id == faction) {
                 assert(base_enemy_range[i] > 0);
-                values[i] = base->pop_size + 10*has_fac_built(FAC_HEADQUARTERS, i)
+                values[i] = base->pop_size + (base->is_objective() ? 16 : 0)
+                    + 10*has_fac_built(FAC_HEADQUARTERS, i)
                     + 10*pm_enemy_near[base->x][base->y] - base_enemy_range[i];
                 sorter[bases] = values[i];
                 bases++;
@@ -786,7 +791,7 @@ void move_upkeep(int faction, UpdateMode mode) {
         std::sort(sorter, sorter+bases);
         p.defend_weights = 0;
 
-        for (int i=0; i < *BaseCount; i++) {
+        for (int i = 0; i < *BaseCount; i++) {
             BASE* base = &Bases[i];
             if (base->faction_id == faction) {
                 if (values[i] >= sorter[bases*15/16] && values[i] > 0) {
@@ -847,7 +852,7 @@ void move_upkeep(int faction, UpdateMode mode) {
             }
         }
     }
-    for (int i=0; i < MaxGoalsNum; i++) {
+    for (int i = 0; i < MaxGoalsNum; i++) {
         Goal& goal = f.goals[i];
         if (goal.priority <= 0) {
             continue;
@@ -1168,7 +1173,7 @@ int base_tile_score(int x, int y, int faction, MAP* sq) {
         {BIT_MONOLITH, 4},
     };
     bool sea_colony = is_ocean(sq);
-    int score = min(20, 40 - 80*abs(*MapAreaY/2 - y)/(*MapAreaY));
+    int score = min(min(y, *MapAreaY - y), min(*MapAreaY/4, 24)) / 2;
     int land = 0;
     score += (sq->items & BIT_SENSOR ? 8 : 0);
     if (!sea_colony) {

@@ -382,9 +382,11 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
                     MOD_VERSION, MB_OK | MB_ICONSTOP);
                 exit(EXIT_FAILURE);
             }
-            random_reseed(GetTickCount());
             *EngineVersion = MOD_VERSION;
             *EngineDate = MOD_DATE;
+            random_reseed(GetTickCount());
+            debug("random_reseed %u\n", random_state());
+            flushlog();
             break;
 
         case DLL_PROCESS_DETACH:

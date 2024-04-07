@@ -6,6 +6,7 @@ int __cdecl fungal_tower_bonus(int value);
 int __cdecl dream_twister_bonus(int value);
 int __cdecl neural_amplifier_bonus(int value);
 int __cdecl psi_factor(int value, int faction_id, bool is_attack, bool is_fungal_twr);
+int __cdecl battle_kill_credits(int veh_id);
 
 int __cdecl mod_morale_alien(int veh_id, int faction_id_vs_native);
 int __cdecl mod_morale_veh(int veh_id, bool check_drone_riot, int faction_id_vs_native);

@@ -1369,12 +1369,6 @@ struct CMainMenuItem {
     CMenu* poSubMenu;
 };
 
-struct CClass5 {
-    MapWin_Alt oMap;
-    int field_21A68;
-    GraphicWin oClass2;
-};
-
 struct CKeyFileIndex {
     char szFileName[256];
     char* pszSections;
@@ -1588,7 +1582,6 @@ typedef Palette CPalette;
 //CClass3B
 //CClass3ArrayItem
 //CWinFonted
-//CClass5
 //CKeyFileIndex
 //CKeyFile
 //CList

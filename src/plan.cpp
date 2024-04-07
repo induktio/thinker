@@ -283,7 +283,7 @@ void plans_upkeep(int faction) {
                 n++;
                 // Update enemy base threat distances
                 int base_region = (sq ? sq->region : 0);
-                float enemy_range = 10*MaxEnemyRange;
+                float enemy_range = 100*MaxEnemyRange;
                 for (int k=0; k < *BaseCount; k++) {
                     BASE* b = &Bases[k];
                     if (faction != b->faction_id

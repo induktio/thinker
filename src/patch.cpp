@@ -223,14 +223,11 @@ int WINAPI ModGetSystemMetrics(int nIndex) {
 }
 
 ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass) {
-    debug("register %x %x = ", (int)pstWndClass, (int)pstWndClass->lpfnWndProc);
     if (conf.reduced_mode) {
         WinProc = (FWinProc)pstWndClass->lpfnWndProc;
     }
     pstWndClass->lpfnWndProc = ModWinProc;
-    int value = RegisterClassA(pstWndClass);
-    debug("%d\n", value);
-    return value;
+    return RegisterClassA(pstWndClass);
 }
 
 void exit_fail(int32_t addr) {
@@ -376,9 +373,7 @@ bool patch_setup(Config* cf) {
     cf->reduced_mode = strcmp((const char*)0x668165, "prax") == 0;
 
     if (cf->smooth_scrolling && cf->reduced_mode) {
-        MessageBoxA(0, "Smooth scrolling feature will be disabled while PRACX is also running.",
-            MOD_VERSION, MB_OK | MB_ICONWARNING);
-        cf->smooth_scrolling = 0;
+        cf->smooth_scrolling = 0; // Feature not supported
     }
     init_video_config(cf);
     debug("patch_setup screen: %dx%d window: %dx%d\n",
@@ -387,12 +382,10 @@ bool patch_setup(Config* cf) {
     if (!VirtualProtect(AC_IMPORT_BASE, AC_IMPORT_LEN, PAGE_EXECUTE_READWRITE, &oldattrs)) {
         return false;
     }
+    *(int*)RegisterClassImport = (int)ModRegisterClassA;
     *(int*)GetSystemMetricsImport = (int)ModGetSystemMetrics;
     *(int*)GetPrivateProfileStringAImport = (int)ModGetPrivateProfileStringA;
 
-    if (cf->reduced_mode) {
-        *(int*)RegisterClassImport = (int)ModRegisterClassA;
-    }
     if (cf->cpu_idle_fix) {
         *(int*)PeekMessageImport = (int)ModPeekMessage;
     }
@@ -414,9 +407,6 @@ bool patch_setup(Config* cf) {
     }
     extra_setup(cf);
 
-    if (!cf->reduced_mode) {
-        write_call(0x5F028E, (int)ModRegisterClassA);
-    }
     write_jump(0x4688E0, (int)MapWin_gen_overlays);
     write_jump(0x4E3EF0, (int)mod_whose_territory);
     write_jump(0x4F6510, (int)fac_maint);
@@ -834,18 +824,23 @@ bool patch_setup(Config* cf) {
                 assert(0);
             }
         }
+        // Restore the planet preview background on game setup screen for all resolutions
         if (cf->window_width >= 1024) {
             short_jump(0x4AE66C); // SetupWin_draw_item resolution checks
             write_call(0x4AE6D5, (int)SetupWin_buffer_draw);
             write_call(0x4AE710, (int)SetupWin_buffer_copy);
             write_call(0x4AE73B, (int)SetupWin_soft_update3);
         }
-    }
-    /*
-    Fix visual issues where the game sometimes did not update the map properly
-    when recentering it offscreen on native resolution mode.
-    */
-    if (cf->render_high_detail && !cf->directdraw) {
+        // Fix bottom tile row shifting to the wrong side of screen in MapWin_tile_to_pixel
+        if (*(uint16_t*)0x462F2E == 0x657D) {
+            *(uint16_t*)0x462F2E = 0x657F;
+        } else {
+            assert(0);
+        }
+        /*
+        Fix visual issues where the game sometimes did not update the map properly
+        when recentering it offscreen on native resolution mode.
+        */
         write_call(0x4BE697, (int)mod_MapWin_focus); // TutWin::tut_map
         write_call(0x51094C, (int)mod_MapWin_focus); // Console::focus
         write_call(0x51096D, (int)mod_MapWin_focus); // Console::focus
@@ -984,6 +979,14 @@ bool patch_setup(Config* cf) {
         };
         write_bytes(0x4EA56D, old_bytes, new_bytes, sizeof(new_bytes));
         write_call(0x4EA56D, (int)base_psych_content_pop);
+    }
+    /*
+    Modify planetpearls income after wiping out any planet-owned units.
+    */
+    {
+        const byte old_bytes[] = {0x40,0x8D,0x0C,0x80,0x8B,0x06,0xD1,0xE1,0x03,0xC1};
+        write_bytes(0x5060FD, old_bytes, NULL, sizeof(old_bytes));
+        write_call(0x5060F5, (int)battle_kill_credits);
     }
 
     if (cf->smac_only) {
@@ -1188,14 +1191,6 @@ bool patch_setup(Config* cf) {
         const byte new_bytes[] = {0x90};
         write_bytes(0x4E7604, old_bytes, new_bytes, sizeof(new_bytes));
     }
-    if (!cf->planetpearls) {
-        const byte old_bytes[] = {
-            0x8B,0x45,0x08,0x6A,0x00,0x6A,0x01,0x50,0xE8,0x46,
-            0xAD,0x0B,0x00,0x83,0xC4,0x0C,0x40,0x8D,0x0C,0x80,
-            0x8B,0x06,0xD1,0xE1,0x03,0xC1,0x89,0x06
-        };
-        write_bytes(0x5060ED, old_bytes, NULL, sizeof(old_bytes));
-    }
     if (!cf->event_perihelion) {
         short_jump(0x51F481);
     }
@@ -1308,7 +1303,6 @@ bool patch_setup(Config* cf) {
     if (!VirtualProtect(AC_IMAGE_BASE, AC_IMAGE_LEN, PAGE_EXECUTE_READ, &attrs)) {
         return false;
     }
-    flushlog();
     return true;
 }
 
