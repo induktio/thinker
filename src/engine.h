@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stddef.h>
 #include <windows.h>
 #include <algorithm>
 #include <set>
@@ -335,7 +336,6 @@ extern char** Mood;
 extern char** Repute;
 
 
-typedef int (__cdecl *FGenString)(const char* name);
 typedef int(__cdecl *Fbattle_fight_1)(int veh_id, int offset, bool use_table_offset, int v1, int v2);
 typedef int(__cdecl *Fpropose_proto)(int faction_id, VehChassis chassis, VehWeapon weapon, VehArmor armor,
     int abilities, VehReactor reactor, VehPlan ai_plan, const char* name);
@@ -360,6 +360,7 @@ typedef void(__cdecl *Fbattle_compute)(int veh_id_atk, int veh_id_def,
     int* offense_out, int* defense_out, int combat_type);
 typedef int(__cdecl *Fbase_draw)(Buffer* buffer, int base_id, int x, int y, int zoom, int opts);
 
+typedef int(__cdecl *FGenString)(const char* name);
 typedef int(__thiscall *FGenVoid)(void* This);
 typedef int(__thiscall *FGenWin)(Win* This);
 typedef int(__thiscall *FMapWin)(Console* This);
@@ -428,6 +429,10 @@ typedef int(__thiscall *FMapWin_clear_alt)(Console* This, int a2, int a3, int a4
 typedef int(__thiscall *FMapWin_clear_terrain)(Console* This);
 typedef int(__thiscall *FMapWin_get_relative_alt)(Console* This, int a2, int a3, int a4);
 typedef int(__thiscall *FMapWin_get_alt)(Console* This, int a2, int a3, int a4);
+typedef int(__thiscall *FMapWin_get_brighting)(Console* This, int a2, int a3, int a4);
+typedef int(__thiscall *FMapWin_get_point_light)(Console* This, int a2, int a3, int a4);
+typedef int(__thiscall *FMapWin_init2)(Console* This, int a2, int a3, int a4);
+typedef int(__thiscall *FMapWin_init)(Console* This, int a2, int a3);
 
 extern FMapWin_clear MapWin_clear;
 extern FMapWin MapWin_calculate_dimensions;
@@ -448,18 +453,25 @@ extern FMapWin_clear_alt MapWin_clear_alt;
 extern FMapWin_clear_terrain MapWin_clear_terrain;
 extern FMapWin_get_relative_alt MapWin_get_relative_alt;
 extern FMapWin_get_alt MapWin_get_alt;
+extern fp_void MapWin_compute_lighting_table;
+extern FMapWin_get_brighting MapWin_get_brighting;
+extern FMapWin_get_point_light MapWin_get_point_light;
+extern FMapWin_init2 MapWin_init2;
+extern FMapWin_init MapWin_init;
+extern FMapWin MapWin_init_dummy;
+extern FMapWin MapWin_close;
 
 typedef int(__thiscall *FGraphicWin_fill)(Win* This, int a2);
-typedef int(__thiscall *FGraphicWin_fill2)(Win* This, RECT* a2, int a3);
+typedef int(__thiscall *FGraphicWin_fill2)(Win* This, RECT* rc, int a3);
 typedef int(__thiscall *FGraphicWin_fill3)(Win* This, int x, int y, int a4, int a5, int a6);
 typedef int(__thiscall *FGraphicWin_load_pcx)(Win* This, char* a1, int a2, int a3, int a4, int a5);
 typedef int(__thiscall *FGraphicWin_resize)(Win* This, int a2, int a3, int a4);
 typedef int(__thiscall *FGraphicWin_update3)(Win* This, int a2, int a3, int a4, int a5, int a6);
-typedef int(__thiscall *FGraphicWin_update2)(Win* This, LONG* a2, int a3);
+typedef int(__thiscall *FGraphicWin_update2)(Win* This, RECT* rc, int a3);
 typedef int(__thiscall *FGraphicWin_update)(Win* This, int a2);
 typedef int(__thiscall *FGraphicWin_soft_update3)(Win* This, LONG a2, LONG a3, int a4, int a5);
 typedef int(__thiscall *FGraphicWin_soft_update2)(Win* This);
-typedef int(__thiscall *FGraphicWin_soft_update)(Win* This, LONG* a2);
+typedef int(__thiscall *FGraphicWin_soft_update)(Win* This, RECT* rc);
 typedef int(__thiscall *FGraphicWin_redraw)(Win* This);
 
 extern FGraphicWin_fill GraphicWin_fill;
@@ -477,7 +489,7 @@ extern FGraphicWin_redraw GraphicWin_redraw;
 
 typedef int(__thiscall *FBuffer_resize)(Buffer* This, int a2, int a3);
 typedef int(__stdcall *FBuffer_load_pcx)(char* a1, int a2, int a3, int a4);
-typedef int(__thiscall *FBuffer_set_clip)(Buffer* This, LONG* a2);
+typedef int(__thiscall *FBuffer_set_clip)(Buffer* This, RECT* rc);
 typedef int(__thiscall *FBuffer_set_clip_)(Buffer* This, int xLeft, int yTop, int a4, int a5);
 typedef int(__thiscall *FBuffer_fill)(Buffer* This, int x, int y, int w, int h, int a6);
 typedef int(__thiscall *FBuffer_draw2)(Buffer* src, Buffer* dst, RECT* rc, int xDst, int yDst);

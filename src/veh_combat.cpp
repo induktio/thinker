@@ -47,7 +47,7 @@ int __cdecl battle_kill_credits(int veh_id) {
     if (conf.planetpearls > 1) { // Original value
         return 10 * (mod_morale_alien(veh_id, 0) + 1);
     } else if (conf.planetpearls == 1) {
-        return 10 + ((mod_morale_alien(veh_id, 0) + 1)/2)*5;
+        return 10 + 5 * mod_morale_alien(veh_id, 0);
     } else {
         return 0;
     }

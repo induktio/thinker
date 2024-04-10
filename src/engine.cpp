@@ -258,6 +258,13 @@ FMapWin_clear_alt MapWin_clear_alt = (FMapWin_clear_alt)0x46FB90;
 FMapWin_clear_terrain MapWin_clear_terrain = (FMapWin_clear_terrain)0x46FD90;
 FMapWin_get_relative_alt MapWin_get_relative_alt = (FMapWin_get_relative_alt)0x46FE00;
 FMapWin_get_alt MapWin_get_alt = (FMapWin_get_alt)0x46FE70;
+fp_void MapWin_compute_lighting_table = (fp_void)0x470420;
+FMapWin_get_brighting MapWin_get_brighting = (FMapWin_get_brighting)0x470550;
+FMapWin_get_point_light MapWin_get_point_light = (FMapWin_get_point_light)0x470790;
+FMapWin_init2 MapWin_init2 = (FMapWin_init2)0x470920;
+FMapWin_init MapWin_init = (FMapWin_init)0x470A90;
+FMapWin MapWin_init_dummy = (FMapWin)0x470ED0;
+FMapWin MapWin_close = (FMapWin)0x470F70;
 
 FGraphicWin_fill GraphicWin_fill = (FGraphicWin_fill)0x5D5250;
 FGraphicWin_fill2 GraphicWin_fill2 = (FGraphicWin_fill2)0x5D5350;

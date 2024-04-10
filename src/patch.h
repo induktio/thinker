@@ -12,11 +12,13 @@ const int RegisterClassImport = 0x66929C;
 const int GetSystemMetricsImport = 0x669334;
 const int GetPrivateProfileStringAImport = 0x669108;
 
-void write_jump(int addr, int func);
-void short_jump(int addr);
-void write_call(int addr, int func);
-void write_offset(int addr, const void* offset);
-void write_bytes(int addr, const byte* old_bytes, const byte* new_bytes, int len);
-void remove_call(int addr);
+const int8_t NetVersion = 11; // Network multiplayer
+
+void write_jump(int32_t addr, int32_t func);
+void short_jump(int32_t addr);
+void write_call(int32_t addr, int32_t func);
+void write_offset(int32_t addr, const void* offset);
+void write_bytes(int32_t addr, const byte* old_bytes, const byte* new_bytes, int32_t len);
+void remove_call(int32_t addr);
 bool patch_setup(Config* cf);
 

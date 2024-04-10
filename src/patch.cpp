@@ -11,7 +11,6 @@ const char* ac_opening = "opening";
 const char* ac_movlist = "movlist";
 const char* ac_movlist_txt = "movlist.txt";
 const char* ac_movlistx_txt = "movlistx.txt";
-const int8_t NetVersion = (DEBUG ? 64 : 10);
 
 
 bool FileExists(const char* path) {
@@ -984,8 +983,9 @@ bool patch_setup(Config* cf) {
     Modify planetpearls income after wiping out any planet-owned units.
     */
     {
-        const byte old_bytes[] = {0x40,0x8D,0x0C,0x80,0x8B,0x06,0xD1,0xE1,0x03,0xC1};
-        write_bytes(0x5060FD, old_bytes, NULL, sizeof(old_bytes));
+        const byte old_bytes[] = {0x40,0x8D,0x0C,0x80,0x8B,0x06,0xD1,0xE1,0x03,0xC1,0x89,0x06};
+        const byte new_bytes[] = {0x01,0x06,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90};
+        write_bytes(0x5060FD, old_bytes, new_bytes, sizeof(old_bytes));
         write_call(0x5060F5, (int)battle_kill_credits);
     }
 

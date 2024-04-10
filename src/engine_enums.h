@@ -841,7 +841,8 @@ enum CouncilProposal {
 };
 
 enum MapwinState {
-    MAPWIN_DRAW_TRANSLUCENT = 0x2, // render translucent sprites, farms/forests excl. fungus
+    MAPWIN_DRAW_TRANSLUCENT = 0x1, // render translucent sprites, farm/forest/kelp excl. fungus
+    MAPWIN_UNK_2 = 0x2,
     MAPWIN_DRAW_SITES = 0x4, // debug overlay
     MAPWIN_UNK_10 = 0x10, // render some random yellow sprites
     MAPWIN_DRAW_IMPROVEMENTS = 0x20, // render terrain improvements
@@ -856,8 +857,10 @@ enum MapwinState {
     MAPWIN_DRAW_BORDERS = 0x10000,
     MAPWIN_DRAW_CURSOR_COMPASS = 0x20000,
     MAPWIN_DRAW_DIPLO_STATE = 0x100000, // show faction treaty status matrix in window corner
+    MAPWIN_SUPPORT_VIEW = 0x200000,
     MAPWIN_DRAW_SOLID_RADIUS = 0x1000000, // faction base radius solid color terrain view
     MAPWIN_HIDE_OCEAN_BASE = 0x2000000, // stop rendering ocean base layer
+    MAPWIN_UNK_4000000 = 0x4000000,
     MAPWIN_HIDE_TERRAIN = 0x10000000, // stop rendering all terrain
     MAPWIN_DRAW_SOLID_BORDERS = 0x80000000, // faction borders solid color terrain view
 };
