@@ -32,6 +32,11 @@ int __cdecl game_year(int n) {
     return Rules->normal_start_year + n;
 }
 
+bool __cdecl in_box(int x, int y, RECT* rc) {
+    return x >= rc->left && x < rc->right
+        && y >= rc->top && y < rc->bottom;
+}
+
 /*
 Calculate the offset and bitmask for the specified input.
 */

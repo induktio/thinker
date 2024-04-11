@@ -381,13 +381,11 @@ bool patch_setup(Config* cf) {
     if (!VirtualProtect(AC_IMPORT_BASE, AC_IMPORT_LEN, PAGE_EXECUTE_READWRITE, &oldattrs)) {
         return false;
     }
-    *(int*)RegisterClassImport = (int)ModRegisterClassA;
-    *(int*)GetSystemMetricsImport = (int)ModGetSystemMetrics;
-    *(int*)GetPrivateProfileStringAImport = (int)ModGetPrivateProfileStringA;
+    *(int32_t*)PeekMessageImport = (int32_t)ModPeekMessage;
+    *(int32_t*)RegisterClassImport = (int32_t)ModRegisterClassA;
+    *(int32_t*)GetSystemMetricsImport = (int32_t)ModGetSystemMetrics;
+    *(int32_t*)GetPrivateProfileStringAImport = (int32_t)ModGetPrivateProfileStringA;
 
-    if (cf->cpu_idle_fix) {
-        *(int*)PeekMessageImport = (int)ModPeekMessage;
-    }
     if (!VirtualProtect(AC_IMPORT_BASE, AC_IMPORT_LEN, oldattrs, &attrs)) {
         return false;
     }
@@ -727,23 +725,6 @@ bool patch_setup(Config* cf) {
     write_call(0x4CAA7C, (int)skip_action_destroy);
 
     /*
-    Fix engine rendering issue where ocean fungus tiles displayed
-    inconsistent graphics compared to the adjacent land fungus tiles.
-    */
-    {
-        const byte old_bytes[] = {
-            0x8B,0x1D,0x8C,0x98,0x94,0x00,0x83,0xE3,0x01,0x8B,0x75,0x20,
-            0x8D,0x79,0xFF,0x83,0xE7,0x07,0xC1,0xE7,0x02,0x8B,0x87,0x50,
-        };
-        const byte new_bytes[] = {
-            0x8B,0x45,0x24,0x50,0x8B,0x45,0x20,0x50,0xE8,0x00,0x00,0x00,
-            0x00,0x83,0xC4,0x08,0x89,0x45,0xC4,0xE9,0x85,0x07,0x00,0x00,
-        };
-        write_bytes(0x463651, old_bytes, new_bytes, sizeof(new_bytes));
-        write_call(0x463659, (int)MapWin_gen_terrain_nearby_fungus);
-    }
-
-    /*
     Fix issue where attacking other satellites doesn't work in
     Orbital Attack View when smac_only is activated.
     */
@@ -794,10 +775,59 @@ bool patch_setup(Config* cf) {
     }
 
     /*
-    Patch map window to render more detailed tiles when zoomed out.
-    83 7D 10 F8      cmp     [ebp+zoom], 0FFFFFFF8h
+    Fix engine rendering issue where ocean fungus tiles displayed
+    inconsistent graphics compared to the adjacent land fungus tiles.
     */
+    {
+        const byte old_bytes[] = {
+            0x8B,0x1D,0x8C,0x98,0x94,0x00,0x83,0xE3,0x01,0x8B,0x75,0x20,
+            0x8D,0x79,0xFF,0x83,0xE7,0x07,0xC1,0xE7,0x02,0x8B,0x87,0x50,
+        };
+        const byte new_bytes[] = {
+            0x8B,0x45,0x24,0x50,0x8B,0x45,0x20,0x50,0xE8,0x00,0x00,0x00,
+            0x00,0x83,0xC4,0x08,0x89,0x45,0xC4,0xE9,0x85,0x07,0x00,0x00,
+        };
+        write_bytes(0x463651, old_bytes, new_bytes, sizeof(new_bytes));
+        write_call(0x463659, (int)MapWin_gen_terrain_nearby_fungus);
+    }
+
+    /*
+    Fix visual issues where the game sometimes did not update the map properly
+    when recentering it offscreen on native resolution mode.
+    */
+    {
+        write_call(0x4BE697, (int)mod_MapWin_focus); // TutWin::tut_map
+        write_call(0x51094C, (int)mod_MapWin_focus); // Console::focus
+        write_call(0x51096D, (int)mod_MapWin_focus); // Console::focus
+        write_call(0x510C81, (int)mod_MapWin_focus); // sub_510B70
+        write_call(0x51A7B4, (int)mod_MapWin_focus); // Console::on_key_click
+        write_call(0x51B594, (int)mod_MapWin_focus); // Console::on_key_click
+        write_call(0x51C7BC, (int)mod_MapWin_focus); // Console::iface_click
+        write_call(0x522504, (int)mod_MapWin_focus); // alien_fauna
+        write_call(0x5583ED, (int)mod_MapWin_focus); // communicate
+        write_call(0x46E4A1, (int)mod_MapWin_set_center); // MapWin::click
+        write_call(0x46E7CF, (int)mod_MapWin_set_center); // MapWin::click
+        write_call(0x46E7FA, (int)mod_MapWin_set_center); // MapWin::click
+        write_call(0x46E8CA, (int)mod_MapWin_set_center); // MapWin::click
+        write_call(0x518285, (int)mod_MapWin_set_center); // Console::on_key_click
+        write_call(0x51B19F, (int)mod_MapWin_set_center); // Console::on_key_click
+        write_call(0x51C6B4, (int)mod_MapWin_set_center); // Console::iface_click
+    }
+
+    /*
+    Fix rendering bug that caused half of the bottom row map tiles to shift
+    to the wrong side of screen when zoomed out in MapWin_tile_to_pixel.
+    */
+    {
+        if (*(uint16_t*)0x462F2E == 0x657D) {
+            *(uint16_t*)0x462F2E = 0x657F;
+        } else {
+            assert(0);
+        }
+    }
     if (cf->render_high_detail) {
+        // Patch map window to render more detailed tiles when zoomed out.
+        // 83 7D 10 F8      cmp     [ebp+zoom], 0FFFFFFF8h
         int locations[] = {
             0x4636AE,
             0x465050,
@@ -830,25 +860,9 @@ bool patch_setup(Config* cf) {
             write_call(0x4AE710, (int)SetupWin_buffer_copy);
             write_call(0x4AE73B, (int)SetupWin_soft_update3);
         }
-        // Fix bottom tile row shifting to the wrong side of screen in MapWin_tile_to_pixel
-        if (*(uint16_t*)0x462F2E == 0x657D) {
-            *(uint16_t*)0x462F2E = 0x657F;
-        } else {
-            assert(0);
-        }
-        /*
-        Fix visual issues where the game sometimes did not update the map properly
-        when recentering it offscreen on native resolution mode.
-        */
-        write_call(0x4BE697, (int)mod_MapWin_focus); // TutWin::tut_map
-        write_call(0x51094C, (int)mod_MapWin_focus); // Console::focus
-        write_call(0x51096D, (int)mod_MapWin_focus); // Console::focus
-        write_call(0x510C81, (int)mod_MapWin_focus); // sub_510B70
-        write_call(0x51A7B4, (int)mod_MapWin_focus); // Console::on_key_click
-        write_call(0x51B594, (int)mod_MapWin_focus); // Console::on_key_click
-        write_call(0x51C7BC, (int)mod_MapWin_focus); // Console::iface_click
-        write_call(0x522504, (int)mod_MapWin_focus); // alien_fauna
-        write_call(0x5583ED, (int)mod_MapWin_focus); // communicate
+        // Draw zoomable support view on the base window
+        write_call(0x40F1C3, (int)BaseWin_draw_support); // BaseWin::draw_farm
+        write_call(0x40F1EB, (int)BaseWin_draw_support); // BaseWin::draw_farm
     }
 
     /*

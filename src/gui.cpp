@@ -13,6 +13,7 @@ char label_sat_mineral[StrBufLen] = "M +%d";
 char label_sat_energy[StrBufLen] = "E +%d";
 
 static int minimal_cost = 0;
+static int base_zoom_factor = -14;
 
 struct ConsoleState {
     const int ScrollMin = 1;
@@ -146,11 +147,11 @@ and other large modal windows are not blocking it.
 Other modal windows with the exception of BaseWin are already
 covered by checking Win_get_key_window condition.
 */
-static bool map_is_visible() {
-    bool value = !*GameHalted
-        && Win_get_key_window() == MainWinHandle
-        && !Win_is_visible(BaseWin);
-    return value;
+static GameWinState current_window() {
+    if (!*GameHalted && Win_get_key_window() == MainWinHandle) {
+        return Win_is_visible(BaseWin) ? GW_Base : GW_World;
+    }
+    return GW_None;
 }
 
 static bool win_has_focus() {
@@ -163,6 +164,11 @@ static bool alt_key_down() {
 
 static bool ctrl_key_down() {
     return GetAsyncKeyState(VK_CONTROL) < 0;
+}
+
+static void base_resource_zoom(bool zoom_in) {
+    base_zoom_factor = clamp(base_zoom_factor + (zoom_in ? 2 : -2), -14, 0);
+    GraphicWin_redraw(BaseWin);
 }
 
 void mouse_over_tile(POINT* p) {
@@ -390,13 +396,12 @@ void check_scroll() {
 
     } while (fScrolled && (GetCursorPos(&p) || (CState.ScrollDragging && CState.RightButtonDown)));
 
-    // TODO: determine the purpose of this code
     if (fScrolledAtAll) {
         MapWin->drawOnlyCursor = 1;
         MapWin_set_center(MapWin, MapWin->iTileX, MapWin->iTileY, 1);
         MapWin->drawOnlyCursor = 0;
         for (int i = 1; i < 8; i++) {
-            if (ppMain[i] && ppMain[i]->field_1DD74 &&
+            if (ppMain[i] && ppMain[i]->iDrawToggleA &&
             (!fLeftButtonDown || ppMain[i]->field_1DD80) &&
             ppMain[i]->iMapTilesOddX + ppMain[i]->iMapTilesEvenX < *MapAreaX) {
                 MapWin_set_center(ppMain[i], MapWin->iTileX, MapWin->iTileY, 1);
@@ -601,14 +606,17 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         iDelta /= WHEEL_DELTA;
         bool zoom_in = (iDelta >= 0);
         iDelta = labs(iDelta);
+        GameWinState state = current_window();
 
-        if (map_is_visible()) {
+        if (state == GW_World) {
             int iZoomType = (zoom_in ? 515 : 516);
             for (int i = 0; i < iDelta; i++) {
                 if (MapWin->iZoomFactor > -8 || zoom_in) {
                     Console_zoom(iZoomType, 0);
                 }
             }
+        } else if (state == GW_Base && conf.render_high_detail) {
+            base_resource_zoom(zoom_in);
         } else {
             int iKey = (zoom_in ? VK_UP : VK_DOWN);
             iDelta *= CState.ListScrollDelta;
@@ -619,8 +627,12 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             return 0;
         }
 
+    } else if (msg == WM_KEYDOWN && (wParam == VK_UP || wParam == VK_DOWN)
+    && conf.render_high_detail && ctrl_key_down() && current_window() == GW_Base) {
+        base_resource_zoom(wParam == VK_UP);
+
     } else if (msg == WM_KEYDOWN && (wParam == VK_LEFT || wParam == VK_RIGHT)
-    && ctrl_key_down() && !*GameHalted && Win_is_visible(BaseWin)) {
+    && ctrl_key_down() && current_window() == GW_Base) {
         int32_t value = ((BaseWindow*)BaseWin)->oRender.iResWindowTab;
         if (wParam == VK_LEFT) {
             value = (value + 1) % 3;
@@ -631,7 +643,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         GraphicWin_redraw(BaseWin);
 
     } else if (conf.smooth_scrolling && msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) {
-        if (!map_is_visible() || !win_has_focus()) {
+        if (current_window() != GW_World || !win_has_focus()) {
             CState.RightButtonDown = false;
             CState.ScrollDragging = false;
             return WinProc(hwnd, msg, wParam, lParam);
@@ -659,10 +671,10 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     } else if (conf.smooth_scrolling && msg == WM_CHAR && wParam == 'r' && alt_key_down()) {
         CState.MouseOverTileInfo = !CState.MouseOverTileInfo;
 
-    } else if (msg == WM_CHAR && wParam == 't' && alt_key_down() && !conf.reduced_mode) {
+    } else if (!conf.reduced_mode && msg == WM_CHAR && wParam == 't' && alt_key_down()) {
         show_mod_menu();
 
-    } else if (msg == WM_CHAR && wParam == 'h' && alt_key_down() && conf.reduced_mode) {
+    } else if (conf.reduced_mode && msg == WM_CHAR && wParam == 'h' && alt_key_down()) {
         show_mod_menu();
 
     } else if (msg == WM_CHAR && wParam == 'o' && alt_key_down() && !*GameHalted
@@ -1207,6 +1219,27 @@ const char* filename, const char* label, int a4, int a5, int a6, int a7)
 
 #pragma GCC diagnostic pop
 
+void __thiscall BaseWin_draw_support(BaseWindow* This)
+{
+    RECT& rc = This->oRender.rResWindow;
+    Buffer_set_clip(&This->oCanvas, &rc);
+    GraphicWin_fill2((Win*)This, &rc, 0);
+
+    MapWin_init((Console*)&This->oRender, 2, 0);
+    This->oRender.iZoomFactor = base_zoom_factor;
+    This->oRender.iWhatToDrawFlags = MAPWIN_SUPPORT_VIEW|MAPWIN_DRAW_BONUS_RES|\
+        MAPWIN_DRAW_RIVERS|MAPWIN_DRAW_IMPROVEMENTS|MAPWIN_DRAW_TRANSLUCENT;
+
+    This->oRender.iTileX = (*CurrentBase)->x;
+    This->oRender.iTileY = (*CurrentBase)->y;
+    GraphicWin_redraw((Win*)&This->oRender.oBufWin);
+
+    Buffer_copy(&This->oRender.oBufWin.oCanvas, &This->oCanvas,
+        0, 0, rc.left + 11, rc.top + 31, rc.right, rc.bottom);
+    GraphicWin_soft_update((Win*)This, &rc);
+    Buffer_set_clip(&This->oCanvas, &This->oCanvas.stRect[0]);
+}
+
 int __cdecl BaseWin_ask_number(const char* label, int value, int a3)
 {
     ParseNumTable[0] = value;
@@ -1373,10 +1406,19 @@ int __thiscall mod_MapWin_focus(Console* This, int x, int y)
 {
     // Return value is non-zero when the map is recentered offscreen
     if (MapWin_focus(This, x, y)) {
-        MapWin_clear_terrain(MapWin);
+        This->drawOnlyCursor = 0;
         draw_map(1);
     }
     return 0;
+}
+
+int __thiscall mod_MapWin_set_center(Console* This, int x, int y, int flag)
+{
+    // Make sure the whole screen is refreshed when clicking on map tiles
+    if (!in_box(x, y, RenderTileBounds)) {
+        This->drawOnlyCursor = 0;
+    }
+    return MapWin_set_center(This, x, y, flag);
 }
 
 /*

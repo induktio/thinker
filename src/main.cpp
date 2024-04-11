@@ -234,9 +234,9 @@ int option_handler(void* user, const char* section, const char* name, const char
     } else if (MATCH("planet_defense_bonus")) {
         cf->planet_defense_bonus = atoi(value);
     } else if (MATCH("perimeter_defense_bonus")) {
-        cf->perimeter_defense_bonus = clamp(atoi(value), 0, 127);
+        cf->perimeter_defense_bonus = clamp(atoi(value), 0, 100);
     } else if (MATCH("tachyon_field_bonus")) {
-        cf->tachyon_field_bonus = clamp(atoi(value), 0, 127);
+        cf->tachyon_field_bonus = clamp(atoi(value), 0, 100);
     } else if (MATCH("collateral_damage_value")) {
         cf->collateral_damage_value = clamp(atoi(value), 0, 127);
     } else if (MATCH("cost_factor")) {
@@ -265,8 +265,6 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->repair_base_facility = clamp(atoi(value), 0, 10);
     } else if (MATCH("repair_nano_factory")) {
         cf->repair_nano_factory = clamp(atoi(value), 0, 10);
-    } else if (MATCH("cpu_idle_fix")) {
-        cf->cpu_idle_fix = atoi(value);
     } else if (MATCH("minimal_popups")) {
         if (DEBUG) {
             cf->minimal_popups = atoi(value);

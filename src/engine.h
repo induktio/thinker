@@ -240,6 +240,7 @@ extern int* GameDrawState;
 extern int* WinModalState;
 extern int* DiploWinState;
 extern int* PopupDialogState;
+extern RECT* RenderTileBounds;
 
 extern int* VehDropLiftVehID;
 extern int* VehLiftX;

@@ -260,7 +260,6 @@ struct Config {
     int repair_base_native = 10;
     int repair_base_facility = 10;
     int repair_nano_factory = 10;
-    int cpu_idle_fix = 1; // unlisted option
     int minimal_popups = 0; // unlisted option
     int skip_random_factions = 0; // internal variable
     int faction_file_count = 14; // internal variable

@@ -17,6 +17,7 @@ bool valid_player(int faction);
 bool valid_triad(int triad);
 int __cdecl game_start_turn();
 int __cdecl game_year(int n);
+bool __cdecl in_box(int x, int y, RECT* rc);
 void __cdecl bitmask(uint32_t input, uint32_t* offset, uint32_t* mask);
 int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id);
 

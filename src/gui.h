@@ -6,6 +6,8 @@ enum WinFlag {
     WIN_VISIBLE = 1,
 };
 
+enum GameWinState {GW_None, GW_World, GW_Base};
+
 const uint32_t WM_WINDOWED = (WM_USER + 3);
 const uint32_t WM_MOVIEOVER = (WM_USER + 6);
 const uint32_t AC_WS_WINDOWED = (WS_OVERLAPPED | WS_CLIPCHILDREN);
@@ -65,6 +67,7 @@ int __thiscall SetupWin_soft_update3(Win* This, int a2, int a3, int a4, int a5);
 int __thiscall BaseWin_popup_start(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
 int __cdecl BaseWin_ask_number(const char* label, int value, int a3);
+void __thiscall BaseWin_draw_support(BaseWindow* This);
 void __thiscall Basewin_draw_farm_set_font(Buffer* This, Font* font, int a3, int a4, int a5);
 void __thiscall BaseWin_draw_energy_set_text_color(Buffer* This, int a2, int a3, int a4, int a5);
 void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, int opts);
@@ -73,6 +76,7 @@ void __cdecl BaseWin_action_staple(int base_id);
 void __cdecl popb_action_staple(int base_id);
 int __thiscall BaseWin_click_staple(Win* This);
 int __thiscall mod_MapWin_focus(Console* This, int x, int y);
+int __thiscall mod_MapWin_set_center(Console* This, int x, int y, int flag);
 int __thiscall ReportWin_close_handler(void* This);
 void __thiscall Console_editor_fungus(Console* UNUSED(This));
 void __cdecl mod_say_loc(char* dest, int x, int y, int a4, int a5, int a6);

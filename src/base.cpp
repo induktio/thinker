@@ -523,7 +523,7 @@ bool can_build_unit(int base_id, int unit_id) {
             return false;
         }
     }
-    return *VehCount < MaxVehNum * 15 / 16;
+    return *VehCount < MaxVehNum * 19 / 20;
 }
 
 bool can_build_ships(int base_id) {
@@ -1236,7 +1236,8 @@ int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships) 
     && (choice = find_proto(base_id, (build_ships ? TRIAD_SEA : TRIAD_LAND), WMODE_INFOWAR, DEF)) >= 0) {
         return choice;
     }
-    if (aircraft && (f->SE_police >= -3 || !base_can_riot(base_id, true)) && !random(w1)
+    if (aircraft && (!base_can_riot(base_id, true)
+    || f->SE_police + 2*has_fac_built(FAC_BROOD_PIT, base_id) >= -3) && !random(w1)
     && (choice = find_proto(base_id, TRIAD_AIR, WMODE_COMBAT, ATT)) >= 0) {
         return choice;
     }
@@ -1259,7 +1260,7 @@ int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships) 
             VehWeaponMode mode;
             if (!transports) {
                 mode = WMODE_COMBAT;
-            } else if (~gov & GOV_MAY_PROD_NAVAL_COMBAT) {
+            } else if (!(gov & GOV_MAY_PROD_NAVAL_COMBAT)) {
                 mode = WMODE_TRANSPORT;
             } else {
                 mode = (!random(w2) ? WMODE_TRANSPORT : WMODE_COMBAT);
@@ -1386,20 +1387,21 @@ int select_build(int base_id) {
     const int F_Trees = 16;
     const int F_Surplus = 32;
     const int F_Default = 64;
+    const int F_Unit = 128;
 
     const int build_order[][2] = {
-        {DefendUnit,                0},
+        {DefendUnit,                F_Unit},
         {MorePsych,                 0},
         {FAC_PRESSURE_DOME,         0},
         {FAC_HEADQUARTERS,          0},
         {Satellites,                0},
-        {CombatUnit,                0},
-        {FormerUnit,                0},
+        {CombatUnit,                F_Unit},
+        {FormerUnit,                F_Unit},
         {FAC_RECYCLING_TANKS,       0},
-        {SeaProbeUnit,              0},
-        {CrawlerUnit,               0},
-        {FerryUnit,                 0},
-        {ColonyUnit,                0},
+        {SeaProbeUnit,              F_Unit},
+        {CrawlerUnit,               F_Unit},
+        {FerryUnit,                 F_Unit},
+        {ColonyUnit,                F_Unit},
         {FAC_RECREATION_COMMONS,    F_Default},
         {FAC_TREE_FARM,             F_Trees},
         {SecretProject,             0},
@@ -1439,6 +1441,9 @@ int select_build(int base_id) {
         const int flag = item[1];
         int choice = 0;
 
+        if (flag & F_Unit && !allow_units) {
+            continue;
+        }
         if (t == Satellites && minerals >= p->median_limit) {
             if ((choice = find_satellite(base_id, defenders/2)) != 0) {
                 return choice;
@@ -1452,9 +1457,6 @@ int select_build(int base_id) {
         if (t == MorePsych && (choice = need_psych(base_id)) != 0) {
             return choice;
         }
-        if (t < 0 && !allow_units) {
-            continue;
-        }
         if (t == DefendUnit && gov & GOV_ALLOW_COMBAT && gov & GOV_MAY_PROD_LAND_DEFENSE) {
             if (minerals > 1 + (defenders > 0)
             && (defenders < 2 || need_scouts(base->x, base->y, faction, scouts))
@@ -1464,7 +1466,7 @@ int select_build(int base_id) {
         }
         if (t == CombatUnit && gov & GOV_ALLOW_COMBAT) {
             if (minerals > reserve && random(256) < (int)(256 * threat)
-            && (choice = select_combat(base_id, landprobes+seaprobes,  sea_base, build_ships)) >= 0) {
+            && (choice = select_combat(base_id, landprobes+seaprobes, sea_base, build_ships)) >= 0) {
                 return choice;
             }
         }
@@ -1528,7 +1530,9 @@ int select_build(int base_id) {
                     if (prod_turns(base_id, choice) < 10 && random(2)) {
                         return choice;
                     }
-                    default_choice = choice;
+                    if (!default_choice) {
+                        default_choice = choice;
+                    }
                 }
             }
         }
@@ -1541,7 +1545,7 @@ int select_build(int base_id) {
         int turns = max(0, facility.cost * min(12, cfactor) - base->minerals_accumulated)
             / max(2, base->mineral_surplus);
         /* Check if we have sufficient base energy for multiplier facilities. */
-        if (flag & F_Energy && (turns > 10 || base->energy_surplus < 8))
+        if (flag & F_Energy && (base->energy_surplus < 8 || turns > 6 + min(8, base->energy_surplus/4)))
             continue;
         /* Avoid building combat-related facilities in peacetime. */
         if (flag & F_Combat && p->enemy_base_range > MaxEnemyRange - 5*min(5, facility.maint))
@@ -1552,7 +1556,7 @@ int select_build(int base_id) {
             continue;
         if (flag & F_Mineral && (base->mineral_intake_2 > (core_base ? 80 : 50)
         || 3*base->mineral_intake_2 > 2*(conf.clean_minerals + f->clean_minerals_modifier)
-        || turns > 5 + f->AI_power + f->AI_wealth))
+        || turns > 4 + random(8)))
             continue;
         if (flag & F_Trees && (base->eco_damage < random(16)
         || (!base->eco_damage && (turns > random(16) || nearby_items(base->x, base->y, 1, BIT_FOREST) < 3))))
@@ -1567,9 +1571,9 @@ int select_build(int base_id) {
             continue;
         if (t == FAC_HEADQUARTERS && (conf.auto_relocate_hq || !valid_relocate_base(base_id)))
             continue;
-        if (t == FAC_COMMAND_CENTER && (sea_base || turns > 5))
+        if (t == FAC_COMMAND_CENTER && (sea_base || minerals < reserve || turns > 6))
             continue;
-        if (t == FAC_NAVAL_YARD && (!sea_base || turns > 5))
+        if (t == FAC_NAVAL_YARD && (!sea_base || minerals < reserve || turns > 6))
             continue;
         if (t == FAC_TACHYON_FIELD && base->defend_goal < 4 && turns > (allow_units ? 2 : 4))
             continue;

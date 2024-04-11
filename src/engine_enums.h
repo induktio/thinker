@@ -862,6 +862,8 @@ enum MapwinState {
     MAPWIN_HIDE_OCEAN_BASE = 0x2000000, // stop rendering ocean base layer
     MAPWIN_UNK_4000000 = 0x4000000,
     MAPWIN_HIDE_TERRAIN = 0x10000000, // stop rendering all terrain
+    MAPWIN_UNK_20000000 = 0x20000000,
+    MAPWIN_UNK_40000000 = 0x40000000,
     MAPWIN_DRAW_SOLID_BORDERS = 0x80000000, // faction borders solid color terrain view
 };
 

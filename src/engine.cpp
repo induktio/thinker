@@ -107,6 +107,7 @@ int* GameDrawState = (int*)0x90D91C;
 int* WinModalState = (int*)0x9B7AE4;
 int* DiploWinState = (int*)0x93FAB4; // Non-zero when diplomacy communication active
 int* PopupDialogState = (int*)0x6A721C; // Non-zero when most popups or scrollable lists are visible
+RECT* RenderTileBounds = (RECT*)0x7D3C28;
 
 int* VehDropLiftVehID = (int*)0x9B2280;
 int* VehLiftX = (int*)0x9B2278;
