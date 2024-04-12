@@ -1,6 +1,25 @@
 
 # Thinker mod release changelog
 
+## Version 4.2 (2024-04-12)
+* Game setup screen will now adjust the planet preview background based on selected properties on all resolutions.
+* Base window support tab shows a terrain view that is zoomable with the mousewheel or Ctrl+Up/Down.
+* Players on two lowest difficulty levels will start accumulating labs immediately instead of 5 turns later (early_research_start).
+* Add event_market_crash option to select if the event is enabled. This can now reduce energy reserves by 1/2 when the faction has more than 1000 credits.
+* Add biology_lab_bonus option to adjust the research bonus granted by the facility. AI may sometimes build this facility if the benefit is large enough.
+* AI will also consider suitable non-combat predefined units for production even if the tech for corresponding non-combat module is not available.
+* Planetpearls option is set by default to slightly reduce planetpearls income.
+* Patch Stockpile Energy when it enabled double production if the base produces one item and then switches to Stockpile Energy on the same turn gaining additional credits.
+* Stockpile Energy also shows extra credits gained per turn on the base resource view.
+* Minor changes on AI priorities with naval pathfinding and objective bases in scenario mode.
+* Fix base governor not building prototype units in some cases if the prototype cost is zero.
+* Fix startup issues with the game launcher when the keyboard shortcuts were not working.
+* Fix issue when faction credits are less than the minimal hurry cost, the default payment will be equal to credits available.
+* Fix production picker showing incorrect Stockpile Energy output in the selection list when Planetary Energy Grid is built.
+* Fix world map shifting the bottom row of tiles to the wrong side of screen when the map is zoomed out.
+* Fix rare issue where the game freezes during turn processing if some of the combat units are automated.
+
+
 ## Version 4.1 (2024-03-28)
 * Replace older DirectDraw and windowed mode options with video_mode option which also allows to select fullscreen mode on custom resolution.
 * It is now possible to toggle between windowed and custom resolution modes by pressing Alt+Enter.
