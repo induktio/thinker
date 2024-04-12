@@ -281,7 +281,7 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
     MFactions[faction2].filename, score, friction, f_cmp.energy_credits, reserve, amount, turns, payment);
     flushlog();
 
-    if (f_plr.sanction_turns > 0 || score < -10) {
+    if (f_plr.sanction_turns > 0 || score < -15) {
         parse_says(0, MFactions[faction1].title_leader, -1, -1);
         parse_says(1, MFactions[faction1].name_leader, -1, -1);
         X_dialog("modmenu", "REJECTIDEA", faction2);

@@ -91,7 +91,7 @@ When enabled, use `Shift+A` shortcut to automate any specific unit and it will f
 
 Beware formers automated in this way **can replace any existing improvements** on the territory if Thinker calculates the replacement would increase tile production. A notable difference compared to the AI factions is that player-automated formers will never raise/lower terrain. To prevent the formers from ever replacing some specific improvements, such as bunkers, they need to be placed outside the workable base radius from any friendly base.
 
-Bases managed by Thinker governors will mostly follow the same options as provided in the base governor settings, with a few exceptions. Normal explore/build/discover/conquer priorities will have no effect on production choices and they are automatically deselected in the interface.
+Bases managed by Thinker governors will mostly follow the same options as provided in the base governor settings, with a few exceptions. Normal explore/build/discover/conquer priorities will have no effect on production choices and they are automatically deselected in the interface. Enabling either terraformers or colony pods in the governor settings will also allow governors to build crawlers since they don't have a separate option in the menu.
 Thinker governors will also never attempt to start secret projects, hurry production with energy reservers, or nerve staple drones in the base. These choices are left for the player to manage.
 
 
@@ -160,7 +160,6 @@ This list is not complete, but it details the most important bonuses granted for
 3. Content (non-drone) base population for each difficulty level can be adjusted with `content_pop_player` and `content_pop_computer` variables. By default these have the same values than vanilla game mechanics.
 4. AI pays reduced maintenance for facilities on two highest difficulty levels. Transcend level has 1/3 and Thinker level 2/3 maintenance from the normal amounts.
 5. AI pays no retooling costs whenever it changes production from one item to another.
-6. AI bases will not trigger sea level rise events unless the difficulty is Thinker or Transcend.
 
 
 Difficulty level effects
@@ -168,42 +167,27 @@ Difficulty level effects
 This list details the most important changes on different difficulty levels for player factions in the original game.
 For AI factions, difficulty in some calculations is treated as a fixed value. Any changes made by the mod are mentioned separately.
 
-Easier Diplomacy. At lower levels, computer players will be more likely to "go easy"
-on players in diplomacy, unless the "Intense Rivalry" option is enabled, in which
-case they always use maximum ruthlessness.
+Easier Diplomacy. At lower levels, computer players will be more likely to "go easy" on players in diplomacy, unless the "Intense Rivalry" option is enabled, in which case they are much more ruthless.
 
-Delayed Gang Tackles. In particular, the tendency for computer players to "gang up on"
-the human player is controlled by the difficulty level and current turn thresholds.
-With Intense Rivalry enabled, difficulty is treated as Transcend.
+Delayed Gang Tackles. In particular, the tendency for computer players to "gang up on" the human player is controlled by the difficulty level and current turn thresholds. With Intense Rivalry enabled, difficulty is treated as Transcend.
 
-Also computer players will not gang up until the player's overall "dominance bar" is
-significantly higher than the dominance bar of the second-place player: it need only be
-20% higher with Intense Rivalry, but otherwise it needs to be 50% higher at Librarian,
-Thinker and Transcend levels, twice as high at Talent level, and never happens at Citizen
-and Specialist levels.
+Also computer players will not gang up until the player's overall "dominance bar" is significantly higher than the dominance bar of the second-place player: it need only be 20% higher with Intense Rivalry, but otherwise it needs to be 50% higher at Librarian, Thinker and Transcend levels, twice as high at Talent level, and never happens at Citizen and Specialist levels.
 
-No Mind Control. At Citizen, Specialist and Talent levels, computer players will not
-use Mind Control against player bases.
+No Mind Control. At Citizen, Specialist and Talent levels, computer players will not use Mind Control against player bases.
 
-Secret Projects. At Talent and below, the other factions can't start work on a Secret
-Project until the player has its prerequisite tech, even if they already have the tech
-in question (this restriction is removed in the mod).
+Secret Projects. At Talent and below, the other factions can't start work on a Secret Project until the player has its prerequisite tech, even if they already have the tech in question (this restriction is removed in the mod).
 
-Colony Pod. At Citizen and Specialist levels, building a colony pod at a size 1 base does
-not eliminate the base.
+Colony Pod. At Citizen and Specialist levels, building a colony pod at a size 1 base does not eliminate the base.
 
-No Early Research. At Citizen and Specialist levels, all research points accumulated
-during the first 5 turns are ignored (removed by early_research_start).
+No Early Research. At Citizen and Specialist levels, all research points accumulated during the first 5 turns are ignored (removed by early_research_start).
 
-Command Center Maintenance. The Maintenance cost of the Command Center facility is equal
-to the best Reactor level that is available (1 to 4), but never more than half of DIFF
-rounded up. In the mod Command Center only uses the maintenance cost set in alphax.txt.
+Command Center Maintenance. The Maintenance cost of the Command Center facility is equal to the best Reactor level that is available (1 to 4), but never more than half of DIFF rounded up. In the mod Command Center only uses the maintenance cost set in alphax.txt.
 
-No Power Overloads. At Citizen and Specialist levels. Base facilities do not experience
-power overloads when running out of energy to pay maintenance.
+No Power Overloads. At Citizen and Specialist levels. Base facilities do not experience power overloads when running out of energy to pay maintenance.
 
-No Pop Lost to Attack. At Citizen level, the bases never lose population points
-when they are attacked.
+No Pop Lost to Attack. At Citizen level, the bases never lose population points when they are attacked.
+
+Ecological Damage. AI bases will not trigger sea level rise events unless the difficulty is Thinker or Transcend.
 
 Random Events do not occur before Turn `75 - (DIFF * 10)`.
 
@@ -366,7 +350,7 @@ Known limitations
 =================
 Currently the features listed here may not be fully supported or may have issues while Thinker is enabled. The list may be subject to change in future releases.
 
-1. Network multiplayer TCP/IP and PBEM should be supported, however this receives less testing than the singleplayer configuration, so some issues might occur. In case of network problems, refer to other manuals on how to configure firewalls and open the necessary ports for multiplayer.
+1. Network multiplayer (TCP/IP) should be supported, however this is less stable than the singleplayer configuration, so some issues might occur. At minimum every client needs to use the same configuration files. In case of network problems, refer to other manuals on how to configure firewalls and open the necessary ports for multiplayer. Simultaneous turns option for network multiplayer is known to cause issues. If the game desyncs, it is possible to save it to a file and host it again.
 2. Most notable limits in the game engine are 8 factions (one for native life), 512 bases, 2048 units, and 64 prototypes for each faction. These limits were fixed in the game binary at compilation time and are not feasible to change without a full open source port.
 3. Faction selection dialog in the game setup is limited to showing only the first 24 factions even if installed factions in alphax.txt exceed this number.
 4. Most custom settings in "Special Scenario Rules" should be supported even when starting new random maps. However these rules may cause inconsistent behaviour when used from the main menu: `No native life--fungus, mind worms, Planet, etc`, `Force current difficulty level`, and `Force player to play current faction`.
@@ -388,7 +372,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 5. Fix game showing redundant "rainfall patterns have been altered" messages when these events are caused by other factions.
 6. Fix a bug that occurs after the player does an artillery attack on unoccupied tile and then selects another unit to view combat odds and cancels the attack. After this veh_attack_flags will not get properly cleared and the next bombardment on an unoccupied tile always results in the destruction of the bombarding unit.
 7. Disable legacy upkeep code in the game engine that might cause AI formers to be reassigned to nearby bases that are owned by other factions.
-8. Patch the game engine to use significantly less CPU time by using a method similar to [smac-cpu-fix](https://github.com/vinceho/smac-cpu-fix/). Normally the game uses 100% of CPU time which can be be a problem on laptop devices (cpu_idle_fix).
+8. Patch the game engine to use significantly less CPU time when idle by using a method similar to [smac-cpu-fix](https://github.com/vinceho/smac-cpu-fix/). Normally the game uses 100% of CPU time which can be be a problem on laptop devices.
 9. When capturing a base, Recycling Tanks and Recreation Commons are not always destroyed unlike previously. They are sometimes randomly destroyed like other facilities (facility_capture_fix).
 10. Patch any faction with negative research rating to start accumulating labs on the first turn. In vanilla rules each negative point results in an additional 5 turn delay before the faction starts accumulating labs, for example Believers had a 10 turn delay. Players on two lowest difficulty levels will also start accumulating labs immediately instead of 5 turns later (early_research_start).
 11. Fix faction graphics bug that appears when Alpha Centauri.ini has a different set of faction filenames than the loaded scenario file. The patch will make sure the correct graphics set is loaded when opening the scenario. This bug only happened with scenario files, while regular save games were unaffected.
@@ -397,7 +381,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 14. Fix visual bug where population icons in base window would randomly switch their type when clicking on them.
 15. Patch AIs to initiate much less diplomacy dialogs when the player captures their bases. Previously this happened at least once for every turn the AI loses any bases and would repeat the same dialog every time if the player didn't agree to the peace terms. The patch makes the initiation of dialog more dependent on random chance unless the AI would finally accept surrender terms.
 16. Patch genetic warfare probe team action to cause much less damage for any units defending the base. In vanilla game mechanics even one attack instantly inflicted almost 80% damage. In the patched version population loss mechanic is unaffected, but even multiple attacks should do substantially less damage for defender units.
-17. Patch terrain drawing engine to render more detailed tiles when zooming out from the default level instead of the blocky, less detailed versions on almost every zoom out level. Fix visual issues where the game sometimes did not update the map properly when recentering it offscreen on native resolution mode. Main menu setup screen will update the planet preview on all resolutions (render_high_detail).
+17. Patch terrain drawing engine to render more detailed tiles when zooming out from the default level instead of the blocky, less detailed versions on almost every zoom out level. Main menu setup screen will update the planet preview on all resolutions. Base window support tab will also render a zoomable terrain view that can be adjusted with the mousewheel (render_high_detail).
 18. Modify multiplayer setup screen to use average values for each of the random map generator settings, instead of the highest possible like previously.
 19. Fix potential crash when a game is loaded after using Edit Map > Generate/Remove Fungus > No Fungus.
 20. Fix foreign base names being visible in unexplored tiles when issuing move to or patrol orders to the tiles.
@@ -412,7 +396,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 29. Disable drone revolt event which sometimes caused rioting player-owned bases to join other factions while this did not happen on AI factions (skip_drone_revolts).
 30. Whenever additional units are added in the editor mode, these are set as independent units requiring no support by default (editor_free_units).
 31. Patch captured base extra drone effect to last a variable time from 20 to 50 turns depending on the captured base size. The AI will also rename captured bases only after they are fully assimilated.
-32. When a base is captured that was previously owned by active third faction and the time to assimilate the base was more than 10 turns, the previous owner is preserved after capture.
+32. When a base is captured that was previously owned by active third faction and the time to assimilate the base was more than zero, the previous owner is preserved after capture.
 33. Fix diplomacy dialog issues when both human and alien factions are involved in a base capture by removing the event that spawns additional colony pods.
 34. Fix missing defender bonus mentioned in the manual "Units in a headquarters base automatically gain +1 Morale when defending".
 35. Fix multiple issues in unit morale calculation, see more details in "Improved combat mechanics" section (modify_unit_morale).
@@ -422,8 +406,10 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 39. Prevent the AI from making unnecessary trades where it sells their techs for maps owned by the player. The patch removes TRADETECH4 / TRADETECH5 dialogue paths making the AI usually demand a credit payment for any techs.
 40. Fix possible issues with inconsistent captured base facilities when some of the factions have free facilities defined for them.
 41. Fix some issues where AI declared war based on calculations using incorrect variables. AI is also less likely to declare war at early stages when it has only few bases built.
-42. Fix issues where the game would crash on resolutions not divisible by 8. If an unsupported resolution is used, the game will attempt to automatically switch to the closest supported size.
-43. Fix Stockpile Energy when it enabled double production if the base produces one item and then switches to Stockpile Energy on the same turn gaining additional credits.
+42. Fix visual issues where the game sometimes did not update the map properly when recentering it offscreen on native resolution mode.
+43. Fix issues where the game would crash on resolutions not divisible by 8. If an unsupported resolution is used, the game will attempt to automatically switch to the closest supported size.
+44. Fix rendering bug that caused half of the bottom row map tiles to shift to the wrong side of screen when zoomed out.
+45. Patch Stockpile Energy when it enabled double production if the base produces one item and then switches to Stockpile Energy on the same turn gaining additional credits.
 
 
 Scient's patch

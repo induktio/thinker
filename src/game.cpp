@@ -118,7 +118,7 @@ void init_world_config() {
     Adjust Special Scenario Rules if any are selected from the mod menu.
     This also overrides settings for any scenarions unless all custom options are left empty.
     */
-    if (custom_game_rules || custom_more_rules) {
+    if ((custom_game_rules || custom_more_rules) && !*MultiplayerActive) {
         *GameRules = (*GameRules & GAME_RULES_MASK) | custom_game_rules;
         *GameMoreRules = (*GameMoreRules & GAME_MRULES_MASK) | custom_more_rules;
     }

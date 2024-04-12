@@ -967,14 +967,16 @@ void console_world_generate(uint32_t seed) {
 }
 
 void __cdecl mod_world_build() {
-    static uint32_t seed = random_state();
+    static uint32_t v1 = 0;
+    static uint32_t v2 = random_state();
     if (!conf.new_world_builder) {
         ThinkerVars->map_random_value = 0;
         world_build();
         return;
     }
-    seed = random_next(seed) ^ GetTickCount();
-    world_generate(seed);
+    v1 += pair_hash(v2, GetTickCount());
+    v2 += v1;
+    world_generate(v2);
 }
 
 void world_generate(uint32_t seed) {
@@ -1227,7 +1229,7 @@ void __cdecl mod_time_warp() {
     These units are added in setup_player regardless of other conditions.
     */
 
-    if (conf.time_warp_mod) {
+    if (conf.time_warp_mod && !*MultiplayerActive) {
         *SkipTechScreenB = 1;
         for (int i = 1; i < MaxPlayerNum; i++) {
             bool ocean = MFactions[i].is_aquatic();
@@ -1310,7 +1312,7 @@ void __cdecl mod_time_warp() {
         time_warp();
     }
     init_world_config();
-    if (!conf.time_warp_projects) {
+    if (!conf.time_warp_projects || *MultiplayerActive) {
         return;
     }
     for (const FacilityId item_id : projects) {

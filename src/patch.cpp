@@ -547,6 +547,20 @@ bool patch_setup(Config* cf) {
     write_call(0x5BCC70, (int)mod_wants_to_attack); // tech_val
     write_call(0x5BCC85, (int)mod_wants_to_attack); // tech_val
 
+    write_call(0x4CCF13, (int)mod_capture_base); // action_airdrop
+    write_call(0x598778, (int)mod_capture_base); // order_veh
+    write_call(0x5A4AB0, (int)mod_capture_base); // probe
+    write_call(0x4CD629, (int)mod_base_kill); // action_oblit
+    write_call(0x4F1466, (int)mod_base_kill); // base_production
+    write_call(0x4EF319, (int)mod_base_kill); // base_growth
+    write_call(0x500FD7, (int)mod_base_kill); // planet_busting
+    write_call(0x50ADA8, (int)mod_base_kill); // battle_fight_2
+    write_call(0x50AE77, (int)mod_base_kill); // battle_fight_2
+    write_call(0x520E1A, (int)mod_base_kill); // random_events
+    write_call(0x521121, (int)mod_base_kill); // random_events
+    write_call(0x5915A6, (int)mod_base_kill); // alt_set
+    write_call(0x598673, (int)mod_base_kill); // order_veh
+
     // Magtube and fungus movement speed patches
     write_call(0x587424, (int)mod_read_basic_rules);
     write_call(0x467711, (int)mod_hex_cost);
@@ -932,7 +946,7 @@ bool patch_setup(Config* cf) {
     }
 
     /*
-    Fix Stockpile Energy when it enabled double production if the base produces one item
+    Patch Stockpile Energy when it enabled double production if the base produces one item
     and then switches to Stockpile Energy on the same turn gaining additional credits.
     */
     {
@@ -973,7 +987,14 @@ bool patch_setup(Config* cf) {
         const byte new_tachyon[] = {0x83,0xC6,(byte)cf->tachyon_field_bonus};
         write_bytes(0x503506, old_tachyon, new_tachyon, sizeof(new_tachyon));
     }
-
+    /*
+    Modify Biology Lab research bonus value.
+    */
+    {
+        const byte old_bytes[] = {0x83,0x80,0x08,0x01,0x00,0x00,0x02};
+        const byte new_bytes[] = {0x83,0x80,0x08,0x01,0x00,0x00,(byte)cf->biology_lab_bonus};
+        write_bytes(0x4EBC85, old_bytes, new_bytes, sizeof(new_bytes));
+    }
     /*
     Initial content base population before psych modifiers.
     */
@@ -1012,7 +1033,7 @@ bool patch_setup(Config* cf) {
                 MOD_VERSION, MB_OK | MB_ICONSTOP);
             exit(EXIT_FAILURE);
         }
-        *(int*)0x45F97A = 0;
+        *(int32_t*)0x45F97A = 0;
         *(const char**)0x691AFC = ac_mod_alpha;
         *(const char**)0x691B00 = ac_mod_help;
         *(const char**)0x691B14 = ac_mod_tutor;
@@ -1139,21 +1160,6 @@ bool patch_setup(Config* cf) {
         write_call(0x5BE5E1, (int)mod_tech_selection);
         write_call(0x5BE690, (int)mod_tech_selection);
         write_call(0x5BEB5D, (int)mod_tech_selection);
-    }
-    if (cf->auto_relocate_hq) {
-        write_call(0x4CCF13, (int)mod_capture_base);
-        write_call(0x598778, (int)mod_capture_base);
-        write_call(0x5A4AB0, (int)mod_capture_base);
-        write_call(0x4CD629, (int)mod_base_kill); // action_oblit
-        write_call(0x4F1466, (int)mod_base_kill); // base_production
-        write_call(0x4EF319, (int)mod_base_kill); // base_growth
-        write_call(0x500FD7, (int)mod_base_kill); // planet_busting
-        write_call(0x50ADA8, (int)mod_base_kill); // battle_fight_2
-        write_call(0x50AE77, (int)mod_base_kill); // battle_fight_2
-        write_call(0x520E1A, (int)mod_base_kill); // random_events
-        write_call(0x521121, (int)mod_base_kill); // random_events
-        write_call(0x5915A6, (int)mod_base_kill); // alt_set
-        write_call(0x598673, (int)mod_base_kill); // order_veh
     }
     if (cf->simple_hurry_cost) {
         short_jump(0x41900D);

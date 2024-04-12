@@ -191,8 +191,12 @@ void __cdecl mod_drone_riot() {
 
 bool valid_relocate_base(int base_id) {
     int faction = Bases[base_id].faction_id;
-    int new_id = -1;
+    int best_id = -1;
+    int best_score = 0;
 
+    if (conf.auto_relocate_hq) {
+        return false;
+    }
     if (!has_tech(Facility[FAC_HEADQUARTERS].preq_tech, faction)) {
         return false;
     }
@@ -200,19 +204,22 @@ bool valid_relocate_base(int base_id) {
         BASE* b = &Bases[i];
         if (b->faction_id == faction) {
             if ((i != base_id && b->item() == -FAC_HEADQUARTERS)
-            || has_fac_built(FAC_HEADQUARTERS, i)) {
+            || has_fac_built(FAC_HEADQUARTERS, i) || b->mineral_surplus < 2) {
                 return false;
             }
-            if (new_id < 0 && b->mineral_surplus > 3) {
-                new_id = i;
+            int score = 8*(i == base_id) + 2*b->pop_size
+                + b->mineral_surplus - b->assimilation_turns_left;
+            if (best_id < 0 || score > 2 * best_score) {
+                best_id = i;
+                best_score = score;
             }
         }
     }
-    return new_id == base_id;
+    return best_id == base_id;
 }
 
 void find_relocate_base(int faction) {
-    if (find_hq(faction) < 0) {
+    if (conf.auto_relocate_hq && find_hq(faction) < 0) {
         int best_score = INT_MIN;
         int best_id = -1;
         Points bases;
@@ -226,7 +233,7 @@ void find_relocate_base(int faction) {
             BASE* b = &Bases[i];
             if (b->faction_id == faction) {
                 int score = 4 * b->pop_size - (int)(10 * avg_range(bases, b->x, b->y))
-                    - clamp(2 * b->assimilation_turns_left, 0, 80);
+                    - 2 * b->assimilation_turns_left;
                 debug("relocate_base %s %4d %s\n",
                     MFactions[faction].filename, score, b->name);
                 if (score > best_score) {
@@ -237,7 +244,7 @@ void find_relocate_base(int faction) {
         }
         if (best_id >= 0) {
             BASE* b = &Bases[best_id];
-            set_fac(FAC_HEADQUARTERS, best_id, true);
+            set_fac(FAC_HEADQUARTERS, best_id, 1);
             draw_tile(b->x, b->y, 0);
         }
     }
@@ -275,7 +282,7 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
     }
     if (!destroy_base && base->faction_id_former >= 0
     && is_alive(base->faction_id_former)
-    && base->assimilation_turns_left >= 10) {
+    && base->assimilation_turns_left > 0) {
         prev_owner = base->faction_id_former;
     }
     base->defend_goal = 0;
@@ -298,7 +305,7 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
     Prevent AIs from initiating diplomacy once every turn after losing a base.
     Allow dialog if surrender is possible given the diplomacy check values.
     */
-    if (vendetta && is_human(faction) && !is_human(old_faction)
+    if (!*MultiplayerActive && vendetta && is_human(faction) && !is_human(old_faction)
     && last_spoke < 10 && !*diplo_value_93FA98 && !*diplo_value_93FA24) {
         int lost_bases = 0;
         for (int i = 0; i < *BaseCount; i++) {
@@ -737,10 +744,11 @@ int project_score(int faction, FacilityId item_id, bool shuffle) {
         + (f->AI_tech+1) * p->AI_tech + (f->AI_wealth+1) * p->AI_wealth;
 }
 
-int hurry_item(BASE* b, int mins, int cost) {
+int hurry_item(int base_id, int mins, int cost) {
+    BASE* b = &Bases[base_id];
     Faction* f = &Factions[b->faction_id];
     debug("hurry_item %d %d mins: %2d cost: %2d credits: %d %s %s\n",
-        *CurrentTurn, b->faction_id, mins, cost, f->energy_credits, b->name, prod_name(b->item()));
+        *CurrentTurn, base_id, mins, cost, f->energy_credits, b->name, prod_name(b->item()));
     f->energy_credits -= cost;
     b->minerals_accumulated += mins;
     b->state_flags |= BSTATE_HURRY_PRODUCTION;
@@ -807,7 +815,7 @@ int consider_hurry() {
         }
         std::sort(values, values+num);
         debug("hurry_proj %d %d score: %d limit: %d %s\n",
-            *CurrentTurn, b->faction_id, proj_score, values[num/2], Facility[-t].name);
+            *CurrentTurn, base_id, proj_score, values[num/2], Facility[-t].name);
         if (proj_score < max(4, values[num/2])) {
             return 0;
         }
@@ -816,7 +824,7 @@ int consider_hurry() {
         cost = hurry_cost(base_id, t, mins);
 
         if (cost > 0 && cost < f->energy_credits && mins > 0 && mins > b->mineral_surplus) {
-            hurry_item(b, mins, cost);
+            hurry_item(base_id, mins, cost);
             if (!(*GameState & STATE_GAME_DONE)
             && has_treaty(b->faction_id, MapWin->cOwner, DIPLO_COMMLINK)) {
                 parse_says(0, MFactions[b->faction_id].adj_name_faction, -1, -1);
@@ -829,25 +837,25 @@ int consider_hurry() {
     }
     if (b->drone_total + b->specialist_total > b->talent_total
     && t < 0 && t == need_psych(base_id)) {
-        return hurry_item(b, mins, cost);
+        return hurry_item(base_id, mins, cost);
     }
     if (t < 0 && turns > 1 && cost < f->energy_credits/8) {
         if (t == -FAC_RECYCLING_TANKS || t == -FAC_PRESSURE_DOME
         || t == -FAC_RECREATION_COMMONS || t == -FAC_TREE_FARM
         || t == -FAC_PUNISHMENT_SPHERE || t == -FAC_HEADQUARTERS) {
-            return hurry_item(b, mins, cost);
+            return hurry_item(base_id, mins, cost);
         }
         if (t == -FAC_CHILDREN_CRECHE && base_unused_space(base_id) > 2) {
-            return hurry_item(b, mins, cost);
+            return hurry_item(base_id, mins, cost);
         }
         if (t == -FAC_HAB_COMPLEX && base_unused_space(base_id) == 0) {
-            return hurry_item(b, mins, cost);
+            return hurry_item(base_id, mins, cost);
         }
         if (t == -FAC_PERIMETER_DEFENSE && b->defend_goal > 2 && p->enemy_factions > 0) {
-            return hurry_item(b, mins, cost);
+            return hurry_item(base_id, mins, cost);
         }
         if (t == -FAC_AEROSPACE_COMPLEX && has_tech(TECH_Orbital, b->faction_id)) {
-            return hurry_item(b, mins, cost);
+            return hurry_item(base_id, mins, cost);
         }
     }
     if (t >= 0 && turns > 1 && cost < f->energy_credits/4) {
@@ -860,17 +868,17 @@ int consider_hurry() {
                 + (cost < f->energy_credits/16)
                 + 2*(!has_defenders(b->x, b->y, b->faction_id));
             if (val > 3) {
-                return hurry_item(b, mins, cost);
+                return hurry_item(base_id, mins, cost);
             }
         }
         if (Units[t].is_former() && cost < f->energy_credits/16
         && (*CurrentTurn < 80 || b->mineral_surplus < p->median_limit)) {
-            return hurry_item(b, mins, cost);
+            return hurry_item(base_id, mins, cost);
         }
         if (Units[t].is_colony() && cost < f->energy_credits/16
         && (b->state_flags & BSTATE_DRONE_RIOTS_ACTIVE
         || (!base_unused_space(base_id) && turns > 3))) {
-            return hurry_item(b, mins, cost);
+            return hurry_item(base_id, mins, cost);
         }
     }
     return 0;
@@ -1216,6 +1224,37 @@ Triad select_colony(int base_id, int pods, bool build_ships) {
     return TRIAD_NONE;
 }
 
+// Transcend AI pays 1/3 maintenance but this is only an estimate
+int calc_maint(int item_id, int faction_id) {
+    assert(item_id > 0 && valid_player(faction_id));
+    return fac_maint(item_id, faction_id) / (is_human(faction_id) || *DiffLevel < DIFF_THINKER ? 1 : 2);
+}
+
+bool allow_energy(int base_id, int item_id, int turns) {
+    assert(base_id >= 0 && item_id > 0 && turns >= 0);
+    int faction = Bases[base_id].faction_id;
+    int surplus = Bases[base_id].energy_surplus;
+    int maint = calc_maint(item_id, faction);
+    debug("allow_energy %d %d turns: %d surplus: %d maint: %d %s\n",
+        *CurrentTurn, base_id, turns, surplus, maint, prod_name(-item_id));
+    if (item_id == FAC_BIOLOGY_LAB) {
+        return conf.biology_lab_bonus + clamp(psi_score(faction), -4, 4)
+            - clamp(surplus/4, 0, 4) - calc_maint(FAC_BIOLOGY_LAB, faction) >= turns;
+    }
+    if (item_id == FAC_NETWORK_NODE) {
+        if (has_project(FAC_VIRTUAL_WORLD, faction) && base_can_riot(base_id, false)) {
+            return true;
+        }
+        if (surplus >= 4 && turns < 10 && (has_project(FAC_NETWORK_BACKBONE, faction)
+        || facility_count(FAC_NETWORK_NODE, faction) < Factions[faction].base_count/8)) {
+            return true;
+        }
+    }
+    bool reduce = has_fac_built(FAC_PUNISHMENT_SPHERE, base_id)
+        && (item_id == FAC_NETWORK_NODE || item_id == FAC_FUSION_LAB || item_id == FAC_QUANTUM_LAB);
+    return surplus >= 4 && surplus * (reduce ? 1 : 2) + random(8) >= 14 + turns + maint;
+}
+
 int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships) {
     BASE* base = &Bases[base_id];
     int faction = base->faction_id;
@@ -1291,7 +1330,7 @@ int select_build(int base_id) {
         && ~base->state_flags & BSTATE_PRODUCTION_DONE
         && base->minerals_accumulated > Rules->retool_exemption;
     bool allow_units = can_build_unit(base_id, -1) && !project_change;
-    bool allow_supply = !sea_base;
+    bool allow_supply = !sea_base && gov & (GOV_MAY_PROD_COLONY_POD | GOV_MAY_PROD_TERRAFORMERS);
     int all_crawlers = 0;
     int near_formers = 0;
     int need_ferry = 0;
@@ -1410,9 +1449,10 @@ int select_build(int base_id) {
         {FAC_HOLOGRAM_THEATRE,      F_Default},
         {FAC_PERIMETER_DEFENSE,     F_Combat},
         {FAC_GENEJACK_FACTORY,      F_Mineral},
-        {FAC_AEROSPACE_COMPLEX,     0},
         {FAC_ROBOTIC_ASSEMBLY_PLANT,F_Mineral},
         {FAC_NANOREPLICATOR,        F_Mineral},
+        {FAC_QUANTUM_CONVERTER,     F_Mineral},
+        {FAC_AEROSPACE_COMPLEX,     0},
         {FAC_TACHYON_FIELD,         F_Combat},
         {FAC_NETWORK_NODE,          F_Energy|F_Default},
         {FAC_COMMAND_CENTER,        F_Repair|F_Combat},
@@ -1427,6 +1467,7 @@ int select_build(int base_id) {
         {FAC_FUSION_LAB,            F_Energy},
         {FAC_ENERGY_BANK,           F_Energy},
         {FAC_RESEARCH_HOSPITAL,     F_Energy},
+        {FAC_BIOLOGY_LAB,           F_Energy|F_Surplus},
         {FAC_FLECHETTE_DEFENSE_SYS, F_Combat|F_Surplus},
         {FAC_QUANTUM_LAB,           F_Energy|F_Surplus},
         {FAC_NANOHOSPITAL,          F_Energy|F_Surplus},
@@ -1525,14 +1566,13 @@ int select_build(int base_id) {
             }
         }
         if (t == CrawlerUnit && allow_supply) {
-            if (has_wmode(faction, WMODE_CONVOY) && all_crawlers < f->base_count) {
-                if ((choice = find_proto(base_id, TRIAD_LAND, WMODE_CONVOY, DEF)) >= 0) {
-                    if (prod_turns(base_id, choice) < 10 && random(2)) {
-                        return choice;
-                    }
-                    if (!default_choice) {
-                        default_choice = choice;
-                    }
+            if (has_wmode(faction, WMODE_CONVOY) && all_crawlers < f->base_count
+            && ((choice = find_proto(base_id, TRIAD_LAND, WMODE_CONVOY, DEF)) >= 0)) {
+                if (prod_turns(base_id, choice) < 10 && random(2)) {
+                    return choice;
+                }
+                if (!default_choice) {
+                    default_choice = choice;
                 }
             }
         }
@@ -1545,18 +1585,20 @@ int select_build(int base_id) {
         int turns = max(0, facility.cost * min(12, cfactor) - base->minerals_accumulated)
             / max(2, base->mineral_surplus);
         /* Check if we have sufficient base energy for multiplier facilities. */
-        if (flag & F_Energy && (base->energy_surplus < 8 || turns > 6 + min(8, base->energy_surplus/4)))
+        if (flag & F_Energy && !allow_energy(base_id, t, turns)) {
             continue;
+        }
         /* Avoid building combat-related facilities in peacetime. */
-        if (flag & F_Combat && p->enemy_base_range > MaxEnemyRange - 5*min(5, facility.maint))
+        if (flag & F_Combat && p->enemy_base_range > MaxEnemyRange - turns/8 - 5*min(5, facility.maint)) {
             continue;
+        }
         if (flag & F_Repair && (!conf.repair_base_facility || f->SE_morale < 0))
             continue;
         if (flag & F_Surplus && turns > random(4) + (allow_units ? 3 : 5))
             continue;
         if (flag & F_Mineral && (base->mineral_intake_2 > (core_base ? 80 : 50)
         || 3*base->mineral_intake_2 > 2*(conf.clean_minerals + f->clean_minerals_modifier)
-        || turns > 4 + random(8)))
+        || base->mineral_intake_2 < facility.cost || turns > 2 + random(16)))
             continue;
         if (flag & F_Trees && (base->eco_damage < random(16)
         || (!base->eco_damage && (turns > random(16) || nearby_items(base->x, base->y, 1, BIT_FOREST) < 3))))
@@ -1564,18 +1606,18 @@ int select_build(int base_id) {
         if (t == FAC_RECYCLING_TANKS && base->drone_total > 0 && can_build(base_id, FAC_RECREATION_COMMONS))
             continue;
         if ((t == FAC_RECREATION_COMMONS || t == FAC_HOLOGRAM_THEATRE)
-        && base->pop_size < content_pop_value + 1
-        && !base->drone_total && base->specialist_total < 2)
+        && ((base->pop_size <= content_pop_value && !base->drone_total && base->specialist_total < 2)
+        || (base->talent_total > 0 && !base->drone_total && !base->specialist_total)))
             continue;
         if (t == FAC_PRESSURE_DOME && (*ClimateFutureChange <= 0 || !is_shore_level(mapsq(base->x, base->y))))
             continue;
-        if (t == FAC_HEADQUARTERS && (conf.auto_relocate_hq || !valid_relocate_base(base_id)))
+        if (t == FAC_HEADQUARTERS && !valid_relocate_base(base_id))
             continue;
-        if (t == FAC_COMMAND_CENTER && (sea_base || minerals < reserve || turns > 6))
+        if (t == FAC_COMMAND_CENTER && (sea_base || minerals < reserve || turns > 8))
             continue;
-        if (t == FAC_NAVAL_YARD && (!sea_base || minerals < reserve || turns > 6))
+        if (t == FAC_NAVAL_YARD && (!sea_base || minerals < reserve || turns > 8))
             continue;
-        if (t == FAC_TACHYON_FIELD && base->defend_goal < 4 && turns > (allow_units ? 2 : 4))
+        if (t == FAC_TACHYON_FIELD && base->defend_goal < 4 && turns > (allow_units ? 3 : 5))
             continue;
         if (t == FAC_HAB_COMPLEX && base_unused_space(base_id) > 0)
             continue;

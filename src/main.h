@@ -248,6 +248,7 @@ struct Config {
     int planet_defense_bonus = 1;
     int perimeter_defense_bonus = 2;
     int tachyon_field_bonus = 2;
+    int biology_lab_bonus = 2;
     int collateral_damage_value = 3;
     int content_pop_player[MaxDiffNum] = {6,5,4,3,2,1};
     int content_pop_computer[MaxDiffNum] = {3,3,3,3,3,3};

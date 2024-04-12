@@ -680,9 +680,6 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     } else if (msg == WM_CHAR && wParam == 'o' && alt_key_down() && !*GameHalted
     && *GameState & STATE_SCENARIO_EDITOR && *GameState & STATE_OMNISCIENT_VIEW) {
         uint32_t seed = ThinkerVars->map_random_value;
-        if (!seed) {
-            seed = random_next(GetTickCount()) >> 16;
-        }
         int value = pop_ask_number("modmenu", "MAPGEN", seed, 0);
         if (!value) { // OK button pressed
             console_world_generate(ParseNumTable[0]);

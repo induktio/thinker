@@ -237,6 +237,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->perimeter_defense_bonus = clamp(atoi(value), 0, 100);
     } else if (MATCH("tachyon_field_bonus")) {
         cf->tachyon_field_bonus = clamp(atoi(value), 0, 100);
+    } else if (MATCH("biology_lab_bonus")) {
+        cf->biology_lab_bonus = clamp(atoi(value), 0, 127);
     } else if (MATCH("collateral_damage_value")) {
         cf->collateral_damage_value = clamp(atoi(value), 0, 127);
     } else if (MATCH("cost_factor")) {
