@@ -194,7 +194,7 @@ bool valid_relocate_base(int base_id) {
     int best_id = -1;
     int best_score = 0;
 
-    if (conf.auto_relocate_hq) {
+    if (conf.auto_relocate_hq || Bases[base_id].mineral_surplus < 2) {
         return false;
     }
     if (!has_tech(Facility[FAC_HEADQUARTERS].preq_tech, faction)) {
@@ -203,9 +203,11 @@ bool valid_relocate_base(int base_id) {
     for (int i = 0; i < *BaseCount; i++) {
         BASE* b = &Bases[i];
         if (b->faction_id == faction) {
-            if ((i != base_id && b->item() == -FAC_HEADQUARTERS)
-            || has_fac_built(FAC_HEADQUARTERS, i) || b->mineral_surplus < 2) {
+            if (has_fac_built(FAC_HEADQUARTERS, i)) {
                 return false;
+            }
+            if (b->item() == -FAC_HEADQUARTERS) {
+                return base_id == i;
             }
             int score = 8*(i == base_id) + 2*b->pop_size
                 + b->mineral_surplus - b->assimilation_turns_left;

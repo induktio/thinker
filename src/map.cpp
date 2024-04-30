@@ -246,11 +246,7 @@ int __cdecl mod_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, in
         assert(value == hex_cost(unit_id, faction_id, x1, y1, x2, y2, toggle));
     }
 
-    if (conf.magtube_movement_rate < 1 && conf.fast_fungus_movement < 1) {
-        return value;
-    }
-
-    if (conf.magtube_movement_rate > 0) {
+    if (conf.magtube_movement_rate > 0 && Units[unit_id].triad() != TRIAD_AIR) {
         if (!is_ocean(sq_a) && !is_ocean(sq_b)) {
             if (sq_a->items & (BIT_BASE_IN_TILE | BIT_MAGTUBE)
             && sq_b->items & (BIT_BASE_IN_TILE | BIT_MAGTUBE)) {
@@ -260,7 +256,7 @@ int __cdecl mod_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, in
             }
         }
     }
-    if (conf.fast_fungus_movement > 0) {
+    if (conf.fast_fungus_movement > 0 && Units[unit_id].triad() != TRIAD_AIR) {
         if (!is_ocean(sq_b) && sq_b->is_fungus()) {
             value = min(max(proto_speed(unit_id), Rules->move_rate_roads), value);
         }
@@ -967,16 +963,14 @@ void console_world_generate(uint32_t seed) {
 }
 
 void __cdecl mod_world_build() {
-    static uint32_t v1 = 0;
-    static uint32_t v2 = random_state();
+    static uint32_t seed = random_state();
     if (!conf.new_world_builder) {
         ThinkerVars->map_random_value = 0;
         world_build();
         return;
     }
-    v1 += pair_hash(v2, GetTickCount());
-    v2 += v1;
-    world_generate(v2);
+    seed += pair_hash(seed, GetTickCount());
+    world_generate(seed);
 }
 
 void world_generate(uint32_t seed) {

@@ -114,7 +114,7 @@ int base_trade_value(int base_id, int faction1, int faction2)
         int dist = map_range(base->x, base->y, Bases[hq_id].x, Bases[hq_id].y);
         value = value * (72 - clamp(dist, 8, 40)) / 64;
     }
-    if (base->event_flags & BEVENT_OBJECTIVE || *GameRules & RULES_SCN_VICT_ALL_BASE_COUNT_OBJ) {
+    if (base->is_objective() || *GameRules & RULES_SCN_VICT_ALL_BASE_COUNT_OBJ) {
         value *= 2;
     }
     debug("base_trade_value %s %d %d friction: %d num_own: %d num_all: %d value: %d\n",

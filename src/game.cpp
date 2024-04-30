@@ -109,10 +109,6 @@ int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id) {
 }
 
 void init_world_config() {
-    if (conf.ignore_reactor_power) {
-        *GamePreferences &= ~PREF_BSC_AUTO_DESIGN_VEH;
-        *GameMorePreferences &= ~MPREF_BSC_AUTO_PRUNE_OBS_VEH;
-    }
     ThinkerVars->game_time_spent = 0;
     /*
     Adjust Special Scenario Rules if any are selected from the mod menu.
