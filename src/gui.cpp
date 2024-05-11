@@ -148,8 +148,13 @@ Other modal windows with the exception of BaseWin are already
 covered by checking Win_get_key_window condition.
 */
 static GameWinState current_window() {
-    if (!*GameHalted && Win_get_key_window() == MainWinHandle) {
-        return Win_is_visible(BaseWin) ? GW_Base : GW_World;
+    if (!*GameHalted) {
+        int state = Win_get_key_window();
+        if (state == MainWinHandle) {
+            return Win_is_visible(BaseWin) ? GW_Base : GW_World;
+        } else if (state == (int)DesignWin) {
+            return GW_Design;
+        }
     }
     return GW_None;
 }
@@ -618,7 +623,12 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         } else if (state == GW_Base && conf.render_high_detail) {
             base_resource_zoom(zoom_in);
         } else {
-            int iKey = (zoom_in ? VK_UP : VK_DOWN);
+            int iKey;
+            if (state == GW_Design) {
+                iKey = (zoom_in ? VK_LEFT : VK_RIGHT);
+            } else {
+                iKey = (zoom_in ? VK_UP : VK_DOWN);
+            }
             iDelta *= CState.ListScrollDelta;
             for (int i = 0; i < iDelta; i++) {
                 PostMessage(hwnd, WM_KEYDOWN, iKey, 0);

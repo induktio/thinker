@@ -6,7 +6,7 @@ enum WinFlag {
     WIN_VISIBLE = 1,
 };
 
-enum GameWinState {GW_None, GW_World, GW_Base};
+enum GameWinState {GW_None, GW_World, GW_Base, GW_Design};
 
 const uint32_t WM_WINDOWED = (WM_USER + 3);
 const uint32_t WM_MOVIEOVER = (WM_USER + 6);
