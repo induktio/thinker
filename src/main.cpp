@@ -25,12 +25,6 @@ NodeSet mapnodes;
 AIPlans plans[MaxPlayerNum];
 map_str_t musiclabels;
 
-const char* landmark_params[] = {
-    "crater", "volcano", "jungle", "uranium",
-    "sargasso", "ruins", "dunes", "fresh",
-    "mesa", "canyon", "geothermal", "ridge",
-    "borehole", "nexus", "unity", "fossil"
-};
 
 int option_handler(void* user, const char* section, const char* name, const char* value) {
     #define MATCH(n) strcmp(name, n) == 0
@@ -179,6 +173,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->counter_espionage = atoi(value);
     } else if (MATCH("ignore_reactor_power")) {
         cf->ignore_reactor_power = atoi(value);
+    } else if (MATCH("modify_upgrade_cost")) {
+        cf->modify_upgrade_cost = atoi(value);
     } else if (MATCH("modify_unit_morale")) {
         cf->modify_unit_morale = atoi(value);
     } else if (MATCH("skip_default_balance")) {
@@ -276,6 +272,38 @@ int option_handler(void* user, const char* section, const char* name, const char
         if (atoi(value) > 0) {
             cf->skip_random_factions |= 1 << (atoi(value) - 1);
         }
+    } else if (MATCH("crater")) {
+        cf->landmarks.crater = max(0, atoi(value));
+    } else if (MATCH("volcano")) {
+        cf->landmarks.volcano = max(0, atoi(value));
+    } else if (MATCH("jungle")) {
+        cf->landmarks.jungle = max(0, atoi(value));
+    } else if (MATCH("uranium")) {
+        cf->landmarks.uranium = max(0, atoi(value));
+    } else if (MATCH("sargasso")) {
+        cf->landmarks.sargasso = max(0, atoi(value));
+    } else if (MATCH("ruins")) {
+        cf->landmarks.ruins = max(0, atoi(value));
+    } else if (MATCH("dunes")) {
+        cf->landmarks.dunes = max(0, atoi(value));
+    } else if (MATCH("fresh")) {
+        cf->landmarks.fresh = max(0, atoi(value));
+    } else if (MATCH("mesa")) {
+        cf->landmarks.mesa = max(0, atoi(value));
+    } else if (MATCH("canyon")) {
+        cf->landmarks.canyon = max(0, atoi(value));
+    } else if (MATCH("geothermal")) {
+        cf->landmarks.geothermal = max(0, atoi(value));
+    } else if (MATCH("ridge")) {
+        cf->landmarks.ridge = max(0, atoi(value));
+    } else if (MATCH("borehole")) {
+        cf->landmarks.borehole = max(0, atoi(value));
+    } else if (MATCH("nexus")) {
+        cf->landmarks.nexus = max(0, atoi(value));
+    } else if (MATCH("unity")) {
+        cf->landmarks.unity = max(0, atoi(value));
+    } else if (MATCH("fossil")) {
+        cf->landmarks.fossil = max(0, atoi(value));
     } else if (MATCH("label_pop_size")) {
         parse_format_args(label_pop_size, value, 4, StrBufLen);
     } else if (MATCH("label_pop_boom")) {
@@ -305,12 +333,6 @@ int option_handler(void* user, const char* section, const char* name, const char
             }
         }
     } else {
-        for (int i = 0; i < 16; i++) {
-            if (MATCH(landmark_params[i])) {
-                cf->landmarks &= ~((atoi(value) ? 0 : 1) << i);
-                return 1;
-            }
-        }
         return opt_handle_error(section, name);
     }
     return 1;

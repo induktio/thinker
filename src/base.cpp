@@ -513,9 +513,10 @@ bool can_build(int base_id, int fac_id) {
             return false;
         }
     }
-    /* Rare special case if the game engine reaches the global unit limit. */
+    /* Stockpile Energy is selected most often if the game engine reaches the global unit limit. */
     if (fac_id == FAC_STOCKPILE_ENERGY) {
-        return (*CurrentTurn + base_id) % 4 > 0 || !can_build_unit(base_id, -1);
+        return !can_build_unit(base_id, -1)
+            || (is_human(base->faction_id) ? random(4) : (*CurrentTurn + base_id) % 4 > 0);
     }
     return has_tech(Facility[fac_id].preq_tech, faction) && !has_facility((FacilityId)fac_id, base_id);
 }

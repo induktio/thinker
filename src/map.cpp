@@ -1150,37 +1150,89 @@ void world_generate(uint32_t seed) {
     world_fungus();
     Path_continents(Path);
 
-    int lm = (conf.world_mirror_x || conf.world_mirror_y ? 0 : conf.landmarks);
-    if (lm & LM_JUNGLE) {
-        if (conf.modified_landmarks) {
-            mod_world_monsoon();
-        } else {
-            world_monsoon(-1, -1);
+    LMConfig lm;
+    memcpy(&lm, &conf.landmarks, sizeof(lm));
+
+    for (i = 0; i < 16; i++) {
+        if (conf.world_mirror_x || conf.world_mirror_y) {
+            break;
+        }
+        if (lm.jungle > 0) {
+            if (conf.modified_landmarks) {
+                mod_world_monsoon();
+            } else {
+                world_monsoon(-1, -1);
+            }
+            lm.jungle--;
+        }
+        if (lm.crater > 0) {
+            world_crater(-1, -1);
+            lm.crater--;
+        }
+        if (lm.volcano > 0) {
+            world_volcano(-1, -1, 0);
+            lm.volcano--;
+        }
+        if (lm.mesa > 0) {
+            world_mesa(-1, -1);
+            lm.mesa--;
+        }
+        if (lm.ridge > 0) {
+            world_ridge(-1, -1);
+            lm.ridge--;
+        }
+        if (lm.uranium > 0) {
+            world_diamond(-1, -1);
+            lm.uranium--;
+        }
+        if (lm.ruins > 0) {
+            world_ruin(-1, -1);
+            lm.ruins--;
+        }
+        /*
+        Unity Wreckage and Fossil Field Ridge are always expansion only content.
+        Manifold Nexus and Borehole Cluster were also added to vanilla SMAC
+        in the patches, even though those landmarks are technically expansion content.
+        */
+        if (*ExpansionEnabled) {
+            if (lm.unity > 0) {
+                world_unity(-1, -1);
+                lm.unity--;
+            }
+            if (lm.fossil > 0) {
+                world_fossil(-1, -1);
+                lm.fossil--;
+            }
+        }
+        if (lm.canyon > 0) {
+            world_canyon_nessus(-1, -1);
+            lm.canyon--;
+        }
+        if (lm.nexus > 0) {
+            world_temple(-1, -1);
+            lm.nexus--;
+        }
+        if (lm.borehole > 0) {
+            mod_world_borehole(-1, -1);
+            lm.borehole--;
+        }
+        if (lm.sargasso > 0) {
+            world_sargasso(-1, -1);
+            lm.sargasso--;
+        }
+        if (lm.dunes > 0) {
+            world_dune(-1, -1);
+            lm.dunes--;
+        }
+        if (lm.fresh > 0) {
+            world_fresh(-1, -1);
+            lm.fresh--;
+        }
+        if (lm.geothermal > 0) {
+            world_geothermal(-1, -1);
+            lm.geothermal--;
         }
     }
-    if (lm & LM_CRATER) world_crater(-1, -1);
-    if (lm & LM_VOLCANO) world_volcano(-1, -1, 0);
-    if (lm & LM_MESA) world_mesa(-1, -1);
-    if (lm & LM_RIDGE) world_ridge(-1, -1);
-    if (lm & LM_URANIUM) world_diamond(-1, -1);
-    if (lm & LM_RUINS) world_ruin(-1, -1);
-    /*
-    Unity Wreckage and Fossil Field Ridge are always expansion only content.
-    Manifold Nexus and Borehole Cluster were also added to vanilla SMAC
-    in the patches, even though those landmarks are technically expansion content.
-    */
-    if (*ExpansionEnabled) {
-        if (lm & LM_UNITY) world_unity(-1, -1);
-        if (lm & LM_FOSSIL) world_fossil(-1, -1);
-    }
-    if (lm & LM_NEXUS) world_temple(-1, -1);
-    if (lm & LM_BOREHOLE) mod_world_borehole(-1, -1);
-    if (lm & LM_CANYON) world_canyon_nessus(-1, -1);
-    if (lm & LM_SARGASSO) world_sargasso(-1, -1);
-    if (lm & LM_DUNES) world_dune(-1, -1);
-    if (lm & LM_FRESH) world_fresh(-1, -1);
-    if (lm & LM_GEOTHERMAL) world_geothermal(-1, -1);
-
     fixup_landmarks();
     *WorldAddTemperature = 0;
     *WorldSkipTerritory = 0; // If this flag is false, reset_territory is run in world_climate

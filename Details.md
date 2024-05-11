@@ -107,7 +107,7 @@ From the menu options it is also possible to choose the random map style from la
 
 All landmarks that are placed on random maps can also be configured from `thinker.ini`. Nessus Canyon is available but disabled by default. When new map generator is enabled, `modified_landmarks` option replaces the default Monsoon Jungle landmark with multiple smaller jungles dispersed across the equator area, and Borehole Cluster is also expanded to four tiles. Planet rainfall level will determine how many jungle tiles are placed.
 
-When playing on smaller maps, it might make more sense to disable some additional landmarks, as otherwise the map generator may skip placing some landmarks due to not having enough space.
+It is also possible to place multiple similar landmarks if the corresponding landmark option is set to some value greater than one. When playing on smaller maps, it might make more sense to disable some additional landmarks, as otherwise the map generator may skip placing some landmarks due to not having enough space.
 
 The new map generator is entirely different from the vanilla version, so it does not parse the variables specified in `alphax.txt` WorldBuilder section. Only in limited cases, such as fungus placement, WorldBuilder variables might be used by the game engine when the new map generator is enabled.
 
@@ -210,8 +210,10 @@ In both cases, rushing facilities cost 2 credits per mineral and secret projects
 
 Base window hurry dialog will now display the minimum required hurry cost to complete the item on the next turn. This assumes the mineral surplus does not decrease, so take it into account when adjusting the workers. When entering a partial payment, this minimal amount will be the default choice in the dialog, instead of the full hurry cost like previously.
 
-All crawler units have a special ability that enables them to disband their full mineral cost towards secret projects. Thinker patches the upgrade cost for crawlers such that it is always equal to the mineral row cost difference between two prototypes multiplied by 40.
-Nano Factory does not lower crawler upgrade costs anymore. This means crawlers can be used to rush projects like previously, but it will confer no advantage beyond bypassing the initial 40 mineral double cost threshold.
+All crawler units have a special ability that enables them to disband their full mineral value towards secret projects, while other units are able to disband only half of their mineral value on production.
+Optional feature `modify_upgrade_cost` changes the upgrade cost for crawlers such that it is equal to the mineral row cost difference between two prototypes multiplied by 40 while for non-crawler units the difference is multiplied by 20.
+If the difference is zero or negative, the value is treated as being one mineral row. In addition the upgrade cost is at least 10 credits for each mineral row in the new unit regardless of the difference.
+This means crawlers can be used to rush projects like previously, but it will confer no advantage beyond bypassing the initial 40 mineral double cost threshold.
 
 
 Revised tech costs
@@ -387,17 +389,17 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 20. Fix foreign base names being visible in unexplored tiles when issuing move to or patrol orders to the tiles.
 21. Fix diplomacy dialog to show the missing response messages (GAVEENERGY) when gifting energy credits to another faction.
 22. Fix issue that caused sea-based probe teams to be returned to landlocked bases. Probes are now returned to the closest base as determined by the actual pathfinding distance.
-23. Patch crawler upgrade cost so that it depends only on the mineral row cost difference between the prototypes multiplied by 40. Nano Factory does not affect crawler upgrades anymore.
-24. Fix issue with randomized faction agendas where they might be given agendas that are their opposition social models. Additionally randomized leader personalities option now always selects 1 or 2 AI priorities.
-25. Fix bug that prevents the turn from advancing after force-ending the turn while any player-owned needlejet in flight has moves left.
-26. Patch Energy Market Crash event to reduce energy reserves only by 1/2 instead of 3/4. Optionally the event can also be disabled entirely (event_market_crash).
-27. Game will now allow reselecting units that have already skipped their turns if they have full movement points available (activate_skipped_units).
-28. Bases that have sufficient drone control facilities before the growth phase can grow without triggering possible drone riots on the same turn (delay_drone_riots).
-29. Disable drone revolt event which sometimes caused rioting player-owned bases to join other factions while this did not happen on AI factions (skip_drone_revolts).
-30. Whenever additional units are added in the editor mode, these are set as independent units requiring no support by default (editor_free_units).
+23. Fix issue with randomized faction agendas where they might be given agendas that are their opposition social models. Additionally randomized leader personalities option now always selects 1 or 2 AI priorities.
+24. Fix bug that prevents the turn from advancing after force-ending the turn while any player-owned needlejet in flight has moves left.
+25. Game will now allow reselecting units that have already skipped their turns if they have full movement points available (activate_skipped_units).
+26. Whenever additional units are added in the editor mode, these are set as independent units requiring no support by default (editor_free_units).
+27. Patch Stockpile Energy when it enabled double production if the base produces one item and then switches to Stockpile Energy on the same turn gaining additional credits.
+28. Patch Energy Market Crash event to reduce energy reserves only by 1/2 instead of 3/4. Optionally the event can also be disabled entirely (event_market_crash).
+29. Bases that have sufficient drone control facilities before the growth phase can grow without triggering possible drone riots on the same turn (delay_drone_riots).
+30. Disable drone revolt event which sometimes caused rioting player-owned bases to join other factions while this did not happen on AI factions (skip_drone_revolts).
 31. Patch captured base extra drone effect to last a variable time from 20 to 50 turns depending on the captured base size. The AI will also rename captured bases only after they are fully assimilated.
 32. When a base is captured that was previously owned by active third faction and the time to assimilate the base was more than zero, the previous owner is preserved after capture.
-33. Fix diplomacy dialog issues when both human and alien factions are involved in a base capture by removing the event that spawns additional colony pods.
+33. Fix diplomacy dialog appearing multiple times when both human and alien factions are involved in a base capture by removing the event that spawns additional colony pods.
 34. Fix missing defender bonus mentioned in the manual "Units in a headquarters base automatically gain +1 Morale when defending".
 35. Fix multiple issues in unit morale calculation, see more details in "Improved combat mechanics" section (modify_unit_morale).
 36. Fix issue where TECHSHARE faction ability always skips the checks for infiltration conditions while smac_only mode is activated. Spying by probe team, pact, governor or Empath Guild is required.
@@ -409,7 +411,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 42. Fix visual issues where the game sometimes did not update the map properly when recentering it offscreen on native resolution mode.
 43. Fix issues where the game would crash on resolutions not divisible by 8. If an unsupported resolution is used, the game will attempt to automatically switch to the closest supported size.
 44. Fix rendering bug that caused half of the bottom row map tiles to shift to the wrong side of screen when zoomed out.
-45. Patch Stockpile Energy when it enabled double production if the base produces one item and then switches to Stockpile Energy on the same turn gaining additional credits.
+45. Fix datalinks window not showing the first character for Sea Formers units.
 
 
 Scient's patch

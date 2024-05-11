@@ -368,7 +368,6 @@ void init_video_config(Config* cf) {
 bool patch_setup(Config* cf) {
     DWORD attrs;
     DWORD oldattrs;
-    int lm = ~cf->landmarks;
     cf->reduced_mode = strcmp((const char*)0x668165, "prax") == 0;
 
     if (cf->smooth_scrolling && cf->reduced_mode) {
@@ -914,8 +913,8 @@ bool patch_setup(Config* cf) {
     }
 
     /*
-    Fix diplomacy dialog issues when both human and alien factions are involved
-    in a base capture by removing the event that spawns additional colony pods.
+    Fix diplomacy dialog appearing multiple times when both human and alien factions are
+    involved in a base capture by removing the event that spawns additional colony pods.
     */
     {
         const byte old_bytes[] = {0x0F,0x84};
@@ -952,6 +951,14 @@ bool patch_setup(Config* cf) {
     {
         short_jump(0x4EC33D); // base_energy skip stockpile energy
         write_call(0x4F7A2F, (int)mod_base_production); // base_upkeep
+    }
+
+    /*
+    Fix datalinks window not showing the first character for Sea Formers units.
+    */
+    {
+        short_jump(0x42A651); // Datalink::set_cat_unit
+        short_jump(0x42CB01); // Datalink::draw_unit
     }
 
     /*
@@ -1249,22 +1256,22 @@ bool patch_setup(Config* cf) {
         short_jump(0x5921C8); // goody_at
     }
 
-    if (lm & LM_JUNGLE) remove_call(0x5C88A0);
-    if (lm & LM_CRATER) remove_call(0x5C88A9);
-    if (lm & LM_VOLCANO) remove_call(0x5C88B5);
-    if (lm & LM_MESA) remove_call(0x5C88BE);
-    if (lm & LM_RIDGE) remove_call(0x5C88C7);
-    if (lm & LM_URANIUM) remove_call(0x5C88D0);
-    if (lm & LM_RUINS) remove_call(0x5C88D9);
-    if (lm & LM_UNITY) remove_call(0x5C88EE);
-    if (lm & LM_FOSSIL) remove_call(0x5C88F7);
-    if (lm & LM_CANYON) remove_call(0x5C8903);
-    if (lm & LM_NEXUS) remove_call(0x5C890F);
-    if (lm & LM_BOREHOLE) remove_call(0x5C8918);
-    if (lm & LM_SARGASSO) remove_call(0x5C8921);
-    if (lm & LM_DUNES) remove_call(0x5C892A);
-    if (lm & LM_FRESH) remove_call(0x5C8933);
-    if (lm & LM_GEOTHERMAL) remove_call(0x5C893C);
+    if (!cf->landmarks.jungle    ) remove_call(0x5C88A0);
+    if (!cf->landmarks.crater    ) remove_call(0x5C88A9);
+    if (!cf->landmarks.volcano   ) remove_call(0x5C88B5);
+    if (!cf->landmarks.mesa      ) remove_call(0x5C88BE);
+    if (!cf->landmarks.ridge     ) remove_call(0x5C88C7);
+    if (!cf->landmarks.uranium   ) remove_call(0x5C88D0);
+    if (!cf->landmarks.ruins     ) remove_call(0x5C88D9);
+    if (!cf->landmarks.unity     ) remove_call(0x5C88EE);
+    if (!cf->landmarks.fossil    ) remove_call(0x5C88F7);
+    if (!cf->landmarks.canyon    ) remove_call(0x5C8903);
+    if (!cf->landmarks.nexus     ) remove_call(0x5C890F);
+    if (!cf->landmarks.borehole  ) remove_call(0x5C8918);
+    if (!cf->landmarks.sargasso  ) remove_call(0x5C8921);
+    if (!cf->landmarks.dunes     ) remove_call(0x5C892A);
+    if (!cf->landmarks.fresh     ) remove_call(0x5C8933);
+    if (!cf->landmarks.geothermal) remove_call(0x5C893C);
 
     if (cf->repair_minimal != 1) {
         const byte old_bytes[] = {0xC7,0x45,0xFC,0x01,0x00,0x00,0x00};

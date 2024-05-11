@@ -363,26 +363,39 @@ int __cdecl mod_veh_cost(int unit_id, int base_id, int* has_proto_cost) {
 }
 
 /*
-Calculate unit upgrade cost in mineral rows. This version modifies crawler upgrade costs.
+Calculate upgrade cost between two prototypes in mineral rows.
 */
 int __cdecl mod_upgrade_cost(int faction, int new_unit_id, int old_unit_id) {
     UNIT* old_unit = &Units[old_unit_id];
     UNIT* new_unit = &Units[new_unit_id];
     int modifier = new_unit->cost;
+    int cost;
 
-    if (old_unit->is_supply()) {
-        return 4*max(1, new_unit->cost - old_unit->cost);
-    }
-    if (new_unit_id >= MaxProtoFactionNum && !new_unit->is_prototyped()) {
-        modifier = ((new_unit->cost + 1) / 2 + new_unit->cost)
-            * ((new_unit->cost + 1) / 2 + new_unit->cost + 1);
-    }
-    int cost = max(0, new_unit->speed() - old_unit->speed())
-        + max(0, new_unit->armor_cost() - old_unit->armor_cost())
-        + max(0, new_unit->weapon_cost() - old_unit->weapon_cost())
-        + modifier;
-    if (has_project(FAC_NANO_FACTORY, faction)) {
-        cost /= 2;
+    if (conf.modify_upgrade_cost) {
+        if (new_unit->is_supply()) {
+            cost = max((int)new_unit->cost, 4*max(1, new_unit->cost - old_unit->cost));
+        } else {
+            cost = max((int)new_unit->cost, 2*max(1, new_unit->cost - old_unit->cost));
+        }
+        if (new_unit_id >= MaxProtoFactionNum && !new_unit->is_prototyped()) {
+            cost *= 2;
+        }
+        if (has_project(FAC_NANO_FACTORY, faction)) {
+            cost /= 2;
+        }
+    } else {
+        if (new_unit_id >= MaxProtoFactionNum && !new_unit->is_prototyped()) {
+            modifier = ((new_unit->cost + 1) / 2 + new_unit->cost)
+                * ((new_unit->cost + 1) / 2 + new_unit->cost + 1);
+        }
+        cost = max(0, new_unit->speed() - old_unit->speed())
+            + max(0, new_unit->armor_cost() - old_unit->armor_cost())
+            + max(0, new_unit->weapon_cost() - old_unit->weapon_cost())
+            + modifier;
+        if (has_project(FAC_NANO_FACTORY, faction)) {
+            cost /= 2;
+        }
+        assert(cost == upgrade_cost(faction, new_unit_id, old_unit_id));
     }
     return cost;
 }
@@ -416,7 +429,8 @@ int __cdecl mod_veh_skip(int veh_id) {
         if (conf.activate_skipped_units) {
             if (!veh->moves_spent && veh->order < ORDER_FARM && !(veh->state & VSTATE_HAS_MOVED)) {
                 veh->flags |= VFLAG_FULL_MOVE_SKIPPED;
-            } else {
+            } else if (veh->triad() != TRIAD_AIR) {
+                // veh_skip may get called twice on aircraft units
                 veh->flags &= ~VFLAG_FULL_MOVE_SKIPPED;
             }
         }

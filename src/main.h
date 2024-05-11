@@ -136,6 +136,25 @@ enum VideoMode {
     VM_Window = 2,
 };
 
+struct LMConfig {
+    int crater = 1;
+    int volcano = 1;
+    int jungle = 1;
+    int uranium = 1;
+    int sargasso = 1;
+    int ruins = 1;
+    int dunes = 1;
+    int fresh = 1;
+    int mesa = 1;
+    int canyon = 0;
+    int geothermal = 1;
+    int ridge = 1;
+    int borehole = 1;
+    int nexus = 1;
+    int unity = 1;
+    int fossil = 1;
+};
+
 /*
 Config parsed from thinker.ini. Alpha Centauri.ini related options
 can be set negative values to use the defaults from Alpha Centauri.ini.
@@ -195,7 +214,6 @@ struct Config {
     int world_mirror_x = 0;
     int world_mirror_y = 0;
     int modified_landmarks = 0;
-    int landmarks = 0xffff;
     int time_warp_mod = 1;
     int time_warp_techs = 5;
     int time_warp_projects = 1;
@@ -219,6 +237,7 @@ struct Config {
     int activate_skipped_units = 1; // unlisted option
     int counter_espionage = 0;
     int ignore_reactor_power = 0;
+    int modify_upgrade_cost = 0;
     int modify_unit_morale = 1; // unlisted option
     int skip_default_balance = 1; // unlisted option
     int early_research_start = 1; // unlisted option
@@ -261,6 +280,7 @@ struct Config {
     int repair_base_native = 10;
     int repair_base_facility = 10;
     int repair_nano_factory = 10;
+    LMConfig landmarks;
     int minimal_popups = 0; // unlisted option
     int skip_random_factions = 0; // internal variable
     int faction_file_count = 14; // internal variable
