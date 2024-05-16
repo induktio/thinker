@@ -368,7 +368,6 @@ Calculate upgrade cost between two prototypes in mineral rows.
 int __cdecl mod_upgrade_cost(int faction, int new_unit_id, int old_unit_id) {
     UNIT* old_unit = &Units[old_unit_id];
     UNIT* new_unit = &Units[new_unit_id];
-    int modifier = new_unit->cost;
     int cost;
 
     if (conf.modify_upgrade_cost) {
@@ -384,6 +383,7 @@ int __cdecl mod_upgrade_cost(int faction, int new_unit_id, int old_unit_id) {
             cost /= 2;
         }
     } else {
+        int modifier = new_unit->cost;
         if (new_unit_id >= MaxProtoFactionNum && !new_unit->is_prototyped()) {
             modifier = ((new_unit->cost + 1) / 2 + new_unit->cost)
                 * ((new_unit->cost + 1) / 2 + new_unit->cost + 1);

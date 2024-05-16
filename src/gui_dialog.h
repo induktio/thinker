@@ -16,9 +16,9 @@ enum {
 };
 
 enum {
-    DiploProposalUnk1 = 1, // ?
-    DiploProposalUnk2 = 2, // ?
-    DiploProposalUnk3 = 3, // ?
+    DiploProposalMakeGift = 1,
+    DiploProposalMakePact = 2,
+    DiploProposalMakeTreaty = 3,
     DiploProposalTechTrade = 4,
     DiploProposalBuyTech = 5, // mention related prototype?
     DiploProposalNeedEnergy = 6,
@@ -44,6 +44,7 @@ enum {
 int __cdecl X_pop2(const char* label, int a2);
 int __cdecl X_pop7(const char* label, int a2, int a3);
 int __cdecl X_pops4(const char* label, int a2, Sprite* a3, int a4);
+int __cdecl mod_threaten(int faction1, int faction2);
 int __cdecl mod_base_swap(int faction1, int faction2);
 int __cdecl mod_energy_trade(int faction1, int faction2);
 int __cdecl mod_buy_tech(int faction1, int faction2, int counter_id, bool high_price, int proposal_id);

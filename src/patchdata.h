@@ -30,9 +30,9 @@ This list describes the changes below in more detail while referencing Details.m
 * Fix 16. 004E6FCC -> borehole nutrient problem
 * Fix 17. 00683C8B -> Believers were using incorrect ambient sound string
 * Fix 18 & 19. 0059F0B9 -> flag to look into more whether correct mechanic
-* Fix 20. 0045FA5E, 006187F8 : disable useless cpu check,
+* Fix 20. 0045FA5E, 006187F8 -> disable useless cpu check,
           ForceOldVoxelAlgorithm=0 by default (use MMX voxel code) but read in ini value
-* Fix 20 also? 006392DC, 0063E85B : empty patch data spaces -> former cpu check functions
+* Fix 20 also? 006392DC, 0063E85B -> empty patch data spaces, former cpu check functions
 * Fix 21. 00593590, 006186ED -> sealurk movement in fungus
 * Fix 22. **Removed**
 * Fix 23. 0052A9BC, 0052AAB1, 006186FF -> registry check complete install
@@ -43,7 +43,7 @@ This list describes the changes below in more detail while referencing Details.m
 * Fix 28. 00403BA9, 004BEF8E, 00697214 -> movlistx
 * Fix 29. 005C88E9 -> Nessus Canyon
 * Fix 30. 00502F5B, 006392DC -> attacking along road
-* Fix 31. 0051E01D, 0051E049, 0051E06A, 0051E0AB, 0051E14A, 0051E175, 0051E196, 0051E262, 0051E324 :
+* Fix 31. 0051E01D, 0051E049, 0051E06A, 0051E0AB, 0051E14A, 0051E175, 0051E196, 0051E262, 0051E324 ->
           change offsets of duplicate const registry str to make room for new str table
 * Fix 31. 005201BF, 00520364, 005204BC, 0068AD88 -> NEWRESOURCE/PETERSOUT
 * Fix 32. 0042EC63, 0042E18F, 006187A2 -> ARMORDESC/REACTORDESC datalinks

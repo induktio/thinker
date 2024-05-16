@@ -501,7 +501,7 @@ int probe_upkeep(int faction1)
                         *CurrentTurn + probe_active_turns(faction2, faction1);
                 }
                 if (MFactions[faction2].thinker_probe_end_turn[faction1] <= *CurrentTurn) {
-                    set_treaty(faction2, faction1, DIPLO_HAVE_INFILTRATOR, 0);
+                    net_set_treaty(faction2, faction1, DIPLO_HAVE_INFILTRATOR, 0, 0);
                     MFactions[faction2].thinker_probe_lost |= (1 << faction1);
                     if (faction1 == MapWin->cOwner) {
                         parse_says(0, MFactions[faction2].adj_name_faction, -1, -1);
@@ -519,7 +519,7 @@ int probe_upkeep(int faction1)
                 MFactions[faction1].thinker_probe_end_turn[faction2]
             );
             if (faction1 != *GovernorFaction && !has_project(FAC_EMPATH_GUILD, faction1)) {
-                set_treaty(faction1, faction2, DIPLO_RENEW_INFILTRATOR, 0);
+                net_set_treaty(faction1, faction2, DIPLO_RENEW_INFILTRATOR, 0, 0);
             }
             if (faction1 == MapWin->cOwner && MFactions[faction1].thinker_probe_lost & (1 << faction2)) {
                 parse_says(0, MFactions[faction2].noun_faction, -1, -1);
@@ -545,7 +545,7 @@ int __thiscall probe_popup_start(Win* This, int veh_id1, int base_id, int a4, in
                 return Popup_start(This, "modmenu", "PROBE", a4, a5, a6, a7);
             }
             // Sometimes this flag is set even when infiltration is not active
-            set_treaty(faction1, faction2, DIPLO_RENEW_INFILTRATOR, 0);
+            net_set_treaty(faction1, faction2, DIPLO_RENEW_INFILTRATOR, 0, 0);
         }
     }
     return Popup_start(This, ScriptFile, "PROBE", a4, a5, a6, a7);

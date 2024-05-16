@@ -120,6 +120,9 @@ int* VehBattleUnkTgl = (int*)0x91561C; // [2] ; planet_busting() + boom() + time
 int (*VehBattleModifier)[4] = (int (*)[4])0x9155F0; // [2][4]
 char (*VehBattleDisplay)[4][80] = (char (*)[4][80])0x90F554; // [2][4][80]
 char* VehBattleDisplayTerrain;
+int* ProbeHasAlgoEnhancement = (int*)0x945B30;
+int* ProbeTargetFactionID = (int*)0x945B34;
+int* ProbeTargetHasHSA = (int*)0x945B38;
 
 uint8_t* TechOwners = (uint8_t*)0x9A6670;
 int* SecretProjects = (int*)0x9A6514;
@@ -505,8 +508,8 @@ fp_4int net_treaty_off           = (fp_4int)0x539230;
 fp_5int net_set_treaty           = (fp_5int)0x5392A0;
 fp_4int net_agenda_off           = (fp_4int)0x539380;
 fp_5int net_set_agenda           = (fp_5int)0x5393F0;
-fp_5int net_energy               = (fp_5int)0x539460;
-fp_4int net_loan                 = (fp_4int)0x539510;
+Fnet_energy net_energy       = (Fnet_energy)0x539460;
+Fnet_loan net_loan             = (Fnet_loan)0x539510;
 fp_3int net_maps                 = (fp_3int)0x539580;
 fp_4int net_tech                 = (fp_4int)0x5395F0;
 fp_3int net_pact_ends            = (fp_3int)0x539660;

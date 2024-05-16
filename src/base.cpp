@@ -276,9 +276,6 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
     */
     set_base(base_id);
 
-    if (is_probe) {
-        MFactions[old_faction].thinker_last_mc_turn = *CurrentTurn;
-    }
     if (!destroy_base && alien_fight) {
         base->pop_size = max(2, base->pop_size / 2);
     }
@@ -290,6 +287,15 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
     base->defend_goal = 0;
     capture_base(base_id, faction, is_probe);
     find_relocate_base(old_faction);
+    if (is_probe) {
+        MFactions[old_faction].thinker_last_mc_turn = *CurrentTurn;
+        for (int i = *VehCount-1; i >= 0; i--) {
+            if (Vehs[i].x == base->x && Vehs[i].y == base->y
+            && Vehs[i].faction_id != faction && !has_pact(faction, Vehs[i].faction_id)) {
+                veh_kill(i);
+            }
+        }
+    }
     /*
     Modify captured base extra drone effect to take into account the base size.
     */

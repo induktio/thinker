@@ -27,22 +27,6 @@ int __cdecl base_governor_crop_yield(int faction, int base_id, int x, int y, int
     return value;
 }
 
-/*
-Calculate current vehicle health only for the purposes of
-possible damage from genetic warfare probe team action.
-*/
-int __cdecl probe_veh_health(int veh_id) {
-    VEH* veh = &Vehs[veh_id];
-    int level = clamp(veh->reactor_type(), 1, 100);
-    if (veh->is_artifact()) {
-        return 1;
-    }
-    if (veh->damage_taken > 5*level) {
-        return 1;
-    }
-    return clamp(min(5*level, 10*level - veh->damage_taken), 0, 9999);
-}
-
 int __cdecl base_psych_content_pop() {
     int faction = (*CurrentBase)->faction_id;
     assert(valid_player(faction));
@@ -458,8 +442,6 @@ bool patch_setup(Config* cf) {
     write_call(0x5B3C4C, (int)mod_setup_player);
     write_call(0x5C0984, (int)veh_kill_lift);
     write_call(0x498720, (int)ReportWin_close_handler);
-    write_call(0x5A3F7D, (int)probe_veh_health);
-    write_call(0x5A3F98, (int)probe_veh_health);
     write_call(0x4E1061, (int)mod_world_build);
     write_call(0x4E113B, (int)mod_world_build);
     write_call(0x58B9BF, (int)mod_world_build);
@@ -486,7 +468,14 @@ bool patch_setup(Config* cf) {
     write_call(0x542425, (int)mod_buy_tech);
     write_call(0x5425CF, (int)mod_buy_tech);
     write_call(0x543843, (int)mod_buy_tech);
+    write_call(0x54F4E2, (int)mod_threaten);
+    write_call(0x54F532, (int)mod_threaten);
+    write_call(0x54F702, (int)mod_threaten);
     write_call(0x59FBA7, (int)set_treaty);
+    write_call(0x5A3F7D, (int)probe_veh_health);
+    write_call(0x5A3F98, (int)probe_veh_health);
+    write_call(0x5A4972, (int)probe_mind_control_range);
+    write_call(0x5A4B8C, (int)probe_thought_control);
     write_call(0x559E21, (int)map_draw_strcmp); // veh_draw
     write_call(0x55B5E1, (int)map_draw_strcmp); // base_draw
     write_call(0x4364FB, (int)mod_name_proto);

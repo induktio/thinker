@@ -412,6 +412,9 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 43. Fix issues where the game would crash on resolutions not divisible by 8. If an unsupported resolution is used, the game will attempt to automatically switch to the closest supported size.
 44. Fix rendering bug that caused half of the bottom row map tiles to shift to the wrong side of screen when zoomed out.
 45. Fix datalinks window not showing the first character for Sea Formers units.
+46. Fix Mind Control issue when capturing bases that have non-allied units owned by a third faction inside them. In this case the units can't remain on the base tile and they are removed.
+47. Modify Mind Control probe action to only subvert units inside the base and not on adjacent tiles to balance for the relatively cheap cost for this action.
+48. Modify Total Thought Control probe action to not set silently "want revenge" or "shall betray" flags which usually resulted in automatic vendetta. This can be still used to subvert bases without declaring war but it applies a notable diplomatic penalty between the factions.
 
 
 Scient's patch

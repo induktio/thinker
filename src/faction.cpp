@@ -321,10 +321,6 @@ int __cdecl mod_setup_player(int faction, int a2, int a3) {
     that are their opposition social models.
     */
     if (*GameState & STATE_RAND_FAC_LEADER_SOCIAL_AGENDA && !*CurrentTurn) {
-        int active_factions = 0;
-        for (int i = 0; i < *VehCount; i++) {
-            active_factions |= (1 << Vehs[i].faction_id);
-        }
         for (int i = 0; i < 1000; i++) {
             int sfield = random(3);
             int smodel = random(3) + 1;
@@ -332,7 +328,7 @@ int __cdecl mod_setup_player(int faction, int a2, int a3) {
                 continue;
             }
             for (int j = 1; j < MaxPlayerNum; j++) {
-                if (faction != j && (1 << j) & active_factions) {
+                if (faction != j && is_alive(j)) {
                     if (MFactions[j].soc_priority_category == sfield
                     && MFactions[j].soc_priority_model == smodel) {
                         continue;

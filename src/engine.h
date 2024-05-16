@@ -252,6 +252,9 @@ extern int* VehBattleUnkTgl;
 extern int (*VehBattleModifier)[4];
 extern char (*VehBattleDisplay)[4][80];
 extern char* VehBattleDisplayTerrain;
+extern int* ProbeHasAlgoEnhancement;
+extern int* ProbeTargetFactionID;
+extern int* ProbeTargetHasHSA;
 
 extern uint8_t* TechOwners;
 extern int* SecretProjects;
@@ -357,9 +360,12 @@ typedef int (__cdecl *FX_pops)(
 typedef int(__cdecl *Fpop_ask_number)(const char *filename, const char* label, int value, int a4);
 typedef int(__cdecl *Fname_proto)(char* name, int unit_id, int faction_id,
 VehChassis chassis, VehWeapon weapon, VehArmor armor, VehAblFlag abls, VehReactor reactor);
-typedef void(__cdecl *Fbattle_compute)(int veh_id_atk, int veh_id_def,
-    int* offense_out, int* defense_out, int combat_type);
+typedef void(__cdecl *Fbattle_compute)(
+    int veh_id_atk, int veh_id_def, int* offense_out, int* defense_out, int combat_type);
 typedef int(__cdecl *Fbase_draw)(Buffer* buffer, int base_id, int x, int y, int zoom, int opts);
+typedef int(__cdecl *Fnet_energy)(
+    int faction_id1, int faction_sum1, int faction_id2, int faction_sum2, int await_diplo);
+typedef int(__cdecl *Fnet_loan)(int faction_id1, int faction_id2, int balance, int payment);
 
 typedef int(__cdecl *FGenString)(const char* name);
 typedef int(__thiscall *FGenVoid)(void* This);
@@ -771,8 +777,8 @@ extern fp_4int net_treaty_off;
 extern fp_5int net_set_treaty;
 extern fp_4int net_agenda_off;
 extern fp_5int net_set_agenda;
-extern fp_5int net_energy;
-extern fp_4int net_loan;
+extern Fnet_energy net_energy;
+extern Fnet_loan net_loan;
 extern fp_3int net_maps;
 extern fp_4int net_tech;
 extern fp_3int net_pact_ends;

@@ -39,21 +39,67 @@ int __cdecl X_dialog(const char* filename, const char* label, int faction2)
         (int)FactionPortraits[faction2], 1, 1, (int)sub_5398E0);
 }
 
+/*
+Higher values indicate more hostile relations (broken treaties or similar).
+*/
+int diplo_relation(int faction1, int faction2)
+{
+    return clamp(Factions[faction1].integrity_blemishes
+        + Factions[faction2].diplo_betrayed[faction1]
+        - Factions[faction2].diplo_gifts[faction1], -8, 8);
+}
+
+int __cdecl mod_threaten(int faction1, int faction2)
+{
+    MFaction& m_plr = MFactions[faction1];
+    Faction& f_plr = Factions[faction1];
+    Faction& f_cmp = Factions[faction2];
+
+    if (!*MultiplayerActive && has_pact(faction2, faction1)
+    && !has_treaty(faction2, faction1, DIPLO_HAVE_SURRENDERED)
+    && (*diplo_current_proposal_id == DiploProposalTechTrade
+    || *diplo_current_proposal_id == DiploProposalNeedEnergy)) {
+
+        int friction = clamp(*DiploFriction, 0, 20);
+        int score = 2*(*DiffLevel + friction)
+            + 8*diplo_relation(faction1, faction2)
+            + 8*f_cmp.AI_fight
+            + 4*clamp(f_cmp.ranking - f_plr.ranking, -4, 4)
+            + clamp((f_cmp.pop_total - f_plr.pop_total)/32, -8, 8)
+            + clamp((f_cmp.mil_strength_1 - f_plr.mil_strength_1)/32, -8, 8);
+
+        if (score > random(64)) {
+            f_cmp.diplo_patience[faction1] = 4 - (friction + 3) / 8;
+            cause_friction(faction2, faction1, 2);
+            *gender_default = m_plr.noun_gender;
+            *plurality_default = 0;
+            parse_says(0, m_plr.title_leader, -1, -1);
+            parse_says(1, m_plr.name_leader, -1, -1);
+            parse_says(2, (const char*)get_pact(faction1), -1, -1);
+            X_dialog("ENDPACT", faction2);
+            return pact_ends(faction1, faction2);
+        }
+    }
+    return threaten(faction1, faction2);
+}
+
 int base_trade_value(int base_id, int faction1, int faction2)
 {
     if (base_id < 0 || base_id >= *BaseCount) {
         return 0;
     }
+    Faction& f_plr = Factions[faction1];
+    Faction& f_cmp = Factions[faction2];
     BASE* base = &Bases[base_id];
     bool own_base = base->faction_id == faction2;
     bool pact = has_pact(faction1, faction2);
     int hq_id = find_hq(faction2);
     int value = 50*base->pop_size;
-    int friction_score = *DiffLevel*2 + clamp(*DiploFriction, 0, 20)
-        + 4*max(0, Factions[faction1].ranking - 4)
-        + (Factions[faction1].pop_total > Factions[faction2].pop_total ? 4 : 0)
-        + 4*Factions[faction1].integrity_blemishes
-        + 2*Factions[faction1].atrocities;
+    int score = max(0, *DiffLevel*2 + clamp(*DiploFriction, 0, 20)
+        + 2*clamp((f_plr.pop_total - f_cmp.pop_total)/32, -4, 4)
+        + 2*clamp(f_plr.ranking - f_cmp.ranking, -4, 4)
+        + 4*diplo_relation(faction1, faction2)
+        + 2*f_plr.atrocities);
 
     for (int i = Fac_ID_First; i < Fac_ID_Last; i++) {
         if (has_fac_built((FacilityId)i, base_id)) {
@@ -104,10 +150,10 @@ int base_trade_value(int base_id, int faction1, int faction2)
             value = value * (num_own == num_all ? 5 : 3) / 2;
         }
         value = value * (base->assimilation_turns_left > 8 ? 3 : 4)
-            * (max(0, friction_score) + (pact ? 32 : 40)) / (32 * 4);
+            * (score + (pact ? 32 : 40)) / (32 * 4);
     } else {
         if (num_own < num_all) {
-            value = value * (num_own ? 5 : 3) / 8;
+            value = value * (num_own ? 3 : 2) / 4;
         }
     }
     if (hq_id >= 0) {
@@ -117,8 +163,8 @@ int base_trade_value(int base_id, int faction1, int faction2)
     if (base->is_objective() || *GameRules & RULES_SCN_VICT_ALL_BASE_COUNT_OBJ) {
         value *= 2;
     }
-    debug("base_trade_value %s %d %d friction: %d num_own: %d num_all: %d value: %d\n",
-    base->name, faction1, faction2, friction_score, num_own, num_all, value);
+    debug("base_trade_value %s %d %d score: %d num_own: %d num_all: %d value: %d\n",
+    base->name, faction1, faction2, score, num_own, num_all, value);
     flushlog();
     return value;
 }
@@ -174,10 +220,9 @@ int __cdecl mod_base_swap(int faction1, int faction2)
         if (!X_dialog("PAYBASESWAP", faction2)) {
             return 0;
         }
-        f_plr.energy_credits -= cost_ask;
-        f_cmp.energy_credits += cost_ask;
-        give_a_base(*diplo_ask_base_swap_id, faction1);
-        StatusWin_redraw(StatusWin);
+        // net_energy also calls Console_update_data and StatusWin_redraw
+        net_cede_base(*diplo_ask_base_swap_id, faction1, 1);
+        net_energy(faction1, -cost_ask, faction2, cost_ask, 1);
         draw_map(1);
         return 0;
     }
@@ -199,8 +244,8 @@ int __cdecl mod_base_swap(int faction1, int faction2)
             return 0;
         }
         X_dialog("YESBASESWAP", faction2);
-        give_a_base(*diplo_ask_base_swap_id, faction1);
-        give_a_base(*diplo_bid_base_swap_id, faction2);
+        net_cede_base(*diplo_ask_base_swap_id, faction1, 1);
+        net_cede_base(*diplo_bid_base_swap_id, faction2, 1);
         StatusWin_redraw(StatusWin);
         draw_map(1);
         return 0;
@@ -235,7 +280,7 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
         }
         return 0;
     }
-    if (*MultiplayerActive || *diplo_current_proposal_id != DiploProposalNeedEnergy
+    if (*diplo_current_proposal_id != DiploProposalNeedEnergy
     || *diplo_counter_proposal_id != DiploCounterLoanPayment) {
         return energy_trade(faction1, faction2);
     }
@@ -244,17 +289,13 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
     bool is_treaty = has_treaty(faction1, faction2, DIPLO_TREATY);
     int friction = clamp(*DiploFriction, 0, 20);
     int score = 5 - friction
-        - 16*f_cmp.diplo_betrayed[faction1]
-        - 8*f_plr.integrity_blemishes
+        - 8*diplo_relation(faction1, faction2)
         - 4*f_plr.atrocities
-        + 2*f_plr.diplo_gifts[faction2]
-        + (is_pact ? 10 : 0)
-        + (is_treaty ? 5 : 0)
-        + (want_revenge(faction2, faction1) ? -50 : 0)
-        + (f_plr.pop_total > f_cmp.pop_total ? -5 : 0)
-        + (f_plr.labs_total > 2*f_cmp.labs_total ? -5 : 0)
-        + (2*f_plr.pop_total > 3*f_cmp.pop_total ? -10 : 0)
-        + (3*f_plr.pop_total < 2*f_cmp.pop_total ? 5 : 0);
+        + (is_pact ? 16 : 0)
+        + (is_treaty ? 4 : 0)
+        + (want_revenge(faction2, faction1) ? -20 : 0)
+        + clamp((f_cmp.pop_total - f_plr.pop_total)/32, -8, 8)
+        + clamp((f_cmp.labs_total - f_plr.labs_total)/64, -8, 8);
 
     for (int i=1; i < MaxPlayerNum; i++) {
         if (Factions[i].base_count && i != faction1 && i != faction2) {
@@ -269,12 +310,14 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
             }
         }
     }
-    int reserve = clamp(*CurrentTurn * f_cmp.base_count / 8, 50, 200 + 20*friction);
-    int amount = clamp(f_cmp.energy_credits - reserve, 0, *CurrentTurn * 4)
-        * (f_plr.pop_total > f_cmp.pop_total ? 1 : 2)
-        * clamp(20 + score - 16*f_cmp.AI_fight + 16*clamp(f_cmp.SE_economy_base, -1, 1)
-        - 20*(f_plr.ranking > 5) + 20*is_pact, 16, 64) / (128 * 20) * 20;
-    int turns = clamp(50 - *DiffLevel*5 - friction + min(20, score), 10, 50);
+    int reserve = max(0, min(f_cmp.energy_credits - 50 - 20*friction,
+        50*max(4, f_cmp.base_count + f_plr.base_count)));
+    int amount = (reserve
+        * clamp(32 - friction - 4*diplo_relation(faction1, faction2)
+        - 8*f_cmp.AI_fight + 8*clamp(f_cmp.SE_economy_base, -1, 1)
+        + 4*clamp(f_cmp.ranking - f_plr.ranking, -4, 4)
+        + (is_pact ? 16 : 0) + (is_treaty ? 4 : 0), 12, 96) / 256) / 20 * 20;
+    int turns = clamp(50 - *DiffLevel*5 - friction + score/2, 10, 50);
     int payment = ((18 + friction/4 + *DiffLevel*2)*amount + 15) / (16*turns);
 
     debug("energy_trade %s score: %d friction: %d credits: %d reserve: %d amount: %d turns: %d payment: %d\n",
@@ -291,7 +334,7 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
         X_dialog("modmenu", "REJECTLOAN", faction2);
         return 0;
     }
-    if (amount < 10 || payment < 1 || score < 0) {
+    if (amount < 10 || payment < 1 || score < 0 || f_cmp.energy_credits < 50) {
         X_dialog(random(2) ? "REJENERGY0" : "REJENERGY1", faction2);
         return 0;
     }
@@ -304,11 +347,8 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
     int choice = X_dialog(random(2) ? "ENERGYLOAN1" : "ENERGYLOAN2", faction2);
 
     if (choice == 1) {
-        f_plr.loan_balance[faction2] = turns * payment;
-        f_plr.loan_payment[faction2] = payment;
-        f_plr.energy_credits += amount;
-        f_cmp.energy_credits -= amount;
-        StatusWin_redraw(StatusWin);
+        net_loan(faction1, faction2, turns * payment, payment);
+        net_energy(faction1, amount, faction2, -amount, 1);
     }
     return 0;
 }
@@ -326,8 +366,10 @@ int tech_ask_value(int faction1, int faction2, int tech_id, bool high_price)
         + (f_cmp.AI_tech + 1) * tech.AI_tech
         + (f_cmp.AI_wealth + 1) * tech.AI_wealth, 0, 32);
     int value = (20 + 35*level + 4*level*level)
-        * (64 + weights/2 + *DiffLevel*4 + clamp(*DiploFriction, 0, 20)
-        + 8*f_plr.integrity_blemishes + 4*f_plr.atrocities) / 64;
+        * (64 + weights/2 + *DiffLevel*4
+        + max(0, clamp(*DiploFriction, 0, 20)
+        + 8*diplo_relation(faction1, faction2)
+        + 4*f_plr.atrocities)) / 64;
 
     if (*GameRules & RULES_TECH_STAGNATION) {
         value = value * 3 / 2;
@@ -354,7 +396,7 @@ int tech_ask_value(int faction1, int faction2, int tech_id, bool high_price)
     value = (value + 24) / 25 * 25;
 
     debug("tech_ask_value %d %d level: %d owners: %d weights: %d value: %d tech: %d %s\n",
-        faction1, faction2, level, owners, weights, value, tech_id, Tech[tech_id].name);
+    faction1, faction2, level, owners, weights, value, tech_id, Tech[tech_id].name);
     flushlog();
     return value;
 }
@@ -363,14 +405,6 @@ int __cdecl mod_buy_tech(int faction1, int faction2, int counter_id, bool high_p
 {
     Faction& f_plr = Factions[faction1];
     Faction& f_cmp = Factions[faction2];
-
-    if (*MultiplayerActive) {
-        if (!has_pact(faction1, faction2)) {
-            X_dialog(random(2) ? "REJTECHLATER0" : "REJTECHLATER1", faction2);
-            return 1;
-        }
-        return buy_tech(faction1, faction2, counter_id, high_price, proposal_id);
-    }
 
     if (proposal_id == DiploProposalTechTrade
     && (counter_id == DiploCounterEnergyPayment
@@ -402,10 +436,8 @@ int __cdecl mod_buy_tech(int faction1, int faction2, int counter_id, bool high_p
             return 1;
         }
         if (X_dialog(random(2) ? "BUYTECH0" : "BUYTECH1", faction2) == 1) {
-            f_plr.energy_credits -= value;
-            f_cmp.energy_credits += value;
-            tech_achieved(faction1, *diplo_tech_id1, faction2, 0);
-            StatusWin_redraw(StatusWin);
+            net_tech(faction1, *diplo_tech_id1, faction2, 1);
+            net_energy(faction1, -value, faction2, value, 1);
         }
         return 1;
     }

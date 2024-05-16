@@ -299,6 +299,19 @@ enum VehOrderAutoType {
     ORDERA_AUTOMATE_AIR_DEFENSE = 12,
 };
 
+enum ProbeAction {
+    PRB_INFILTRATE_DATALINKS = 0,
+    PRB_PROCURE_RESEARCH_DATA = 1,
+    PRB_ACTIVATE_SABOTAGE_VIRUS = 2,
+    PRB_DRAIN_ENERGY_RESERVES = 3,
+    PRB_INCITE_DRONE_RIOTS = 4,
+    PRB_ASSASSINATE_PROMINENT_RESEARCHERS = 5,
+    PRB_MIND_CONTROL_CITY = 6,
+    PRB_INTRODUCE_GENETIC_PLAGUE = 7,
+    PRB_FREE_CAPTURED_FACTION_LEADER = 8,
+    PRB_MIND_CONTROL_UNIT = -1,
+};
+
 enum UnitFlags {
     UNIT_ACTIVE = 0x1, // if this bit is zero, prototype has been retired
     UNIT_CUSTOM_NAME_SET = 0x2,
@@ -483,7 +496,7 @@ struct VEH {
     // 000 00 000 : framed faction : secondary options : primary action id (0-7)
     // secondary options: THOUGHTMENU, ADVVIRUS, DECIPHER, SUBVERTMENU
     // 000 0 0000 : framed faction : n/a : probe action id (8) ; Freeing Captured Leaders only
-    uint8_t probe_action; // see above and ProbePrimaryAction, last action taken by probe team
+    uint8_t probe_action; // see above and ProbeAction, last action taken by probe team
     uint8_t probe_sabotage_id; // for targeted sabotage: production: 0, abort: 99, or facility id
     int16_t home_base_id;
     int16_t next_veh_id_stack;
