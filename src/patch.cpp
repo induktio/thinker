@@ -1233,10 +1233,10 @@ bool patch_setup(Config* cf) {
     if (!cf->alien_guaranteed_techs) {
         short_jump(0x5B29F8);
     }
-    if (cf->natives_weak_until_turn >= 0) {
+    if (cf->native_weak_until_turn >= 0) {
         const byte old_bytes[] = {0x83, 0x3D, 0xD4, 0x64, 0x9A, 0x00, 0x0F};
         const byte new_bytes[] = {0x83, 0x3D, 0xD4, 0x64, 0x9A, 0x00,
-            (byte)cf->natives_weak_until_turn};
+            (byte)cf->native_weak_until_turn};
         write_bytes(0x507C22, old_bytes, new_bytes, sizeof(new_bytes));
     }
     if (cf->rare_supply_pods) {

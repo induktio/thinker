@@ -259,7 +259,9 @@ struct Config {
     int alien_guaranteed_techs = 1;
     int alien_early_start = 0;
     int cult_early_start = 0;
-    int natives_weak_until_turn = -1;
+    int normal_elite_moves = 1;
+    int native_elite_moves = 0;
+    int native_weak_until_turn = -1;
     int native_lifecycle_levels[6] = {40,80,120,160,200,240};
     int neural_amplifier_bonus = 50;
     int dream_twister_bonus = 50;

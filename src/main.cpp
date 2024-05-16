@@ -217,8 +217,12 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->alien_early_start = atoi(value);
     } else if (MATCH("cult_early_start")) {
         cf->cult_early_start = atoi(value);
-    } else if (MATCH("natives_weak_until_turn")) {
-        cf->natives_weak_until_turn = clamp(atoi(value), 0, 127);
+    } else if (MATCH("normal_elite_moves")) {
+        cf->normal_elite_moves = atoi(value);
+    } else if (MATCH("native_elite_moves")) {
+        cf->native_elite_moves = atoi(value);
+    } else if (MATCH("native_weak_until_turn")) {
+        cf->native_weak_until_turn = clamp(atoi(value), 0, 127);
     } else if (MATCH("native_lifecycle_levels")) {
         opt_list_parse(cf->native_lifecycle_levels, buf, 6, 0);
     } else if (MATCH("neural_amplifier_bonus")) {

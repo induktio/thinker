@@ -156,6 +156,7 @@ Fix: due to limited size of moves_spent field, speeds over 255 are not allowed.
 int __cdecl veh_speed(int veh_id, bool skip_morale) {
     int unit_id = Vehs[veh_id].unit_id;
     UNIT* u = &Units[unit_id];
+    bool normal_unit = unit_id >= MaxProtoFactionNum || u->offense_value() >= 0;
     if (unit_id == BSC_FUNGAL_TOWER) {
         return 0; // cannot move
     }
@@ -167,8 +168,9 @@ int __cdecl veh_speed(int veh_id, bool skip_morale) {
         speed_val += Rules->move_rate_roads * 2;
     }
     if (!skip_morale && mod_morale_veh(veh_id, true, 0) == MORALE_ELITE
-    && (unit_id >= MaxProtoFactionNum || u->offense_value() >= 0)) {
-        speed_val += Rules->move_rate_roads; // Non-native elite units only
+    && ((normal_unit && conf.normal_elite_moves > 0)
+    || (!normal_unit && conf.native_elite_moves > 0))) {
+        speed_val += Rules->move_rate_roads;
     }
     if (Vehs[veh_id].damage_taken && triad != TRIAD_AIR) {
         int moves = speed_val / Rules->move_rate_roads;
