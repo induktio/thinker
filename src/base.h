@@ -18,6 +18,8 @@ int __cdecl mod_base_growth();
 void __cdecl mod_drone_riot();
 int __cdecl mod_base_kill(int base_id);
 int __cdecl mod_capture_base(int base_id, int faction, int is_probe);
+int __cdecl base_psych_content_pop();
+void __cdecl mod_psych_check(int faction_id, int32_t* content_pop, int32_t* base_limit);
 
 char* prod_name(int item_id);
 int prod_turns(int base_id, int item_id);

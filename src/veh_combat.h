@@ -2,10 +2,6 @@
 
 #include "main.h"
 
-int __cdecl probe_veh_health(int veh_id);
-int __cdecl probe_mind_control_range(int x1, int y1, int x2, int y2);
-void __cdecl probe_thought_control(int faction_id_def, int faction_id_atk);
-
 int __cdecl fungal_tower_bonus(int value);
 int __cdecl dream_twister_bonus(int value);
 int __cdecl neural_amplifier_bonus(int value);

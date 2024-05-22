@@ -371,6 +371,7 @@ enum NodesetType {
 #include "faction.h"
 #include "random.h"
 #include "patch.h"
+#include "probe.h"
 #include "path.h"
 #include "plan.h"
 #include "gui.h"

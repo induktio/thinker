@@ -110,6 +110,8 @@
 		<Unit filename="src/path.h" />
 		<Unit filename="src/plan.cpp" />
 		<Unit filename="src/plan.h" />
+		<Unit filename="src/probe.cpp" />
+		<Unit filename="src/probe.h" />
 		<Unit filename="src/random.cpp" />
 		<Unit filename="src/random.h" />
 		<Unit filename="src/strings.cpp" />

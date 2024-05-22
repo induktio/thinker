@@ -334,6 +334,28 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
     return 0;
 }
 
+/*
+Calculate the amount of content population before psych modifiers for the current faction.
+*/
+int __cdecl base_psych_content_pop() {
+    int faction = (*CurrentBase)->faction_id;
+    assert(valid_player(faction));
+    if (is_human(faction)) {
+        return conf.content_pop_player[*DiffLevel];
+    }
+    return conf.content_pop_computer[*DiffLevel];
+}
+
+/*
+Calculate the base count threshold for possible bureaucracy notifications in Console::new_base.
+*/
+void __cdecl mod_psych_check(int faction_id, int32_t* content_pop, int32_t* base_limit) {
+    *content_pop = (is_human(faction_id) ?
+        conf.content_pop_player[*DiffLevel] : conf.content_pop_computer[*DiffLevel]);
+    *base_limit = (((*content_pop + 2) * (Factions[faction_id].SE_effic_pending < 0 ? 4
+        : Factions[faction_id].SE_effic_pending + 4) * *MapAreaSqRoot) / 56) / 2;
+}
+
 char* prod_name(int item_id) {
     if (item_id >= 0) {
         return Units[item_id].name;

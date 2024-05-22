@@ -3,44 +3,6 @@
 
 
 /*
-Calculate current vehicle health only to determine
-the damage from genetic warfare probe team action.
-*/
-int __cdecl probe_veh_health(int veh_id) {
-    VEH* veh = &Vehs[veh_id];
-    int level = clamp(veh->reactor_type(), 1, 100);
-    if (veh->is_artifact()) {
-        return 1;
-    }
-    if (veh->damage_taken > 5*level) {
-        return 1;
-    }
-    return clamp(min(5*level, 10*level - veh->damage_taken), 0, 9999);
-}
-
-/*
-Replace distance to determine if the adjacent units to the base should also be subverted.
-*/
-int __cdecl probe_mind_control_range(int x1, int y1, int x2, int y2) {
-    return (x1 == x2 && y1 == y2) ? 0 : 2;
-}
-
-/*
-Replaces set_treaty call when Total Thought Control probe action is completed.
-This does not result in automatic vendetta unlike normal Mind Control action.
-*/
-void __cdecl probe_thought_control(int faction_id_def, int faction_id_atk) {
-    if (!at_war(faction_id_def, faction_id_atk)) {
-        cause_friction(faction_id_def, faction_id_atk, 5);
-        Factions[faction_id_def].diplo_betrayed[faction_id_atk]++;
-        Factions[faction_id_atk].diplo_wrongs[faction_id_def]++;
-        if (has_pact(faction_id_def, faction_id_atk)) {
-            set_treaty(faction_id_def, faction_id_atk, DIPLO_WANT_TO_TALK, 1);
-        }
-    }
-}
-
-/*
 These functions are used to patch more features on get_basic_offense or get_basic_defense.
 */
 int __cdecl fungal_tower_bonus(int value) {

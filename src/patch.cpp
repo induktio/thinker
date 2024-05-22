@@ -27,15 +27,6 @@ int __cdecl base_governor_crop_yield(int faction, int base_id, int x, int y, int
     return value;
 }
 
-int __cdecl base_psych_content_pop() {
-    int faction = (*CurrentBase)->faction_id;
-    assert(valid_player(faction));
-    if (is_human(faction)) {
-        return conf.content_pop_player[*DiffLevel];
-    }
-    return conf.content_pop_computer[*DiffLevel];
-}
-
 int __cdecl BaseWin_random_seed() {
     return *CurrentBaseID ^ *MapRandomSeed;
 }
@@ -407,6 +398,8 @@ bool patch_setup(Config* cf) {
     write_jump(0x626350, (int)log_say_hex2);
     write_jump(0x645460, (int)limit_strcpy);
     write_jump(0x645470, (int)limit_strcat);
+    write_jump(0x55BB30, (int)set_treaty);
+    write_jump(0x55BBA0, (int)set_agenda);
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
     write_call(0x415F35, (int)mod_base_reset);
@@ -471,7 +464,6 @@ bool patch_setup(Config* cf) {
     write_call(0x54F4E2, (int)mod_threaten);
     write_call(0x54F532, (int)mod_threaten);
     write_call(0x54F702, (int)mod_threaten);
-    write_call(0x59FBA7, (int)set_treaty);
     write_call(0x5A3F7D, (int)probe_veh_health);
     write_call(0x5A3F98, (int)probe_veh_health);
     write_call(0x5A4972, (int)probe_mind_control_range);
@@ -1009,6 +1001,7 @@ bool patch_setup(Config* cf) {
         };
         write_bytes(0x4EA56D, old_bytes, new_bytes, sizeof(new_bytes));
         write_call(0x4EA56D, (int)base_psych_content_pop);
+        write_call(0x4CFEA4, (int)mod_psych_check);
     }
     /*
     Modify planetpearls income after wiping out any planet-owned units.
@@ -1222,9 +1215,11 @@ bool patch_setup(Config* cf) {
         write_bytes(0x520615, old_bytes, new_bytes, sizeof(new_bytes));
     }
     if (cf->event_market_crash > 0) { // Reduce reserves only by 1/2 instead of 3/4
-        const byte old_bytes[] = {0x99,0x83,0xE2,0x03,0x03,0xC2,0xC1,0xF8};
-        const byte new_bytes[] = {0xD1,0xF8,0x90,0x90,0x90,0x90,0x90,0x90};
+        const byte old_bytes[] = {0x99,0x83,0xE2,0x03,0x03,0xC2,0xC1,0xF8,0x02};
+        const byte new_bytes[] = {0xD1,0xF8,0x90,0x90,0x90,0x90,0x90,0x90,0x90};
         write_bytes(0x520725, old_bytes, new_bytes, sizeof(new_bytes));
+        write_offset(0x520751, (void*)0x68B154); // Change image to genwarning_sm.pcx
+        write_offset(0x520786, (void*)0x68B154);
     } else if (!cf->event_market_crash) { // Remove event
         const byte old_bytes[] = {0x75,0x0C,0x81,0xFE,0xD0};
         const byte new_bytes[] = {0xE9,0x02,0x1A,0x00,0x00};

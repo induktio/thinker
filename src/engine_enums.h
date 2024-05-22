@@ -517,6 +517,7 @@ enum DiploAgenda {
 };
 
 enum PlayerFlags {
+    PFLAG_MULTI_TECH_ACHIEVED = 0x2, // tech_achieved during network multiplayer
     PFLAG_SELF_AWARE_COLONY_LOST_MAINT = 0x20, // used to even out lossy integer division
     PFLAG_MAP_REVEALED = 0x200,
     PFLAG_GENETIC_PLAGUE_INTRO = 0x400, // +1 to defense against after 1st time faction experiences

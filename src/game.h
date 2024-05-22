@@ -28,8 +28,5 @@ void __cdecl mod_auto_save();
 int __cdecl mod_turn_upkeep();
 int __cdecl mod_faction_upkeep(int faction);
 void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool water);
-int probe_upkeep(int faction);
-int probe_active_turns(int faction1, int faction2);
-int __thiscall probe_popup_start(Win* This, int veh_id1, int base_id, int a4, int a5, int a6, int a7);
 int __cdecl load_music_strcmpi(const char* active, const char* label);
 
