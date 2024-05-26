@@ -157,7 +157,7 @@ This list is not complete, but it details the most important bonuses granted for
 
 1. AI mineral production and nutrient base growth cost factors for each difficulty level can be changed with `cost_factor` setting. Does not affect other difficulty related modifiers.
 2. When `revised_tech_cost` is enabled, `tech_cost_factor` scales the AI tech cost for each difficulty level.
-3. Content (non-drone) base population for each difficulty level can be adjusted with `content_pop_player` and `content_pop_computer` variables. By default these have the same values than vanilla game mechanics.
+3. Content (non-drone) base population for each difficulty level can be adjusted with `content_pop_player` and `content_pop_computer` variables.
 4. AI pays reduced maintenance for facilities on two highest difficulty levels. Transcend level has 1/3 and Thinker level 2/3 maintenance from the normal amounts.
 5. AI pays no retooling costs whenever it changes production from one item to another.
 
@@ -414,7 +414,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 45. Fix datalinks window not showing the first character for Sea Formers units.
 46. Fix Mind Control issue when capturing bases that have non-allied units owned by a third faction inside them. In this case the units can't remain on the base tile and they are removed.
 47. Modify Mind Control probe action to only subvert units inside the base and not on adjacent tiles to balance for the relatively cheap cost for this action.
-48. Modify Total Thought Control probe action to not set silently "want revenge" or "shall betray" flags which usually resulted in automatic vendetta. This can be still used to subvert bases without declaring war but it applies a notable diplomatic penalty between the factions.
+48. Modify Total Thought Control probe action to not set silently "want revenge" or "shall betray" flags which usually made the AI sneak attack. This action can be still used to subvert bases without declaring war but it applies a notable diplomatic penalty between the factions.
 
 
 Scient's patch

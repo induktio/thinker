@@ -1,6 +1,23 @@
 
 # Thinker mod release changelog
 
+## Version 4.3 (2024-05-26)
+* Random map generator allows placing multiple similar landmarks when the related option value is greater than one.
+* Modify Mind Control probe action to only subvert units inside the base and not on adjacent tiles to balance for the relatively cheap cost for this action.
+* Modify Total Thought Control probe action so that the AI will not always sneak attack. This action can be still used to subvert bases without declaring war but it applies a notable diplomatic penalty between the factions.
+* Many changes on AI diplomacy code related to tech trading, energy loans, base swaps and threats to cancel the current alliance.
+* Add options modify_upgrade_cost, normal_elite_moves and native_elite_moves.
+* Add possibility to scroll the prototype list in design workshop with the mouse wheel.
+* Change energy market crash event icon to genwarning_sm.pcx while previously it was markbm_sm.pcx.
+* Fix reactivating skipped units not working for aircraft units that have not moved.
+* Fix magtube_movement_rate issue with aircraft units when the cost is non-zero.
+* Fix chopper movement points being modified when the combat is canceled from the confirmation dialog.
+* Fix some game preferences being reset when starting a new game with ignore_reactor_power enabled.
+* Fix Mind Control issue when capturing bases that have non-allied units owned by a third faction inside them.
+* Fix datalinks window not showing the first character for Sea Formers units.
+* Fix issue with event_market_crash option that occurred during turn processing.
+
+
 ## Version 4.2 (2024-04-12)
 * Game setup screen will now adjust the planet preview background based on selected properties on all resolutions.
 * Base window support tab shows a terrain view that is zoomable with the mousewheel or Ctrl+Up/Down.
