@@ -63,7 +63,7 @@ int __cdecl mod_threaten(int faction1, int faction2)
         int friction = clamp(*DiploFriction, 0, 20);
         int score = 2*(*DiffLevel + friction)
             + 8*diplo_relation(faction1, faction2)
-            + 8*f_cmp.AI_fight
+            + 8*clamp(f_cmp.AI_fight, -1, 1)
             + 4*clamp(f_cmp.ranking - f_plr.ranking, -4, 4)
             + clamp((f_cmp.pop_total - f_plr.pop_total)/32, -8, 8)
             + clamp((f_cmp.mil_strength_1 - f_plr.mil_strength_1)/32, -8, 8);
@@ -103,12 +103,12 @@ int base_trade_value(int base_id, int faction1, int faction2)
 
     for (int i = Fac_ID_First; i < Fac_ID_Last; i++) {
         if (has_fac_built((FacilityId)i, base_id)) {
-            value += Facility[i].cost * 20;
+            value += max(0, Facility[i].cost) * 20;
         }
     }
     for (int i = SP_ID_First; i <= SP_ID_Last; i++) {
         if (SecretProjects[i - SP_ID_First] == base_id) {
-            value += Facility[i].cost * (own_base && !pact ? 40 : 20)
+            value += max(0, Facility[i].cost) * (own_base && !pact ? 40 : 20)
                 + 60 * clamp(project_score(faction2, (FacilityId)i, false), 0, 10);
         }
     }
@@ -139,11 +139,11 @@ int base_trade_value(int base_id, int faction1, int faction2)
         }
     }
     if (own_base) {
-        value += 80;
+        value += 50;
         for (int i = 0; i < *VehCount; i++) {
             if ((Vehs[i].x == base->x && Vehs[i].y == base->y)
             || Vehs[i].home_base_id == base_id) {
-                value += Units[Vehs[i].unit_id].cost * 20;
+                value += max(0, Units[Vehs[i].unit_id].cost * 20);
             }
         }
         if (num_own > 0) {
@@ -160,7 +160,7 @@ int base_trade_value(int base_id, int faction1, int faction2)
         int dist = map_range(base->x, base->y, Bases[hq_id].x, Bases[hq_id].y);
         value = value * (72 - clamp(dist, 8, 40)) / 64;
     }
-    if (base->is_objective() || *GameRules & RULES_SCN_VICT_ALL_BASE_COUNT_OBJ) {
+    if (is_objective(base_id)) {
         value *= 2;
     }
     debug("base_trade_value %s %d %d score: %d num_own: %d num_all: %d value: %d\n",
@@ -291,8 +291,7 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
     int score = 5 - friction
         - 8*diplo_relation(faction1, faction2)
         - 4*f_plr.atrocities
-        + (is_pact ? 16 : 0)
-        + (is_treaty ? 4 : 0)
+        + (is_pact ? 16 : (is_treaty ? 4 : 0))
         + (want_revenge(faction2, faction1) ? -20 : 0)
         + clamp((f_cmp.pop_total - f_plr.pop_total)/32, -8, 8)
         + clamp((f_cmp.labs_total - f_plr.labs_total)/64, -8, 8);
@@ -314,9 +313,10 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
         50*max(4, f_cmp.base_count + f_plr.base_count)));
     int amount = (reserve
         * clamp(32 - friction - 4*diplo_relation(faction1, faction2)
-        - 8*f_cmp.AI_fight + 8*clamp(f_cmp.SE_economy_base, -1, 1)
+        - 8*clamp(f_cmp.AI_fight, -1, 1)
+        + 8*clamp(f_cmp.SE_economy_base, -1, 1)
         + 4*clamp(f_cmp.ranking - f_plr.ranking, -4, 4)
-        + (is_pact ? 16 : 0) + (is_treaty ? 4 : 0), 12, 96) / 256) / 20 * 20;
+        + (is_pact ? 32 : (is_treaty ? 8 : 0)), 12, 96) / 256) / 20 * 20;
     int turns = clamp(50 - *DiffLevel*5 - friction + score/2, 10, 50);
     int payment = ((18 + friction/4 + *DiffLevel*2)*amount + 15) / (16*turns);
 

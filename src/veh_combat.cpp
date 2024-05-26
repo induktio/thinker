@@ -369,24 +369,33 @@ This function is only called from battle_fight_1 and not when combat results are
 When chopper attack rate is modified, one full movement point is always reserved for the attack.
 This avoids overflow issues with vehicle speed and incorrect hasty penalties for air units.
 */
-int __cdecl mod_battle_fight_2(int veh_id, int offset, int tx, int ty, int is_table_offset, int a6, int a7)
+int __cdecl mod_battle_fight_2(int veh_id, int offset, int tx, int ty, int table_offset, int a6, int a7)
 {
     VEH* veh = &Vehs[veh_id];
     UNIT* u = &Units[veh->unit_id];
+    int cost = 0;
     if (conf.chopper_attack_rate > 1 && conf.chopper_attack_rate < 256) {
         if (u->triad() == TRIAD_AIR && u->range() == 1 && !u->is_missile()) {
             int moves = veh_speed(veh_id, 0) - veh->moves_spent - Rules->move_rate_roads;
             int addon = (conf.chopper_attack_rate - 1) * Rules->move_rate_roads;
             if (moves > 0 && addon > 0) {
-                veh->moves_spent += min(moves, addon);
+                cost = min(moves, addon);
+                veh->moves_spent += cost;
             }
         }
     }
-    int value = battle_fight_2(veh_id, offset, tx, ty, is_table_offset, a6, a7);
+    // Non-zero return value indicates the battle was skipped (odds dialog, treaty dialog)
+    int prev_count = *VehCount;
+    int value = battle_fight_2(veh_id, offset, tx, ty, table_offset, a6, a7);
+    if (cost > 0 && (value == 1 || value == 2) && prev_count == *VehCount) {
+        assert(veh->moves_spent - cost >= 0);
+        veh->moves_spent -= cost;
+    }
     return value;
 }
 
-void __cdecl add_bat(int type, int modifier, char* display_str) {
+void __cdecl add_bat(int type, int modifier, char* display_str)
+{
     int offset = VehBattleModCount[type];
     if (modifier && offset >= 0 && offset < 4 && (type == 0 || type == 1)) {
         strncpy(VehBattleDisplay[type][offset], display_str, 80);

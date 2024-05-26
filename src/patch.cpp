@@ -11,6 +11,7 @@ const char* ac_opening = "opening";
 const char* ac_movlist = "movlist";
 const char* ac_movlist_txt = "movlist.txt";
 const char* ac_movlistx_txt = "movlistx.txt";
+const char* ac_genwarning_sm_pcx = "genwarning_sm.pcx";
 
 
 bool FileExists(const char* path) {
@@ -380,26 +381,27 @@ bool patch_setup(Config* cf) {
 
     write_jump(0x4688E0, (int)MapWin_gen_overlays);
     write_jump(0x4E3EF0, (int)mod_whose_territory);
+    write_jump(0x4E4AA0, (int)base_first);
     write_jump(0x4F6510, (int)fac_maint);
+    write_jump(0x527290, (int)mod_faction_upkeep);
+    write_jump(0x55BB30, (int)set_treaty);
+    write_jump(0x55BBA0, (int)set_agenda);
     write_jump(0x579A30, (int)add_goal);
     write_jump(0x579B70, (int)add_site);
     write_jump(0x579D80, (int)wipe_goals);
-    write_jump(0x527290, (int)mod_faction_upkeep);
-    write_jump(0x5BF310, (int)X_pop2);
-    write_jump(0x4E4AA0, (int)base_first);
     write_jump(0x591040, (int)mod_map_wipe);
     write_jump(0x592250, (int)mod_say_loc);
+    write_jump(0x5BF310, (int)X_pop2);
+    write_jump(0x5C1540, (int)veh_speed);
     write_jump(0x5C1D20, (int)mod_veh_skip);
     write_jump(0x5C1D70, (int)mod_veh_wake);
-    write_jump(0x5C1540, (int)veh_speed);
-    write_jump(0x6262F0, (int)log_say);
     write_jump(0x626250, (int)log_say2);
-    write_jump(0x6263F0, (int)log_say_hex);
+    write_jump(0x6262F0, (int)log_say);
     write_jump(0x626350, (int)log_say_hex2);
+    write_jump(0x6263F0, (int)log_say_hex);
     write_jump(0x645460, (int)limit_strcpy);
     write_jump(0x645470, (int)limit_strcat);
-    write_jump(0x55BB30, (int)set_treaty);
-    write_jump(0x55BBA0, (int)set_agenda);
+
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
     write_call(0x415F35, (int)mod_base_reset);
@@ -451,10 +453,6 @@ bool patch_setup(Config* cf) {
     write_call(0x4AED04, (int)SocialWin_social_ai);
     write_call(0x51D1C2, (int)Console_editor_fungus);
     write_call(0x54814D, (int)mod_diplomacy_caption);
-    write_call(0x4D0ECF, (int)mod_upgrade_cost);
-    write_call(0x4D16D9, (int)mod_upgrade_cost);
-    write_call(0x4EFB76, (int)mod_upgrade_cost);
-    write_call(0x4EFEB9, (int)mod_upgrade_cost);
     write_call(0x54F7D7, (int)mod_energy_trade);
     write_call(0x54F77E, (int)mod_base_swap);
     write_call(0x542278, (int)mod_buy_tech);
@@ -554,7 +552,11 @@ bool patch_setup(Config* cf) {
     write_call(0x59B61A, (int)mod_hex_cost);
     write_call(0x59C105, (int)mod_hex_cost);
 
-    // Redirected but not modified from vanilla game logic
+    // Prototypes and combat game mechanics
+    write_call(0x4D0ECF, (int)mod_upgrade_cost);
+    write_call(0x4D16D9, (int)mod_upgrade_cost);
+    write_call(0x4EFB76, (int)mod_upgrade_cost);
+    write_call(0x4EFEB9, (int)mod_upgrade_cost);
     write_call(0x436ADD, (int)mod_proto_cost);
     write_call(0x43704C, (int)mod_proto_cost);
     write_call(0x5817C9, (int)mod_proto_cost);
@@ -1218,8 +1220,8 @@ bool patch_setup(Config* cf) {
         const byte old_bytes[] = {0x99,0x83,0xE2,0x03,0x03,0xC2,0xC1,0xF8,0x02};
         const byte new_bytes[] = {0xD1,0xF8,0x90,0x90,0x90,0x90,0x90,0x90,0x90};
         write_bytes(0x520725, old_bytes, new_bytes, sizeof(new_bytes));
-        write_offset(0x520751, (void*)0x68B154); // Change image to genwarning_sm.pcx
-        write_offset(0x520786, (void*)0x68B154);
+        write_offset(0x520751, ac_genwarning_sm_pcx);
+        write_offset(0x520786, ac_genwarning_sm_pcx);
     } else if (!cf->event_market_crash) { // Remove event
         const byte old_bytes[] = {0x75,0x0C,0x81,0xFE,0xD0};
         const byte new_bytes[] = {0xE9,0x02,0x1A,0x00,0x00};

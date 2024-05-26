@@ -205,7 +205,7 @@ struct Config {
     int conquer_priority = 100;
     int max_satellites = 20;
     int new_world_builder = 1;
-    int world_sea_levels[3] = {45,57,70};
+    int world_sea_levels[3] = {46,58,70};
     int world_hills_mod = 40;
     int world_ocean_mod = 40;
     int world_islands_mod = 16;

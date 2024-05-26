@@ -104,18 +104,20 @@ int __cdecl region_at(int x, int y) {
     return sq ? sq->region : 0;
 }
 
-/*
-This version never calls rebuild_base_bits on failed searches.
-*/
 int __cdecl base_at(int x, int y) {
     MAP* sq = mapsq(x, y);
     if (sq && sq->is_base()) {
+        if (*BaseCount <= 0) {
+            // Removed unnecessary debug code from here
+            rebuild_base_bits();
+            return -1;
+        }
         for (int i = 0; i < *BaseCount; ++i) {
             if (Bases[i].x == x && Bases[i].y == y) {
                 return i;
             }
         }
-        assert(0); // Removed debug code from here
+        assert(0);
     }
     return -1;
 }
@@ -170,7 +172,7 @@ void __cdecl mod_map_wipe() {
     }
 }
 
-int __cdecl base_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, int y2, bool toggle) {
+static int __cdecl base_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, int y2, bool toggle) {
     MAP* sq_dst = mapsq(x2, y2);
     uint32_t bit_dst = (sq_dst ? sq_dst->items : 0);
     if (is_ocean(sq_dst)) {
@@ -359,11 +361,11 @@ int __cdecl mod_base_find3(int x, int y, int faction1, int region, int faction2,
         debug("base_find3 x: %2d y: %2d r: %2d %2d %2d %2d %2d %4d\n",
               x, y, region, faction1, faction2, faction3, result, dist);
         assert(res == result);
-        assert(*base_find_dist == dist);
+        assert(*BaseFindDist == dist);
     }
-    *base_find_dist = 9999;
+    *BaseFindDist = 9999;
     if (result >= 0) {
-        *base_find_dist = dist;
+        *BaseFindDist = dist;
     }
     return result;
 }

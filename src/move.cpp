@@ -359,8 +359,10 @@ int target_priority(int x, int y, int faction, MAP* sq) {
         }
         if (sq->is_base()) {
             int base_id = base_at(x, y);
-            if (base_id >= 0 && Bases[base_id].is_objective()) {
-                score += 250;
+            if (base_id >= 0) {
+                score += (has_fac_built(FAC_HEADQUARTERS, base_id) ? 100 : 0);
+                score += (Bases[base_id].is_objective() ? 100 : 0);
+                score += clamp(4*Bases[base_id].pop_size, 4, 64);
             }
             score += (pm_roads[x][y] ? 150 : 0);
             return score;
@@ -776,13 +778,13 @@ void move_upkeep(int faction, UpdateMode mode) {
         int sorter[MaxBaseNum] = {};
         int bases = 0;
 
-        for (int i=0; i < *BaseCount; i++) {
+        for (int i = 0; i < *BaseCount; i++) {
             BASE* base = &Bases[i];
             if (base->faction_id == faction) {
                 assert(base_enemy_range[i] > 0);
                 values[i] = base->pop_size + (base->is_objective() ? 16 : 0)
-                    + 10*has_fac_built(FAC_HEADQUARTERS, i)
-                    + 10*pm_enemy_near[base->x][base->y] - base_enemy_range[i];
+                    + 16*has_fac_built(FAC_HEADQUARTERS, i)
+                    + 8*pm_enemy_near[base->x][base->y] - base_enemy_range[i];
                 sorter[bases] = values[i];
                 bases++;
                 debug("defend_score %4d %s\n", values[i], base->name);

@@ -12,6 +12,7 @@ extern UNIT* Units;
 struct VEH;
 extern VEH* Vehicles;
 extern int* GameState;
+extern int* GameRules;
 
 bool is_human(int faction);
 
@@ -104,8 +105,12 @@ struct BASE {
     bool plr_owner() {
         return is_human(faction_id);
     }
+    /*
+    This implementation is simplified to skip additional checks for these rules:
+    RULES_SCN_VICT_SP_COUNT_OBJ, STATE_SCN_VICT_BASE_FACIL_COUNT_OBJ.
+    */
     bool is_objective() {
-        return (*GameState & STATE_IS_SCENARIO) && (event_flags & BEVENT_OBJECTIVE);
+        return (*GameRules & RULES_SCN_VICT_ALL_BASE_COUNT_OBJ ) || (event_flags & BEVENT_OBJECTIVE);
     }
 };
 
