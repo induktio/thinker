@@ -391,6 +391,7 @@ extern FILE* debug_log;
 extern Config conf;
 extern NodeSet mapnodes;
 extern AIPlans plans[MaxPlayerNum];
+extern set_str_t movedlabels;
 extern map_str_t musiclabels;
 
 DLL_EXPORT DWORD ThinkerModule();

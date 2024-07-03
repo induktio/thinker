@@ -389,8 +389,11 @@ typedef int(__cdecl *FWin_update_screen)(RECT* rc, int v1);
 typedef int(__cdecl *FWin_flip)(RECT* rc);
 typedef int(__thiscall *FPopup_start)(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
-typedef int(__cdecl *FNetMsg_pop2)(char* label, void* a2);
-typedef int(__thiscall *FNetMsg_pop)(void* This, char* label, int delay, int a4, void* a5);
+typedef int(__thiscall *FBasePop_start)(
+    void* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
+typedef int(__thiscall *FNetMsg_pop)(
+    void* This, const char* label, int delay, int a4, const char* filename);
+typedef int(__cdecl *FNetMsg_pop2)(const char* label, const char* filename);
 typedef void(__thiscall *FConsole_go_to)(Console* This, int a2, void* a3, void* a4);
 
 extern FGenString amovie_project;
@@ -403,6 +406,7 @@ extern fp_void draw_cursor;
 extern fp_3int draw_tile;
 extern fp_1int draw_map;
 extern FNetMsg_pop NetMsg_pop;
+extern FBasePop_start BasePop_start;
 extern FPlanWin_blink PlanWin_blink;
 extern Fpopp popp;
 extern FGenVoid StatusWin_on_redraw;

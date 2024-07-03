@@ -620,6 +620,17 @@ bool patch_setup(Config* cf) {
     write_call(0x445A2F, (int)load_music_strcmpi);
     write_call(0x445AB2, (int)load_music_strcmpi);
 
+    // Modify popup dialog entries
+    write_call(0x4063CB, (int)mod_BasePop_start); // Popup::start
+    write_call(0x40649A, (int)mod_BasePop_start); // Popup::start
+    write_call(0x4064BE, (int)mod_BasePop_start); // Popup::start
+    write_call(0x4C90EB, (int)mod_BasePop_start); // sub_4C9080
+    write_call(0x4E27F6, (int)mod_BasePop_start); // AlphaNet::pick_service
+    write_call(0x60053A, (int)mod_BasePop_start); // filefind_init
+    write_call(0x6276DB, (int)mod_BasePop_start); // pops
+    write_call(0x62794B, (int)mod_BasePop_start); // pop_ask
+    write_call(0x627C90, (int)mod_BasePop_start); // pop_ask_number
+
     if (cf->directdraw) {
         *(int32_t*)0x45F9EF = cf->window_width;
         *(int32_t*)0x45F9F4 = cf->window_height;

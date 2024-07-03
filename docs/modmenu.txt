@@ -115,4 +115,66 @@ Our infiltration on {$MSG0} has been discovered! The spies have been lost.
 #caption Operations Director
 We have discovered and removed {$MSG0} infiltration on our networks!
 
+#EDITVEH2A
+#xs 400
+#caption Edit Vehicle Data
+#itemlist
+Damage Incurred:
+Moves Expended (times three):
+Year to End Lurking
+Turns Spent Away From Base:
+
+#NEEDCOLONISTS
+#xs 320
+#wave 6
+#caption Operations Director
+Only Colony Pods can perform that function.
+
+#RETOOLPENALTY3
+#xs 400
+#caption Operations Director
+Switching production now
+carries a $NUM0% retooling penalty.
+$NUM2 minerals would be lost.
+
+Keep making $ITEM0.
+Retool for $ITEM1.
+
+#RETOOLPENALTY3A
+#xs 400
+#caption Operations Director
+Switching production in mid-course
+carries a $NUM0% retooling penalty
+for all but the first $NUM1 minerals.
+$NUM2 minerals would be lost.
+
+Keep making $ITEM0.
+Retool for $ITEM1.
+
+#TERRTREATY2
+#xs 440
+#caption Operations Director
+$TITLE0, our treaty with $TITLE5 $NAME6 of the $FACTION2 precludes us from
+building bases in $<M1:$FACTIONADJ3> territorial waters.
+
+Never mind.
+Break treaty!
+
+#TERRTRUCE2
+#xs 440
+#caption Operations Director
+$TITLE5 $NAME6 claims these as territorial waters. We have no obligation to
+respect the claim, but if we build a base here the $FACTION2
+may decide to attack.
+
+Cancel base.
+Build base anyway.
+
+#NEEDADVECOENG
+#xs 320
+#wave 4
+#caption Planetary Ecologist
+Sea enhancements can only be built here after you have researched
+Advanced Ecological Engineering.
+
 # ; This line must remain at end of file

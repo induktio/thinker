@@ -228,6 +228,7 @@ fp_void draw_cursor                        = (fp_void              )0x46AE00;
 fp_3int draw_tile                          = (fp_3int              )0x46AF40;
 fp_1int draw_map                           = (fp_1int              )0x46B190;
 FNetMsg_pop NetMsg_pop                     = (FNetMsg_pop          )0x47A890;
+FBasePop_start BasePop_start               = (FBasePop_start       )0x601BF0;
 FPlanWin_blink PlanWin_blink               = (FPlanWin_blink       )0x48BC20;
 Fpopp popp                                 = (Fpopp                )0x48C0A0;
 FGenVoid StatusWin_on_redraw               = (FGenVoid             )0x4B8890;

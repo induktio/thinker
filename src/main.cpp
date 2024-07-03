@@ -23,6 +23,7 @@ FILE* debug_log = NULL;
 Config conf;
 NodeSet mapnodes;
 AIPlans plans[MaxPlayerNum];
+set_str_t movedlabels;
 map_str_t musiclabels;
 
 
@@ -324,6 +325,10 @@ int option_handler(void* user, const char* section, const char* name, const char
         parse_format_args(label_sat_mineral, value, 1, StrBufLen);
     } else if (MATCH("label_sat_energy")) {
         parse_format_args(label_sat_energy, value, 1, StrBufLen);
+    } else if (MATCH("script_label")) {
+        char* p = strstrip(buf);
+        debug("script_label %s\n", p);
+        movedlabels.insert(p);
     } else if (MATCH("music_label")) {
         char *p, *s, *k, *v;
         if ((p = strtok_r(buf, ",", &s)) != NULL) {

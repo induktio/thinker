@@ -421,8 +421,17 @@ Scient's patch
 ==============
 Thinker includes the binary patches from both [Scient's patch v2.0 and v2.1](https://github.com/DrazharLn/scient-unofficial-smacx-patch).
 The differences between these versions include only changes to the txt files to prevent the game from crashing when opening certain datalinks entries.
-Installing the modded txt files in the patch is purely optional, and Thinker does not include those files by default.
-The following fixes from Scient's patch are automatically applied at game startup.
+
+Thinker also includes the following non-engine fixes from Scient's patch for specific user interface issues. These labels listed below are redirected from other script files to modmenu.txt based on the default config.
+Installing the other modified files provided by Scient's patch (such as wav files) is purely optional, and Thinker does not include those files by default since it would require overwriting files in the base game.
+
+1. [BUG] Needlejet "DATA" edit window via scenario editor wouldn't render properly making it so you couldn't edit the stats. (EDITVEH2A)
+2. [BUG] When attempting to build a sea base inside another faction's territorial waters, you were suppose to receive warning messages that were mislabeled. (TERRTREATY2, TERRTRUCE2)
+3. [BUG] Added a new entry that was missing when you attempted to use "B" or "b" shortcuts with a non-combat unit that didn't have a "Colony Pod". (NEEDCOLONISTS)
+4. [BUG] Added new entries that were missing in conjunction with an engine fix for when "retool strictness" in alpha/x.txt is set to "never free". (RETOOLPENALTY3, RETOOLPENALTY3A)
+5. [BUG][SMACX] When attempting to terraform an ocean square other than shelf, aquatic factions (Nautilus Pirates) were suppose to receive a warning message that was mislabeled. (NEEDADVECOENG)
+
+The following binary fixes from Scient's patch are automatically applied at game startup.
 
 1.  [BUG] If a faction's cumulative PROBE value is greater than 3 (SE morale, covert ops center) it is possible to "mind control" their bases when they should be immune. If the University uses SE Knowledge putting PROBE value down to -4, it would act as if it were 0 erroneously increasing "mind control" costs. After patch, PROBE values greater than 3 will always be immune to regular probes and values less than -2 will be treated as if they were -2.
 2.  [CRASH] It is possible usually on larger maps that scrambling air interceptors would cause the game to crash. Even when the game didn't crash incorrect altitude values were being used in checks. Both of these have been fixed.

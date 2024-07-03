@@ -1536,7 +1536,7 @@ void __cdecl reset_netmsg_status()
     netmsg_item1[0] = '\0';
 }
 
-int __thiscall mod_NetMsg_pop(void* This, char* label, int delay, int a4, void* a5)
+int __thiscall mod_NetMsg_pop(void* This, const char* label, int delay, int a4, const char* a5)
 {
     if (!conf.foreign_treaty_popup) {
         return NetMsg_pop(This, label, delay, a4, a5);
@@ -1557,6 +1557,15 @@ int __thiscall mod_NetMsg_pop(void* This, char* label, int delay, int a4, void* 
     strncpy(netmsg_item1, (char*)&ParseStrBuffer[1], StrBufLen);
     netmsg_item1[StrBufLen-1] = '\0';
     return NetMsg_pop(This, label, -1, a4, a5);
+}
+
+int __thiscall mod_BasePop_start(
+void* This, const char* filename, const char* label, int a4, int a5, int a6, int a7)
+{
+    if (movedlabels.count(label)) {
+        return BasePop_start(This, "modmenu", label, a4, a5, a6, a7);
+    }
+    return BasePop_start(This, filename, label, a4, a5, a6, a7);
 }
 
 
