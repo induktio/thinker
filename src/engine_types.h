@@ -699,6 +699,16 @@ struct CAbility {
     int32_t flags;
     int16_t preq_tech;
     int16_t pad;
+
+    bool cost_increase_with_weapon() {
+        return cost == -2 || cost == -5 || cost == -6;
+    }
+    bool cost_increase_with_armor() {
+        return cost == -3 || cost == -5 || cost == -7;
+    }
+    bool cost_increase_with_speed() {
+        return cost == -4 || cost == -6 || cost == -7;
+    }
 };
 
 struct CChassis {

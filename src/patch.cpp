@@ -468,14 +468,6 @@ bool patch_setup(Config* cf) {
     write_call(0x5A4B8C, (int)probe_thought_control);
     write_call(0x559E21, (int)map_draw_strcmp); // veh_draw
     write_call(0x55B5E1, (int)map_draw_strcmp); // base_draw
-    write_call(0x4364FB, (int)mod_name_proto);
-    write_call(0x4383B2, (int)mod_name_proto);
-    write_call(0x4383DE, (int)mod_name_proto);
-    write_call(0x43BE8F, (int)mod_name_proto);
-    write_call(0x43E06E, (int)mod_name_proto);
-    write_call(0x43E663, (int)mod_name_proto);
-    write_call(0x581044, (int)mod_name_proto);
-    write_call(0x5B301E, (int)mod_name_proto);
     write_call(0x506ADE, (int)mod_battle_fight_2);
     write_call(0x4F7D13, (int)base_upkeep_rand);
     write_call(0x527039, (int)mod_base_upkeep);
@@ -553,6 +545,15 @@ bool patch_setup(Config* cf) {
     write_call(0x59C105, (int)mod_hex_cost);
 
     // Prototypes and combat game mechanics
+    write_call(0x5808B3, (int)mod_is_bunged);
+    write_call(0x4364FB, (int)mod_name_proto);
+    write_call(0x4383B2, (int)mod_name_proto);
+    write_call(0x4383DE, (int)mod_name_proto);
+    write_call(0x43BE8F, (int)mod_name_proto);
+    write_call(0x43E06E, (int)mod_name_proto);
+    write_call(0x43E663, (int)mod_name_proto);
+    write_call(0x581044, (int)mod_name_proto);
+    write_call(0x5B301E, (int)mod_name_proto);
     write_call(0x4D0ECF, (int)mod_upgrade_cost);
     write_call(0x4D16D9, (int)mod_upgrade_cost);
     write_call(0x4EFB76, (int)mod_upgrade_cost);
@@ -1126,6 +1127,28 @@ bool patch_setup(Config* cf) {
         write_call(0x506D07, (int)mod_best_defender);
         write_call(0x5082AF, (int)battle_fight_parse_num);
         write_call(0x5082B7, (int)battle_fight_parse_num);
+    }
+    if (cf->long_range_artillery > 0) {
+        write_call(0x46D42F, (int)mod_action_move); // MapWin::right_menu
+        write_call(0x46E1FF, (int)mod_action_move); // MapWin::click
+
+        const byte old_cursor[] = {0x8B,0x0D,0x44,0x97,0x94,0x00,0x51};
+        const byte new_cursor[] = {0x57,0x90,0x90,0x90,0x90,0x90,0x90};
+        write_bytes(0x4D927F, old_cursor, new_cursor, sizeof(new_cursor));
+        write_call(0x4D928D, (int)Console_arty_cursor_on);
+
+        const byte old_menu[] = {
+            0x8B,0x45,0xF0,0x6A,0x01,0x8D,0x0C,0x40,0x8D,0x14,
+            0x88,0x0F,0xBF,0x04,0x95,0x32,0x28,0x95,0x00,0x50,
+            0xE8,0x82,0x43,0x15,0x00,0x83,0xC4,0x08,0x85,0xC0
+        };
+        const byte new_menu[] = {
+            0x8B,0x45,0x0C,0x50,0x8B,0x45,0x08,0x50,0x8B,0x45,
+            0xF0,0x50,0xE8,0x00,0x00,0x00,0x00,0x83,0xC4,0x0C,
+            0x85,0xC0,0x75,0x6E,0xE9,0x8E,0x00,0x00,0x00,0x90
+        };
+        write_bytes(0x46CA15, old_menu, new_menu, sizeof(new_menu));
+        write_call(0x46CA21, (int)MapWin_right_menu_arty);
     }
     if (cf->modify_unit_morale) {
         write_jump(0x5C0E40, (int)mod_morale_veh);

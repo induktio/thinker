@@ -243,7 +243,7 @@ int __cdecl mod_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, in
     MAP* sq_a = mapsq(x1, y1);
     MAP* sq_b = mapsq(x2, y2);
 
-    if (DEBUG && sq_b && (!is_ocean(sq_b) || Units[unit_id].triad() != TRIAD_SEA
+    if (DEBUG && sq_b && (unit_id != BSC_SEALURK
     || !sq_b->is_fungus() || sq_b->alt_level() != ALT_OCEAN_SHELF)) {
         assert(value == hex_cost(unit_id, faction_id, x1, y1, x2, y2, toggle));
     }

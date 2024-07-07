@@ -237,6 +237,7 @@ struct Config {
     int activate_skipped_units = 1; // unlisted option
     int counter_espionage = 0;
     int ignore_reactor_power = 0;
+    int long_range_artillery = 0;
     int modify_upgrade_cost = 0;
     int modify_unit_morale = 1; // unlisted option
     int skip_default_balance = 1; // unlisted option

@@ -174,6 +174,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->counter_espionage = atoi(value);
     } else if (MATCH("ignore_reactor_power")) {
         cf->ignore_reactor_power = atoi(value);
+    } else if (MATCH("long_range_artillery")) {
+        cf->long_range_artillery = atoi(value);
     } else if (MATCH("modify_upgrade_cost")) {
         cf->modify_upgrade_cost = atoi(value);
     } else if (MATCH("modify_unit_morale")) {

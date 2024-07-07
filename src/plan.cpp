@@ -2,18 +2,10 @@
 #include "plan.h"
 
 
-void create_proto(int faction, VehChassis chassis, VehWeapon weapon, VehArmor armor,
-VehAblFlag abls, VehReactor reactor, VehPlan ai_plan)
-{
-    char name[256];
-    mod_name_proto(name, -1, faction, chassis, weapon, armor, abls, reactor);
-    debug("propose_proto %d %d chs: %d rec: %d wpn: %2d arm: %2d plan: %2d %08X %s\n",
-        *CurrentTurn, faction, chassis, reactor, weapon, armor, ai_plan, abls, name);
-    propose_proto(faction, chassis, weapon, armor, abls, reactor, ai_plan, (strlen(name) ? name : NULL));
-}
-
 void design_units(int faction) {
     const int i = faction;
+    CAbility& aaa = Ability[ABL_ID_AAA];
+    CAbility& arty = Ability[ABL_ID_ARTILLERY];
     VehReactor rec = best_reactor(i);
     VehWeapon wpn = best_weapon(i);
     VehArmor arm = best_armor(i, false);
@@ -25,6 +17,7 @@ void design_units(int faction) {
     VehAbl DefendAbls[] =
         {ABL_ID_AAA, ABL_ID_COMM_JAMMER, ABL_ID_POLICE_2X, ABL_ID_TRANCE, ABL_ID_TRAINED};
     bool twoabl = has_tech(Rules->tech_preq_allow_2_spec_abil, i);
+    int wpn_v = Weapon[wpn].offense_value;
 
     if (has_weapon(i, WPN_PROBE_TEAM)) {
         if (chs_ship != CHS_INFANTRY) {
@@ -40,9 +33,26 @@ void design_units(int faction) {
             create_proto(i, chs_land, WPN_PROBE_TEAM, arm, algo, rec, PLAN_INFO_WARFARE);
         }
     }
-    if (chs_ship != CHS_INFANTRY && Weapon[wpn].offense_value >= 4) {
-        VehArmor arm_ship = Weapon[wpn].offense_value >= 10 || rec >= REC_FUSION ? arm_cheap : ARM_NO_ARMOR;
-        create_proto(i, chs_ship, wpn, arm_ship, ABL_NONE, rec, PLAN_OFFENSIVE);
+    if (chs_ship != CHS_INFANTRY && wpn_v >= 4) {
+        bool long_range = conf.long_range_artillery > 0 && !*MultiplayerActive
+            && (Rules->artillery_max_rng <= 4 || arty.cost == 0 || arty.cost == 1)
+            && has_ability(i, ABL_ID_ARTILLERY, chs_ship, wpn);
+        if (long_range) {
+            VehArmor arm_ship = (rec >= REC_FUSION || !arty.cost_increase_with_speed())
+                && !arty.cost_increase_with_armor() ? arm_cheap : ARM_NO_ARMOR;
+            uint32_t abls = ABL_ARTILLERY
+                | (twoabl && has_ability(i, ABL_ID_AAA, chs_ship, wpn)
+                && aaa.cost >= 0 && aaa.cost <= (rec >= REC_FUSION)
+                && wpn_v <= 10 && arm_ship != ARM_NO_ARMOR ? ABL_AAA : ABL_NONE);
+            create_proto(i, chs_ship, wpn, arm_ship, (VehAblFlag)abls, rec, PLAN_OFFENSIVE);
+        }
+        if (!long_range || arty.cost < -1 || arty.cost > 2) {
+            VehArmor arm_ship = wpn_v >= 6 || rec >= REC_FUSION ? arm_cheap : ARM_NO_ARMOR;
+            VehAblFlag abls = has_ability(i, ABL_ID_AAA, chs_ship, wpn)
+                && aaa.cost >= 0 && aaa.cost <= 1 + (rec >= REC_FUSION)
+                && arm_ship != ARM_NO_ARMOR ? ABL_AAA : ABL_NONE;
+            create_proto(i, chs_ship, wpn, arm_ship, abls, rec, PLAN_OFFENSIVE);
+        }
     }
     if (arm != ARM_NO_ARMOR) {
         uint32_t abls = 0;
@@ -64,7 +74,7 @@ void design_units(int faction) {
         }
         create_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, (VehAblFlag)abls, rec, PLAN_DEFENSIVE);
 
-        if (~abls & ABL_POLICE_2X && need_police(i)
+        if (!(abls & ABL_POLICE_2X) && need_police(i)
         && has_ability(i, ABL_ID_POLICE_2X, CHS_INFANTRY, WPN_HAND_WEAPONS)) {
             create_proto(i, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, ABL_POLICE_2X, rec, PLAN_DEFENSIVE);
         }

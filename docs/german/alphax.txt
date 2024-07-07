@@ -514,7 +514,7 @@ Empath-Lied,             2,  CentEmp, Empath-,      000010001111, +50% Angriff g
 Polymorphe Codierung,    1,  Algor,   Codiert,      000000111111, x2 Kosten für Unterwanderung
 Fungizid-Tanks,          1,  Fossil,  Fungizid-,    000000010111, Beseitigt Fungus doppelt so schnell
 Hohe Gruppenmoral,       1,  Integ,   Ausgebil,     000000001111, Steigert Moral
-Schwere Artillerie,      -7, Poly,    Artillerie-,  000010001001, Bombardiert
+Schwere Artillerie,      -4, Poly,    Artillerie-,  000010001011, Bombardiert
 Autonomer Reaktor,       2,  BioEng,  Autonom,      000001111111, Braucht keine Unterstützung
 Mini-Teleporter,         1,  Matter,  Mini-Tele-,   000000001111, Umgeht Basisabwehr
 Hypnotische Trance,      -1, Brain,   Trance-,      000010111111, +50% Abwehr gegen PSI

@@ -54,6 +54,21 @@ bool __cdecl has_abil(int unit_id, VehAblFlag ability) {
     return false;
 }
 
+int __cdecl arty_range(int unit_id) {
+    assert(unit_id >= 0 && unit_id < MaxProtoNum);
+    UNIT* u = &Units[unit_id];
+    if (can_arty(unit_id, true)) {
+        if (*MultiplayerActive) {
+            return Rules->artillery_max_rng;
+        }
+        return min(8, Rules->artillery_max_rng
+            + (conf.long_range_artillery > 0 && u->triad() == TRIAD_SEA
+            && u->offense_value() > 0 && u->ability_flags & ABL_ARTILLERY
+            ? conf.long_range_artillery : 0));
+    }
+    return 0;
+}
+
 bool has_ability(int faction, VehAbl abl, VehChassis chs, VehWeapon wpn) {
     int F = Ability[abl].flags;
     int triad = Chassis[chs].triad;
@@ -512,6 +527,38 @@ int __cdecl probe_return_base(int UNUSED(x), int UNUSED(y), int veh_id) {
     return find_return_base(veh_id);
 }
 
+int __cdecl create_proto(int faction, VehChassis chs, VehWeapon wpn, VehArmor arm,
+VehAblFlag abls, VehReactor rec, VehPlan ai_plan) {
+    char name[256];
+    mod_name_proto(name, -1, faction, chs, wpn, arm, abls, rec);
+    debug("create_proto  %d %d chs: %d rec: %d wpn: %2d arm: %2d plan: %2d %08X %s\n",
+        *CurrentTurn, faction, chs, rec, wpn, arm, ai_plan, abls, name);
+    return propose_proto(faction, chs, wpn, arm, abls, rec, ai_plan, (strlen(name) ? name : NULL));
+}
+
+/*
+This function is only called from propose_proto to skip prototypes that are invalid.
+*/
+int __cdecl mod_is_bunged(int faction, VehChassis chs, VehWeapon wpn, VehArmor arm,
+VehAblFlag abls, VehReactor rec) {
+    int triad = Chassis[chs].triad;
+    int arm_v = Armor[arm].defense_value;
+    int wpn_v = Weapon[wpn].offense_value;
+    debug("propose_proto %d %d chs: %d rec: %d wpn: %2d arm: %2d %08X\n",
+        *CurrentTurn, faction, chs, rec, wpn, arm, abls);
+
+    if (!is_human(faction)) {
+        if (conf.design_units) {
+            if (triad == TRIAD_SEA && wpn_v > 0 && arm_v > 3
+            && arm_v > wpn_v + 1) {
+                return 1;
+            }
+        }
+        return 0;
+    }
+    return is_bunged(faction, chs, wpn, arm, abls, rec);
+}
+
 void parse_abl_name(char* buf, const char* name, bool reduce) {
     const int len = min(strlen(name), (size_t)MaxProtoNameLen);
     // Skip empty abbreviation names (Deep Radar)
@@ -596,8 +643,9 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
     int arm_v = (psi_arm ? 2 : Armor[arm].defense_value);
     int triad = Chassis[chs].triad;
     int spd_v = Chassis[chs].speed;
-    bool arty = abls & ABL_ARTILLERY;
-    bool marine = abls & ABL_AMPHIBIOUS;
+    bool arty = abls & ABL_ARTILLERY && triad == TRIAD_LAND;
+    bool sea_arty = abls & ABL_ARTILLERY && triad == TRIAD_SEA;
+    bool marine = abls & ABL_AMPHIBIOUS && triad == TRIAD_LAND;
     bool intercept = abls & ABL_AIR_SUPERIORITY && triad == TRIAD_AIR;
     bool garrison = combat && !arty && !marine && wpn_v < arm_v && spd_v < 2;
     uint32_t prefix_abls = abls & ~(ABL_ARTILLERY | ABL_AMPHIBIOUS | ABL_NERVE_GAS
@@ -642,7 +690,7 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
             if ((!arty && !marine && !intercept) || (arty && spd_v > 1)) {
                 int value = wpn_v - arm_v;
                 if (value <= -1) { // Defensive
-                    if (arm_v >= 8 && wpn_v*2 >= arm_v) {
+                    if ((arm_v >= 8 && wpn_v*2 >= arm_v) || (sea_arty && wpn_v + arm_v >= 6)) {
                         parse_chs_name(buf, Chassis[chs].defsv_name_lrg);
                     } else if (wpn_v >= 2) {
                         parse_chs_name(buf, Chassis[chs].defsv1_name);
@@ -650,7 +698,7 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
                         parse_chs_name(buf, Chassis[chs].defsv2_name);
                     }
                 } else if (value >= 1) { // Offensive
-                    if (wpn_v >= 8 && arm_v*2 >= wpn_v) {
+                    if ((wpn_v >= 8 && arm_v*2 >= wpn_v) || (sea_arty && wpn_v + arm_v >= 6)) {
                         parse_chs_name(buf, Chassis[chs].offsv_name_lrg);
                     } else if (triad != TRIAD_AIR && arm_v >= 2) {
                         parse_chs_name(buf, Chassis[chs].offsv1_name);

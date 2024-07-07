@@ -1107,7 +1107,6 @@ int unit_score(int unit_id, int faction, int cfactor, int minerals, int accumula
         {ABL_AIR_SUPERIORITY, 2},
         {ABL_ALGO_ENHANCEMENT, 5},
         {ABL_AMPHIBIOUS, -2},
-        {ABL_ARTILLERY, -1},
         {ABL_DROP_POD, 3},
         {ABL_EMPATH, 2},
         {ABL_TRANCE, 3},
@@ -1133,6 +1132,14 @@ int unit_score(int unit_id, int faction, int cfactor, int minerals, int accumula
         if (u->triad() == TRIAD_SEA && u->is_combat_unit()
         && defense_value(unit_id) > offense_value(unit_id)) {
             v -= 20;
+        }
+    }
+    if (u->ability_flags & ABL_ARTILLERY) {
+        if (conf.long_range_artillery > 0 && Rules->artillery_max_rng <= 4
+        && !*MultiplayerActive && u->triad() == TRIAD_SEA && u->offense_value() > 0) {
+            v += (conf.long_range_artillery > 1 ? 24 : 16);
+        } else {
+            v -= 8;
         }
     }
     if (u->ability_flags & ABL_POLICE_2X && need_police(faction)) {

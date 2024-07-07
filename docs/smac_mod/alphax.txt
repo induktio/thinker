@@ -521,7 +521,7 @@ Empath Song,            2, CentEmp,  Empath,    000010001111, +50% attack vs. Ps
 Polymorphic Encryption, 1, Algor,    Secure,    000000111111, x2 cost to subvert
 Fungicide Tanks,        1, Fossil,   Fungicidal,000000010111, Clear fungus at double speed
 High Morale,            1, Integ,    Trained,   000000001111, Gains morale upgrade
-Heavy Artillery,       -7, Poly,     Artillery, 000010001001, Bombards
+Heavy Artillery,       -4, Poly,     Artillery, 000010001011, Bombards
 Clean Reactor,          2, BioEng,   Clean,     000001111111, Requires no support
 Blink Displacer,        1, Matter,   Blink,     000000001111, Bypass base defenses
 Hypnotic Trance,       -1, Brain,    Trance,    000010111111, +50% defense vs. Psi

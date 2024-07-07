@@ -40,14 +40,14 @@ int tech_cost(int faction, int tech) {
 
     if (tech >= 0) {
         level = tech_level(tech, 0);
-        for (int i=1; i < MaxPlayerNum; i++) {
-            if (i != faction && has_tech(tech, i)
+        for (int i = 1; i < MaxPlayerNum; i++) {
+            if (i != faction && is_alive(i) && has_tech(tech, i)
             && has_treaty(faction, i, DIPLO_COMMLINK)) {
                 owners += (has_treaty(faction, i, DIPLO_PACT|DIPLO_HAVE_INFILTRATOR) ? 2 : 1);
             }
         }
     }
-    for (int i=Tech_ID_First; i <= Tech_ID_Last; i++) {
+    for (int i = Tech_ID_First; i <= Tech_ID_Last; i++) {
         if (Tech[i].preq_tech1 != TECH_Disable && has_tech(i, faction)) {
             our_techs++;
         }

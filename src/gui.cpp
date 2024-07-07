@@ -1568,5 +1568,50 @@ void* This, const char* filename, const char* label, int a4, int a5, int a6, int
     return BasePop_start(This, filename, label, a4, a5, a6, a7);
 }
 
+int __cdecl mod_action_move(int veh_id, int x, int y)
+{
+    VEH* veh = &Vehs[veh_id];
+    if (*MultiplayerActive) {
+        return action_move(veh_id, x, y);
+    }
+    if (veh->faction_id == *CurrentPlayerFaction) {
+        if (!veh_ready(veh_id)) {
+            return NetMsg_pop(NetMsg, "UNITMOVED", 5000, 0, NULL);
+        }
+    }
+    int veh_range = arty_range(veh->unit_id);
+    if (map_range(veh->x, veh->y, x, y) <= veh_range) {
+        int veh_id_tgt = stack_fix(veh_at(x, y));
+        if (veh_id_tgt >= 0) {
+            if (veh->faction_id != Vehs[veh_id_tgt].faction_id
+            && !has_pact(veh->faction_id, Vehs[veh_id_tgt].faction_id)) {
+                int offset = radius_move2(veh->x, veh->y, x, y, TableRange[veh_range]);
+                if (offset >= 0) {
+                    *veh_attack_flags = 3;
+                    return battle_fight_1(veh_id, offset, 1, 1, 0);
+                }
+            }
+        } else {
+            return action_destroy(veh_id, 0, x, y);
+        }
+    } else {
+        return NetMsg_pop(NetMsg, "OUTOFRANGE", 5000, 0, 0);
+    }
+    return 0;
+}
+
+int __cdecl MapWin_right_menu_arty(int veh_id, int x, int y)
+{
+    VEH* veh = &Vehs[veh_id];
+    return map_range(veh->x, veh->y, x, y) <= arty_range(veh->unit_id);
+}
+
+void __thiscall Console_arty_cursor_on(void* This, int cursor_type, int veh_id)
+{
+    int veh_range = arty_range(Vehs[veh_id].unit_id);
+    Console_cursor_on(This, cursor_type, veh_range);
+}
+
+
 
 

@@ -303,6 +303,7 @@ These edits will introduce fairly minimal differences to the vanilla game mechan
 12. Crawler, Needlejet, Chopper and Gravship chassis costs are slightly increased overall. This results in about 10 mineral increase for most prototypes. For example the default Supply Crawler prototype costs 40 minerals.
 13. When using SMAC in SMACX mod, the documentation displayed in the game will contain additional information about game engine limitations, and many bugs are marked with KNOWN BUG tag.
 14. The amount of techs that grant automatic morale boosts for probe teams is reduced from five to two. These techs are now Pre-Sentient Algorithms and Digital Sentience. This makes it much harder to build elite-level probe teams.
+15. Cost factor for Artillery special ability is changed to "increases with speed value" instead of "armor+speed value". It is also possible to add Artillery on ships to increase their range when `long_range_artillery` is enabled.
 
 
 SMAC in SMACX mod

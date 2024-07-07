@@ -2064,7 +2064,7 @@ int defender_count(int x, int y, int veh_skip_id) {
             }
         }
     }
-    return (num > 2 ? (num+1)/2 : num/2);
+    return (num > 1 ? (num+1)/2 : 0);
 }
 
 /*
@@ -2807,7 +2807,7 @@ int combat_move(const int id) {
         best_score = 0;
         tx = -1;
         ty = -1;
-        for (i = 1; i < TableRange[Rules->artillery_max_rng]; i++) {
+        for (i = 1; i < TableRange[arty_range(veh->unit_id)]; i++) {
             int x2 = wrap(veh->x + TableOffsetX[i]);
             int y2 = veh->y + TableOffsetY[i];
             if ((sq = mapsq(x2, y2)) && pm_enemy[x2][y2] > 0) {
