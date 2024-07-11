@@ -149,7 +149,7 @@ struct MAP {
         return visibility & (1 << faction);
     }
     bool is_owned() {
-        return owner > 0;
+        return owner >= 0;
     }
     bool is_land_region() {
         return region < 63; // Skip pole tiles

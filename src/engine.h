@@ -481,6 +481,11 @@ extern FMapWin_init MapWin_init;
 extern FMapWin MapWin_init_dummy;
 extern FMapWin MapWin_close;
 
+typedef int(__thiscall *FGraphicWin_GraphicWin)(Win* This);
+typedef int(__thiscall *FGraphicWin_close)(Win* This);
+typedef int(__thiscall *FGraphicWin_init)(
+    Win* This, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, int a10);
+typedef int(__thiscall *FGraphicWin_init2)(Win* This, int* a2, char* a3, int a4, int a5, int a6, int a7);
 typedef int(__thiscall *FGraphicWin_fill)(Win* This, int a2);
 typedef int(__thiscall *FGraphicWin_fill2)(Win* This, RECT* rc, int a3);
 typedef int(__thiscall *FGraphicWin_fill3)(Win* This, int x, int y, int a4, int a5, int a6);
@@ -493,7 +498,12 @@ typedef int(__thiscall *FGraphicWin_soft_update3)(Win* This, LONG a2, LONG a3, i
 typedef int(__thiscall *FGraphicWin_soft_update2)(Win* This);
 typedef int(__thiscall *FGraphicWin_soft_update)(Win* This, RECT* rc);
 typedef int(__thiscall *FGraphicWin_redraw)(Win* This);
+typedef int(__thiscall *FGraphicWin_delete)(Win* This, int a2);
 
+extern FGraphicWin_GraphicWin GraphicWin_GraphicWin;
+extern FGraphicWin_close GraphicWin_close;
+extern FGraphicWin_init GraphicWin_init;
+extern FGraphicWin_init2 GraphicWin_init2;
 extern FGraphicWin_fill GraphicWin_fill;
 extern FGraphicWin_fill2 GraphicWin_fill2;
 extern FGraphicWin_fill3 GraphicWin_fill3;
@@ -506,9 +516,11 @@ extern FGraphicWin_soft_update3 GraphicWin_soft_update3;
 extern FGraphicWin_soft_update2 GraphicWin_soft_update2;
 extern FGraphicWin_soft_update GraphicWin_soft_update;
 extern FGraphicWin_redraw GraphicWin_redraw;
+extern FGraphicWin_delete GraphicWin_delete;
 
+typedef int(__thiscall *FBuffer_Buffer)(Buffer* This);
 typedef int(__thiscall *FBuffer_resize)(Buffer* This, int a2, int a3);
-typedef int(__stdcall *FBuffer_load_pcx)(char* a1, int a2, int a3, int a4);
+typedef int(__thiscall *FBuffer_load_pcx)(Buffer* This, char* filename, int a3, int a4, int a5);
 typedef int(__thiscall *FBuffer_set_clip)(Buffer* This, RECT* rc);
 typedef int(__thiscall *FBuffer_set_clip_)(Buffer* This, int xLeft, int yTop, int a4, int a5);
 typedef int(__thiscall *FBuffer_fill)(Buffer* This, int x, int y, int w, int h, int a6);
@@ -544,8 +556,7 @@ typedef int(__thiscall *FBuffer_wrap_cent)(Buffer* This, LPCSTR lpString, int a3
 typedef int(__thiscall *FBuffer_wrap_cent3)(Buffer* This, LPCSTR lpString, int a3);
 typedef int(__thiscall *FBuffer_change_color)(Buffer* This, char a2, char a3);
 typedef int(__thiscall *FBuffer_sync_to_palette)(Buffer* This, Palette* a2);
-typedef int(__thiscall *FBuffer_clear_links)(Buffer* This);
-typedef int(__thiscall *FBuffer_write_pcx)(Buffer* This, char* a2);
+typedef int(__thiscall *FBuffer_write_pcx)(Buffer* This, char* filename);
 typedef int(__thiscall *FBuffer_fill2)(Buffer* This, int a2);
 typedef int(__thiscall *FBuffer_fill3)(Buffer* This, RECT* rc, int a3);
 typedef int(__thiscall *FBuffer_copy)(
@@ -557,13 +568,16 @@ typedef int(__thiscall *FBuffer_hline)(Buffer* This, int x1, int x2, int y1, int
 typedef int(__thiscall *FBuffer_vline)(Buffer* This, int a2, int a3, int a4, char color);
 typedef int(__thiscall *FBuffer_dotted_vline)(Buffer* This, int a2, int a3, int a4, char a5);
 typedef int(__thiscall *FBuffer_get_pixel)(Buffer* This, int a2, int a3);
-typedef int(__cdecl *FBuffer_get_pcx_dimensions)(char* a1, int a2, int a3);
-typedef int(__thiscall *FBuffer_load_pcx2)(Buffer* This, char* a2, int a3, int a4, int a5, int a6);
+typedef int(__cdecl *FBuffer_get_pcx_dimensions)(char* filename, int a2, int a3);
+typedef int(__thiscall *FBuffer_load_pcx2)(Buffer* This, int a2, int a3, int a4, int a5, int a6);
 typedef int(__thiscall *FBuffer_copy_mask)(
     Buffer* This, const RECT* rc, int a3, int a4, LONG a5, LONG a6, int a7, int a8, char a9);
 typedef int(__thiscall *FBuffer_box_sprite)(Buffer* This, int* a2, DWORD* a3);
 typedef int(__thiscall *FBuffer_box)(Buffer* This, RECT* rc, int color_h, int color_v);
 
+extern FBuffer_Buffer Buffer_Buffer;
+extern FBuffer_Buffer Buffer_dtor;
+extern FBuffer_Buffer Buffer_close;
 extern FBuffer_resize Buffer_resize;
 extern FBuffer_load_pcx Buffer_load_pcx;
 extern FBuffer_set_clip Buffer_set_clip;
@@ -599,7 +613,7 @@ extern FBuffer_wrap_cent Buffer_wrap_cent;
 extern FBuffer_wrap_cent3 Buffer_wrap_cent3;
 extern FBuffer_change_color Buffer_change_color;
 extern FBuffer_sync_to_palette Buffer_sync_to_palette;
-extern FBuffer_clear_links Buffer_clear_links;
+extern FBuffer_Buffer Buffer_clear_links;
 extern FBuffer_write_pcx Buffer_write_pcx;
 extern FBuffer_fill2 Buffer_fill2;
 extern FBuffer_fill3 Buffer_fill3;

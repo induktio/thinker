@@ -862,15 +862,18 @@ bool patch_setup(Config* cf) {
             }
         }
         // Restore the planet preview background on game setup screen for all resolutions
-        if (cf->window_width >= 1024) {
-            short_jump(0x4AE66C); // SetupWin_draw_item resolution checks
-            write_call(0x4AE6D5, (int)SetupWin_buffer_draw);
-            write_call(0x4AE710, (int)SetupWin_buffer_copy);
-            write_call(0x4AE73B, (int)SetupWin_soft_update3);
-        }
+        short_jump(0x4AE66C); // SetupWin_draw_item resolution checks
+        write_call(0x4AE6D5, (int)SetupWin_buffer_draw);
+        write_call(0x4AE710, (int)SetupWin_buffer_copy);
+        write_call(0x4AE73B, (int)SetupWin_soft_update3);
         // Draw zoomable support view on the base window
         write_call(0x40F1C3, (int)BaseWin_draw_support); // BaseWin::draw_farm
         write_call(0x40F1EB, (int)BaseWin_draw_support); // BaseWin::draw_farm
+        // Update interlude and credits backgrounds
+        write_call(0x45F3C2, (int)window_scale_load_pcx); // Interlude::exec
+        write_call(0x5D552E, (int)window_scale_load_pcx); // GraphicWin::load_pcx
+        write_call(0x428A40, (int)Credits_GraphicWin_init); // Credits::exec
+        write_call(0x428AB9, (int)Credits_GraphicWin_init); // Credits::exec
     }
 
     /*

@@ -38,6 +38,7 @@ bool base_can_riot(int base_id, bool allow_staple);
 bool base_pop_boom(int base_id);
 bool can_use_teleport(int base_id);
 bool has_facility(FacilityId item_id, int base_id);
+bool has_free_facility(FacilityId item_id, int faction_id);
 bool __cdecl has_fac_built(FacilityId item_id, int base_id);
 void __cdecl set_fac(FacilityId item_id, int base_id, bool add);
 int __cdecl fac_maint(int facility_id, int faction_id);

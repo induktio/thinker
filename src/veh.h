@@ -30,7 +30,7 @@ int __cdecl mod_is_bunged(int faction, VehChassis chs, VehWeapon wpn, VehArmor a
 int __cdecl mod_name_proto(char* name, int unit_id, int faction_id,
     VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec);
 
-VehArmor best_armor(int faction, bool cheap);
+VehArmor best_armor(int faction, int max_cost);
 VehWeapon best_weapon(int faction);
 VehReactor best_reactor(int faction);
 int offense_value(int unit_id);

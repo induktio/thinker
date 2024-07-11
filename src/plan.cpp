@@ -8,8 +8,8 @@ void design_units(int faction) {
     CAbility& arty = Ability[ABL_ID_ARTILLERY];
     VehReactor rec = best_reactor(i);
     VehWeapon wpn = best_weapon(i);
-    VehArmor arm = best_armor(i, false);
-    VehArmor arm_cheap = best_armor(i, true);
+    VehArmor arm = best_armor(i, -1);
+    VehArmor arm_cheap = best_armor(i, max(3, Weapon[wpn].cost/2));
     VehChassis chs_land = has_chassis(i, CHS_HOVERTANK) ? CHS_HOVERTANK :
         (has_chassis(i, CHS_SPEEDER) ? CHS_SPEEDER : CHS_INFANTRY);
     VehChassis chs_ship = has_chassis(i, CHS_CRUISER) ? CHS_CRUISER :
@@ -39,17 +39,20 @@ void design_units(int faction) {
             && has_ability(i, ABL_ID_ARTILLERY, chs_ship, wpn);
         if (long_range) {
             VehArmor arm_ship = (rec >= REC_FUSION || !arty.cost_increase_with_speed())
-                && !arty.cost_increase_with_armor() ? arm_cheap : ARM_NO_ARMOR;
+                && !arty.cost_increase_with_armor()
+                ? (rec >= REC_QUANTUM ? arm : arm_cheap) : ARM_NO_ARMOR;
             uint32_t abls = ABL_ARTILLERY
                 | (twoabl && has_ability(i, ABL_ID_AAA, chs_ship, wpn)
-                && aaa.cost >= 0 && aaa.cost <= (rec >= REC_FUSION)
-                && wpn_v <= 10 && arm_ship != ARM_NO_ARMOR ? ABL_AAA : ABL_NONE);
+                && (rec >= REC_QUANTUM || Weapon[wpn].cost <= 6 * rec
+                || !arty.cost_increase_with_speed())
+                && arm_ship != ARM_NO_ARMOR ? ABL_AAA : ABL_NONE);
             create_proto(i, chs_ship, wpn, arm_ship, (VehAblFlag)abls, rec, PLAN_OFFENSIVE);
         }
         if (!long_range || arty.cost < -1 || arty.cost > 2) {
-            VehArmor arm_ship = wpn_v >= 6 || rec >= REC_FUSION ? arm_cheap : ARM_NO_ARMOR;
+            VehArmor arm_ship = wpn_v >= 6 || rec >= REC_FUSION
+                ? (rec >= REC_QUANTUM ? arm : arm_cheap) : ARM_NO_ARMOR;
             VehAblFlag abls = has_ability(i, ABL_ID_AAA, chs_ship, wpn)
-                && aaa.cost >= 0 && aaa.cost <= 1 + (rec >= REC_FUSION)
+                && (rec >= REC_FUSION || (aaa.cost >= -1 && aaa.cost <= rec))
                 && arm_ship != ARM_NO_ARMOR ? ABL_AAA : ABL_NONE;
             create_proto(i, chs_ship, wpn, arm_ship, abls, rec, PLAN_OFFENSIVE);
         }

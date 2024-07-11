@@ -12,7 +12,7 @@ bool un_charter() {
 bool victory_done() {
     // TODO: Check for scenario victory conditions
     return *GameState & (STATE_VICTORY_CONQUER | STATE_VICTORY_DIPLOMATIC | STATE_VICTORY_ECONOMIC)
-        || has_project(FAC_ASCENT_TO_TRANSCENDENCE, -1);
+        || has_project(FAC_ASCENT_TO_TRANSCENDENCE);
 }
 
 bool valid_player(int faction) {

@@ -677,20 +677,21 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
         }
         if (combat) {
             if (!garrison) {
-                if (triad == TRIAD_LAND && Weapon[wpn].offense_value == 1) {
+                if (triad == TRIAD_LAND && wpn_v == 1) {
                     strncat(buf, (*TextLabels)[146], 16); // Scout
                     strncat(buf, " ", 2);
-                } else if (triad == TRIAD_LAND && Weapon[wpn].offense_value == 2 && spd_v > 1) {
+                } else if (triad == TRIAD_LAND && wpn_v == 2 && !psi_wpn && spd_v > 1) {
                     strncat(buf, (*TextLabels)[182], 16); // Recon
                     strncat(buf, " ", 2);
-                } else {
+                } else if (triad == TRIAD_LAND || wpn_v != 1 || arm_v == 1) {
                     parse_wpn_name(buf, wpn, i > 0);
                 }
             }
             if ((!arty && !marine && !intercept) || (arty && spd_v > 1)) {
                 int value = wpn_v - arm_v;
                 if (value <= -1) { // Defensive
-                    if ((arm_v >= 8 && wpn_v*2 >= arm_v) || (sea_arty && wpn_v + arm_v >= 6)) {
+                    if ((arm_v >= 8 && wpn_v*2 >= min(24, arm_v))
+                    || (sea_arty && wpn_v + arm_v >= 6)) {
                         parse_chs_name(buf, Chassis[chs].defsv_name_lrg);
                     } else if (wpn_v >= 2) {
                         parse_chs_name(buf, Chassis[chs].defsv1_name);
@@ -698,7 +699,8 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
                         parse_chs_name(buf, Chassis[chs].defsv2_name);
                     }
                 } else if (value >= 1) { // Offensive
-                    if ((wpn_v >= 8 && arm_v*2 >= wpn_v) || (sea_arty && wpn_v + arm_v >= 6)) {
+                    if ((wpn_v >= 8 && arm_v*2 >= min(24, wpn_v))
+                    || (sea_arty && wpn_v + arm_v >= 6)) {
                         parse_chs_name(buf, Chassis[chs].offsv_name_lrg);
                     } else if (triad != TRIAD_AIR && arm_v >= 2) {
                         parse_chs_name(buf, Chassis[chs].offsv1_name);
@@ -707,7 +709,7 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
                     } else {
                         parse_chs_name(buf, Chassis[chs].offsv2_name);
                     }
-                } else if (triad != LAND || spd_v == 1) { // Scout units
+                } else if (triad == TRIAD_LAND && spd_v == 1) { // Scout units
                     parse_chs_name(buf, Chassis[chs].offsv1_name);
                 } else {
                     parse_chs_name(buf, Chassis[chs].offsv2_name);
@@ -759,14 +761,14 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
     return 0;
 }
 
-VehArmor best_armor(int faction, bool cheap) {
+VehArmor best_armor(int faction, int max_cost) {
     int ci = ARM_NO_ARMOR;
     int cv = 0;
     for (int i = ARM_NO_ARMOR; i <= ARM_RESONANCE_8_ARMOR; i++) {
         if (has_tech(Armor[i].preq_tech, faction)) {
             int val = Armor[i].defense_value;
             int cost = Armor[i].cost;
-            if (cheap && (cost > 5 || cost > val)) {
+            if (max_cost >= 0 && (cost > max_cost || cost > val + 3)) {
                 continue;
             }
             int iv = val * (i >= ARM_PULSE_3_ARMOR ? 5 : 4);

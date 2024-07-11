@@ -10,8 +10,8 @@ bool has_aircraft(int faction);
 bool has_ships(int faction);
 bool has_orbital_drops(int faction);
 bool has_terra(int faction, FormerItem act, bool ocean);
+bool has_project(FacilityId item_id);
 bool has_project(FacilityId item_id, int faction);
-bool has_free_facility(FacilityId item_id, int faction);
 int facility_count(FacilityId item_id, int faction);
 int prod_count(int item_id, int faction, int base_skip_id);
 

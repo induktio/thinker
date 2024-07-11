@@ -87,24 +87,17 @@ bool has_terra(int faction, FormerItem act, bool ocean) {
     return has_tech(preq_tech, faction);
 }
 
-bool has_project(FacilityId item_id, int faction) {
-    /* If faction_id is negative, check if anyone has built the project. */
-    assert(faction < MaxPlayerNum && item_id >= SP_ID_First && item_id <= FAC_EMPTY_SP_64);
-    int i = SecretProjects[item_id - SP_ID_First];
-    return i >= 0 && (faction < 0 || Bases[i].faction_id == faction);
+bool has_project(FacilityId item_id) {
+    assert(item_id >= SP_ID_First && item_id <= FAC_EMPTY_SP_64);
+    int base_id = SecretProjects[item_id - SP_ID_First];
+    return base_id >= 0;
 }
 
-bool has_free_facility(FacilityId item_id, int faction) {
-    MFaction& m = MFactions[faction];
-    for (int i=0; i < m.faction_bonus_count; i++) {
-        if (m.faction_bonus_val1[i] == item_id
-        && (m.faction_bonus_id[i] == FCB_FREEFAC
-        || (m.faction_bonus_id[i] == FCB_FREEFAC_PREQ
-        && has_tech(Facility[item_id].preq_tech, faction)))) {
-            return true;
-        }
-    }
-    return false;
+bool has_project(FacilityId item_id, int faction) {
+    assert(faction >= 0 && faction < MaxPlayerNum);
+    assert(item_id >= SP_ID_First && item_id <= FAC_EMPTY_SP_64);
+    int base_id = SecretProjects[item_id - SP_ID_First];
+    return base_id >= 0 && faction >= 0 && Bases[base_id].faction_id == faction;
 }
 
 int facility_count(FacilityId item_id, int faction) {
@@ -207,10 +200,9 @@ bool allow_expand(int faction) {
     if (*GameRules & RULES_SCN_NO_COLONY_PODS || *BaseCount >= MaxBaseNum * 19 / 20) {
         return false;
     }
-    for (int i=1; i < MaxPlayerNum && conf.expansion_autoscale > 0; i++) {
-        if (is_human(i)) {
-            bases = Factions[i].base_count;
-            break;
+    for (int i = 1; i < MaxPlayerNum && conf.expansion_autoscale > 0; i++) {
+        if (is_human(i) && is_alive(i)) {
+            bases = max(bases, Factions[i].base_count);
         }
     }
     if (conf.expansion_limit > 0) {

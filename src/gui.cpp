@@ -1180,27 +1180,35 @@ int show_mod_menu()
 
 int __thiscall SetupWin_buffer_draw(Buffer* src, Buffer* dst, int a3, int a4, int a5, int a6, int a7)
 {
-    const int moon_positions[][4] = {
-        {8, 287, 132, 132},
-        {221, 0, 80, 51},
-        {348, 94, 55, 57},
-    };
-    for (auto& p : moon_positions) {
-        int x = conf.window_width  * p[0] / 1024;
-        int y = conf.window_height * p[1] / 768;
-        int w = conf.window_width  * p[2] / 1024;
-        int h = conf.window_height * p[3] / 768;
-        Buffer_copy2(src, dst, p[0], p[1], p[2], p[3], x, y, w, h);
+    if (conf.window_width >= 1024) {
+        const int moon_positions[][4] = {
+            {8, 287, 132, 132},
+            {221, 0, 80, 51},
+            {348, 94, 55, 57},
+        };
+        for (auto& p : moon_positions) {
+            int x = conf.window_width  * p[0] / 1024;
+            int y = conf.window_height * p[1] / 768;
+            int w = conf.window_width  * p[2] / 1024;
+            int h = conf.window_height * p[3] / 768;
+            Buffer_copy2(src, dst, p[0], p[1], p[2], p[3], x, y, w, h);
+        }
+        return 0;
+    } else {
+        return Buffer_draw(src, dst, a3, a4, a5, a6, a7);
     }
-    return 0;
 }
 
 int __thiscall SetupWin_buffer_copy(Buffer* src, Buffer* dst,
 int xSrc, int ySrc, int xDst, int yDst, int wSrc, int hSrc)
 {
-    int wDst = conf.window_width * wSrc / 1024;
-    return Buffer_copy2(src, dst, xSrc, ySrc, wSrc, hSrc,
-        conf.window_width - wDst, yDst, wDst, conf.window_height);
+    if (conf.window_width >= 1024) {
+        int wDst = conf.window_width * wSrc / 1024;
+        return Buffer_copy2(src, dst, xSrc, ySrc, wSrc, hSrc,
+            conf.window_width - wDst, yDst, wDst, conf.window_height);
+    } else {
+        return Buffer_copy(src, dst, xSrc, ySrc, xDst, yDst, wSrc, hSrc);
+    }
 }
 
 int __thiscall SetupWin_soft_update3(Win* This, int a2, int a3, int a4, int a5)
@@ -1209,8 +1217,40 @@ int __thiscall SetupWin_soft_update3(Win* This, int a2, int a3, int a4, int a5)
     return GraphicWin_soft_update2(This);
 }
 
-int __thiscall BaseWin_popup_start(Win* This,
-const char* filename, const char* label, int a4, int a5, int a6, int a7)
+int __thiscall window_scale_load_pcx(Buffer* This, char* filename, int a3, int a4, int a5)
+{
+    int value;
+    if (conf.window_width >= 1024) {
+        Buffer image;
+        Buffer_Buffer(&image);
+        value = Buffer_load_pcx(&image, filename, a3, a4, a5);
+        Buffer_resize(This, conf.window_width, conf.window_height);
+        Buffer_copy2(&image, This, 0, 0, image.stRect->right, image.stRect->bottom,
+            0, 0, conf.window_width, conf.window_height);
+        Buffer_dtor(&image);
+    } else {
+        value = Buffer_load_pcx(This, filename, a3, a4, a5);
+    }
+    return value;
+}
+
+int __thiscall Credits_GraphicWin_init(
+Win* This, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, int a10)
+{
+    if (conf.window_width >= 1024) {
+        return GraphicWin_init(This,
+            a2 * conf.window_width / 1024,
+            a3 * conf.window_height / 768,
+            a4 * conf.window_width / 1024,
+            a5 * conf.window_height / 768,
+            a6, a7, a8, a9, a10);
+    } else {
+        return GraphicWin_init(This, a2, a3, a4, a5, a6, a7, a8, a9, a10);
+    }
+}
+
+int __thiscall BaseWin_popup_start(
+Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7)
 {
     BASE* base = *CurrentBase;
     Faction* f = &Factions[base->faction_id];

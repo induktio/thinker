@@ -173,7 +173,7 @@ will only get called from production_phase > base_upkeep.
 int __cdecl mod_base_growth() {
     BASE* base = *CurrentBase;
     delay_base_riot = base->talent_total >= base->drone_total
-        && ~base->state_flags & BSTATE_DRONE_RIOTS_ACTIVE;
+        && !(base->state_flags & BSTATE_DRONE_RIOTS_ACTIVE);
     int cur_pop = base->pop_size;
     int value = base_growth();
     assert(*CurrentBase == base);
@@ -400,7 +400,7 @@ int hurry_cost(int base_id, int item_id, int hurry_mins) {
     if (item_id <= -SP_ID_First) {
         cost *= (b->minerals_accumulated < 4*cost_factor(b->faction_id, 1, -1) ? 4 : 2);
     }
-    if (has_project(FAC_VOICE_OF_PLANET, -1)) {
+    if (has_project(FAC_VOICE_OF_PLANET)) {
         cost *= 2;
     }
     cost = cost * m->rule_hurry / 100;
@@ -457,19 +457,19 @@ bool can_build(int base_id, int fac_id) {
     Faction* f = &Factions[faction];
 
     if (fac_id >= SP_ID_First && fac_id <= FAC_EMPTY_SP_64) {
-        if (SecretProjects[fac_id-SP_ID_First] != SP_Unbuilt
+        if (SecretProjects[fac_id - SP_ID_First] != SP_Unbuilt
         || *GameRules & RULES_SCN_NO_BUILDING_SP) {
             return false;
         }
     }
     if (fac_id == FAC_ASCENT_TO_TRANSCENDENCE || fac_id == FAC_VOICE_OF_PLANET) {
-        if (is_alien(faction) || ~*GameRules & RULES_VICTORY_TRANSCENDENCE) {
+        if (is_alien(faction) || !(*GameRules & RULES_VICTORY_TRANSCENDENCE)) {
             return false;
         }
     }
     if (fac_id == FAC_ASCENT_TO_TRANSCENDENCE) {
-        return has_project(FAC_VOICE_OF_PLANET, -1)
-            && !has_project(FAC_ASCENT_TO_TRANSCENDENCE, -1);
+        return has_project(FAC_VOICE_OF_PLANET)
+            && !has_project(FAC_ASCENT_TO_TRANSCENDENCE);
     }
     if (fac_id == FAC_HEADQUARTERS && find_hq(faction) >= 0) {
         return false;
@@ -615,7 +615,7 @@ bool base_pop_boom(int base_id) {
 
 bool can_use_teleport(int base_id) {
     return has_fac_built(FAC_PSI_GATE, base_id)
-        && ~Bases[base_id].state_flags & BSTATE_PSI_GATE_USED;
+        && !(Bases[base_id].state_flags & BSTATE_PSI_GATE_USED);
 }
 
 bool has_facility(FacilityId item_id, int base_id) {
@@ -641,6 +641,19 @@ bool has_facility(FacilityId item_id, int base_id) {
         }
     }
     return has_fac_built(item_id, base_id);
+}
+
+bool has_free_facility(FacilityId item_id, int faction_id) {
+    MFaction& m = MFactions[faction_id];
+    for (int i = 0; i < m.faction_bonus_count; i++) {
+        if (m.faction_bonus_val1[i] == item_id
+        && (m.faction_bonus_id[i] == FCB_FREEFAC
+        || (m.faction_bonus_id[i] == FCB_FREEFAC_PREQ
+        && has_tech(Facility[item_id].preq_tech, faction_id)))) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool __cdecl has_fac_built(FacilityId item_id, int base_id) {
@@ -670,7 +683,7 @@ int __cdecl fac_maint(int facility_id, int faction_id) {
     CFacility& facility = Facility[facility_id];
     MFaction& meta = MFactions[faction_id];
 
-    for (int i=0; i < meta.faction_bonus_count; i++) {
+    for (int i = 0; i < meta.faction_bonus_count; i++) {
         if (meta.faction_bonus_val1[i] == facility_id
         && (meta.faction_bonus_id[i] == FCB_FREEFAC
         || (meta.faction_bonus_id[i] == FCB_FREEFAC_PREQ
@@ -819,7 +832,7 @@ int consider_hurry() {
         int delay = clamp(DIFF_TRANSCEND - *DiffLevel + (f->ranking > 5 + random(4)), 0, 3);
         int threshold = max(Facility[-t].cost/8, 4*cost_factor(b->faction_id, 1, -1));
 
-        if (has_project((FacilityId)-t, -1) || turns < 2 + delay
+        if (has_project((FacilityId)-t) || turns < 2 + delay
         || (b->defend_goal > 3 && p->enemy_factions > 0)
         || b->mineral_surplus < 4
         || b->minerals_accumulated < threshold) { // Avoid double cost threshold
@@ -1122,7 +1135,7 @@ int unit_score(int unit_id, int faction, int cfactor, int minerals, int accumula
     UNIT* u = &Units[unit_id];
     int v = 18 * (defend ? defense_value(unit_id) : offense_value(unit_id));
     if (v < 0) {
-        v = (defend ? Armor[best_armor(faction, false)].defense_value
+        v = (defend ? Armor[best_armor(faction, -1)].defense_value
             : Weapon[best_weapon(faction)].offense_value)
             * (conf.ignore_reactor_power ? REC_FISSION : best_reactor(faction))
             + plans[faction].psi_score * 12;
@@ -1365,7 +1378,7 @@ int select_build(int base_id) {
     bool core_base = minerals >= plans[faction].project_limit;
     bool project_change = base->item_is_project()
         && !can_build(base_id, -base->item())
-        && ~base->state_flags & BSTATE_PRODUCTION_DONE
+        && !(base->state_flags & BSTATE_PRODUCTION_DONE)
         && base->minerals_accumulated > Rules->retool_exemption;
     bool allow_units = can_build_unit(base_id, -1) && !project_change;
     bool allow_supply = !sea_base && gov & (GOV_MAY_PROD_COLONY_POD | GOV_MAY_PROD_TERRAFORMERS);

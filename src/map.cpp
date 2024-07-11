@@ -243,11 +243,9 @@ int __cdecl mod_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, in
     MAP* sq_a = mapsq(x1, y1);
     MAP* sq_b = mapsq(x2, y2);
 
-    if (DEBUG && sq_b && (unit_id != BSC_SEALURK
-    || !sq_b->is_fungus() || sq_b->alt_level() != ALT_OCEAN_SHELF)) {
+    if (DEBUG && sq_a && sq_b) {
         assert(value == hex_cost(unit_id, faction_id, x1, y1, x2, y2, toggle));
     }
-
     if (conf.magtube_movement_rate > 0 && Units[unit_id].triad() != TRIAD_AIR) {
         if (!is_ocean(sq_a) && !is_ocean(sq_b)) {
             if (sq_a->items & (BIT_BASE_IN_TILE | BIT_MAGTUBE)
@@ -372,7 +370,7 @@ int __cdecl mod_base_find3(int x, int y, int faction1, int region, int faction2,
 
 int __cdecl mod_whose_territory(int faction_id, int x, int y, int* base_id, int ignore_comm) {
     MAP* sq = mapsq(x, y);
-    if (!sq || sq->owner <= 0) { // Fix: invalid coordinates return -1 (no owner)
+    if (!sq || sq->owner < 0) { // Fix: invalid coordinates return -1 (no owner)
         return -1;
     }
     if (faction_id != sq->owner) {

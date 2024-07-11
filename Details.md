@@ -384,7 +384,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 14. Fix visual bug where population icons in base window would randomly switch their type when clicking on them.
 15. Patch AIs to initiate much less diplomacy dialogs when the player captures their bases. Previously this happened at least once for every turn the AI loses any bases and would repeat the same dialog every time if the player didn't agree to the peace terms. The patch makes the initiation of dialog more dependent on random chance unless the AI would finally accept surrender terms.
 16. Patch genetic warfare probe team action to cause much less damage for any units defending the base. In vanilla game mechanics even one attack instantly inflicted almost 80% damage. In the patched version population loss mechanic is unaffected, but even multiple attacks should do substantially less damage for defender units.
-17. Patch terrain drawing engine to render more detailed tiles when zooming out from the default level instead of the blocky, less detailed versions on almost every zoom out level. Main menu setup screen will update the planet preview on all resolutions. Base window support tab will also render a zoomable terrain view that can be adjusted with the mousewheel (render_high_detail).
+17. Patch terrain drawing engine to render more detailed tiles when zooming out from the default level instead of the blocky, less detailed versions. Main menu setup screen will update the planet preview on all resolutions. Interlude and credits backgrounds are scaled on all resolutions. Base window support tab will also render a zoomable terrain view that can be adjusted with the mousewheel (render_high_detail).
 18. Modify multiplayer setup screen to use average values for each of the random map generator settings, instead of the highest possible like previously.
 19. Fix potential crash when a game is loaded after using Edit Map > Generate/Remove Fungus > No Fungus.
 20. Fix foreign base names being visible in unexplored tiles when issuing move to or patrol orders to the tiles.
@@ -427,10 +427,10 @@ Thinker also includes the following non-engine fixes from Scient's patch for spe
 Installing the other modified files provided by Scient's patch (such as wav files) is purely optional, and Thinker does not include those files by default since it would require overwriting files in the base game.
 
 1. [BUG] Needlejet "DATA" edit window via scenario editor wouldn't render properly making it so you couldn't edit the stats. (EDITVEH2A)
-2. [BUG] When attempting to build a sea base inside another faction's territorial waters, you were suppose to receive warning messages that were mislabeled. (TERRTREATY2, TERRTRUCE2)
+2. [BUG] When attempting to build a sea base inside another faction's territorial waters, you were supposed to receive warning messages that were mislabeled. (TERRTREATY2, TERRTRUCE2)
 3. [BUG] Added a new entry that was missing when you attempted to use "B" or "b" shortcuts with a non-combat unit that didn't have a "Colony Pod". (NEEDCOLONISTS)
 4. [BUG] Added new entries that were missing in conjunction with an engine fix for when "retool strictness" in alpha/x.txt is set to "never free". (RETOOLPENALTY3, RETOOLPENALTY3A)
-5. [BUG][SMACX] When attempting to terraform an ocean square other than shelf, aquatic factions (Nautilus Pirates) were suppose to receive a warning message that was mislabeled. (NEEDADVECOENG)
+5. [BUG][SMAX] When attempting to terraform an ocean square other than shelf, aquatic factions (Nautilus Pirates) were supposed to receive a warning message that was mislabeled. (NEEDADVECOENG)
 
 The following binary fixes from Scient's patch are automatically applied at game startup.
 
