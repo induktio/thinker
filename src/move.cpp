@@ -505,7 +505,7 @@ void invasion_plan(int faction) {
     }
     if (p.naval_end_x >= 0) {
         int min_dist = 25;
-        for (i=0; i < *BaseCount; i++) {
+        for (i = 0; i < *BaseCount; i++) {
             BASE* base = &Bases[i];
             if (base->faction_id == faction) {
                 int dist = map_range(base->x, base->y, p.naval_end_x, p.naval_end_y)
@@ -547,7 +547,7 @@ void update_main_region(int faction) {
         }
     }
 
-    for (int i=0; i < *BaseCount; i++) {
+    for (int i = 0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];
         MAP* sq = mapsq(base->x, base->y);
         AIPlans& p = plans[base->faction_id];
@@ -1265,14 +1265,19 @@ int colony_move(const int id) {
         return VEH_SYNC;
     }
     bool full_search = (*CurrentTurn + id) % 4 == 0;
-    int limit = full_search ? 800 : 250;
+    bool airdrop = allow_airdrop(id, sq);
+    int max_range = (has_orbital_drops(faction) ? 2 : 1)
+        * Rules->max_airdrop_rng_wo_orbital_insert;
+    int limit = full_search ? 800 : 280;
     int best_score = INT_MIN;
     int i = 0;
     int k = 0;
     int tx = -1;
     int ty = -1;
     TileSearch ts;
-    if (triad == TRIAD_SEA && invasion_unit(id)) {
+    if (airdrop) {
+        ts.init(veh->x, veh->y, TRIAD_AIR, 2);
+    } else if (triad == TRIAD_SEA && invasion_unit(id)) {
         ts.init(plans[faction].naval_end_x, plans[faction].naval_end_y, triad, 2);
     } else {
         ts.init(veh->x, veh->y, triad, 2);
@@ -1280,7 +1285,9 @@ int colony_move(const int id) {
     while (++i <= limit && k < 50 && (sq = ts.get_next()) != NULL) {
         if (mapnodes.count({ts.rx, ts.ry, NODE_BASE_SITE})
         || !can_build_base(ts.rx, ts.ry, faction, triad)
-        || !safe_path(ts, faction)) {
+        || !safe_path(ts, faction)
+        || (airdrop && ts.dist > max_range && veh_region != sq->region)
+        || (airdrop && prevent_airdrop(ts.rx, ts.ry, faction))) {
             continue;
         }
         int score = base_tile_score(ts.rx, ts.ry, faction, sq) - 2*ts.dist;
@@ -1292,10 +1299,17 @@ int colony_move(const int id) {
         }
     }
     if (tx >= 0) {
-        debug("colony_move %d %d -> %d %d score: %d\n", veh->x, veh->y, tx, ty, best_score);
         for (auto& m : iterate_tiles(tx, ty, 0, TableRange[conf.base_spacing - 1])) {
             mapnodes.insert({m.x, m.y, NODE_BASE_SITE});
         }
+        if (airdrop && map_range(veh->x, veh->y, tx, ty) <= max_range
+        && (veh_region != region_at(tx, ty)
+        || path_cost(veh->x, veh->y, tx, ty, veh->unit_id, faction, veh_speed(id, 0)) < 0)) {
+            debug("colony_drop %d %d -> %d %d\n", veh->x, veh->y, tx, ty);
+            action_airdrop(id, tx, ty, 3);
+            return VEH_SYNC;
+        }
+        debug("colony_move %d %d -> %d %d\n", veh->x, veh->y, tx, ty);
         // Set these flags to disable any non-Thinker unit automation.
         veh->state |= VSTATE_UNK_40000;
         veh->state &= ~VSTATE_UNK_2000;
@@ -2009,6 +2023,25 @@ bool allow_conv_missile(int veh_id, int enemy_veh_id, MAP* sq) {
         + min(4, Units[enemy->unit_id].cost/2) >= 6 + random(6);
 }
 
+bool allow_airdrop(int veh_id, MAP* sq) {
+    VEH* veh = &Vehicles[veh_id];
+    return has_abil(veh->unit_id, ABL_DROP_POD)
+        && !(veh->state & VSTATE_MADE_AIRDROP)
+        && !veh->moves_spent
+        && sq->is_airbase();
+}
+
+bool prevent_airdrop(int x, int y, int faction) {
+    for (int i = 0; i < *BaseCount; i++) {
+        if (at_war(faction, Bases[i].faction_id)
+        && map_range(Bases[i].x, Bases[i].y, x, y) <= 2
+        && has_facility(FAC_AEROSPACE_COMPLEX, i)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int garrison_goal(int x, int y, int faction, int triad) {
     assert(triad == TRIAD_LAND || triad == TRIAD_SEA);
     AIPlans& p = plans[faction];
@@ -2016,7 +2049,7 @@ int garrison_goal(int x, int y, int faction, int triad) {
     && p.naval_start_x == x && p.naval_start_y == y) {
         return clamp(p.land_combat_units/64 + p.transport_units, 4, 12);
     }
-    for (int i=0; i < *BaseCount; i++) {
+    for (int i = 0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];
         if (base->x == x && base->y == y) {
             int goal = max(1,
@@ -2509,23 +2542,9 @@ int aircraft_move(const int id) {
     return mod_veh_skip(id);
 }
 
-bool prevent_airdrop(int x, int y, int faction) {
-    for (int i = 0; i < *BaseCount; i++) {
-        if (at_war(faction, Bases[i].faction_id)
-        && map_range(Bases[i].x, Bases[i].y, x, y) <= 2
-        && has_facility(FAC_AEROSPACE_COMPLEX, i)) {
-            return true;
-        }
-    }
-    return false;
-}
-
 bool airdrop_move(const int id, MAP* sq) {
     VEH* veh = &Vehicles[id];
-    if (!has_abil(veh->unit_id, ABL_DROP_POD)
-    || veh->state & VSTATE_MADE_AIRDROP
-    || veh->moves_spent > 0
-    || !sq->is_airbase()) {
+    if (!allow_airdrop(id, sq)) {
         return false;
     }
     int faction = veh->faction_id;

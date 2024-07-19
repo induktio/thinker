@@ -624,7 +624,7 @@ enum BaseGovernor {
     GOV_PRIORITY_CONQUER = 0x8000000,
     // 0x10000000
     // 0x20000000
-    GOV_UNK_40000000 = 0x40000000,
+    GOV_UNK_40000000 = 0x40000000, // used on lowest difficulty
     GOV_ACTIVE = 0x80000000,
 };
 

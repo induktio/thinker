@@ -764,7 +764,7 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
     flushlog();
 }
 
-bool locate_landmark(int* x, int* y) {
+bool locate_landmark(int* x, int* y, bool ocean) {
     int attempts = 0;
     if (!mapsq(*x, *y)) {
         do {
@@ -782,7 +782,7 @@ bool locate_landmark(int* x, int* y) {
             if (++attempts >= 1000) {
                 return false;
             }
-        } while (is_ocean(mapsq(*x, *y)) || near_landmark(*x, *y));
+        } while (is_ocean(mapsq(*x, *y)) != ocean || near_landmark(*x, *y));
     }
     return true;
 }
@@ -875,7 +875,7 @@ void __cdecl mod_world_monsoon() {
 }
 
 void __cdecl mod_world_borehole(int x, int y) {
-    if (!locate_landmark(&x, &y)) {
+    if (!locate_landmark(&x, &y, false)) {
         return;
     }
     // Replace inconsistent timeGetTime() values used for seeding
@@ -936,6 +936,26 @@ void __cdecl mod_world_borehole(int x, int y) {
     }
     bit2_set(x, y, LM_BOREHOLE, true);
     new_landmark(x, y, (int)Natural[__builtin_ctz(LM_BOREHOLE)].name);
+}
+
+void __cdecl mod_world_fossil(int x, int y) {
+    if (!locate_landmark(&x, &y, true)) {
+        return;
+    }
+    for (int i = 0; i < 6; i++) {
+        int x2 = wrap(x + TableOffsetX[i]);
+        int y2 = y + TableOffsetY[i];
+        MAP* sq = mapsq(x2, y2);
+        if (sq && is_ocean(sq)) {
+            world_alt_set(x2, y2, ALT_OCEAN, true);
+            if (conf.modified_landmarks) {
+                world_alt_set(x2, y2, ALT_OCEAN_SHELF, true);
+            }
+            bit2_set(x2, y2, LM_FOSSIL, true);
+            code_set(x2, y2, i);
+        }
+    }
+    new_landmark(x, y, (int)Natural[__builtin_ctz(LM_FOSSIL)].name);
 }
 
 float world_fractal(FastNoiseLite& noise, int x, int y) {
@@ -1200,7 +1220,7 @@ void world_generate(uint32_t seed) {
                 lm.unity--;
             }
             if (lm.fossil > 0) {
-                world_fossil(-1, -1);
+                mod_world_fossil(-1, -1);
                 lm.fossil--;
             }
         }

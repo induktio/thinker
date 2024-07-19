@@ -115,6 +115,11 @@ Our infiltration on {$MSG0} has been discovered! The spies have been lost.
 #caption Operations Director
 We have discovered and removed {$MSG0} infiltration on our networks!
 
+#GOVHURRY
+#xs 600
+#caption Operations Director
+Governor of $MSG0 hurries $MSG1!
+
 #EDITVEH2A
 #xs 400
 #caption Edit Vehicle Data

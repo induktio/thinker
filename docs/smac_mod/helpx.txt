@@ -211,15 +211,12 @@ Units defending here will gain $LINK<+1 Morale=11> increase.
 
 #; Children's Creche
 #HELPFAC2
-Base receives +2 on $LINK<GROWTH=130006> scale and +1 on
-$LINK<EFFICIENCY=130001> scale.
+Base receives +2 on $LINK<GROWTH=130006> scale and +2 on
+$LINK<EFFICIENCY=130001> scale when determining the inefficiency.
+All negative $LINK<MORALE=130004> effects are cancelled for units in
+base square; instead such units receive a +1 MORALE modifier.
 ^
 Reduces base's vulnerability to enemy mind control.
-^
-Prevents the riot $LINK<Random Event=55>, and instead increases base population.
-^
-{KNOWN BUG}: The combat and morale effects on the base square are inconsistent.
-See $LINK<Advanced Morale=10017> for more information.
 
 #; Recycling Tanks
 #HELPFAC3
@@ -474,12 +471,6 @@ Vulnerable to Solar Flare/Storm $LINK<random event=55>.
 #HELPFAC69
 All $LINK<MINERALS=42> produced at base are immediately converted to
 $LINK<ECONOMY=44> energy reserves (each 2 minerals makes 1 energy rounded up).
-^
-{KNOWN BUG}: If a base completes construction of a facility or secret project
-and its build queue is empty, then for that turn the base will accumulate
-energy as if production had been set to {Stockpile Energy} in addition to
-accumulating the usual amount of minerals.
-
 
 #; Human Genome Project
 #HELPPROJ0

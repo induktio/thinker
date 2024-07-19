@@ -92,7 +92,7 @@ When enabled, use `Shift+A` shortcut to automate any specific unit and it will f
 Beware formers automated in this way **can replace any existing improvements** on the territory if Thinker calculates the replacement would increase tile production. A notable difference compared to the AI factions is that player-automated formers will never raise/lower terrain. To prevent the formers from ever replacing some specific improvements, such as bunkers, they need to be placed outside the workable base radius from any friendly base.
 
 Bases managed by Thinker governors will mostly follow the same options as provided in the base governor settings, with a few exceptions. Normal explore/build/discover/conquer priorities will have no effect on production choices and they are automatically deselected in the interface. Enabling either terraformers or colony pods in the governor settings will also allow governors to build crawlers since they don't have a separate option in the menu.
-Thinker governors will also never attempt to start secret projects, hurry production with energy reservers, or nerve staple drones in the base. These choices are left for the player to manage.
+By default Thinker governors will not attempt to start secret projects or hurry production with energy reserves, but this can be enabled from the governor settings. If production is hurried in a base, this will be displayed as a separate line in the message log.
 
 
 Map generator options
@@ -321,9 +321,11 @@ Thinker also adds support for custom factions that are not aliens while using th
 
 Installing custom factions
 ==========================
-First any downloaded faction txt and pcx files have to be extracted to the main game folder. There should not be any need to overwrite files unless replacing factions in the base game. Note that even when using smac_only mode, the definitions have to be extracted to the main game folder since the same files are used in both game modes. The faction files must not be placed in any subfolder under the main game folder.
+First any downloaded faction txt and pcx files have to be extracted to the main game folder. There should not be any need to overwrite files unless replacing factions in the base game.
+Note that even when using smac_only mode, the factions have to be extracted to the main game folder since the same files are used in both game modes. The faction files must not be placed in any subfolder under the main game folder.
 
-To install the factions on the game startup menu, they need to added in `alphax.txt` in the default expansion or `smac_mod/alphax.txt` when using smac_only mode. Take note of the required faction definition .txt files and add them into the `#CUSTOMFACTIONS` section without .txt suffix. For example to enable the two hidden factions in the base game, edit the section like below.
+To install the factions on the game startup menu, they need to be added in `alphax.txt` in the default expansion or `smac_mod/alphax.txt` when using smac_only mode.
+Take note of the required faction definition .txt files and add them into the `#CUSTOMFACTIONS` section without .txt suffix. For example, to enable the two hidden factions in the base game, edit the section like below.
 
     #CUSTOMFACTIONS
     BRIAN, BRIAN

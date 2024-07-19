@@ -361,7 +361,9 @@ typedef void(__cdecl *Fname_base)(int faction_id, char* name, bool save_offset, 
 typedef int(__cdecl *Fveh_cost)(int item_id, int base_id, int* ptr);
 typedef int(__cdecl *Fbase_at)(int x, int y);
 typedef int(__cdecl *Fpopp)(
-    const char* filename, const char* label, int v1, const char* pcx_filename, int v2);
+    const char* filename, const char* label, int a3, const char* pcx_filename, int a5);
+typedef int(__cdecl *Fpopb)(
+    const char* label, int flags, int sound_id, const char* pcx_filename, int a5);
 typedef int (__cdecl *FX_pop)(const char* filename, const char* label, int a3, int a4, int a5, int a6);
 typedef int (__cdecl *FX_pops)(
     const char* filename, const char* label, int a3, int a4, int a5, int a6, int a7, int a8, int a9);
@@ -408,6 +410,7 @@ extern fp_1int draw_map;
 extern FNetMsg_pop NetMsg_pop;
 extern FPlanWin_blink PlanWin_blink;
 extern Fpopp popp;
+extern Fpopb popb;
 extern FGenVoid StatusWin_on_redraw;
 extern FGenVoid StatusWin_redraw;
 extern FTutWin_draw_arrow TutWin_draw_arrow;

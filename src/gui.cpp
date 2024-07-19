@@ -1616,7 +1616,7 @@ int __cdecl mod_action_move(int veh_id, int x, int y)
     }
     if (veh->faction_id == *CurrentPlayerFaction) {
         if (!veh_ready(veh_id)) {
-            return NetMsg_pop(NetMsg, "UNITMOVED", 5000, 0, NULL);
+            return NetMsg_pop(NetMsg, "UNITMOVED", 5000, 0, 0);
         }
     }
     int veh_range = arty_range(veh->unit_id);

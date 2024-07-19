@@ -379,6 +379,10 @@ int __cdecl mod_setup_player(int faction, int a2, int a3) {
         Factions[faction].satellites_mineral = conf.computer_satellites[1];
         Factions[faction].satellites_energy = conf.computer_satellites[2];
     }
+    if (!*CurrentTurn) {
+        // Update default governor settings
+        Factions[faction].base_governor_adv &= ~(GOV_MAY_PROD_SP|GOV_MAY_HURRY_PRODUCTION);
+    }
     return 0;
 }
 

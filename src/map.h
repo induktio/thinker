@@ -35,6 +35,7 @@ int __cdecl mod_whose_territory(int faction_id, int x, int y, int* base_id, int 
 int total_yield(int x, int y, int faction);
 int fungus_yield(int faction, ResType res_type);
 int item_yield(int x, int y, int faction, int bonus, MapItem item);
+bool locate_landmark(int* x, int* y, bool ocean);
 void world_generate(uint32_t seed);
 void console_world_generate(uint32_t seed);
 void __cdecl find_start(int faction, int* tx, int* ty);

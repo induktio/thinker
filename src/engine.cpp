@@ -230,6 +230,7 @@ fp_1int draw_map                           = (fp_1int              )0x46B190;
 FNetMsg_pop NetMsg_pop                     = (FNetMsg_pop          )0x47A890;
 FPlanWin_blink PlanWin_blink               = (FPlanWin_blink       )0x48BC20;
 Fpopp popp                                 = (Fpopp                )0x48C0A0;
+Fpopb popb                                 = (Fpopb                )0x48C650;
 FGenVoid StatusWin_on_redraw               = (FGenVoid             )0x4B8890;
 FGenVoid StatusWin_redraw                  = (FGenVoid             )0x4B9EA0;
 FTutWin_draw_arrow TutWin_draw_arrow       = (FTutWin_draw_arrow   )0x4BDEA0;

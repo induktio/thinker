@@ -36,9 +36,8 @@ int __cdecl mod_base_build(int base_id, bool has_gov) {
     base_compute(1);
 
     if (base.plr_owner()) {
-        // Unimplemented settings
-        base.governor_flags &= ~(GOV_MAY_PROD_SP|GOV_MAY_HURRY_PRODUCTION
-            |GOV_PRIORITY_BUILD|GOV_PRIORITY_CONQUER|GOV_PRIORITY_DISCOVER|GOV_PRIORITY_EXPLORE);
+        base.governor_flags &=
+            ~(GOV_PRIORITY_BUILD|GOV_PRIORITY_CONQUER|GOV_PRIORITY_DISCOVER|GOV_PRIORITY_EXPLORE);
         base.governor_flags |= GOV_MULTI_PRIORITIES;
     } else {
         consider_staple(base_id);
@@ -477,6 +476,35 @@ bool can_build(int base_id, int fac_id) {
     if (fac_id == FAC_RECYCLING_TANKS && has_facility(FAC_PRESSURE_DOME, base_id)) {
         return false;
     }
+    if (fac_id == FAC_HYBRID_FOREST && !has_facility(FAC_TREE_FARM, base_id)) {
+        return false;
+    }
+    if (fac_id == FAC_NANOHOSPITAL && !has_facility(FAC_RESEARCH_HOSPITAL, base_id)) {
+        return false;
+    }
+    if (fac_id == FAC_QUANTUM_LAB && !has_facility(FAC_FUSION_LAB, base_id)) {
+        return false;
+    }
+    if (fac_id == FAC_TEMPLE_OF_PLANET && !has_facility(FAC_CENTAURI_PRESERVE, base_id)) {
+        return false;
+    }
+    if (fac_id == FAC_HABITATION_DOME && !has_facility(FAC_HAB_COMPLEX, base_id)) {
+        return false;
+    }
+    if (fac_id == FAC_TACHYON_FIELD && !has_facility(FAC_PERIMETER_DEFENSE, base_id)) {
+        return false;
+    }
+    if (fac_id == FAC_SKUNKWORKS && *DiffLevel <= DIFF_SPECIALIST) {
+        return false;
+    }
+    if ((fac_id == FAC_AQUAFARM || fac_id == FAC_SUBSEA_TRUNKLINE || fac_id == FAC_THERMOCLINE_TRANSDUCER)
+    && (!*ExpansionEnabled || !is_coast(base->x, base->y, 0))) {
+        return false;
+    }
+    if ((fac_id == FAC_COVERT_OPS_CENTER || fac_id == FAC_BROOD_PIT || fac_id ==  FAC_FLECHETTE_DEFENSE_SYS
+    || fac_id == FAC_GEOSYNC_SURVEY_POD || fac_id == FAC_SUBSPACE_GENERATOR) && !*ExpansionEnabled) {
+        return false;
+    }
     if (fac_id == FAC_HOLOGRAM_THEATRE && (has_project(FAC_VIRTUAL_WORLD, faction)
     || !has_facility(FAC_RECREATION_COMMONS, base_id))) {
         return false;
@@ -498,7 +526,7 @@ bool can_build(int base_id, int fac_id) {
             return false;
         }
         int n = 0;
-        for (int i=0; i < *BaseCount; i++) {
+        for (int i = 0; i < *BaseCount; i++) {
             BASE* b = &Bases[i];
             if (b->faction_id == faction && has_facility(FAC_SUBSPACE_GENERATOR, i)
             && b->pop_size >= Rules->base_size_subspace_gen
@@ -523,7 +551,7 @@ bool can_build(int base_id, int fac_id) {
         return false;
     }
     if (fac_id == FAC_GEOSYNC_SURVEY_POD || fac_id == FAC_FLECHETTE_DEFENSE_SYS) {
-        for (int i=0; i < *BaseCount; i++) {
+        for (int i = 0; i < *BaseCount; i++) {
             BASE* b = &Bases[i];
             if (b->faction_id == faction && i != base_id
             && map_range(base->x, base->y, b->x, b->y) <= 3
@@ -796,23 +824,42 @@ int hurry_item(int base_id, int mins, int cost) {
     f->energy_credits -= cost;
     b->minerals_accumulated += mins;
     b->state_flags |= BSTATE_HURRY_PRODUCTION;
+
+    // This also enables "zoom to base" feature in the message window
+    if (b->faction_id == MapWin->cOwner) {
+        parse_says(0, b->name, -1, -1);
+        parse_says(1, prod_name(b->item()), -1, -1);
+        popb("GOVHURRY", 0, -1, "facblt_sm.pcx", 0);
+    }
     return 1;
 }
 
 int consider_hurry() {
     const int base_id = *CurrentBaseID;
     BASE* b = &Bases[base_id];
-    const int t = b->item();
     Faction* f = &Factions[b->faction_id];
     AIPlans* p = &plans[b->faction_id];
     assert(b == *CurrentBase);
+    const int t = b->item();
     bool is_cheap = conf.simple_hurry_cost || b->minerals_accumulated >= Rules->retool_exemption;
     bool is_project = t <= -SP_ID_First && t >= -SP_ID_Last;
+    bool player_gov = is_human(b->faction_id);
+    int hurry_option;
 
-    if (!thinker_enabled(b->faction_id)) {
-        return base_hurry();
+    if (player_gov) {
+        if (!conf.manage_player_bases) {
+            return base_hurry();
+        }
+        hurry_option = (b->governor_flags & GOV_ACTIVE) &&
+            (b->governor_flags & GOV_MAY_HURRY_PRODUCTION) ?
+            ((b->governor_flags & GOV_MAY_PROD_SP) ? 2 : 1) : 0;
+    } else {
+        if (!thinker_enabled(b->faction_id)) {
+            return base_hurry();
+        }
+        hurry_option = conf.base_hurry;
     }
-    if (conf.base_hurry < (is_project ? 2 : 1)
+    if (hurry_option < (is_project ? 2 : 1)
     || t == -FAC_STOCKPILE_ENERGY || t < -SP_ID_Last
     || b->state_flags & (BSTATE_PRODUCTION_DONE | BSTATE_HURRY_PRODUCTION)) {
         return 0;
@@ -829,7 +876,7 @@ int consider_hurry() {
         return 0;
     }
     if (is_project) {
-        int delay = clamp(DIFF_TRANSCEND - *DiffLevel + (f->ranking > 5 + random(4)), 0, 3);
+        int delay = player_gov ? 0 : clamp(DIFF_THINKER - *DiffLevel + random(4), 0, 3);
         int threshold = max(Facility[-t].cost/8, 4*cost_factor(b->faction_id, 1, -1));
 
         if (has_project((FacilityId)-t) || turns < 2 + delay
@@ -869,7 +916,7 @@ int consider_hurry() {
 
         if (cost > 0 && cost < f->energy_credits && mins > 0 && mins > b->mineral_surplus) {
             hurry_item(base_id, mins, cost);
-            if (!(*GameState & STATE_GAME_DONE)
+            if (!(*GameState & STATE_GAME_DONE) && b->faction_id != MapWin->cOwner
             && has_treaty(b->faction_id, MapWin->cOwner, DIPLO_COMMLINK)) {
                 parse_says(0, MFactions[b->faction_id].adj_name_faction, -1, -1);
                 parse_says(1, Facility[-t].name, -1, -1);
@@ -1044,7 +1091,7 @@ int find_project(int base_id) {
     int nuke_limit = (unit_id >= 0 && nuke_score > 2 &&
         f->planet_busters < 2 + bases/40 + f->AI_fight ? 1 + bases/40 : 0);
 
-    for (int i=0; i < *BaseCount; i++) {
+    for (int i = 0; i < *BaseCount; i++) {
         if (Bases[i].faction_id == faction) {
             int t = Bases[i].queue_items[0];
             if (t <= -SP_ID_First || t == -FAC_SUBSPACE_GENERATOR) {
@@ -1059,6 +1106,12 @@ int find_project(int base_id) {
     if (unit_id >= 0 && nukes < nuke_limit && nukes < bases/8
     && (!((base_id + *CurrentTurn) & 3) || has_facility(FAC_SKUNKWORKS, base_id))) {
         debug("find_project %d %d %s\n", faction, unit_id, Units[unit_id].name);
+        if (is_human(faction) && !Units[unit_id].is_prototyped()
+        && Rules->extra_cost_prototype_air > 0
+        && !has_facility(FAC_SKUNKWORKS, base_id)
+        && !(base.governor_flags & GOV_MAY_PROD_PROTOTYPE)) {
+            return 0;
+        }
         if (!Units[unit_id].is_prototyped()
         && Rules->extra_cost_prototype_air >= 50
         && can_build(base_id, FAC_SKUNKWORKS)) {
@@ -1335,7 +1388,7 @@ int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships) 
         int min_dist = INT_MAX;
         bool sea_enemy = false;
 
-        for (int i=0; i < *BaseCount; i++) {
+        for (int i = 0; i < *BaseCount; i++) {
             BASE* b = &Bases[i];
             if (faction != b->faction_id && !has_pact(faction, b->faction_id)) {
                 int dist = map_range(base->x, base->y, b->x, b->y)
