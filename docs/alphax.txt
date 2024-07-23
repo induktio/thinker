@@ -597,7 +597,7 @@ Missile,    Missile-, Miss., M
 ; Reac    = Reactor level 1–4
 ;
 #UNITS
-25
+26
 Colony Pod,             Infantry, Colony Pod,   Scout,      8, 0, 0, None,    -1, 00000000000000000000000000
 Formers,                Infantry, Formers,      Scout,      9, 0, 0, Ecology, -1, 00000000000000000000000000
 Scout Patrol,           Infantry, Gun,          Scout,      3, 0, 0, None,    -1, 00000000000000000000000000
@@ -621,8 +621,9 @@ Fungal Tower,           Infantry, Psi,          Psi,        3, 0, 0, Disable,  1
 Unity Mining Laser,     Infantry, Laser,        Scout,      0, 0, 0, Disable, -1, 00000000000000000000000000
 Sea Escape Pod,         Foil,     Colony Pod,   Scout,      8, 0, 0, Disable, -1, 00000000000000000000000000
 Unity Gunship,          Foil,     Gun,          Scout,     -1, 0, 0, Disable, -1, 00000000000000000000000000
-Trance Scout Patrol,    Infantry, Gun,          Scout,      3, 0, 0, Brain,   -1, 00000001000000000000000000
+Trance Infantry,        Infantry, Gun,          Scout,      3, 0, 0, Brain,   -1, 00000001000000000000000000
 Police Garrison,        Infantry, Gun,          Scout,      2, 0, 0, Integ,   -1, 00010000000000000000000000
+Drop Colony Pod,        Infantry, Colony Pod,   Scout,      8, 0, 0, MindMac, -1, 00000000000000000000010000
 
 ;
 ; Base Facilities

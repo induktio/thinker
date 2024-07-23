@@ -69,11 +69,6 @@ bool has_ships(int faction) {
     return false;
 }
 
-bool has_orbital_drops(int faction) {
-    return has_tech(Rules->tech_preq_orb_insert_wo_space, faction)
-        || has_project(FAC_SPACE_ELEVATOR, faction);
-}
-
 bool has_terra(int faction, FormerItem act, bool ocean) {
     int preq_tech = (ocean ? Terraform[act].preq_tech_sea : Terraform[act].preq_tech);
     if ((act == FORMER_RAISE_LAND || act == FORMER_LOWER_LAND)
@@ -94,7 +89,6 @@ bool has_project(FacilityId item_id) {
 }
 
 bool has_project(FacilityId item_id, int faction) {
-    assert(faction >= 0 && faction < MaxPlayerNum);
     assert(item_id >= SP_ID_First && item_id <= FAC_EMPTY_SP_64);
     int base_id = SecretProjects[item_id - SP_ID_First];
     return base_id >= 0 && faction >= 0 && Bases[base_id].faction_id == faction;

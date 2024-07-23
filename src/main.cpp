@@ -327,8 +327,21 @@ int option_handler(void* user, const char* section, const char* name, const char
         parse_format_args(label_sat_mineral, value, 1, StrBufLen);
     } else if (MATCH("label_sat_energy")) {
         parse_format_args(label_sat_energy, value, 1, StrBufLen);
+    } else if (MATCH("label_unit_reactor")) {
+        int len = strlen(buf);
+        int j = 0;
+        int k = 0;
+        for (int i = 0; i < len && i < StrBufLen && k < 4; i++) {
+            bool last = i == len - 1;
+            if (buf[i] == ',' || last) {
+                strncpy(label_unit_reactor[k], buf+j, i-j+last);
+                label_unit_reactor[k][i-j+last] = '\0';
+                j = i + 1;
+                k++;
+            }
+        }
     } else if (MATCH("script_label")) {
-        char* p = strstrip(buf);
+        char* p = strupr(strstrip(buf));
         debug("script_label %s\n", p);
         movedlabels.insert(p);
     } else if (MATCH("music_label")) {
@@ -369,7 +382,7 @@ int opt_list_parse(int* ptr, char* buf, int len, int min_val) {
     const char *d=",";
     char *s, *p;
     p = strtok_r(buf, d, &s);
-    for (int i=0; i<len && p != NULL; i++, p = strtok_r(NULL, d, &s)) {
+    for (int i = 0; i < len && p != NULL; i++, p = strtok_r(NULL, d, &s)) {
         ptr[i] = max(min_val, atoi(p));
     }
     return 1;

@@ -22,6 +22,7 @@ extern char label_stockpile_energy[StrBufLen];
 extern char label_sat_nutrient[StrBufLen];
 extern char label_sat_mineral[StrBufLen];
 extern char label_sat_energy[StrBufLen];
+extern char label_unit_reactor[4][StrBufLen];
 
 // Bottom middle UI console size in pixels
 const int ConsoleHeight = 219;

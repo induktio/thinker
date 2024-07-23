@@ -355,6 +355,11 @@ FBuffer_box_sprite Buffer_box_sprite = (FBuffer_box_sprite)0x5E2DD3;
 FBuffer_box Buffer_box = (FBuffer_box)0x5E3203;
 
 
+fp_3int say_morale2              = (fp_3int)0x4B3FD0;
+fp_2int say_morale               = (fp_2int)0x4B43C0;
+fp_2int say_orders               = (fp_2int)0x4B43E0;
+fp_1int say_orders2              = (fp_1int)0x4B4970;
+
 fp_3int terraform_cost           = (fp_3int)0x4C9420;
 fp_2int action_build             = (fp_2int)0x4C96E0;
 fp_2int contribution             = (fp_2int)0x4C9A50;

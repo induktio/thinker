@@ -197,7 +197,7 @@ void print_veh_stack(int x, int y) {
 void print_veh(int id) {
     VEH* v = &Vehicles[id];
     debug("VEH %24s u: %3d v: %4d owner: %d order: %2d %2d %c %3d %3d -> %3d %3d "
-        "next: %4d prev: %4d moves: %2d speed: %2d damage: %d "
+        "next: %4d prev: %4d moves: %2d speed: %2d damage: %2d "
         "state: %08x flags: %04x vis: %02x mor: %d iter: %d angle: %d\n",
         Units[v->unit_id].name, v->unit_id, id, v->faction_id,
         v->order, v->order_auto_type, (v->status_icon ? v->status_icon : ' '),

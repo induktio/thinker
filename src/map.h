@@ -23,6 +23,7 @@ bool __cdecl bad_reg(int region);
 int __cdecl region_at(int x, int y);
 int __cdecl base_at(int x, int y);
 int __cdecl x_dist(int x1, int x2);
+uint32_t __cdecl bit_at(int x, int y);
 uint32_t __cdecl code_at(int x, int y);
 void __cdecl code_set(int x, int y, int code);
 bool __cdecl near_landmark(int x, int y);

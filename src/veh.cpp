@@ -5,16 +5,16 @@ static TileSearch ts;
 
 
 bool __cdecl can_arty(int unit_id, bool allow_sea_arty) {
-    UNIT& u = Units[unit_id];
-    if ((Weapon[u.weapon_id].offense_value <= 0 // PSI + non-combat
-    || Armor[u.armor_id].defense_value < 0) // PSI
+    UNIT* u = &Units[unit_id];
+    if ((u->offense_value() <= 0 // PSI + non-combat
+    || u->defense_value() < 0) // PSI
     && unit_id != BSC_SPORE_LAUNCHER) { // Spore Launcher exception
         return false;
     }
-    if (u.triad() == TRIAD_SEA) {
+    if (u->triad() == TRIAD_SEA) {
         return allow_sea_arty;
     }
-    if (u.triad() == TRIAD_AIR) {
+    if (u->triad() == TRIAD_AIR) {
         return false;
     }
     return has_abil(unit_id, ABL_ARTILLERY); // TRIAD_LAND
@@ -67,6 +67,18 @@ int __cdecl arty_range(int unit_id) {
             ? conf.long_range_artillery : 0));
     }
     return 0;
+}
+
+int __cdecl drop_range(int faction) {
+    if (!has_orbital_drops(faction)) {
+        return max(0, Rules->max_airdrop_rng_wo_orbital_insert);
+    }
+    return max(*MapAreaX, *MapAreaY);
+}
+
+bool has_orbital_drops(int faction) {
+    return has_tech(Rules->tech_preq_orb_insert_wo_space, faction)
+        || has_project(FAC_SPACE_ELEVATOR, faction);
 }
 
 bool has_ability(int faction, VehAbl abl, VehChassis chs, VehWeapon wpn) {
@@ -205,16 +217,48 @@ int __cdecl veh_speed(int veh_id, bool skip_morale) {
 }
 
 /*
-Original version assigned cargo capacity on Spore Launchers but it seems this feature is not used.
+Calculate the cargo capacity of a unit. This version removes a redundant reference on
+Spore Launchers which was never triggered since their carry_capacity was set to zero.
 */
 int __cdecl veh_cargo(int veh_id) {
     VEH* v = &Vehicles[veh_id];
     UNIT* u = &Units[v->unit_id];
-    if (u->carry_capacity > 0 && veh_id < MaxProtoFactionNum
-    && Weapon[u->weapon_id].offense_value < 0) {
+    if (u->carry_capacity && v->unit_id < MaxProtoFactionNum && u->offense_value() < 0) {
         return v->morale + 1;
     }
     return u->carry_capacity;
+}
+
+/*
+Determine whether the specified unit is eligible for a monolith morale upgrade.
+*/
+bool __cdecl want_monolith(int veh_id) {
+    return !(Vehs[veh_id].state & VSTATE_MONOLITH_UPGRADED)
+        && mod_morale_veh(veh_id, true, 0) < MORALE_ELITE
+        && Vehs[veh_id].morale < MORALE_ELITE
+        && Vehs[veh_id].offense_value() != 0;
+}
+
+/*
+Determine the extra percent cost for building a prototype. Includes a check if the faction
+has the free prototype flag set or if the player is using one of the easier difficulties.
+*/
+int __cdecl prototype_factor(int unit_id) {
+    int faction_id = unit_id / MaxProtoFactionNum;
+    if (MFactions[faction_id].rule_flags & RFLAG_FREEPROTO
+    || Factions[faction_id].diff_level <= DIFF_SPECIALIST) {
+        return 0;
+    }
+    int triad = Units[unit_id].triad();
+    switch (triad) {
+    case TRIAD_SEA:
+        return Rules->extra_cost_prototype_sea;
+    case TRIAD_AIR:
+        return Rules->extra_cost_prototype_air;
+    case TRIAD_LAND:
+    default:
+        return Rules->extra_cost_prototype_land;
+    }
 }
 
 /*
@@ -356,7 +400,7 @@ Calculate the specified prototype's mineral row cost to build. Optional output p
 whether there is an associated 1st time prototype cost (true) or just the base (false).
 Note that has_proto_cost is treated as int32_t variable in the game engine.
 */
-int __cdecl mod_veh_cost(int unit_id, int base_id, int* has_proto_cost) {
+int __cdecl mod_veh_cost(int unit_id, int base_id, int32_t* has_proto_cost) {
     int cost = Units[unit_id].cost;
     if (base_id >= 0 && unit_id < MaxProtoFactionNum // Fix: added base_id bounds check
     && (Units[unit_id].offense_value() < 0 || unit_id == BSC_SPORE_LAUNCHER)
@@ -417,6 +461,137 @@ int __cdecl mod_upgrade_cost(int faction, int new_unit_id, int old_unit_id) {
     return cost;
 }
 
+/*
+Various unit stack related calculations based on type parameter (0-19) and conditions.
+*/
+int __cdecl mod_stack_check(int veh_id, int type, int cond1, int cond2, int cond3) {
+    int value = 0;
+    for (int i = veh_top(veh_id); i >= 0; i = Vehs[i].next_veh_id_stack) {
+        switch (type) {
+        case 0:
+            if ((cond2 < 0 || Vehs[i].faction_id == cond2) && Vehs[i].unit_id == cond1) {
+                value++;
+            }
+            break;
+        case 1:
+            if (cond1 < 0 || Vehs[i].faction_id == cond1) {
+                value++;
+            }
+            break;
+        case 2:
+            if ((cond2 < 0 || Vehs[i].faction_id == cond2)
+            && Vehs[i].plan() == cond1) {
+                value++;
+            }
+            break;
+        case 3:
+            if ((cond2 < 0 || Vehs[i].faction_id == cond2) && Vehs[i].triad() == cond1) {
+                value++;
+            }
+            break;
+        case 4:
+            if (cond1 < 0 || Vehs[i].faction_id == cond1) {
+                value += Vehs[i].offense_value();
+            }
+            break;
+        case 5:
+            if (cond1 < 0 || Vehs[i].faction_id == cond1) {
+                value += Vehs[i].defense_value();
+            }
+            break;
+        case 6:
+            if ((cond2 < 0 || Vehs[i].faction_id == cond2)
+            && has_abil(Vehs[i].unit_id, (VehAblFlag)cond1)) {
+                value++;
+            }
+            break;
+        case 7:
+            if (cond1 < 0 || Vehs[i].faction_id == cond1) {
+                value += Units[Vehs[i].unit_id].cost;
+            }
+            break;
+        case 8:
+            if (cond1 < 0 || Vehs[i].faction_id == cond1) {
+                int triad = Vehs[i].triad();
+                if (triad == TRIAD_LAND) {
+                    value--;
+                } else if (triad == TRIAD_SEA) {
+                    value += veh_cargo(i);
+                }
+            }
+            break;
+        case 9:
+            if ((cond2 < 0 || Vehs[i].faction_id == cond2) && Vehs[i].order == cond1) {
+                value++;
+            }
+            break;
+        case 10:
+            if (Vehs[i].faction_id == cond1) {
+                value++;
+            }
+            break;
+        case 11:
+            if ((cond3 < 0 || Vehs[i].faction_id == cond3)
+            && (Vehs[i].state & cond1) == (uint32_t)cond2) {
+                value++;
+            }
+            break;
+        case 12:
+            if (cond1 < 0 || Vehs[i].faction_id == cond1) {
+                if (arm_strat(Units[Vehs[i].unit_id].armor_id, Vehs[i].faction_id)
+                > weap_strat(Units[Vehs[i].unit_id].weapon_id, Vehs[i].faction_id)) {
+                    value++;
+                }
+            }
+            break;
+        case 13:
+            if ((cond1 < 0 || Vehs[i].faction_id == cond1) && Vehs[i].is_missile()) {
+                value++;
+            }
+            break;
+        case 14:
+            if ((cond1 < 0 || Vehs[i].faction_id == cond1)
+            && (Vehs[i].plan() == PLAN_COMBAT || Vehs[i].plan() == PLAN_DEFENSIVE)) {
+                value++;
+            }
+            break;
+        case 15:
+            if ((cond1 < 0 || Vehs[i].faction_id == cond1) && can_arty(Vehs[i].unit_id, true)) {
+                value++;
+            }
+            break;
+        case 16:
+            if ((cond1 < 0 || Vehs[i].faction_id == cond1)
+            && (Vehs[i].plan() == PLAN_COMBAT || Vehs[i].plan() == PLAN_DEFENSIVE
+            || Vehs[i].plan() == PLAN_RECONNAISSANCE)) {
+                value++;
+            }
+            break;
+        case 17:
+            if ((cond2 < 0 || Vehs[i].faction_id == cond2)
+            && Units[Vehs[i].unit_id].unk_1 == cond1) {
+                value++;
+            }
+            break;
+        case 18:
+            if ((cond1 < 0 || Vehs[i].faction_id == cond1)
+            && (Vehs[i].triad() == TRIAD_AIR && Vehs[i].range() > 1)) {
+                value++;
+            }
+            break;
+        case 19:
+            if ((cond1 < 0 || Vehs[i].faction_id == cond1) && !Vehs[i].offense_value()) {
+                value++;
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    assert(value == stack_check(veh_id, type, cond1, cond2, cond3));
+    return value;
+}
+
 int __cdecl mod_veh_init(int unit_id, int faction, int x, int y) {
     int veh_id = veh_init(unit_id, faction, x, y);
     if (veh_id >= 0) {
@@ -444,7 +619,8 @@ int __cdecl mod_veh_skip(int veh_id) {
 
     if (is_human(veh->faction_id)) {
         if (conf.activate_skipped_units) {
-            if (!veh->moves_spent && veh->order < ORDER_FARM && !(veh->state & VSTATE_HAS_MOVED)) {
+            if (!veh->moves_spent && veh->order < ORDER_FARM
+            && !(veh->state & (VSTATE_HAS_MOVED|VSTATE_MADE_AIRDROP))) {
                 veh->flags |= VFLAG_FULL_MOVE_SKIPPED;
             } else if (veh->triad() != TRIAD_AIR) {
                 // veh_skip may get called twice on aircraft units
@@ -455,9 +631,8 @@ int __cdecl mod_veh_skip(int veh_id) {
         veh->waypoint_1_x = veh->x;
         veh->waypoint_1_y = veh->y;
         veh->status_icon = '-';
-        if (veh->need_monolith()) {
-            MAP* sq = mapsq(veh->x, veh->y);
-            if (sq && sq->items & BIT_MONOLITH) {
+        if (want_monolith(veh_id)) {
+            if (bit_at(veh->x, veh->y) & BIT_MONOLITH) {
                 monolith(veh_id);
             }
         }
@@ -483,7 +658,8 @@ int __cdecl mod_veh_wake(int veh_id) {
     When formers build something, VSTATE_HAS_MOVED should be set to prevent them from moving twice per turn.
     */
     if (conf.activate_skipped_units) {
-        if (veh->flags & VFLAG_FULL_MOVE_SKIPPED && !(veh->state & VSTATE_HAS_MOVED)) {
+        if (veh->flags & VFLAG_FULL_MOVE_SKIPPED
+        && !(veh->state & (VSTATE_HAS_MOVED|VSTATE_MADE_AIRDROP))) {
             veh->moves_spent = 0;
         }
         veh->flags &= ~VFLAG_FULL_MOVE_SKIPPED;
@@ -650,7 +826,6 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
     bool garrison = combat && !arty && !marine && wpn_v < arm_v && spd_v < 2;
     uint32_t prefix_abls = abls & ~(ABL_ARTILLERY | ABL_AMPHIBIOUS | ABL_NERVE_GAS
         | (intercept ? ABL_AIR_SUPERIORITY : 0)); // SAM for ground units
-    const char* mk_label = (*TextLabels)[919]; // Mk (reactors)
 
     if (!conf.new_unit_names || (!combat && !noncombat) || Chassis[chs].missile) {
         if (unit_id < 0) {
@@ -671,8 +846,8 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
                 parse_abl_name(buf, Ability[j].abbreviation, i > 0);
             }
         }
-        if (arm_v != 1 && !(combat && !psi_arm && wpn_v >= 4*arm_v)) {
-            parse_arm_name(buf, arm, i > 0 || abls || spd_v > 1 || wpn_v >= arm_v
+        if (arm_v != 1 && !(combat && !psi_arm && wpn_v >= (i > 0 ? 2 : 4)*arm_v)) {
+            parse_arm_name(buf, arm, i > 0 || prefix_abls || spd_v > 1 || wpn_v >= arm_v
                 || (noncombat && strlen(Weapon[wpn].name_short) >= 10));
         }
         if (combat) {
@@ -744,9 +919,9 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
             }
             parse_wpn_name(buf, wpn, i > 0);
         }
-        if (Weapon[wpn].mode != WMODE_INFOWAR && rec > REC_FISSION) {
-            if (strlen(buf) + strlen(mk_label) + 3 <= MaxProtoNameLen) {
-                snprintf(buf, MaxProtoNameLen, "%s%s%d", buf, mk_label, rec);
+        if (Weapon[wpn].mode != WMODE_INFOWAR && rec >= REC_FISSION && rec <= REC_SINGULARITY) {
+            if (strlen(buf) + strlen(label_unit_reactor[rec-1]) + 2 <= MaxProtoNameLen) {
+                strncat(buf, label_unit_reactor[rec-1], MaxProtoNameLen);
             } else if (i == 0) {
                 continue;
             }
@@ -876,13 +1051,23 @@ int set_action(int veh_id, int act, char icon) {
     return VEH_SYNC;
 }
 
+int set_order_none(int veh_id) {
+    VEH* veh = &Vehicles[veh_id];
+    veh->order = ORDER_NONE;
+    veh->order_auto_type = ORDERA_TERRA_AUTO_FULL;
+    veh->waypoint_1_x = -1;
+    veh->waypoint_1_y = -1;
+    veh->status_icon = '-';
+    return mod_veh_skip(veh_id);
+}
+
 int set_convoy(int veh_id, ResType res) {
     VEH* veh = &Vehicles[veh_id];
     mapnodes.insert({veh->x, veh->y, NODE_CONVOY});
     veh->order_auto_type = res-1;
     veh->order = ORDER_CONVOY;
     veh->status_icon = 'C';
-    return veh_skip(veh_id);
+    return mod_veh_skip(veh_id);
 }
 
 int set_board_to(int veh_id, int trans_veh_id) {

@@ -115,6 +115,24 @@ int __cdecl mod_read_basic_rules() {
 }
 
 /*
+Fix possible crash when say_orders is called without CurrentBase pointer being set.
+*/
+int mod_say_orders(char* buf, int veh_id) {
+    VEH* veh = &Vehs[veh_id];
+    if (!*CurrentBase) {
+        if (veh->home_base_id >= 0) {
+            set_base(veh->home_base_id);
+        } else {
+            int base_id = mod_base_find3(veh->x, veh->y, veh->faction_id, -1, -1, -1);
+            if (base_id >= 0) {
+                set_base(base_id);
+            }
+        }
+    }
+    return say_orders((int)buf, veh_id);
+}
+
+/*
 This is called from enemy_strategy to upgrade prototypes marked with obsolete_factions flag.
 Early upgrades are disabled to prevent unnecessary costs for any starting units.
 */
@@ -477,6 +495,8 @@ bool patch_setup(Config* cf) {
     write_call(0x506EA6, (int)mod_battle_compute); // battle_fight_2
     write_call(0x5085E0, (int)mod_battle_compute); // battle_fight_2
     write_call(0x4F7B82, (int)mod_base_research); // base_upkeep
+    write_call(0x4B497C, (int)mod_say_orders); // say_orders2
+    write_call(0x4B5C27, (int)mod_say_orders); // StatusWin::draw_active
 
     write_offset(0x50F421, (void*)mod_turn_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);

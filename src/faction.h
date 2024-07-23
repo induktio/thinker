@@ -8,7 +8,6 @@ bool has_weapon(int faction, VehWeapon wpn);
 bool has_wmode(int faction, VehWeaponMode mode);
 bool has_aircraft(int faction);
 bool has_ships(int faction);
-bool has_orbital_drops(int faction);
 bool has_terra(int faction, FormerItem act, bool ocean);
 bool has_project(FacilityId item_id);
 bool has_project(FacilityId item_id, int faction);

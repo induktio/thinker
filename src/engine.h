@@ -635,6 +635,11 @@ extern FBuffer_box Buffer_box;
 
 #pragma GCC diagnostic pop
 
+extern fp_3int say_morale2;
+extern fp_2int say_morale;
+extern fp_2int say_orders;
+extern fp_1int say_orders2;
+
 extern fp_3int terraform_cost;
 extern fp_2int action_build;
 extern fp_2int contribution;
@@ -726,7 +731,7 @@ extern fp_1int make_base_unique;
 extern fp_6int base_claimed;
 extern fp_4int base_build;
 
-extern fp_1int drop_range;
+//extern fp_1int drop_range;
 extern fp_1int planet_buster2;
 extern fp_1int planet_buster;
 extern fp_4int shoot;
@@ -937,7 +942,7 @@ extern fp_4int at_site;
 //extern fp_1int wipe_goals;
 extern fp_1int clear_goals;
 extern fp_5int del_site;
-extern fp_1int want_monolith;
+//extern fp_1int want_monolith;
 extern fp_1int monolith;
 extern fp_1int goody_box;
 extern fp_2int valid_tech_leap;
@@ -1181,7 +1186,7 @@ extern fp_3int armor_proto;
 extern fp_1int speed_proto; // replaced by proto_speed
 extern fp_2int speed; // replaced by veh_speed
 //extern fp_1int veh_cargo;
-extern fp_1int prototype_factor;
+//extern fp_1int prototype_factor;
 extern Fveh_cost veh_cost;
 extern fp_1int veh_selectable;
 extern fp_1int veh_unmoved;

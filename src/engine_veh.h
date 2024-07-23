@@ -130,7 +130,7 @@ enum VehPlan {
     PLAN_OFFENSIVE = 0,
     PLAN_COMBAT = 1,
     PLAN_DEFENSIVE = 2,
-    PLAN_RECONNAISANCE = 3,
+    PLAN_RECONNAISSANCE = 3,
     PLAN_AIR_SUPERIORITY = 4,
     PLAN_PLANET_BUSTER = 5,
     PLAN_NAVAL_SUPERIORITY = 6,
@@ -511,8 +511,14 @@ struct VEH {
     uint8_t speed() {
         return Chassis[Units[unit_id].chassis_id].speed;
     }
+    uint8_t range() {
+        return Chassis[Units[unit_id].chassis_id].range;
+    }
     uint8_t cost() {
         return Units[unit_id].cost;
+    }
+    int plan() {
+        return Units[unit_id].plan;
     }
     int chassis_type() {
         return Units[unit_id].chassis_id;

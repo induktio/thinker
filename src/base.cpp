@@ -819,7 +819,7 @@ int project_score(int faction, FacilityId item_id, bool shuffle) {
 int hurry_item(int base_id, int mins, int cost) {
     BASE* b = &Bases[base_id];
     Faction* f = &Factions[b->faction_id];
-    debug("hurry_item %d %d mins: %2d cost: %2d credits: %d %s %s\n",
+    debug("hurry_item %3d %3d mins: %d cost: %d credits: %d %s / %s\n",
         *CurrentTurn, base_id, mins, cost, f->energy_credits, b->name, prod_name(b->item()));
     f->energy_credits -= cost;
     b->minerals_accumulated += mins;
@@ -867,21 +867,21 @@ int consider_hurry() {
     int mins = mineral_cost(base_id, t) - b->minerals_accumulated;
     int cost = hurry_cost(base_id, t, mins);
     int turns = prod_turns(base_id, t);
-    int reserve = clamp(*CurrentTurn * 2 + 10 * f->base_count, 20, 600)
-        * (is_project ? 1 : 4)
-        * (has_fac_built(FAC_HEADQUARTERS, base_id) ? 1 : 2)
-        * (b->defend_goal > 3 && p->enemy_factions > 0 ? 1 : 2) / 16;
+    int reserve = clamp(*CurrentTurn * f->base_count / 8, 20, 500)
+        * (!p->contacted_factions || is_project ? 1 : 4)
+        * (b->defend_goal > 3 && p->enemy_factions > 0 ? 1 : 2)
+        * (has_fac_built(FAC_HEADQUARTERS, base_id) ? 1 : 2) / 16;
 
     if (!is_cheap || mins < 1 || cost < 1 || f->energy_credits - cost < reserve) {
         return 0;
     }
     if (is_project) {
-        int delay = player_gov ? 0 : clamp(DIFF_THINKER - *DiffLevel + random(4), 0, 3);
-        int threshold = max(Facility[-t].cost/8, 4*cost_factor(b->faction_id, 1, -1));
+        int delay = player_gov ? 0 : clamp((*DiffLevel < DIFF_THINKER) + random(4), 0, 3);
+        int threshold = 4*cost_factor(b->faction_id, 1, -1);
 
         if (has_project((FacilityId)-t) || turns < 2 + delay
         || (b->defend_goal > 3 && p->enemy_factions > 0)
-        || b->mineral_surplus < 4
+        || (delay > 0 && b->mineral_surplus < 4)
         || b->minerals_accumulated < threshold) { // Avoid double cost threshold
             return 0;
         }
@@ -905,8 +905,6 @@ int consider_hurry() {
             }
         }
         std::sort(values, values+num);
-        debug("hurry_proj %d %d score: %d limit: %d %s\n",
-            *CurrentTurn, base_id, proj_score, values[num/2], Facility[-t].name);
         if (proj_score < max(4, values[num/2])) {
             return 0;
         }
@@ -927,7 +925,8 @@ int consider_hurry() {
         return 0;
     }
     if (b->drone_total + b->specialist_total > b->talent_total
-    && t < 0 && t == need_psych(base_id)) {
+    && t < 0 && t == need_psych(base_id)
+    && cost < f->energy_credits/4) {
         return hurry_item(base_id, mins, cost);
     }
     if (t < 0 && turns > 1 && cost < f->energy_credits/8) {
@@ -951,9 +950,9 @@ int consider_hurry() {
     }
     if (t >= 0 && turns > 1 && cost < f->energy_credits/4) {
         if (Units[t].is_combat_unit()) {
-            int val = (b->defend_goal > 3)
+            int val = (b->defend_goal > 2)
+                + (b->defend_goal > 3)
                 + (p->enemy_bases > 0)
-                + (p->enemy_bases > 2 && b->defend_goal > 2)
                 + (p->enemy_factions > 0)
                 + (at_war(b->faction_id, MapWin->cOwner) > 0)
                 + (cost < f->energy_credits/16)
@@ -962,13 +961,16 @@ int consider_hurry() {
                 return hurry_item(base_id, mins, cost);
             }
         }
-        if (Units[t].is_former() && cost < f->energy_credits/16
-        && (*CurrentTurn < 80 || b->mineral_surplus < p->median_limit)) {
+        if (Units[t].is_former() && turns > (*CurrentTurn + base_id) % 16
+        && (cost < f->energy_credits/16 || b->mineral_surplus < p->median_limit)) {
             return hurry_item(base_id, mins, cost);
         }
-        if (Units[t].is_colony() && cost < f->energy_credits/16
+        if (Units[t].is_colony() && b->pop_size > 1
+        && (cost < f->energy_credits/16 || turns > (*CurrentTurn + base_id) % 16)
         && (b->state_flags & BSTATE_DRONE_RIOTS_ACTIVE
-        || (!base_unused_space(base_id) && turns > 3))) {
+        || (!base_unused_space(base_id) && b->nutrient_surplus > 1)
+        || (base_can_riot(base_id, true)
+        && b->specialist_total + b->drone_total > b->talent_total))) {
             return hurry_item(base_id, mins, cost);
         }
     }
@@ -992,7 +994,7 @@ bool redundant_project(int faction, int fac_id) {
     }
     if (fac_id == FAC_MARITIME_CONTROL_CENTER) {
         int n = 0;
-        for (int i = 0; i<*VehCount; i++) {
+        for (int i = 0; i < *VehCount; i++) {
             VEH* veh = &Vehicles[i];
             if (veh->faction_id == faction && veh->triad() == TRIAD_SEA) {
                 n++;

@@ -130,6 +130,11 @@ int __cdecl x_dist(int x1, int x2) {
     return dist;
 }
 
+uint32_t __cdecl bit_at(int x, int y) {
+    MAP* sq = mapsq(x, y);
+    return sq ? sq->items : 0;
+}
+
 uint32_t __cdecl code_at(int x, int y) {
     MAP* sq = mapsq(x, y);
     return (sq ? sq->art_ref_id : 0);

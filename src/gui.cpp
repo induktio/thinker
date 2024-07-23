@@ -11,6 +11,7 @@ char label_stockpile_energy[StrBufLen] = "Stockpile: %d per turn";
 char label_sat_nutrient[StrBufLen] = "N +%d";
 char label_sat_mineral[StrBufLen] = "M +%d";
 char label_sat_energy[StrBufLen] = "E +%d";
+char label_unit_reactor[4][StrBufLen] = {};
 
 static int minimal_cost = 0;
 static int base_zoom_factor = -14;
@@ -1254,11 +1255,14 @@ Win* This, const char* filename, const char* label, int a4, int a5, int a6, int 
 {
     BASE* base = *CurrentBase;
     Faction* f = &Factions[base->faction_id];
-    int mins = mineral_cost(*CurrentBaseID, base->queue_items[0])
-        - base->minerals_accumulated - base->mineral_surplus;
+    int item_cost = mineral_cost(*CurrentBaseID, base->queue_items[0]);
+    int minerals = item_cost - base->minerals_accumulated - max(0, base->mineral_surplus);
     int credits = max(0, f->energy_credits - f->energy_cost);
-    int cost = hurry_cost(*CurrentBaseID, base->queue_items[0], mins);
+    int cost = hurry_cost(*CurrentBaseID, base->queue_items[0], minerals);
     minimal_cost = min(credits, cost);
+    if (item_cost <= base->minerals_accumulated) {
+        ParseNumTable[0] = 0;
+    }
     ParseNumTable[1] = cost;
     ParseNumTable[2] = credits;
     return Popup_start(This, "modmenu", "HURRY", a4, a5, a6, a7);

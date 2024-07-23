@@ -295,7 +295,7 @@ These edits will introduce fairly minimal differences to the vanilla game mechan
 4. WorldBuilder is modified to produce bigger continents, less tiny islands, more rivers and ocean shelf on random maps.
 5. Large map size is increased to 50x100. Previous value was nearly the same as a standard map.
 6. Descriptions of various configuration values have been updated to reflect their actual meaning.
-7. Add new predefined units Trance Scout Patrol and Police Garrison.
+7. Add new predefined units Trance Infantry, Police Garrison and Drop Colony Pod.
 8. Plasma Shard weapon strength is raised to 14.
 9. Secret project priorities are adjusted for the AI to start important projects first.
 10. Chopper range is reduced to 8 (fission reactor).

@@ -359,6 +359,7 @@ enum NodesetType {
     NODE_SENSOR_ARRAY, // Sensor being built
     NODE_NEED_FERRY,
     NODE_BASE_SITE,
+    NODE_CONVOY_SITE,
     NODE_GOAL_RAISE_LAND, // Former priority only
     NODE_GOAL_NAVAL_START,
     NODE_GOAL_NAVAL_BEACH,
