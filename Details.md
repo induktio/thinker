@@ -418,6 +418,8 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 46. Fix Mind Control issue when capturing bases that have non-allied units owned by a third faction inside them. In this case the units can't remain on the base tile and they are removed.
 47. Modify Mind Control probe action to only subvert units inside the base and not on adjacent tiles to balance for the relatively cheap cost for this action.
 48. Modify Total Thought Control probe action to not set silently "want revenge" or "shall betray" flags which usually made the AI sneak attack. This action can be still used to subvert bases without declaring war but it applies a notable diplomatic penalty between the factions.
+49. Base production picker will not show Paradise Garden as buildable if the base already has Punishment Sphere.
+50. Clinical Immortality provides one extra talent per base instead of two as mentioned in the manual.
 
 
 Scient's patch
@@ -425,7 +427,7 @@ Scient's patch
 Thinker includes the binary patches from both [Scient's patch v2.0 and v2.1](https://github.com/DrazharLn/scient-unofficial-smacx-patch).
 The differences between these versions include only changes to the txt files to prevent the game from crashing when opening certain datalinks entries.
 
-Thinker also includes the following non-engine fixes from Scient's patch for specific user interface issues. These labels listed below are redirected from other script files to modmenu.txt based on the default config.
+Thinker also includes the following non-engine fixes from Scient's patch for specific user interface issues. These labels listed below are redirected from other script files to modmenu.txt based on `script_label` config options.
 Installing the other modified files provided by Scient's patch (such as wav files) is purely optional, and Thinker does not include those files by default since it would require overwriting files in the base game.
 
 1. [BUG] Needlejet "DATA" edit window via scenario editor wouldn't render properly making it so you couldn't edit the stats. (EDITVEH2A)

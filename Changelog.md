@@ -1,6 +1,24 @@
 
 # Thinker mod release changelog
 
+## Version 4.4 (2024-07-26)
+* Add option long_range_artillery to enable increased range for ship-based artillery when the special ability is used. Land-based artillery remains the same as before.
+* Cost factor for Artillery ability is changed to "increases with speed value" instead of "armor+speed value".
+* Minor changes on AI ship designs and prototype naming rules to be more consistent. Longer range artillery ships use only Battleship names.
+* Add new predefined unit Drop Colony Pod. AI is also able to use such units when available.
+* Add option intercept_defense_bonus for "Air superiority unit vs. air unit" in alphax.txt to also affect scrambled interceptors.
+* Add option label_unit_reactor to customize how reactors are displayed in the prototype names.
+* Thinker governors are able to build secret projects and hurry production also in player bases. Hurry actions will display a notification in the message log.
+* Thinker is also able to automate player-owned crawlers. Most often they will attempt to convoy nutrients and minerals.
+* Interlude and credits screen planet backgrounds are scaled to fit all resolutions.
+* Fossil Field Ridge is placed on ocean shelf tiles when modified_landmarks is enabled.
+* Clinical Immortality provides one extra talent per base instead of two as mentioned in the manual.
+* Base production picker will not show Paradise Garden as buildable if the base already has Punishment Sphere.
+* Minor clarifications on smac-in-smacx mod documentation to remove mentions of resolved issues.
+* Fix multiple issues with the user interface by modifying script entries (see script_label option and Details.md).
+* Fix issue where the game might crash when first opening an old savegame and clicking some crawler unit on the world map.
+
+
 ## Version 4.3 (2024-05-26)
 * Random map generator allows placing multiple similar landmarks when the related option value is greater than one.
 * Modify Mind Control probe action to only subvert units inside the base and not on adjacent tiles to balance for the relatively cheap cost for this action.
