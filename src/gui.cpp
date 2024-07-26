@@ -136,7 +136,7 @@ CMAP_GETCORNERYOFFSET_F        pfncMapGetCornerYOffset =        (CMAP_GETCORNERY
 // End of PRACX definitions
 
 
-bool __thiscall Win_is_visible(Win* This) {
+int __thiscall Win_is_visible(Win* This) {
     bool value = (This->iSomeFlag & WIN_VISIBLE)
         && (!This->poParent || Win_is_visible(This->poParent));
     return value;

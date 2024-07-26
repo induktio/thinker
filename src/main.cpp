@@ -95,7 +95,7 @@ int option_handler(void* user, const char* section, const char* name, const char
     } else if (MATCH("social_ai")) {
         cf->social_ai = atoi(value);
     } else if (MATCH("social_ai_bias")) {
-        cf->social_ai = clamp(atoi(value), 0, 1000);
+        cf->social_ai_bias = clamp(atoi(value), 0, 1000);
     } else if (MATCH("tech_balance")) {
         cf->tech_balance = atoi(value);
     } else if (MATCH("base_hurry")) {
@@ -236,6 +236,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->fungal_tower_bonus = clamp(atoi(value), 0, 1000);
     } else if (MATCH("planet_defense_bonus")) {
         cf->planet_defense_bonus = atoi(value);
+    } else if (MATCH("intercept_defense_bonus")) {
+        cf->intercept_defense_bonus = atoi(value);
     } else if (MATCH("perimeter_defense_bonus")) {
         cf->perimeter_defense_bonus = clamp(atoi(value), 0, 100);
     } else if (MATCH("tachyon_field_bonus")) {

@@ -71,7 +71,6 @@ bool non_ally_in_tile(int x, int y, int faction) {
     return nonally.count({x, y}) > 0;
 }
 
-
 bool allow_move(int x, int y, int faction, int triad) {
     assert(valid_player(faction));
     assert(valid_triad(triad));
@@ -593,8 +592,8 @@ void move_upkeep(int faction, UpdateMode mode) {
     if (!is_alive(faction)) {
         return;
     }
-    if (((mode == UM_Player) != is_human(faction))
-    || (mode != UM_Player && !thinker_enabled(faction))) {
+    if ((mode == UM_Full && !thinker_enabled(faction))
+    || (mode == UM_Player && !is_human(faction))) {
         return;
     }
     int tile_count[MaxRegionNum] = {};
@@ -739,7 +738,8 @@ void move_upkeep(int faction, UpdateMode mode) {
                 ts.init(base->x, base->y, TS_TERRITORY_LAND);
                 while (++j <= 150 && k < 5 && (sq = ts.get_next()) != NULL) {
                     if (sq->is_base()) {
-                        if (route_distance(pm_roads, base->x, base->y, ts.rx, ts.ry) < 0) {
+                        if (f.region_total_bases[sq->region] < 4
+                        || route_distance(pm_roads, base->x, base->y, ts.rx, ts.ry) < 0) {
 //                            debug("route_add %d %d -> %d %d\n", base->x, base->y, ts.rx, ts.ry);
                             adjust_route(pm_roads, ts, 1);
                         }
@@ -1020,18 +1020,26 @@ int move_to_base(const int id, bool ally) {
     return mod_veh_skip(id);
 }
 
-ResType want_convoy(int base_id, int x, int y, int* score) {
+ResType want_convoy(int veh_id, int x, int y, int* score) {
     MAP* sq;
-    BASE* base = &Bases[base_id];
+    VEH* veh = &Vehs[veh_id];
+    BASE* base = &Bases[veh->home_base_id];
     ResType choice = RES_NONE;
+    int base_id = veh->home_base_id;
     *score = 0;
 
-    if ((sq = mapsq(x, y)) && !sq->is_base()
-    && (sq->owner == base->faction_id || !sq->is_owned())
+    if ((sq = mapsq(x, y)) && !sq->is_base() && base_id >= 0
+    && (sq->owner == veh->faction_id || !sq->is_owned())
     && !mapnodes.count({x, y, NODE_CONVOY})) {
-        int N = crop_yield(base->faction_id, base_id, x, y, 0);
-        int M = mine_yield(base->faction_id, base_id, x, y, 0);
-        int E = energy_yield(base->faction_id, base_id, x, y, 0);
+        for (int i = 0; i < *VehCount; i++) {
+            if (veh_id != i && Vehs[i].x == x && Vehs[i].y == y
+            && Vehs[i].is_supply() && Vehs[i].order == ORDER_CONVOY) {
+                return RES_NONE;
+            }
+        }
+        int N = crop_yield(veh->faction_id, base_id, x, y, 0);
+        int M = mine_yield(veh->faction_id, base_id, x, y, 0);
+        int E = energy_yield(veh->faction_id, base_id, x, y, 0);
 
         int Nw = (base->nutrient_surplus < 0 ? 8 : min(8, 2 + base_growth_goal(base_id)))
             - max(0, base->nutrient_surplus - 14);
@@ -1053,12 +1061,13 @@ ResType want_convoy(int base_id, int x, int y, int* score) {
         }
         if (E > 1 && Es > *score
         && base->energy_inefficiency*2 < base->energy_surplus
+        && base->mineral_surplus > min(20, 4 + base->pop_size)
         && !has_fac_built(FAC_PUNISHMENT_SPHERE, base_id)
         && (has_fac_built(FAC_NETWORK_NODE, base_id)
         || has_fac_built(FAC_TREE_FARM, base_id)
-        || SecretProjects[FAC_SPACE_ELEVATOR - SP_ID_First] == base_id
-        || SecretProjects[FAC_SUPERCOLLIDER - SP_ID_First] == base_id
-        || SecretProjects[FAC_THEORY_OF_EVERYTHING - SP_ID_First] == base_id)) {
+        || project_base(FAC_SPACE_ELEVATOR) == base_id
+        || project_base(FAC_SUPERCOLLIDER) == base_id
+        || project_base(FAC_THEORY_OF_EVERYTHING) == base_id)) {
             choice = RES_ENERGY;
             *score = Es;
         }
@@ -1068,9 +1077,17 @@ ResType want_convoy(int base_id, int x, int y, int* score) {
 
 int crawler_move(const int id) {
     MAP* sq;
-    VEH* veh = &Vehicles[id];
-    assert(Bases[veh->home_base_id].faction_id == veh->faction_id);
-    if (veh->home_base_id < 0) {
+    VEH* veh = &Vehs[id];
+    if (veh->home_base_id < 0 || Bases[veh->home_base_id].faction_id != veh->faction_id) {
+        if (is_human(veh->faction_id)){
+            return mod_veh_skip(id);
+        }
+        sq = mapsq(veh->x, veh->y);
+        if (sq && sq->is_base() && sq->owner == veh->faction_id) {
+            veh->home_base_id = base_at(veh->x, veh->y);
+        } else if (random(2)) {
+            return move_to_base(id, false);
+        }
         return mod_veh_skip(id);
     }
     if (!veh->at_target()) {
@@ -1081,7 +1098,7 @@ int crawler_move(const int id) {
         return VEH_SYNC;
     }
     int best_score = 0;
-    ResType best_choice = want_convoy(veh->home_base_id, veh->x, veh->y, &best_score);
+    ResType best_choice = want_convoy(id, veh->x, veh->y, &best_score);
     if (best_choice != RES_NONE && (*CurrentTurn + id) % 4) {
         return set_convoy(id, best_choice);
     }
@@ -1099,7 +1116,7 @@ int crawler_move(const int id) {
         || mapnodes.count({ts.rx, ts.ry, NODE_CONVOY_SITE})) {
             continue;
         }
-        int choice = want_convoy(veh->home_base_id, ts.rx, ts.ry, &score);
+        int choice = want_convoy(id, ts.rx, ts.ry, &score);
         if (choice != RES_NONE && score - ts.dist > best_score) {
             best_score = score - ts.dist;
             tx = ts.rx;
@@ -2403,7 +2420,6 @@ int choose_defender(int x, int y, int att_id, MAP* sq) {
 int combat_value(int id, int power, int moves, int mov_rate) {
     VEH* veh = &Vehicles[id];
     int damage = veh->damage_taken / veh->reactor_type();
-    assert(damage >= 0 && damage < 10);
     assert(moves > 0 && moves <= mov_rate);
     return max(1, power * (10 - damage) * moves / mov_rate);
 }
@@ -2583,8 +2599,9 @@ int aircraft_move(const int id) {
     max_dist = max_range * (missile || veh->mid_damage() ? 1 : 2);
 
     if (move_naval && !missile && (u->chassis_id != CHS_COPTER || !veh->mid_damage())) {
-        debug("aircraft_invade %2d %2d -> %2d %2d\n", veh->x, veh->y, tx, ty);
-        return set_move_to(id, tx, ty);
+        debug("aircraft_invade %2d %2d -> %2d %2d\n",
+            veh->x, veh->y, p.naval_airbase_x, p.naval_airbase_y);
+        return set_move_to(id, p.naval_airbase_x, p.naval_airbase_y);
     }
     for (i = 0; i < *BaseCount && (move_naval || move_other); i++) {
         BASE* base = &Bases[i];
@@ -2611,7 +2628,8 @@ int aircraft_move(const int id) {
         }
     }
     if (tx >= 0 && !(veh->x == tx && veh->y == ty)) {
-        debug("aircraft_rebase %2d %2d -> %2d %2d score: %d\n", veh->x, veh->y, tx, ty, best_score);
+        debug("aircraft_rebase %2d %2d -> %2d %2d score: %d\n",
+            veh->x, veh->y, tx, ty, best_score);
         return set_move_to(id, tx, ty);
     }
     if (!at_base && (u->chassis_id != CHS_GRAVSHIP || !random(8))) {
@@ -2925,7 +2943,6 @@ int combat_move(const int id) {
                     if (v->x == x2 && v->y == y2 && at_war(faction, v->faction_id)
                     && (v->triad() != TRIAD_AIR || sq->is_base())) {
                         int damage = v->damage_taken / v->reactor_type();
-                        assert(damage >= 0 && damage < 10);
                         score += max(0, arty_limit - damage)
                             * (v->faction_id > 0 ? 2 : 1)
                             * (v->is_combat_unit() ? 2 : 1)

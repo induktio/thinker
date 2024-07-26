@@ -62,6 +62,7 @@
 #include <psapi.h>
 #include <set>
 #include <list>
+#include <queue>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -267,7 +268,8 @@ struct Config {
     int neural_amplifier_bonus = 50;
     int dream_twister_bonus = 50;
     int fungal_tower_bonus = 50;
-    int planet_defense_bonus = 1;
+    int planet_defense_bonus = 0;
+    int intercept_defense_bonus = 0;
     int perimeter_defense_bonus = 2;
     int tachyon_field_bonus = 2;
     int biology_lab_bonus = 2;
@@ -341,15 +343,11 @@ struct AIPlans {
     int satellite_goal = 0;
     int enemy_odp = 0;
     int enemy_sat = 0;
-    int enemy_nukes = 0;
     int mil_strength = 0;
     float enemy_base_range = 0;
     float enemy_mil_factor = 0;
-    /*
-    Number of our bases captured by another faction we're currently at war with.
-    Important heuristic in threat calculation.
-    */
     int enemy_bases = 0;
+    int captured_bases = 0;
 };
 
 enum NodesetType {

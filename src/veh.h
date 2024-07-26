@@ -2,8 +2,8 @@
 
 #include "main.h"
 
-bool __cdecl can_arty(int unit_id, bool allow_sea_arty);
-bool __cdecl has_abil(int unit_id, VehAblFlag ability);
+int __cdecl can_arty(int unit_id, bool allow_sea_arty);
+int __cdecl has_abil(int unit_id, VehAblFlag ability);
 int __cdecl arty_range(int unit_id);
 int __cdecl drop_range(int faction);
 bool has_orbital_drops(int faction);
@@ -13,13 +13,14 @@ int __cdecl veh_stack(int x, int y);
 int __cdecl proto_speed(int unit_id);
 int __cdecl veh_speed(int veh_id, bool skip_morale);
 int __cdecl veh_cargo(int veh_id);
-bool __cdecl want_monolith(uint32_t veh_id);
+int __cdecl want_monolith(uint32_t veh_id);
 int __cdecl prototype_factor(int unit_id);
 int __cdecl mod_proto_cost(VehChassis chassis_id, VehWeapon weapon_id,
     VehArmor armor_id, VehAblFlag ability, VehReactor reactor_id);
 int __cdecl mod_base_cost(int unit_id);
 int __cdecl mod_veh_cost(int unit_id, int base_id, int32_t* has_proto_cost);
-int __cdecl mod_upgrade_cost(int faction, int new_unit_id, int old_unit_id);
+int __cdecl mod_upgrade_cost(int faction_id, int new_unit_id, int old_unit_id);
+int __cdecl mod_veh_avail(int unit_id, int faction_id, int base_id);
 int __cdecl mod_stack_check(int veh_id, int type, int cond1, int cond2, int cond3);
 
 int __cdecl mod_veh_init(int unit_id, int faction, int x, int y);

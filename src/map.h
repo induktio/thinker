@@ -19,14 +19,16 @@ bool is_ocean_shelf(MAP* sq);
 bool is_shore_level(MAP* sq);
 bool map_is_flat();
 
-bool __cdecl bad_reg(int region);
+int __cdecl is_coast(int x, int y, bool is_base_radius);
+int __cdecl is_port(int base_id, bool is_base_radius);
+int __cdecl bad_reg(int region);
 int __cdecl region_at(int x, int y);
 int __cdecl base_at(int x, int y);
 int __cdecl x_dist(int x1, int x2);
 uint32_t __cdecl bit_at(int x, int y);
 uint32_t __cdecl code_at(int x, int y);
 void __cdecl code_set(int x, int y, int code);
-bool __cdecl near_landmark(int x, int y);
+int __cdecl near_landmark(int x, int y);
 void __cdecl mod_map_wipe();
 int __cdecl mod_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, int y2, int toggle);
 int __cdecl mod_bonus_at(int x, int y);

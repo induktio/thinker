@@ -4,7 +4,7 @@
 static TileSearch ts;
 
 
-bool __cdecl can_arty(int unit_id, bool allow_sea_arty) {
+int __cdecl can_arty(int unit_id, bool allow_sea_arty) {
     UNIT* u = &Units[unit_id];
     if ((u->offense_value() <= 0 // PSI + non-combat
     || u->defense_value() < 0) // PSI
@@ -20,7 +20,7 @@ bool __cdecl can_arty(int unit_id, bool allow_sea_arty) {
     return has_abil(unit_id, ABL_ARTILLERY); // TRIAD_LAND
 }
 
-bool __cdecl has_abil(int unit_id, VehAblFlag ability) {
+int __cdecl has_abil(int unit_id, VehAblFlag ability) {
     int faction_id = unit_id / MaxProtoFactionNum;
     // workaround fix for legacy base_build that may incorrectly use negative unit_id
     if (unit_id < 0) {
@@ -232,7 +232,7 @@ int __cdecl veh_cargo(int veh_id) {
 /*
 Determine whether the specified unit is eligible for a monolith morale upgrade.
 */
-bool __cdecl want_monolith(int veh_id) {
+int __cdecl want_monolith(int veh_id) {
     return !(Vehs[veh_id].state & VSTATE_MONOLITH_UPGRADED)
         && mod_morale_veh(veh_id, true, 0) < MORALE_ELITE
         && Vehs[veh_id].morale < MORALE_ELITE
@@ -426,7 +426,7 @@ int __cdecl mod_veh_cost(int unit_id, int base_id, int32_t* has_proto_cost) {
 /*
 Calculate upgrade cost between two prototypes in mineral rows.
 */
-int __cdecl mod_upgrade_cost(int faction, int new_unit_id, int old_unit_id) {
+int __cdecl mod_upgrade_cost(int faction_id, int new_unit_id, int old_unit_id) {
     UNIT* old_unit = &Units[old_unit_id];
     UNIT* new_unit = &Units[new_unit_id];
     int cost;
@@ -440,7 +440,7 @@ int __cdecl mod_upgrade_cost(int faction, int new_unit_id, int old_unit_id) {
         if (new_unit_id >= MaxProtoFactionNum && !new_unit->is_prototyped()) {
             cost *= 2;
         }
-        if (has_project(FAC_NANO_FACTORY, faction)) {
+        if (has_project(FAC_NANO_FACTORY, faction_id)) {
             cost /= 2;
         }
     } else {
@@ -453,12 +453,58 @@ int __cdecl mod_upgrade_cost(int faction, int new_unit_id, int old_unit_id) {
             + max(0, new_unit->armor_cost() - old_unit->armor_cost())
             + max(0, new_unit->weapon_cost() - old_unit->weapon_cost())
             + modifier;
-        if (has_project(FAC_NANO_FACTORY, faction)) {
+        if (has_project(FAC_NANO_FACTORY, faction_id)) {
             cost /= 2;
         }
-        assert(cost == upgrade_cost(faction, new_unit_id, old_unit_id));
+        assert(cost == upgrade_cost(faction_id, new_unit_id, old_unit_id));
     }
     return cost;
+}
+
+/*
+Check to see whether provided faction and base can build a specific prototype.
+Includes checks to prevent SMACX specific units from being built in SMAC mode.
+*/
+int __cdecl mod_veh_avail(int unit_id, int faction_id, int base_id) {
+    assert(unit_id >= 0 && unit_id < MaxProtoNum);
+    assert(faction_id >= 0 && faction_id < MaxPlayerNum);
+
+    if (!Units[unit_id].is_active()
+    || (Units[unit_id].obsolete_factions & (1 << faction_id))) {
+        return false;
+    }
+    if (unit_id < MaxProtoFactionNum) {
+        if (!has_tech(Units[unit_id].preq_tech, faction_id)) {
+            return false;
+        }
+    }
+    if (Units[unit_id].plan == PLAN_COLONIZATION
+    && *GameRules & RULES_SCN_NO_COLONY_PODS) {
+        return false;
+    }
+    if (base_id >= 0 && Units[unit_id].triad() == TRIAD_SEA
+    && !is_coast(Bases[base_id].x, Bases[base_id].y, 0)) {
+        return false;
+    }
+    int wpn_id = Units[unit_id].weapon_id;
+    uint32_t abls = Units[unit_id].ability_flags;
+    if (!*ExpansionEnabled && (Units[unit_id].armor_id > ARM_PSI_DEFENSE
+    || wpn_id == WPN_RESONANCE_LASER || wpn_id == WPN_RESONANCE_BOLT
+    || wpn_id == WPN_STRING_DISRUPTOR || wpn_id == WPN_TECTONIC_PAYLOAD
+    || wpn_id == WPN_FUNGAL_PAYLOAD
+    || abls & ABL_SOPORIFIC_GAS || abls & ABL_DISSOCIATIVE_WAVE
+    || abls & ABL_MARINE_DETACHMENT || abls & ABL_FUEL_NANOCELLS
+    || abls & ABL_ALGO_ENHANCEMENT
+    || unit_id == BSC_SEALURK || unit_id == BSC_SPORE_LAUNCHER
+    || unit_id == BSC_BATTLE_OGRE_MK1 || unit_id == BSC_BATTLE_OGRE_MK2
+    || unit_id == BSC_BATTLE_OGRE_MK3 || unit_id == BSC_FUNGAL_TOWER
+    || unit_id == BSC_UNITY_MINING_LASER)) {
+        return false;
+    }
+    if (unit_id < MaxProtoFactionNum) {
+        return true;
+    }
+    return (unit_id / MaxProtoFactionNum) == faction_id;
 }
 
 /*
@@ -569,7 +615,7 @@ int __cdecl mod_stack_check(int veh_id, int type, int cond1, int cond2, int cond
             break;
         case 17:
             if ((cond2 < 0 || Vehs[i].faction_id == cond2)
-            && Units[Vehs[i].unit_id].unk_1 == cond1) {
+            && Units[Vehs[i].unit_id].group_id == cond1) {
                 value++;
             }
             break;
@@ -707,8 +753,8 @@ int __cdecl create_proto(int faction, VehChassis chs, VehWeapon wpn, VehArmor ar
 VehAblFlag abls, VehReactor rec, VehPlan ai_plan) {
     char name[256];
     mod_name_proto(name, -1, faction, chs, wpn, arm, abls, rec);
-    debug("create_proto  %d %d chs: %d rec: %d wpn: %2d arm: %2d plan: %2d %08X %s\n",
-        *CurrentTurn, faction, chs, rec, wpn, arm, ai_plan, abls, name);
+    debug("create_proto %4d %d chs: %d rec: %d wpn: %2d arm: %2d %08X %s\n",
+        *CurrentTurn, faction, chs, rec, wpn, arm, abls, name);
     return propose_proto(faction, chs, wpn, arm, abls, rec, ai_plan, (strlen(name) ? name : NULL));
 }
 
@@ -720,7 +766,7 @@ VehAblFlag abls, VehReactor rec) {
     int triad = Chassis[chs].triad;
     int arm_v = Armor[arm].defense_value;
     int wpn_v = Weapon[wpn].offense_value;
-    debug("propose_proto %d %d chs: %d rec: %d wpn: %2d arm: %2d %08X\n",
+    debug("propose_proto %3d %d chs: %d rec: %d wpn: %2d arm: %2d %08X\n",
         *CurrentTurn, faction, chs, rec, wpn, arm, abls);
 
     if (!is_human(faction)) {
@@ -805,7 +851,7 @@ void parse_chs_name(char* buf, const char* name) {
 
 int __cdecl mod_name_proto(char* name, int unit_id, int faction_id,
 VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
-    char buf[256];
+    char buf[256] = {};
     bool noncombat = Weapon[wpn].mode == WMODE_CONVOY
         || Weapon[wpn].mode == WMODE_INFOWAR
         || Weapon[wpn].mode == WMODE_TERRAFORMER
@@ -826,6 +872,8 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
     bool garrison = combat && !arty && !marine && wpn_v < arm_v && spd_v < 2;
     uint32_t prefix_abls = abls & ~(ABL_ARTILLERY | ABL_AMPHIBIOUS | ABL_NERVE_GAS
         | (intercept ? ABL_AIR_SUPERIORITY : 0)); // SAM for ground units
+    // Battleship names are used only for long range artillery
+    bool lrg_names = (sea_arty || triad != TRIAD_SEA || conf.long_range_artillery < 1);
 
     if (!conf.new_unit_names || (!combat && !noncombat) || Chassis[chs].missile) {
         if (unit_id < 0) {
@@ -865,7 +913,7 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
             if ((!arty && !marine && !intercept) || (arty && spd_v > 1)) {
                 int value = wpn_v - arm_v;
                 if (value <= -1) { // Defensive
-                    if ((arm_v >= 8 && wpn_v*2 >= min(24, arm_v))
+                    if ((arm_v >= 8 && wpn_v*2 >= min(24, arm_v) && lrg_names)
                     || (sea_arty && wpn_v + arm_v >= 6)) {
                         parse_chs_name(buf, Chassis[chs].defsv_name_lrg);
                     } else if (wpn_v >= 2) {
@@ -873,8 +921,8 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
                     } else {
                         parse_chs_name(buf, Chassis[chs].defsv2_name);
                     }
-                } else if (value >= 1) { // Offensive
-                    if ((wpn_v >= 8 && arm_v*2 >= min(24, wpn_v))
+                } else if (value >= 1 || sea_arty) { // Offensive
+                    if ((wpn_v >= 8 && arm_v*2 >= min(24, wpn_v) && lrg_names)
                     || (sea_arty && wpn_v + arm_v >= 6)) {
                         parse_chs_name(buf, Chassis[chs].offsv_name_lrg);
                     } else if (triad != TRIAD_AIR && arm_v >= 2) {

@@ -92,10 +92,27 @@ bool map_is_flat() {
     return *MapToggleFlat & 1;
 }
 
+int __cdecl is_coast(int x, int y, bool is_base_radius) {
+    int radius = is_base_radius ? 21 : 9;
+    for (int i = 1; i < radius; i++) {
+        int x2 = wrap(x + TableOffsetX[i]);
+        int y2 = y + TableOffsetY[i];
+        MAP* sq = mapsq(x2, y2);
+        if (sq && is_ocean(sq)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int __cdecl is_port(int base_id, bool is_base_radius) {
+    return is_coast(Bases[base_id].x, Bases[base_id].y, is_base_radius);
+}
+
 /*
 Validate region bounds. Bad regions include: 0, 63, 64, 127, 128.
 */
-bool __cdecl bad_reg(int region) {
+int __cdecl bad_reg(int region) {
     return (region & RegionBounds) == RegionBounds || !(region & RegionBounds);
 }
 
@@ -148,7 +165,7 @@ void __cdecl code_set(int x, int y, int code) {
     }
 }
 
-bool __cdecl near_landmark(int x, int y) {
+int __cdecl near_landmark(int x, int y) {
     for (int i = 0; i < TableRange[8]; i++) {
         int x2 = wrap(x + TableOffsetX[i]);
         int y2 = y + TableOffsetY[i];

@@ -107,7 +107,7 @@ int base_trade_value(int base_id, int faction1, int faction2)
         }
     }
     for (int i = SP_ID_First; i <= SP_ID_Last; i++) {
-        if (SecretProjects[i - SP_ID_First] == base_id) {
+        if (project_base((FacilityId)i) == base_id) {
             value += max(0, Facility[i].cost) * (own_base && !pact ? 40 : 20)
                 + 60 * clamp(project_score(faction2, (FacilityId)i, false), 0, 10);
         }

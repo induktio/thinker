@@ -3,7 +3,7 @@
 
 
 bool has_tech(int tech_id, int faction) {
-    assert(valid_player(faction));
+    assert(faction >= 0 && faction < MaxPlayerNum);
     assert(tech_id >= TECH_Disable && tech_id <= TECH_TranT);
     if (tech_id == TECH_None) {
         return true;
@@ -27,8 +27,7 @@ bool has_wmode(int faction, VehWeaponMode mode) {
     }
     for (int i = 0; i < MaxProtoFactionNum; i++) {
         UNIT* u = &Units[i];
-        if (u->is_active() && u->weapon_mode() == mode
-        && strlen(u->name) > 0 && has_tech(u->preq_tech, faction)) {
+        if (mod_veh_avail(i, faction, -1) && u->weapon_mode() == mode) {
             return true;
         }
     }
@@ -44,8 +43,7 @@ bool has_aircraft(int faction) {
     }
     for (int i = 0; i < MaxProtoFactionNum; i++) {
         UNIT* u = &Units[i];
-        if (u->is_active() && u->triad() == TRIAD_AIR && !Chassis[i].missile
-        && strlen(u->name) > 0 && has_tech(u->preq_tech, faction)) {
+        if (mod_veh_avail(i, faction, -1) && u->triad() == TRIAD_AIR && !u->is_missile()) {
             return true;
         }
     }
@@ -61,8 +59,7 @@ bool has_ships(int faction) {
     }
     for (int i = 0; i < MaxProtoFactionNum; i++) {
         UNIT* u = &Units[i];
-        if (u->is_active() && u->triad() == TRIAD_SEA
-        && strlen(u->name) > 0 && has_tech(u->preq_tech, faction)) {
+        if (mod_veh_avail(i, faction, -1) && u->triad() == TRIAD_SEA) {
             return true;
         }
     }
@@ -92,6 +89,11 @@ bool has_project(FacilityId item_id, int faction) {
     assert(item_id >= SP_ID_First && item_id <= FAC_EMPTY_SP_64);
     int base_id = SecretProjects[item_id - SP_ID_First];
     return base_id >= 0 && faction >= 0 && Bases[base_id].faction_id == faction;
+}
+
+int project_base(FacilityId item_id) {
+    assert(item_id >= SP_ID_First && item_id <= FAC_EMPTY_SP_64);
+    return SecretProjects[item_id - SP_ID_First];
 }
 
 int facility_count(FacilityId item_id, int faction) {
@@ -199,8 +201,15 @@ bool allow_expand(int faction) {
             bases = max(bases, Factions[i].base_count);
         }
     }
-    if (conf.expansion_limit > 0) {
-        return Factions[faction].base_count < max(bases, conf.expansion_limit);
+    if (conf.expansion_limit > 0 && !is_human(faction)) {
+        int pods = 0;
+        for (int i = 0; i < *VehCount; i++) {
+            VEH* veh = &Vehicles[i];
+            if (veh->faction_id == faction && veh->is_colony()) {
+                pods++;
+            }
+        }
+        return Factions[faction].base_count + pods < max(bases, conf.expansion_limit);
     }
     return true;
 }
@@ -383,7 +392,7 @@ int __cdecl mod_setup_player(int faction, int a2, int a3) {
 /*
 Improved social engineering AI choices feature.
 */
-int social_score(int faction, int sf, int sm, int range, bool pop_boom, bool has_nexus,
+int social_score(int faction, int sf, int sm, int def_value, bool pop_boom, bool has_nexus,
 int robust, int immunity, int impunity, int penalty) {
     enum {ECO, EFF, SUP, TAL, MOR, POL, GRW, PLA, PRO, IND, RES};
     Faction* f = &Factions[faction];
@@ -391,7 +400,7 @@ int robust, int immunity, int impunity, int penalty) {
     double base_ratio = min(1.0, f->base_count / min(40.0, *MapAreaSqRoot * 0.5));
     int w_morale = (has_project(FAC_COMMAND_NEXUS, faction) ? 2 : 0)
         + (has_project(FAC_CYBORG_FACTORY, faction) ? 2 : 0);
-    int w_probe = (range < 25 && *CurrentTurn - m->thinker_last_mc_turn < 8 ? 5 : 0);
+    int w_probe = (*CurrentTurn - m->thinker_last_mc_turn < 10 ? def_value + 1 : 0);
     int sc = 0;
     int vals[MaxSocialEffectNum];
 
@@ -465,7 +474,7 @@ int robust, int immunity, int impunity, int penalty) {
         sc += 10;
     }
     if (vals[PRO] >= 3 && !has_project(FAC_HUNTER_SEEKER_ALGORITHM, faction)) {
-        sc += 4 * max(0, 4 - range/8);
+        sc += 4 * def_value;
     }
     sc += max(2, 2 + 4*f->AI_wealth + 3*f->AI_tech - f->AI_fight)
         * clamp(vals[ECO], -3, 5);
@@ -473,13 +482,13 @@ int robust, int immunity, int impunity, int penalty) {
         * (min(6, vals[EFF]) + (vals[EFF] >= 3 ? 2 : 0));
     sc += max(3, 3 + 2*f->AI_power + 2*f->AI_fight)
         * clamp(vals[SUP], -4, 3);
-    sc += max(2, 4 - range/8 + 2*f->AI_power + 2*f->AI_fight)
+    sc += max(2, def_value + 2*f->AI_power + 2*f->AI_fight)
         * clamp(vals[MOR], -4, 4);
 
     if (!has_project(FAC_TELEPATHIC_MATRIX, faction)) {
         sc += (vals[POL] < 0 ? 2 : 4) * clamp(vals[POL], -5, 3);
         if (vals[POL] < -2) {
-            sc -= (vals[POL] < -3 ? 4 : 2) * max(0, 4 - range/8)
+            sc -= (vals[POL] < -3 ? 2 : 1) * def_value
                 * (has_aircraft(faction) ? 2 : 1);
         }
         if (has_project(FAC_LONGEVITY_VACCINE, faction) && sf == SOCIAL_C_ECONOMICS) {
@@ -513,7 +522,7 @@ int robust, int immunity, int impunity, int penalty) {
     }
     sc += max(2, (f->SE_planet_base > 0 ? 5 : 2) + m->rule_psi/10
         + (has_project(FAC_MANIFOLD_HARMONICS, faction) ? 6 : 0)) * clamp(vals[PLA], -3, 3);
-    sc += max(2, 5 - range/8 + w_probe + 2*f->AI_power + 2*f->AI_fight)
+    sc += max(2, 1 + def_value + w_probe + 2*f->AI_power + 2*f->AI_fight)
         * clamp(vals[PRO], -2, 3);
     sc += 8 * clamp(vals[IND], -3, 8 - *DiffLevel);
 
@@ -539,6 +548,7 @@ int UNUSED(a2), int UNUSED(a3), int UNUSED(a4), int UNUSED(a5), int UNUSED(a6))
 int __cdecl mod_social_ai(int faction, int a2, int a3, int a4, int a5, int a6) {
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
+    AIPlans* p = &plans[faction];
     bool pop_boom = 0;
     int want_pop = 0;
     int pop_total = 0;
@@ -546,18 +556,28 @@ int __cdecl mod_social_ai(int faction, int a2, int a3, int a4, int a5, int a6) {
     int immunity = 0;
     int impunity = 0;
     int penalty = 0;
+    int def_value;
 
     if (is_human(faction) || !is_alive(faction)) {
         return 0;
     }
-    if (!thinker_enabled(faction)) {
+    if (!thinker_enabled(faction) || !conf.social_ai) {
+        design_units(faction);
         return social_ai(faction, a2, a3, a4, a5, a6);
     }
     if (f->SE_upheaval_cost_paid > 0) {
         social_set(faction);
         return 0;
     }
-    int range = (int)(plans[faction].enemy_base_range / (1.0 + 0.1 * min(4, plans[faction].enemy_bases)));
+    if (!p->enemy_factions) {
+        def_value = clamp(f->AI_fight + f->AI_power + f->base_count/32, 0, 2);
+    } else {
+        def_value = clamp((int)(3.0f - p->enemy_base_range/8.0f)
+            + min(2, f->base_count/32)
+            + min(4, p->enemy_bases/2)
+            + min(2, p->captured_bases/2)
+            + min(2, p->enemy_factions/2), 1, 4);
+    }
     bool has_nexus = (manifold_nexus_owner() == faction);
     assert(!memcmp(&f->SE_Politics, &f->SE_Politics_pending, 16));
 
@@ -597,23 +617,23 @@ int __cdecl mod_social_ai(int faction, int a2, int a3, int a4, int a5, int a6) {
             pop_boom = ((f->SE_growth < 4 ? 1 : 2) * want_pop) >= pop_total;
         }
     }
-    debug("social_params %d %d %8s range: %2d has_nexus: %d pop_boom: %d want_pop: %3d pop_total: %3d "\
+    debug("social_params %d %d %8s defense: %d has_nexus: %d pop_boom: %d want_pop: %3d pop_total: %3d "\
         "robust: %04x immunity: %04x impunity: %04x penalty: %04x\n", *CurrentTurn, faction, m->filename,
-        range, has_nexus, pop_boom, want_pop, pop_total, robust, immunity, impunity, penalty);
+        def_value, has_nexus, pop_boom, want_pop, pop_total, robust, immunity, impunity, penalty);
     int score_diff = 1 + (*CurrentTurn + 11*faction) % 6;
     int sf = -1;
     int sm2 = -1;
 
     for (int i = 0; i < MaxSocialCatNum; i++) {
         int sm1 = (&f->SE_Politics)[i];
-        int sc1 = social_score(faction, i, sm1, range, pop_boom, has_nexus, robust, immunity, impunity, penalty);
+        int sc1 = social_score(faction, i, sm1, def_value, pop_boom, has_nexus, robust, immunity, impunity, penalty);
 
         for (int j = 0; j < MaxSocialModelNum; j++) {
             if (j == sm1 || !has_tech(Social[i].soc_preq_tech[j], faction) ||
             (i == m->soc_opposition_category && j == m->soc_opposition_model)) {
                 continue;
             }
-            int sc2 = social_score(faction, i, j, range, pop_boom, has_nexus, robust, immunity, impunity, penalty);
+            int sc2 = social_score(faction, i, j, def_value, pop_boom, has_nexus, robust, immunity, impunity, penalty);
             if (sc2 - sc1 > score_diff) {
                 sf = i;
                 sm2 = j;
@@ -632,6 +652,7 @@ int __cdecl mod_social_ai(int faction, int a2, int a3, int a4, int a5, int a6) {
             cost, score_diff, Social[sf].soc_name[sm1], Social[sf].soc_name[sm2]);
     }
     social_set(faction);
+    design_units(faction);
     consider_designs(faction);
     return 0;
 }
@@ -640,7 +661,7 @@ int __cdecl mod_social_ai(int faction, int a2, int a3, int a4, int a5, int a6) {
 Determine if the specified faction wants to attack the target faction.
 Lower values of modifier will make the faction more likely to attack.
 */
-static bool __cdecl evaluate_attack(int faction_id, int faction_id_tgt, int faction_id_unk) {
+static int __cdecl evaluate_attack(int faction_id, int faction_id_tgt, int faction_id_unk) {
     int32_t peace_faction_id = 0;
     bool common_enemy = false; // Target faction is at war with a human faction we are allied with
     if (MFactions[faction_id].is_alien() && MFactions[faction_id_tgt].is_alien()) {
@@ -824,7 +845,7 @@ static bool __cdecl evaluate_attack(int faction_id, int faction_id_tgt, int fact
     return true;
 }
 
-bool __cdecl mod_wants_to_attack(int faction_id, int faction_id_tgt, int faction_id_unk) {
+int __cdecl mod_wants_to_attack(int faction_id, int faction_id_tgt, int faction_id_unk) {
     bool value = evaluate_attack(faction_id, faction_id_tgt, faction_id_unk);
 
     debug("wants_to_attack turn: %d factions: %d %d %d value: %d\n",

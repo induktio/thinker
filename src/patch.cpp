@@ -255,6 +255,16 @@ void write_bytes(int32_t addr, const byte* old_bytes, const byte* new_bytes, int
     }
 }
 
+void write_byte(int32_t addr, byte old_byte, byte new_byte) {
+    if (addr < (int32_t)AC_IMAGE_BASE) {
+        exit_fail(addr);
+    }
+    if (*(byte*)addr != old_byte && *(byte*)addr != new_byte) {
+        exit_fail(addr);
+    }
+    *(byte*)addr = new_byte;
+}
+
 /*
 Check before patching that the locations contain expected data.
 */
@@ -422,26 +432,6 @@ bool patch_setup(Config* cf) {
 
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
-    write_call(0x415F35, (int)mod_base_reset);
-    write_call(0x41605A, (int)mod_base_reset);
-    write_call(0x417F83, (int)mod_base_reset);
-    write_call(0x419F7C, (int)mod_base_reset);
-    write_call(0x4E63CD, (int)mod_base_reset);
-    write_call(0x4F098F, (int)mod_base_reset);
-    write_call(0x4F154C, (int)mod_base_reset);
-    write_call(0x4F184C, (int)mod_base_reset);
-    write_call(0x4F1BA7, (int)mod_base_reset);
-    write_call(0x4F1CBB, (int)mod_base_reset);
-    write_call(0x4F3404, (int)mod_base_reset);
-    write_call(0x4F3922, (int)mod_base_reset);
-    write_call(0x4F5109, (int)mod_base_reset);
-    write_call(0x4F5F04, (int)mod_base_reset);
-    write_call(0x508B3F, (int)mod_base_reset);
-    write_call(0x50AE18, (int)mod_base_reset);
-    write_call(0x50CCA8, (int)mod_base_reset);
-    write_call(0x561607, (int)mod_base_reset);
-    write_call(0x564850, (int)mod_base_reset);
-    write_call(0x5B01C7, (int)mod_base_reset);
     write_call(0x4F7A38, (int)consider_hurry);
     write_call(0x5BDC4C, (int)mod_tech_value);
     write_call(0x579362, (int)mod_enemy_move);
@@ -491,12 +481,51 @@ bool patch_setup(Config* cf) {
     write_call(0x527039, (int)mod_base_upkeep);
     write_call(0x5B41E9, (int)mod_time_warp);
     write_call(0x561948, (int)enemy_strategy_upgrade);
+    write_call(0x4B497C, (int)mod_say_orders); // say_orders2
+    write_call(0x4B5C27, (int)mod_say_orders); // StatusWin::draw_active
     write_call(0x50474C, (int)mod_battle_compute); // best_defender
     write_call(0x506EA6, (int)mod_battle_compute); // battle_fight_2
     write_call(0x5085E0, (int)mod_battle_compute); // battle_fight_2
     write_call(0x4F7B82, (int)mod_base_research); // base_upkeep
-    write_call(0x4B497C, (int)mod_say_orders); // say_orders2
-    write_call(0x4B5C27, (int)mod_say_orders); // StatusWin::draw_active
+    write_call(0x4CCF13, (int)mod_capture_base); // action_airdrop
+    write_call(0x598778, (int)mod_capture_base); // order_veh
+    write_call(0x5A4AB0, (int)mod_capture_base); // probe
+    write_call(0x4CD629, (int)mod_base_kill); // action_oblit
+    write_call(0x4F1466, (int)mod_base_kill); // base_production
+    write_call(0x4EF319, (int)mod_base_kill); // base_growth
+    write_call(0x500FD7, (int)mod_base_kill); // planet_busting
+    write_call(0x50ADA8, (int)mod_base_kill); // battle_fight_2
+    write_call(0x50AE77, (int)mod_base_kill); // battle_fight_2
+    write_call(0x520E1A, (int)mod_base_kill); // random_events
+    write_call(0x521121, (int)mod_base_kill); // random_events
+    write_call(0x5915A6, (int)mod_base_kill); // alt_set
+    write_call(0x598673, (int)mod_base_kill); // order_veh
+    write_call(0x415F35, (int)mod_base_reset); // BaseWin::unk4
+    write_call(0x41605A, (int)mod_base_reset); // BaseWin::gov_on
+    write_call(0x417F83, (int)mod_base_reset); // BaseWin::production
+    write_call(0x419F7C, (int)mod_base_reset); // BaseWin::gov_options
+    write_call(0x4E63CD, (int)mod_base_reset); // bases_reset
+    write_call(0x4F098F, (int)mod_base_reset); // base_production
+    write_call(0x4F154C, (int)mod_base_reset); // base_production
+    write_call(0x4F184C, (int)mod_base_reset); // base_production
+    write_call(0x4F1BA7, (int)mod_base_reset); // base_production
+    write_call(0x4F1CBB, (int)mod_base_reset); // base_production
+    write_call(0x4F3404, (int)mod_base_reset); // base_production
+    write_call(0x4F3922, (int)mod_base_reset); // base_production
+    write_call(0x4F5109, (int)mod_base_reset); // drone_riot
+    write_call(0x4F5F04, (int)mod_base_reset); // base_drones
+    write_call(0x508B3F, (int)mod_base_reset); // battle_fight_2
+    write_call(0x50AE18, (int)mod_base_reset); // battle_fight_2
+    write_call(0x50CCA8, (int)mod_base_reset); // capture_base
+    write_call(0x561607, (int)mod_base_reset); // enemy_strategy
+    write_call(0x564850, (int)mod_base_reset); // enemy_strategy
+    write_call(0x5B01C7, (int)mod_base_reset); // time_warp
+    write_call(0x41B8BF, (int)mod_facility_avail); // BaseWin::base_editor_fac
+    write_call(0x41CC07, (int)mod_facility_avail); // BaseWin::base_editor
+    write_call(0x49357A, (int)mod_facility_avail); // ProdPicker::calculate
+    write_call(0x4F077E, (int)mod_facility_avail); // base_queue
+    write_call(0x4FD920, (int)mod_facility_avail); // base_build
+    write_call(0x4FF2D4, (int)mod_facility_avail); // base_build
 
     write_offset(0x50F421, (void*)mod_turn_timer);
     write_offset(0x6456EE, (void*)mod_except_handler3);
@@ -537,35 +566,31 @@ bool patch_setup(Config* cf) {
     write_call(0x5BCC70, (int)mod_wants_to_attack); // tech_val
     write_call(0x5BCC85, (int)mod_wants_to_attack); // tech_val
 
-    write_call(0x4CCF13, (int)mod_capture_base); // action_airdrop
-    write_call(0x598778, (int)mod_capture_base); // order_veh
-    write_call(0x5A4AB0, (int)mod_capture_base); // probe
-    write_call(0x4CD629, (int)mod_base_kill); // action_oblit
-    write_call(0x4F1466, (int)mod_base_kill); // base_production
-    write_call(0x4EF319, (int)mod_base_kill); // base_growth
-    write_call(0x500FD7, (int)mod_base_kill); // planet_busting
-    write_call(0x50ADA8, (int)mod_base_kill); // battle_fight_2
-    write_call(0x50AE77, (int)mod_base_kill); // battle_fight_2
-    write_call(0x520E1A, (int)mod_base_kill); // random_events
-    write_call(0x521121, (int)mod_base_kill); // random_events
-    write_call(0x5915A6, (int)mod_base_kill); // alt_set
-    write_call(0x598673, (int)mod_base_kill); // order_veh
-
     // Magtube and fungus movement speed patches
-    write_call(0x587424, (int)mod_read_basic_rules);
-    write_call(0x467711, (int)mod_hex_cost);
-    write_call(0x572518, (int)mod_hex_cost);
-    write_call(0x5772D7, (int)mod_hex_cost);
-    write_call(0x5776F4, (int)mod_hex_cost);
-    write_call(0x577E2C, (int)mod_hex_cost);
-    write_call(0x577F0E, (int)mod_hex_cost);
-    write_call(0x597695, (int)mod_hex_cost);
-    write_call(0x59ACA4, (int)mod_hex_cost);
-    write_call(0x59B61A, (int)mod_hex_cost);
-    write_call(0x59C105, (int)mod_hex_cost);
+    write_call(0x587424, (int)mod_read_basic_rules); // read_rules
+    write_call(0x467711, (int)mod_hex_cost); // MapWin::dest_line
+    write_call(0x572518, (int)mod_hex_cost); // enemy_move
+    write_call(0x5772D7, (int)mod_hex_cost); // enemy_move
+    write_call(0x5776F4, (int)mod_hex_cost); // enemy_move
+    write_call(0x577E2C, (int)mod_hex_cost); // enemy_move
+    write_call(0x577F0E, (int)mod_hex_cost); // enemy_move
+    write_call(0x597695, (int)mod_hex_cost); // order_veh
+    write_call(0x59ACA4, (int)mod_hex_cost); // Path::find
+    write_call(0x59B61A, (int)mod_hex_cost); // Path::find
+    write_call(0x59C105, (int)mod_hex_cost); // Path::move
 
     // Prototypes and combat game mechanics
-    write_call(0x5808B3, (int)mod_is_bunged);
+    write_call(0x4930F8, (int)mod_veh_avail); // ProdPicker::calculate
+    write_call(0x4DED97, (int)mod_veh_avail); // Console::editor_veh
+    write_call(0x4E4AE4, (int)mod_veh_avail); // base_first
+    write_call(0x4F0769, (int)mod_veh_avail); // base_queue
+    write_call(0x4FA04C, (int)mod_veh_avail); // base_build
+    write_call(0x4FFD37, (int)mod_veh_avail); // base_build
+    write_call(0x4FFF5D, (int)mod_veh_avail); // base_build
+    write_call(0x560DDF, (int)mod_veh_avail); // enemy_capabilities
+    write_call(0x560E86, (int)mod_veh_avail); // enemy_capabilities
+    write_call(0x5B30E1, (int)mod_veh_avail); // setup_player
+    write_call(0x5808B3, (int)mod_is_bunged); // propose_proto
     write_call(0x4364FB, (int)mod_name_proto);
     write_call(0x4383B2, (int)mod_name_proto);
     write_call(0x4383DE, (int)mod_name_proto);
@@ -711,13 +736,15 @@ bool patch_setup(Config* cf) {
     /*
     Provide better defaults for multiplayer settings.
     */
-    *(int8_t*)0x481EE0 = 1; // MapOceanCoverage
-    *(int8_t*)0x481EE7 = 1; // MapErosiveForces
-    *(int8_t*)0x481EEE = 1; // MapNativeLifeForms
-    *(int8_t*)0x481EF5 = 1; // MapCloudCover
-    *(int8_t*)0x4E3222 = NetVersion; // AlphaNet::setup
-    *(int8_t*)0x52AA5C = NetVersion; // control_game
-    *(int8_t*)0x627C8B = 11; // pop_ask_number maximum length
+    write_byte(0x481EE0, 2, 1); // MapOceanCoverage
+    write_byte(0x481EE7, 2, 1); // MapErosiveForces
+    write_byte(0x481EEE, 2, 1); // MapNativeLifeForms
+    write_byte(0x481EF5, 2, 1); // MapCloudCover
+    write_byte(0x4E3222, 9, NetVersion); // AlphaNet::setup
+    write_byte(0x52AA5C, 9, NetVersion); // control_game
+    write_byte(0x627C8B, 9, 11); // pop_ask_number maximum length
+    write_byte(0x4EA8BE, 1, HumanGenomeProjectTalents); // base_psych
+    write_byte(0x4EA8ED, 2, ClinicalImmortalityTalents); // base_psych
 
     /*
     Hide unnecessary region_base_plan display next to base names in debug mode.

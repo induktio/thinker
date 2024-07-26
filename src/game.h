@@ -2,22 +2,19 @@
 
 #include "main.h"
 
-/*
-This header includes the main turn processing functions and
-various other game features that don't clearly belong elsewhere.
-*/
-
+// Always enabled settings for random maps started from the main menu
 // Select only those settings that are not set in Special Scenario Rules
 const uint32_t GAME_RULES_MASK = 0x7808FFFF;
 const uint32_t GAME_MRULES_MASK = 0xFFFFFFF0;
 
 bool un_charter();
 bool victory_done();
+bool voice_of_planet();
 bool valid_player(int faction);
 bool valid_triad(int triad);
 int __cdecl game_start_turn();
 int __cdecl game_year(int n);
-bool __cdecl in_box(int x, int y, RECT* rc);
+int __cdecl in_box(int x, int y, RECT* rc);
 void __cdecl bitmask(uint32_t input, uint32_t* offset, uint32_t* mask);
 int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id);
 

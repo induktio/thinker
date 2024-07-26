@@ -412,10 +412,22 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
     VEH* v1 = &Vehs[veh_id_atk];
     VEH* v2 = &Vehs[veh_id_def];
 
+    if (conf.intercept_defense_bonus
+    && v1->triad() == TRIAD_AIR && v2->triad() == TRIAD_AIR
+    && v1->offense_value() > 0 && v2->offense_value() > 0 && v2->defense_value() > 0
+    && !v1->is_missile() && !v2->is_missile()
+    && !has_abil(v1->unit_id, ABL_AIR_SUPERIORITY)
+    && has_abil(v2->unit_id, ABL_AIR_SUPERIORITY)) {
+        int combat_bonus = clamp(Rules->combat_bonus_air_supr_vs_air / 2, -50, 100);
+        if (combat_bonus != 0) {
+            *defense_out = *defense_out * (100 + combat_bonus) / 100;
+            add_bat(1, combat_bonus, (*TextLabels)[449]); // Air-to-Air
+        }
+    }
     if (conf.planet_defense_bonus && v2->faction_id > 0
     && (v1->offense_value() < 0 || v2->defense_value() < 0)) {
         int planet_value = Factions[v2->faction_id].SE_planet;
-        int combat_bonus = clamp(planet_value * Rules->combat_psi_bonus_per_planet / 2, -50, 50);
+        int combat_bonus = clamp(planet_value * Rules->combat_psi_bonus_per_planet / 2, -50, 100);
         if (combat_bonus != 0) {
             *defense_out = *defense_out * (100 + combat_bonus) / 100;
             add_bat(1, combat_bonus, (*TextLabels)[625]); // Planet

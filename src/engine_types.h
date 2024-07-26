@@ -105,6 +105,10 @@ struct BASE {
     bool plr_owner() {
         return is_human(faction_id);
     }
+    // AI bases are not limited by any governor settings
+    uint32_t gov_config() {
+        return is_human(faction_id) ? governor_flags : ~0u;
+    }
     /*
     This implementation is simplified to skip additional checks for these rules:
     RULES_SCN_VICT_SP_COUNT_OBJ, STATE_SCN_VICT_BASE_FACIL_COUNT_OBJ.

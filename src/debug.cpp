@@ -207,6 +207,16 @@ void print_veh(int id) {
         v->iter_count, v->rotate_angle);
 }
 
+void print_unit(int id) {
+    UNIT* u = &Units[id];
+    int owner = id/MaxProtoFactionNum;
+    bool old = (1 << owner) & u->obsolete_factions;
+    debug("UNIT %31s u: %3d owner: %d group: %2d obs: %d chs: %d rec: %d wpn: %2d arm: %2d "
+        "cost: %2d preq: %2d flags: %4X abls: %8X\n",
+        u->name, id, owner, u->group_id, old, u->chassis_id, u->reactor_id, u->weapon_id, u->armor_id,
+        u->cost, u->preq_tech, u->unit_flags, u->ability_flags);
+}
+
 void print_base(int id) {
     BASE* base = &Bases[id];
     int prod = base->item();

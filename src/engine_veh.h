@@ -316,6 +316,8 @@ enum UnitFlags {
     UNIT_ACTIVE = 0x1, // if this bit is zero, prototype has been retired
     UNIT_CUSTOM_NAME_SET = 0x2,
     UNIT_PROTOTYPED = 0x4,
+    UNIT_UNK_80 = 0x80,
+    UNIT_UNK_100 = 0x100, // checked in upgrade_any_prototypes
 };
 
 enum VehFlags {
@@ -382,7 +384,7 @@ struct UNIT {
     int8_t carry_capacity;
     uint8_t cost;
     int8_t plan;
-    int8_t unk_1; // some kind of internal prototype category?
+    int8_t group_id; // some kind of internal prototype category
     uint8_t obsolete_factions;// faction bitfield of those who marked this prototype obsolete
     uint8_t combat_factions; // faction bitfield for those that have seen this unit in combat (atk/def)
     int8_t icon_offset;

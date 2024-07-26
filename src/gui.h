@@ -58,7 +58,7 @@ int __cdecl mod_blink_timer();
 void __cdecl mod_turn_timer();
 int __thiscall mod_calc_dim(Console* This);
 int __thiscall mod_gen_map(Console* This, int iOwner, int fUnitsOnly);
-bool __thiscall Win_is_visible(Win* This);
+int __thiscall Win_is_visible(Win* This);
 void __thiscall MapWin_gen_overlays(Console* This, int x, int y);
 void refresh_overlay(std::function<int32_t(int32_t, int32_t)> tile_value);
 int __thiscall SetupWin_buffer_draw(Buffer* src, Buffer* dst, int a3, int a4, int a5, int a6, int a7);

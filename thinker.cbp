@@ -61,7 +61,7 @@
 			</Target>
 		</Build>
 		<Compiler>
-			<Add option="-std=c++11 -march=i686 -mtune=generic -pedantic -Wall -Wextra -Wshadow -Wundef -Wuseless-cast -Wpointer-arith -Wfloat-conversion" />
+			<Add option="-std=c++11 -march=pentium4 -mtune=generic -pedantic -Wall -Wextra -Wshadow -Wundef -Wuseless-cast -Wpointer-arith -Wfloat-conversion" />
 		</Compiler>
 		<Linker>
 			<Add library="user32" />
