@@ -927,6 +927,11 @@ bool patch_setup(Config* cf) {
         write_call(0x428A40, (int)Credits_GraphicWin_init); // Credits::exec
         write_call(0x428AB9, (int)Credits_GraphicWin_init); // Credits::exec
     }
+    if (cf->render_base_info) {
+        short_jump(0x49DE33);
+        write_call(0x49DE83, (int)ReportWin_draw_ops_color);
+        write_call(0x49DEA5, (int)ReportWin_draw_ops_strcat);
+    }
 
     /*
     Find nearest base for returned probes in order_veh and probe functions.

@@ -12,6 +12,7 @@ char label_sat_nutrient[StrBufLen] = "N +%d";
 char label_sat_mineral[StrBufLen] = "M +%d";
 char label_sat_energy[StrBufLen] = "E +%d";
 char label_eco_damage[StrBufLen] = "";
+char label_base_surplus[StrBufLen] = "";
 char label_unit_reactor[4][StrBufLen] = {};
 
 static int minimal_cost = 0;
@@ -1466,6 +1467,48 @@ int __thiscall BaseWin_click_staple(Win* This)
         return BaseWin_nerve_staple(This);
     }
     return 0;
+}
+
+void __cdecl ReportWin_draw_ops_strcat(char* dst, char* UNUSED(src))
+{
+    BASE* base = *CurrentBase;
+    uint32_t gov = base->governor_flags;
+    char buf[StrBufLen] = {};
+    dst[0] = '\0';
+
+    if (base->faction_id == MapWin->cOwner) {
+        if (gov & GOV_ACTIVE) {
+            if (conf.manage_player_bases) {
+                strncat(dst, (*TextLabels)[457], 32); // Governor
+            } else {
+                if (gov & GOV_PRIORITY_EXPLORE) {
+                    strncat(dst, (*TextLabels)[521], 32);
+                } else if (gov & GOV_PRIORITY_DISCOVER) {
+                    strncat(dst, (*TextLabels)[522], 32);
+                } else if (gov & GOV_PRIORITY_BUILD) {
+                    strncat(dst, (*TextLabels)[523], 32);
+                } else if (gov & GOV_PRIORITY_CONQUER) {
+                    strncat(dst, (*TextLabels)[524], 32);
+                } else {
+                    strncat(dst, (*TextLabels)[457], 32);
+                }
+            }
+            strncat(dst, " ", 32);
+        }
+    }
+    if (strlen(label_base_surplus)) {
+        snprintf(buf, StrBufLen, label_base_surplus,
+            base->nutrient_surplus, base->mineral_surplus, base->energy_surplus);
+        strncat(dst, buf, StrBufLen);
+    }
+}
+
+void __thiscall ReportWin_draw_ops_color(Buffer* This, int UNUSED(a2), int a3, int a4, int a5)
+{
+    BASE* base = *CurrentBase;
+    int color = (base->mineral_surplus < 0 || base->nutrient_surplus < 0
+        ? ColorRed : ColorMediumBlue);
+    Buffer_set_text_color(This, color, a3, a4, a5);
 }
 
 int __thiscall mod_MapWin_focus(Console* This, int x, int y)

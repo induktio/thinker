@@ -23,6 +23,7 @@ extern char label_sat_nutrient[StrBufLen];
 extern char label_sat_mineral[StrBufLen];
 extern char label_sat_energy[StrBufLen];
 extern char label_eco_damage[StrBufLen];
+extern char label_base_surplus[StrBufLen];
 extern char label_unit_reactor[4][StrBufLen];
 
 // Bottom middle UI console size in pixels
@@ -39,6 +40,7 @@ const int ColorIntakeSurplus = 169;
 const int ColorProdName = 154;
 const int ColorLabsAlloc = 155;
 const int ColorPsychAlloc = 204;
+const int ColorMediumBlue = 225;
 const int ColorRed = 249;
 const int ColorGreen = 250;
 const int ColorYellow = 251;
@@ -81,6 +83,8 @@ void __cdecl BaseWin_draw_psych_strcat(char* buffer, char* source);
 void __cdecl BaseWin_action_staple(int base_id);
 void __cdecl popb_action_staple(int base_id);
 int __thiscall BaseWin_click_staple(Win* This);
+void __cdecl ReportWin_draw_ops_strcat(char* dst, char* src);
+void __thiscall ReportWin_draw_ops_color(Buffer* This, int UNUSED(a2), int a3, int a4, int a5);
 int __thiscall mod_MapWin_focus(Console* This, int x, int y);
 int __thiscall mod_MapWin_set_center(Console* This, int x, int y, int flag);
 int __thiscall ReportWin_close_handler(void* This);
