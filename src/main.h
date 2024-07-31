@@ -67,6 +67,7 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
+#include <unordered_map>
 
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 #define THINKER_HEADER (int16_t)0xACAC
@@ -90,8 +91,7 @@ const bool ATT = false;
 const bool SEA = true;
 const bool LAND = false;
 
-const int MaxMapAreaX = 512;
-const int MaxMapAreaY = 256;
+const int MaxMapDist = 1024;
 const int MaxNaturalNum = 16;
 const int MaxLandmarkNum = 64;
 const int MaxRegionNum = 128;
@@ -117,7 +117,7 @@ const int MaxArmorNum = 14;
 const int MaxReactorNum = 4;
 const int MaxAbilityNum = 29;
 
-const int MaxFacilityNum = 134; // 0 slot unused
+const int MaxFacilityNum = 64; // 0 slot unused
 const int MaxSecretProjectNum = 64;
 const int MaxSocialCatNum = 4;
 const int MaxSocialModelNum = 4;
@@ -351,13 +351,12 @@ struct AIPlans {
 };
 
 enum NodesetType {
-    NODE_CONVOY, // Resource being crawled
     NODE_BOREHOLE, // Borehole being built
     NODE_RAISE_LAND, // Land raise action initiated
     NODE_SENSOR_ARRAY, // Sensor being built
     NODE_NEED_FERRY,
-    NODE_BASE_SITE,
-    NODE_CONVOY_SITE,
+    NODE_BASE_SITE, // Skip from search
+    NODE_CONVOY_SITE, // Skip from search
     NODE_GOAL_RAISE_LAND, // Former priority only
     NODE_GOAL_NAVAL_START,
     NODE_GOAL_NAVAL_BEACH,
@@ -389,7 +388,6 @@ enum NodesetType {
 
 extern FILE* debug_log;
 extern Config conf;
-extern NodeSet mapnodes;
 extern AIPlans plans[MaxPlayerNum];
 extern set_str_t movedlabels;
 extern map_str_t musiclabels;

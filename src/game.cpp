@@ -215,9 +215,18 @@ int __cdecl mod_turn_upkeep() {
     return 0;
 }
 
-/*
-Original Offset: 005ABD20
-*/
+void __cdecl mod_load_map_daemon(int a1) {
+    // Another map selected from various dialogs
+    reset_state();
+    load_map_daemon(a1);
+}
+
+void __cdecl mod_load_daemon(int a1, int a2) {
+    // Another savegame opened from selection dialog
+    reset_state();
+    load_daemon(a1, a2);
+}
+
 void __cdecl mod_auto_save() {
     if ((!*PbemActive || *MultiplayerActive)
     && (!(*GameRules & RULES_IRONMAN) || *GameState & STATE_SCENARIO_EDITOR)) {
@@ -229,21 +238,11 @@ void __cdecl mod_auto_save() {
     }
 }
 
-/*
-Original Offset: 00527290
-*/
 int __cdecl mod_faction_upkeep(int faction) {
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
     debug("faction_upkeep %d %d\n", *CurrentTurn, faction);
 
-    if (conf.factions_enabled > 0 && (*MapAreaX > MaxMapAreaX || *MapAreaY > MaxMapAreaY)) {
-        parse_says(0, MOD_VERSION, -1, -1);
-        parse_says(1, "This map exceeds Thinker's maximum supported map size.", -1, -1);
-        popp("modmenu", "GENERIC", 0, 0, 0);
-        *ControlTurnA = 1; // Return to main menu
-        *ControlTurnB = 1;
-    }
     init_save_game(faction);
     plans_upkeep(faction);
     reset_netmsg_status();
@@ -260,7 +259,7 @@ int __cdecl mod_faction_upkeep(int faction) {
     }
     repair_phase(faction);
     do_all_non_input();
-    production_phase(faction);
+    mod_production_phase(faction);
     do_all_non_input();
     if (!(*GameState & STATE_GAME_DONE) || *GameState & STATE_FINAL_SCORE_DONE) {
         allocate_energy(faction);
@@ -336,6 +335,125 @@ int __cdecl mod_faction_upkeep(int faction) {
     }
     flushlog();
     return 0;
+}
+
+void __cdecl mod_production_phase(int faction_id) {
+    Faction* f = &Factions[faction_id];
+    MFaction* m = &MFactions[faction_id];
+    debug("production_phase %d %d\n", *CurrentTurn, faction_id);
+    f->best_mineral_output = 0;
+    f->energy_surplus_total = 0;
+    f->facility_maint_total = 0;
+    f->turn_commerce_income = 0;
+    tech_effects(faction_id);
+
+    for (int i = 1; i < MaxPlayerNum; i++) {
+        if (faction_id != i && is_alive(faction_id) && is_alive(i)) {
+            assert(f->loan_balance[i] >= 0);
+            if (f->loan_balance[i] && !Factions[i].sanction_turns) {
+                assert(f->loan_payment[i] > 0);
+                if (at_war(faction_id, i)) {
+                    f->loan_balance[i] += f->loan_payment[i];
+                } else {
+                    int payment = clamp(f->energy_credits, 0, f->loan_payment[i]);
+                    Factions[i].energy_credits += payment;
+                    f->energy_credits -= payment;
+                    f->loan_balance[i] -= payment;
+                    if (payment < f->loan_payment[i]) {
+                        f->loan_balance[i] += f->loan_payment[i] - payment;
+                    }
+                }
+            }
+        }
+    }
+
+    f->player_flags &= ~PFLAG_SELF_AWARE_COLONY_LOST_MAINT;
+    *dword_93A958 = f->energy_credits;
+    /*
+    Reset all fields listed below.
+    int32_t unk_40[8];
+    int32_t unk_41[40];
+    int32_t unk_42[32];
+    int32_t unk_43[8];
+    int32_t unk_44;
+    int32_t unk_45;
+    int32_t unk_46;
+    int32_t unk_47;
+    */
+    assert((int)&f->unk_40 + 0x170 == (int)&f->nutrient_surplus_total);
+    memset(&f->unk_40, 0, 0x170);
+
+    f->nutrient_surplus_total = 0;
+    f->labs_total = 0;
+
+    if (*BaseCount > 0) {
+        for (int base_id = 0; base_id < *BaseCount; base_id++) {
+            if (Bases[base_id].faction_id == faction_id) {
+                if (mod_base_upkeep(base_id)) {
+                    base_id--; // Base was removed for some reason
+                }
+                do_all_non_input();
+            }
+        }
+    }
+    /*
+    Apply the original AI facility maintenance discounts
+    These modifiers are not displayed in budget screens, they are just applied here
+    */
+    if (!is_human(faction_id) && *DiffLevel >= DIFF_THINKER) {
+        if (f->facility_maint_total) {
+            int value;
+            if (*DiffLevel == DIFF_THINKER) {
+                value = f->facility_maint_total / 3;
+                f->energy_credits += value;
+            } else {
+                value = f->facility_maint_total * 2 / 3;
+                f->energy_credits += value;
+            }
+            f->facility_maint_total -= value;
+        }
+    }
+    /*
+    INTEREST = Energy reserves interest.
+    Non-zero = constant percentage per turn (including negative)
+    Zero     = +1/base each turn
+    */
+    if (m->rule_flags & RFLAG_INTEREST) {
+        int rule_interest = m->rule_interest;
+        if (rule_interest) {
+            f->energy_credits += f->energy_credits * rule_interest / 100;
+        } else {
+            for (int base_id = 0; base_id < *BaseCount; base_id++) {
+                if (Bases[base_id].faction_id == faction_id) {
+                    f->energy_credits++;
+                    f->energy_surplus_total++;
+                }
+            }
+        }
+    }
+    f->unk_18 = f->energy_surplus_total;
+    f->unk_17 = f->energy_surplus_total + f->turn_commerce_income - f->facility_maint_total;
+
+    if (*CurrentTurn == 1) {
+        int techs = m->rule_tech_selected;
+        *SkipTechScreenA = 1;
+        while (--techs >= 0) {
+            tech_advance(faction_id);
+        }
+        *SkipTechScreenA = 0;
+    }
+    if (!(*GameState & STATE_GAME_DONE) || *GameState & STATE_FINAL_SCORE_DONE) {
+        if (f->sanction_turns) {
+            f->sanction_turns--;
+            if (!f->sanction_turns && faction_id == MapWin->cOwner) {
+                if (!is_alien(faction_id)) {
+                    popp(ScriptFile, "SANCTIONSEND", 0, "council_sm.pcx", 0);
+                } else {
+                    popp(ScriptFile, "SANCTIONSENDALIEN", 0, "Alopdir.pcx", 0);
+                }
+            }
+        }
+    }
 }
 
 uint32_t offset_next(int32_t faction, uint32_t position, uint32_t amount) {

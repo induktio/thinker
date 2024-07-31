@@ -42,6 +42,8 @@ Base window will also show additional details that were previously not directly 
 
 The game will show population counts for talents, workers, drones and specialists. Bases that are about to drone riot, enter the golden age or pop boom on the next turn are highlighted with colored labels. When a base has been nerve stapled, the remaining turns for the staple effect are shown on the bottom right corner.
 
+Ecological damage display on the base window has been updated to be more useful. Whenever the mineral production level is sustainable on planet's ecology, the Eco-Damage percentage is displayed in green indicating how much of the clean minerals capacity is in use. Whenever this number is exceeded and the base begins to cause ecological disruption, the percentage is displayed in red and the number over 100% shows the current Eco-Damage being experienced at the base. This will not change how [ecological damage](https://web.archive.org/web/20220310074913/https://alphacentauri2.info/wiki/Ecology_(Revised)) is calculated by the game unless minor details are modified by `eco_damage_fix` option.
+
 Whenever the player instructs a former to build an improvement that replaces any other item in the tile, the game will display a warning dialog. This dialog can be skipped by toggling the warning option (warn_on_former_replace).
 
 When building or capturing a new base, the mod will automatically copy the saved build queue from **Template 1** to the new base. At maximum 8 items can be saved to the template, and the first item from the template will be automatically moved to current production choice when a new base is built or captured. Only the template saved to the first slot is checked, any other saved templates are ignored.
@@ -360,9 +362,8 @@ Currently the features listed here may not be fully supported or may have issues
 3. Faction selection dialog in the game setup is limited to showing only the first 24 factions even if installed factions in alphax.txt exceed this number.
 4. Most custom settings in "Special Scenario Rules" should be supported even when starting new random maps. However these rules may cause inconsistent behaviour when used from the main menu: `No native life--fungus, mind worms, Planet, etc`, `Force current difficulty level`, and `Force player to play current faction`.
 5. While `collateral_damage_value` is set to 0, the game might still display messages about collateral damage being inflicted on units on the stack, but none of them will actually take any damage.
-6. Maximum supported map size by Thinker is 256x256. This is a compile time constant, but it is also the largest map that the game interface will allow selecting.
-7. DirectDraw mode is not supported while using thinker.exe launcher. In this case the game may fail to start properly unless `DirectDraw=0` config option is used.
-8. In rare cases needlejets that are set to automated air defense may disappear after ending their turn outside the base. This should not happen if the units are moved manually.
+6. DirectDraw mode is not supported while using thinker.exe launcher. In this case the game may fail to start properly unless `DirectDraw=0` config option is used.
+7. In rare cases needlejets that are set to automated air defense may disappear after ending their turn outside the base. This should not happen if the units are moved manually.
 
 
 Other patches included

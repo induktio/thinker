@@ -16,17 +16,17 @@ int path_get_next(int x1, int y1, int x2, int y2, int unit_id, int faction_id) {
 }
 
 /*
-Return tile distance to destination if it is less than MaxMapH, otherwise return -1.
+Return tile distance to destination if it is less than MaxMapDist, otherwise return -1.
 */
 int path_distance(int x1, int y1, int x2, int y2, int unit_id, int faction_id) {
     int px = x1;
     int py = y1;
     int val = 0;
     int dist = 0;
-    memset(pm_overlay, 0, sizeof(pm_overlay));
+    refresh_overlay(clear_overlay);
 
-    while (dist < MaxMapAreaY && val >= 0) {
-        pm_overlay[px][py] = dist;
+    while (dist < MaxMapDist && val >= 0) {
+        mapdata[{px, py}].overlay = dist;
         if (px == x2 && py == y2) {
             return dist;
         }
@@ -83,7 +83,7 @@ int nearby_items(int x, int y, int range, uint32_t item) {
 bool nearby_tiles(int x, int y, TSType type, int limit) {
     MAP* sq;
     int n = 0;
-    ts.init(x, y, type, 2);
+    ts.init(x, y, type, 1);
     while ((sq = ts.get_next()) != NULL) {
         if (++n >= limit) {
             return true;
@@ -104,6 +104,7 @@ std::vector<MapTile> iterate_tiles(int x, int y, size_t start_index, size_t end_
             tiles.push_back({x2, y2, (int)i, sq});
         }
     }
+    assert(tiles.size() > 0);
     return tiles;
 }
 

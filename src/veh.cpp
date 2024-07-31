@@ -914,7 +914,7 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
                 int value = wpn_v - arm_v;
                 if (value <= -1) { // Defensive
                     if ((arm_v >= 8 && wpn_v*2 >= min(24, arm_v) && lrg_names)
-                    || (sea_arty && wpn_v + arm_v >= 6)) {
+                    || (sea_arty && wpn_v + arm_v >= 4)) {
                         parse_chs_name(buf, Chassis[chs].defsv_name_lrg);
                     } else if (wpn_v >= 2) {
                         parse_chs_name(buf, Chassis[chs].defsv1_name);
@@ -923,7 +923,7 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
                     }
                 } else if (value >= 1 || sea_arty) { // Offensive
                     if ((wpn_v >= 8 && arm_v*2 >= min(24, wpn_v) && lrg_names)
-                    || (sea_arty && wpn_v + arm_v >= 6)) {
+                    || (sea_arty && wpn_v + arm_v >= 4)) {
                         parse_chs_name(buf, Chassis[chs].offsv_name_lrg);
                     } else if (triad != TRIAD_AIR && arm_v >= 2) {
                         parse_chs_name(buf, Chassis[chs].offsv1_name);
@@ -1064,7 +1064,7 @@ int set_move_to(int veh_id, int x, int y) {
     if (veh->x == x && veh->y == y) {
         return mod_veh_skip(veh_id);
     }
-    pm_target[x][y]++;
+    mapdata[{x, y}].target++;
     return VEH_SYNC;
 }
 
@@ -1111,7 +1111,6 @@ int set_order_none(int veh_id) {
 
 int set_convoy(int veh_id, ResType res) {
     VEH* veh = &Vehicles[veh_id];
-    mapnodes.insert({veh->x, veh->y, NODE_CONVOY});
     veh->order_auto_type = res-1;
     veh->order = ORDER_CONVOY;
     veh->status_icon = 'C';

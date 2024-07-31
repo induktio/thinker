@@ -1,10 +1,20 @@
 
 #include "plan.h"
 
+int base_enemy_range[MaxBaseNum] = {};
+int base_border_range[MaxBaseNum] = {};
+int plan_upkeep_turn = 0;
+
 typedef std::pair<int32_t, int32_t> ipair_t;
 auto ipair_cmp_t = [](ipair_t& a, ipair_t& b)->bool {
     return a.first > b.first || (a.first == b.first && a.second > b.second); };
 
+
+void reset_state() {
+    // Invalidate all previous plans
+    plan_upkeep_turn = 0;
+    move_upkeep_faction = -1;
+}
 
 bool check_disband(int unit_id, int faction_id) {
     Points bases;
@@ -269,11 +279,10 @@ void plans_upkeep(int faction_id) {
         return;
     }
     if (governor) {
-        static int last_turn = 0;
-        if (last_turn == *CurrentTurn) {
+        if (plan_upkeep_turn == *CurrentTurn) {
             return;
         }
-        last_turn = *CurrentTurn;
+        plan_upkeep_turn = *CurrentTurn;
     }
     if (thinker_enabled(faction_id) || governor) {
         int minerals[MaxBaseNum] = {};
@@ -337,44 +346,50 @@ void plans_upkeep(int faction_id) {
                     plans[fc].enemy_sat += Factions[i].satellites_mineral;
                     plans[fc].enemy_sat += Factions[i].satellites_energy;
                 }
-                float factor = min(8.0f, (is_human(i) ? 2.0f : 1.0f)
+                float factor = clamp((is_human(i) ? 2.0f : 1.0f)
                     * (has_treaty(fc, i, DIPLO_COMMLINK) ? 1.0f : 0.5f)
                     * (at_war(fc, i) ? 1.0f : (has_pact(fc, i) ? 0.1f : 0.25f))
                     * (plans[fc].main_region == plans[i].main_region ? 1.5f : 1.0f)
-                    * faction_might(i) / max(1, faction_might(fc)));
+                    * faction_might(i) / max(1, faction_might(fc)), 0.01f, 8.0f);
 
                 plans[fc].enemy_mil_factor = max(plans[fc].enemy_mil_factor, factor);
                 plans[fc].diplo_flags |= f->diplo_status[i];
             }
         }
         memset(base_enemy_range, 0, sizeof(base_enemy_range));
-        float enemy_sum = 0;
+        int enemy_sum = 0;
         int n = 0;
-        for (int j = 0; j < *BaseCount; j++) {
-            BASE* base = &Bases[j];
-            MAP* sq = mapsq(base->x, base->y);
+        for (int i = 0; i < *BaseCount; i++) {
+            BASE* base = &Bases[i];
+            MAP* sq;
             if (base->faction_id == faction_id) {
                 population[n] = base->pop_size;
                 minerals[n] = base->mineral_surplus;
                 n++;
                 // Update enemy base threat distances
-                int base_region = (sq ? sq->region : 0);
-                float enemy_range = 100*MaxEnemyRange;
-                for (int k = 0; k < *BaseCount; k++) {
-                    BASE* b = &Bases[k];
+                int base_region = region_at(base->x, base->y);
+                int enemy_range = MaxEnemyRange;
+                int border_range = MaxEnemyRange;
+                for (int j = 0; j < *BaseCount; j++) {
+                    BASE* b = &Bases[j];
                     if (faction_id != b->faction_id
                     && !has_pact(faction_id, b->faction_id)
                     && (sq = mapsq(b->x, b->y))) {
-                        float range = map_range(base->x, base->y, b->x, b->y)
-                            * (sq->region == base_region ? 1.0f : 1.5f)
-                            * (at_war(faction_id, b->faction_id) ? 1.0f : 5.0f)
-                            * (b->faction_id_former == faction_id ? 1.0f : 2.0f)
-                            * (is_human(b->faction_id) ? 1.0f : 1.5f);
-                        enemy_range = min(enemy_range, range);
+                        int border_dist = map_range(base->x, base->y, b->x, b->y);
+                        int enemy_dist = border_dist
+                            * (sq->region == base_region ? 2 : 3)
+                            * (b->faction_id_former == faction_id ? 2 : 3);
+                        if (!at_war(faction_id, b->faction_id)) {
+                            border_dist *= 2;
+                            enemy_dist *= 4;
+                        }
+                        enemy_range = min(enemy_range, enemy_dist / 4);
+                        border_range = min(border_range, border_dist);
                     }
                 }
-                base_enemy_range[j] = (int)enemy_range;
-                enemy_sum += min((float)MaxEnemyRange, enemy_range);
+                base_enemy_range[i] = enemy_range;
+                base_border_range[i] = border_range;
+                enemy_sum += enemy_range;
                 if (base->faction_id_former != faction_id
                 && at_war(faction_id, base->faction_id_former)) {
                     plans[fc].captured_bases++;
@@ -384,7 +399,7 @@ void plans_upkeep(int faction_id) {
             }
         }
         assert(n == f->base_count);
-        plans[fc].enemy_base_range = (n > 0 ? enemy_sum/n : MaxEnemyRange);
+        plans[fc].enemy_base_range = (n > 0 ? (1.0f*enemy_sum)/n : MaxEnemyRange);
         plans[fc].psi_score = psi_score(fc);
         std::sort(minerals, minerals+n);
         std::sort(population, population+n);

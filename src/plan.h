@@ -2,6 +2,11 @@
 
 #include "main.h"
 
+extern int base_enemy_range[MaxBaseNum];
+extern int base_border_range[MaxBaseNum];
+extern int plan_upkeep_turn;
+
+void reset_state();
 void design_units(int faction_id);
 void former_plans(int faction_id);
 void plans_upkeep(int faction_id);

@@ -2,7 +2,20 @@
 
 #include "main.h"
 
-typedef int16_t PMTable[MaxMapAreaX][MaxMapAreaY];
+struct PInfo {
+    int former;
+    int safety;
+    int target;
+    int roads;
+    int shore;
+    int unit_near;
+    int enemy;
+    int enemy_near;
+    int enemy_dist;
+    int overlay;
+};
+
+typedef std::unordered_map<Point, PInfo> PMTable;
 
 enum UpdateMode {UM_Full, UM_Visual, UM_Player};
 enum StackType {ST_NeutralOnly, ST_NonPactOnly, ST_EnemyOnly, ST_EnemyOneUnit};
@@ -13,18 +26,13 @@ enum EnemyVehMove { // Return codes for enemy_veh processing
     VEH_SKIP = 1,
 };
 
-enum RegionFlag {
-    PM_ENEMY = 1,
-    PM_PROBE = 2,
-};
-
 const uint32_t BIT_SIMPLE = (BIT_FARM | BIT_MINE | BIT_SOLAR | BIT_FOREST);
 const uint32_t BIT_ADVANCED = (BIT_CONDENSER | BIT_THERMAL_BORE);
 const uint32_t BIT_BASE_DISALLOWED = (BIT_BASE_IN_TILE | BIT_MONOLITH | BIT_FUNGUS | BIT_THERMAL_BORE);
 
-extern PMTable pm_target;
-extern PMTable pm_overlay;
-extern int base_enemy_range[MaxBaseNum];
+extern PMTable mapdata;
+extern NodeSet mapnodes;
+extern int move_upkeep_faction;
 
 int arty_value(int x, int y);
 int base_tile_score(int x, int y, int faction, MAP* sq);

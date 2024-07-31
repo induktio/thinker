@@ -193,7 +193,7 @@ bool want_revenge(int faction1, int faction2) {
 
 bool allow_expand(int faction) {
     int bases = 0;
-    if (*GameRules & RULES_SCN_NO_COLONY_PODS || *BaseCount >= MaxBaseNum * 19 / 20) {
+    if (*GameRules & RULES_SCN_NO_COLONY_PODS || *BaseCount >= MaxBaseNum) {
         return false;
     }
     for (int i = 1; i < MaxPlayerNum && conf.expansion_autoscale > 0; i++) {
@@ -397,7 +397,7 @@ int robust, int immunity, int impunity, int penalty) {
     enum {ECO, EFF, SUP, TAL, MOR, POL, GRW, PLA, PRO, IND, RES};
     Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
-    double base_ratio = min(1.0, f->base_count / min(40.0, *MapAreaSqRoot * 0.5));
+    int base_ratio = min(10, 10 * f->base_count / min(40, *MapAreaSqRoot / 2));
     int w_morale = (has_project(FAC_COMMAND_NEXUS, faction) ? 2 : 0)
         + (has_project(FAC_CYBORG_FACTORY, faction) ? 2 : 0);
     int w_probe = (*CurrentTurn - m->thinker_last_mc_turn < 10 ? def_value + 1 : 0);
@@ -467,9 +467,6 @@ int robust, int immunity, int impunity, int penalty) {
     if (vals[SUP] < -3) {
         sc -= 10;
     }
-    if (vals[SUP] < 0) {
-        sc -= (int)((1.0 - base_ratio) * 10.0);
-    }
     if (vals[MOR] >= 1 && vals[MOR] + w_morale >= 4) {
         sc += 10;
     }
@@ -478,9 +475,9 @@ int robust, int immunity, int impunity, int penalty) {
     }
     sc += max(2, 2 + 4*f->AI_wealth + 3*f->AI_tech - f->AI_fight)
         * clamp(vals[ECO], -3, 5);
-    sc += max(2, 2*(f->AI_wealth + f->AI_tech) - f->AI_fight + (int)(4*base_ratio))
+    sc += max(2, 2*(f->AI_wealth + f->AI_tech) - f->AI_fight + base_ratio/2)
         * (min(6, vals[EFF]) + (vals[EFF] >= 3 ? 2 : 0));
-    sc += max(3, 3 + 2*f->AI_power + 2*f->AI_fight)
+    sc += max(3, 4 + 2*f->AI_power + 2*f->AI_fight - base_ratio/4 + (def_value > 2))
         * clamp(vals[SUP], -4, 3);
     sc += max(2, def_value + 2*f->AI_power + 2*f->AI_fight)
         * clamp(vals[MOR], -4, 4);

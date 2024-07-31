@@ -18,6 +18,8 @@ bool is_ocean(BASE* base);
 bool is_ocean_shelf(MAP* sq);
 bool is_shore_level(MAP* sq);
 bool map_is_flat();
+int clear_overlay(int x, int y);
+void refresh_overlay(std::function<int(int, int)> tile_value);
 
 int __cdecl is_coast(int x, int y, bool is_base_radius);
 int __cdecl is_port(int base_id, bool is_base_radius);

@@ -28,8 +28,8 @@ struct BASE {
     uint8_t visibility;
     int8_t factions_pop_size_intel[8];
     char name[25];
-    int16_t unk_x; // terraforming related
-    int16_t unk_y; // terraforming related
+    int16_t unk_x; // base_terraform
+    int16_t unk_y; // base_terraform
     int32_t state_flags;
     int32_t event_flags;
     int32_t governor_flags;

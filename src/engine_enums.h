@@ -3,7 +3,7 @@
 const int SP_Unbuilt = -1;
 const int SP_Destroyed = -2;
 const int SP_ID_First = 70;
-const int SP_ID_Last = 106;
+const int SP_ID_Last = 133;
 const int Fac_ID_First = 1;
 const int Fac_ID_Last = 64;
 const int Tech_ID_First = 0;
@@ -564,7 +564,7 @@ enum BaseState {
     BSTATE_UNK_2000 = 0x2000,
     BSTATE_UNK_4000 = 0x4000,
     BSTATE_UNK_8000 = 0x8000,
-    BSTATE_UNK_10000 = 0x10000, // set in capture_base, this base can be renamed in base_upkeep
+    BSTATE_RENAME_BASE = 0x10000, // set in capture_base, this base can be renamed in base_upkeep
     BSTATE_GENETIC_PLAGUE_INTRO = 0x20000,
     BSTATE_ASSISTANT_KILLER_HOME = 0x40000, // Veh home base (or closest) of Assistant worm killer
     BSTATE_UNK_80000 = 0x80000, // enemy_strategy, former units

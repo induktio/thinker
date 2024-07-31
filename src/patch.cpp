@@ -430,28 +430,38 @@ bool patch_setup(Config* cf) {
     write_jump(0x645460, (int)limit_strcpy);
     write_jump(0x645470, (int)limit_strcat);
 
+    write_call(0x58D84C, (int)mod_load_map_daemon); // map_menu
+    write_call(0x5AB891, (int)mod_load_map_daemon); // load_map
+    write_call(0x5AAD7D, (int)mod_load_daemon); // load_game
+    write_call(0x5ABEB3, (int)mod_load_daemon); // load_undo
+    write_call(0x5ADCD7, (int)mod_load_daemon); // show_replay
+    write_call(0x4E1061, (int)mod_world_build); // Console::editor_generate
+    write_call(0x4E113B, (int)mod_world_build); // Console::editor_fast
+    write_call(0x58B9BF, (int)mod_world_build); // config_game
+    write_call(0x58DDD8, (int)mod_world_build); // multiplayer_init
+    write_call(0x525CC7, (int)mod_setup_player); // turn_upkeep
+    write_call(0x5A3C9B, (int)mod_setup_player); // probe
+    write_call(0x5B341C, (int)mod_setup_player); // eliminate_player
+    write_call(0x5B3C03, (int)mod_setup_player); // setup_game
+    write_call(0x5B3C4C, (int)mod_setup_player); // setup_game
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
-    write_call(0x4F7A38, (int)consider_hurry);
+    write_call(0x527039, (int)mod_base_upkeep);
+    write_call(0x4F7A38, (int)mod_base_hurry);
     write_call(0x5BDC4C, (int)mod_tech_value);
     write_call(0x579362, (int)mod_enemy_move);
     write_call(0x4E888C, (int)base_governor_crop_yield);
-    write_call(0x4672A7, (int)mod_base_draw);
     write_call(0x40F45A, (int)mod_base_draw);
-    write_call(0x525CC7, (int)mod_setup_player);
-    write_call(0x5A3C9B, (int)mod_setup_player);
-    write_call(0x5B341C, (int)mod_setup_player);
-    write_call(0x5B3C03, (int)mod_setup_player);
-    write_call(0x5B3C4C, (int)mod_setup_player);
+    write_call(0x4672A7, (int)mod_base_draw);
+    write_call(0x559E21, (int)map_draw_strcmp); // veh_draw
+    write_call(0x55B5E1, (int)map_draw_strcmp); // base_draw
     write_call(0x5C0984, (int)veh_kill_lift);
     write_call(0x498720, (int)ReportWin_close_handler);
-    write_call(0x4E1061, (int)mod_world_build);
-    write_call(0x4E113B, (int)mod_world_build);
-    write_call(0x58B9BF, (int)mod_world_build);
-    write_call(0x58DDD8, (int)mod_world_build);
+    write_call(0x5B41E9, (int)mod_time_warp);
     write_call(0x408DBD, (int)BaseWin_draw_psych_strcat);
     write_call(0x40F8F8, (int)Basewin_draw_farm_set_font);
     write_call(0x4129E5, (int)BaseWin_draw_energy_set_text_color);
+    write_call(0x415AD8, (int)BaseWin_draw_misc_eco_damage);
     write_call(0x41B771, (int)BaseWin_action_staple);
     write_call(0x41916B, (int)BaseWin_popup_start);
     write_call(0x4195A6, (int)BaseWin_ask_number);
@@ -474,12 +484,7 @@ bool patch_setup(Config* cf) {
     write_call(0x5A3F98, (int)probe_veh_health);
     write_call(0x5A4972, (int)probe_mind_control_range);
     write_call(0x5A4B8C, (int)probe_thought_control);
-    write_call(0x559E21, (int)map_draw_strcmp); // veh_draw
-    write_call(0x55B5E1, (int)map_draw_strcmp); // base_draw
     write_call(0x506ADE, (int)mod_battle_fight_2);
-    write_call(0x4F7D13, (int)base_upkeep_rand);
-    write_call(0x527039, (int)mod_base_upkeep);
-    write_call(0x5B41E9, (int)mod_time_warp);
     write_call(0x561948, (int)enemy_strategy_upgrade);
     write_call(0x4B497C, (int)mod_say_orders); // say_orders2
     write_call(0x4B5C27, (int)mod_say_orders); // StatusWin::draw_active
@@ -1101,10 +1106,6 @@ bool patch_setup(Config* cf) {
         memset((void*)0x58A5E1, 0x90, 6);
         memset((void*)0x58B76F, 0x90, 2);
         memset((void*)0x58B9F3, 0x90, 2);
-    }
-    if (cf->delay_drone_riots) {
-        write_call(0x4F7A52, (int)mod_base_growth);
-        write_jump(0x4F5E08, (int)mod_drone_riot);
     }
     if (cf->skip_drone_revolts) {
         const byte old_bytes[] = {0x0F, 0x8E};

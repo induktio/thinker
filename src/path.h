@@ -69,7 +69,7 @@ extern CPath* Path;
 extern FPath_find Path_find;
 extern FPath_continents Path_continents;
 
-const int PathLimit = 80;
+const int PathLimit = 128;
 const int QueueSize = 6400;
 const int MaxTileSearchType = 6;
 

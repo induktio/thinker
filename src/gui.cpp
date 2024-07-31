@@ -11,6 +11,7 @@ char label_stockpile_energy[StrBufLen] = "Stockpile: %d per turn";
 char label_sat_nutrient[StrBufLen] = "N +%d";
 char label_sat_mineral[StrBufLen] = "M +%d";
 char label_sat_energy[StrBufLen] = "E +%d";
+char label_eco_damage[StrBufLen] = "";
 char label_unit_reactor[4][StrBufLen] = {};
 
 static int minimal_cost = 0;
@@ -706,7 +707,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         if (!value) { // OK button pressed
             sq->art_ref_id = ParseNumTable[0];
         }
-        memset(pm_overlay, 0, sizeof(pm_overlay));
+        refresh_overlay(clear_overlay);
         MapWin->iWhatToDrawFlags = prev_state;
         draw_map(1);
 
@@ -755,23 +756,22 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
     } else if (debug_active && msg == WM_CHAR && wParam == 'v' && alt_key_down()) {
         MapWin->iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
-        memset(pm_overlay, 0, sizeof(pm_overlay));
+        refresh_overlay(clear_overlay);
         static int ts_type = 0;
         int i = 0;
         TileSearch ts;
         ts_type = (ts_type+1) % (MaxTileSearchType+1);
         ts.init(MapWin->iTileX, MapWin->iTileY, ts_type, 0);
         while (ts.get_next() != NULL) {
-            pm_overlay[ts.rx][ts.ry] = ++i;
+            mapdata[{ts.rx, ts.ry}].overlay = ++i;
         }
-        pm_overlay[MapWin->iTileX][MapWin->iTileY] = ts_type;
+        mapdata[{MapWin->iTileX, MapWin->iTileY}].overlay = -ts_type;
         MapWin_draw_map(MapWin, 0);
         InvalidateRect(hwnd, NULL, false);
 
     } else if (debug_active && msg == WM_CHAR && wParam == 'f' && alt_key_down()
     && (sq = mapsq(MapWin->iTileX, MapWin->iTileY))) {
         MapWin->iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
-        memset(pm_overlay, 0, sizeof(pm_overlay));
         if (sq && sq->is_owned()) {
             move_upkeep(sq->owner, UM_Visual);
             MapWin_draw_map(MapWin, 0);
@@ -902,7 +902,7 @@ void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
         char buf[20] = {};
         bool found = false;
         int color = 255;
-        int value = pm_overlay[x][y];
+        int value = mapdata[{x, y}].overlay;
 
         for (int faction = 1; faction < MaxPlayerNum && !found; faction++) {
             Faction& f = Factions[faction];
@@ -964,17 +964,6 @@ void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
             Buffer_set_font(Canvas, &This->oFont2, 0, 0, 0);
             Buffer_write_cent_l3(Canvas, buf, &rt, 10);
         }
-    }
-}
-
-void refresh_overlay(std::function<int32_t(int32_t, int32_t)> tile_value) {
-    if (*GameState & STATE_OMNISCIENT_VIEW && MapWin->iWhatToDrawFlags & MAPWIN_DRAW_GOALS) {
-        for (int y = 0; y < *MapAreaY; y++) {
-            for (int x = y&1; x < *MapAreaX; x+=2) {
-                pm_overlay[x][y] = tile_value(x, y);
-            }
-        }
-        draw_map(1);
     }
 }
 
@@ -1137,6 +1126,9 @@ int show_mod_config()
         (conf.auto_minimise ? "1" : "0"), ModIniFile);
 
     draw_map(1);
+    if (Win_is_visible(BaseWin)) {
+        BaseWin_on_redraw(BaseWin);
+    }
     return 0;
 }
 
@@ -1269,6 +1261,29 @@ Win* This, const char* filename, const char* label, int a4, int a5, int a6, int 
 }
 
 #pragma GCC diagnostic pop
+
+void __thiscall BaseWin_draw_misc_eco_damage(Buffer* This, char* buf, int x, int y, int len)
+{
+    BASE* base = *CurrentBase;
+    Faction* f = &Factions[base->faction_id];
+    if (!conf.render_base_info || !strlen(label_eco_damage)) {
+        Buffer_write_l(This, buf, x, y, len);
+    } else {
+        int clean_mins = conf.clean_minerals + f->clean_minerals_modifier
+            + clamp(f->satellites_mineral, 0, (int)base->pop_size);
+        int damage = terraform_eco_damage(*CurrentBaseID);
+        int mins = base->mineral_intake_2 + damage/8 + f->major_atrocities
+            + 5*TectonicDetonationCount[base->faction_id];
+        int pct;
+        if (base->eco_damage > 0) {
+            pct = 100 + base->eco_damage;
+        } else {
+            pct = (clean_mins > 0 ? 100 * clamp(mins, 0, clean_mins) / clean_mins : 0);
+        }
+        snprintf(buf, StrBufLen, label_eco_damage, pct);
+        Buffer_write_l(This, buf, x, y, strlen(buf));
+    }
+}
 
 void __thiscall BaseWin_draw_support(BaseWindow* This)
 {

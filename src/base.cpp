@@ -147,31 +147,12 @@ void __cdecl mod_base_research() {
 }
 
 /*
-Replaces rand() call in base_upkeep to decide if the AI should rename a captured base
-when the return value equals zero.
-*/
-int __cdecl base_upkeep_rand() {
-    return !(*CurrentBaseID >= 0 && !Bases[*CurrentBaseID].assimilation_turns_left);
-}
-
-int __cdecl mod_base_upkeep(int base_id) {
-    BASE* base = &Bases[base_id];
-    int value = base_upkeep(base_id);
-    if (!value // non-zero values indicate special cases (exited early)
-    && base->nerve_staple_turns_left > 0
-    && Factions[base->faction_id].SE_police_pending < conf.nerve_staple_mod) {
-        --base->nerve_staple_turns_left;
-    }
-    return value;
-}
-
-/*
-These functions (first base_growth and then drone_riot)
+These functions (first base_growth and then base_drones)
 will only get called from production_phase > base_upkeep.
 */
 int __cdecl mod_base_growth() {
     BASE* base = *CurrentBase;
-    delay_base_riot = base->talent_total >= base->drone_total
+    delay_base_riot = conf.delay_drone_riots && base->talent_total >= base->drone_total
         && !(base->state_flags & BSTATE_DRONE_RIOTS_ACTIVE);
     int cur_pop = base->pop_size;
     int value = base_growth();
@@ -180,12 +161,246 @@ int __cdecl mod_base_growth() {
     return value;
 }
 
-void __cdecl mod_drone_riot() {
-    if (!delay_base_riot) {
-        drone_riot();
-    } else {
-        assert(!((*CurrentBase)->state_flags & BSTATE_DRONE_RIOTS_ACTIVE));
+void __cdecl mod_base_drones() {
+    BASE* base = *CurrentBase;
+
+    if (base->golden_age()) {
+        if (!(base->state_flags & BSTATE_GOLDEN_AGE_ACTIVE)) {
+            base->state_flags |= BSTATE_GOLDEN_AGE_ACTIVE;
+            if (!is_alien(base->faction_id)) {
+                popb("GOLDENAGE", 32, -1, "talent_sm.pcx", 0);
+            } else {
+                popb("GOLDENAGE", 32, -1, "Alopdir.pcx", 0);
+            }
+        }
+    } else if (base->state_flags & BSTATE_GOLDEN_AGE_ACTIVE) {
+        base->state_flags &= ~BSTATE_GOLDEN_AGE_ACTIVE;
+        if (base->drone_total <= base->talent_total) {
+            // Notify end of golden age without drone riots
+            if (!is_alien(base->faction_id)) {
+                popb("GOLDENAGEOVER", 64, -1, "talent_sm.pcx", 0);
+            } else {
+                popb("GOLDENAGEOVER", 64, -1, "Alopdir.pcx", 0);
+            }
+        }
     }
+
+    if (base->drone_total <= base->talent_total || base->nerve_staple_turns_left
+    || has_project(FAC_TELEPATHIC_MATRIX, base->faction_id)) {
+        if (base->state_flags & BSTATE_DRONE_RIOTS_ACTIVE) {
+            base->state_flags &= ~BSTATE_DRONE_RIOTS_ACTIVE;
+
+            if (!(base->state_flags & BSTATE_GOLDEN_AGE_ACTIVE)) {
+                bool manage = base->governor_flags & GOV_ACTIVE
+                    && base->governor_flags & GOV_MANAGES_CITIZENS_SPECS;
+
+                if (!is_alien(base->faction_id)) {
+                    if (manage) {
+                        popb("DRONERIOTSOVER2", 0, 51, "talent_sm.pcx", 0);
+                    } else {
+                        popb("DRONERIOTSOVER", 16, 51, "talent_sm.pcx", 0);
+                    }
+                } else if (manage) {
+                    popb("DRONERIOTSOVER2", 0, 51, "Alopdir.pcx", 0);
+                } else {
+                    popb("DRONERIOTSOVER", 16, 51, "Alopdir.pcx", 0);
+                }
+            }
+            if (!is_human(base->faction_id)) {
+                base_reset(*CurrentBaseID, 0);
+            }
+            draw_tile((*CurrentBase)->x, (*CurrentBase)->y, 2);
+        }
+    } else if (!delay_base_riot) {
+        // Normally drone riots would always happen here if there are sufficient drones
+        // but delay_drone_riots option can postpone it for one turn.
+        drone_riot();
+    }
+}
+
+/*
+Main base production management function during production_phase.
+For the most part this follows the original logic flow as closely
+as possible except when noted by comments or config options.
+*/
+int __cdecl mod_base_upkeep(int base_id) {
+    BASE* base = &Bases[base_id];
+    Faction* f = &Factions[base->faction_id];
+    int faction_id = base->faction_id;
+
+    set_base(base_id);
+    *ComputeBaseID = base_id;
+    *BaseUpkeepFlag = 0;
+    base->state_flags &= ~(BSTATE_PSI_GATE_USED|BSTATE_FACILITY_SCRAPPED);
+    base_support();
+    base_yield();
+    base_nutrient();
+    base_minerals();
+    base_energy();
+    if (mod_base_production()) {
+        return 1; // Current base was removed
+    }
+    mod_base_hurry();
+    assert(base == *CurrentBase);
+    (*CurrentBase)->minerals_accumulated_2 = (*CurrentBase)->minerals_accumulated;
+    (*CurrentBase)->production_id_last = (*CurrentBase)->queue_items[0];
+
+    if (mod_base_growth()) {
+        return 1; // Current base was removed
+    }
+    if (*CurrentTurn > 1) {
+        base_check_support();
+    }
+    *BaseUpkeepState = 1;
+    assert(base == *CurrentBase);
+    *ComputeBaseID = *CurrentBaseID;
+    base_support();
+    base_yield();
+    base_nutrient();
+    base_minerals();
+    base_energy();
+
+    int plan = f->region_base_plan[region_at(base->x, base->y)];
+    int plan_value;
+    if (plan != 7 || f->AI_fight > 0) {
+        plan_value = (plan != 2) + 1;
+    } else {
+        plan_value = 4;
+    }
+    f->unk_45 += plan_value * __builtin_popcount((*CurrentBase)->worked_tiles);
+    *BaseUpkeepState = 2;
+
+    if (*CurrentTurn > 0) {
+        mod_base_drones();
+        base_doctors();
+        if ((*CurrentBase)->faction_id != faction_id) {
+            return 1; // drone_riot may change base ownership if revolt is active
+        }
+        base_energy_costs();
+        if (conf.early_research_start || *CurrentTurn > 5
+        || *MultiplayerActive || !(*GamePreferences & PREF_BSC_TUTORIAL_MSGS)) {
+            mod_base_research();
+        }
+    }
+    set_base(base_id);
+    if (*ComputeBaseID != base_id) {
+        *ComputeBaseID = base_id;
+        base_support();
+        base_yield();
+        base_nutrient();
+        base_minerals();
+        base_energy();
+    }
+    base_ecology();
+    f->energy_credits += base->economy_total;
+
+    int commerce = 0;
+    int energygrid = 0;
+    if (!f->sanction_turns && !is_alien(base->faction_id)) {
+        for (int i = 1; i < MaxPlayerNum; i++) {
+            if (i != base->faction_id && !is_alien(i) && !Factions[i].sanction_turns) {
+                commerce += BaseCommerceIncome[i];
+            }
+        }
+    }
+    if (!f->sanction_turns && is_alien(base->faction_id)) {
+        int num = 0;
+        for (int i = 0; i <= MaxFacilityNum; i++) {
+            if (has_fac_built((FacilityId)i, base_id)) {
+                num++;
+            }
+        }
+        for (int i = SP_ID_First; i <= SP_ID_Last; i++) {
+            if (project_base((FacilityId)i) == base_id) {
+                num += 5;
+            }
+        }
+        energygrid += num/2;
+    }
+    f->turn_commerce_income += commerce;
+    f->turn_commerce_income += energygrid;
+
+    if (DEBUG) {
+        int* c = &(*BaseCommerceIncome);
+        debug("base_upkeep %d %d base: %3d trade: %d %d %d %d %d %d %d commerce: %d grid: %d total: %d %s\n",
+        *CurrentTurn, base->faction_id, base_id, c[1], c[2], c[3], c[4], c[5], c[6], c[7],
+        commerce, energygrid, f->turn_commerce_income, base->name);
+    }
+    if (*CurrentTurn > 1) {
+        base_maint();
+    }
+    // This is only used by the original AI terraformers
+    if (!thinker_enabled(base->faction_id)) {
+        base_terraform(0);
+    }
+    assert(base == *CurrentBase);
+    assert(*ComputeBaseID == *CurrentBaseID);
+
+    // Instead of random delay the AI always renames captured bases when they are assimilated
+    if (base->state_flags & BSTATE_RENAME_BASE) {
+        if (base->assimilation_turns_left <= 1 && !(*GameState & STATE_GAME_DONE)) {
+            if ((base->faction_id_former == MapWin->cOwner
+            || base->visibility & (1 << MapWin->cOwner))
+            && !Console_focus(MapWin, base->x, base->y, MapWin->cOwner)) {
+                draw_tiles(base->x, base->y, 2);
+            }
+            MFaction* m = &MFactions[base->faction_id];
+            *gender_default = m->noun_gender;
+            *plurality_default = m->is_noun_plural;
+            parse_says(0, m->noun_faction, -1, -1);
+            parse_says(1, base->name, -1, -1);
+
+            if (conf.new_base_names) {
+                mod_name_base(base->faction_id, base->name, 1, is_ocean(base));
+            } else {
+                name_base(base->faction_id, base->name, 1, is_ocean(base));
+            }
+            parse_says(2, base->name, -1, -1);
+
+            if (base->faction_id_former == MapWin->cOwner
+            || base->visibility & (1 << MapWin->cOwner)) {
+                draw_map(1);
+                if (is_alien(base->faction_id)) {
+                    popp(ScriptFile, "RENAMEBASE", 0, "al_col_sm.pcx", 0);
+                } else {
+                    popp(ScriptFile, "RENAMEBASE", 0, "colfoun_sm.pcx", 0);
+                }
+            }
+            base->state_flags &= ~(BSTATE_RENAME_BASE|BSTATE_UNK_1);
+            base->state_flags |= BSTATE_UNK_80;
+        }
+    }
+    *ComputeBaseID = -1;
+    if (*CurrentBaseID == *BaseUpkeepDrawID) {
+        BaseWin_on_redraw(BaseWin);
+    }
+    if (*BaseUpkeepFlag && (!(*GameState & STATE_GAME_DONE) || *GameState & STATE_FINAL_SCORE_DONE)) {
+        BaseWin_zoom(BaseWin, *CurrentBaseID, 1);
+    }
+    *BaseUpkeepState = 0;
+    if (base->assimilation_turns_left) {
+        base->assimilation_turns_left--;
+        if (base->faction_id_former == base->faction_id) {
+            if (base->assimilation_turns_left) {
+                base->assimilation_turns_left--;
+            }
+        }
+        if (!base->assimilation_turns_left) {
+            base->faction_id_former = base->faction_id;
+        }
+    }
+    if (base->nerve_staple_turns_left) {
+        base->nerve_staple_turns_left--;
+    }
+    // Nerve staple expires twice as fast when SE Police becomes insufficient
+    if (base->nerve_staple_turns_left && f->SE_police_pending < conf.nerve_staple_mod) {
+        base->nerve_staple_turns_left--;
+    }
+    base->state_flags &= ~(BSTATE_UNK_200000|BSTATE_COMBAT_LOSS_LAST_TURN);
+    if (!((*CurrentTurn + *CurrentBaseID) & 7)) {
+        base->state_flags &= ~BSTATE_UNK_100000;
+    }
+    return 0;
 }
 
 bool valid_relocate_base(int base_id) {
@@ -448,6 +663,31 @@ int stockpile_energy_active(int base_id) {
     return 0;
 }
 
+int terraform_eco_damage(int base_id) {
+    BASE* base = &Bases[base_id];
+    int modifier = (has_fac_built(FAC_TREE_FARM, base_id) != 0)
+        + (has_fac_built(FAC_HYBRID_FOREST, base_id) != 0);
+    int value = 0;
+    for (const auto& m : iterate_tiles(base->x, base->y, 0, 21)) {
+        int num = __builtin_popcount(m.sq->items & (BIT_THERMAL_BORE|BIT_ECH_MIRROR|
+            BIT_CONDENSER|BIT_SOIL_ENRICHER|BIT_FARM|BIT_SOLAR|BIT_MINE|BIT_MAGTUBE|BIT_ROAD));
+        if ((1 << m.i) & base->worked_tiles) {
+            num *= 2;
+        }
+        if (m.sq->items & BIT_THERMAL_BORE) {
+            num += 8;
+        }
+        if (m.sq->items & BIT_CONDENSER) {
+            num += 4;
+        }
+        if (m.sq->items & BIT_FOREST) {
+            num -= 1;
+        }
+        value += num * (2 - modifier) / 2;
+    }
+    return value;
+}
+
 /*
 Determine if the faction can build a specific facility or Secret Project in the specified base.
 Checks are included to prevent SMACX specific facilities from being built in SMAC mode.
@@ -569,7 +809,7 @@ bool can_build(int base_id, int item_id) {
             return false;
         }
     }
-    if (item_id == FAC_HEADQUARTERS && find_hq(faction) >= 0) {
+    if (item_id == FAC_HEADQUARTERS && !valid_relocate_base(base_id)) {
         return false;
     }
     if ((item_id == FAC_RECREATION_COMMONS || item_id == FAC_HOLOGRAM_THEATRE
@@ -587,7 +827,15 @@ bool can_build(int base_id, int item_id) {
     && base->talent_total + 1 < base->drone_total + Rules->drones_induced_genejack_factory) {
         return false;
     }
-    if ((item_id == FAC_HAB_COMPLEX || item_id == FAC_HABITATION_DOME) && base->nutrient_surplus < 2) {
+    if ((item_id == FAC_HAB_COMPLEX || item_id == FAC_HABITATION_DOME)
+    && (base->nutrient_surplus < 2 || !base_unused_space(base_id))) {
+        return false;
+    }
+    if (item_id == FAC_PRESSURE_DOME && (*ClimateFutureChange <= 0
+    || !is_shore_level(mapsq(base->x, base->y)))) {
+        return false;
+    }
+    if (item_id == FAC_PSI_GATE && 3*facility_count(FAC_PSI_GATE, faction) >= f->base_count) {
         return false;
     }
     if (item_id == FAC_SUBSPACE_GENERATOR) {
@@ -643,7 +891,7 @@ bool can_build_unit(int base_id, int unit_id) {
             return false;
         }
     }
-    return *VehCount < MaxVehNum * 19 / 20;
+    return (*VehCount + 128 < MaxVehNum) || (*VehCount + random(128) < MaxVehNum);
 }
 
 bool can_build_ships(int base_id) {
@@ -941,7 +1189,7 @@ int hurry_item(int base_id, int mins, int cost) {
     return 1;
 }
 
-int consider_hurry() {
+int mod_base_hurry() {
     const int base_id = *CurrentBaseID;
     BASE* b = &Bases[base_id];
     Faction* f = &Factions[b->faction_id];
@@ -1021,6 +1269,9 @@ int consider_hurry() {
 
         if (cost > 0 && cost < f->energy_credits && mins > 0 && mins > b->mineral_surplus) {
             hurry_item(base_id, mins, cost);
+            if (DEBUG && conf.minimal_popups) {
+                return 1;
+            }
             if (!(*GameState & STATE_GAME_DONE) && b->faction_id != MapWin->cOwner
             && has_treaty(b->faction_id, MapWin->cOwner, DIPLO_COMMLINK)) {
                 parse_says(0, MFactions[b->faction_id].adj_name_faction, -1, -1);
@@ -1630,14 +1881,15 @@ int select_build(int base_id) {
     bool build_ships = can_build_ships(base_id);
     bool build_pods = allow_expand(faction) && pods < 2
         && (base->pop_size > 1 || base->nutrient_surplus > 1);
-    double w1 = min(1.0, max(0.4, 1.0 * minerals / p->project_limit))
-        * (conf.conquer_priority / 100.0)
-        * (region_at(base->x, base->y) == p->target_land_region
-        && p->main_region != p->target_land_region ? 4 : 1);
-    double w2 = 2.0 * p->enemy_mil_factor / (p->enemy_base_range * 0.1 + 0.1)
-        + 0.8 * p->enemy_bases + min(0.4, *CurrentTurn/400.0)
-        + min(1.0, 1.5 * f->base_count / *MapAreaSqRoot) * (f->AI_fight * 0.2 + 0.8);
-    double threat = 1 - (1 / (1 + max(0.0, w1 * w2)));
+    float w1 = clamp(1.0f * minerals / p->project_limit, 0.4f, 1.0f)
+        * (conf.conquer_priority / 100.0f)
+        * (p->main_region != p->target_land_region
+        && region_at(base->x, base->y) == p->target_land_region ? 4 : 1)
+        * (base_enemy_range[base_id] > 0 && base_enemy_range[base_id] < 8 ? 4 : 1);
+    float w2 = 2.0f * p->enemy_mil_factor / (p->enemy_base_range * 0.1f + 0.1f)
+        + 0.8f * p->enemy_bases + min(0.4f, *CurrentTurn/400.0f)
+        + min(1.0f, 1.5f * f->base_count / *MapAreaSqRoot) * (f->AI_fight * 0.2f + 0.8f);
+    float threat = 1 - (1 / (1 + max(0.01f, w1 * w2)));
 
     debug("select_build %d %d %2d %2d def: %d frm: %d prb: %d crw: %d pods: %d expand: %d "\
         "scouts: %d min: %2d res: %2d limit: %2d mil: %.4f threat: %.4f\n",
@@ -1673,7 +1925,7 @@ int select_build(int base_id) {
         {Satellites,                0},
         {CombatUnit,                F_Unit},
         {FormerUnit,                F_Unit},
-        {FAC_RECYCLING_TANKS,       0},
+        {FAC_RECYCLING_TANKS,       F_Default},
         {SeaProbeUnit,              F_Unit},
         {CrawlerUnit,               F_Unit},
         {FerryUnit,                 F_Unit},
@@ -1713,7 +1965,7 @@ int select_build(int base_id) {
     };
     int default_choice = 0;
 
-    for (const int* item : build_order) {
+    for (const auto& item : build_order) {
         const CFacility& facility = Facility[item[0]];
         const int t = item[0];
         const int flag = item[1];
@@ -1823,11 +2075,11 @@ int select_build(int base_id) {
         }
         int turns = max(0, facility.cost * min(12, cfactor) - base->minerals_accumulated)
             / max(2, base->mineral_surplus);
-        /* Check if we have sufficient base energy for multiplier facilities. */
+        // Check if we have sufficient base energy for multiplier facilities.
         if (flag & F_Energy && !allow_energy(base_id, t, turns)) {
             continue;
         }
-        /* Avoid building combat-related facilities in peacetime. */
+        // Avoid building combat-related facilities in peacetime.
         if (flag & F_Combat && p->enemy_base_range > MaxEnemyRange - turns/8 - 5*min(5, facility.maint)) {
             continue;
         }
@@ -1848,21 +2100,14 @@ int select_build(int base_id) {
         && ((base->pop_size <= content_pop_value && !base->drone_total && base->specialist_total < 2)
         || (base->talent_total > 0 && !base->drone_total && !base->specialist_total)))
             continue;
-        if (t == FAC_PRESSURE_DOME && (*ClimateFutureChange <= 0 || !is_shore_level(mapsq(base->x, base->y))))
-            continue;
-        if (t == FAC_HEADQUARTERS && !valid_relocate_base(base_id))
-            continue;
         if (t == FAC_COMMAND_CENTER && (sea_base || minerals < reserve || turns > 8))
             continue;
         if (t == FAC_NAVAL_YARD && (!sea_base || minerals < reserve || turns > 8))
             continue;
-        if (t == FAC_TACHYON_FIELD && base->defend_goal < 4 && turns > (allow_units ? 3 : 5))
+        if ((t  == FAC_COMMAND_CENTER || t == FAC_NAVAL_YARD || t == FAC_COVERT_OPS_CENTER)
+        && base_border_range[base_id] > max(16, *MapAreaSqRoot/4))
             continue;
-        if (t == FAC_HAB_COMPLEX && base_unused_space(base_id) > 0)
-            continue;
-        if (t == FAC_HABITATION_DOME && base_unused_space(base_id) > 0)
-            continue;
-        if (t == FAC_PSI_GATE && facility_count(FAC_PSI_GATE, faction) >= f->base_count/2)
+        if (t == FAC_TACHYON_FIELD && allow_units && base_border_range[base_id] > 14)
             continue;
         if (t > 0) {
             return -t;

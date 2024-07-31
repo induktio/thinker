@@ -47,7 +47,7 @@ int vector_dist(int x1, int y1, int x2, int y2) {
 }
 
 int min_range(const Points& S, int x, int y) {
-    int z = MaxMapAreaX;
+    int z = MaxMapDist;
     for (auto& p : S) {
         z = min(z, map_range(x, y, p.x, p.y));
     }
@@ -55,7 +55,7 @@ int min_range(const Points& S, int x, int y) {
 }
 
 int min_vector(const Points& S, int x, int y) {
-    int z = MaxMapAreaX;
+    int z = MaxMapDist;
     for (auto& p : S) {
         z = min(z, vector_dist(x, y, p.x, p.y));
     }
@@ -69,7 +69,7 @@ double avg_range(const Points& S, int x, int y) {
         sum += map_range(x, y, p.x, p.y);
         n++;
     }
-    return (n > 0 ? (double)sum/n : 0);
+    return (n > 0 ? (1.0*sum)/n : 0);
 }
 
 bool is_ocean(MAP* sq) {
@@ -90,6 +90,21 @@ bool is_shore_level(MAP* sq) {
 
 bool map_is_flat() {
     return *MapToggleFlat & 1;
+}
+
+int clear_overlay(int UNUSED(x), int UNUSED(y)) {
+    return 0;
+}
+
+void refresh_overlay(std::function<int(int, int)> tile_value) {
+    if (*GameState & STATE_OMNISCIENT_VIEW && MapWin->iWhatToDrawFlags & MAPWIN_DRAW_GOALS) {
+        for (int y = 0; y < *MapAreaY; y++) {
+            for (int x = y&1; x < *MapAreaX; x+=2) {
+                mapdata[{x, y}].overlay = tile_value(x, y);
+            }
+        }
+        draw_map(1);
+    }
 }
 
 int __cdecl is_coast(int x, int y, bool is_base_radius) {
@@ -1017,10 +1032,12 @@ void __cdecl mod_world_build() {
 
 void world_generate(uint32_t seed) {
     if (DEBUG) {
-        memset(pm_overlay, 0, sizeof(pm_overlay));
         *GameState |= STATE_DEBUG_MODE;
     }
     MAP* sq;
+    mapdata.clear();
+    mapnodes.clear();
+    reset_state();
     mod_map_wipe();
     ThinkerVars->map_random_value = seed;
     FastNoiseLite noise;
@@ -1164,7 +1181,7 @@ void world_generate(uint32_t seed) {
             if (conf.world_islands_mod > 0) {
                 if (land_count < conf.world_islands_mod && land_count < *MapAreaTiles/8) {
                     bridges.insert({x, y});
-                    if (DEBUG) pm_overlay[x][y] = -1;
+                    if (DEBUG) mapdata[{x, y}].overlay = -1;
                     continue;
                 }
             }
@@ -1178,7 +1195,7 @@ void world_generate(uint32_t seed) {
             if (__builtin_popcount(sea) > 1) {
                 if (land_count > *MapAreaTiles/8 || pair_hash(seed^(x/8), y/8) & 1) {
                     bridges.insert({x, y});
-                    if (DEBUG) pm_overlay[x][y] = -2;
+                    if (DEBUG) mapdata[{x, y}].overlay = -2;
                 }
             }
         }

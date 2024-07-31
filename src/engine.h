@@ -8,12 +8,12 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <windows.h>
-#include <algorithm>
 #include <set>
 #include <map>
 #include <list>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 typedef uint8_t byte;
 typedef uint32_t Dib;
@@ -34,6 +34,10 @@ struct MapTile {
 struct Point {
     int x;
     int y;
+
+    bool operator==(const Point& other) const {
+        return (x == other.x && y == other.y);
+    }
 };
 
 struct PointComp {
@@ -43,13 +47,20 @@ struct PointComp {
     }
 };
 
+template <>
+struct std::hash<Point> {
+    std::size_t operator()(const Point& p) const {
+        return p.x ^ (p.y << 16);
+    }
+};
+
 struct MapNode {
     int x;
     int y;
     int type;
 };
 
-struct NodeComp {
+struct MapNodeComp {
     bool operator()(const MapNode& p1, const MapNode& p2) const
     {
         return p1.x < p2.x || (p1.x == p2.x && (
@@ -78,7 +89,7 @@ const T& clamp (const T& value, const T& low, const T& high) {
     return (value < low ? low : (value > high ? high : value));
 }
 
-typedef std::set<MapNode,NodeComp> NodeSet;
+typedef std::set<MapNode,MapNodeComp> NodeSet;
 typedef std::set<Point,PointComp> Points;
 typedef std::list<Point> PointList;
 typedef std::set<std::string> set_str_t;
@@ -143,14 +154,17 @@ extern char* StrBuffer;
 extern BASE** CurrentBase;
 extern int* CurrentBaseID;
 extern int* ComputeBaseID;
+extern int* BaseUpkeepDrawID;
 extern int* BaseFindDist;
-extern int* BaseUpkeepStage;
+extern int* BaseUpkeepFlag;
+extern int* BaseUpkeepState;
 extern int* BaseCurrentConvoyFrom;
 extern int* BaseCurrentConvoyTo;
 extern int* BaseCurrentGrowthRate;
 extern int* BaseCurrentVehPacifismCount;
 extern int* BaseCurrentForcesSupported;
 extern int* BaseCurrentForcesMaintCost;
+extern int* BaseCommerceIncome;
 extern int* ScnVictFacilityObj;
 extern int* BaseCount;
 extern int* VehCount;
@@ -217,6 +231,7 @@ extern int* diplo_second_faction;
 extern int* diplo_third_faction;
 extern int* diplo_tech_faction;
 extern int* reportwin_opponent_faction;
+extern int* dword_93A958;
 extern int* diplo_value_93FA98;
 extern int* diplo_value_93FA24;
 extern int* diplo_entry_id;
@@ -386,9 +401,11 @@ typedef int(__thiscall *FTutWin_draw_arrow)(Win* This);
 typedef int(__thiscall *FPlanWin_blink)(Win* This);
 typedef int(__thiscall *FStringBox_clip_ids)(Win* This, int len);
 typedef int(__stdcall *FWinProc)(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+typedef int(__thiscall *FConsole_focus)(Console* This, int a2, int a3, int a4);
 typedef int(__stdcall *FConsole_zoom)(int zoom_type, int v1);
 typedef int(__cdecl *FWin_update_screen)(RECT* rc, int v1);
 typedef int(__cdecl *FWin_flip)(RECT* rc);
+typedef int(__thiscall *FBaseWin_zoom)(Win* This, int a2, int a3);
 typedef int(__thiscall *FPopup_start)(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
 typedef int(__thiscall *FBasePop_start)(
@@ -400,12 +417,14 @@ typedef void(__thiscall *FConsole_go_to)(Console* This, int a2, void* a3, void* 
 
 extern FGenString amovie_project;
 extern FPopup_start Popup_start;
+extern FBaseWin_zoom BaseWin_zoom;
 extern FGenWin BaseWin_nerve_staple;
 extern FGenWin BaseWin_on_redraw;
 extern FGenWin GraphicWin_redraw;
 extern FGenVoid SubInterface_release_iface_mode;
 extern fp_void draw_cursor;
 extern fp_3int draw_tile;
+extern fp_3int draw_tiles;
 extern fp_1int draw_map;
 extern FNetMsg_pop NetMsg_pop;
 extern FPlanWin_blink PlanWin_blink;
@@ -418,6 +437,7 @@ extern FConsole_go_to Console_go_to;
 extern FGenVoid Console_editor_scen_rules;
 extern fp_void turn_timer;
 extern tc_3int Console_cursor_on;
+extern FConsole_focus Console_focus;
 extern FConsole_zoom Console_zoom;
 extern Fhex_cost hex_cost;
 //extern Fhas_abil has_abil;

@@ -21,9 +21,12 @@ int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id);
 void show_rules_menu();
 void init_world_config();
 void init_save_game(int faction);
+void __cdecl mod_load_map_daemon(int a1);
+void __cdecl mod_load_daemon(int a1, int a2);
 void __cdecl mod_auto_save();
 int __cdecl mod_turn_upkeep();
 int __cdecl mod_faction_upkeep(int faction);
+void __cdecl mod_production_phase(int faction_id);
 void __cdecl mod_name_base(int faction, char* name, bool save_offset, bool water);
 int __cdecl load_music_strcmpi(const char* active, const char* label);
 

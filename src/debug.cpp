@@ -221,7 +221,7 @@ void print_base(int id) {
     BASE* base = &Bases[id];
     int prod = base->item();
     debug("[ turn: %d faction: %d base: %2d x: %2d y: %2d "\
-        "pop: %d tal: %d dro: %d spe: %d min: %2d acc: %2d | %08x | %3d %s | %s ]\n",
+        "pop: %2d tal: %2d dro: %2d spe: %2d min: %2d acc: %2d | %08x | %3d %s | %s ]\n",
         *CurrentTurn, base->faction_id, id, base->x, base->y,
         base->pop_size, base->talent_total, base->drone_total, base->specialist_total,
         base->mineral_surplus, base->minerals_accumulated,
