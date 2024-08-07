@@ -3,9 +3,6 @@
 #include "main.h"
 #include "lib/FastNoiseLite.h"
 
-const int StartBonusCount = 2;
-const int StartBonusTiles = 25;
-
 const int ManifoldHarmonicsBonus[][3] = {
     {0,0,0}, // Planet < 0
     {0,0,1}, // Planet = 0

@@ -1001,12 +1001,11 @@ void process_map(int faction, int k) {
         *MapAreaX, *MapAreaY, *MapAreaSqRoot, *MapAreaTiles, goodtiles.size());
 }
 
-bool valid_start(int faction, int iter, int x, int y, bool need_bonus) {
+bool valid_start(int faction, int iter, int x, int y) {
     MAP* sq = mapsq(x, y);
     bool aquatic = MFactions[faction].is_aquatic();
     int limit = max((*MapAreaTiles < 1600 ? 5 : 7), 8 - iter/80);
     int min_sc = 80 - iter/4;
-    int pods = 0;
     int sea = 0;
     int sc = 0;
     int xd = 0;
@@ -1068,16 +1067,10 @@ bool valid_start(int faction, int iter, int x, int y, bool need_bonus) {
             }
         }
         if (bonus != RES_NONE) {
-            if (m.i < StartBonusTiles && is_ocean(m.sq) == aquatic) {
-                pods++;
-            }
-            sc += (m.i < StartBonusTiles ? 15 : 10);
+            sc += (m.i < 25 ? 15 : 10);
         }
         if (goody_at(m.x, m.y) > 0) {
             sc += 15;
-            if (is_ocean(m.sq) == aquatic) {
-                pods++;
-            }
         }
         if (m.sq->items & BIT_FUNGUS) {
             sc -= (m.i <= 20 ? 4 : 2) * (is_ocean(m.sq) ? 1 : 2);
@@ -1086,12 +1079,9 @@ bool valid_start(int faction, int iter, int x, int y, bool need_bonus) {
             sc += 8;
         }
     }
-    debug("find_score %d %d x: %3d y: %3d xd: %d yd: %d pods: %d min: %d score: %d\n",
-        faction, iter, x, y, xd, yd, pods, min_sc, sc);
+    debug("find_score %d %d x: %3d y: %3d xd: %d yd: %d min: %d score: %d\n",
+        faction, iter, x, y, xd, yd, min_sc, sc);
 
-    if (need_bonus && pods < StartBonusCount && iter < 150 && !(*GameRules & RULES_NO_UNITY_SCATTERING)) {
-        return false;
-    }
     if (!aquatic && iter < 100) { // Avoid spawns without sufficient land nearby
         if (sea > 20) {
             return false;
@@ -1105,33 +1095,32 @@ bool valid_start(int faction, int iter, int x, int y, bool need_bonus) {
 
 void apply_nutrient_bonus(int faction, int* x, int* y) {
     MAP* sq;
-    Points pods;
+    Points addon;
+    Points places;
+    Points allpods;
     Points rivers;
     bool aquatic = MFactions[faction].is_aquatic();
     int adjust = (aquatic ? 0 : 8);
     int nutrient = 0;
     int num = 0;
 
-    for (auto& m : iterate_tiles(*x, *y, 0, 45)) {
-        if (((aquatic && is_ocean_shelf(m.sq)) || (!aquatic && !is_ocean(m.sq)))
-        && (m.i < StartBonusTiles || pods.size() < StartBonusCount)) {
-            int bonus = bonus_at(m.x, m.y);
+    // Bonus resources are placed adjacent to each other only on diagonals
+    for (auto& m : iterate_tiles(*x, *y, 0, 80)) {
+        int bonus = bonus_at(m.x, m.y);
+        int goody = goody_at(m.x, m.y);
+        if (aquatic == is_ocean(m.sq) && m.sq->alt_level() >= ALT_OCEAN_SHELF
+        && (m.i < 25 || (m.i < 45 && nutrient + (int)places.size()/4 < conf.nutrient_bonus))) {
             if (bonus == RES_NUTRIENT) {
-                if (nutrient < StartBonusCount && m.sq->items & BIT_FUNGUS) {
+                if (nutrient < conf.nutrient_bonus && m.sq->items & BIT_FUNGUS) {
                     m.sq->items &= ~BIT_FUNGUS;
                 }
                 if (m.sq->is_rocky()) {
                     rocky_set(m.x, m.y, LEVEL_ROLLING);
                 }
+                synch_bit(m.x, m.y, faction);
                 nutrient++;
-            }
-            else if (bonus == RES_MINERAL || bonus == RES_ENERGY) {
-                pods.insert({m.x, m.y});
-            }
-            else if (goody_at(m.x, m.y) > 0) {
-                pods.insert({m.x, m.y});
-            }
-            else if (adjust > 0 && m.sq->items & BIT_RIVER) {
+            } else if (!goody && bonus == RES_NONE
+            && adjust > 0 && m.sq->items & BIT_RIVER) {
                 if (m.i == 0) {
                     adjust = 0;
                 }
@@ -1143,16 +1132,37 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
                 }
             }
         }
+        if (bonus || goody) {
+            allpods.insert({m.x, m.y});
+        }
+        else if (m.i < 45 && (int)places.size()/4 < conf.nutrient_bonus
+        && aquatic == is_ocean(m.sq) && m.sq->alt_level() >= ALT_OCEAN_SHELF
+        && !(m.sq->items & (BIT_SUPPLY_REMOVE | BIT_MONOLITH))) {
+            places.insert({m.x, m.y});
+        }
     }
-    while (pods.size() > 0 && nutrient + num < StartBonusCount) {
-        auto t = pick_random(pods);
+    while (places.size() > 0 && nutrient + (int)addon.size() < conf.nutrient_bonus) {
+        auto t = pick_random(places);
+        bool found = false;
+        for (auto& p : allpods) {
+            if (wrap(abs(p.x - t.x)) == 1 && abs(p.y - t.y) == 1) {
+                found = true; break;
+            }
+        }
+        if (!found) {
+            addon.insert({t.x, t.y});
+            allpods.insert({t.x, t.y});
+        }
+        places.erase(t);
+    }
+    for (auto& t : addon) {
         sq = mapsq(t.x, t.y);
-        pods.erase(t);
         sq->items &= ~(BIT_FUNGUS | BIT_MINERAL_RES | BIT_ENERGY_RES);
         sq->items |= (BIT_SUPPLY_REMOVE | BIT_BONUS_RES | BIT_NUTRIENT_RES);
         if (sq->is_rocky()) {
             rocky_set(t.x, t.y, LEVEL_ROLLING);
         }
+        synch_bit(t.x, t.y, faction);
         num++;
     }
     // Adjust position to adjacent river if currently not on river
@@ -1165,7 +1175,6 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
 
 void __cdecl find_start(int faction, int* tx, int* ty) {
     bool aquatic = MFactions[faction].is_aquatic();
-    bool need_bonus = conf.nutrient_bonus > is_human(faction);
     int x = 0;
     int y = 0;
     int i = 0;
@@ -1182,8 +1191,8 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
             x = (random(*MapAreaX) & (~1)) + (y&1);
         }
         debug("find_iter  %d %d x: %3d y: %3d\n", faction, i, x, y);
-        if (valid_start(faction, i, x, y, need_bonus)) {
-            if (need_bonus) {
+        if (valid_start(faction, i, x, y)) {
+            if (conf.nutrient_bonus > 0) {
                 apply_nutrient_bonus(faction, &x, &y);
             }
             // No unity scattering can normally spawn pods at two tile range from the start

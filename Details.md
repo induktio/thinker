@@ -87,14 +87,15 @@ Base swapping dialogue has been adjusted to reject any base swaps where the AI w
 
 Player automation features
 ==========================
-It is possible to instruct Thinker to automate player-owned colony pods and formers from `ALT+T` menu options. There's also a separate option to set Thinker manage governors in player-owned bases.  Normally player base governors and unit automation would be handled by the vanilla AI.
+It is possible to instruct Thinker to automate player-owned colony pods, crawlers and formers from `ALT+T` menu options. There's also a separate option to set Thinker manage governors in player-owned bases. Normally player base governors and unit automation would be handled by the vanilla AI.
 
-When enabled, use `Shift+A` shortcut to automate any specific unit and it will follow the same colonization or terraforming strategy as the AI factions. Colony pods will attempt to travel to a suitable location autonomously and deploy a base there. If this is not required, the units can be moved manually as well. Automated formers should follow the same settings listed in the Automation Preferences dialog.
+When enabled, use `Shift+A` shortcut to automate any specific unit and it will follow the same colonization or terraforming strategy as the AI factions. Colony pods will attempt to travel to a suitable location autonomously and deploy a base there. If this is not required, the units can be moved manually as well. Automated formers should follow the same settings listed in the Automation Preferences dialog. Crawlers will usually try to convoy nutrient or mineral resources depending on the base status.
 
 Beware formers automated in this way **can replace any existing improvements** on the territory if Thinker calculates the replacement would increase tile production. A notable difference compared to the AI factions is that player-automated formers will never raise/lower terrain. To prevent the formers from ever replacing some specific improvements, such as bunkers, they need to be placed outside the workable base radius from any friendly base.
 
-Bases managed by Thinker governors will mostly follow the same options as provided in the base governor settings, with a few exceptions. Normal explore/build/discover/conquer priorities will have no effect on production choices and they are automatically deselected in the interface. Enabling either terraformers or colony pods in the governor settings will also allow governors to build crawlers since they don't have a separate option in the menu.
-By default Thinker governors will not attempt to start secret projects or hurry production with energy reserves, but this can be enabled from the governor settings. If production is hurried in a base, this will be displayed as a separate line in the message log.
+Bases managed by Thinker governors will mostly follow the same options as provided in the base governor settings. Adjusting explore/discover/build/conquer governor priorities from the base window has the same effect compared to AIs using these choices as faction priorities. Enabling terraformer production in the governor settings will also allow governors to build crawlers since they don't have a separate option in the menu.
+
+By default Thinker governors will not attempt to start secret projects or hurry production with energy reserves, but this can be enabled from the governor settings. If production is hurried by the base governor, this will be displayed as a separate line in the message log. Normally the governor tries to keep some energy credits in reserve before attempting to hurry production.
 
 
 Map generator options
@@ -107,7 +108,7 @@ This feature supports all the world settings chosen from the game menus such as 
 
 From the menu options it is also possible to choose the random map style from larger or smaller continents. Note that this has only significant impact if the ocean coverage is at least average, since at low levels all generated maps will tend towards pangaea layouts.
 
-All landmarks that are placed on random maps can also be configured from `thinker.ini`. Nessus Canyon is available but disabled by default. When new map generator is enabled, `modified_landmarks` option replaces the default Monsoon Jungle landmark with multiple smaller jungles dispersed across the equator area, and Borehole Cluster is also expanded to four tiles. Planet rainfall level will determine how many jungle tiles are placed.
+All landmarks that are placed on random maps can also be configured from `thinker.ini`. Nessus Canyon is available but disabled by default. When new map generator is enabled, `modified_landmarks` option replaces the default Monsoon Jungle landmark with multiple smaller jungles dispersed across the equator area. Planet rainfall level will determine how many jungle tiles are placed. Borehole Cluster is also expanded to four tiles and Fossil Field Ridge is placed on ocean shelf tiles.
 
 It is also possible to place multiple similar landmarks if the corresponding landmark option is set to some value greater than one. When playing on smaller maps, it might make more sense to disable some additional landmarks, as otherwise the map generator may skip placing some landmarks due to not having enough space.
 
@@ -115,7 +116,7 @@ The new map generator is entirely different from the vanilla version, so it does
 
 Thinker's `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on Huge map sizes.
 
-When `nutrient_bonus` setting is enabled, the placement algorithm tries to ensure each spawn location has at least two nutrient bonus resources. The placement also strongly favors spawns on river tiles for easier movement in the early game.
+When `nutrient_bonus` option is higher than zero, the placement algorithm adds this many additional nutrient bonus resources at each start. The placement also strongly favors spawns on river tiles for easier movement in the early game.
 
 Another optional setting `rare_supply_pods` is not dependent on faction placement, instead it affects the whole map by reducing the frequency of random supply pods significantly. Thematically it never made much sense that the supply pods would be excessively abundant across the whole planet surface, while the Unity spaceship would supposedly only have limited space for extra supplies.
 
@@ -421,6 +422,8 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 48. Modify Total Thought Control probe action to not set silently "want revenge" or "shall betray" flags which usually made the AI sneak attack. This action can be still used to subvert bases without declaring war but it applies a notable diplomatic penalty between the factions.
 49. Base production picker will not show Paradise Garden as buildable if the base already has Punishment Sphere.
 50. Clinical Immortality provides one extra talent per base instead of two as mentioned in the manual.
+51. Fix issue where terrain detail display on the world map showed incorrect mineral output for aquatic factions.
+52. Fix base tile sometimes producing too much energy (up to 2 extra resources) when SE Economy value is between 3 and 4.
 
 
 Scient's patch
