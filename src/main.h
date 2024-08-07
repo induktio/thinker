@@ -88,8 +88,6 @@
 
 const bool DEF = true;
 const bool ATT = false;
-const bool SEA = true;
-const bool LAND = false;
 
 const int MaxMapDist = 1024;
 const int MaxNaturalNum = 16;

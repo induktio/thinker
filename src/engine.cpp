@@ -22,7 +22,10 @@ int* BaseCurrentVehPacifismCount = (int*)0x90E980;
 int* BaseCurrentForcesSupported = (int*)0x90E8FC;
 int* BaseCurrentForcesMaintCost = (int*)0x90E91C;
 int* BaseCommerceIncome = (int*)0x90EA0C; // [8] for each faction trading with this base
+int* BaseTerraformEnergy = (int*)0x90E914;
+int* BaseTerraformReduce = (int*)0x90E998;
 int* ScnVictFacilityObj = (int*)0x9A6814;
+int* SolarFlaresEvent = (int*)0x9A6818;
 int* BaseCount = (int*)0x9A64CC;
 int* VehCount = (int*)0x9A64C8;
 int* GamePreferences = (int*)0x9A6490;
@@ -994,7 +997,7 @@ fp_void text_item_number         = (fp_void)0x5FD740;
 fp_void text_item_binary         = (fp_void)0x5FD7A0;
 fp_2int parse_string             = (fp_2int)0x625880;
 fp_2int parse_num                = (fp_2int)0x625E30;
-fp_4int parse_say                = (fp_4int)0x625E50;
+Fparse_says parse_say        = (Fparse_says)0x625E50;
 Fparse_says parse_says       = (Fparse_says)0x625EC0;
 
 

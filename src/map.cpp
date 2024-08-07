@@ -9,7 +9,7 @@ static Points goodtiles;
 
 MAP* mapsq(int x, int y) {
     if (x >= 0 && y >= 0 && x < *MapAreaX && y < *MapAreaY && !((x + y)&1)) {
-        return &((*MapTiles)[ x/2 + (*MapHalfX) * y ]);
+        return &((*MapTiles)[ (x + *MapAreaX * y)/2 ]);
     } else {
         return NULL;
     }
@@ -90,6 +90,20 @@ bool is_shore_level(MAP* sq) {
 
 bool map_is_flat() {
     return *MapToggleFlat & 1;
+}
+
+bool adjacent_region(int x, int y, int owner, int threshold, bool ocean) {
+    assert(mapsq(x, y));
+    for (auto& m : iterate_tiles(x, y, 1, 9)) {
+        if (is_ocean(m.sq) != ocean) {
+            continue;
+        }
+        if ((owner < 0 || m.sq->owner < 0 || m.sq->owner == owner) && !bad_reg(m.sq->region)
+        && Continents[m.sq->region].tile_count >= threshold) {
+            return true;
+        }
+    }
+    return false;
 }
 
 int clear_overlay(int UNUSED(x), int UNUSED(y)) {
@@ -180,6 +194,23 @@ void __cdecl code_set(int x, int y, int code) {
     }
 }
 
+/*
+First Manifold Nexus tile must also be visible to the owner for the effect to take place.
+*/
+int __cdecl has_temple(int faction_id) {
+    for (int y = 0; y < *MapAreaY; y++) {
+        for (int x = y&1; x < *MapAreaX; x += 2) {
+            MAP* sq = mapsq(x, y);
+            if (sq && sq->landmarks & LM_NEXUS
+            && sq->art_ref_id == 0 && sq->owner == faction_id
+            && sq->visibility & (1 << faction_id)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 int __cdecl near_landmark(int x, int y) {
     for (int i = 0; i < TableRange[8]; i++) {
         int x2 = wrap(x + TableOffsetX[i]);
@@ -207,6 +238,388 @@ void __cdecl mod_map_wipe() {
         (*MapTiles)[i].val2 = 0xF;
         (*MapTiles)[i].owner = -1;
     }
+    reset_state();
+    mapdata.clear();
+    mapnodes.clear();
+}
+
+int __cdecl mod_crop_yield(int faction_id, int base_id, int x, int y, int flag) {
+    MAP* sq = mapsq(x, y);
+    if (!sq) {
+        return 0;
+    }
+    int value = 0;
+    int alt = sq->alt_level();
+    bool bonus_landmark = false;
+    bool bonus_nutrient = bonus_at(x, y) == RES_NUTRIENT;
+    bool is_base = sq->is_base() && (sq->val2 & 0xf) < 8;
+    int planet = Factions[faction_id].SE_planet_pending;
+
+    if ((alt >= ALT_SHORE_LINE && sq->landmarks & LM_JUNGLE && !(sq->art_ref_id & 0x80))
+    || (alt < ALT_SHORE_LINE && sq->landmarks & LM_FRESH)) {
+        bonus_landmark = true;
+    }
+    if (is_base) {
+        value = ResInfo->base_sq_nutrient;
+        if (bonus_nutrient )
+            value = 2 * ResInfo->base_sq_nutrient;
+        if (bonus_landmark) {
+            value++;
+        }
+        if (has_fac_built(FAC_PRESSURE_DOME, base_id)
+        || has_fac_built(FAC_RECYCLING_TANKS, base_id)) {
+            value += ResInfo->recycling_tanks_energy;
+        }
+    }
+    else if (sq->items & BIT_THERMAL_BORE) {
+        value = ResInfo->borehole_sq_nutrient;
+        if (bonus_nutrient) {
+            value += ResInfo->bonus_sq_nutrient;
+        }
+    }
+    else if (sq->items & BIT_MONOLITH) {
+        value = ResInfo->monolith_nutrient;
+        if (bonus_nutrient) {
+            value += ResInfo->bonus_sq_nutrient;
+        }
+        if (has_project(FAC_MANIFOLD_HARMONICS, faction_id)) {
+            value += ManifoldHarmonicsBonus[clamp(planet + 1, 0, 4)][0];
+        }
+    }
+    else if (sq->items & BIT_FUNGUS && !flag && alt >= ALT_OCEAN_SHELF) {
+        int fungus_val = clamp(planet, -3, 0) + Factions[faction_id].tech_fungus_nutrient;
+        value = clamp(fungus_val, 0, 99);
+        if (has_project(FAC_MANIFOLD_HARMONICS, faction_id)) {
+            value += ManifoldHarmonicsBonus[clamp(planet + 1, 0, 4)][0];
+        }
+    } else {
+        if (alt < ALT_SHORE_LINE) {
+            value = ResInfo->ocean_sq_nutrient;
+            if (bonus_nutrient) {
+                value = ResInfo->bonus_sq_nutrient + ResInfo->ocean_sq_nutrient;
+            }
+            if (bonus_landmark)
+                value++;
+            if (alt == ALT_OCEAN_SHELF || *ExpansionEnabled) {
+                if (sq->items & BIT_FARM) {
+                    value += ResInfo->improved_sea_nutrient;
+                    if (has_fac_built(FAC_AQUAFARM, base_id)) {
+                        value++;
+                    }
+                }
+                if (sq->items & BIT_MINE && value > 1) {
+                    value += Rules->nutrient_effect_mine_sq;
+                }
+            }
+        } else {
+            if (sq->items & BIT_FOREST) {
+                value = ResInfo->forest_sq_nutrient
+                    + (bonus_nutrient ? ResInfo->bonus_sq_nutrient : 0);
+                if (has_fac_built(FAC_TREE_FARM, base_id)) {
+                    value++;
+                }
+                if (has_fac_built(FAC_HYBRID_FOREST, base_id)) {
+                    value++;
+                }
+                if (bonus_landmark) {
+                    value++;
+                }
+            } else {
+                if (sq->is_rocky()) {
+                    value = 0;
+                } else {
+                    value = (sq->is_rainy() ? 2 : (sq->is_moist() ? 1 : 0));
+                }
+                if (bonus_nutrient) {
+                    value += ResInfo->bonus_sq_nutrient;
+                }
+                if (bonus_landmark) {
+                    value++;
+                }
+                if (value < 0) {
+                    value = 0;
+                }
+                if (sq->items & BIT_FARM && !sq->is_rocky()) {
+                    value += ResInfo->improved_land_nutrient;
+                }
+                if (sq->items & BIT_MINE && value > 1) {
+                    value += Rules->nutrient_effect_mine_sq;
+                }
+            }
+        }
+        if (sq->items & BIT_SOIL_ENRICHER) {
+            value += value / 2;
+        }
+        if (sq->items & BIT_CONDENSER) {
+            value += value / 2;
+        }
+        if (value > 2 && !bonus_nutrient && !(sq->items & BIT_CONDENSER)
+        && (faction_id < 0 || !has_tech(Rules->tech_preq_allow_3_nutrients_sq, faction_id))) {
+            *BaseTerraformReduce += (value - 2);
+            value = 2;
+        }
+    }
+    if (base_id >= 0) {
+        if (Bases[base_id].event_flags & BEVENT_BUMPER) {
+            value++;
+        }
+        if (Bases[base_id].event_flags & BEVENT_FAMINE && value) {
+            value--;
+        }
+    }
+    assert(value == crop_yield(faction_id, base_id, x, y, flag));
+    return value;
+}
+
+int __cdecl mod_mine_yield(int faction_id, int base_id, int x, int y, int flag) {
+    MAP* sq = mapsq(x, y);
+    if (!sq) {
+        return 0;
+    }
+    bool has_limit = true;
+    bool bonus_landmark = false;
+    bool bonus_mineral = bonus_at(x, y) == RES_MINERAL;
+    bool is_base = sq->is_base() && (sq->val2 & 0xf) < 8;
+    int alt = sq->alt_level();
+    int planet = Factions[faction_id].SE_planet_pending;
+
+    if ((sq->landmarks & LM_CRATER && sq->art_ref_id < 9)
+    || (sq->landmarks & LM_VOLCANO && sq->art_ref_id < 9)
+    || (sq->landmarks & LM_FOSSIL && sq->art_ref_id < 6)
+    || (sq->landmarks & LM_CANYON)) {
+        bonus_landmark = !(sq->art_ref_id & 0x80);
+    }
+    int value = bonus_landmark + (bonus_mineral ? ResInfo->bonus_sq_mineral : 0);
+
+    if (is_base) {
+        value += ResInfo->base_sq_mineral;
+        if (has_fac_built(FAC_PRESSURE_DOME, base_id)
+        || has_fac_built(FAC_RECYCLING_TANKS, base_id)) {
+            value += ResInfo->recycling_tanks_mineral;
+        }
+        has_limit = false;
+    } else {
+        if (sq->items & BIT_MONOLITH) {
+            value = ResInfo->monolith_mineral;
+            if (bonus_mineral) {
+                value += ResInfo->bonus_sq_mineral;
+            }
+            if (has_project(FAC_MANIFOLD_HARMONICS, faction_id)) {
+                value += ManifoldHarmonicsBonus[clamp(planet + 1, 0, 4)][1];
+            }
+            has_limit = false;
+        }
+        else if (sq->items & BIT_THERMAL_BORE) {
+            value = ResInfo->borehole_sq_mineral;
+            if (bonus_mineral) {
+                value += ResInfo->bonus_sq_mineral;
+            }
+        }
+        else if (sq->items & BIT_FUNGUS && alt >= ALT_OCEAN_SHELF) {
+            int fungus_val = clamp(planet, -3, 0) + Factions[faction_id].tech_fungus_mineral;
+            value = clamp(fungus_val, 0, 99);
+            if (has_project(FAC_MANIFOLD_HARMONICS, faction_id)) {
+                value += ManifoldHarmonicsBonus[clamp(planet + 1, 0, 4)][1];
+            }
+            has_limit = false;
+        }
+        else if (alt >= ALT_SHORE_LINE) {
+            int modifier = sq->val3 >> 6;
+            if (sq->items & BIT_FOREST) {
+                value += ResInfo->forest_sq_mineral;
+            } else if (!(sq->items & BIT_MINE) && !flag) {
+                value += (modifier > 0);
+            } else {
+                value += modifier;
+                if (!modifier) {
+                    modifier = 1;
+                }
+                if (bonus_mineral || bonus_landmark) {
+                    modifier++;
+                }
+                if (!(sq->items & BIT_ROAD) && !flag
+                && modifier > Rules->limit_mineral_inc_for_mine_wo_road) {
+                    *BaseTerraformReduce += (modifier - Rules->limit_mineral_inc_for_mine_wo_road);
+                    modifier = Rules->limit_mineral_inc_for_mine_wo_road;
+                }
+                value += modifier;
+            }
+        }
+        else {
+            value += ResInfo->ocean_sq_mineral;
+            if (alt == ALT_OCEAN_SHELF && MFactions[faction_id].is_aquatic()
+            && *ExpansionEnabled && conf.aquatic_bonus_minerals) {
+                value++;
+            }
+            if (alt == ALT_OCEAN_SHELF || *ExpansionEnabled) {
+                if (sq->items & BIT_MINE || flag) {
+                    value += ResInfo->improved_sea_mineral;
+                    if (has_tech(Rules->tech_preq_mining_platform_bonus, faction_id) ) {
+                        value++;
+                    }
+                    if (has_fac_built(FAC_SUBSEA_TRUNKLINE, base_id)) {
+                        value++;
+                    }
+                }
+            }
+        }
+    }
+    if (has_limit && value > 2 && !bonus_mineral
+    && !has_tech(Rules->tech_preq_allow_3_minerals_sq, faction_id)) {
+        *BaseTerraformReduce += (value - 2);
+        value = 2;
+    }
+    if (base_id >= 0) {
+        if (Bases[base_id].event_flags & BEVENT_INDUSTRY) {
+            value++;
+        }
+        if (Bases[base_id].event_flags & BEVENT_BUST && value) {
+            value--;
+        }
+    }
+    // Original function can return inconsistent sea mineral output when base_id is not set
+    assert((base_id < 0 && alt == ALT_OCEAN_SHELF && MFactions[faction_id].is_aquatic())
+        || (value == mine_yield(faction_id, base_id, x, y, flag)));
+    return value;
+}
+
+int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag) {
+    MAP* sq = mapsq(x, y);
+    if (!sq) {
+        return 0;
+    }
+    bool is_fungus = false;
+    bool bonus_energy = bonus_at(x, y) == RES_ENERGY;
+    bool is_base = sq->is_base() && (sq->val2 & 0xf) < 8;
+    int economy = Factions[faction_id].SE_economy_pending
+        + (base_id >= 0 && Bases[base_id].golden_age_active() ? 1 : 0);
+    int planet = Factions[faction_id].SE_planet_pending;
+    int alt = sq->alt_level();
+    int value = 0;
+
+    if (is_base) {
+        bool is_hq = has_fac_built(FAC_HEADQUARTERS, base_id);
+        if (has_fac_built(FAC_PRESSURE_DOME, base_id)
+        || has_fac_built(FAC_RECYCLING_TANKS, base_id)) {
+            value += ResInfo->recycling_tanks_energy;
+        }
+        if (economy > 4) {
+            value += 4;
+        } else if (economy > 3) {
+            value += 2;
+        } else if (economy >= 0) {
+            value += (economy == 1); // +1 each square is added later
+        } else {
+            value += economy;
+            if (!is_hq || economy < -1 || Factions[faction_id].base_count == 1) {
+                value++;
+            }
+        }
+        value += 1 + is_hq;
+        if (*GovernorFaction == faction_id) {
+            value++;
+        }
+    }
+    else if (sq->items & BIT_MONOLITH) {
+        value = ResInfo->monolith_energy;
+        if (has_project(FAC_MANIFOLD_HARMONICS, faction_id)) {
+            value += ManifoldHarmonicsBonus[clamp(planet + 1, 0, 4)][2];
+        }
+    }
+    else if (sq->items & BIT_THERMAL_BORE) {
+        value = ResInfo->borehole_sq_energy;
+    }
+    else if (sq->items & BIT_FUNGUS && alt >= ALT_OCEAN_SHELF) {
+        int fungus_val = clamp(planet, -3, 0) + Factions[faction_id].tech_fungus_energy;
+        value = clamp(fungus_val, 0, 99);
+        if (has_project(FAC_MANIFOLD_HARMONICS, faction_id)) {
+            value += ManifoldHarmonicsBonus[clamp(planet + 1, 0, 4)][2];
+        }
+        is_fungus = true;
+    }
+    else if (alt < ALT_SHORE_LINE) {
+        if (alt == ALT_OCEAN_SHELF || *ExpansionEnabled) {
+            value = ResInfo->ocean_sq_energy;
+            if (sq->items & BIT_SOLAR || flag) {
+                value += ResInfo->improved_sea_energy;
+                if (has_fac_built(FAC_THERMOCLINE_TRANSDUCER, base_id)) {
+                    value++;
+                }
+            }
+        }
+        if (sq->items & BIT_FOREST) {
+            value--;
+        }
+    }
+    else if (sq->items & BIT_FOREST) {
+        value = ResInfo->forest_sq_energy;
+        if (has_fac_built(FAC_HYBRID_FOREST, base_id)) {
+            value++;
+        }
+    }
+    else {
+        if (sq->items & (BIT_ECH_MIRROR|BIT_SOLAR) || flag) {
+            value += 1 + max(0, alt - 3);
+        }
+        // Fix crash issue by adding null pointer check for CurrentBase
+        if (sq->items & BIT_SOLAR && *CurrentBase) {
+            for (auto& m : iterate_tiles(x, y, 1, 9)) {
+                if (m.sq->items & BIT_ECH_MIRROR
+                && m.sq->owner == (*CurrentBase)->faction_id) {
+                    value++;
+                }
+            }
+        }
+    }
+    if (!is_fungus) {
+        if (sq->items & BIT_RIVER && alt >= ALT_SHORE_LINE) {
+            value++;
+        }
+        if (bonus_energy) {
+            value += ResInfo->bonus_sq_energy;
+        }
+        if ((sq->landmarks & LM_VOLCANO && sq->art_ref_id < 9)
+        || sq->landmarks & (LM_URANIUM|LM_GEOTHERMAL|LM_RIDGE)) {
+            value += !(sq->art_ref_id & 0x80);
+        }
+        if (base_id >= 0 && project_base(FAC_MERCHANT_EXCHANGE) == base_id) {
+            value++;
+        }
+        if (economy >= 2) {
+            value++;
+        }
+        if (is_base) {
+            value = clamp(value, 0, 99);
+            *BaseTerraformEnergy = value;
+        } else if (value > 2 && !bonus_energy
+        && !has_tech(Rules->tech_preq_allow_3_energy_sq, faction_id)) {
+            value = 2;
+            *BaseTerraformReduce += (value - 2);
+        }
+    }
+    if (base_id >= 0) {
+        if (Bases[base_id].event_flags & BEVENT_HEAT_WAVE) {
+            value++;
+        }
+        if (Bases[base_id].event_flags & BEVENT_CLOUD_COVER && value) {
+            value--;
+        }
+    }
+    if (*DustCloudDuration && value) {
+        value--;
+    }
+    bool solar_flares;
+    if (*ControlUpkeepA) {
+        solar_flares = *SolarFlaresEvent & 2;
+    } else {
+        solar_flares = *SolarFlaresEvent & 1;
+    }
+    value = (solar_flares ? 3 * value : value);
+
+    // Original function can return inconsistent base output when economy is between 3 and 4
+    assert((is_base && economy >= 3 && economy <= 4)
+        || (value == energy_yield(faction_id, base_id, x, y, flag)));
+    return value;
 }
 
 static int __cdecl base_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, int y2, bool toggle) {
@@ -263,7 +676,7 @@ static int __cdecl base_hex_cost(int unit_id, int faction_id, int x1, int y1, in
     if (faction_id && bit_dst & BIT_FUNGUS && (unit_id >= MaxProtoFactionNum
     || Units[unit_id].offense_value() >= 0)) {
         int plan = Units[unit_id].plan;
-        if (plan != PLAN_TERRAFORMING && plan != PLAN_ALIEN_ARTIFACT
+        if (plan != PLAN_TERRAFORM && plan != PLAN_ARTIFACT
         && Factions[faction_id].SE_planet <= 0) {
             return cost + Rules->move_rate_roads * 2;
         }
@@ -429,13 +842,12 @@ int __cdecl mod_whose_territory(int faction_id, int x, int y, int* base_id, int 
 }
 
 int total_yield(int x, int y, int faction) {
-    return crop_yield(faction, -1, x, y, 0)
-        + mine_yield(faction, -1, x, y, 0)
-        + energy_yield(faction, -1, x, y, 0);
+    return mod_crop_yield(faction, -1, x, y, 0)
+        + mod_mine_yield(faction, -1, x, y, 0)
+        + mod_energy_yield(faction, -1, x, y, 0);
 }
 
 int fungus_yield(int faction, ResType res_type) {
-    const int manifold[][3] = {{0,0,0}, {0,1,0}, {1,1,0}, {1,1,1}, {1,2,1}};
     Faction* f = &Factions[faction];
     int p = clamp(f->SE_planet_pending, -3, 0);
     int N = clamp(f->tech_fungus_nutrient + p, 0, 99);
@@ -444,9 +856,9 @@ int fungus_yield(int faction, ResType res_type) {
 
     if (has_project(FAC_MANIFOLD_HARMONICS, faction)) {
         int m = clamp(f->SE_planet_pending + 1, 0, 4);
-        N += manifold[m][0];
-        M += manifold[m][1];
-        E += manifold[m][2];
+        N += ManifoldHarmonicsBonus[m][0];
+        M += ManifoldHarmonicsBonus[m][1];
+        E += ManifoldHarmonicsBonus[m][2];
     }
     if (res_type == RES_NUTRIENT) {
         return N;
@@ -549,11 +961,6 @@ void process_map(int faction, int k) {
     natives.clear();
     goodtiles.clear();
     /*
-    How many tiles a particular region has. Regions are disjoint land/water areas
-    and the partitions are already calculated by the game engine.
-    */
-    int region_count[MaxRegionNum] = {};
-    /*
     This value defines how many tiles an area needs to have before it's
     considered sufficiently large to be a faction starting location.
     Map area square root values: Tiny = 33, Standard = 56, Huge = 90
@@ -564,23 +971,17 @@ void process_map(int faction, int k) {
 
     for (int y = 0; y < *MapAreaY; y++) {
         for (int x = y&1; x < *MapAreaX; x+=2) {
-            if ((sq = mapsq(x, y))) {
-                assert(sq->region >= 0 && sq->region < MaxRegionNum);
-                region_count[sq->region]++;
-                if (sq->is_land_region()) {
-                    land_area++;
-                }
-            }
-        }
-    }
-    for (int y = 0; y < *MapAreaY; y++) {
-        for (int x = y&1; x < *MapAreaX; x+=2) {
             if (y < k || y >= *MapAreaY - k || !(sq = mapsq(x, y))) {
                 continue;
             }
+            // LM_FRESH landmark is ignored for this check
             if (!is_ocean(sq) && !sq->is_rocky() && !sq->is_fungus()
-            && !(sq->landmarks & ~LM_FRESH) && region_count[sq->region] >= limit) {
+            && sq->is_land_region() && !(sq->landmarks & ~LM_FRESH)
+            && Continents[sq->region].tile_count >= limit) {
                 goodtiles.insert({x, y});
+            }
+            if (sq->is_land_region()) {
+                land_area++;
             }
         }
     }
@@ -771,14 +1172,14 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
     int k = (*MapAreaY < 80 ? 4 : 8);
     process_map(faction, k/2);
 
-    while (++i <= 400) {
+    while (++i <= 500) {
         if (!aquatic && goodtiles.size() > 0 && i <= 200) {
             auto t = pick_random(goodtiles);
             y = t.y;
             x = t.x;
         } else {
             y = (random(*MapAreaY - k*2) + k);
-            x = (random(*MapAreaX) &~1) + (y&1);
+            x = (random(*MapAreaX) & (~1)) + (y&1);
         }
         debug("find_iter  %d %d x: %3d y: %3d\n", faction, i, x, y);
         if (valid_start(faction, i, x, y, need_bonus)) {
@@ -811,8 +1212,7 @@ bool locate_landmark(int* x, int* y, bool ocean) {
                 *y = 0;
             }
             if (*MapAreaX > 1) {
-                *x = random(*MapAreaX);
-                *x = ((*x ^ *y) & 1) ^ *x;
+                *x = (random(*MapAreaX) & (~1)) + (*y&1);
             } else {
                 *x = 0;
             }
@@ -825,18 +1225,17 @@ bool locate_landmark(int* x, int* y, bool ocean) {
 }
 
 void __cdecl mod_world_monsoon() {
-    typedef struct {
+    struct TileInfo {
         uint8_t valid;
         uint8_t valid_near;
         uint8_t sea;
         uint8_t sea_near;
-    } TileInfo;
-    TileInfo* tiles = new TileInfo[*MapAreaX * *MapAreaY]{};
+    };
+    std::unordered_map<Point, TileInfo> tiles;
     world_rainfall();
 
     MAP* sq;
     int i = 0, j = 0, x = 0, y = 0, x2 = 0, y2 = 0, num = 0;
-    const int w = *MapAreaX;
     const int y_a = *MapAreaY * 5/16;
     const int y_b = *MapAreaY * 11/16;
     const int limit = max(1024, *MapAreaTiles) * (3 + *MapCloudCover) / 120;
@@ -846,21 +1245,21 @@ void __cdecl mod_world_monsoon() {
             if (!(sq = mapsq(x, y))) {
                 continue;
             }
-            tiles[w*y + x].sea = sq->alt_level() < ALT_SHORE_LINE
+            tiles[{x, y}].sea = sq->alt_level() < ALT_SHORE_LINE
                 && Continents[sq->region].tile_count > 15;
-            tiles[w*y + x].valid = !sq->landmarks
+            tiles[{x, y}].valid = !sq->landmarks
                 && (sq->alt_level() == ALT_SHORE_LINE || sq->alt_level() == ALT_ONE_ABOVE_SEA);
         }
     }
     for (y = 0; y < *MapAreaY; y++) {
         for (x = y&1; x < *MapAreaX; x+=2) {
-            if (tiles[w*y + x].valid) {
+            if (tiles[{x, y}].valid) {
                 for (auto& p : iterate_tiles(x, y, 0, 45)) {
-                    if (tiles[w*p.y + p.x].valid) {
-                        tiles[w*y + x].valid_near++;
+                    if (tiles[{p.x, p.y}].valid) {
+                        tiles[{x, y}].valid_near++;
                     }
-                    if (tiles[w*p.y + p.x].sea) {
-                        tiles[w*y + x].sea_near++;
+                    if (tiles[{p.x, p.y}].sea) {
+                        tiles[{x, y}].sea_near++;
                     }
                 }
             }
@@ -880,9 +1279,9 @@ void __cdecl mod_world_monsoon() {
         }
         y = (random(y_b - y_a) + y_a);
         x = wrap(((random(*MapAreaX / 4) + loc_cur * *MapAreaX / 4) &~1) + (y&1));
-        if (!tiles[w*y + x].valid
-        || tiles[w*y + x].sea_near < 8 - i/16
-        || tiles[w*y + x].valid_near < 16 - i/32) {
+        if (!tiles[{x, y}].valid
+        || tiles[{x, y}].sea_near < 8 - i/16
+        || tiles[{x, y}].valid_near < 16 - i/32) {
             continue;
         }
         int goal = num + max(21, limit/4);
@@ -894,10 +1293,10 @@ void __cdecl mod_world_monsoon() {
             y2 = y2 + random(8);
             x2 = wrap(((x2 + random(8)) &~1) + (y2&1));
             if (y2 >= y_a && y2 <= y_b
-            && tiles[w*y2 + x2].valid
-            && tiles[w*y2 + x2].valid_near > 8 - i/32) {
+            && tiles[{x2, y2}].valid
+            && tiles[{x2, y2}].valid_near > 8 - i/32) {
                 for (auto& p : iterate_tiles(x2, y2, 0, 21)) {
-                    if (tiles[w*p.y + p.x].valid && !(p.sq->landmarks & LM_JUNGLE)) {
+                    if (tiles[{p.x, p.y}].valid && !(p.sq->landmarks & LM_JUNGLE)) {
                         assert(!is_ocean(p.sq));
                         bit2_set(p.x, p.y, LM_JUNGLE, 1);
                         code_set(p.x, p.y, num % 121);
@@ -908,7 +1307,6 @@ void __cdecl mod_world_monsoon() {
             }
         }
     }
-    delete[] tiles;
 }
 
 void __cdecl mod_world_borehole(int x, int y) {
@@ -1035,9 +1433,6 @@ void world_generate(uint32_t seed) {
         *GameState |= STATE_DEBUG_MODE;
     }
     MAP* sq;
-    mapdata.clear();
-    mapnodes.clear();
-    reset_state();
     mod_map_wipe();
     ThinkerVars->map_random_value = seed;
     FastNoiseLite noise;

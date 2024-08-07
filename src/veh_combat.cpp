@@ -123,7 +123,7 @@ int __cdecl mod_morale_veh(int veh_id, bool check_drone_riot, int faction_id_vs_
     if (!faction_id) {
         return mod_morale_alien(veh_id, faction_id_vs_native);
     }
-    if (Units[unit_id].plan == PLAN_INFO_WARFARE) {
+    if (Units[unit_id].plan == PLAN_PROBE) {
         int probe_morale = clamp(Factions[faction_id].SE_probe, 0, 3);
         probe_morale += has_project(FAC_TELEPATHIC_MATRIX, faction_id) ? 2 : 0;
         for (int i = 0; i < MaxTechnologyNum; i++) {
@@ -286,12 +286,12 @@ int __cdecl mod_get_basic_defense(int veh_id_def, int veh_id_atk, int psi_combat
     VehBasicBattleMorale[1] = morale;
     morale += 6;
     int plan_def = Units[unit_id_def].plan;
-    if (plan_def == PLAN_ALIEN_ARTIFACT) {
+    if (plan_def == PLAN_ARTIFACT) {
         return 1;
     }
     // Fix: added veh_id_atk bounds check to prevent potential read outside array
-    if (plan_def == PLAN_INFO_WARFARE && Units[unit_id_def].defense_value() == 1
-    && (veh_id_atk < 0 || Units[Vehs[veh_id_atk].unit_id].plan != PLAN_INFO_WARFARE)) {
+    if (plan_def == PLAN_PROBE && Units[unit_id_def].defense_value() == 1
+    && (veh_id_atk < 0 || Units[Vehs[veh_id_atk].unit_id].plan != PLAN_PROBE)) {
         return 1;
     }
     int defense = armor_proto(unit_id_def, veh_id_atk, is_bombard);

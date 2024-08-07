@@ -32,7 +32,6 @@ int terraform_eco_damage(int base_id);
 int __cdecl mod_facility_avail(FacilityId item_id, int faction_id, int base_id, int queue_count);
 bool can_build(int base_id, int item_id);
 bool can_build_unit(int base_id, int unit_id);
-bool can_build_ships(int base_id);
 bool can_staple(int base_id);
 bool base_maybe_riot(int base_id);
 bool base_can_riot(int base_id, bool allow_staple);
@@ -45,14 +44,14 @@ int __cdecl has_fac(FacilityId item_id, int base_id, int queue_count);
 int __cdecl has_fac_built(FacilityId item_id, int base_id);
 void __cdecl set_fac(FacilityId item_id, int base_id, bool add);
 int __cdecl fac_maint(int facility_id, int faction_id);
+int satellite_output(int satellites, int pop_size, bool full_value);
+bool satellite_bonus(int base_id, int* nutrient, int* mineral, int* energy);
 
 int consider_staple(int base_id);
 int mod_base_hurry();
 int need_psych(int base_id);
 int find_project(int base_id);
 int select_build(int base_id);
-int project_score(int faction, FacilityId item_id, bool shuffle);
 int find_proto(int base_id, Triad triad, VehWeaponMode mode, bool defend);
 int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships);
-bool satellite_bonus(int base_id, int* nutrient, int* mineral, int* energy);
 

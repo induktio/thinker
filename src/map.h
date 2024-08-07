@@ -6,6 +6,14 @@
 const int StartBonusCount = 2;
 const int StartBonusTiles = 25;
 
+const int ManifoldHarmonicsBonus[][3] = {
+    {0,0,0}, // Planet < 0
+    {0,0,1}, // Planet = 0
+    {1,0,1}, // Planet = 1
+    {1,1,1}, // Planet = 2
+    {1,1,2}, // Planet > 2
+};
+
 MAP* mapsq(int x, int y);
 int wrap(int x);
 int map_range(int x1, int y1, int x2, int y2);
@@ -18,6 +26,7 @@ bool is_ocean(BASE* base);
 bool is_ocean_shelf(MAP* sq);
 bool is_shore_level(MAP* sq);
 bool map_is_flat();
+bool adjacent_region(int x, int y, int owner, int threshold, bool ocean);
 int clear_overlay(int x, int y);
 void refresh_overlay(std::function<int(int, int)> tile_value);
 
@@ -30,8 +39,12 @@ int __cdecl x_dist(int x1, int x2);
 uint32_t __cdecl bit_at(int x, int y);
 uint32_t __cdecl code_at(int x, int y);
 void __cdecl code_set(int x, int y, int code);
+int __cdecl has_temple(int faction_id);
 int __cdecl near_landmark(int x, int y);
 void __cdecl mod_map_wipe();
+int __cdecl mod_crop_yield(int faction_id, int base_id, int x, int y, int flag);
+int __cdecl mod_mine_yield(int faction_id, int base_id, int x, int y, int flag);
+int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag);
 int __cdecl mod_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, int y2, int toggle);
 int __cdecl mod_bonus_at(int x, int y);
 int __cdecl mod_goody_at(int x, int y);

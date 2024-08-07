@@ -239,10 +239,10 @@ bool has_defenders(int x, int y, int faction) {
     return false;
 }
 
-bool has_colony_pods(int faction) {
+bool has_active_veh(int faction, VehPlan plan) {
     for (int i = 0; i < *VehCount; i++) {
         VEH* veh = &Vehicles[i];
-        if (veh->faction_id == faction && veh->is_colony()) {
+        if (veh->faction_id == faction && Units[veh->unit_id].plan == plan) {
             return true;
         }
     }
@@ -254,19 +254,6 @@ int find_hq(int faction) {
         BASE* base = &Bases[i];
         if (base->faction_id == faction && has_fac_built(FAC_HEADQUARTERS, i)) {
             return i;
-        }
-    }
-    return -1;
-}
-
-int manifold_nexus_owner() {
-    for (int y=0; y < *MapAreaY; y++) {
-        for (int x=y&1; x < *MapAreaX; x += 2) {
-            MAP* sq = mapsq(x, y);
-            /* First Manifold Nexus tile must also be visible to the owner. */
-            if (sq && sq->landmarks & LM_NEXUS && sq->art_ref_id == 0) {
-                return (sq->owner >= 0 && sq->is_visible(sq->owner) ? sq->owner : -1);
-            }
         }
     }
     return -1;
@@ -465,7 +452,7 @@ int robust, int immunity, int impunity, int penalty) {
         sc -= (vals[EFF] < -3 ? 20 : 14);
     }
     if (vals[SUP] < -3) {
-        sc -= 10;
+        sc -= 16;
     }
     if (vals[MOR] >= 1 && vals[MOR] + w_morale >= 4) {
         sc += 10;
@@ -477,7 +464,7 @@ int robust, int immunity, int impunity, int penalty) {
         * clamp(vals[ECO], -3, 5);
     sc += max(2, 2*(f->AI_wealth + f->AI_tech) - f->AI_fight + base_ratio/2)
         * (min(6, vals[EFF]) + (vals[EFF] >= 3 ? 2 : 0));
-    sc += max(3, 4 + 2*f->AI_power + 2*f->AI_fight - base_ratio/4 + (def_value > 2))
+    sc += max(3, 4 + 2*f->AI_power + 2*f->AI_fight - base_ratio/4 + def_value/2)
         * clamp(vals[SUP], -4, 3);
     sc += max(2, def_value + 2*f->AI_power + 2*f->AI_fight)
         * clamp(vals[MOR], -4, 4);
@@ -509,7 +496,7 @@ int robust, int immunity, int impunity, int penalty) {
             sc += 20;
         }
         if (vals[GRW] < -2) {
-            sc -= 10;
+            sc -= 16;
         }
         sc += (pop_boom ? 6 : 3) * clamp(vals[GRW], -3, 6);
     }
@@ -575,7 +562,7 @@ int __cdecl mod_social_ai(int faction, int a2, int a3, int a4, int a5, int a6) {
             + min(2, p->captured_bases/2)
             + min(2, p->enemy_factions/2), 1, 4);
     }
-    bool has_nexus = (manifold_nexus_owner() == faction);
+    bool has_nexus = has_temple(faction);
     assert(!memcmp(&f->SE_Politics, &f->SE_Politics_pending, 16));
 
     for (int i = 0; i < m->faction_bonus_count; i++) {

@@ -4,7 +4,7 @@
 
 int __cdecl X_pop2(const char* label, int a2)
 {
-    if (!strcmp(label, "MIMIMI") && !conf.warn_on_former_replace) {
+    if (!conf.warn_on_former_replace && !strcmp(label, "MIMIMI")) {
         return 1;
     }
     /*
@@ -14,7 +14,7 @@ int __cdecl X_pop2(const char* label, int a2)
     if (!strcmp(label, "VERYLARGEMAP")) {
         return 0;
     }
-    return X_pop("SCRIPT", label, -1, 0, 0, a2);
+    return X_pop(ScriptFile, label, -1, 0, 0, a2);
 }
 
 int __cdecl X_pop7(const char* label, int a2, int a3)
@@ -101,15 +101,14 @@ int base_trade_value(int base_id, int faction1, int faction2)
         + 4*diplo_relation(faction1, faction2)
         + 2*f_plr.atrocities);
 
-    for (int i = Fac_ID_First; i < Fac_ID_Last; i++) {
+    for (int i = Fac_ID_First; i <= Fac_ID_Last; i++) {
         if (has_fac_built((FacilityId)i, base_id)) {
             value += max(0, Facility[i].cost) * 20;
         }
     }
     for (int i = SP_ID_First; i <= SP_ID_Last; i++) {
         if (project_base((FacilityId)i) == base_id) {
-            value += max(0, Facility[i].cost) * (own_base && !pact ? 40 : 20)
-                + 60 * clamp(project_score(faction2, (FacilityId)i, false), 0, 10);
+            value += max(0, Facility[i].cost) * (own_base ? 60 : 40);
         }
     }
     MAP* sq;
@@ -125,7 +124,7 @@ int base_trade_value(int base_id, int faction1, int faction2)
             num_all++;
         }
     }
-    for (auto& m : iterate_tiles(base->x, base->y, 0, 21)) {
+    for (const auto& m : iterate_tiles(base->x, base->y, 0, 21)) {
         if (mod_base_find3(m.x, m.y, -1, m.sq->region, -1, -1) == base_id) {
             if (m.sq->landmarks & ~(LM_DUNES|LM_SARGASSO|LM_UNITY)) {
                 value += (m.sq->landmarks & LM_JUNGLE ? 20 : 15);

@@ -27,11 +27,10 @@ bool both_neutral(int faction1, int faction2);
 bool both_non_enemy(int faction1, int faction2);
 bool want_revenge(int faction1, int faction2);
 bool allow_expand(int faction);
-bool has_colony_pods(int faction);
+bool has_active_veh(int faction, VehPlan plan);
 bool has_transport(int x, int y, int faction);
 bool has_defenders(int x, int y, int faction);
 int find_hq(int faction);
-int manifold_nexus_owner();
 int faction_might(int faction);
 
 void __cdecl set_treaty(int faction1, int faction2, uint32_t treaty, bool add);

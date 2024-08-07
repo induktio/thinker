@@ -19,10 +19,9 @@ bool FileExists(const char* path) {
 }
 
 int __cdecl base_governor_crop_yield(int faction, int base_id, int x, int y, int flags) {
-    int value = crop_yield(faction, base_id, x, y, flags);
-    MAP* sq = mapsq(x, y);
-    if (sq && sq->items & BIT_THERMAL_BORE && value + mine_yield(faction, base_id, x, y, 0)
-    + energy_yield(faction, base_id, x, y, 0) >= 6) {
+    int value = mod_crop_yield(faction, base_id, x, y, flags);
+    if (bit_at(x, y) & BIT_THERMAL_BORE && value + mod_mine_yield(faction, base_id, x, y, 0)
+    + mod_energy_yield(faction, base_id, x, y, 0) >= 6) {
         value++;
     }
     return value;
@@ -407,8 +406,25 @@ bool patch_setup(Config* cf) {
     }
     extra_setup(cf);
 
+    write_offset(0x50F421, (void*)mod_turn_timer);
+    write_offset(0x6456EE, (void*)mod_except_handler3);
+    write_offset(0x64576E, (void*)mod_except_handler3);
+    write_offset(0x6457CC, (void*)mod_except_handler3);
+    write_offset(0x645F98, (void*)mod_except_handler3);
+    write_offset(0x646CA7, (void*)mod_except_handler3);
+    write_offset(0x646FDE, (void*)mod_except_handler3);
+    write_offset(0x648C54, (void*)mod_except_handler3);
+    write_offset(0x648D83, (void*)mod_except_handler3);
+    write_offset(0x648EC8, (void*)mod_except_handler3);
+    write_offset(0x64908C, (void*)mod_except_handler3);
+    write_offset(0x6492D4, (void*)mod_except_handler3);
+    write_offset(0x649335, (void*)mod_except_handler3);
+    write_offset(0x64A3C0, (void*)mod_except_handler3);
+    write_offset(0x64D947, (void*)mod_except_handler3);
+
     write_jump(0x4688E0, (int)MapWin_gen_overlays);
     write_jump(0x4E3EF0, (int)mod_whose_territory);
+    write_jump(0x4E4430, (int)mod_cost_factor);
     write_jump(0x4E4AA0, (int)base_first);
     write_jump(0x4F6510, (int)fac_maint);
     write_jump(0x527290, (int)mod_faction_upkeep);
@@ -444,27 +460,32 @@ bool patch_setup(Config* cf) {
     write_call(0x5B341C, (int)mod_setup_player); // eliminate_player
     write_call(0x5B3C03, (int)mod_setup_player); // setup_game
     write_call(0x5B3C4C, (int)mod_setup_player); // setup_game
+    write_call(0x4E12BF, (int)mod_map_wipe); // Console::editor_clear
+    write_call(0x4E12E2, (int)mod_map_wipe); // Console::editor_clear
+    write_call(0x58E942, (int)mod_map_wipe); // top_menu
+    write_call(0x5C8730, (int)mod_map_wipe); // world_build
+    write_call(0x5B41E9, (int)mod_time_warp);
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
     write_call(0x527039, (int)mod_base_upkeep);
     write_call(0x4F7A38, (int)mod_base_hurry);
     write_call(0x5BDC4C, (int)mod_tech_value);
     write_call(0x579362, (int)mod_enemy_move);
-    write_call(0x4E888C, (int)base_governor_crop_yield);
     write_call(0x40F45A, (int)mod_base_draw);
     write_call(0x4672A7, (int)mod_base_draw);
     write_call(0x559E21, (int)map_draw_strcmp); // veh_draw
     write_call(0x55B5E1, (int)map_draw_strcmp); // base_draw
     write_call(0x5C0984, (int)veh_kill_lift);
     write_call(0x498720, (int)ReportWin_close_handler);
-    write_call(0x5B41E9, (int)mod_time_warp);
     write_call(0x408DBD, (int)BaseWin_draw_psych_strcat);
-    write_call(0x40F8F8, (int)Basewin_draw_farm_set_font);
+    write_call(0x40F8F8, (int)BaseWin_draw_farm_set_font);
     write_call(0x4129E5, (int)BaseWin_draw_energy_set_text_color);
     write_call(0x415AD8, (int)BaseWin_draw_misc_eco_damage);
-    write_call(0x41B771, (int)BaseWin_action_staple);
     write_call(0x41916B, (int)BaseWin_popup_start);
     write_call(0x4195A6, (int)BaseWin_ask_number);
+    write_call(0x41B6E5, (int)BaseWin_staple_popp);
+    write_call(0x41B719, (int)BaseWin_staple_popp);
+    write_call(0x41B771, (int)BaseWin_action_staple);
     write_call(0x41D99D, (int)BaseWin_click_staple);
     write_call(0x48CDA4, (int)popb_action_staple);
     write_call(0x4936F4, (int)ProdPicker_calculate_itoa);
@@ -531,23 +552,6 @@ bool patch_setup(Config* cf) {
     write_call(0x4F077E, (int)mod_facility_avail); // base_queue
     write_call(0x4FD920, (int)mod_facility_avail); // base_build
     write_call(0x4FF2D4, (int)mod_facility_avail); // base_build
-
-    write_offset(0x50F421, (void*)mod_turn_timer);
-    write_offset(0x6456EE, (void*)mod_except_handler3);
-    write_offset(0x64576E, (void*)mod_except_handler3);
-    write_offset(0x6457CC, (void*)mod_except_handler3);
-    write_offset(0x645F98, (void*)mod_except_handler3);
-    write_offset(0x646CA7, (void*)mod_except_handler3);
-    write_offset(0x646FDE, (void*)mod_except_handler3);
-    write_offset(0x648C54, (void*)mod_except_handler3);
-    write_offset(0x648D83, (void*)mod_except_handler3);
-    write_offset(0x648EC8, (void*)mod_except_handler3);
-    write_offset(0x64908C, (void*)mod_except_handler3);
-    write_offset(0x6492D4, (void*)mod_except_handler3);
-    write_offset(0x649335, (void*)mod_except_handler3);
-    write_offset(0x64A3C0, (void*)mod_except_handler3);
-    write_offset(0x64D947, (void*)mod_except_handler3);
-
     write_call(0x52B0E1, (int)mod_wants_to_attack); // wants_prop
     write_call(0x52B0F4, (int)mod_wants_to_attack); // wants_prop
     write_call(0x52B21A, (int)mod_wants_to_attack); // wants_prop
@@ -571,7 +575,27 @@ bool patch_setup(Config* cf) {
     write_call(0x5BCC70, (int)mod_wants_to_attack); // tech_val
     write_call(0x5BCC85, (int)mod_wants_to_attack); // tech_val
 
-    // Magtube and fungus movement speed patches
+    write_call(0x4E888C, (int)base_governor_crop_yield); // base_yield
+    write_call(0x465DD6, (int)mod_crop_yield); // MapWin::gen_terrain_poly
+    write_call(0x4B6C44, (int)mod_crop_yield); // StatusWin::draw_status
+    write_call(0x4BCEEB, (int)mod_crop_yield); // TutWin::tour
+    write_call(0x4E7DE4, (int)mod_crop_yield); // resource_yield
+    write_call(0x4E96F4, (int)mod_crop_yield); // base_support
+    write_call(0x4ED7F1, (int)mod_crop_yield); // base_terraform
+    write_call(0x565878, (int)mod_crop_yield); // can_terraform
+    write_call(0x4B6E4F, (int)mod_mine_yield); // StatusWin::draw_status
+    write_call(0x4B6EF9, (int)mod_mine_yield); // StatusWin::draw_status
+    write_call(0x4B6F84, (int)mod_mine_yield); // StatusWin::draw_status
+    write_call(0x4E7E00, (int)mod_mine_yield); // resource_yield
+    write_call(0x4E88AC, (int)mod_mine_yield); // base_yield
+    write_call(0x4E970A, (int)mod_mine_yield); // base_support
+    write_call(0x4B7028, (int)mod_energy_yield); // StatusWin::draw_status
+    write_call(0x4B7136, (int)mod_energy_yield); // StatusWin::draw_status
+    write_call(0x4D3E5C, (int)mod_energy_yield); // Console::terraform
+    write_call(0x4E7E1C, (int)mod_energy_yield); // resource_yield
+    write_call(0x4E88CA, (int)mod_energy_yield); // base_yield
+    write_call(0x4E971F, (int)mod_energy_yield); // base_support
+    write_call(0x56C856, (int)mod_energy_yield); // enemy_move
     write_call(0x587424, (int)mod_read_basic_rules); // read_rules
     write_call(0x467711, (int)mod_hex_cost); // MapWin::dest_line
     write_call(0x572518, (int)mod_hex_cost); // enemy_move
@@ -1223,9 +1247,6 @@ bool patch_setup(Config* cf) {
     if (cf->territory_border_fix || DEBUG) {
         write_call(0x523ED7, (int)mod_base_find3);
         write_call(0x52417F, (int)mod_base_find3);
-    }
-    if (cf->simple_cost_factor) {
-        write_jump(0x4E4430, (int)mod_cost_factor);
     }
     if (cf->revised_tech_cost) {
         write_call(0x4452D5, (int)mod_tech_rate);

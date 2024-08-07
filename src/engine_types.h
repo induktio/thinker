@@ -81,7 +81,8 @@ struct BASE {
     int16_t autoforward_land_base_id;
     int16_t autoforward_sea_base_id;
     int16_t autoforward_air_base_id;
-    int16_t defend_goal; // Thinker variable
+    int8_t defend_goal; // Thinker variable
+    int8_t defend_range; // Thinker variable
     int32_t talent_total;
     int32_t drone_total;
     int32_t superdrone_total;
@@ -98,6 +99,12 @@ struct BASE {
     }
     bool item_is_unit() {
         return queue_items[0] >= 0;
+    }
+    bool drone_riots_active() {
+        return state_flags & BSTATE_DRONE_RIOTS_ACTIVE;
+    }
+    bool golden_age_active() {
+        return state_flags & BSTATE_GOLDEN_AGE_ACTIVE;
     }
     bool golden_age() {
         return !drone_total && pop_size > 2 && talent_total >= (pop_size + 1) / 2;

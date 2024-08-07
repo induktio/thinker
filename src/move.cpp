@@ -304,7 +304,7 @@ void land_raise_plan(int faction) {
     if (p.main_region < 0) {
         return;
     }
-    if (!has_terra(faction, FORMER_RAISE_LAND, LAND) || Factions[faction].energy_credits < 100) {
+    if (!has_terra(faction, FORMER_RAISE_LAND, TRIAD_LAND) || Factions[faction].energy_credits < 100) {
         return;
     }
     bool expand = allow_expand(faction);
@@ -619,7 +619,7 @@ void move_upkeep(int faction, UpdateMode mode) {
         return;
     }
     move_upkeep_faction = faction;
-    build_tubes = has_terra(faction, FORMER_MAGTUBE, LAND);
+    build_tubes = has_terra(faction, FORMER_MAGTUBE, TRIAD_LAND);
     mapdata.clear();
     mapnodes.clear();
     region_enemy.clear();
@@ -722,7 +722,7 @@ void move_upkeep(int faction, UpdateMode mode) {
                 debug("capture_artifact %2d %2d\n", veh->x, veh->y);
             }
             if (veh->is_probe() && sq->owner == faction
-            && stack_search(veh->x, veh->y, faction, ST_NeutralOnly, WMODE_INFOWAR)) {
+            && stack_search(veh->x, veh->y, faction, ST_NeutralOnly, WMODE_PROBE)) {
                 mapnodes.insert({veh->x, veh->y, NODE_COMBAT_PATROL});
                 debug("capture_probe %2d %2d\n", veh->x, veh->y);
             }
@@ -800,7 +800,7 @@ void move_upkeep(int faction, UpdateMode mode) {
                 values[i] = base->pop_size + (base->is_objective() ? 16 : 0)
                     + 16*has_fac_built(FAC_HEADQUARTERS, i)
                     + 8*mapdata[{base->x, base->y}].enemy_near
-                    - base_enemy_range[i];
+                    - (base->defend_range > 0 ? base->defend_range : MaxEnemyRange/2);
                 sorter[bases] = values[i];
                 bases++;
                 debug("defend_score %4d %s\n", values[i], base->name);
@@ -1056,13 +1056,13 @@ ResType want_convoy(int veh_id, int x, int y, int* score, MAP* sq) {
                 return RES_NONE;
             }
         }
-        int N = crop_yield(veh->faction_id, base_id, x, y, 0);
-        int M = mine_yield(veh->faction_id, base_id, x, y, 0);
-        int E = energy_yield(veh->faction_id, base_id, x, y, 0);
+        int N = mod_crop_yield(veh->faction_id, base_id, x, y, 0);
+        int M = mod_mine_yield(veh->faction_id, base_id, x, y, 0);
+        int E = mod_energy_yield(veh->faction_id, base_id, x, y, 0);
 
         int Nw = (base->nutrient_surplus < 0 ? 8 : min(8, 2 + base_growth_goal(base_id)))
-            - max(0, base->nutrient_surplus - 14);
-        int Mw = max(3, (45 - base->mineral_intake_2) / 5);
+            - max(0, base->nutrient_surplus - 14) + (base->pop_size < 4 ? 2 : 0);
+        int Mw = max(3, (50 - base->mineral_intake_2) / 5);
         int Ew = max(3, Mw - 1);
         int B = sq->is_base_radius() ? 2 : 4;
 
@@ -1084,7 +1084,6 @@ ResType want_convoy(int veh_id, int x, int y, int* score, MAP* sq) {
         && !has_fac_built(FAC_PUNISHMENT_SPHERE, base_id)
         && (has_fac_built(FAC_NETWORK_NODE, base_id)
         || has_fac_built(FAC_TREE_FARM, base_id)
-        || project_base(FAC_SPACE_ELEVATOR) == base_id
         || project_base(FAC_SUPERCOLLIDER) == base_id
         || project_base(FAC_THEORY_OF_EVERYTHING) == base_id)) {
             choice = RES_ENERGY;
@@ -1328,7 +1327,7 @@ int colony_move(const int id) {
     if (can_build_base(veh->x, veh->y, faction, triad)) {
         if (triad == TRIAD_LAND && (veh->at_target() || !near_ocean_coast(veh->x, veh->y))) {
             return action_build(id, 0);
-        } else if (triad == TRIAD_SEA && (veh->at_target() || (is_ocean_shelf(veh_sq) && !random(16)))) {
+        } else if (triad == TRIAD_SEA && veh->at_target()) {
             return action_build(id, 0);
         } else if (triad == TRIAD_AIR) {
             return action_build(id, 0);
@@ -1385,7 +1384,8 @@ int colony_move(const int id) {
             ty = ts.ry;
             best_score = score;
         }
-        if (++k >= 25 && ts.dist >= 8 && (sq->owner != faction || !sq->is_visible(faction))) {
+        if (++k >= 25 && ts.dist >= 8 && score >= 20
+        && (sq->owner != faction || !sq->is_visible(faction))) {
             break;
         }
     }
@@ -1431,7 +1431,7 @@ int colony_move(const int id) {
 
 bool can_bridge(int x, int y, int faction, MAP* sq) {
     if (is_ocean(sq) || is_human(faction)
-    || !has_terra(faction, FORMER_RAISE_LAND, LAND)) {
+    || !has_terra(faction, FORMER_RAISE_LAND, TRIAD_LAND)) {
         return false;
     }
     if (is_shore_level(sq) && mapnodes.count({x, y, NODE_GOAL_RAISE_LAND})) {
@@ -1512,7 +1512,7 @@ bool can_farm(int x, int y, int faction, int bonus, MAP* sq) {
     if (bonus == RES_ENERGY || bonus == RES_MINERAL || sq->landmarks & LM_VOLCANO) {
         return false;
     }
-    if (!has_nut && bonus != RES_NUTRIENT && crop_yield(faction, -1, x, y, 0) >= 2) {
+    if (!has_nut && bonus != RES_NUTRIENT && mod_crop_yield(faction, -1, x, y, 0) >= 2) {
         return false;
     }
     return (sq->is_rolling()
@@ -1532,7 +1532,7 @@ bool can_solar(int x, int y, int faction, int bonus, MAP* sq) {
         return false;
     }
     if (!has_tech(Rules->tech_preq_allow_3_energy_sq, faction)
-    && bonus != RES_ENERGY && energy_yield(faction, -1, x, y, 0) >= 2) {
+    && bonus != RES_ENERGY && mod_energy_yield(faction, -1, x, y, 0) >= 2) {
         return false;
     }
     if (!sea && has_terra(faction, FORMER_FOREST, sea) && ResInfo->forest_sq_energy > 0
@@ -1557,7 +1557,7 @@ bool can_mine(int x, int y, int faction, int bonus, MAP* sq) {
         return false;
     }
     if (!has_tech(Rules->tech_preq_allow_3_minerals_sq, faction)
-    && bonus != RES_MINERAL && mine_yield(faction, -1, x, y, 0) >= 2) {
+    && bonus != RES_MINERAL && mod_mine_yield(faction, -1, x, y, 0) >= 2) {
         return false;
     }
     if (sq->items & BIT_SENSOR && nearby_items(x, y, 1, BIT_SENSOR) < 2) {
@@ -1575,7 +1575,7 @@ bool can_forest(int x, int y, int faction, MAP* sq) {
     }
     if (!has_tech(Rules->tech_preq_allow_3_nutrients_sq, faction)
     && (sq->is_rolling() || sq->items & BIT_SOLAR)
-    && crop_yield(faction, -1, x, y, 0) >= 2) {
+    && mod_crop_yield(faction, -1, x, y, 0) >= 2) {
         return false;
     }
     if (is_human(faction) && !(*GamePreferences & PREF_AUTO_FORMER_PLANT_FORESTS)) {
@@ -1631,7 +1631,7 @@ bool can_level(int x, int y, int faction, int bonus, MAP* sq) {
 }
 
 bool can_river(int x, int y, int faction, MAP* sq) {
-    if (is_ocean(sq) || !has_terra(faction, FORMER_AQUIFER, LAND)) {
+    if (is_ocean(sq) || !has_terra(faction, FORMER_AQUIFER, TRIAD_LAND)) {
         return false;
     }
     if (sq->items & (BIT_BASE_IN_TILE | BIT_RIVER | BIT_THERMAL_BORE)) {
@@ -2187,13 +2187,11 @@ int garrison_goal(int x, int y, int faction, int triad) {
     for (int i = 0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];
         if (base->x == x && base->y == y) {
-            int goal = max(1,
-                min(5, (p.land_combat_units + p.sea_combat_units)
-                * max(1, (int)base->defend_goal) / max(1, p.defend_weights))
+            int goal = clamp((p.land_combat_units + p.sea_combat_units)
+                * max(1, (int)base->defend_goal) / max(1, p.defend_weights)
                 - (triad == TRIAD_SEA ? 2 : 0)
-                - (p.contacted_factions < 2 && p.unknown_factions > 1 ? 1 : 0)
-                - (!random(4)));
-
+                - (p.unknown_factions > 1 && p.contacted_factions < 2)
+                - random(2), 1, 5);
             debug("garrison_goal %2d %2d %2d %s\n", x, y, goal, base->name);
             return goal;
         }
@@ -2829,11 +2827,11 @@ int combat_move(const int id) {
     }
     bool defend;
     if (triad == TRIAD_SEA) {
-        defend = (at_home && (id % 11) < 3 && !veh->is_probe())
+        defend = (at_home && (*CurrentTurn + id) % 8 < 3 && !veh->is_probe())
             || (!reg_enemy_at(veh_sq->region, veh->is_probe())
             && !reg_enemy_at(p.main_sea_region, veh->is_probe()));
     } else {
-        defend = (at_home && (id % 11) < 5)
+        defend = (at_home && (*CurrentTurn + id) % 8 < 4)
             || (veh->is_probe() && veh->speed() < 2)
             || !reg_enemy_at(veh_sq->region, veh->is_probe());
     }

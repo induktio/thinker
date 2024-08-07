@@ -85,8 +85,8 @@ bool has_ability(int faction, VehAbl abl, VehChassis chs, VehWeapon wpn) {
     int F = Ability[abl].flags;
     int triad = Chassis[chs].triad;
     bool is_combat = Weapon[wpn].offense_value != 0;
-    bool is_former = Weapon[wpn].mode == WMODE_TERRAFORMER;
-    bool is_probe = Weapon[wpn].mode == WMODE_INFOWAR;
+    bool is_former = Weapon[wpn].mode == WMODE_TERRAFORM;
+    bool is_probe = Weapon[wpn].mode == WMODE_PROBE;
 
     if ((triad == TRIAD_LAND && ~F & AFLAG_ALLOWED_LAND_UNIT)
     || (triad == TRIAD_SEA && ~F & AFLAG_ALLOWED_SEA_UNIT)
@@ -202,7 +202,7 @@ int __cdecl veh_speed(int veh_id, bool skip_morale) {
     if (Vehs[veh_id].damage_taken && triad != TRIAD_AIR) {
         int moves = speed_val / Rules->move_rate_roads;
         int reactor_val;
-        if (u->plan == PLAN_ALIEN_ARTIFACT) {
+        if (u->plan == PLAN_ARTIFACT) {
             reactor_val = 1;
             speed_val = 1;
         } else {
@@ -366,7 +366,7 @@ VehArmor armor_id, VehAblFlag ability, VehReactor reactor_id) {
             }
         }
         // excludes sea probes
-        if (triad == TRIAD_SEA && Weapon[weapon_id].mode != WMODE_INFOWAR) {
+        if (triad == TRIAD_SEA && Weapon[weapon_id].mode != WMODE_PROBE) {
             proto_mod = (proto_mod + 1) / 2;
         } else if (triad == TRIAD_AIR) {
             proto_mod /= (Weapon[weapon_id].mode > WMODE_MISSILE) ? 2 : 4; // Non-combat : Combat
@@ -407,7 +407,7 @@ int __cdecl mod_veh_cost(int unit_id, int base_id, int32_t* has_proto_cost) {
     && has_fac_built(FAC_BROOD_PIT, base_id)) {
         cost = (cost * 3) / 4; // Decrease the cost of alien units by 25%
     }
-    if (Units[unit_id].plan == PLAN_COLONIZATION && base_id >= 0) {
+    if (Units[unit_id].plan == PLAN_COLONY && base_id >= 0) {
         cost = clamp(cost, 1, 999);
     }
     int proto_cost_first = 0;
@@ -478,7 +478,7 @@ int __cdecl mod_veh_avail(int unit_id, int faction_id, int base_id) {
             return false;
         }
     }
-    if (Units[unit_id].plan == PLAN_COLONIZATION
+    if (Units[unit_id].plan == PLAN_COLONY
     && *GameRules & RULES_SCN_NO_COLONY_PODS) {
         return false;
     }
@@ -852,11 +852,11 @@ void parse_chs_name(char* buf, const char* name) {
 int __cdecl mod_name_proto(char* name, int unit_id, int faction_id,
 VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
     char buf[256] = {};
-    bool noncombat = Weapon[wpn].mode == WMODE_CONVOY
-        || Weapon[wpn].mode == WMODE_INFOWAR
-        || Weapon[wpn].mode == WMODE_TERRAFORMER
+    bool noncombat = Weapon[wpn].mode == WMODE_SUPPLY
+        || Weapon[wpn].mode == WMODE_PROBE
+        || Weapon[wpn].mode == WMODE_TERRAFORM
         || Weapon[wpn].mode == WMODE_TRANSPORT
-        || Weapon[wpn].mode == WMODE_COLONIST;
+        || Weapon[wpn].mode == WMODE_COLONY;
     bool combat = Weapon[wpn].offense_value != 0
         && Armor[arm].defense_value != 0;
     bool psi_arm = Armor[arm].defense_value < 0;
@@ -967,7 +967,7 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
             }
             parse_wpn_name(buf, wpn, i > 0);
         }
-        if (Weapon[wpn].mode != WMODE_INFOWAR && rec >= REC_FISSION && rec <= REC_SINGULARITY) {
+        if (Weapon[wpn].mode != WMODE_PROBE && rec >= REC_FISSION && rec <= REC_SINGULARITY) {
             if (strlen(buf) + strlen(label_unit_reactor[rec-1]) + 2 <= MaxProtoNameLen) {
                 strncat(buf, label_unit_reactor[rec-1], MaxProtoNameLen);
             } else if (i == 0) {

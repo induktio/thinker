@@ -89,6 +89,9 @@ const T& clamp (const T& value, const T& low, const T& high) {
     return (value < low ? low : (value > high ? high : value));
 }
 
+inline VehAblFlag operator| (VehAblFlag a, VehAblFlag b) { return (VehAblFlag)((int)a | (int)b); }
+inline VehAblFlag& operator|= (VehAblFlag& a, VehAblFlag b) { return (VehAblFlag&)((int&)a |= (int)b); }
+
 typedef std::set<MapNode,MapNodeComp> NodeSet;
 typedef std::set<Point,PointComp> Points;
 typedef std::list<Point> PointList;
@@ -165,7 +168,10 @@ extern int* BaseCurrentVehPacifismCount;
 extern int* BaseCurrentForcesSupported;
 extern int* BaseCurrentForcesMaintCost;
 extern int* BaseCommerceIncome;
+extern int* BaseTerraformEnergy;
+extern int* BaseTerraformReduce;
 extern int* ScnVictFacilityObj;
+extern int* SolarFlaresEvent;
 extern int* BaseCount;
 extern int* VehCount;
 extern int* GamePreferences;
@@ -1287,7 +1293,7 @@ extern fp_void text_item_number;
 extern fp_void text_item_binary;
 extern fp_2int parse_string;
 extern fp_2int parse_num;
-extern fp_4int parse_say;
+extern Fparse_says parse_say;
 extern Fparse_says parse_says;
 
 

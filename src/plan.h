@@ -2,10 +2,45 @@
 
 #include "main.h"
 
-extern int base_enemy_range[MaxBaseNum];
-extern int base_border_range[MaxBaseNum];
+struct WItem {
+    int AI_growth;
+    int AI_tech;
+    int AI_wealth;
+    int AI_power;
+    int AI_fight;
+};
+
+struct PItem {
+    int item_id;
+    int explore;
+    int discover;
+    int build;
+    int conquer;
+    int energy;
+};
+
+struct SItem {
+    int item_id;
+    int score;
+
+    bool operator<(SItem const& obj) const
+    {
+        return score < obj.score || (score == obj.score && item_id < obj.item_id);
+    }
+    bool operator>(SItem const& obj) const
+    {
+        return score > obj.score || (score == obj.score && item_id > obj.item_id);;
+    }
+};
+
+typedef std::pair<int, int> ipair_t;
+typedef std::priority_queue<SItem, std::vector<SItem>, std::less<SItem>> score_max_queue_t;
+typedef std::priority_queue<SItem, std::vector<SItem>, std::greater<SItem>> score_min_queue_t;
+
 extern int plan_upkeep_turn;
 
+int facility_score(FacilityId item_id, WItem& Wgov);
+void governor_priorities(BASE& base, WItem& Wgov);
 void reset_state();
 void design_units(int faction_id);
 void former_plans(int faction_id);

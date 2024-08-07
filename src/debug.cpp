@@ -196,10 +196,10 @@ void print_veh_stack(int x, int y) {
 
 void print_veh(int id) {
     VEH* v = &Vehicles[id];
-    debug("VEH %24s u: %3d v: %4d owner: %d order: %2d %2d %c %3d %3d -> %3d %3d "
+    debug("VEH %24s u: %3d v: %4d owner: %d base: %d order: %2d %2d %c %3d %3d -> %3d %3d "
         "next: %4d prev: %4d moves: %2d speed: %2d damage: %2d "
         "state: %08x flags: %04x vis: %02x mor: %d iter: %d angle: %d\n",
-        Units[v->unit_id].name, v->unit_id, id, v->faction_id,
+        Units[v->unit_id].name, v->unit_id, id, v->faction_id, v->home_base_id,
         v->order, v->order_auto_type, (v->status_icon ? v->status_icon : ' '),
         v->x, v->y, v->waypoint_1_x, v->waypoint_1_y,
         v->next_veh_id_stack, v->prev_veh_id_stack, v->moves_spent, veh_speed(id, 0),
@@ -212,9 +212,9 @@ void print_unit(int id) {
     int owner = id/MaxProtoFactionNum;
     bool old = (1 << owner) & u->obsolete_factions;
     debug("UNIT %31s u: %3d owner: %d group: %2d obs: %d chs: %d rec: %d wpn: %2d arm: %2d "
-        "cost: %2d preq: %2d flags: %4X abls: %8X\n",
+        "plan: %2d cost: %2d preq: %2d flags: %4X abls: %8X\n",
         u->name, id, owner, u->group_id, old, u->chassis_id, u->reactor_id, u->weapon_id, u->armor_id,
-        u->cost, u->preq_tech, u->unit_flags, u->ability_flags);
+        u->plan, u->cost, u->preq_tech, u->unit_flags, u->ability_flags);
 }
 
 void print_base(int id) {

@@ -892,9 +892,9 @@ Render custom debug overlays with original and additional goals.
 */
 void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
 {
-    Buffer* Canvas = (Buffer*)0x939888;
+    Buffer* Canvas = (Buffer*)&This->oMainWin.oCanvas.poOwner;
     RECT rt;
-    if (*GameState & STATE_OMNISCIENT_VIEW && MapWin->iWhatToDrawFlags & MAPWIN_DRAW_GOALS)
+    if (*GameState & STATE_OMNISCIENT_VIEW && This->iWhatToDrawFlags & MAPWIN_DRAW_GOALS)
     {
         MapWin_tile_to_pixel(This, x, y, &rt.left, &rt.top);
         rt.right = rt.left + This->iPixelsPerTileX;
@@ -963,7 +963,7 @@ void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
         if (found || value) {
             Buffer_set_text_color(Canvas, color, 0, 1, 1);
             Buffer_set_font(Canvas, &This->oFont2, 0, 0, 0);
-            Buffer_write_cent_l3(Canvas, buf, &rt, 10);
+            Buffer_write_cent_l3(Canvas, buf, &rt, 20);
         }
     }
 }
@@ -1313,7 +1313,7 @@ int __cdecl BaseWin_ask_number(const char* label, int value, int a3)
     return pop_ask_number(ScriptFile, label, minimal_cost, a3);
 }
 
-void __thiscall Basewin_draw_farm_set_font(Buffer* This, Font* font, int a3, int a4, int a5)
+void __thiscall BaseWin_draw_farm_set_font(Buffer* This, Font* font, int a3, int a4, int a5)
 {
     char buf[StrBufLen] = {};
     // Base resource window coordinates including button row
@@ -1436,6 +1436,17 @@ void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, 
     }
 }
 
+int __cdecl BaseWin_staple_popp(
+const char* filename, const char* label, int a3, const char* imagefile, int a5)
+{
+    BASE* base = *CurrentBase;
+    if (base && base->assimilation_turns_left
+    && base->faction_id_former != MapWin->cOwner && is_alive(base->faction_id_former)) {
+        return popp("modmenu", "NERVESTAPLE2", a3, imagefile, a5);
+    }
+    return popp(filename, label, a3, imagefile, a5);
+}
+
 /*
 Refresh base window workers properly after nerve staple is done.
 */
@@ -1478,20 +1489,16 @@ void __cdecl ReportWin_draw_ops_strcat(char* dst, char* UNUSED(src))
 
     if (base->faction_id == MapWin->cOwner) {
         if (gov & GOV_ACTIVE) {
-            if (conf.manage_player_bases) {
-                strncat(dst, (*TextLabels)[457], 32); // Governor
+            if (gov & GOV_PRIORITY_EXPLORE) {
+                strncat(dst, (*TextLabels)[521], 32);
+            } else if (gov & GOV_PRIORITY_DISCOVER) {
+                strncat(dst, (*TextLabels)[522], 32);
+            } else if (gov & GOV_PRIORITY_BUILD) {
+                strncat(dst, (*TextLabels)[523], 32);
+            } else if (gov & GOV_PRIORITY_CONQUER) {
+                strncat(dst, (*TextLabels)[524], 32);
             } else {
-                if (gov & GOV_PRIORITY_EXPLORE) {
-                    strncat(dst, (*TextLabels)[521], 32);
-                } else if (gov & GOV_PRIORITY_DISCOVER) {
-                    strncat(dst, (*TextLabels)[522], 32);
-                } else if (gov & GOV_PRIORITY_BUILD) {
-                    strncat(dst, (*TextLabels)[523], 32);
-                } else if (gov & GOV_PRIORITY_CONQUER) {
-                    strncat(dst, (*TextLabels)[524], 32);
-                } else {
-                    strncat(dst, (*TextLabels)[457], 32);
-                }
+                strncat(dst, (*TextLabels)[457], 32); // Governor
             }
             strncat(dst, " ", 32);
         }

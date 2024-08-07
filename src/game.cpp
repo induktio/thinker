@@ -52,9 +52,8 @@ void __cdecl bitmask(uint32_t input, uint32_t* offset, uint32_t* mask) {
 
 /*
 Calculate nutrient/mineral cost factors for base production.
-In vanilla game mechanics, if the player faction is ranked first, then the AIs
-will get additional growth/industry bonuses. This modified version removes them.
-Original Offset: 004E4430
+In the original game, if the player faction is ranked first, the AI factions will get
+additional growth/industry bonuses. It can be optionally skipped with simple_cost_factor option.
 */
 int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id) {
     int value;
@@ -63,54 +62,63 @@ int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id) {
     if (is_human(faction_id)) {
         value = multiplier;
     } else {
-        value = multiplier * CostRatios[*DiffLevel] / 10;
+        value = CostRatios[*DiffLevel];
+        if (!conf.simple_cost_factor) {
+            value -= (great_satan(FactionRankings[7], 0) != 0);
+            value -= (!*MultiplayerActive && is_human(FactionRankings[7]));
+        }
+        value = multiplier * value / 10;
     }
-
     if (*MapSizePlanet == 0) {
         value = 8 * value / 10;
     } else if (*MapSizePlanet == 1) {
         value = 9 * value / 10;
     }
-    if (is_mineral) {
-        if (is_mineral == 1) {
-            switch (Factions[faction_id].SE_industry_pending) {
-                case -7:
-                case -6:
-                case -5:
-                case -4:
-                case -3:
-                    return (13 * value + 9) / 10;
-                case -2:
-                    return (6 * value + 4) / 5;
-                case -1:
-                    return (11 * value + 9) / 10;
-                case 0:
-                    break;
-                case 1:
-                    return (9 * value + 9) / 10;
-                case 2:
-                    return (4 * value + 4) / 5;
-                case 3:
-                    return (7 * value + 9) / 10;
-                case 4:
-                    return (3 * value + 4) / 5;
-                default:
-                    return (value + 1) / 2;
-            }
+    if (is_mineral == 1) {
+        switch (Factions[faction_id].SE_industry_pending) {
+            case -7:
+            case -6:
+            case -5:
+            case -4:
+            case -3:
+                value = (13 * value + 9) / 10;
+                break;
+            case -2:
+                value = (6 * value + 4) / 5;
+                break;
+            case -1:
+                value = (11 * value + 9) / 10;
+                break;
+            case 0:
+                break;
+            case 1:
+                value = (9 * value + 9) / 10;
+                break;
+            case 2:
+                value = (4 * value + 4) / 5;
+                break;
+            case 3:
+                value = (7 * value + 9) / 10;
+                break;
+            case 4:
+                value = (3 * value + 4) / 5;
+                break;
+            default: // +5 Industry or better
+                value = (value + 1) / 2;
         }
-        return value;
-    } else {
+    } else if (is_mineral == 0) {
         int growth = Factions[faction_id].SE_growth_pending;
         if (base_id >= 0) {
-            if (has_facility(FAC_CHILDREN_CRECHE, base_id)) {
+            if (has_fac_built(FAC_CHILDREN_CRECHE, base_id)) {
                 growth += 2;
             }
-            if (Bases[base_id].state_flags & BSTATE_GOLDEN_AGE_ACTIVE) {
+            if (Bases[base_id].golden_age_active()) {
                 growth += 2;
             }
         }
-        return (value * (10 - clamp(growth, -2, 5)) + 9) / 10;
+        value = (value * (10 - clamp(growth, -2, 5)) + 9) / 10;
     }
+    return value;
 }
 
 void init_world_config() {
@@ -170,6 +178,18 @@ void init_save_game(int faction) {
                 }
             }
             memset(u, 0, sizeof(UNIT));
+        }
+        if (u->is_active()) {
+            if (u->weapon_mode() == WMODE_SUPPLY && u->plan != PLAN_SUPPLY) {
+                print_unit(unit_id);
+                u->plan = PLAN_SUPPLY;
+            } else if (u->weapon_mode() == WMODE_TERRAFORM && u->plan != PLAN_TERRAFORM) {
+                print_unit(unit_id);
+                u->plan = PLAN_TERRAFORM;
+            } else if (u->weapon_mode() == WMODE_PROBE && u->plan != PLAN_PROBE) {
+                print_unit(unit_id);
+                u->plan = PLAN_PROBE;
+            }
         }
     }
     for (int i = 0; i < *VehCount; i++) {
@@ -311,7 +331,7 @@ int __cdecl mod_faction_upkeep(int faction) {
     if (f->energy_credits < 0) {
         f->energy_credits = 0;
     }
-    if (!f->base_count && !has_colony_pods(faction)) {
+    if (!f->base_count && !has_active_veh(faction, PLAN_COLONY)) {
         eliminate_player(faction, 0);
     }
     *ControlUpkeepA = 0;

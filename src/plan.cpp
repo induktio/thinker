@@ -5,14 +5,35 @@ int base_enemy_range[MaxBaseNum] = {};
 int base_border_range[MaxBaseNum] = {};
 int plan_upkeep_turn = 0;
 
-typedef std::pair<int32_t, int32_t> ipair_t;
-auto ipair_cmp_t = [](ipair_t& a, ipair_t& b)->bool {
-    return a.first > b.first || (a.first == b.first && a.second > b.second); };
 
+int facility_score(FacilityId item_id, WItem& Wgov) {
+    CFacility& p = Facility[item_id];
+    return Wgov.AI_fight * p.AI_fight
+        + Wgov.AI_growth * p.AI_growth + Wgov.AI_power * p.AI_power
+        + Wgov.AI_tech * p.AI_tech + Wgov.AI_wealth * p.AI_wealth;
+}
+
+void governor_priorities(BASE& base, WItem& Wgov) {
+    Faction& f = Factions[base.faction_id];
+    uint32_t gov = base.governor_flags;
+    if (is_human(base.faction_id)) {
+        Wgov.AI_growth = (gov & GOV_PRIORITY_EXPLORE ? 4 : 1);
+        Wgov.AI_tech   = (gov & GOV_PRIORITY_DISCOVER ? 4 : 1);
+        Wgov.AI_wealth = (gov & GOV_PRIORITY_BUILD ? 4 : 1);
+        Wgov.AI_power  = (gov & GOV_PRIORITY_CONQUER ? 4 : 1);
+        Wgov.AI_fight  = 2*(base.defend_goal > 3);
+    } else {
+        Wgov.AI_growth = (f.AI_growth ? 4 : 1);
+        Wgov.AI_tech   = (f.AI_tech ? 4 : 1);
+        Wgov.AI_wealth = (f.AI_wealth ? 4 : 1);
+        Wgov.AI_power  = (f.AI_power ? 4 : 1);
+        Wgov.AI_fight  = clamp(2*f.AI_fight, -2, 2);
+    }
+}
 
 void reset_state() {
     // Invalidate all previous plans
-    plan_upkeep_turn = 0;
+    plan_upkeep_turn = -1;
     move_upkeep_faction = -1;
 }
 
@@ -64,7 +85,7 @@ void design_units(int faction_id) {
     bool twoabl = has_tech(Rules->tech_preq_allow_2_spec_abil, fc);
     int wpn_v = Weapon[wpn].offense_value;
 
-    std::priority_queue<ipair_t, std::vector<ipair_t>, decltype(ipair_cmp_t)> obsolete(ipair_cmp_t);
+    score_min_queue_t obsolete;
     int active = 0;
     for (int i = 0; i < MaxProtoNum; i++) {
         UNIT* u = &Units[i];
@@ -78,15 +99,15 @@ void design_units(int faction_id) {
             && !u->is_transport() && !u->is_missile()))) {
                 int score = (u->cost + 1)*(u->triad() == TRIAD_AIR ? 4 : 1)
                     * Factions[fc].units_active[i];
-                obsolete.push({score, i});
+                obsolete.push({i, score});
             }
         }
     }
     if (active >= 60) {
         bool disband = !(*CurrentTurn % 5);
         while (!obsolete.empty()) {
-            int unit_id = obsolete.top().second;
-            int score = obsolete.top().first;
+            int unit_id = obsolete.top().item_id;
+            int score = obsolete.top().score;
             obsolete.pop();
             if (--active >= (score ? 56 : 48)
             && (!score || (disband && check_disband(unit_id, fc)))) {
@@ -103,12 +124,12 @@ void design_units(int faction_id) {
             VehAblFlag algo = has_ability(fc, ABL_ID_ALGO_ENHANCEMENT, chs_ship, WPN_PROBE_TEAM)
                 ? ABL_ALGO_ENHANCEMENT : ABL_NONE;
             create_proto(fc, ship, WPN_PROBE_TEAM,
-                (rec >= REC_FUSION ? arm : ARM_NO_ARMOR), algo, rec, PLAN_INFO_WARFARE);
+                (rec >= REC_FUSION ? arm : ARM_NO_ARMOR), algo, rec, PLAN_PROBE);
         }
         if (arm != ARM_NO_ARMOR && rec >= REC_FUSION) {
             VehAblFlag algo = has_ability(fc, ABL_ID_ALGO_ENHANCEMENT, chs_land, WPN_PROBE_TEAM)
                 ? ABL_ALGO_ENHANCEMENT : ABL_NONE;
-            create_proto(fc, chs_land, WPN_PROBE_TEAM, arm, algo, rec, PLAN_INFO_WARFARE);
+            create_proto(fc, chs_land, WPN_PROBE_TEAM, arm, algo, rec, PLAN_PROBE);
         }
     }
     if (chs_ship != CHS_INFANTRY && wpn_v >= 4) {
@@ -119,12 +140,12 @@ void design_units(int faction_id) {
             VehArmor arm_ship = (rec >= REC_FUSION || !arty.cost_increase_with_speed())
                 && !arty.cost_increase_with_armor()
                 ? (rec >= REC_QUANTUM ? arm : arm_cheap) : ARM_NO_ARMOR;
-            uint32_t abls = ABL_ARTILLERY
+            VehAblFlag abls = ABL_ARTILLERY
                 | (twoabl && has_ability(fc, ABL_ID_AAA, chs_ship, wpn)
                 && (rec >= REC_QUANTUM || Weapon[wpn].cost <= 6 * rec
                 || !arty.cost_increase_with_speed())
                 && arm_ship != ARM_NO_ARMOR ? ABL_AAA : ABL_NONE);
-            create_proto(fc, chs_ship, wpn, arm_ship, (VehAblFlag)abls, rec, PLAN_OFFENSIVE);
+            create_proto(fc, chs_ship, wpn, arm_ship, abls, rec, PLAN_OFFENSIVE);
         }
         if (!long_range || arty.cost < -1 || arty.cost > 2) {
             VehArmor arm_ship = wpn_v >= 6 || rec >= REC_FUSION
@@ -136,7 +157,7 @@ void design_units(int faction_id) {
         }
     }
     if (arm != ARM_NO_ARMOR) {
-        uint32_t abls = 0;
+        VehAblFlag abls = ABL_NONE;
         int num = 0;
         for (VehAbl v : DefendAbls) {
             if (v == ABL_ID_POLICE_2X && !need_police(fc)) {
@@ -146,14 +167,14 @@ void design_units(int faction_id) {
                 continue;
             }
             if (has_ability(fc, v, CHS_INFANTRY, WPN_HAND_WEAPONS)) {
-                abls |= (1 << v);
+                abls |= (VehAblFlag)(1 << v);
                 num++;
             }
             if (num > twoabl) {
                 break;
             }
         }
-        create_proto(fc, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, (VehAblFlag)abls, rec, PLAN_DEFENSIVE);
+        create_proto(fc, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, abls, rec, PLAN_DEFENSIVE);
 
         if (!(abls & ABL_POLICE_2X) && need_police(fc)
         && has_ability(fc, ABL_ID_POLICE_2X, CHS_INFANTRY, WPN_HAND_WEAPONS)) {
@@ -161,31 +182,31 @@ void design_units(int faction_id) {
         }
     }
     if (has_chassis(fc, CHS_NEEDLEJET)) {
-        uint32_t addon = twoabl && has_ability(fc, ABL_ID_DEEP_RADAR, CHS_NEEDLEJET, wpn)
+        VehAblFlag addon = twoabl && has_ability(fc, ABL_ID_DEEP_RADAR, CHS_NEEDLEJET, wpn)
             ? ABL_DEEP_RADAR : ABL_NONE;
         if (has_ability(fc, ABL_ID_AIR_SUPERIORITY, CHS_NEEDLEJET, wpn)) {
-            uint32_t abls = ABL_AIR_SUPERIORITY | addon;
-            create_proto(fc, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, (VehAblFlag)abls, rec, PLAN_AIR_SUPERIORITY);
+            VehAblFlag abls = ABL_AIR_SUPERIORITY | addon;
+            create_proto(fc, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, abls, rec, PLAN_AIR_SUPERIORITY);
         }
         if (has_ability(fc, ABL_ID_DISSOCIATIVE_WAVE, CHS_NEEDLEJET, wpn)
         && has_ability(fc, ABL_ID_AAA, CHS_INFANTRY, wpn)) {
-            uint32_t abls = ABL_DISSOCIATIVE_WAVE | addon;
-            create_proto(fc, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, (VehAblFlag)abls, rec, PLAN_OFFENSIVE);
+            VehAblFlag abls = ABL_DISSOCIATIVE_WAVE | addon;
+            create_proto(fc, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, abls, rec, PLAN_OFFENSIVE);
         }
     }
     if (has_weapon(fc, WPN_TERRAFORMING_UNIT) && rec >= REC_FUSION) {
         bool grav = has_chassis(fc, CHS_GRAVSHIP);
         VehChassis chs = (grav ? CHS_GRAVSHIP : chs_land);
-        uint32_t abls = (has_ability(fc, ABL_ID_SUPER_TERRAFORMER, chs, WPN_TERRAFORMING_UNIT)
+        VehAblFlag abls = (has_ability(fc, ABL_ID_SUPER_TERRAFORMER, chs, WPN_TERRAFORMING_UNIT)
             ? ABL_SUPER_TERRAFORMER : ABL_NONE)
             | (twoabl && !grav && has_ability(fc, ABL_ID_FUNGICIDAL, chs, WPN_TERRAFORMING_UNIT)
             ? ABL_FUNGICIDAL : ABL_NONE);
-        create_proto(fc, chs, WPN_TERRAFORMING_UNIT, ARM_NO_ARMOR, (VehAblFlag)abls,
-            REC_FUSION, PLAN_TERRAFORMING);
+        create_proto(fc, chs, WPN_TERRAFORMING_UNIT, ARM_NO_ARMOR, abls,
+            REC_FUSION, PLAN_TERRAFORM);
     }
     if (has_weapon(fc, WPN_SUPPLY_TRANSPORT) && rec >= REC_FUSION && arm_cheap != ARM_NO_ARMOR) {
         create_proto(fc, CHS_INFANTRY, WPN_SUPPLY_TRANSPORT,
-            rec >= REC_QUANTUM ? arm : arm_cheap, ABL_NONE, rec, PLAN_DEFENSIVE);
+            rec >= REC_QUANTUM ? arm : arm_cheap, ABL_NONE, rec, PLAN_SUPPLY);
     }
 }
 
@@ -197,7 +218,7 @@ bool need_police(int faction_id) {
 int psi_score(int faction_id) {
     Faction* f = &Factions[faction_id];
     int weapon_value = Weapon[best_weapon(faction_id)].offense_value;
-    int enemy_weapon_value = 1;
+    int enemy_weapon_value = 0;
     for (int i = 1; i < MaxPlayerNum; i++) {
         if (faction_id != i && is_alive(i) && !has_pact(faction_id, i)) {
             enemy_weapon_value = max(
@@ -217,10 +238,15 @@ int psi_score(int faction_id) {
     if (has_project(FAC_XENOEMPATHY_DOME, faction_id)) {
         psi++;
     }
+    if (has_project(FAC_VOICE_OF_PLANET, faction_id)) {
+        psi++;
+    }
     if (MFactions[faction_id].rule_flags & RFLAG_WORMPOLICE && need_police(faction_id)) {
         psi += 2;
     }
-    psi += clamp((enemy_weapon_value - weapon_value)/2, -2, 2);
+    if (enemy_weapon_value) {
+        psi += clamp((enemy_weapon_value - weapon_value)/2, -3, 3);
+    }
     psi += MFactions[faction_id].rule_psi/10 + 2*f->SE_planet;
     return psi;
 }
@@ -258,13 +284,13 @@ int satellite_goal(int faction_id, int item_id) {
 }
 
 void former_plans(int faction_id) {
-    bool former_fungus = (has_terra(faction_id, FORMER_PLANT_FUNGUS, LAND)
-        || has_terra(faction_id, FORMER_PLANT_FUNGUS, SEA));
+    bool former_fungus = (has_terra(faction_id, FORMER_PLANT_FUNGUS, TRIAD_LAND)
+        || has_terra(faction_id, FORMER_PLANT_FUNGUS, TRIAD_SEA));
     bool improv_fungus = (has_tech(Rules->tech_preq_ease_fungus_mov, faction_id)
         || has_tech(Rules->tech_preq_improv_fungus, faction_id)
         || has_project(FAC_XENOEMPATHY_DOME, faction_id));
     int value = fungus_yield(faction_id, RES_NONE)
-        - (has_terra(faction_id, FORMER_FOREST, LAND)
+        - (has_terra(faction_id, FORMER_FOREST, TRIAD_LAND)
         ? ResInfo->forest_sq_nutrient
         + ResInfo->forest_sq_mineral
         + ResInfo->forest_sq_energy : 2);
@@ -356,7 +382,6 @@ void plans_upkeep(int faction_id) {
                 plans[fc].diplo_flags |= f->diplo_status[i];
             }
         }
-        memset(base_enemy_range, 0, sizeof(base_enemy_range));
         int enemy_sum = 0;
         int n = 0;
         for (int i = 0; i < *BaseCount; i++) {
@@ -369,7 +394,6 @@ void plans_upkeep(int faction_id) {
                 // Update enemy base threat distances
                 int base_region = region_at(base->x, base->y);
                 int enemy_range = MaxEnemyRange;
-                int border_range = MaxEnemyRange;
                 for (int j = 0; j < *BaseCount; j++) {
                     BASE* b = &Bases[j];
                     if (faction_id != b->faction_id
@@ -380,15 +404,12 @@ void plans_upkeep(int faction_id) {
                             * (sq->region == base_region ? 2 : 3)
                             * (b->faction_id_former == faction_id ? 2 : 3);
                         if (!at_war(faction_id, b->faction_id)) {
-                            border_dist *= 2;
                             enemy_dist *= 4;
                         }
                         enemy_range = min(enemy_range, enemy_dist / 4);
-                        border_range = min(border_range, border_dist);
                     }
                 }
-                base_enemy_range[i] = enemy_range;
-                base_border_range[i] = border_range;
+                base->defend_range = enemy_range;
                 enemy_sum += enemy_range;
                 if (base->faction_id_former != faction_id
                 && at_war(faction_id, base->faction_id_former)) {

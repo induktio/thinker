@@ -120,6 +120,15 @@ We have discovered and removed {$MSG0} infiltration on our networks!
 #caption Operations Director
 Governor of $MSG0 hurries $MSG1!
 
+#NERVESTAPLE2
+#xs 440
+#caption Operations Director
+^Nerve staple citizens of $BASENAME0?
+^This will carry serious consequences since the base was captured.
+
+No! That is a serious atrocity!
+Yes! Teach those drones a lesson!
+
 #EDITVEH2A
 #xs 400
 #caption Edit Vehicle Data

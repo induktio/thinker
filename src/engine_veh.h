@@ -119,10 +119,10 @@ enum VehWeaponMode {
     WMODE_ENERGY = 1,
     WMODE_MISSILE = 2,
     WMODE_TRANSPORT = 7,
-    WMODE_COLONIST = 8,
-    WMODE_TERRAFORMER = 9,
-    WMODE_CONVOY = 10,
-    WMODE_INFOWAR = 11,
+    WMODE_COLONY = 8,
+    WMODE_TERRAFORM = 9,
+    WMODE_SUPPLY = 10,
+    WMODE_PROBE = 11,
     WMODE_ARTIFACT = 12,
 };
 
@@ -135,11 +135,11 @@ enum VehPlan {
     PLAN_PLANET_BUSTER = 5,
     PLAN_NAVAL_SUPERIORITY = 6,
     PLAN_NAVAL_TRANSPORT = 7,
-    PLAN_COLONIZATION = 8,
-    PLAN_TERRAFORMING = 9,
-    PLAN_SUPPLY_CONVOY = 10,
-    PLAN_INFO_WARFARE = 11,
-    PLAN_ALIEN_ARTIFACT = 12,
+    PLAN_COLONY = 8,
+    PLAN_TERRAFORM = 9,
+    PLAN_SUPPLY = 10,
+    PLAN_PROBE = 11,
+    PLAN_ARTIFACT = 12,
     PLAN_TECTONIC_MISSILE = 13,
     PLAN_FUNGAL_MISSILE = 14,
     PLAN_AUTO_CALCULATE = -1,
@@ -441,22 +441,22 @@ struct UNIT {
             || (chassis_id == CHS_INFANTRY && Armor[armor_id].defense_value > 1));
     }
     bool is_colony() {
-        return plan == PLAN_COLONIZATION;
+        return plan == PLAN_COLONY;
     }
     bool is_former() {
-        return plan == PLAN_TERRAFORMING;
+        return plan == PLAN_TERRAFORM;
     }
     bool is_probe() {
-        return plan == PLAN_INFO_WARFARE;
+        return plan == PLAN_PROBE;
     }
     bool is_supply() {
-        return plan == PLAN_SUPPLY_CONVOY;
+        return plan == PLAN_SUPPLY;
     }
     bool is_transport() {
         return plan == PLAN_NAVAL_TRANSPORT;
     }
     bool is_artifact() {
-        return plan == PLAN_ALIEN_ARTIFACT;
+        return plan == PLAN_ARTIFACT;
     }
     bool is_missile() {
         return Chassis[chassis_id].missile;
