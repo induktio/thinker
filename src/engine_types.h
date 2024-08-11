@@ -42,10 +42,6 @@ struct BASE {
     int32_t worked_tiles;
     int32_t specialist_total;
     int32_t specialist_unk_1;
-    /*
-    Specialist types (CCitizen, 4 bits per id) for the first 16 specialists in the base.
-    These are assigned in base_yield and base_energy and chosen by best_specialist.
-    */
     int32_t specialist_types[2];
     uint8_t facilities_built[12];
     int32_t mineral_surplus_final;
@@ -77,7 +73,7 @@ struct BASE {
     int32_t economy_total;
     int32_t psych_total;
     int32_t labs_total;
-    int32_t unk_5;
+    int32_t unk_total;
     int16_t autoforward_land_base_id;
     int16_t autoforward_sea_base_id;
     int16_t autoforward_air_base_id;
@@ -122,6 +118,23 @@ struct BASE {
     */
     bool is_objective() {
         return (*GameRules & RULES_SCN_VICT_ALL_BASE_COUNT_OBJ ) || (event_flags & BEVENT_OBJECTIVE);
+    }
+    /*
+    Specialist types (CCitizen, 4 bits per id) for the first 16 specialists in the base.
+    These are assigned in base_yield and base_energy and chosen by best_specialist.
+    */
+    int specialist_type(int index) {
+        if (index < 0 || index > 15) {
+            return 0;
+        }
+        return (specialist_types[index/8] >> 4 * (index & 7)) & 0xF;
+    }
+    void specialist_modify(int index, int citizen_id) {
+        if (index < 0 || index > 15) {
+            return;
+        }
+        specialist_types[index/8] &= ~(0xF << (4 * (index & 7)));
+        specialist_types[index/8] |= ((citizen_id & 0xF) << (4 * (index & 7)));
     }
 };
 
@@ -696,9 +709,9 @@ struct CCitizen {
     char* plural_name;
     int32_t preq_tech;
     int32_t obsol_tech;
-    int32_t ops_bonus;
+    int32_t econ_bonus;
     int32_t psych_bonus;
-    int32_t research_bonus;
+    int32_t labs_bonus;
 };
 
 struct CAbility {

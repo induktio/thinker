@@ -50,7 +50,7 @@ struct CListItem {
 };
 
 struct CList {
-    int vtbl;
+    int* vtbl;
     CListItem* pFirst;
     CListItem* pCurrent;
     int iCount;
@@ -878,7 +878,7 @@ struct Sprite {
 };
 
 struct Win {
-    void* vtbl;
+    int* vtbl;
     int field_4;
     int field_8;
     int field_C;

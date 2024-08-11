@@ -1225,6 +1225,14 @@ int __thiscall window_scale_load_pcx(Buffer* This, char* filename, int a3, int a
     } else {
         value = Buffer_load_pcx(This, filename, a3, a4, a5);
     }
+    if (*GameHalted) {
+        char buf[StrBufLen];
+        snprintf(buf, StrBufLen, "%s%s%s%s",
+            MOD_VERSION, " / ", MOD_DATE, (conf.smac_only ? " / SMAC" : ""));
+        Buffer_set_text_color(This, ColorProdName, 0, 1, 1);
+        Buffer_set_font(This, &MapWin->oFont1, 0, 0, 0);
+        Buffer_write_l(This, buf, 20, conf.window_height-32, 100);
+    }
     return value;
 }
 
@@ -1273,8 +1281,7 @@ void __thiscall BaseWin_draw_misc_eco_damage(Buffer* This, char* buf, int x, int
         int clean_mins = conf.clean_minerals + f->clean_minerals_modifier
             + clamp(f->satellites_mineral, 0, (int)base->pop_size);
         int damage = terraform_eco_damage(*CurrentBaseID);
-        int mins = base->mineral_intake_2 + damage/8 + f->major_atrocities
-            + 5*TectonicDetonationCount[base->faction_id];
+        int mins = base->mineral_intake_2 + damage/8;
         int pct;
         if (base->eco_damage > 0) {
             pct = 100 + base->eco_damage;

@@ -6,7 +6,13 @@ static uint32_t custom_more_rules = 0;
 
 
 bool un_charter() {
-    return *UNCharterRepeals <= *UNCharterReinstates;
+    return ProposalPassCount[PROP_REPEAL_UN_CHARTER]
+        <= ProposalPassCount[PROP_REINSTATE_UN_CHARTER];
+}
+
+bool global_trade_pact() {
+    return ProposalPassCount[PROP_REPEAL_GLOBAL_TRADE_PACT]
+        < ProposalPassCount[PROP_GLOBAL_TRADE_PACT];
 }
 
 bool victory_done() {
@@ -183,6 +189,9 @@ void init_save_game(int faction) {
             if (u->weapon_mode() == WMODE_SUPPLY && u->plan != PLAN_SUPPLY) {
                 print_unit(unit_id);
                 u->plan = PLAN_SUPPLY;
+            } else if (u->weapon_mode() == WMODE_COLONY && u->plan != PLAN_COLONY) {
+                print_unit(unit_id);
+                u->plan = PLAN_COLONY;
             } else if (u->weapon_mode() == WMODE_TERRAFORM && u->plan != PLAN_TERRAFORM) {
                 print_unit(unit_id);
                 u->plan = PLAN_TERRAFORM;

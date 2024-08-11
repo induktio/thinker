@@ -739,7 +739,14 @@ enum TerrainType {
     LEVEL_ROCKY = 2,
 };
 
-enum ResType {
+enum BaseResType { // base production, convoy types, cost factor
+    BRT_NUTRIENT = 0,
+    BRT_MINERAL = 1,
+    BRT_ENERGY = 2,
+    BRT_UNUSED = 3,
+};
+
+enum ResType { // bonus_at
     RES_NONE = 0,
     RES_NUTRIENT = 1,
     RES_MINERAL = 2,

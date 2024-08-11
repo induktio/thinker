@@ -8,6 +8,7 @@ const uint32_t GAME_RULES_MASK = 0x7808FFFF;
 const uint32_t GAME_MRULES_MASK = 0xFFFFFFF0;
 
 bool un_charter();
+bool global_trade_pact();
 bool victory_done();
 bool voice_of_planet();
 bool valid_player(int faction);
