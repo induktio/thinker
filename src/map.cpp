@@ -181,6 +181,34 @@ uint32_t __cdecl bit_at(int x, int y) {
     return sq ? sq->items : 0;
 }
 
+void __cdecl bit_put(int x, int y, uint32_t items) {
+    MAP* sq = mapsq(x, y);
+    sq->items = items;
+}
+
+void __cdecl bit_set(int x, int y, uint32_t items, bool add) {
+    MAP* sq = mapsq(x, y);
+    if (add) {
+        sq->items |= items;
+    } else {
+        sq->items &= ~items;
+    }
+}
+
+uint32_t __cdecl bit2_at(int x, int y) {
+    MAP* sq = mapsq(x, y);
+    return (sq ? *((uint32_t*)&sq->landmarks) : 0);
+}
+
+void __cdecl bit2_set(int x, int y, uint32_t items, bool add) {
+    MAP* sq = mapsq(x, y);
+    if (add) {
+        *((uint32_t*)&sq->landmarks) |= items;
+    } else {
+        *((uint32_t*)&sq->landmarks) &= ~items;
+    }
+}
+
 uint32_t __cdecl code_at(int x, int y) {
     MAP* sq = mapsq(x, y);
     return (sq ? sq->art_ref_id : 0);
@@ -489,6 +517,7 @@ int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag
         return 0;
     }
     bool is_fungus = false;
+    bool has_limit = true;
     bool bonus_energy = bonus_at(x, y) == RES_ENERGY;
     bool is_base = sq->is_base() && (sq->val2 & 0xf) < 8;
     int economy = Factions[faction_id].SE_economy_pending
@@ -519,12 +548,17 @@ int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag
         if (*GovernorFaction == faction_id) {
             value++;
         }
+        has_limit = false;
     }
+    // Monolith takes priority over any fungus values on the same tile.
+    // Modify the game to not apply 2 resource yield restrictions on monolith energy.
+    // This limit does not apply on nutrients/minerals produced by monoliths.
     else if (sq->items & BIT_MONOLITH) {
         value = ResInfo->monolith_energy;
         if (has_project(FAC_MANIFOLD_HARMONICS, faction_id)) {
             value += ManifoldHarmonicsBonus[clamp(planet + 1, 0, 4)][2];
         }
+        has_limit = false;
     }
     else if (sq->items & BIT_THERMAL_BORE) {
         value = ResInfo->borehole_sq_energy;
@@ -536,6 +570,7 @@ int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag
             value += ManifoldHarmonicsBonus[clamp(planet + 1, 0, 4)][2];
         }
         is_fungus = true;
+        has_limit = false;
     }
     else if (alt < ALT_SHORE_LINE) {
         if (alt == ALT_OCEAN_SHELF || *ExpansionEnabled) {
@@ -559,7 +594,7 @@ int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag
     }
     else {
         if (sq->items & (BIT_ECH_MIRROR|BIT_SOLAR) || flag) {
-            value += 1 + max(0, alt - 3);
+            value += 1 + max(0, alt - ALT_SHORE_LINE);
         }
         // Fix crash issue by adding null pointer check for CurrentBase
         if (sq->items & BIT_SOLAR && *CurrentBase) {
@@ -591,11 +626,12 @@ int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag
         if (is_base) {
             value = clamp(value, 0, 99);
             *BaseTerraformEnergy = value;
-        } else if (value > 2 && !bonus_energy
-        && !has_tech(Rules->tech_preq_allow_3_energy_sq, faction_id)) {
-            value = 2;
-            *BaseTerraformReduce += (value - 2);
         }
+    }
+    if (has_limit && value > 2 && !bonus_energy
+    && !has_tech(Rules->tech_preq_allow_3_energy_sq, faction_id)) {
+        value = 2;
+        *BaseTerraformReduce += (value - 2);
     }
     if (base_id >= 0) {
         if (Bases[base_id].event_flags & BEVENT_HEAT_WAVE) {
@@ -618,6 +654,7 @@ int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag
 
     // Original function can return inconsistent base output when economy is between 3 and 4
     assert((is_base && economy >= 3 && economy <= 4)
+        || (!is_base && sq->items & BIT_MONOLITH && !has_tech(Rules->tech_preq_allow_3_energy_sq, faction_id))
         || (value == energy_yield(faction_id, base_id, x, y, flag)));
     return value;
 }
@@ -1474,7 +1511,7 @@ void world_generate(uint32_t seed) {
         MapWin_clear_terrain(MapWin);
         draw_map(1);
     }
-    my_srand(seed ^ 0xffff); // For my_rand function, terrain detail and landmark placement
+    game_srand(seed ^ 0xffff); // For game_rand function, terrain detail and landmark placement
     *MapRandomSeed = (seed % 0x7fff) + 1; // Must be non-zero, supply pod placement
 
     Points conts;

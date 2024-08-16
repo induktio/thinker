@@ -178,7 +178,7 @@ Also computer players will not gang up until the player's overall "dominance bar
 
 No Mind Control. At Citizen, Specialist and Talent levels, computer players will not use Mind Control against player bases.
 
-Secret Projects. At Talent and below, the other factions can't start work on a Secret Project until the player has its prerequisite tech, even if they already have the tech in question (this restriction is removed in the mod).
+Secret Projects. At Talent and below, the other factions can't start work on a Secret Project until the player has its prerequisite tech, even if they already have the tech in question. This can be adjusted with `limit_project_start` option.
 
 Colony Pod. At Citizen and Specialist levels, building a colony pod at a size 1 base does not eliminate the base.
 
@@ -223,50 +223,45 @@ Revised tech costs
 ==================
 In the original game, research costs were mainly decided by how many techs a faction had already researched. That meant the current research target was irrelevant as far as the costs were concerned. This is somewhat counter-intuitive since lower level techs would be worth the same than higher level techs. For speed runs, it made sense to avoid researching any techs that were not strictly necessary to keep the cost of discovering new techs as low as possible.
 
-The config option `revised_tech_cost` attempts to remake this mechanic so that the research cost for any particular tech is fixed and depends mainly on the level of the tech. This follows the game design choices that were also made in later Civilization games. Enabling this feature should delay the tech race in mid to late game.
+The config option `revised_tech_cost` attempts to remake this mechanic so that the research cost for any particular tech is mostly fixed and depends on the level of the tech. This follows the game design choices that were also made in later Civilization games. Enabling this feature should delay the tech race in mid to late game. This formula still uses some adjustments for cheaper early game research and adds a minor modifier for the number of known techs by the faction.
 
-Optionally it is possible to choose `cheap_early_tech` so the tech cost is somewhat between the old and new version. In this case, each tech known to the faction, including starting techs, will increase all tech costs slightly. Also the costs for first 10 techs are discounted, with every starting tech counting against the limit.
+For example, in the default tech tree, Social Psych is level 1 and Transcendent Thought is level 16. See also a helpful chart of [the standard tech tree](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAkyzALX76aWAOc363a7mgpa/resources?dl=0&lst=). The base cost for any particular tech is determined by this formula.
 
-For example, in the default tech tree, Social Psych is level 1 and Transcendent Thought is level 16. See also [a helpful chart](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAkyzALX76aWAOc363a7mgpa/resources?dl=0&lst=) of the standard tech tree. The base cost for any particular tech is determined by this formula.
+    5 * Level^3 + 25 * Level^2 + 20 * KnownTechs
 
-    5 * Level^3 + 75 * Level
-
-When `cheap_early_tech` is enabled, the formula changes to the following.
-
-    5 * Level^3 + 25 * Level + 15 * KnownTechs
-
-Here are the base costs without early tech adjustment for standard maps.
+Here are the base costs without tech count adjustment for standard maps.
 
 | Level | Labs  |
 |-------|-------|
-|     1 |    80 |
-|     2 |   190 |
+|     1 |    30 |
+|     2 |   140 |
 |     3 |   360 |
-|     4 |   620 |
-|     5 |  1000 |
-|     6 |  1530 |
-|     7 |  2240 |
-|     8 |  3160 |
-|     9 |  4320 |
-|    10 |  5750 |
-|    11 |  7480 |
-|    12 |  9540 |
-|    13 | 11960 |
-|    14 | 14770 |
-|    15 | 18000 |
-|    16 | 21680 |
+|     4 |   720 |
+|     5 |  1250 |
+|     6 |  1980 |
+|     7 |  2940 |
+|     8 |  4160 |
+|     9 |  5670 |
+|    10 |  7500 |
+|    11 |  9680 |
+|    12 | 12240 |
+|    13 | 15210 |
+|    14 | 18620 |
+|    15 | 22500 |
+|    16 | 26880 |
 
 The idea here is that level 1-3 costs stay relatively modest and the big cost increases should begin from level 4 onwards.
 This feature is also designed to work with `counter_espionage` option. Keeping the infiltration active can provide notable discounts for researching new techs if they can't be acquired by using probe teams.
 
 After calculating the base cost, it is multiplied by all of the following factors.
 
+* The first 10 techs discovered by the faction are discounted with the modifier decreasing for every new tech gained. Every faction starting tech counts against this limit.
 * For AI factions, `tech_cost_factor` scales the cost for each difficulty level, e.g. setting value 84 equals 84% of human cost.
 * Multiply by the square root of the map size divided by the square root of a standard map size (56).
 * Multiply by faction specific TECHCOST modifier (higher values means slower progress).
 * Divide by Technology Discovery Rate set in alphax.txt (higher values means faster progress).
 * If Tech Stagnation is enabled, the cost is doubled unless a different rate is set in the options.
-* Count every other faction with commlink to the current faction who has the tech, while allied or infiltrated factions count twice. Discount 5% for every point in this value. Maximum allowed discount from this step is 30%. Only infiltration gained using probe teams counts for the purposes of extra discount, the Empath Guild or Planetary Governor status is ignored in this step.
+* Count every other faction with commlink to the current faction who has the tech, while allied or infiltrated factions count twice. Discount 5% for every point in this value. Maximum allowed discount from this step is 30%. Only infiltration gained by probe or pact counts for the purposes of extra discount, the Empath Guild or Planetary Governor status is ignored in this step.
 
 The final cost calculated by this formula is visible in the F2 status screen after the label "TECH COST". Note that the social engineering RESEARCH rating does not affect this number. Instead it changes "TECH PER TURN" value displayed on the same screen.
 

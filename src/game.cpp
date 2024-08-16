@@ -58,12 +58,13 @@ void __cdecl bitmask(uint32_t input, uint32_t* offset, uint32_t* mask) {
 
 /*
 Calculate nutrient/mineral cost factors for base production.
-In the original game, if the player faction is ranked first, the AI factions will get
-additional growth/industry bonuses. It can be optionally skipped with simple_cost_factor option.
+If the player faction is ranked first in the original game, the AI factions will get
+additional growth/industry bonuses. This can be optionally skipped with simple_cost_factor option.
 */
-int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id) {
+int __cdecl mod_cost_factor(int faction_id, BaseResType type, int base_id) {
     int value;
-    int multiplier = (is_mineral ? Rules->mineral_cost_multi : Rules->nutrient_cost_multi);
+    int multiplier = (type == RSC_NUTRIENT ?
+        Rules->nutrient_cost_multi : Rules->mineral_cost_multi);
 
     if (is_human(faction_id)) {
         value = multiplier;
@@ -80,7 +81,7 @@ int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id) {
     } else if (*MapSizePlanet == 1) {
         value = 9 * value / 10;
     }
-    if (is_mineral == 1) {
+    if (type == RSC_MINERAL) {
         switch (Factions[faction_id].SE_industry_pending) {
             case -7:
             case -6:
@@ -112,7 +113,7 @@ int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id) {
             default: // +5 Industry or better
                 value = (value + 1) / 2;
         }
-    } else if (is_mineral == 0) {
+    } else if (type == RSC_NUTRIENT) {
         int growth = Factions[faction_id].SE_growth_pending;
         if (base_id >= 0) {
             if (has_fac_built(FAC_CHILDREN_CRECHE, base_id)) {
@@ -125,6 +126,49 @@ int __cdecl mod_cost_factor(int faction_id, int is_mineral, int base_id) {
         value = (value * (10 - clamp(growth, -2, 5)) + 9) / 10;
     }
     return value;
+}
+
+/*
+Calculate the energy loss/inefficiency for the given energy intake in the base.
+This function modifies the parameters to avoid writing on the global game state.
+*/
+int __cdecl mod_black_market(int base_id, int energy, int* effic_energy_lost) {
+    BASE* base = &Bases[base_id];
+    if (energy <= 0) {
+        return 0;
+    }
+    int dist_hq;
+    int head_id = find_hq(base->faction_id);
+    if (head_id >= 0) {
+        dist_hq = vector_dist(Bases[head_id].x, Bases[head_id].y, base->x, base->y);
+    } else {
+        dist_hq = 16;
+    }
+    if (dist_hq == 0) {
+        return 0;
+    }
+    bool has_creche = has_fac_built(FAC_CHILDREN_CRECHE, base_id);
+    if (effic_energy_lost != NULL) {
+        for (int i = 0; i < 9; i++) {
+            int factor;
+            if (has_creche) {
+                factor = 10 - i; // +2 on efficiency scale
+            } else {
+                factor = 8 - i;
+            }
+            if (factor <= 0) {
+                effic_energy_lost[i] += energy;
+            } else {
+                effic_energy_lost[i] += energy * dist_hq / (8 * factor);
+            }
+        }
+    }
+    int factor = 4 + Factions[base->faction_id].SE_effic_pending
+        + (has_creche ? 2 : 0); // +2 on efficiency scale
+    if (factor <= 0) {
+        return energy;
+    }
+    return clamp(energy * dist_hq / (8 * factor), 0, energy);
 }
 
 void init_world_config() {
@@ -148,20 +192,16 @@ void show_rules_menu() {
 }
 
 void init_save_game(int faction) {
-    Faction* f = &Factions[faction];
     MFaction* m = &MFactions[faction];
     if (!faction) {
         return;
     }
-    if (m->thinker_header != THINKER_HEADER) {
-        m->thinker_header = THINKER_HEADER;
-        m->thinker_flags = 0;
-        m->thinker_tech_id = f->tech_research_id;
-        m->thinker_tech_cost = f->tech_cost;
-        m->thinker_probe_lost = 0;
-        m->thinker_last_mc_turn = 0;
+    if (!*CurrentTurn) {
+        memset(&m->thinker_probe_lost, 0, 20);
     }
-    m->thinker_unused = 0;
+    m->thinker_unused[0] = 0;
+    m->thinker_unused[1] = 0;
+    m->thinker_unused[2] = 0;
     /*
     Remove invalid prototypes from the savegame.
     This also attempts to repair invalid vehicle stacks to prevent game crashes.
@@ -343,6 +383,9 @@ int __cdecl mod_faction_upkeep(int faction) {
     if (!f->base_count && !has_active_veh(faction, PLAN_COLONY)) {
         eliminate_player(faction, 0);
     }
+    if (f->tech_research_id < 0 && f->base_count && *NetUpkeepState != 1) {
+        tech_selection(faction);
+    }
     *ControlUpkeepA = 0;
     Path->xDst = -1;
     Path->yDst = -1;
@@ -374,7 +417,7 @@ void __cdecl mod_production_phase(int faction_id) {
     f->energy_surplus_total = 0;
     f->facility_maint_total = 0;
     f->turn_commerce_income = 0;
-    tech_effects(faction_id);
+    mod_tech_effects(faction_id);
 
     for (int i = 1; i < MaxPlayerNum; i++) {
         if (faction_id != i && is_alive(faction_id) && is_alive(i)) {
@@ -403,8 +446,7 @@ void __cdecl mod_production_phase(int faction_id) {
     int32_t unk_40[8];
     int32_t unk_41[40];
     int32_t unk_42[32];
-    int32_t unk_43[8];
-    int32_t unk_44;
+    int32_t unk_43[9];
     int32_t unk_45;
     int32_t unk_46;
     int32_t unk_47;

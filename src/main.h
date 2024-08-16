@@ -70,7 +70,6 @@
 #include <unordered_map>
 
 #define DLL_EXPORT extern "C" __declspec(dllexport)
-#define THINKER_HEADER (int16_t)0xACAC
 #define ModAppName "thinker"
 #define GameAppName "Alpha Centauri"
 #define ModIniFile ".\\thinker.ini"
@@ -201,9 +200,7 @@ struct Config {
     int base_nearby_limit = -1;
     int expansion_limit = 100;
     int expansion_autoscale = 0;
-    // Adjust how often the AIs should build new military units instead of infrastructure.
-    // Unlisted option for AI tuning. Allowed values 1-10000.
-    int conquer_priority = 100;
+    int limit_project_start = 0;
     int max_satellites = 20;
     int new_world_builder = 1;
     int world_sea_levels[3] = {46,58,70};
@@ -225,7 +222,6 @@ struct Config {
     int simple_cost_factor = 0;
     int revised_tech_cost = 1;
     int tech_cost_factor[MaxDiffNum] = {116,108,100,92,84,76};
-    int cheap_early_tech = 1;
     int tech_stagnate_rate = 200;
     int fast_fungus_movement = 0;
     int magtube_movement_rate = 0;

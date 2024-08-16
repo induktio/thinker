@@ -107,8 +107,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->expansion_limit = atoi(value);
     } else if (MATCH("expansion_autoscale")) {
         cf->expansion_autoscale = atoi(value);
-    } else if (MATCH("conquer_priority")) {
-        cf->conquer_priority = clamp(atoi(value), 1, 10000);
+    } else if (MATCH("limit_project_start")) {
+        cf->limit_project_start = atoi(value);
     } else if (MATCH("max_satellites")) {
         cf->max_satellites = max(0, atoi(value));
     } else if (MATCH("new_world_builder")) {
@@ -149,8 +149,6 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->simple_cost_factor = atoi(value);
     } else if (MATCH("revised_tech_cost")) {
         cf->revised_tech_cost = atoi(value);
-    } else if (MATCH("cheap_early_tech")) {
-        cf->cheap_early_tech = atoi(value);
     } else if (MATCH("tech_stagnate_rate")) {
         cf->tech_stagnate_rate = max(1, atoi(value));
     } else if (MATCH("fast_fungus_movement")) {

@@ -519,6 +519,7 @@ enum DiploAgenda {
 enum PlayerFlags {
     PFLAG_MULTI_TECH_ACHIEVED = 0x2, // tech_achieved during network multiplayer
     PFLAG_SELF_AWARE_COLONY_LOST_MAINT = 0x20, // used to even out lossy integer division
+    PFLAG_FIRST_SECRETS = 0x40, // set in tech_achieved for first faction gaining TFLAG_SECRETS
     PFLAG_MAP_REVEALED = 0x200,
     PFLAG_GENETIC_PLAGUE_INTRO = 0x400, // +1 to defense against after 1st time faction experiences
     PFLAG_BEEN_ELECTED_GOVERNOR = 0x8000, // used to determine whether #GOVERNOR has been displayed
@@ -740,10 +741,10 @@ enum TerrainType {
 };
 
 enum BaseResType { // base production, convoy types, cost factor
-    BRT_NUTRIENT = 0,
-    BRT_MINERAL = 1,
-    BRT_ENERGY = 2,
-    BRT_UNUSED = 3,
+    RSC_NUTRIENT = 0,
+    RSC_MINERAL = 1,
+    RSC_ENERGY = 2,
+    RSC_UNUSED = 3,
 };
 
 enum ResType { // bonus_at

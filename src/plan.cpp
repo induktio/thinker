@@ -21,7 +21,7 @@ void governor_priorities(BASE& base, WItem& Wgov) {
         Wgov.AI_tech   = (gov & GOV_PRIORITY_DISCOVER ? 4 : 1);
         Wgov.AI_wealth = (gov & GOV_PRIORITY_BUILD ? 4 : 1);
         Wgov.AI_power  = (gov & GOV_PRIORITY_CONQUER ? 4 : 1);
-        Wgov.AI_fight  = 2*(base.defend_goal > 3);
+        Wgov.AI_fight  = clamp(((base.defend_goal/2)-1)*2, -2, 2);
     } else {
         Wgov.AI_growth = (f.AI_growth ? 4 : 1);
         Wgov.AI_tech   = (f.AI_tech ? 4 : 1);
@@ -416,7 +416,7 @@ void plans_upkeep(int faction_id) {
                     plans[fc].captured_bases++;
                 }
             } else if (base->faction_id_former == faction_id && at_war(faction_id, base->faction_id)) {
-                plans[fc].enemy_bases += (is_human(base->faction_id) ? 2 : 1);
+                plans[fc].enemy_bases++;
             }
         }
         assert(n == f->base_count);

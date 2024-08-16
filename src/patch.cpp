@@ -469,7 +469,6 @@ bool patch_setup(Config* cf) {
     write_call(0x52A4AD, (int)mod_turn_upkeep);
     write_call(0x527039, (int)mod_base_upkeep);
     write_call(0x4F7A38, (int)mod_base_hurry);
-    write_call(0x5BDC4C, (int)mod_tech_value);
     write_call(0x579362, (int)mod_enemy_move);
     write_call(0x40F45A, (int)mod_base_draw);
     write_call(0x4672A7, (int)mod_base_draw);
@@ -507,6 +506,27 @@ bool patch_setup(Config* cf) {
     write_call(0x5A4B8C, (int)probe_thought_control);
     write_call(0x506ADE, (int)mod_battle_fight_2);
     write_call(0x561948, (int)enemy_strategy_upgrade);
+    write_call(0x4868B2, (int)mod_tech_avail); // PickTech::pick
+    write_call(0x4DFC41, (int)mod_tech_avail); // Console::editor_tech
+    write_call(0x558246, (int)mod_tech_avail); // communicate
+    write_call(0x57C0CC, (int)mod_tech_avail); // goody_box
+    write_call(0x57D130, (int)mod_tech_avail); // study_artifact
+    write_call(0x5BDC38, (int)mod_tech_avail); // tech_ai
+    write_call(0x5BDC4C, (int)mod_tech_val); // tech_ai
+    write_call(0x486655, (int)mod_tech_ai); // PickTech::pick
+    write_call(0x5AEFA1, (int)mod_tech_ai); // time_warp
+    write_call(0x5B2A6F, (int)mod_tech_ai); // setup_player
+    write_call(0x50C398, (int)mod_tech_pick); // steal_tech
+    write_call(0x515080, (int)mod_tech_pick); // Console::set_research
+    write_call(0x5BE4AC, (int)mod_tech_pick); // tech_selection
+    write_call(0x4452D5, (int)mod_tech_rate); // energy_compute
+    write_call(0x498D26, (int)mod_tech_rate); // ReportWin::draw_labs
+    write_call(0x4A77DA, (int)mod_tech_rate); // ReportIF::draw_labs
+    write_call(0x521872, (int)mod_tech_rate); // random_events
+    write_call(0x5218BE, (int)mod_tech_rate); // random_events
+    write_call(0x5581E9, (int)mod_tech_rate); // communicate
+    write_call(0x5BEA4D, (int)mod_tech_rate); // tech_research
+    write_call(0x5BEAC7, (int)mod_tech_rate); // tech_research
     write_call(0x4B497C, (int)mod_say_orders); // say_orders2
     write_call(0x4B5C27, (int)mod_say_orders); // StatusWin::draw_active
     write_call(0x50474C, (int)mod_battle_compute); // best_defender
@@ -1247,21 +1267,6 @@ bool patch_setup(Config* cf) {
     if (cf->territory_border_fix || DEBUG) {
         write_call(0x523ED7, (int)mod_base_find3);
         write_call(0x52417F, (int)mod_base_find3);
-    }
-    if (cf->revised_tech_cost) {
-        write_call(0x4452D5, (int)mod_tech_rate);
-        write_call(0x498D26, (int)mod_tech_rate);
-        write_call(0x4A77DA, (int)mod_tech_rate);
-        write_call(0x521872, (int)mod_tech_rate);
-        write_call(0x5218BE, (int)mod_tech_rate);
-        write_call(0x5581E9, (int)mod_tech_rate);
-        write_call(0x5BEA4D, (int)mod_tech_rate);
-        write_call(0x5BEAC7, (int)mod_tech_rate);
-
-        write_call(0x52935F, (int)mod_tech_selection);
-        write_call(0x5BE5E1, (int)mod_tech_selection);
-        write_call(0x5BE690, (int)mod_tech_selection);
-        write_call(0x5BEB5D, (int)mod_tech_selection);
     }
     if (cf->simple_hurry_cost) {
         short_jump(0x41900D);

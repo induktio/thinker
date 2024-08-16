@@ -35,6 +35,8 @@ int faction_might(int faction);
 
 void __cdecl set_treaty(int faction1, int faction2, uint32_t treaty, bool add);
 void __cdecl set_agenda(int faction1, int faction2, uint32_t agenda, bool add);
+int __cdecl mod_social_cost(int faction_id, int* choices);
+int __cdecl mod_society_avail(int soc_category, int soc_model, int faction_id);
 int __cdecl mod_setup_player(int faction, int a2, int a3);
 int __cdecl SocialWin_social_ai(int faction, int a2, int a3, int a4, int a5, int a6);
 int __cdecl mod_social_ai(int faction, int a2, int a3, int a4, int a5, int a6);

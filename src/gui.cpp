@@ -427,8 +427,6 @@ void check_scroll() {
 int __thiscall mod_gen_map(Console* This, int iOwner, int fUnitsOnly) {
 
     if (This == MapWin) {
-        debug("mod_gen_map %d %.4f %.4f\n", CState.Scrolling, CState.ScrollOffsetX, CState.ScrollOffsetY);
-
         // Save these values to restore them later
         int iMapPixelLeft = This->iMapPixelLeft;
         int iMapPixelTop = This->iMapPixelTop;
@@ -491,11 +489,10 @@ int __thiscall mod_calc_dim(Console* This) {
     int iOldZoom;
     int dx, dy;
     bool fx, fy;
-//    int w = ((CWinBuffed*)((int)This + (int)This->vtbl->iOffsetofoClass2))->oCanvas.stBitMapInfo.bmiHeader.biWidth;
-//    int h = -((CWinBuffed*)((int)This + (int)This->vtbl->iOffsetofoClass2))->oCanvas.stBitMapInfo.bmiHeader.biHeight;
+//    int w = ((GraphicWin*)((int)This + This->vtbl[1]))->oCanvas.stBitMapInfo.bmiHeader.biWidth;
+//    int h = -((GraphicWin*)((int)This + This->vtbl[1]))->oCanvas.stBitMapInfo.bmiHeader.biHeight;
 
     if (This == MapWin) {
-        debug("mod_calc_dim %d %.4f %.4f\n",  CState.Scrolling, CState.ScrollOffsetX, CState.ScrollOffsetY);
         iOldZoom = This->iLastZoomFactor;
         ptNewTile.x = This->iTileX;
         ptNewTile.y = This->iTileY;
@@ -1433,7 +1430,7 @@ void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, 
             return;
         }
         // Game engine uses this way to determine the population label width
-        int w = Font_width(*MapLabelFont, (int)(base->pop_size >= 10 ? "88" : "8")) + 5;
+        int w = Font_width(*MapLabelFont, (base->pop_size >= 10 ? "88" : "8")) + 5;
         int h = (*MapLabelFont)->iHeight + 4;
 
         for (int i = 1; i <= width; i++) {

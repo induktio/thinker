@@ -292,6 +292,40 @@ void __cdecl set_agenda(int faction1, int faction2, uint32_t agenda, bool add) {
     }
 }
 
+/*
+Calculate the cost of the social upheaval for the specified faction.
+*/
+int __cdecl mod_social_cost(int faction_id, int* choices) {
+    Faction* f = &Factions[faction_id];
+    int changes = 0;
+    for (int i = 0; i < MaxSocialCatNum; i++) {
+        if (choices[i] != (&f->SE_Politics)[i]) {
+            changes++;
+        }
+    }
+    if (!changes) {
+        return 0;
+    }
+    changes++;
+    int diff_lvl = is_human(faction_id) ? f->diff_level : DIFF_LIBRARIAN;
+    int cost = changes * changes * changes * diff_lvl;
+    if (is_alien(faction_id)) {
+        cost += cost / 2;
+    }
+    return cost;
+}
+
+/*
+Check to see whether the faction can utilize a specific social category and model.
+*/
+int __cdecl mod_society_avail(int soc_category, int soc_model, int faction_id) {
+    if (MFactions[faction_id].soc_opposition_category == soc_category
+    && MFactions[faction_id].soc_opposition_model == soc_model) {
+        return false;
+    }
+    return has_tech(Social[soc_category].soc_preq_tech[soc_model], faction_id);
+}
+
 int __cdecl mod_setup_player(int faction, int a2, int a3) {
     MFaction* m = &MFactions[faction];
     debug("setup_player %d %d %d\n", faction, a2, a3);
@@ -613,8 +647,7 @@ int __cdecl mod_social_ai(int faction, int a2, int a3, int a4, int a5, int a6) {
         int sc1 = social_score(faction, i, sm1, def_value, pop_boom, has_nexus, robust, immunity, impunity, penalty);
 
         for (int j = 0; j < MaxSocialModelNum; j++) {
-            if (j == sm1 || !has_tech(Social[i].soc_preq_tech[j], faction) ||
-            (i == m->soc_opposition_category && j == m->soc_opposition_model)) {
+            if (j == sm1 || !mod_society_avail(i, j, faction)) {
                 continue;
             }
             int sc2 = social_score(faction, i, j, def_value, pop_boom, has_nexus, robust, immunity, impunity, penalty);

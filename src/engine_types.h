@@ -256,11 +256,7 @@ struct MFaction {
     /*
     Thinker-specific save game variables.
     */
-    int16_t thinker_header;
-    int8_t thinker_flags;
-    int8_t thinker_tech_id;
-    int32_t thinker_tech_cost;
-    int32_t thinker_unused;
+    int32_t thinker_unused[3];
     int16_t thinker_probe_lost;
     int16_t thinker_last_mc_turn;
     int16_t thinker_probe_end_turn[8];
@@ -420,7 +416,7 @@ struct Faction {
     int32_t tech_fungus_nutrient;
     int32_t tech_fungus_mineral;
     int32_t tech_fungus_energy;
-    int32_t unk_22;
+    int32_t tech_fungus_unused;
     int32_t SE_alloc_psych;
     int32_t SE_alloc_labs;
     int32_t unk_25;
@@ -428,7 +424,7 @@ struct Faction {
     int32_t tech_ranking; // Twice the number of techs discovered
     int32_t unk_27;
     int32_t ODP_deployed;
-    int32_t theory_of_everything;
+    int32_t tech_count_transcendent; // Transcendent Thoughts achieved
     int8_t tech_trade_source[92];
     int32_t tech_accumulated;
     int32_t tech_research_id;
@@ -458,8 +454,7 @@ struct Faction {
     int32_t unk_40[8];
     int32_t unk_41[40];
     int32_t unk_42[32];
-    int32_t unk_43[8];
-    int32_t unk_44;
+    int32_t unk_43[9]; // From possible SE effic 4 to -4 all energy lost to inefficieny
     int32_t unk_45;
     int32_t unk_46;
     int32_t unk_47;

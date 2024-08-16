@@ -84,8 +84,7 @@ struct Time {
     int field_24;
 };
 
-struct PaletteInternal
-{
+struct PaletteInternal {
     int field_0;
     Time* ptrTime;
     BYTE field_8;
@@ -122,15 +121,13 @@ struct _PcxHeader {
     BYTE Reserved2[54];
 };
 
-struct CaviarData
-{
+struct CaviarData {
     int field_0;
     int fileDescriptor;
     int field_8;
 };
 
-struct Caviar
-{
+struct Caviar {
     int field_0;
     int field_4;
     int field_8;
@@ -803,7 +800,7 @@ struct Caviar
 };
 
 struct Buffer {
-    void* vtblCPCX;
+    int* vtbl;
     Win* poOwner;
     int (__cdecl *pfcnScrollText)(char* pszText, int x, int y, int iCharsToScroll);
     int dwordC;
@@ -1103,11 +1100,6 @@ struct CWinFonted {
     CClass3ArrayItem astArray[15];
 };
 
-struct MapVtbl {
-    int field_0;
-    GraphicWin* iOffsetofoClass2;
-};
-
 struct TTilePos {
     char field_0;
     char field_1;
@@ -1131,8 +1123,7 @@ struct TextureStore {
 
 struct ButtonGroup;
 
-struct BaseButton
-{
+struct BaseButton {
     GraphicWin graphicWin;
     int field_A14;
     int field_A18;
@@ -1159,8 +1150,7 @@ struct BaseButton
     int field_AB4;
 };
 
-struct ButtonGroup
-{
+struct ButtonGroup {
     BaseButton* buttons[32];
     int btnCount;
     int field_84;
@@ -1169,8 +1159,7 @@ struct ButtonGroup
     int field_90;
 };
 
-struct FlatButton
-{
+struct FlatButton {
     BaseButton baseButton;
     int field_AB8;
     int field_ABC;
@@ -1211,8 +1200,7 @@ struct FlatButton
     int field_B48;
 };
 
-struct Scroll
-{
+struct Scroll {
     GraphicWin graphicWin;
     int field_A14;
     int field_A18;
@@ -1324,7 +1312,7 @@ struct Menu {
 };
 
 struct Console {
-    MapVtbl* vtbl;
+    int* vtbl;
     TTilePos* paTilePos;
     int field_8;
     TextureStore oUnknown[201];
@@ -1551,10 +1539,27 @@ struct StatusWin {
 };
 
 struct RenderWindow {
-    MapVtbl* vtbl;
-    TTilePos* paTilePos;
-    int field_8;
-    int field_C[1021];
+    Win oWinBase;
+    Buffer oCanvas;
+    int field_9CC;
+    int field_9D0;
+    int field_9D4;
+    int field_9D8;
+    int field_9DC;
+    int field_9E0;
+    int field_9E4;
+    int field_9E8;
+    int field_9EC;
+    int field_9F0;
+    int field_9F4;
+    int field_9F8;
+    int field_9FC;
+    int field_A00;
+    int field_A04;
+    Buffer* poCanvas;
+    int field_A0C;
+    int field_A10;
+    int field_A14[379];
     int field_1000[1024];
     int field_2000[1024];
     int field_3000[1024];
