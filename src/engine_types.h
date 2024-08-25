@@ -13,6 +13,7 @@ struct VEH;
 extern VEH* Vehicles;
 extern int* GameState;
 extern int* GameRules;
+extern const int MaxPlayerNum;
 
 bool is_human(int faction);
 
@@ -41,7 +42,7 @@ struct BASE {
     int32_t queue_items[10];
     int32_t worked_tiles;
     int32_t specialist_total;
-    int32_t specialist_unk_1;
+    int32_t specialist_adjust;
     int32_t specialist_types[2];
     uint8_t facilities_built[12];
     int32_t mineral_surplus_final;
@@ -205,6 +206,9 @@ struct MAP {
     bool is_rolling() {
         return val3 & TILE_ROLLING;
     }
+    bool is_arid() {
+        return !(climate & (TILE_MOIST | TILE_RAINY));
+    }
     bool is_rainy() {
         return climate & TILE_RAINY;
     }
@@ -221,10 +225,22 @@ struct MAP {
         return items & BIT_VEH_IN_TILE;
     }
     int veh_owner() {
-        if ((val2 & 0xf) == 0xf) {
+        if ((val2 & 0xF) >= MaxPlayerNum) {
             return -1; // No vehicles in this tile
         }
-        return val2 & 0xf;
+        return val2 & 0xF;
+    }
+    int veh_who() {
+        if (items & BIT_VEH_IN_TILE) {
+            return veh_owner();
+        }
+        return -1;
+    }
+    int anything_at() {
+        if (items & (BIT_VEH_IN_TILE | BIT_BASE_IN_TILE)) {
+            return veh_owner();
+        }
+        return -1;
     }
 };
 
@@ -237,10 +253,24 @@ struct Landmark {
 struct Continent {
     int32_t tile_count; // count of tiles in region
     int32_t open_terrain; // count of non-rocky, non-fungus tiles (only 1 movement point to travel)
-    int32_t unk_3; // highest world_site value (0-15)
+    int32_t world_site; // highest world_site value (0-15)
     int32_t pods; // current count of supply and unity pods in region
     int32_t unk_5; // padding?
     uint8_t sea_coasts[8]; // sea specific regions, connections to land regions? bitmask
+};
+
+struct Path {
+    int* mapTable;
+    int16_t* xTable;
+    int16_t* yTable;
+    int index1; // specific territory count
+    int index2; // overall territory count
+    int faction_id1;
+    int xDst;
+    int yDst;
+    int field_20;
+    int faction_id2;
+    int unit_id;
 };
 
 struct MFaction {
@@ -451,9 +481,9 @@ struct Faction {
     char saved_queue_name[8][24];
     int32_t saved_queue_size[8];
     int32_t saved_queue_items[8][10];
-    int32_t unk_40[8];
-    int32_t unk_41[40];
-    int32_t unk_42[32];
+    int32_t unk_40[8]; // From possible SE support -4 to 3 minerals spent on unit support
+    int32_t unk_41[40]; // base_psych
+    int32_t unk_42[32]; // base_psych
     int32_t unk_43[9]; // From possible SE effic 4 to -4 all energy lost to inefficieny
     int32_t unk_45;
     int32_t unk_46;

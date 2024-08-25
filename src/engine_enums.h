@@ -518,6 +518,8 @@ enum DiploAgenda {
 
 enum PlayerFlags {
     PFLAG_MULTI_TECH_ACHIEVED = 0x2, // tech_achieved during network multiplayer
+    PFLAG_UNK_4 = 0x4, // study_artifact
+    PFLAG_UNK_10 = 0x10, // study_artifact
     PFLAG_SELF_AWARE_COLONY_LOST_MAINT = 0x20, // used to even out lossy integer division
     PFLAG_FIRST_SECRETS = 0x40, // set in tech_achieved for first faction gaining TFLAG_SECRETS
     PFLAG_MAP_REVEALED = 0x200,
@@ -556,7 +558,7 @@ enum BaseState {
     BSTATE_UNK_10 = 0x10,
     BSTATE_UNK_20 = 0x20, // enemy_strategy, former units
     BSTATE_RESEARCH_DATA_STOLEN = 0x40,
-    BSTATE_UNK_80 = 0x80, // prevents capture_base from adding flag BSTATE_UNK_10000
+    BSTATE_SKIP_RENAME = 0x80, // prevents capture_base from adding flag BSTATE_RENAME_BASE
     BSTATE_UNK_100 = 0x100,
     BSTATE_FACILITY_SCRAPPED = 0x200, // Only one facility can be scrapped/recycled per turn
     BSTATE_ARTIFACT_LINKED = 0x400, // Alien Artifact linked to Network Node
@@ -777,6 +779,7 @@ enum AIGoal {
     AI_GOAL_NAVAL_END = 202,
     AI_GOAL_NAVAL_BEACH = 203,
     AI_GOAL_NAVAL_SCOUT = 204,
+    AI_GOAL_NAVAL_PICK = 205,
     Thinker_Goal_ID_First = AI_GOAL_RAISE_LAND,
 };
 

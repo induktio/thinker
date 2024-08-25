@@ -383,12 +383,13 @@ int __cdecl mod_faction_upkeep(int faction) {
     if (!f->base_count && !has_active_veh(faction, PLAN_COLONY)) {
         eliminate_player(faction, 0);
     }
-    if (f->tech_research_id < 0 && f->base_count && *NetUpkeepState != 1) {
+    if (f->base_count && f->tech_research_id < 0 && *NetUpkeepState != 1
+    && !(*GameRules & RULES_SCN_NO_TECH_ADVANCES)) {
         tech_selection(faction);
     }
     *ControlUpkeepA = 0;
-    Path->xDst = -1;
-    Path->yDst = -1;
+    Paths->xDst = -1;
+    Paths->yDst = -1;
 
     if (!(*GameState & STATE_GAME_DONE) || *GameState & STATE_FINAL_SCORE_DONE) {
         if (faction == MapWin->cOwner

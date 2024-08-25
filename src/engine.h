@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <unordered_map>
 
 typedef uint8_t byte;
 typedef uint32_t Dib;
@@ -29,6 +30,16 @@ struct MapTile {
     int y;
     int i;
     MAP* sq;
+};
+
+struct TileValue {
+    int x;
+    int y;
+    int i;
+    MAP* sq;
+    int nutrient;
+    int mineral;
+    int energy;
 };
 
 struct Point {
@@ -89,9 +100,28 @@ const T& clamp (const T& value, const T& low, const T& high) {
     return (value < low ? low : (value > high ? high : value));
 }
 
+template <class A, class B>
+int map_range(const A* a, const B* b) {
+    return map_range(a->x, a->y, b->x, b->y);
+}
+
 inline VehAblFlag operator| (VehAblFlag a, VehAblFlag b) { return (VehAblFlag)((int)a | (int)b); }
 inline VehAblFlag& operator|= (VehAblFlag& a, VehAblFlag b) { return (VehAblFlag&)((int&)a |= (int)b); }
 
+struct PInfo {
+    int former;
+    int safety;
+    int target;
+    int roads;
+    int shore;
+    int unit_near;
+    int enemy;
+    int enemy_near;
+    int enemy_dist;
+    int overlay;
+};
+
+typedef std::unordered_map<Point, PInfo> PMTable;
 typedef std::set<MapNode,MapNodeComp> NodeSet;
 typedef std::set<Point,PointComp> Points;
 typedef std::list<Point> PointList;
@@ -158,15 +188,17 @@ extern BASE** CurrentBase;
 extern int* CurrentBaseID;
 extern int* ComputeBaseID;
 extern int* BaseUpkeepDrawID;
+extern int* BaseReservedTiles;
 extern int* BaseFindDist;
+extern int* BaseGrowthRate;
 extern int* BaseUpkeepFlag;
 extern int* BaseUpkeepState;
 extern int* BaseResourceConvoyFrom;
 extern int* BaseResourceConvoyTo;
-extern int* BaseGrowthRate;
 extern int* BaseVehPacifismCount;
 extern int* BaseForcesSupported;
 extern int* BaseForcesMaintCost;
+extern int* BaseForcesMaintCount;
 extern int* BaseCommerceImport;
 extern int* BaseCommerceExport;
 extern int* BaseTerraformEnergy;
@@ -341,6 +373,8 @@ extern Win* WorldWin;
 extern Font** MapLabelFont;
 extern Sprite** FactionPortraits;
 extern void* NetMsg;
+extern void* NetState;
+extern Path* Paths;
 
 // Rules parsed from alphax.txt
 extern CRules* Rules;
@@ -688,6 +722,28 @@ extern FFont_find_line_break_l Font_find_line_break_l;
 extern FFont_init_font_class Font_init_font_class;
 extern FFont_close_font_class Font_close_font_class;
 
+typedef int(__thiscall *FPath_init)(Path* This);
+typedef int(__thiscall *FPath_shutdown)(Path* This);
+typedef int(__stdcall *FPath_zoc_path)(int a1, int a2, int a3);
+typedef int(__thiscall *FPath_find)(
+    Path* This, int x1, int y1, int x2, int y2, int unit_id, int faction_id, int a8, int a9);
+typedef int(__thiscall *FPath_move)(Path* This, int veh_id, int faction_id);
+typedef int(__thiscall *FPath_territory)(Path* This, int a2, int a3, int a4, int a5);
+typedef int(__thiscall *FPath_continent)(Path* This, int a2, int a3, int a4);
+typedef int(__thiscall *FPath_continents)(Path* This);
+typedef int(__thiscall *FPath_sensors)(Path* This, int a2, int* a3, int* a4);
+
+extern FPath_init Path_init;
+extern FPath_shutdown Path_shutdown;
+extern FPath_zoc_path Path_zoc_path;
+extern FPath_find Path_find;
+extern FPath_move Path_move;
+extern fp_none Path_make_abstract;
+extern FPath_territory Path_territory;
+extern FPath_continent Path_continent;
+extern FPath_continents Path_continents;
+extern FPath_sensors Path_sensors;
+
 #pragma GCC diagnostic pop
 
 extern fp_1int monument;
@@ -742,9 +798,9 @@ extern fp_2int say_base;
 extern fp_2int base_find;
 extern fp_3int base_find2;
 extern fp_6int base_find3;
-extern fp_5int whose_territory;
+//extern fp_5int whose_territory;
 extern fp_3int base_territory;
-extern fp_none best_specialist;
+//extern fp_none best_specialist;
 extern Fname_base name_base;
 extern fp_1int base_mark;
 extern fp_3int cost_factor;
@@ -765,7 +821,7 @@ extern fp_none farm_compute;
 extern fp_5int crop_yield;
 extern fp_5int mine_yield;
 extern fp_5int energy_yield;
-extern fp_5int resource_yield;
+//extern fp_5int resource_yield;
 extern fp_none base_yield;
 extern fp_none base_support;
 extern fp_none base_nutrient;

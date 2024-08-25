@@ -37,6 +37,7 @@ typedef std::pair<int, int> ipair_t;
 typedef std::priority_queue<SItem, std::vector<SItem>, std::less<SItem>> score_max_queue_t;
 typedef std::priority_queue<SItem, std::vector<SItem>, std::greater<SItem>> score_min_queue_t;
 
+
 extern int plan_upkeep_turn;
 
 int facility_score(FacilityId item_id, WItem& Wgov);

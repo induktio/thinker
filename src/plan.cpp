@@ -1,8 +1,6 @@
 
 #include "plan.h"
 
-int base_enemy_range[MaxBaseNum] = {};
-int base_border_range[MaxBaseNum] = {};
 int plan_upkeep_turn = 0;
 
 

@@ -271,6 +271,19 @@ void __cdecl mod_map_wipe() {
     mapnodes.clear();
 }
 
+int __cdecl resource_yield(BaseResType type, int faction_id, int base_id, int x, int y) {
+    if (type == RSC_NUTRIENT) {
+        return mod_crop_yield(faction_id, base_id, x, y, 0);
+    } else if (type == RSC_MINERAL) {
+        return mod_mine_yield(faction_id, base_id, x, y, 0);
+    } else if (type == RSC_ENERGY) {
+        return mod_energy_yield(faction_id, base_id, x, y, 0);
+    } else if (type == RSC_UNUSED) {
+        *BaseTerraformReduce = 0;
+    }
+    return 0;
+}
+
 int __cdecl mod_crop_yield(int faction_id, int base_id, int x, int y, int flag) {
     MAP* sq = mapsq(x, y);
     if (!sq) {
@@ -733,7 +746,7 @@ int __cdecl mod_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, in
     if (DEBUG && sq_a && sq_b) {
         assert(value == hex_cost(unit_id, faction_id, x1, y1, x2, y2, toggle));
     }
-    if (conf.magtube_movement_rate > 0 && Units[unit_id].triad() != TRIAD_AIR) {
+    if (conf.magtube_movement_rate > 0 && Units[unit_id].triad() == TRIAD_LAND) {
         if (!is_ocean(sq_a) && !is_ocean(sq_b)) {
             if (sq_a->items & (BIT_BASE_IN_TILE | BIT_MAGTUBE)
             && sq_b->items & (BIT_BASE_IN_TILE | BIT_MAGTUBE)) {
@@ -1270,7 +1283,46 @@ bool locate_landmark(int* x, int* y, bool ocean) {
     return true;
 }
 
-void __cdecl mod_world_monsoon() {
+void __cdecl mod_world_monsoon(int x, int y) {
+    MAP* sq;
+    world_rainfall();
+    if (!conf.modified_landmarks) {
+        int attempts = 0;
+        int land_count;
+        if (!mapsq(x, y)) {
+            do {
+                y = *MapAreaY / 2 + random(4) - 2;
+                x = (random(*MapAreaX) & (~1)) + (y&1);
+                land_count = 0;
+                for (int i = 0; i < TableRange[5]; i++) {
+                    int x2 = wrap(x + TableOffsetX[i]);
+                    int y2 = y + TableOffsetY[i];
+                    if (!is_ocean(mapsq(x2, y2))) {
+                        land_count++;
+                    }
+                }
+                if (++attempts >= 1000) {
+                    return;
+                }
+                sq = mapsq(x, y);
+            } while (is_ocean(sq) || !is_coast(x, y, true)
+            || land_count < 40 || !sq->is_rainy() || near_landmark(x, y));
+        }
+        for (int i = 0; i < TableRange[5]; i++) {
+            int x2 = wrap(x + TableOffsetX[i]);
+            int y2 = y + TableOffsetY[i];
+            sq = mapsq(x2, y2);
+            if (sq && abs(TableOffsetY[i]) <= 8) {
+                if (i < 21 && is_ocean(sq)) {
+                    world_alt_set(x2, y2, ALT_SHORE_LINE, true);
+                }
+                bit2_set(x2, y2, LM_JUNGLE, true);
+                code_set(x2, y2, i);
+            }
+        }
+        new_landmark(x, y, (int)Natural[__builtin_ctz(LM_JUNGLE)].name);
+        return;
+    }
     struct TileInfo {
         uint8_t valid;
         uint8_t valid_near;
@@ -1278,10 +1330,8 @@ void __cdecl mod_world_monsoon() {
         uint8_t sea_near;
     };
     std::unordered_map<Point, TileInfo> tiles;
-    world_rainfall();
 
-    MAP* sq;
-    int i = 0, j = 0, x = 0, y = 0, x2 = 0, y2 = 0, num = 0;
+    int i = 0, j = 0, x2 = 0, y2 = 0, num = 0;
     const int y_a = *MapAreaY * 5/16;
     const int y_b = *MapAreaY * 11/16;
     const int limit = max(1024, *MapAreaTiles) * (3 + *MapCloudCover) / 120;
@@ -1608,7 +1658,7 @@ void world_generate(uint32_t seed) {
     }
     world_linearize_contours();
     world_shorelines();
-    Path_continents(Path);
+    Path_continents(Paths);
     Points bridges;
 
     for (y = 3; y < *MapAreaY - 3; y++) {
@@ -1648,7 +1698,7 @@ void world_generate(uint32_t seed) {
     world_temperature();
     world_riverbeds();
     world_fungus();
-    Path_continents(Path);
+    Path_continents(Paths);
 
     LMConfig lm;
     memcpy(&lm, &conf.landmarks, sizeof(lm));
@@ -1658,11 +1708,7 @@ void world_generate(uint32_t seed) {
             break;
         }
         if (lm.jungle > 0) {
-            if (conf.modified_landmarks) {
-                mod_world_monsoon();
-            } else {
-                world_monsoon(-1, -1);
-            }
+            mod_world_monsoon(-1, -1);
             lm.jungle--;
         }
         if (lm.crater > 0) {

@@ -49,5 +49,5 @@ int set_action(int veh_id, int act, char icon);
 int set_order_none(int veh_id);
 int set_convoy(int veh_id, ResType res);
 int set_board_to(int veh_id, int trans_veh_id);
-int cargo_loaded(int veh_id);
+int veh_cargo_loaded(int veh_id);
 

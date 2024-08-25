@@ -30,6 +30,7 @@
     #define debug(...) fprintf(debug_log, __VA_ARGS__);
     #define debugw(...) { fprintf(debug_log, __VA_ARGS__); \
         fflush(debug_log); }
+    #define debug_ver(...) if (conf.debug_verbose) { fprintf(debug_log, __VA_ARGS__); }
     #define flushlog() fflush(debug_log);
 #else
     #define MOD_DATE __DATE__
@@ -37,6 +38,7 @@
     #define NDEBUG /* Disable assertions */
     #define debug(...) /* Nothing */
     #define debugw(...) /* Nothing */
+    #define debug_ver(...) /* Nothing */
     #define flushlog()
     #ifdef __GNUC__
     #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -344,21 +346,6 @@ struct AIPlans {
     float enemy_mil_factor = 0;
     int enemy_bases = 0;
     int captured_bases = 0;
-};
-
-enum NodesetType {
-    NODE_BOREHOLE, // Borehole being built
-    NODE_RAISE_LAND, // Land raise action initiated
-    NODE_SENSOR_ARRAY, // Sensor being built
-    NODE_NEED_FERRY,
-    NODE_BASE_SITE, // Skip from search
-    NODE_CONVOY_SITE, // Skip from search
-    NODE_GOAL_RAISE_LAND, // Former priority only
-    NODE_GOAL_NAVAL_START,
-    NODE_GOAL_NAVAL_BEACH,
-    NODE_GOAL_NAVAL_END,
-    NODE_PATROL, // Includes probes/transports
-    NODE_COMBAT_PATROL, // Only attack-capable units
 };
 
 #include "engine.h"

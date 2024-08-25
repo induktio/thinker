@@ -18,15 +18,6 @@ bool FileExists(const char* path) {
     return GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES;
 }
 
-int __cdecl base_governor_crop_yield(int faction, int base_id, int x, int y, int flags) {
-    int value = mod_crop_yield(faction, base_id, x, y, flags);
-    if (bit_at(x, y) & BIT_THERMAL_BORE && value + mod_mine_yield(faction, base_id, x, y, 0)
-    + mod_energy_yield(faction, base_id, x, y, 0) >= 6) {
-        value++;
-    }
-    return value;
-}
-
 int __cdecl BaseWin_random_seed() {
     return *CurrentBaseID ^ *MapRandomSeed;
 }
@@ -424,9 +415,17 @@ bool patch_setup(Config* cf) {
 
     write_jump(0x4688E0, (int)MapWin_gen_overlays);
     write_jump(0x4E3EF0, (int)mod_whose_territory);
+    write_jump(0x4E4020, (int)mod_best_specialist);
     write_jump(0x4E4430, (int)mod_cost_factor);
     write_jump(0x4E4AA0, (int)base_first);
+    write_jump(0x4E80B0, (int)mod_base_yield);
+    write_jump(0x4E9550, (int)mod_base_support);
+    write_jump(0x4E9B70, (int)mod_base_nutrient);
+    write_jump(0x4E9CB0, (int)mod_base_minerals);
+    write_jump(0x4EB560, (int)mod_base_energy);
+    write_jump(0x4EC3B0, (int)base_compute);
     write_jump(0x4F6510, (int)fac_maint);
+    write_jump(0x500320, (int)drop_range);
     write_jump(0x527290, (int)mod_faction_upkeep);
     write_jump(0x55BB30, (int)set_treaty);
     write_jump(0x55BBA0, (int)set_agenda);
@@ -435,7 +434,9 @@ bool patch_setup(Config* cf) {
     write_jump(0x579D80, (int)wipe_goals);
     write_jump(0x591040, (int)mod_map_wipe);
     write_jump(0x592250, (int)mod_say_loc);
+    write_jump(0x5BF1F0, (int)has_abil);
     write_jump(0x5BF310, (int)X_pop2);
+    write_jump(0x5C0DB0, (int)can_arty);
     write_jump(0x5C1540, (int)veh_speed);
     write_jump(0x5C1D20, (int)mod_veh_skip);
     write_jump(0x5C1D70, (int)mod_veh_wake);
@@ -445,6 +446,11 @@ bool patch_setup(Config* cf) {
     write_jump(0x6263F0, (int)log_say_hex);
     write_jump(0x645460, (int)limit_strcpy);
     write_jump(0x645470, (int)limit_strcat);
+
+    remove_call(0x415F69); // base_doctors
+    remove_call(0x41608E); // base_doctors
+    remove_call(0x419FB2); // base_doctors
+    remove_call(0x4F7B42); // base_doctors
 
     write_call(0x58D84C, (int)mod_load_map_daemon); // map_menu
     write_call(0x5AB891, (int)mod_load_map_daemon); // load_map
@@ -460,10 +466,6 @@ bool patch_setup(Config* cf) {
     write_call(0x5B341C, (int)mod_setup_player); // eliminate_player
     write_call(0x5B3C03, (int)mod_setup_player); // setup_game
     write_call(0x5B3C4C, (int)mod_setup_player); // setup_game
-    write_call(0x4E12BF, (int)mod_map_wipe); // Console::editor_clear
-    write_call(0x4E12E2, (int)mod_map_wipe); // Console::editor_clear
-    write_call(0x58E942, (int)mod_map_wipe); // top_menu
-    write_call(0x5C8730, (int)mod_map_wipe); // world_build
     write_call(0x5B41E9, (int)mod_time_warp);
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
@@ -595,11 +597,11 @@ bool patch_setup(Config* cf) {
     write_call(0x5BCC70, (int)mod_wants_to_attack); // tech_val
     write_call(0x5BCC85, (int)mod_wants_to_attack); // tech_val
 
-    write_call(0x4E888C, (int)base_governor_crop_yield); // base_yield
     write_call(0x465DD6, (int)mod_crop_yield); // MapWin::gen_terrain_poly
     write_call(0x4B6C44, (int)mod_crop_yield); // StatusWin::draw_status
     write_call(0x4BCEEB, (int)mod_crop_yield); // TutWin::tour
     write_call(0x4E7DE4, (int)mod_crop_yield); // resource_yield
+    write_call(0x4E888C, (int)mod_crop_yield); // base_yield
     write_call(0x4E96F4, (int)mod_crop_yield); // base_support
     write_call(0x4ED7F1, (int)mod_crop_yield); // base_terraform
     write_call(0x565878, (int)mod_crop_yield); // can_terraform

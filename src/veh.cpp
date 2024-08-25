@@ -1,8 +1,6 @@
 
 #include "veh.h"
 
-static TileSearch ts;
-
 
 int __cdecl can_arty(int unit_id, bool allow_sea_arty) {
     UNIT* u = &Units[unit_id];
@@ -21,6 +19,7 @@ int __cdecl can_arty(int unit_id, bool allow_sea_arty) {
 }
 
 int __cdecl has_abil(int unit_id, VehAblFlag ability) {
+    assert(unit_id >= 0 && unit_id < MaxProtoNum);
     int faction_id = unit_id / MaxProtoFactionNum;
     // workaround fix for legacy base_build that may incorrectly use negative unit_id
     if (unit_id < 0) {
@@ -719,6 +718,7 @@ int __cdecl find_return_base(int veh_id) {
     VEH* veh = &Vehs[veh_id];
     MAP* sq;
     debug("find_return_base %2d %2d %s\n", veh->x, veh->y, veh->name());
+    TileSearch ts;
     ts.init(veh->x, veh->y, veh->triad() == TRIAD_SEA ? TS_SEA_AND_SHORE : veh->triad());
     while ((sq = ts.get_next()) != NULL) {
         if (sq->is_base() && sq->owner == veh->faction_id) {
@@ -1050,7 +1050,7 @@ int defense_value(int unit_id) {
 }
 
 int set_move_to(int veh_id, int x, int y) {
-    VEH* veh = &Vehicles[veh_id];
+    VEH* veh = &Vehs[veh_id];
     debug("set_move_to %2d %2d -> %2d %2d %s\n", veh->x, veh->y, x, y, veh->name());
     veh->waypoint_1_x = x;
     veh->waypoint_1_y = y;
@@ -1069,14 +1069,14 @@ int set_move_to(int veh_id, int x, int y) {
 }
 
 int set_move_next(int veh_id, int offset) {
-    VEH* veh = &Vehicles[veh_id];
+    VEH* veh = &Vehs[veh_id];
     int x = wrap(veh->x + BaseOffsetX[offset]);
     int y = veh->y + BaseOffsetY[offset];
     return set_move_to(veh_id, x, y);
 }
 
 int set_road_to(int veh_id, int x, int y) {
-    VEH* veh = &Vehicles[veh_id];
+    VEH* veh = &Vehs[veh_id];
     veh->waypoint_1_x = x;
     veh->waypoint_1_y = y;
     veh->order = ORDER_ROAD_TO;
@@ -1085,7 +1085,7 @@ int set_road_to(int veh_id, int x, int y) {
 }
 
 int set_action(int veh_id, int act, char icon) {
-    VEH* veh = &Vehicles[veh_id];
+    VEH* veh = &Vehs[veh_id];
     if (act == ORDER_THERMAL_BOREHOLE) {
         mapnodes.insert({veh->x, veh->y, NODE_BOREHOLE});
     } else if (act == ORDER_TERRAFORM_UP) {
@@ -1100,7 +1100,7 @@ int set_action(int veh_id, int act, char icon) {
 }
 
 int set_order_none(int veh_id) {
-    VEH* veh = &Vehicles[veh_id];
+    VEH* veh = &Vehs[veh_id];
     veh->order = ORDER_NONE;
     veh->order_auto_type = ORDERA_TERRA_AUTO_FULL;
     veh->waypoint_1_x = -1;
@@ -1110,7 +1110,7 @@ int set_order_none(int veh_id) {
 }
 
 int set_convoy(int veh_id, ResType res) {
-    VEH* veh = &Vehicles[veh_id];
+    VEH* veh = &Vehs[veh_id];
     veh->order_auto_type = res-1;
     veh->order = ORDER_CONVOY;
     veh->status_icon = 'C';
@@ -1118,8 +1118,8 @@ int set_convoy(int veh_id, ResType res) {
 }
 
 int set_board_to(int veh_id, int trans_veh_id) {
-    VEH* veh = &Vehicles[veh_id];
-    VEH* v2 = &Vehicles[trans_veh_id];
+    VEH* veh = &Vehs[veh_id];
+    VEH* v2 = &Vehs[trans_veh_id];
     assert(veh_id != trans_veh_id);
     assert(veh->x == v2->x && veh->y == v2->y);
     assert(veh_cargo(trans_veh_id) > 0);
@@ -1131,14 +1131,16 @@ int set_board_to(int veh_id, int trans_veh_id) {
     return VEH_SYNC;
 }
 
-int cargo_loaded(int veh_id) {
-    int n=0;
-    for (int i=0; i < *VehCount; i++) {
-        VEH* veh = &Vehicles[i];
-        if (veh->order == ORDER_SENTRY_BOARD && veh->waypoint_1_x == veh_id) {
-            n++;
+int veh_cargo_loaded(int veh_id) {
+    int num = 0;
+    for (int i = 0; i < *VehCount; i++) {
+        VEH* veh = &Vehs[i];
+        if (veh->order == ORDER_SENTRY_BOARD && veh->waypoint_1_x == veh_id
+        && veh->x == Vehs[veh_id].x && veh->y == Vehs[veh_id].y) {
+            assert(veh_id != i);
+            num++;
         }
     }
-    return n;
+    return num;
 }
 

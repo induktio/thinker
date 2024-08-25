@@ -589,6 +589,9 @@ struct VEH {
         return order == ORDER_NONE || (waypoint_1_x < 0 && waypoint_1_y < 0)
             || (x == waypoint_1_x && y == waypoint_1_y);
     }
+    bool in_transit() {
+        return order == ORDER_SENTRY_BOARD && waypoint_1_x >= 0 && waypoint_1_y == 0;
+    }
     bool mid_damage() {
         return damage_taken > 2*Units[unit_id].reactor_id;
     }

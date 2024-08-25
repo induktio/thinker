@@ -367,8 +367,8 @@ Other patches included
 This list covers the game engine patches used by Thinker that are not included in Scient's Patch. These patches are all enabled by default.
 If the line mentions a config variable name in parentheses, the patch can be optionally disabled by adding `config_variable=0` in thinker.ini.
 
-1. Base governors of all factions will now prefer to work borehole tiles instead of always emphasizing food production. The patch makes governors assume borehole tiles produce 1 food but this will not affect the actual nutrient intake or anything else beyond tile selection.
-2. Make sure the game engine can read movie settings from "movlistx.txt" while using smac_only mode.
+1. Modify governor worker allocation to better take into account any psych-related issues and convert workers into specialists as needed. Worker tile selection is improved to emphasize high-yielding tiles such as boreholes.
+2. Governor is able to choose from multiple specialist types based on social engineering choices and various factors. The default specialist type chosen by the game has less emphasis on psych compared to the original version.
 3. Fix issue where attacking other satellites doesn't work in Orbital Attack View when smac_only is activated.
 4. Fix engine rendering issue where ocean fungus tiles displayed inconsistent graphics compared to the adjacent land fungus tiles.
 5. Fix game showing redundant "rainfall patterns have been altered" messages when these events are caused by other factions.
