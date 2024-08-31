@@ -123,7 +123,6 @@ int __cdecl mod_tech_pick(int faction_id, int flag, int other_faction_id, const 
     Faction* f = &Factions[faction_id];
     int tech_id = tech_pick(faction_id, flag, other_faction_id, (int)label);
     if (other_faction_id < 0 && tech_id >= 0 && tech_id != f->tech_research_id) {
-        f->tech_research_id = tech_id;
         if (conf.revised_tech_cost) {
             f->tech_cost = tech_cost(faction_id, tech_id);
         } else {

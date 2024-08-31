@@ -326,7 +326,7 @@ int __cdecl mod_faction_upkeep(int faction) {
             }
         }
     }
-    repair_phase(faction);
+    mod_repair_phase(faction);
     do_all_non_input();
     mod_production_phase(faction);
     do_all_non_input();
@@ -408,6 +408,145 @@ int __cdecl mod_faction_upkeep(int faction) {
     }
     flushlog();
     return 0;
+}
+
+void __cdecl mod_repair_phase(int faction_id) {
+    Faction* f = &Factions[faction_id];
+    f->ODP_deployed = 0;
+    Points tiles;
+
+    for (int veh_id = 0; veh_id < *VehCount; veh_id++) {
+        VEH* veh = &Vehs[veh_id];
+        if (veh->faction_id != faction_id) {
+            continue;
+        }
+        MAP* sq = mapsq(veh->x, veh->y);
+        const bool at_base = sq && sq->is_base() && sq->veh_owner() >= 0;
+        const int triad = veh->triad();
+        veh->iter_count = 0;
+        veh->moves_spent = 0;
+        veh->flags &= ~VFLAG_UNK_1000;
+        veh->state &= ~(VSTATE_CRAWLING|VSTATE_UNK_2000|VSTATE_UNK_2);
+
+        if (sq && !at_base) {
+            if (veh->faction_id == MapWin->cOwner || veh->is_visible(MapWin->cOwner)) {
+                tiles.insert({veh->x, veh->y});
+            }
+        }
+        if ( !((*CurrentTurn + veh_id) & 3) ) {
+            veh->state &= ~VSTATE_UNK_800;
+            if (veh->flags & VFLAG_UNK_2) {
+                veh->flags &= ~VFLAG_UNK_2;
+            } else {
+                veh->flags &= ~VFLAG_UNK_1;
+            }
+        }
+        if (veh->order == ORDER_SENTRY_BOARD || veh->order == ORDER_HOLD) {
+            if (veh->waypoint_1_y) {
+                veh->waypoint_1_y--;
+                if (!veh->waypoint_1_y) {
+                    veh->order = ORDER_NONE;
+                }
+            }
+        }
+        if (veh->state & VSTATE_UNK_8) {
+            if (at_base
+            || (triad == TRIAD_LAND && sq->is_bunker())
+            || (triad == TRIAD_AIR && sq->is_airbase())) {
+                veh->state &= ~VSTATE_UNK_8;
+            }
+        }
+        if (veh->unit_id == BSC_FUNGAL_TOWER) {
+            veh->faction_id = 0;
+        }
+        if (!sq || !veh->damage_taken
+        || (veh->is_battle_ogre() && conf.repair_battle_ogre <= 0)
+        || !(veh->unit_id == BSC_FUNGAL_TOWER || !(veh->state & VSTATE_HAS_MOVED))) {
+            continue;
+        }
+        int value = conf.repair_minimal;
+        int base_id = base_at(veh->x, veh->y);
+
+        if (veh->unit_id != BSC_FUNGAL_TOWER) {
+            if (veh->is_native_unit() && sq->is_fungus() && sq->alt_level() >= ALT_OCEAN_SHELF) {
+                value = conf.repair_fungus;
+            }
+            if (conf.repair_friendly > 0
+            && mod_whose_territory(faction_id, veh->x, veh->y, 0, 0) == faction_id) {
+                value += conf.repair_friendly;
+            }
+            if (triad == TRIAD_AIR && sq->items & BIT_AIRBASE) {
+                value += conf.repair_airbase;
+            }
+            if (triad == TRIAD_LAND && sq->items & BIT_BUNKER) {
+                value += conf.repair_bunker;
+            }
+        }
+        if (base_id >= 0 && !Bases[base_id].drone_riots_active()) {
+            value += conf.repair_base;
+            if (!veh->is_native_unit()) {
+                if ((triad == TRIAD_LAND && (has_fac_built(FAC_COMMAND_CENTER, base_id)
+                || has_project(FAC_MARITIME_CONTROL_CENTER, faction_id)))
+                || (triad == TRIAD_SEA && (has_fac_built(FAC_NAVAL_YARD, base_id)
+                || has_project(FAC_MARITIME_CONTROL_CENTER, faction_id)))
+                || (triad == TRIAD_AIR && (has_fac_built(FAC_AEROSPACE_COMPLEX, base_id)
+                || has_project(FAC_CLOUDBASE_ACADEMY, faction_id)))) {
+                    value += conf.repair_base_facility;
+                }
+            } else if (breed_mod(base_id, faction_id)) {
+                value += conf.repair_base_native;
+            }
+        }
+        bool repair_abl = false;
+        if (triad == TRIAD_LAND) {
+            if ((!veh_cargo(veh_id) && veh->order == ORDER_SENTRY_BOARD) || is_ocean(sq)) {
+                int iter_id = veh_top(veh_id);
+                while (iter_id >= 0) {
+                    if (iter_id != veh_id && has_abil(Vehs[iter_id].unit_id, ABL_REPAIR)) {
+                        repair_abl = true;
+                    }
+                    iter_id = Vehs[iter_id].next_veh_id_stack;
+                }
+                if (repair_abl) {
+                    value *= 2;
+                }
+            }
+        }
+        if (has_project(FAC_NANO_FACTORY, faction_id)) {
+            value += conf.repair_nano_factory;
+        }
+        if (veh->is_battle_ogre()) {
+             value = min(value, conf.repair_battle_ogre);
+        }
+        int repair_limit = 0;
+        int repair_value = value * veh->reactor_type();
+
+        if (faction_id && !repair_abl && base_id < 0 && !has_project(FAC_NANO_FACTORY, faction_id)) {
+            repair_limit = 2 * veh->reactor_type();
+            if (sq->is_fungus() && sq->alt_level() >= ALT_OCEAN_SHELF) {
+                if (veh->is_native_unit()) {
+                    repair_limit = 0;
+                }
+                if (has_project(FAC_XENOEMPATHY_DOME, faction_id)) {
+                    repair_limit = 0;
+                    repair_value += veh->reactor_type();
+                }
+            }
+        }
+        int damage = clamp(veh->damage_taken - repair_value, repair_limit, 255);
+        if (damage < veh->damage_taken) {
+            veh->damage_taken = damage;
+            if (damage <= repair_limit && is_human(faction_id)
+            && veh->order == ORDER_SENTRY_BOARD
+            && (triad != TRIAD_LAND || !is_ocean(sq))) {
+                veh->order = ORDER_NONE;
+            }
+        }
+    }
+    for (auto& p : tiles) {
+        draw_tile(p.x, p.y, -1);
+    }
+    do_all_draws();
 }
 
 void __cdecl mod_production_phase(int faction_id) {

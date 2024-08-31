@@ -2,23 +2,6 @@
 
 #include "main.h"
 
-struct WItem {
-    int AI_growth;
-    int AI_tech;
-    int AI_wealth;
-    int AI_power;
-    int AI_fight;
-};
-
-struct PItem {
-    int item_id;
-    int explore;
-    int discover;
-    int build;
-    int conquer;
-    int energy;
-};
-
 struct SItem {
     int item_id;
     int score;

@@ -3,6 +3,7 @@
 
 extern const int MaxProtoFactionNum;
 
+bool can_repair(int unit_id);
 bool is_human(int faction);
 
 enum Triad {
@@ -555,6 +556,10 @@ struct VEH {
     bool is_native_unit() {
         return unit_id < MaxProtoFactionNum && Units[unit_id].is_psi_unit();
     }
+    bool is_battle_ogre() {
+        return unit_id == BSC_BATTLE_OGRE_MK1 || unit_id == BSC_BATTLE_OGRE_MK2
+            || unit_id == BSC_BATTLE_OGRE_MK3;
+    }
     bool is_colony() {
         return Units[unit_id].is_colony();
     }
@@ -599,12 +604,11 @@ struct VEH {
         return damage_taken > 4*Units[unit_id].reactor_id;
     }
     bool need_heals() {
-        return mid_damage() && unit_id != BSC_BATTLE_OGRE_MK1
-            && unit_id != BSC_BATTLE_OGRE_MK2 && unit_id != BSC_BATTLE_OGRE_MK3;
+        return mid_damage() && can_repair(unit_id);
     }
     bool need_monolith() {
-        return need_heals() || (morale < MORALE_ELITE
-            && ~state & VSTATE_MONOLITH_UPGRADED && offense_value() != 0);
+        return !is_battle_ogre() && (need_heals() || (morale < MORALE_ELITE
+            && !(state & VSTATE_MONOLITH_UPGRADED) && offense_value() != 0));
     }
 };
 

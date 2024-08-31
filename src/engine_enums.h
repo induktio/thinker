@@ -631,6 +631,15 @@ enum BaseGovernor {
     GOV_ACTIVE = 0x80000000,
 };
 
+enum BaseRadius {
+    BR_NOT_AVAILABLE = 1,
+    BR_NOT_VISIBLE = 2,
+    BR_BASE_IN_TILE = 4,
+    BR_VEH_IN_TILE = 8, // convoy active or non-pact/non-treaty vehicle
+    BR_WORKER_ACTIVE = 16,
+    BR_FOREIGN_TILE = 32,
+};
+
 enum MapItem {
     BIT_BASE_IN_TILE = 0x1,
     BIT_VEH_IN_TILE = 0x2,

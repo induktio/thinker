@@ -564,8 +564,8 @@ int __cdecl mod_blink_timer() {
 
 LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    static int iDeltaAccum = 0;
-    bool debug_active = DEBUG && !*GameHalted;
+    const bool debug_cmd = DEBUG && !*GameHalted && msg == WM_CHAR;
+    static int delta_accum = 0;
     POINT p;
     MAP* sq;
 
@@ -606,33 +606,33 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED);
 
     } else if (msg == WM_MOUSEWHEEL && win_has_focus()) {
-        int iDelta = GET_WHEEL_DELTA_WPARAM(wParam) + iDeltaAccum;
-        iDeltaAccum = iDelta % WHEEL_DELTA;
-        iDelta /= WHEEL_DELTA;
-        bool zoom_in = (iDelta >= 0);
-        iDelta = labs(iDelta);
+        int wheel_delta = GET_WHEEL_DELTA_WPARAM(wParam) + delta_accum;
+        delta_accum = wheel_delta % WHEEL_DELTA;
+        wheel_delta /= WHEEL_DELTA;
+        bool zoom_in = (wheel_delta >= 0);
+        wheel_delta = abs(wheel_delta);
         GameWinState state = current_window();
 
         if (state == GW_World) {
-            int iZoomType = (zoom_in ? 515 : 516);
-            for (int i = 0; i < iDelta; i++) {
+            int zoom_type = (zoom_in ? 515 : 516);
+            for (int i = 0; i < wheel_delta; i++) {
                 if (MapWin->iZoomFactor > -8 || zoom_in) {
-                    Console_zoom(iZoomType, 0);
+                    Console_zoom(MapWin, zoom_type, 0);
                 }
             }
         } else if (state == GW_Base && conf.render_high_detail) {
             base_resource_zoom(zoom_in);
         } else {
-            int iKey;
+            int key;
             if (state == GW_Design) {
-                iKey = (zoom_in ? VK_LEFT : VK_RIGHT);
+                key = (zoom_in ? VK_LEFT : VK_RIGHT);
             } else {
-                iKey = (zoom_in ? VK_UP : VK_DOWN);
+                key = (zoom_in ? VK_UP : VK_DOWN);
             }
-            iDelta *= CState.ListScrollDelta;
-            for (int i = 0; i < iDelta; i++) {
-                PostMessage(hwnd, WM_KEYDOWN, iKey, 0);
-                PostMessage(hwnd, WM_KEYUP, iKey, 0);
+            wheel_delta *= CState.ListScrollDelta;
+            for (int i = 0; i < wheel_delta; i++) {
+                PostMessage(hwnd, WM_KEYDOWN, key, 0);
+                PostMessage(hwnd, WM_KEYUP, key, 0);
             }
             return 0;
         }
@@ -695,20 +695,6 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             console_world_generate(ParseNumTable[0]);
         }
 
-    } else if (debug_active && msg == WM_CHAR && wParam == 'c' && alt_key_down()
-    && *GameState & STATE_SCENARIO_EDITOR && *GameState & STATE_OMNISCIENT_VIEW
-    && (sq = mapsq(MapWin->iTileX, MapWin->iTileY)) && sq->landmarks) {
-        uint32_t prev_state = MapWin->iWhatToDrawFlags;
-        MapWin->iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
-        refresh_overlay(code_at);
-        int value = pop_ask_number("modmenu", "MAPGEN", sq->art_ref_id, 0);
-        if (!value) { // OK button pressed
-            sq->art_ref_id = ParseNumTable[0];
-        }
-        refresh_overlay(clear_overlay);
-        MapWin->iWhatToDrawFlags = prev_state;
-        draw_map(1);
-
     } else if (DEBUG && msg == WM_CHAR && wParam == 'd' && alt_key_down()) {
         conf.debug_mode = !conf.debug_mode;
         if (conf.debug_mode) {
@@ -740,7 +726,26 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             "Verbose mode enabled." : "Verbose mode disabled."), -1, -1);
         popp("modmenu", "GENERIC", 0, 0, 0);
 
-    } else if (debug_active && msg == WM_CHAR && wParam == 'y' && alt_key_down()) {
+    } else if (debug_cmd && wParam == 'b' && alt_key_down() && Win_is_visible(BaseWin)) {
+        conf.base_psych = !conf.base_psych;
+        base_compute(1);
+        BaseWin_on_redraw(BaseWin);
+
+    } else if (debug_cmd && wParam == 'c' && alt_key_down()
+    && *GameState & STATE_SCENARIO_EDITOR && *GameState & STATE_OMNISCIENT_VIEW
+    && (sq = mapsq(MapWin->iTileX, MapWin->iTileY)) && sq->landmarks) {
+        uint32_t prev_state = MapWin->iWhatToDrawFlags;
+        MapWin->iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
+        refresh_overlay(code_at);
+        int value = pop_ask_number("modmenu", "MAPGEN", sq->art_ref_id, 0);
+        if (!value) { // OK button pressed
+            sq->art_ref_id = ParseNumTable[0];
+        }
+        refresh_overlay(clear_overlay);
+        MapWin->iWhatToDrawFlags = prev_state;
+        draw_map(1);
+
+    } else if (debug_cmd && wParam == 'y' && alt_key_down()) {
         static int draw_diplo = 0;
         draw_diplo = !draw_diplo;
         if (draw_diplo) {
@@ -752,7 +757,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         MapWin_draw_map(MapWin, 0);
         InvalidateRect(hwnd, NULL, false);
 
-    } else if (debug_active && msg == WM_CHAR && wParam == 'v' && alt_key_down()) {
+    } else if (debug_cmd && wParam == 'v' && alt_key_down()) {
         MapWin->iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
         refresh_overlay(clear_overlay);
         static int ts_type = 0;
@@ -767,7 +772,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         MapWin_draw_map(MapWin, 0);
         InvalidateRect(hwnd, NULL, false);
 
-    } else if (debug_active && msg == WM_CHAR && wParam == 'f' && alt_key_down()
+    } else if (debug_cmd && wParam == 'f' && alt_key_down()
     && (sq = mapsq(MapWin->iTileX, MapWin->iTileY))) {
         MapWin->iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
         if (sq && sq->is_owned()) {
@@ -776,7 +781,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             InvalidateRect(hwnd, NULL, false);
         }
 
-    } else if (debug_active && msg == WM_CHAR && wParam == 'x' && alt_key_down()) {
+    } else if (debug_cmd && wParam == 'x' && alt_key_down()) {
         MapWin->iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
         static int px = 0, py = 0;
         int x = MapWin->iTileX, y = MapWin->iTileY;
@@ -787,7 +792,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         MapWin_draw_map(MapWin, 0);
         InvalidateRect(hwnd, NULL, false);
 
-    } else if (debug_active && msg == WM_CHAR && wParam == 'z' && alt_key_down()) {
+    } else if (debug_cmd && wParam == 'z' && alt_key_down()) {
         int x = MapWin->iTileX, y = MapWin->iTileY;
         int base_id;
         if ((base_id = base_at(x, y)) >= 0) {
@@ -1358,15 +1363,26 @@ void __thiscall BaseWin_draw_farm_set_font(Buffer* This, Font* font, int a3, int
 
 void __cdecl BaseWin_draw_psych_strcat(char* buffer, char* source)
 {
-    if (conf.render_base_info && *CurrentBaseID >= 0
-    && !strcmp(source, (*TextLabels)[970])) { // Captured Base
-        int turns = Bases[*CurrentBaseID].assimilation_turns_left;
-        if (turns > 0) {
+    BASE* base = &Bases[*CurrentBaseID];
+    if (conf.render_base_info && *CurrentBaseID >= 0) {
+        if (base->nerve_staple_turns_left > 0
+        || has_fac_built(FAC_PUNISHMENT_SPHERE, *CurrentBaseID)) {
+            if (!strcmp(source, (*TextLabels)[971])) { // Stapled Base
+                strncat(buffer, (*TextLabels)[322], StrBufLen); // Unmodified
+                return;
+            }
+            if (!strcmp(source, (*TextLabels)[327])) { // Secret Projects
+                strncat(buffer, (*TextLabels)[971], StrBufLen); // Stapled Base
+                return;
+            }
+        }
+        int turns = base->assimilation_turns_left;
+        if (turns > 0 && !strcmp(source, (*TextLabels)[970])) { // Captured Base
             snprintf(buffer, StrBufLen, label_captured_base, turns);
             return;
         }
     }
-    snprintf(buffer, StrBufLen, "%s", source);
+    strncat(buffer, source, StrBufLen);
 }
 
 void __thiscall BaseWin_draw_energy_set_text_color(Buffer* This, int a2, int a3, int a4, int a5)
@@ -1387,6 +1403,9 @@ void __thiscall BaseWin_draw_energy_set_text_color(Buffer* This, int a2, int a3,
         Buffer_set_text_color(This, color, a3, a4, a5);
         snprintf(buf, StrBufLen, label_pop_size,
             base->talent_total, workers, base->drone_total, base->specialist_total);
+        if (DEBUG) {
+            strncat(buf, conf.base_psych ? " / B" : " / A", 32);
+        }
         Buffer_write_right_l2(This, buf, 690, 423 - 42, LineBufLen);
 
         if (base_pop_boom(*CurrentBaseID) && base_unused_space(*CurrentBaseID) > 0) {
@@ -1719,7 +1738,7 @@ int __cdecl MapWin_right_menu_arty(int veh_id, int x, int y)
     return map_range(veh->x, veh->y, x, y) <= arty_range(veh->unit_id);
 }
 
-void __thiscall Console_arty_cursor_on(void* This, int cursor_type, int veh_id)
+void __thiscall Console_arty_cursor_on(Console* This, int cursor_type, int veh_id)
 {
     int veh_range = arty_range(Vehs[veh_id].unit_id);
     Console_cursor_on(This, cursor_type, veh_range);

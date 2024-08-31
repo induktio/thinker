@@ -185,6 +185,9 @@ struct MAP {
     bool is_base() {
         return items & BIT_BASE_IN_TILE;
     }
+    bool is_bunker() {
+        return items & BIT_BUNKER;
+    }
     bool is_airbase() {
         return items & (BIT_BASE_IN_TILE | BIT_AIRBASE);
     }

@@ -8,12 +8,14 @@ int __cdecl arty_range(int unit_id);
 int __cdecl drop_range(int faction);
 bool has_orbital_drops(int faction);
 bool has_ability(int faction, VehAbl abl, VehChassis chs, VehWeapon wpn);
+bool can_repair(int unit_id);
 
+int __cdecl veh_top(int veh_id);
 int __cdecl veh_stack(int x, int y);
 int __cdecl proto_speed(int unit_id);
 int __cdecl veh_speed(int veh_id, bool skip_morale);
 int __cdecl veh_cargo(int veh_id);
-int __cdecl want_monolith(uint32_t veh_id);
+int __cdecl want_monolith(int veh_id);
 int __cdecl prototype_factor(int unit_id);
 int __cdecl mod_proto_cost(VehChassis chassis_id, VehWeapon weapon_id,
     VehArmor armor_id, VehAblFlag ability, VehReactor reactor_id);

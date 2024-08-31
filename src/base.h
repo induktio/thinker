@@ -15,10 +15,12 @@ void __cdecl mod_base_yield();
 void __cdecl mod_base_nutrient();
 void __cdecl mod_base_minerals();
 void __cdecl mod_base_energy();
+void __cdecl mod_base_psych(int base_id);
+void __cdecl mod_base_research();
 int __cdecl mod_base_production();
 int __cdecl mod_base_growth();
 void __cdecl mod_base_drones();
-void __cdecl mod_base_research();
+void __cdecl mod_base_maint();
 int __cdecl mod_base_upkeep(int base_id);
 int __cdecl mod_base_kill(int base_id);
 int __cdecl mod_capture_base(int base_id, int faction, int is_probe);
@@ -59,12 +61,4 @@ void __cdecl set_fac(FacilityId item_id, int base_id, bool add);
 int __cdecl fac_maint(int facility_id, int faction_id);
 int satellite_output(int satellites, int pop_size, bool full_value);
 bool satellite_bonus(int base_id, int* nutrient, int* mineral, int* energy);
-
-int consider_staple(int base_id);
-int mod_base_hurry();
-int need_psych(int base_id);
-int find_project(int base_id);
-int select_build(int base_id);
-int find_proto(int base_id, Triad triad, VehWeaponMode mode, bool defend);
-int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships);
 

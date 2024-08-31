@@ -157,6 +157,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->magtube_movement_rate = atoi(value);
     } else if (MATCH("chopper_attack_rate")) {
         cf->chopper_attack_rate = atoi(value);
+    } else if (MATCH("base_psych")) {
+        cf->base_psych = atoi(value);
     } else if (MATCH("nerve_staple")) {
         cf->nerve_staple = atoi(value);
     } else if (MATCH("nerve_staple_mod")) {
@@ -175,6 +177,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->long_range_artillery = atoi(value);
     } else if (MATCH("modify_upgrade_cost")) {
         cf->modify_upgrade_cost = atoi(value);
+    } else if (MATCH("modify_unit_support")) {
+        cf->modify_unit_support = atoi(value);
     } else if (MATCH("modify_unit_morale")) {
         cf->modify_unit_morale = atoi(value);
     } else if (MATCH("skip_default_balance")) {
@@ -256,11 +260,11 @@ int option_handler(void* user, const char* section, const char* name, const char
     } else if (MATCH("repair_fungus")) {
         cf->repair_fungus = clamp(atoi(value), 0, 10);
     } else if (MATCH("repair_friendly")) {
-        cf->repair_friendly = atoi(value);
+        cf->repair_friendly = clamp(atoi(value), 0, 10);
     } else if (MATCH("repair_airbase")) {
-        cf->repair_airbase = atoi(value);
+        cf->repair_airbase = clamp(atoi(value), 0, 10);
     } else if (MATCH("repair_bunker")) {
-        cf->repair_bunker = atoi(value);
+        cf->repair_bunker = clamp(atoi(value), 0, 10);
     } else if (MATCH("repair_base")) {
         cf->repair_base = clamp(atoi(value), 0, 10);
     } else if (MATCH("repair_base_native")) {
@@ -269,6 +273,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->repair_base_facility = clamp(atoi(value), 0, 10);
     } else if (MATCH("repair_nano_factory")) {
         cf->repair_nano_factory = clamp(atoi(value), 0, 10);
+    } else if (MATCH("repair_battle_ogre")) {
+        cf->repair_battle_ogre = clamp(atoi(value), 0, 10);
     } else if (MATCH("minimal_popups")) {
         if (DEBUG) {
             cf->minimal_popups = atoi(value);

@@ -229,6 +229,7 @@ struct Config {
     int magtube_movement_rate = 0;
     int road_movement_rate = 1; // internal variable
     int chopper_attack_rate = 1;
+    int base_psych = 1;
     int nerve_staple = 2;
     int nerve_staple_mod = -10;
     int delay_drone_riots = 0;
@@ -238,6 +239,7 @@ struct Config {
     int ignore_reactor_power = 0;
     int long_range_artillery = 0;
     int modify_upgrade_cost = 0;
+    int modify_unit_support = 0;
     int modify_unit_morale = 1; // unlisted option
     int skip_default_balance = 1; // unlisted option
     int early_research_start = 1; // unlisted option
@@ -283,6 +285,7 @@ struct Config {
     int repair_base_native = 10;
     int repair_base_facility = 10;
     int repair_nano_factory = 10;
+    int repair_battle_ogre = 0;
     LMConfig landmarks;
     int minimal_popups = 0; // unlisted option
     int skip_random_factions = 0; // internal variable
@@ -362,6 +365,7 @@ struct AIPlans {
 #include "veh_combat.h"
 #include "map.h"
 #include "base.h"
+#include "build.h"
 #include "game.h"
 #include "goal.h"
 #include "move.h"

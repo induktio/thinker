@@ -427,17 +427,12 @@ void plans_upkeep(int faction_id) {
         } else {
             plans[fc].project_limit = max(5, minerals[n*2/3]);
         }
+        bool full_value = has_tech(Facility[FAC_AEROSPACE_COMPLEX].preq_tech, faction_id)
+            || has_project(FAC_CLOUDBASE_ACADEMY, faction_id)
+            || has_project(FAC_SPACE_ELEVATOR, faction_id);
         plans[fc].median_limit = max(5, minerals[n/2]);
-
-        if (has_project(FAC_CLOUDBASE_ACADEMY, faction_id)
-        || has_project(FAC_SPACE_ELEVATOR, faction_id)
-        || facility_count(FAC_AEROSPACE_COMPLEX, faction_id) >= f->base_count/2) {
-            plans[fc].satellite_goal = min(conf.max_satellites,
-                population[n*7/8]);
-        } else {
-            plans[fc].satellite_goal = min(conf.max_satellites,
-                (population[n*3/4] + 3) / 2 * 2);
-        }
+        plans[fc].satellite_goal = min(conf.max_satellites,
+            population[n*7/8] * (full_value ? 1 : 2));
 
         debug("plans_upkeep %d %d proj_limit: %2d sat_goal: %2d psi: %2d keep_fungus: %d "\
             "plant_fungus: %d enemy_bases: %2d enemy_mil: %.4f enemy_range: %.4f\n",

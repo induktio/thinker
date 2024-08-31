@@ -19,7 +19,7 @@ int __cdecl can_arty(int unit_id, bool allow_sea_arty) {
 }
 
 int __cdecl has_abil(int unit_id, VehAblFlag ability) {
-    assert(unit_id >= 0 && unit_id < MaxProtoNum);
+    assert((!conf.manage_player_bases || unit_id >= 0) && unit_id < MaxProtoNum);
     int faction_id = unit_id / MaxProtoFactionNum;
     // workaround fix for legacy base_build that may incorrectly use negative unit_id
     if (unit_id < 0) {
@@ -111,6 +111,23 @@ bool has_ability(int faction, VehAbl abl, VehChassis chs, VehWeapon wpn) {
         return false;
     }
     return has_tech(Ability[abl].preq_tech, faction);
+}
+
+bool can_repair(int unit_id) {
+    assert(unit_id >= 0 && unit_id < MaxProtoNum);
+    return conf.repair_battle_ogre > 0 || (unit_id != BSC_BATTLE_OGRE_MK1
+        && unit_id != BSC_BATTLE_OGRE_MK2 && unit_id != BSC_BATTLE_OGRE_MK3);
+}
+
+int __cdecl veh_top(int veh_id) {
+    if (veh_id < 0) {
+        return -1;
+    }
+    int top_veh_id = veh_id;
+    while (Vehs[top_veh_id].prev_veh_id_stack >= 0) {
+        top_veh_id = Vehs[top_veh_id].prev_veh_id_stack;
+    }
+    return top_veh_id;
 }
 
 /*
@@ -232,10 +249,10 @@ int __cdecl veh_cargo(int veh_id) {
 Determine whether the specified unit is eligible for a monolith morale upgrade.
 */
 int __cdecl want_monolith(int veh_id) {
-    return !(Vehs[veh_id].state & VSTATE_MONOLITH_UPGRADED)
-        && mod_morale_veh(veh_id, true, 0) < MORALE_ELITE
+    return veh_id >= 0 && !(Vehs[veh_id].state & VSTATE_MONOLITH_UPGRADED)
+        && Vehs[veh_id].offense_value() != 0
         && Vehs[veh_id].morale < MORALE_ELITE
-        && Vehs[veh_id].offense_value() != 0;
+        && mod_morale_veh(veh_id, true, 0) < MORALE_ELITE;
 }
 
 /*
@@ -870,7 +887,7 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
     bool marine = abls & ABL_AMPHIBIOUS && triad == TRIAD_LAND;
     bool intercept = abls & ABL_AIR_SUPERIORITY && triad == TRIAD_AIR;
     bool garrison = combat && !arty && !marine && wpn_v < arm_v && spd_v < 2;
-    uint32_t prefix_abls = abls & ~(ABL_ARTILLERY | ABL_AMPHIBIOUS | ABL_NERVE_GAS
+    uint32_t prefix_abls = abls & ~(ABL_ARTILLERY|ABL_AMPHIBIOUS|ABL_CARRIER|ABL_NERVE_GAS
         | (intercept ? ABL_AIR_SUPERIORITY : 0)); // SAM for ground units
     // Battleship names are used only for long range artillery
     bool lrg_names = (sea_arty || triad != TRIAD_SEA || conf.long_range_artillery < 1);
@@ -965,7 +982,11 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
             if (spd_v > 1) {
                 parse_chs_name(buf, Chassis[chs].offsv1_name, Chassis[chs].offsv2_name);
             }
-            parse_wpn_name(buf, wpn, i > 0);
+            if (abls & ABL_CARRIER) {
+                parse_abl_name(buf, Ability[ABL_ID_CARRIER].abbreviation, i > 0);
+            } else {
+                parse_wpn_name(buf, wpn, i > 0);
+            }
         }
         if (Weapon[wpn].mode != WMODE_PROBE && rec >= REC_FISSION && rec <= REC_SINGULARITY) {
             if (strlen(buf) + strlen(label_unit_reactor[rec-1]) + 2 <= MaxProtoNameLen) {

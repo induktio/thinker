@@ -126,13 +126,11 @@ int mod_say_orders(char* buf, int veh_id) {
 This is called from enemy_strategy to upgrade prototypes marked with obsolete_factions flag.
 Early upgrades are disabled to prevent unnecessary costs for any starting units.
 */
-int __stdcall enemy_strategy_upgrade(int veh_id) {
-    typedef int (__stdcall *std_int)(int);
-    std_int Console_upgrade = (std_int)0x4D06C0;
+int __thiscall enemy_strategy_upgrade(Console* This, int veh_id) {
     if (*CurrentTurn <= 20 + game_start_turn()) {
         return 1; // skip upgrade
     }
-    return Console_upgrade(veh_id);
+    return Console_upgrade(This, veh_id);
 }
 
 /*
@@ -794,8 +792,6 @@ bool patch_setup(Config* cf) {
     write_byte(0x4E3222, 9, NetVersion); // AlphaNet::setup
     write_byte(0x52AA5C, 9, NetVersion); // control_game
     write_byte(0x627C8B, 9, 11); // pop_ask_number maximum length
-    write_byte(0x4EA8BE, 1, HumanGenomeProjectTalents); // base_psych
-    write_byte(0x4EA8ED, 2, ClinicalImmortalityTalents); // base_psych
 
     /*
     Hide unnecessary region_base_plan display next to base names in debug mode.
@@ -864,6 +860,7 @@ bool patch_setup(Config* cf) {
     */
     {
         write_call(0x414B81, (int)BaseWin_random_seed); // BaseWin_draw_pop
+        write_call(0x408786, (int)BaseWin_random_seed); // BaseWin_psych_row
         write_call(0x49D57B, (int)BaseWin_random_seed); // ReportWin_draw_ops
         memset((void*)0x414D52, 0x90, 5); // Superdrone icons, aliens
         memset((void*)0x414EE2, 0x90, 7); // Superdrone icons, humans
@@ -1377,6 +1374,7 @@ bool patch_setup(Config* cf) {
     if (!cf->landmarks.fresh     ) remove_call(0x5C8933);
     if (!cf->landmarks.geothermal) remove_call(0x5C893C);
 
+    /*
     if (cf->repair_minimal != 1) {
         const byte old_bytes[] = {0xC7,0x45,0xFC,0x01,0x00,0x00,0x00};
         const byte new_bytes[] = {0xC7,0x45,0xFC,(byte)cf->repair_minimal,0x00,0x00,0x00};
@@ -1430,6 +1428,7 @@ bool patch_setup(Config* cf) {
             0x83,0x45,0xFC,(byte)cf->repair_nano_factory,0x90,0x90,0x90,0x90,0x90,0x90,0x90};
         write_bytes(0x526540, old_bytes, new_bytes, sizeof(new_bytes));
     }
+    */
 
     if (!VirtualProtect(AC_IMAGE_BASE, AC_IMAGE_LEN, PAGE_EXECUTE_READ, &attrs)) {
         return false;

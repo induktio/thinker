@@ -98,6 +98,6 @@ int __thiscall mod_BasePop_start(
     void* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
 int __cdecl mod_action_move(int veh_id, int x, int y);
 int __cdecl MapWin_right_menu_arty(int veh_id, int x, int y);
-void __thiscall Console_arty_cursor_on(void* This, int cursor_type, int veh_id);
+void __thiscall Console_arty_cursor_on(Console* This, int cursor_type, int veh_id);
 
 
