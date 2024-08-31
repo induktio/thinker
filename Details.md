@@ -87,7 +87,7 @@ Base swapping dialogue has been adjusted to reject any base swaps where the AI w
 
 Player automation features
 ==========================
-It is possible to instruct Thinker to automate player-owned colony pods, crawlers and formers from `ALT+T` menu options. There's also a separate option to set Thinker manage governors in player-owned bases. Normally player base governors and unit automation would be handled by the vanilla AI.
+It is possible to instruct Thinker to automate player-owned colony pods, crawlers and formers from `ALT+T` menu options. There's also a separate option to set Thinker manage governors in player-owned bases. Normally player base governors and unit automation would be handled by the original AI. However worker tile selection and specialist allocation is always managed by Thinker.
 
 When enabled, use `Shift+A` shortcut to automate any specific unit and it will follow the same colonization or terraforming strategy as the AI factions. Colony pods will attempt to travel to a suitable location autonomously and deploy a base there. If this is not required, the units can be moved manually as well. Automated formers should follow the same settings listed in the Automation Preferences dialog. Crawlers will usually try to convoy nutrient or mineral resources depending on the base status.
 
@@ -96,6 +96,8 @@ Beware formers automated in this way **can replace any existing improvements** o
 Bases managed by Thinker governors will mostly follow the same options as provided in the base governor settings. Adjusting explore/discover/build/conquer governor priorities from the base window has the same effect compared to AIs using these choices as faction priorities. Enabling terraformer production in the governor settings will also allow governors to build crawlers since they don't have a separate option in the menu.
 
 By default Thinker governors will not attempt to start secret projects or hurry production with energy reserves, but this can be enabled from the governor settings. If production is hurried by the base governor, this will be displayed as a separate line in the message log. Normally the governor tries to keep some energy credits in reserve before attempting to hurry production.
+
+Governor is also able to choose between multiple specialist types based on social engineering choices and various conditions. If the base has Build/Conquer priorities selected, this will guide the governor to maximize mineral output even if some specialists could be useful for the base. If the governor has to reallocate many drones into specialists, this will be indicated with PSYCHREQUEST message if increasing psych spending could be potentially useful.
 
 
 Map generator options
@@ -419,6 +421,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 50. Clinical Immortality provides one extra talent per base instead of two as mentioned in the manual.
 51. Fix issue where terrain detail display on the world map showed incorrect mineral output for aquatic factions.
 52. Fix base tile sometimes producing too much energy (up to 2 extra resources) when SE Economy value is between 3 and 4.
+53. Fix monolith energy to not be limited by tile yield restrictions in the early game. This limitation did not apply on monolith nutrients/minerals.
 
 
 Scient's patch
