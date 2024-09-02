@@ -53,7 +53,7 @@ To save the current queue to template, open a base and **right click** on the qu
 
 Summary of AI changes
 =====================
-Thinker fully controls the movement of most units, combat and non-combat alike, to manage the base placement and production much more effectively than usual. AI code for land, sea and air combat units has been almost entirely rewritten. Note that the interceptor behavior for AI air units is not implemented, so they will not activate needlejets to intercept enemy units during the other factions turn.
+Thinker fully controls the movement of most units, combat and non-combat alike, to manage the base placement and production much more effectively than usual. AI code for land, sea and air combat units has been almost entirely rewritten. When playing on lower difficulties, it might make sense to apply additional limits on AI expansion by using options such as `expansion_limit=10` and `expansion_autoscale=1` so the AI will expand roughly at the same speed as the player faction.
 
 New combat routines for land-based units will attempt to counter-attack nearby enemy units more often. If the odds are good enough, hasty attacks are executed more often than usual. The AI will fight the native units more aggressively, and it will also try to heal its units at monoliths.
 
@@ -420,8 +420,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 49. Base production picker will not show Paradise Garden as buildable if the base already has Punishment Sphere.
 50. Clinical Immortality provides one extra talent per base instead of two as mentioned in the manual.
 51. Fix issue where terrain detail display on the world map showed incorrect mineral output for aquatic factions.
-52. Fix base tile sometimes producing too much energy (up to 2 extra resources) when SE Economy value is between 3 and 4.
-53. Fix monolith energy to not be limited by tile yield restrictions in the early game. This limitation did not apply on monolith nutrients/minerals.
+52. Fix monolith energy to not be limited by tile yield restrictions in the early game. This limitation did not apply on monolith nutrients/minerals.
 
 
 Scient's patch
