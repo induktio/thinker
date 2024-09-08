@@ -1,11 +1,6 @@
 #pragma once
 #pragma pack(push, 1)
 
-extern const int MaxProtoFactionNum;
-
-bool can_repair(int unit_id);
-bool is_human(int faction);
-
 enum Triad {
     TRIAD_NONE = -1, // Thinker variable
     TRIAD_LAND = 0,
@@ -317,6 +312,7 @@ enum UnitFlags {
     UNIT_ACTIVE = 0x1, // if this bit is zero, prototype has been retired
     UNIT_CUSTOM_NAME_SET = 0x2,
     UNIT_PROTOTYPED = 0x4,
+    UNIT_UNK_10 = 0x10,
     UNIT_UNK_80 = 0x80,
     UNIT_UNK_100 = 0x100, // checked in upgrade_any_prototypes
 };

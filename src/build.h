@@ -5,7 +5,6 @@
 int __cdecl mod_base_hurry();
 int hurry_item(int base_id, int mins, int cost);
 int consider_staple(int base_id);
-int need_psych(int base_id);
 bool need_scouts(int base_id, int scouts);
 bool redundant_project(int faction_id, int item_id);
 int find_satellite(int base_id);

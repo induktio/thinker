@@ -699,7 +699,7 @@ void move_upkeep(int faction, UpdateMode mode) {
             adjust_former(base->x, base->y, 2, base->pop_size);
             mapdata[{base->x, base->y}].safety += 10000;
 
-            if (sq->veh_owner() < 0) { // Undefended base
+            if (sq->veh_who() < 0) { // Undefended base
                 mapnodes.insert({base->x, base->y, NODE_PATROL});
             }
             if (sq->region == p.main_region) {
@@ -1310,7 +1310,7 @@ bool can_farm(int x, int y, int faction, int bonus, MAP* sq) {
     if (!has_terra(faction, FORMER_FARM, sea) || sq->is_rocky() || sq->items & BIT_THERMAL_BORE) {
         return false;
     }
-    if (bonus == RES_NUTRIENT && ~sq->items & BIT_FOREST
+    if (bonus == RES_NUTRIENT && !(sq->items & BIT_FOREST)
     && (sea || sq->is_rainy_or_moist() || sq->is_rolling())) {
         return true;
     }
@@ -1322,7 +1322,7 @@ bool can_farm(int x, int y, int faction, int bonus, MAP* sq) {
     }
     return (sq->is_rolling()
         + sq->is_rainy_or_moist()
-        + (nearby_items(x, y, 1, BIT_FARM | BIT_CONDENSER) < 2)
+        + (nearby_items(x, y, 0, 9, BIT_FARM | BIT_CONDENSER) < 2)
         + (sq->items & (BIT_FARM | BIT_CONDENSER) ? 1 : 0)
         + (sq->items & (BIT_FOREST) ? 0 : 2)
         + (sq->landmarks & LM_JUNGLE ? 0 : 1) > 4);
@@ -1347,7 +1347,7 @@ bool can_solar(int x, int y, int faction, int bonus, MAP* sq) {
     + (sq->items & BIT_FARM ? 1 : 0) < 3))) {
         return false;
     }
-    if (sq->items & BIT_SENSOR && nearby_items(x, y, 1, BIT_SENSOR) < 2) {
+    if (sq->items & BIT_SENSOR && nearby_items(x, y, 0, 9, BIT_SENSOR) < 2) {
         return false;
     }
     return !(sq->items & (BIT_MINE | BIT_FOREST | BIT_SOLAR | BIT_ADVANCED));
@@ -1365,7 +1365,7 @@ bool can_mine(int x, int y, int faction, int bonus, MAP* sq) {
     && bonus != RES_MINERAL && mod_mine_yield(faction, -1, x, y, 0) >= 2) {
         return false;
     }
-    if (sq->items & BIT_SENSOR && nearby_items(x, y, 1, BIT_SENSOR) < 2) {
+    if (sq->items & BIT_SENSOR && nearby_items(x, y, 0, 9, BIT_SENSOR) < 2) {
         return false;
     }
     return !(sq->items & (BIT_MINE | BIT_FOREST | BIT_SOLAR | BIT_ADVANCED));
@@ -1416,7 +1416,7 @@ bool can_sensor(int x, int y, int faction, MAP* sq) {
 bool keep_fungus(int x, int y, int faction, MAP* sq) {
     return plans[faction].keep_fungus
         && !(sq->items & (BIT_BASE_IN_TILE | BIT_MONOLITH))
-        && nearby_items(x, y, 1, BIT_FUNGUS)
+        && nearby_items(x, y, 0, 9, BIT_FUNGUS)
         < (sq->items & BIT_FUNGUS ? 1 : 0) + plans[faction].keep_fungus;
 }
 
@@ -1432,7 +1432,7 @@ bool can_level(int x, int y, int faction, int bonus, MAP* sq) {
         && !(sq->items & (BIT_MINE|BIT_FUNGUS|BIT_THERMAL_BORE))
         && sq->items & BIT_RIVER
         && !plans[faction].plant_fungus
-        && nearby_items(x, y, 1, BIT_FARM|BIT_FOREST) < 2));
+        && nearby_items(x, y, 0, 9, BIT_FARM|BIT_FOREST) < 2));
 }
 
 bool can_river(int x, int y, int faction, MAP* sq) {
@@ -1444,9 +1444,8 @@ bool can_river(int x, int y, int faction, MAP* sq) {
     }
     return !(((*CurrentTurn / 4 * x) ^ y) & 15)
         && !coast_tiles(x, y)
-        && nearby_items(x, y, 1, BIT_RIVER) < 2
-        && nearby_items(x, y, 2, BIT_RIVER) < 6
-        && nearby_items(x, y, 1, BIT_THERMAL_BORE) < 2;
+        && nearby_items(x, y, 1, 9, BIT_RIVER|BIT_THERMAL_BORE) < 2
+        && nearby_items(x, y, 1, 25, BIT_RIVER) < 6;
 }
 
 bool can_road(int x, int y, int faction, MAP* sq) {
@@ -1506,7 +1505,7 @@ bool can_magtube(int x, int y, int faction, MAP* sq) {
         return false;
     }
     return mapdata[{x, y}].roads > 0 && sq->items & BIT_ROAD
-        && (~sq->items & BIT_FUNGUS || has_tech(Rules->tech_preq_build_road_fungus, faction));
+        && (!(sq->items & BIT_FUNGUS) || has_tech(Rules->tech_preq_build_road_fungus, faction));
 }
 
 int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
@@ -1550,7 +1549,34 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
     if (road || sq->owner != faction || !sq->is_base_radius() || items & BIT_MONOLITH) {
         return (road ? FORMER_ROAD : FORMER_NONE);
     }
-    if (mode != FM_Auto_Full) {
+    if (mode == FM_Farm_Road || mode == FM_Mine_Road) {
+        if (items & BIT_FUNGUS) {
+            if (has_terra(faction, FORMER_REMOVE_FUNGUS, sea)) {
+                return FORMER_REMOVE_FUNGUS;
+            }
+            return FORMER_NONE;
+        }
+        if (!(items & BIT_ROAD) && has_terra(faction, FORMER_ROAD, sea)) {
+            return FORMER_ROAD;
+        }
+        if (items & BIT_MONOLITH) {
+            return FORMER_NONE;
+        }
+    }
+    if (mode == FM_Farm_Road) {
+        if ((sea || !sq->is_rocky()) && !(items & BIT_FARM) && has_terra(faction, FORMER_FARM, sea)) {
+            return FORMER_FARM;
+        }
+        if (!(items & BIT_SOLAR) && has_terra(faction, FORMER_SOLAR, sea)) {
+            return FORMER_SOLAR;
+        }
+    }
+    if (mode == FM_Mine_Road) {
+        if (!(items & BIT_MINE) && has_terra(faction, FORMER_MINE, sea)) {
+            return FORMER_MINE;
+        }
+    }
+    if (mode != FM_Auto_Full) { // Skip non-automated player formers
         return FORMER_NONE;
     }
     if (can_river(x, y, faction, sq)) {
@@ -1562,7 +1588,7 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
     bool forest = has_terra(faction, FORMER_FOREST, sea) && ResInfo->forest_sq_energy > 0;
     bool borehole = has_terra(faction, FORMER_THERMAL_BORE, sea) && ResInfo->borehole_sq_energy > 2;
     bool condenser = has_terra(faction, FORMER_CONDENSER, sea);
-    bool use_sensor = items & BIT_SENSOR && nearby_items(x, y, 1, BIT_SENSOR) < 2;
+    bool use_sensor = items & BIT_SENSOR && nearby_items(x, y, 0, 9, BIT_SENSOR) < 2;
     bool allow_farm = items & BIT_FARM || can_farm(x, y, faction, bonus, sq);
     bool allow_forest = items & BIT_FOREST || can_forest(x, y, faction, sq);
     bool allow_fungus = items & BIT_FUNGUS || plant_fungus(x, y, faction, sq);
@@ -1575,7 +1601,7 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
     int max_val = 0;
     int skip_val = (current > 7);
     int bonus_val = (bonus == RES_NUTRIENT) + skip_val
-        + (~sq->items & BIT_CONDENSER && allow_farm && sq->is_rainy_or_moist() && sq->is_rolling());
+        + (!(items & BIT_CONDENSER) && allow_farm && sq->is_rainy_or_moist() && sq->is_rolling());
 
     for (int v : {farm_val, forest_val, fungus_val, borehole_val}) {
         max_val = max(v, max_val);
@@ -1585,7 +1611,7 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
         if (items & BIT_FUNGUS) {
             return (rem_fungus ? FORMER_REMOVE_FUNGUS : FORMER_NONE);
         }
-        if (farm_val > current && allow_farm && ~items & BIT_FARM) {
+        if (farm_val > current && allow_farm && !(items & BIT_FARM)) {
             return FORMER_FARM;
         }
     }
@@ -1633,22 +1659,22 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
     }
 
     int solar_need = (condenser ? 0 : 1) + (forest ? 0 : 2) + (borehole ? 0 : 3)
-        + 2*max(0, sq->alt_level()-ALT_ONE_ABOVE_SEA) - nearby_items(x, y, 2, BIT_SOLAR);
+        + 2*max(0, sq->alt_level()-ALT_ONE_ABOVE_SEA) - nearby_items(x, y, 0, 25, BIT_SOLAR);
     if (sea) {
         solar_need = (has_terra(faction, FORMER_MINE, sea) ?
             (ResInfo->improved_sea_energy - ResInfo->improved_sea_mineral)
             - has_tech(Rules->tech_preq_mining_platform_bonus, faction): 6)
-            + nearby_items(x, y, 2, BIT_MINE) - nearby_items(x, y, 2, BIT_SOLAR);
+            + nearby_items(x, y, 0, 25, BIT_MINE) - nearby_items(x, y, 0, 25, BIT_SOLAR);
     }
 
     if (can_solar(x, y, faction, bonus, sq) && solar_need > 0) {
-        if (allow_farm && ~items & BIT_FARM) {
+        if (allow_farm && !(items & BIT_FARM)) {
             return FORMER_FARM;
         }
         return FORMER_SOLAR;
     }
     if (can_mine(x, y, faction, bonus, sq)) {
-        if (sea && allow_farm && ~items & BIT_FARM) {
+        if (sea && allow_farm && !(items & BIT_FARM)) {
             return FORMER_FARM;
         }
         return FORMER_MINE;
@@ -1656,15 +1682,15 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
     if (items & BIT_SOLAR && solar_need >= 0) {
         return FORMER_NONE;
     }
-    if (allow_farm && ~items & BIT_FARM) {
+    if (allow_farm && !(items & BIT_FARM)) {
         return FORMER_FARM;
     }
-    if (!use_sensor && items & BIT_FARM && ~items & BIT_CONDENSER
+    if (!use_sensor && items & BIT_FARM && !(items & BIT_CONDENSER)
     && has_terra(faction, FORMER_CONDENSER, sea)
     && (!is_human(faction) || *GamePreferences & PREF_AUTO_FORMER_BUILD_ADV)) {
         return FORMER_CONDENSER;
     }
-    if (!use_sensor && items & BIT_FARM && ~items & BIT_SOIL_ENRICHER
+    if (!use_sensor && items & BIT_FARM && !(items & BIT_SOIL_ENRICHER)
     && has_terra(faction, FORMER_SOIL_ENR, sea)) {
         return FORMER_SOIL_ENR;
     }
@@ -1710,7 +1736,7 @@ int former_tile_score(int x, int y, int faction, MAP* sq) {
     if (items & (BIT_FOREST | BIT_SENSOR) && can_road(x, y, faction, sq)) {
         score += 8;
     }
-    if (mapdata[{x, y}].roads > 0 && (~items & BIT_ROAD || (build_tubes && ~items & BIT_MAGTUBE))) {
+    if (mapdata[{x, y}].roads > 0 && (!(items & BIT_ROAD) || (build_tubes && !(items & BIT_MAGTUBE)))) {
         score += 12;
     }
     if (is_shore_level(sq) && mapnodes.count({x, y, NODE_GOAL_RAISE_LAND})) {
@@ -1764,13 +1790,19 @@ int former_move(const int id) {
         && has_terra(faction, FORMER_REMOVE_FUNGUS, is_ocean(sq))) {
             mode = FM_Remove_Fungus;
         }
+        else if (veh->order_auto_type == ORDERA_TERRA_FARM_SOLAR_ROAD) {
+            mode = FM_Farm_Road;
+        }
+        else if (veh->order_auto_type == ORDERA_TERRA_FARM_MINE_ROAD) {
+            mode = FM_Mine_Road;
+        }
     }
     int turns = (veh->order >= ORDER_FARM && veh->order < ORDER_MOVE_TO ?
         Terraform[veh->order - 4].rate : 0);
 
     if (safe || turns >= 12 || veh->plr_owner()) {
         if (turns > 0 && !(veh->order == ORDER_DRILL_AQUIFER
-        && nearby_items(veh->x, veh->y, 1, BIT_RIVER) >= 4)) {
+        && nearby_items(veh->x, veh->y, 0, 9, BIT_RIVER) >= 4)) {
             return VEH_SYNC;
         }
         if (!veh->at_target() && !can_road(veh->x, veh->y, faction, sq)
@@ -1791,6 +1823,11 @@ int former_move(const int id) {
         }
     } else if (!safe) {
         return escape_move(id);
+    }
+    if (mode == FM_Farm_Road || mode == FM_Mine_Road) {
+        veh->state &= ~VSTATE_ON_ALERT; // Request new automation orders
+        veh->order = ORDER_NONE;
+        return VEH_SYNC;
     }
     bool home_base_only = false;
     bool full_search = (*CurrentTurn + id) % 4 == 0;

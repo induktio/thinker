@@ -108,6 +108,7 @@ const int MaxProtoFactionNum = 64;
 const int MaxBaseNameLen = 25;
 const int MaxProtoNameLen = 32;
 const int MaxBasePopSize = 127;
+const int MaxBaseSpecNum = 16;
 
 const int MaxTechnologyNum = 89;
 const int MaxChassisNum = 9;

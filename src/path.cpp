@@ -280,7 +280,7 @@ int __cdecl mod_zoc_sea(int x, int y, int faction_id) {
 
 int __cdecl mod_zoc_move(int x, int y, int faction_id) {
     MAP* sq = mapsq(x, y);
-    if (sq && (!sq->is_base() || sq->veh_owner() < 0)) {
+    if (sq && !sq->is_base()) {
         return mod_zoc_sea(x, y, faction_id);
     }
     return 0;
@@ -302,10 +302,10 @@ std::vector<MapTile> iterate_tiles(int x, int y, size_t start_index, size_t end_
     return tiles;
 }
 
-int nearby_items(int x, int y, int range, uint32_t item) {
-    assert(range >= 0 && range <= MaxTableRange);
+int nearby_items(int x, int y, size_t start_index, size_t end_index, uint32_t item) {
+    assert(start_index < end_index && end_index <= (size_t)TableRange[MaxTableRange]);
     int n = 0;
-    for (int i = 0; i < TableRange[range]; i++) {
+    for (size_t i = start_index; i < end_index; i++) {
         int x2 = wrap(x + TableOffsetX[i]);
         int y2 = y + TableOffsetY[i];
         if (bit_at(x2, y2) & item) {

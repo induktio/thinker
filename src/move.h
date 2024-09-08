@@ -4,7 +4,8 @@
 
 enum UpdateMode {UM_Full, UM_Visual, UM_Player};
 enum StackType {ST_NeutralOnly, ST_NonPactOnly, ST_EnemyOnly, ST_EnemyOneUnit};
-enum FormerMode {FM_Auto_Full, FM_Auto_Roads, FM_Auto_Tubes, FM_Auto_Sensors, FM_Remove_Fungus};
+enum FormerMode {FM_Auto_Full, FM_Auto_Roads, FM_Auto_Tubes, FM_Auto_Sensors,
+    FM_Remove_Fungus, FM_Farm_Road, FM_Mine_Road};
 
 enum EnemyVehMove { // Return codes for enemy_veh processing
     VEH_SYNC = 0,

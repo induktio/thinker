@@ -116,12 +116,7 @@ int __cdecl mod_cost_factor(int faction_id, BaseResType type, int base_id) {
     } else if (type == RSC_NUTRIENT) {
         int growth = Factions[faction_id].SE_growth_pending;
         if (base_id >= 0) {
-            if (has_fac_built(FAC_CHILDREN_CRECHE, base_id)) {
-                growth += 2;
-            }
-            if (Bases[base_id].golden_age_active()) {
-                growth += 2;
-            }
+            growth = Bases[base_id].SE_growth(SE_Pending);
         }
         value = (value * (10 - clamp(growth, -2, 5)) + 9) / 10;
     }
@@ -421,7 +416,7 @@ void __cdecl mod_repair_phase(int faction_id) {
             continue;
         }
         MAP* sq = mapsq(veh->x, veh->y);
-        const bool at_base = sq && sq->is_base() && sq->veh_owner() >= 0;
+        const bool at_base = sq && sq->is_base();
         const int triad = veh->triad();
         veh->iter_count = 0;
         veh->moves_spent = 0;

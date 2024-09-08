@@ -80,6 +80,7 @@
 		<Unit filename="src/debug.h" />
 		<Unit filename="src/engine.cpp" />
 		<Unit filename="src/engine.h" />
+		<Unit filename="src/engine_base.h" />
 		<Unit filename="src/engine_enums.h" />
 		<Unit filename="src/engine_types.h" />
 		<Unit filename="src/engine_veh.h" />

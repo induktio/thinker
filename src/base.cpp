@@ -128,7 +128,7 @@ void __cdecl mod_base_support() {
     const int support_val = clamp(f->SE_support_pending + 4, 0, 7);
     const int support_type = (conf.modify_unit_support == 1 ? PLAN_SUPPLY :
         (conf.modify_unit_support == 2 ? PLAN_PROBE : PLAN_TERRAFORM));
-    const int SE_police = base_police(base_id, true);
+    const int SE_police = base->SE_police(SE_Pending);
 
     BaseResourceConvoyTo[0] = 0;
     BaseResourceConvoyTo[1] = 0;
@@ -153,11 +153,11 @@ void __cdecl mod_base_support() {
             BaseResType type = (BaseResType)veh->order_auto_type;
             assert(type <= RSC_UNUSED);
             if (veh->home_base_id == base_id && type <= RSC_UNUSED) {
-                if (!sq->is_base() || sq->veh_owner() < 0) { // other condition redundant?
+                if (!sq->is_base()) {
                     int value = resource_yield(type, veh->faction_id, base_id, veh->x, veh->y);
                     BaseResourceConvoyTo[type] += value;
                 }
-                if (sq->is_base() && sq->veh_owner() >= 0) {
+                if (sq->is_base()) {
                     BaseResourceConvoyFrom[type]++;
                 }
             } else if (veh->x == base->x && veh->y == base->y
@@ -196,7 +196,7 @@ void __cdecl mod_base_support() {
                     }
                 }
                 if (veh->offense_value() != 0 && veh->plan() != PLAN_AIR_SUPERIORITY
-                && (!sq->is_base() || sq->veh_owner() < 0) && (veh->triad() == TRIAD_AIR
+                && !sq->is_base() && (veh->triad() == TRIAD_AIR
                 || mod_whose_territory(base->faction_id, veh->x, veh->y, 0, 0) != base->faction_id)) {
                     (*BaseVehPacifismCount)++;
                     if (SE_police == -3 && *BaseVehPacifismCount == 1) {
@@ -245,7 +245,7 @@ static int32_t base_radius(int base_id, std::vector<TileValue>& tiles) {
             BaseTileFlags[i] = BR_NOT_VISIBLE;
         } else {
             BaseTileFlags[i] = 0;
-            if (sq->is_base() && sq->veh_owner() >= 0) {
+            if (sq->is_base()) {
                 BaseTileFlags[i] |= BR_BASE_IN_TILE;
             }
             for (int j = 0; j < *VehCount; j++) {
@@ -289,17 +289,6 @@ static void base_update(BASE* base, std::vector<TileValue>& tiles) {
             base->energy_intake += m.energy;
         }
     }
-    for (int i = 0; i < base->specialist_total; i++) {
-        int citizen_id;
-        if (i < 16) {
-            citizen_id = base->specialist_type(i);
-        } else {
-            citizen_id = mod_best_specialist();
-        }
-        base->labs_total += Citizen[citizen_id].labs_bonus;
-        base->economy_total += Citizen[citizen_id].econ_bonus;
-        base->psych_total += Citizen[citizen_id].psych_bonus;
-    }
     base->nutrient_intake_2 = base->nutrient_intake;
     base->mineral_intake_2 = base->mineral_intake;
     base->energy_intake_2 = base->energy_intake;
@@ -331,7 +320,7 @@ void __cdecl mod_base_yield() {
     base->mineral_intake = Ms;
     base->energy_intake = Es;
 
-    int SE_police = base_police(base_id, true);
+    int SE_police = base->SE_police(SE_Pending);
     bool can_grow = base_unused_space(base_id) > 0;
     bool can_riot = base_can_riot(base_id, true);
     bool reallocate = manage_workers || !base->worked_tiles;
@@ -344,10 +333,7 @@ void __cdecl mod_base_yield() {
     int labs_val = 2 + 2*(need_labs && f->SE_alloc_labs > 0) + (alloc_econ <= f->SE_alloc_labs);
     int psych_val = 2 + 2*can_riot + 4*pacifism;
     int best_spc_id = best_specialist(base, econ_val, labs_val, psych_val);
-    if (can_riot && base->drone_total + base->specialist_adjust >= base->pop_size/2
-    && !Citizen[best_spc_id].psych_bonus) {
-        best_spc_id = best_specialist(base, econ_val, labs_val, 3*psych_val);
-    }
+    int psych_spc_id = (can_riot ? best_specialist(base, econ_val, labs_val, 3*psych_val) : best_spc_id);
     CCitizen& spc = Citizen[best_spc_id];
 
     // Initial production without intake from any tiles (incl. base tile)
@@ -364,7 +350,7 @@ void __cdecl mod_base_yield() {
     std::vector<TileValue> choices;
 
     int Wnutrient = 2 + (base->pop_size < Rules->min_base_size_specialists + 2);
-    int Wenergy = 1 + (effic_val >= 8);
+    int Wenergy = 1 + (effic_val >= 6);
     int Wmineral = 3;
     if (base->defend_range > 0) {
         Wmineral = 3 + (base->defend_goal > 2) + max(0, 2 - base->defend_range/16);
@@ -374,7 +360,7 @@ void __cdecl mod_base_yield() {
     }
 
     if (*BaseUpkeepState != 2) {
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < MaxBaseSpecNum; i++) {
             int spc_id = base->specialist_type(i);
             if (manage_workers || has_tech(Citizen[spc_id].obsol_tech, faction_id)) {
                 base->specialist_modify(i, best_spc_id);
@@ -404,11 +390,11 @@ void __cdecl mod_base_yield() {
                 if (can_grow) {
                     score = m.nutrient * max(4 + 4*(Nv < 0) + 4*(Nv < threshold)
                         + max(0, 5 - base->pop_size) - max(0, Nv - 1)/4, 2)
-                        + m.mineral * (5 + 4*(Mv < 0) + 4*(Mv < 2))
+                        + m.mineral * (5 + 5*(Mv < 0) + 4*(Mv < 2))
                         + (m.energy * effic_val + 15) / 16 * 4;
                 } else {
                     score = m.nutrient * (Nv < 0 ? 8 : 2)
-                        + m.mineral * (5 + 4*(Mv < 0) + 4*(Mv < 2))
+                        + m.mineral * (5 + 5*(Mv < 0) + 4*(Mv < 2))
                         + (m.energy * effic_val + 15) / 16 * 4;
                 }
                 score = 32*score - m.i; // Select adjacent tiles first
@@ -422,7 +408,7 @@ void __cdecl mod_base_yield() {
             }
             if (2*(spc.labs_bonus + spc.econ_bonus) + (can_riot ? 2 : 1) * spc.psych_bonus
             > Wnutrient*choice->nutrient + Wmineral*choice->mineral + Wenergy*choice->energy
-            && Nv >= (can_grow ? threshold : 0) && Mv >= 2 + base->pop_size * Wmineral / 2) {
+            && Nv >= (can_grow ? threshold : 0) && Mv >= (base->pop_size * Wmineral + 5) / 2) {
                 break;
             }
             worked_tiles |= (1 << choice->i);
@@ -443,8 +429,24 @@ void __cdecl mod_base_yield() {
         bool valid = !can_riot;
         while (!valid && choices.size() > 1) {
             base_update(base, choices);
+            mod_base_minerals();
             mod_base_energy();
-            valid = base->talent_total >= base->drone_total;
+            valid = !base->drone_riots();
+            if (!valid && manage_workers && best_spc_id != psych_spc_id
+            && base->drone_total - base->talent_total > (base->pop_size + 3)/4) {
+                best_spc_id = psych_spc_id;
+                for (int i = 0; i < MaxBaseSpecNum; i++) {
+                    base->specialist_modify(i, best_spc_id);
+                    initial.specialist_modify(i, best_spc_id);
+                }
+                mod_base_minerals();
+                mod_base_energy();
+                valid = !base->drone_riots();
+            }
+            if (base->mineral_surplus - choices.back().mineral < 0) {
+                // Priority for mineral support costs
+                valid = true;
+            }
             memcpy(base, &initial, sizeof(BASE));
             if (!valid) {
                 worked_tiles &= ~(1 << choices.back().i);
@@ -490,13 +492,7 @@ void __cdecl mod_base_nutrient() {
     BASE* base = *CurrentBase;
     int faction_id = base->faction_id;
 
-    *BaseGrowthRate = Factions[faction_id].SE_growth_pending;
-    if (has_fac_built(FAC_CHILDREN_CRECHE, *CurrentBaseID)) {
-        *BaseGrowthRate += 2; // +2 on growth scale
-    }
-    if (base->state_flags & BSTATE_GOLDEN_AGE_ACTIVE) {
-        *BaseGrowthRate += 2;
-    }
+    *BaseGrowthRate = base->SE_growth(SE_Pending);
     base->nutrient_intake_2 += BaseResourceConvoyTo[RSC_NUTRIENT];
     base->nutrient_consumption = BaseResourceConvoyFrom[RSC_NUTRIENT]
         + base->pop_size * Rules->nutrient_intake_req_citizen;
@@ -506,7 +502,7 @@ void __cdecl mod_base_nutrient() {
         if (base->nutrients_accumulated < 0) {
             base->nutrients_accumulated = 0;
         }
-    } else if (!(base->nutrients_accumulated)) {
+    } else if (!base->nutrients_accumulated) {
         base->nutrients_accumulated = -1;
     }
     if (*BaseUpkeepState == 1) {
@@ -517,11 +513,12 @@ void __cdecl mod_base_nutrient() {
 
 void __cdecl mod_base_minerals() {
     BASE* base = *CurrentBase;
+    int base_id = *CurrentBaseID;
     int faction_id = base->faction_id;
 
     base->mineral_intake_2 += BaseResourceConvoyTo[RSC_MINERAL];
     base->mineral_intake_2 = (base->mineral_intake_2
-        * (mineral_output_modifier(*CurrentBaseID) + 2)) / 2;
+        * (mineral_output_modifier(base_id) + 2)) / 2;
     base->mineral_consumption = *BaseForcesMaintCost
         + BaseResourceConvoyFrom[RSC_MINERAL];
     base->mineral_surplus = base->mineral_intake_2
@@ -538,12 +535,12 @@ void __cdecl mod_base_minerals() {
         clean_minerals_total -= damage_modifier;
         base->eco_damage -= damage_modifier;
     }
-    int eco_dmg_reduction = (has_fac_built(FAC_NANOREPLICATOR, *CurrentBaseID)
+    int eco_dmg_reduction = (has_fac_built(FAC_NANOREPLICATOR, base_id)
         || has_project(FAC_SINGULARITY_INDUCTOR, faction_id)) ? 2 : 1;
-    if (has_fac_built(FAC_CENTAURI_PRESERVE, *CurrentBaseID)) {
+    if (has_fac_built(FAC_CENTAURI_PRESERVE, base_id)) {
         eco_dmg_reduction++;
     }
-    if (has_fac_built(FAC_TEMPLE_OF_PLANET, *CurrentBaseID)) {
+    if (has_fac_built(FAC_TEMPLE_OF_PLANET, base_id)) {
         eco_dmg_reduction++;
     }
     if (has_project(FAC_PHOLUS_MUTAGEN, faction_id)) {
@@ -665,7 +662,7 @@ void __cdecl mod_base_energy() {
 
     for (int i = 0; i < base->specialist_total; i++) {
         int citizen_id;
-        if ( i < 16 ) {
+        if (i < MaxBaseSpecNum) {
             citizen_id = clamp(base->specialist_type(i), 0, MaxSpecialistNum-1);
         } else {
             citizen_id = mod_best_specialist();
@@ -874,7 +871,7 @@ void __cdecl mod_base_psych(int base_id) {
     //  1, Can use up to 2 military units as police
     //  2, Can use up to 3 military units as police!
     //  3, 3 units as police. Police effect doubled!!
-    const int SE_police = base_police(base_id, true);
+    const int SE_police = base->SE_police(SE_Pending);
     const int num_police = clamp((SE_police == -1) + SE_police + 1, 0, 3);
     const int val_police = 1 + (SE_police >= 3);
 
@@ -1124,7 +1121,7 @@ int __cdecl mod_base_growth() {
         base->nutrients_accumulated += base->nutrient_surplus;
         if (base->nutrient_surplus >= 0
         || base->nutrients_accumulated < base->nutrient_surplus
-        || base->nutrients_accumulated + 4 * base->nutrient_surplus + base->nutrient_surplus >= 0
+        || base->nutrients_accumulated + 5 * base->nutrient_surplus >= 0
         || ((base->governor_flags & GOV_ACTIVE) && (base->governor_flags & GOV_MANAGES_CITIZENS_SPECS))) {
             return 0;
         }
@@ -1176,7 +1173,7 @@ int __cdecl mod_base_growth() {
                 if (veh->home_base_id == base_id && veh->is_supply()
                 && veh->order == ORDER_CONVOY && !veh->moves_spent) {
                     MAP* sq = mapsq(veh->x, veh->y);
-                    if (sq && sq->is_base() && sq->veh_owner() >= 0) {
+                    if (sq && sq->is_base()) {
                         veh->order = ORDER_NONE;
                     }
                 }
@@ -1688,13 +1685,6 @@ int hurry_cost(int base_id, int item_id, int hurry_mins) {
     return 0;
 }
 
-int base_police(int base_id, bool pending) {
-    assert(base_id >= 0 && base_id < *BaseCount);
-    Faction* f = &Factions[Bases[base_id].faction_id];
-    return (pending ? f->SE_police_pending : f->SE_police)
-        + 2*has_fac_built(FAC_BROOD_PIT, base_id);
-}
-
 int base_unused_space(int base_id) {
     BASE* base = &Bases[base_id];
     int limit_mod = (has_project(FAC_ASCETIC_VIRTUES, base->faction_id) ? 2 : 0)
@@ -2080,12 +2070,12 @@ bool can_build_unit(int base_id, int unit_id) {
 
 bool can_staple(int base_id) {
     return base_id >= 0 && conf.nerve_staple > Bases[base_id].plr_owner()
-        && base_police(base_id, false) >= 0;
+        && Bases[base_id].SE_police(SE_Current) >= 0;
 }
 
 bool base_maybe_riot(int base_id) {
     BASE* b = &Bases[base_id];
-    return b->drone_total > b->talent_total && base_can_riot(base_id, true);
+    return b->drone_riots() && base_can_riot(base_id, true);
 }
 
 bool base_can_riot(int base_id, bool allow_staple) {
@@ -2197,7 +2187,7 @@ int __cdecl has_fac(FacilityId item_id, int base_id, int queue_count) {
 
 int __cdecl has_fac_built(FacilityId item_id, int base_id) {
     return base_id >= 0 && item_id >= 0 && item_id <= Fac_ID_Last
-        && Bases[base_id].facilities_built[item_id/8] & (1 << (item_id % 8));
+        && !!(Bases[base_id].facilities_built[item_id/8] & (1 << (item_id % 8)));
 }
 
 /*

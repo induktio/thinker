@@ -1092,14 +1092,7 @@ bool patch_setup(Config* cf) {
         const byte new_tachyon[] = {0x83,0xC6,(byte)cf->tachyon_field_bonus};
         write_bytes(0x503506, old_tachyon, new_tachyon, sizeof(new_tachyon));
     }
-    /*
-    Modify Biology Lab research bonus value.
-    */
-    {
-        const byte old_bytes[] = {0x83,0x80,0x08,0x01,0x00,0x00,0x02};
-        const byte new_bytes[] = {0x83,0x80,0x08,0x01,0x00,0x00,(byte)cf->biology_lab_bonus};
-        write_bytes(0x4EBC85, old_bytes, new_bytes, sizeof(new_bytes));
-    }
+
     /*
     Initial content base population before psych modifiers.
     */
@@ -1120,6 +1113,7 @@ bool patch_setup(Config* cf) {
         write_call(0x4EA56D, (int)base_psych_content_pop);
         write_call(0x4CFEA4, (int)mod_psych_check);
     }
+
     /*
     Modify planetpearls income after wiping out any planet-owned units.
     */
@@ -1278,11 +1272,6 @@ bool patch_setup(Config* cf) {
         const byte old_bytes_2[] = {0x85,0xC0,0x74,0x07};
         write_bytes(0x4F2AC6, old_bytes_2, NULL, sizeof(old_bytes_2));
     }
-    if (cf->clean_minerals != 16) {
-        const byte old_bytes[] = {0x83, 0xC6, 0x10};
-        const byte new_bytes[] = {0x83, 0xC6, (byte)cf->clean_minerals};
-        write_bytes(0x4E9E41, old_bytes, new_bytes, sizeof(new_bytes));
-    }
     if (!cf->spawn_fungal_towers) {
         /* Spawn nothing in this case. */
         remove_call(0x4F7143);
@@ -1311,11 +1300,6 @@ bool patch_setup(Config* cf) {
         const byte old_bytes[] = {0xB2, 0x03};
         const byte new_bytes[] = {0xB2, (byte)cf->collateral_damage_value};
         write_bytes(0x50AAA5, old_bytes, new_bytes, sizeof(new_bytes));
-    }
-    if (!cf->aquatic_bonus_minerals) {
-        const byte old_bytes[] = {0x46};
-        const byte new_bytes[] = {0x90};
-        write_bytes(0x4E7604, old_bytes, new_bytes, sizeof(new_bytes));
     }
     if (!cf->event_perihelion) {
         short_jump(0x51F481);
@@ -1375,6 +1359,21 @@ bool patch_setup(Config* cf) {
     if (!cf->landmarks.geothermal) remove_call(0x5C893C);
 
     /*
+    {
+        const byte old_bytes[] = {0x83,0x80,0x08,0x01,0x00,0x00,0x02};
+        const byte new_bytes[] = {0x83,0x80,0x08,0x01,0x00,0x00,(byte)cf->biology_lab_bonus};
+        write_bytes(0x4EBC85, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+    if (cf->clean_minerals != 16) {
+        const byte old_bytes[] = {0x83, 0xC6, 0x10};
+        const byte new_bytes[] = {0x83, 0xC6, (byte)cf->clean_minerals};
+        write_bytes(0x4E9E41, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+    if (!cf->aquatic_bonus_minerals) {
+        const byte old_bytes[] = {0x46};
+        const byte new_bytes[] = {0x90};
+        write_bytes(0x4E7604, old_bytes, new_bytes, sizeof(new_bytes));
+    }
     if (cf->repair_minimal != 1) {
         const byte old_bytes[] = {0xC7,0x45,0xFC,0x01,0x00,0x00,0x00};
         const byte new_bytes[] = {0xC7,0x45,0xFC,(byte)cf->repair_minimal,0x00,0x00,0x00};

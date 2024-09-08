@@ -20,8 +20,31 @@ typedef uint8_t byte;
 typedef uint32_t Dib;
 typedef struct { char str[256]; } char256;
 
+struct CChassis;
+extern CChassis* Chassis;
+struct CWeapon;
+extern CWeapon* Weapon;
+struct CArmor;
+extern CArmor* Armor;
+struct UNIT;
+extern UNIT* Units;
+struct VEH;
+extern VEH* Vehicles;
+struct Faction;
+extern Faction* Factions;
+struct MFaction;
+extern MFaction* MFactions;
+extern int* GameState;
+extern int* GameRules;
+extern const int MaxPlayerNum;
+extern const int MaxBaseSpecNum;
+extern const int MaxProtoFactionNum;
+bool is_human(int faction);
+bool can_repair(int unit_id);
+
 #include "engine_enums.h"
 #include "engine_types.h"
+#include "engine_base.h"
 #include "engine_veh.h"
 #include "engine_win.h"
 
@@ -46,15 +69,11 @@ struct Point {
     int x;
     int y;
 
-    bool operator==(const Point& other) const {
-        return (x == other.x && y == other.y);
+    bool operator==(const Point& obj) const {
+        return (x == obj.x && y == obj.y);
     }
-};
-
-struct PointComp {
-    bool operator()(const Point& p1, const Point& p2) const
-    {
-        return p1.x < p2.x || (p1.x == p2.x && p1.y < p2.y);
+    bool operator<(const Point& obj) const {
+        return x < obj.x || (x == obj.x && y < obj.y);
     }
 };
 
@@ -69,13 +88,10 @@ struct MapNode {
     int x;
     int y;
     int type;
-};
 
-struct MapNodeComp {
-    bool operator()(const MapNode& p1, const MapNode& p2) const
-    {
-        return p1.x < p2.x || (p1.x == p2.x && (
-            p1.y < p2.y || (p1.y == p2.y && (p1.type < p2.type))
+    bool operator<(const MapNode& obj) const {
+        return x < obj.x || (x == obj.x && (
+            y < obj.y || (y == obj.y && (type < obj.type))
         ));
     }
 };
@@ -139,8 +155,8 @@ struct PInfo {
 };
 
 typedef std::unordered_map<Point, PInfo> PMTable;
-typedef std::set<MapNode,MapNodeComp> NodeSet;
-typedef std::set<Point,PointComp> Points;
+typedef std::set<MapNode> NodeSet;
+typedef std::set<Point> Points;
 typedef std::list<Point> PointList;
 typedef std::set<std::string> set_str_t;
 typedef std::vector<std::string> vec_str_t;
@@ -177,10 +193,31 @@ struct ThinkerData {
     int8_t padding[144];
 };
 
+static_assert(sizeof(struct CTerraform) == 32, "");
+static_assert(sizeof(struct CResourceInfo) == 144, "");
+static_assert(sizeof(struct CCitizen) == 28, "");
+static_assert(sizeof(struct CResourceName) == 8, "");
+static_assert(sizeof(struct CCombatMode) == 16, "");
+static_assert(sizeof(struct CBonusName) == 24, "");
+static_assert(sizeof(struct CSocialEffect) == 104, "");
+static_assert(sizeof(struct CCombatMode) == 16, "");
 static_assert(sizeof(struct CRules) == 308, "");
+static_assert(sizeof(struct CEnergy) == 8, "");
+static_assert(sizeof(struct CChassis) == 144, "");
+static_assert(sizeof(struct CNatural) == 8, "");
+static_assert(sizeof(struct CWeapon) == 16, "");
 static_assert(sizeof(struct CSocialField) == 212, "");
-static_assert(sizeof(struct CFacility) == 48, "");
+static_assert(sizeof(struct CMight) == 8, "");
+static_assert(sizeof(struct CTimeControl) == 32, "");
+static_assert(sizeof(struct CArmor) == 16, "");
 static_assert(sizeof(struct CTech) == 44, "");
+static_assert(sizeof(struct CWorldbuilder) == 124, "");
+static_assert(sizeof(struct CMorale) == 8, "");
+static_assert(sizeof(struct CReactor) == 12, "");
+static_assert(sizeof(struct COrder) == 12, "");
+static_assert(sizeof(struct CFacility) == 48, "");
+static_assert(sizeof(struct CProposal) == 12, "");
+static_assert(sizeof(struct CAbility) == 28, "");
 static_assert(sizeof(struct MFaction) == 1436, "");
 static_assert(sizeof(struct Faction) == 8396, "");
 static_assert(sizeof(struct BASE) == 308, "");
@@ -398,31 +435,31 @@ extern void* NetState;
 extern Path* Paths;
 
 // Rules parsed from alphax.txt
-extern CRules* Rules;
-extern CTech* Tech;
-extern CFacility* Facility;
-extern CAbility* Ability;
-extern CChassis* Chassis;
-extern CCitizen* Citizen;
-extern CArmor* Armor;
-extern CReactor* Reactor;
-extern CResourceInfo* ResInfo;
-extern CResourceName* ResName;
-extern CEnergy* Energy;
 extern CTerraform* Terraform;
-extern CWeapon* Weapon;
-extern CNatural* Natural;
-extern CProposal* Proposal;
-extern CWorldbuilder *WorldBuilder;
-extern CMorale* Morale;
-extern CCombatMode* DefenseMode;
+extern CResourceInfo* ResInfo;
+extern CCitizen* Citizen;
+extern CResourceName* ResName;
 extern CCombatMode* OffenseMode;
-extern COrder* Order;
-extern CTimeControl* TimeControl;
-extern CSocialField* Social;
-extern CSocialEffect* SocialEffect;
-extern CMight* Might;
 extern CBonusName* BonusName;
+extern CSocialEffect* SocialEffect;
+extern CCombatMode* DefenseMode;
+extern CRules* Rules;
+extern CEnergy* Energy;
+extern CChassis* Chassis;
+extern CNatural* Natural;
+extern CWeapon* Weapon;
+extern CSocialField* Social;
+extern CMight* Might;
+extern CTimeControl* TimeControl;
+extern CArmor* Armor;
+extern CTech* Tech;
+extern CWorldbuilder* WorldBuilder;
+extern CMorale* Morale;
+extern CReactor* Reactor;
+extern COrder* Order;
+extern CFacility* Facility;
+extern CProposal* Proposal;
+extern CAbility* Ability;
 extern char** Mood;
 extern char** Repute;
 

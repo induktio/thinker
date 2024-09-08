@@ -1,144 +1,6 @@
 #pragma once
 #pragma pack(push, 1)
 
-struct CChassis;
-extern CChassis* Chassis;
-struct CWeapon;
-extern CWeapon* Weapon;
-struct CArmor;
-extern CArmor* Armor;
-struct UNIT;
-extern UNIT* Units;
-struct VEH;
-extern VEH* Vehicles;
-extern int* GameState;
-extern int* GameRules;
-extern const int MaxPlayerNum;
-
-bool is_human(int faction);
-
-struct BASE {
-    int16_t x;
-    int16_t y;
-    int8_t faction_id;
-    int8_t faction_id_former;
-    int8_t pop_size;
-    int8_t assimilation_turns_left;
-    int8_t nerve_staple_turns_left;
-    int8_t ai_plan_status;
-    uint8_t visibility;
-    int8_t factions_pop_size_intel[8];
-    char name[25];
-    int16_t unk_x; // base_terraform
-    int16_t unk_y; // base_terraform
-    int32_t state_flags;
-    int32_t event_flags;
-    int32_t governor_flags;
-    int32_t nutrients_accumulated;
-    int32_t minerals_accumulated;
-    int32_t production_id_last;
-    int32_t eco_damage;
-    int32_t queue_size;
-    int32_t queue_items[10];
-    int32_t worked_tiles;
-    int32_t specialist_total;
-    int32_t specialist_adjust;
-    int32_t specialist_types[2];
-    uint8_t facilities_built[12];
-    int32_t mineral_surplus_final;
-    int32_t minerals_accumulated_2;
-    int32_t pad_1;
-    int32_t pad_2;
-    int32_t pad_3;
-    int32_t pad_4;
-    int32_t nutrient_intake;
-    int32_t mineral_intake; // Before multiplier facilities
-    int32_t energy_intake;
-    int32_t unused_intake;
-    int32_t nutrient_intake_2;
-    int32_t mineral_intake_2; // After multiplier facilities
-    int32_t energy_intake_2;
-    int32_t unused_intake_2;
-    int32_t nutrient_surplus;
-    int32_t mineral_surplus;
-    int32_t energy_surplus;
-    int32_t unused_surplus;
-    int32_t nutrient_inefficiency;
-    int32_t mineral_inefficiency;
-    int32_t energy_inefficiency;
-    int32_t unused_inefficiency;
-    int32_t nutrient_consumption;
-    int32_t mineral_consumption;
-    int32_t energy_consumption;
-    int32_t unused_consumption;
-    int32_t economy_total;
-    int32_t psych_total;
-    int32_t labs_total;
-    int32_t unk_total;
-    int16_t autoforward_land_base_id;
-    int16_t autoforward_sea_base_id;
-    int16_t autoforward_air_base_id;
-    int8_t defend_goal; // Thinker variable
-    int8_t defend_range; // Thinker variable
-    int32_t talent_total;
-    int32_t drone_total;
-    int32_t superdrone_total;
-    int32_t random_event_turns;
-    int32_t nerve_staple_count;
-    int32_t pad_7;
-    int32_t pad_8;
-
-    int item() {
-        return queue_items[0];
-    }
-    bool item_is_project() {
-        return queue_items[0] <= -SP_ID_First;
-    }
-    bool item_is_unit() {
-        return queue_items[0] >= 0;
-    }
-    bool drone_riots_active() {
-        return state_flags & BSTATE_DRONE_RIOTS_ACTIVE;
-    }
-    bool golden_age_active() {
-        return state_flags & BSTATE_GOLDEN_AGE_ACTIVE;
-    }
-    bool golden_age() {
-        return !drone_total && pop_size > 2 && talent_total >= (pop_size + 1) / 2;
-    }
-    bool plr_owner() {
-        return is_human(faction_id);
-    }
-    // AI bases are not limited by any governor settings
-    uint32_t gov_config() {
-        return is_human(faction_id) ? governor_flags : ~0u;
-    }
-    /*
-    This implementation is simplified to skip additional checks for these rules:
-    RULES_SCN_VICT_SP_COUNT_OBJ, STATE_SCN_VICT_BASE_FACIL_COUNT_OBJ.
-    */
-    bool is_objective() {
-        return (*GameRules & RULES_SCN_VICT_ALL_BASE_COUNT_OBJ ) || (event_flags & BEVENT_OBJECTIVE);
-    }
-    /*
-    Specialist types (CCitizen, 4 bits per id) for the first 16 specialists in the base.
-    These are assigned in base_yield and base_energy and chosen by best_specialist.
-    */
-    int specialist_type(int index) {
-        if (index < 0 || index > 15) {
-            return 0;
-        }
-        return (specialist_types[index/8] >> 4 * (index & 7)) & 0xF;
-    }
-    void specialist_modify(int index, int citizen_id) {
-        if (index < 0 || index > 15) {
-            return;
-        }
-        specialist_types[index/8] &= ~(0xF << (4 * (index & 7)));
-        specialist_types[index/8] |= ((citizen_id & 0xF) << (4 * (index & 7)));
-    }
-};
-
 struct MAP {
     uint8_t climate; // 000 00 000 | altitude (3 bit) ; rainfall (2 bit) ; temperature (3 bit)
     uint8_t contour; // altitude details
@@ -183,19 +45,19 @@ struct MAP {
         return region == 63 || region == 127;
     }
     bool is_base() {
-        return items & BIT_BASE_IN_TILE;
+        return items & BIT_BASE_IN_TILE && veh_owner() >= 0;
     }
     bool is_bunker() {
         return items & BIT_BUNKER;
     }
     bool is_airbase() {
-        return items & (BIT_BASE_IN_TILE | BIT_AIRBASE);
+        return is_base() || (items & BIT_AIRBASE);
     }
     bool is_base_radius() {
         return items & BIT_BASE_RADIUS;
     }
     bool is_base_or_bunker() {
-        return items & (BIT_BUNKER | BIT_BASE_IN_TILE);
+        return is_base() || (items & BIT_BUNKER);
     }
     bool is_fungus() {
         return items & BIT_FUNGUS;

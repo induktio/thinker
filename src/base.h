@@ -31,7 +31,6 @@ char* prod_name(int item_id);
 int prod_turns(int base_id, int item_id);
 int mineral_cost(int base_id, int item_id);
 int hurry_cost(int base_id, int item_id, int hurry_mins);
-int base_police(int base_id, bool pending);
 int base_unused_space(int base_id);
 int base_growth_goal(int base_id);
 int stockpile_energy(int base_id);
