@@ -403,7 +403,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 32. When a base is captured that was previously owned by active third faction and the time to assimilate the base was more than zero, the previous owner is preserved after capture.
 33. Fix diplomacy dialog appearing multiple times when both human and alien factions are involved in a base capture by removing the event that spawns additional colony pods.
 34. Fix missing defender bonus mentioned in the manual "Units in a headquarters base automatically gain +1 Morale when defending".
-35. Fix multiple issues in unit morale calculation, see more details in "Improved combat mechanics" section (modify_unit_morale).
+35. Fix multiple issues in unit morale calculation, see more details in "Improved combat mechanics" section.
 36. Fix issue where TECHSHARE faction ability always skips the checks for infiltration conditions while smac_only mode is activated. Spying by probe team, pact, governor or Empath Guild is required.
 37. Fix issue where Accelerated Start option may sometimes freeze the game when selecting a random secret project for Hive. Patched version will not assign Citizens Defense Force or Command Nexus for a faction that already has those facilities for free, unless all other choices among the first seven projects have been exhausted, also Empath Guild is always skipped.
 38. Disable legacy game startup code that spawned additional colony pods for factions if the difficulty level matched pre-defined rules. The same starting units can now be selected from the config file for all difficulty levels (skip_default_balance).
@@ -421,6 +421,9 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 50. Clinical Immortality provides one extra talent per base instead of two as mentioned in the manual.
 51. Fix issue where terrain detail display on the world map showed incorrect mineral output for aquatic factions.
 52. Fix monolith energy to not be limited by tile yield restrictions in the early game. This limitation did not apply on monolith nutrients/minerals.
+53. Fix base tile energy output being inconsistent when SE Economy value is between 3 and 4.
+54. Fix GSP defense bonus range sometimes not being accurate at three tiles like the manual implies.
+55. Fix inconsistent effects with Citizens Defense Force when the base tile is defended by an unit owned by third faction.
 
 
 Scient's patch

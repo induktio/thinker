@@ -119,7 +119,6 @@ int* GameHalted = (int*)0x68F21C;
 int* ControlTurnA = (int*)0x9B2068;
 int* ControlTurnB = (int*)0x93A948;
 int* ControlTurnC = (int*)0x93A938;
-int* ControlRedraw = (int*)0x915620;
 int* ControlUpkeepA = (int*)0x93A934;
 int* ControlWaitLoop = (int*)0x703DE0;
 int* SkipTechScreenA = (int*)0x945F40; // non-zero skips popups, used in tech_achieved and tech_advance
@@ -140,10 +139,10 @@ int* VehBitError = (int*)0x9B228C;
 int* VehBasicBattleMorale = (int*)0x912420; // [2] ; [0] offense, [1] defense
 // Battle related globals
 int* VehBattleModCount = (int*)0x915614; // [2] ; [0] offense, [1] defense
-int* VehBattleUnkTgl = (int*)0x91561C; // [2] ; planet_busting() + boom() + timers
+int* VehBattleState = (int*)0x91561C; // [2] ; planet_busting() + boom() + timers
 int (*VehBattleModifier)[4] = (int (*)[4])0x9155F0; // [2][4]
 char (*VehBattleDisplay)[4][80] = (char (*)[4][80])0x90F554; // [2][4][80]
-char* VehBattleDisplayTerrain;
+char** VehBattleDisplayTerrain = (char**)0x90F550;
 int* ProbeHasAlgoEnhancement = (int*)0x945B30;
 int* ProbeTargetFactionID = (int*)0x945B34;
 int* ProbeTargetHasHSA = (int*)0x945B38;

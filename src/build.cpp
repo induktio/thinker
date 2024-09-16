@@ -397,9 +397,9 @@ bool unit_is_better(int unit_id1, int unit_id2) {
     UNIT* u1 = &Units[unit_id1];
     UNIT* u2 = &Units[unit_id2];
     bool val = (u1->cost >= u2->cost
-        && offense_value(unit_id1) >= 0
-        && offense_value(unit_id1) <= offense_value(unit_id2)
-        && defense_value(unit_id1) <= defense_value(unit_id2)
+        && proto_offense(unit_id1) >= 0
+        && proto_offense(unit_id1) <= proto_offense(unit_id2)
+        && proto_defense(unit_id1) <= proto_defense(unit_id2)
         && Chassis[u1->chassis_id].speed <= Chassis[u2->chassis_id].speed
         && (Chassis[u2->chassis_id].triad != TRIAD_AIR || u1->chassis_id == u2->chassis_id)
         && !((u1->ability_flags & u2->ability_flags) ^ u1->ability_flags))
@@ -430,7 +430,7 @@ int unit_score(BASE* base, int unit_id, int psi_score, bool defend) {
         {ABL_SUPER_TERRAFORMER, 8},
     };
     UNIT* u = &Units[unit_id];
-    int v = 16 * (defend ? defense_value(unit_id) : offense_value(unit_id));
+    int v = 16 * (defend ? proto_defense(unit_id) : proto_offense(unit_id));
     if (v < 0) {
         v = 12 * (defend ? Armor[best_armor(base->faction_id, -1)].defense_value
             : Weapon[best_weapon(base->faction_id)].offense_value)
@@ -440,7 +440,7 @@ int unit_score(BASE* base, int unit_id, int psi_score, bool defend) {
     if (u->triad() != TRIAD_AIR) {
         v += (defend ? 12 : 32) * u->speed();
         if (u->triad() == TRIAD_SEA && u->is_combat_unit()
-        && defense_value(unit_id) > offense_value(unit_id)) {
+        && proto_defense(unit_id) > proto_offense(unit_id)) {
             v -= 24;
         }
     }
@@ -524,8 +524,8 @@ int find_proto(int base_id, Triad triad, VehWeaponMode mode, bool defend) {
                 continue;
             }
             if (combat && best_id >= 0 && best_id != BSC_SCOUT_PATROL
-            && ((defend && offense_value(id) > defense_value(id))
-            || (!defend && offense_value(id) < defense_value(id)))) {
+            && ((defend && proto_offense(id) > proto_defense(id))
+            || (!defend && proto_offense(id) < proto_defense(id)))) {
                 continue;
             }
             if (combat && triad == TRIAD_AIR) {
@@ -959,14 +959,13 @@ int select_build(int base_id) {
                 continue;
             }
             if (clamp((turns - 5) / 10, 0, 3)
+            + clamp((drones - base->talent_total) / 2, 0, 3)
             + (base->energy_surplus < 4 + 2*base->pop_size)
-            + (drones > 1 + base->talent_total)
-            + (drones > 3 + base->talent_total)
             + (base->energy_inefficiency > base->energy_surplus)
             + (base->energy_inefficiency > 2*base->energy_surplus)
             - has_fac_built(FAC_RECREATION_COMMONS, base_id)
             - has_fac_built(FAC_HOLOGRAM_THEATRE, base_id)
-            - has_fac_built(FAC_PARADISE_GARDEN, base_id) < 3) {
+            - has_fac_built(FAC_RESEARCH_HOSPITAL, base_id) < 3) {
                 continue;
             }
             score += 80*drone_riots + 16*drones + 4*turns;
@@ -1023,11 +1022,14 @@ int select_build(int base_id) {
             continue;
         }
         if (t == FAC_COMMAND_CENTER || t == FAC_NAVAL_YARD || t == FAC_BIOENHANCEMENT_CENTER) {
-            if (minerals < reserve || base->defend_goal < 3) {
+            if (minerals < reserve || (base->defend_goal < 3 && Facility[t].maint)) {
                 continue;
             }
             score -= 4*(Facility[t].cost + Facility[t].maint);
             score -= defend_range;
+        }
+        if ((t == FAC_PERIMETER_DEFENSE && sea_base) || (t == FAC_NAVAL_YARD && !sea_base)) {
+            score -= 40;
         }
         if (t == FAC_PERIMETER_DEFENSE || t == FAC_TACHYON_FIELD
         || t == FAC_GEOSYNC_SURVEY_POD || t == FAC_FLECHETTE_DEFENSE_SYS) {

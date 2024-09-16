@@ -60,7 +60,7 @@ struct MAP {
         return is_base() || (items & BIT_BUNKER);
     }
     bool is_fungus() {
-        return items & BIT_FUNGUS;
+        return items & BIT_FUNGUS && alt_level() >= ALT_OCEAN_SHELF;
     }
     int alt_level() {
         return climate >> 5;
@@ -97,6 +97,12 @@ struct MAP {
     }
     int veh_who() {
         if (items & BIT_VEH_IN_TILE) {
+            return veh_owner();
+        }
+        return -1;
+    }
+    int base_who() {
+        if (items & BIT_BASE_IN_TILE) {
             return veh_owner();
         }
         return -1;
@@ -474,7 +480,7 @@ struct CRules {
     int32_t combat_bonus_intrinsic_base_def;
     int32_t combat_bonus_atk_road;
     int32_t combat_bonus_atk_higher_elevation;
-    int32_t combat_penalty_atk_lwr_elevation;
+    int32_t combat_penalty_atk_lower_elevation;
     int32_t tech_preq_orb_insert_wo_space;
     int32_t min_turns_between_councils;
     int32_t minerals_harvesting_forest;

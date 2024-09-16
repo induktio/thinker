@@ -41,8 +41,8 @@ int __cdecl mod_name_proto(char* name, int unit_id, int faction_id,
 VehArmor best_armor(int faction, int max_cost);
 VehWeapon best_weapon(int faction);
 VehReactor best_reactor(int faction);
-int offense_value(int unit_id);
-int defense_value(int unit_id);
+int proto_offense(int unit_id);
+int proto_defense(int unit_id);
 
 int set_move_to(int veh_id, int x, int y);
 int set_move_next(int veh_id, int offset);

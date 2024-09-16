@@ -523,7 +523,9 @@ struct VEH {
         return Units[unit_id].chassis_id;
     }
     int reactor_type() {
-        return std::max(1, (int)Units[unit_id].reactor_id);
+        // For more consistency always limit reactors to supported values
+        // Current reactor array has only space for 4 variations
+        return std::min(4, std::max(1, (int)Units[unit_id].reactor_id));
     }
     int armor_type() {
         return Units[unit_id].armor_id;

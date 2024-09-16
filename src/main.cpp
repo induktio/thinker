@@ -179,8 +179,6 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->modify_upgrade_cost = atoi(value);
     } else if (MATCH("modify_unit_support")) {
         cf->modify_unit_support = atoi(value);
-    } else if (MATCH("modify_unit_morale")) {
-        cf->modify_unit_morale = atoi(value);
     } else if (MATCH("skip_default_balance")) {
         cf->skip_default_balance = atoi(value);
     } else if (MATCH("early_research_start")) {
@@ -197,6 +195,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->eco_damage_fix = atoi(value);
     } else if (MATCH("clean_minerals")) {
         cf->clean_minerals = clamp(atoi(value), 0, 127);
+    } else if (MATCH("biology_lab_bonus")) {
+        cf->biology_lab_bonus = clamp(atoi(value), 0, 127);
     } else if (MATCH("spawn_fungal_towers")) {
         cf->spawn_fungal_towers = atoi(value);
     } else if (MATCH("spawn_spore_launchers")) {
@@ -229,6 +229,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->native_weak_until_turn = clamp(atoi(value), 0, 127);
     } else if (MATCH("native_lifecycle_levels")) {
         opt_list_parse(cf->native_lifecycle_levels, buf, 6, 0);
+    } else if (MATCH("facility_defense_bonus")) {
+        opt_list_parse(cf->facility_defense_bonus, buf, 4, 0);
     } else if (MATCH("neural_amplifier_bonus")) {
         cf->neural_amplifier_bonus = clamp(atoi(value), 0, 1000);
     } else if (MATCH("dream_twister_bonus")) {
@@ -237,14 +239,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->fungal_tower_bonus = clamp(atoi(value), 0, 1000);
     } else if (MATCH("planet_defense_bonus")) {
         cf->planet_defense_bonus = atoi(value);
-    } else if (MATCH("intercept_defense_bonus")) {
-        cf->intercept_defense_bonus = atoi(value);
-    } else if (MATCH("perimeter_defense_bonus")) {
-        cf->perimeter_defense_bonus = clamp(atoi(value), 0, 100);
-    } else if (MATCH("tachyon_field_bonus")) {
-        cf->tachyon_field_bonus = clamp(atoi(value), 0, 100);
-    } else if (MATCH("biology_lab_bonus")) {
-        cf->biology_lab_bonus = clamp(atoi(value), 0, 127);
+    } else if (MATCH("sensor_defense_ocean")) {
+        cf->sensor_defense_ocean = atoi(value);
     } else if (MATCH("collateral_damage_value")) {
         cf->collateral_damage_value = clamp(atoi(value), 0, 127);
     } else if (MATCH("cost_factor")) {

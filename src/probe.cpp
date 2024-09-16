@@ -9,7 +9,7 @@ the damage from genetic warfare probe team action.
 int __cdecl probe_veh_health(int veh_id)
 {
     VEH* veh = &Vehs[veh_id];
-    int level = clamp(veh->reactor_type(), 1, 100);
+    int level = veh->reactor_type();
     if (veh->is_artifact()) {
         return 1;
     }

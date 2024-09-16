@@ -424,6 +424,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x4EC3B0, (int)base_compute);
     write_jump(0x4F6510, (int)fac_maint);
     write_jump(0x500320, (int)drop_range);
+    write_jump(0x501500, (int)psi_factor);
     write_jump(0x527290, (int)mod_faction_upkeep);
     write_jump(0x55BB30, (int)set_treaty);
     write_jump(0x55BBA0, (int)set_agenda);
@@ -435,6 +436,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x5BF1F0, (int)has_abil);
     write_jump(0x5BF310, (int)X_pop2);
     write_jump(0x5C0DB0, (int)can_arty);
+    write_jump(0x5C0E40, (int)mod_morale_veh);
     write_jump(0x5C1540, (int)veh_speed);
     write_jump(0x5C1D20, (int)mod_veh_skip);
     write_jump(0x5C1D70, (int)mod_veh_wake);
@@ -504,7 +506,6 @@ bool patch_setup(Config* cf) {
     write_call(0x5A3F98, (int)probe_veh_health);
     write_call(0x5A4972, (int)probe_mind_control_range);
     write_call(0x5A4B8C, (int)probe_thought_control);
-    write_call(0x506ADE, (int)mod_battle_fight_2);
     write_call(0x561948, (int)enemy_strategy_upgrade);
     write_call(0x4868B2, (int)mod_tech_avail); // PickTech::pick
     write_call(0x4DFC41, (int)mod_tech_avail); // Console::editor_tech
@@ -529,7 +530,13 @@ bool patch_setup(Config* cf) {
     write_call(0x5BEAC7, (int)mod_tech_rate); // tech_research
     write_call(0x4B497C, (int)mod_say_orders); // say_orders2
     write_call(0x4B5C27, (int)mod_say_orders); // StatusWin::draw_active
+    write_call(0x50211F, (int)mod_get_basic_offense); // battle_compute
+    write_call(0x50274A, (int)mod_get_basic_offense); // battle_compute
+    write_call(0x5044EB, (int)mod_get_basic_offense); // battle_compute
+    write_call(0x502A69, (int)mod_get_basic_defense); // battle_compute
     write_call(0x50474C, (int)mod_battle_compute); // best_defender
+    write_call(0x506ADE, (int)mod_battle_fight_2); // battle_fight_1
+    write_call(0x506D07, (int)mod_best_defender); // battle_fight_2
     write_call(0x506EA6, (int)mod_battle_compute); // battle_fight_2
     write_call(0x5085E0, (int)mod_battle_compute); // battle_fight_2
     write_call(0x4F7B82, (int)mod_base_research); // base_upkeep
@@ -1060,40 +1067,6 @@ bool patch_setup(Config* cf) {
     }
 
     /*
-    Additional combat bonus options for PSI effects.
-    */
-    {
-        const byte old_bytes[] = {0x8B,0xC7,0x99,0x2B,0xC2,0xD1,0xF8};
-        const byte new_bytes[] = {0x57,0xE8,0x00,0x00,0x00,0x00,0x5F};
-        write_jump(0x501500, (int)psi_factor);
-
-        write_bytes(0x501CFB, old_bytes, new_bytes, sizeof(new_bytes));
-        write_call(0x501CFC, (int)neural_amplifier_bonus); // get_basic_defense
-        *(int*)0x50209F = cf->neural_amplifier_bonus; // battle_compute
-
-        write_bytes(0x501D11, old_bytes, new_bytes, sizeof(new_bytes));
-        write_call(0x501D12, (int)fungal_tower_bonus); // get_basic_defense
-        *(int*)0x5020EC = cf->fungal_tower_bonus; // battle_compute
-
-        write_bytes(0x501914, old_bytes, new_bytes, sizeof(new_bytes));
-        write_call(0x501915, (int)dream_twister_bonus); // get_basic_offense
-        *(int*)0x501F9C = cf->dream_twister_bonus; // battle_compute
-    }
-
-    /*
-    Modify Perimeter Defense and Tachyon Field defense values.
-    */
-    {
-        const byte old_perimeter[] = {0xBE,0x04,0x00,0x00,0x00};
-        const byte new_perimeter[] = {0xBE,(byte)(2 + cf->perimeter_defense_bonus),0x00,0x00,0x00};
-        write_bytes(0x5034B9, old_perimeter, new_perimeter, sizeof(new_perimeter));
-
-        const byte old_tachyon[] = {0x83,0xC6,0x02};
-        const byte new_tachyon[] = {0x83,0xC6,(byte)cf->tachyon_field_bonus};
-        write_bytes(0x503506, old_tachyon, new_tachyon, sizeof(new_tachyon));
-    }
-
-    /*
     Initial content base population before psych modifiers.
     */
     {
@@ -1214,10 +1187,9 @@ bool patch_setup(Config* cf) {
         write_bytes(0x5AE3E9, old_bytes, NULL, sizeof(old_bytes));
     }
     if (cf->ignore_reactor_power) {
-        short_jump(0x506F90);
-        short_jump(0x506FF6);
+        short_jump(0x506F90); // battle_fight_2
+        short_jump(0x506FF6); // battle_fight_2
         // Adjust combat odds confirmation dialog to match new odds
-        write_call(0x506D07, (int)mod_best_defender);
         write_call(0x5082AF, (int)battle_fight_parse_num);
         write_call(0x5082B7, (int)battle_fight_parse_num);
     }
@@ -1242,13 +1214,6 @@ bool patch_setup(Config* cf) {
         };
         write_bytes(0x46CA15, old_menu, new_menu, sizeof(new_menu));
         write_call(0x46CA21, (int)MapWin_right_menu_arty);
-    }
-    if (cf->modify_unit_morale) {
-        write_jump(0x5C0E40, (int)mod_morale_veh);
-        write_call(0x50211F, (int)mod_get_basic_offense);
-        write_call(0x50274A, (int)mod_get_basic_offense);
-        write_call(0x5044EB, (int)mod_get_basic_offense);
-        write_call(0x502A69, (int)mod_get_basic_defense);
     }
     if (cf->skip_default_balance) {
         remove_call(0x5B41F5);
@@ -1359,6 +1324,31 @@ bool patch_setup(Config* cf) {
     if (!cf->landmarks.geothermal) remove_call(0x5C893C);
 
     /*
+    {
+        const byte old_bytes[] = {0x8B,0xC7,0x99,0x2B,0xC2,0xD1,0xF8};
+        const byte new_bytes[] = {0x57,0xE8,0x00,0x00,0x00,0x00,0x5F};
+
+        write_bytes(0x501CFB, old_bytes, new_bytes, sizeof(new_bytes));
+        write_call(0x501CFC, (int)neural_amplifier_bonus); // get_basic_defense
+        *(int*)0x50209F = cf->neural_amplifier_bonus; // battle_compute
+
+        write_bytes(0x501D11, old_bytes, new_bytes, sizeof(new_bytes));
+        write_call(0x501D12, (int)fungal_tower_bonus); // get_basic_defense
+        *(int*)0x5020EC = cf->fungal_tower_bonus; // battle_compute
+
+        write_bytes(0x501914, old_bytes, new_bytes, sizeof(new_bytes));
+        write_call(0x501915, (int)dream_twister_bonus); // get_basic_offense
+        *(int*)0x501F9C = cf->dream_twister_bonus; // battle_compute
+    }
+    {
+        const byte old_perimeter[] = {0xBE,0x04,0x00,0x00,0x00};
+        const byte new_perimeter[] = {0xBE,(byte)(2 + cf->perimeter_defense_bonus),0x00,0x00,0x00};
+        write_bytes(0x5034B9, old_perimeter, new_perimeter, sizeof(new_perimeter));
+
+        const byte old_tachyon[] = {0x83,0xC6,0x02};
+        const byte new_tachyon[] = {0x83,0xC6,(byte)cf->tachyon_field_bonus};
+        write_bytes(0x503506, old_tachyon, new_tachyon, sizeof(new_tachyon));
+    }
     {
         const byte old_bytes[] = {0x83,0x80,0x08,0x01,0x00,0x00,0x02};
         const byte new_bytes[] = {0x83,0x80,0x08,0x01,0x00,0x00,(byte)cf->biology_lab_bonus};

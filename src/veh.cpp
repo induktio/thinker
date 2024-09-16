@@ -3,7 +3,11 @@
 
 
 int __cdecl can_arty(int unit_id, bool allow_sea_arty) {
+    assert(unit_id >= 0 && unit_id < MaxProtoNum);
     UNIT* u = &Units[unit_id];
+    if (unit_id < 0 || unit_id >= MaxProtoNum) {
+        return false;
+    }
     if ((u->offense_value() <= 0 // PSI + non-combat
     || u->defense_value() < 0) // PSI
     && unit_id != BSC_SPORE_LAUNCHER) { // Spore Launcher exception
@@ -22,7 +26,7 @@ int __cdecl has_abil(int unit_id, VehAblFlag ability) {
     assert((!conf.manage_player_bases || unit_id >= 0) && unit_id < MaxProtoNum);
     int faction_id = unit_id / MaxProtoFactionNum;
     // workaround fix for legacy base_build that may incorrectly use negative unit_id
-    if (unit_id < 0) {
+    if (unit_id < 0 || unit_id >= MaxProtoNum) {
         return false;
     }
     if (Units[unit_id].ability_flags & ability) {
@@ -1010,12 +1014,13 @@ VehArmor best_armor(int faction, int max_cost) {
     int cv = 0;
     for (int i = ARM_NO_ARMOR; i <= ARM_RESONANCE_8_ARMOR; i++) {
         if (has_tech(Armor[i].preq_tech, faction)) {
-            int val = Armor[i].defense_value;
+            int iv = Armor[i].defense_value;
             int cost = Armor[i].cost;
-            if (max_cost >= 0 && (cost > max_cost || cost > val + 3)) {
+            if (max_cost >= 0 && (cost > max_cost || cost > iv + 3)) {
                 continue;
             }
-            int iv = val * (i >= ARM_PULSE_3_ARMOR ? 5 : 4);
+            iv = iv * ((i == ARM_PULSE_3_ARMOR || i == ARM_PULSE_8_ARMOR
+                || i == ARM_RESONANCE_3_ARMOR || i == ARM_RESONANCE_8_ARMOR) ? 5 : 4);
             if (iv > cv) {
                 cv = iv;
                 ci = i;
@@ -1030,8 +1035,8 @@ VehWeapon best_weapon(int faction) {
     int cv = 0;
     for (int i = WPN_HAND_WEAPONS; i <= WPN_STRING_DISRUPTOR; i++) {
         if (has_tech(Weapon[i].preq_tech, faction)) {
-            int iv = Weapon[i].offense_value *
-                (i == WPN_RESONANCE_LASER || i == WPN_RESONANCE_BOLT ? 5 : 4);
+            int iv = Weapon[i].offense_value
+                * ((i == WPN_RESONANCE_LASER || i == WPN_RESONANCE_BOLT) ? 5 : 4);
             if (iv > cv) {
                 cv = iv;
                 ci = i;
@@ -1050,7 +1055,7 @@ VehReactor best_reactor(int faction) {
     return REC_FISSION;
 }
 
-int offense_value(int unit_id) {
+int proto_offense(int unit_id) {
     assert(unit_id >= 0 && unit_id < MaxProtoNum);
     UNIT* u = &Units[unit_id];
     int w = (conf.ignore_reactor_power ? (int)REC_FISSION : u->reactor_id);
@@ -1063,7 +1068,7 @@ int offense_value(int unit_id) {
     return Weapon[u->weapon_id].offense_value * w;
 }
 
-int defense_value(int unit_id) {
+int proto_defense(int unit_id) {
     assert(unit_id >= 0 && unit_id < MaxProtoNum);
     UNIT* u = &Units[unit_id];
     int w = (conf.ignore_reactor_power ? (int)REC_FISSION : u->reactor_id);

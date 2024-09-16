@@ -196,12 +196,15 @@ bool allow_expand(int faction) {
     if (*GameRules & RULES_SCN_NO_COLONY_PODS || *BaseCount >= MaxBaseNum) {
         return false;
     }
+    if (is_human(faction)) {
+        return true;
+    }
     for (int i = 1; i < MaxPlayerNum && conf.expansion_autoscale > 0; i++) {
         if (is_human(i) && is_alive(i)) {
             bases = max(bases, Factions[i].base_count);
         }
     }
-    if (conf.expansion_limit > 0 && !is_human(faction)) {
+    if (conf.expansion_limit > 0) {
         int pods = 0;
         for (int i = 0; i < *VehCount; i++) {
             VEH* veh = &Vehicles[i];

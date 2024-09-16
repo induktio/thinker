@@ -17,10 +17,10 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD* rec, PVOID* frame, CONTEXT* ct
     if (!debug_log && !(debug_log = fopen("debug.txt", "w"))) {
         return _except_handler3(rec, frame, ctx);
     }
-    int32_t* p;
     int32_t bytes = 0;
     int32_t value = 0;
-    int32_t config_num = (int32_t)sizeof(conf)/4;
+    int32_t config_num = sizeof(conf)/sizeof(int);
+    int32_t alloc_base = 0;
     size_t binary_size = 0;
     time_t rawtime = time(&rawtime);
     struct stat filedata;
@@ -57,6 +57,7 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD* rec, PVOID* frame, CONTEXT* ct
         && (DWORD)mbi.AllocationBase <= ctx->Eip
         && (DWORD)mbi.AllocationBase + mbi.RegionSize > ctx->Eip) {
             value = GetModuleFileNameA((HINSTANCE)mbi.AllocationBase, filepath, sizeof(filepath));
+            alloc_base = (int)mbi.AllocationBase;
             break;
         }
         pb += mbi.RegionSize;
@@ -75,7 +76,8 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD* rec, PVOID* frame, CONTEXT* ct
         "ExceptionCode    %08x\n"
         "ExceptionFlags   %08x\n"
         "ExceptionRecord  %08x\n"
-        "ExceptionAddress %08x\n",
+        "ExceptionAddress %08x\n"
+        "ExceptionBase    %08x\n",
         MOD_VERSION,
         MOD_DATE,
         info.dwMajorVersion,
@@ -88,7 +90,8 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD* rec, PVOID* frame, CONTEXT* ct
         (int)rec->ExceptionCode,
         (int)rec->ExceptionFlags,
         (int)rec->ExceptionRecord,
-        (int)rec->ExceptionAddress);
+        (int)rec->ExceptionAddress,
+        alloc_base);
 
     fprintf(debug_log,
         "CFlags %08lx\n"
@@ -106,10 +109,10 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD* rec, PVOID* frame, CONTEXT* ct
         ctx->Eax, ctx->Ebx, ctx->Ecx, ctx->Edx,
         ctx->Esi, ctx->Edi, ctx->Ebp, ctx->Esp, ctx->Eip);
 
-    p = (int32_t*)ctx->Esp;
+    int32_t* p = (int32_t*)ctx->Esp;
     fprintf(debug_log, "Stack dump:\n");
 
-    for (int32_t i = 0; i < 24; i++) {
+    for (int i = 0; i < 24; i++) {
         if (ReadProcessMemory(hProcess, p + i, &bytes, 4, NULL)) {
             fprintf(debug_log, "%08x: %08x\n", (int32_t)(p + i), bytes);
         } else {
@@ -117,8 +120,17 @@ int __cdecl mod_except_handler3(EXCEPTION_RECORD* rec, PVOID* frame, CONTEXT* ct
         }
     }
 
+    byte code[16] = {};
+    if (ReadProcessMemory(hProcess, (LPVOID)ctx->Eip, &code, 16, NULL)) {
+        fprintf(debug_log, "Code dump:\n");
+        for (int i = 0; i < 16; i++) {
+            fprintf(debug_log, "%02X ", code[i]);
+        }
+        fprintf(debug_log, "\n");
+    }
+
     p = (int32_t*)&conf;
-    for (int32_t i = 0; i < config_num; i++) {
+    for (int i = 0; i < config_num; i++) {
         if (i % 10 == 0) {
             fprintf(debug_log, "Config %d:", i);
         }

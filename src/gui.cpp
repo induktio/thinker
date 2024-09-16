@@ -526,7 +526,7 @@ int __thiscall mod_calc_dim(Console* This) {
 }
 
 int __cdecl mod_blink_timer() {
-    if (!*GameHalted && !*ControlRedraw) {
+    if (!*GameHalted && !VehBattleState[1]) {
         if (Win_is_visible(BaseWin)) {
             return TutWin_draw_arrow(TutWin);
         }

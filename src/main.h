@@ -241,7 +241,6 @@ struct Config {
     int long_range_artillery = 0;
     int modify_upgrade_cost = 0;
     int modify_unit_support = 0;
-    int modify_unit_morale = 1; // unlisted option
     int skip_default_balance = 1; // unlisted option
     int early_research_start = 1; // unlisted option
     int facility_capture_fix = 1; // unlisted option
@@ -250,6 +249,7 @@ struct Config {
     int simple_hurry_cost = 1;
     int eco_damage_fix = 1;
     int clean_minerals = 16;
+    int biology_lab_bonus = 2;
     int spawn_fungal_towers = 1;
     int spawn_spore_launchers = 1;
     int spawn_sealurks = 1;
@@ -266,14 +266,12 @@ struct Config {
     int native_elite_moves = 0;
     int native_weak_until_turn = -1;
     int native_lifecycle_levels[6] = {40,80,120,160,200,240};
+    int facility_defense_bonus[4] = {100,100,100,100};
     int neural_amplifier_bonus = 50;
     int dream_twister_bonus = 50;
     int fungal_tower_bonus = 50;
     int planet_defense_bonus = 0;
-    int intercept_defense_bonus = 0;
-    int perimeter_defense_bonus = 2;
-    int tachyon_field_bonus = 2;
-    int biology_lab_bonus = 2;
+    int sensor_defense_ocean = 0;
     int collateral_damage_value = 3;
     int content_pop_player[MaxDiffNum] = {6,5,4,3,2,1};
     int content_pop_computer[MaxDiffNum] = {3,3,3,3,3,3};

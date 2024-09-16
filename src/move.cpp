@@ -180,11 +180,12 @@ int __cdecl mod_enemy_move(int veh_id) {
     VEH* veh = &Vehicles[veh_id];
     debug("enemy_move %2d %2d %s\n", veh->x, veh->y, veh->name());
 
+    if (!mapsq(veh->x, veh->y)) {
+        return VEH_SYNC;
+    }
     if (thinker_enabled(veh->faction_id)) {
         int triad = veh->triad();
-        if (!mapsq(veh->x, veh->y)) {
-            return VEH_SYNC;
-        } else if (veh->is_colony()) {
+        if (veh->is_colony()) {
             return colony_move(veh_id);
         } else if (veh->is_supply()) {
             return crawler_move(veh_id);
@@ -2406,7 +2407,7 @@ int choose_defender(int x, int y, int att_id, MAP* sq) {
     && !Vehicles[def_id].is_visible(faction))) {
         return -1;
     }
-    def_id = best_defender(def_id, att_id, 0);
+    def_id = mod_best_defender(def_id, att_id, 0);
     if (def_id >= 0 && !at_war(faction, Vehicles[def_id].faction_id)) {
         return -1;
     }
@@ -2476,14 +2477,14 @@ double battle_priority(int id1, int id2, int dist, int moves, MAP* sq) {
     );
     double v2 = (sq->owner == veh1->faction_id ? (sq->is_base_radius() ? 0.15 : 0.1) : 0.0)
         + (stack_damage ? 0.03 * mapdata[{veh2->x, veh2->y}].enemy : 0.0)
-        + min(12, abs(offense_value(veh2->unit_id))) * (u2->speed() > 1 ? 0.02 : 0.01)
+        + min(12, abs(proto_offense(veh2->unit_id))) * (u2->speed() > 1 ? 0.02 : 0.01)
         + (triad == TRIAD_AIR ? 0.001 * min(400, arty_value(veh2->x, veh2->y)) : 0.0)
         - (neutral_tile ? 0.06 : 0.01)*dist;
     /*
     Fix: in rare cases the game engine might reject valid attack orders for unknown reason.
     In this case combat_move would repeat failed attack orders until iteration limit.
     */
-    double v3 = min(!offense_value(veh2->unit_id) ? 1.3 : 1.6, v1) + clamp(v2, -0.5, 0.5)
+    double v3 = min(!proto_offense(veh2->unit_id) ? 1.3 : 1.6, v1) + clamp(v2, -0.5, 0.5)
         - 0.04*mapdata[{veh2->x, veh2->y}].target;
 
     debug("combat_odds %2d %2d -> %2d %2d dist: %2d moves: %2d cost: %2d "\
