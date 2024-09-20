@@ -299,9 +299,6 @@ int __cdecl mod_get_basic_defense(int veh_id_def, int veh_id_atk, int psi_combat
     return defense;
 }
 
-static int current_atk_veh_id = -1;
-static int current_def_veh_id = -1;
-
 /*
 Determine the best defender in a stack for a given attacker.
 Value comparisons start with INT_MIN to enable more generic code.
@@ -389,6 +386,9 @@ static int __cdecl find_defender(int veh_id_def, int veh_id_atk, int check_arty)
     }
     return best_veh_id;
 }
+
+static int current_atk_veh_id = -1;
+static int current_def_veh_id = -1;
 
 int __cdecl mod_best_defender(int veh_id_def, int veh_id_atk, int check_arty) {
     int veh_id = find_defender(veh_id_def, veh_id_atk, check_arty);
@@ -494,14 +494,14 @@ int __cdecl terrain_defense(VEH* veh_def, VEH* veh_atk)
     if (sq->is_fungus() && veh_atk && (!veh_atk->faction_id || native)) {
         return 2;
     }
-    *VehBattleDisplayTerrain = label_get(91); // Rocky
     int defense = sq->is_rocky();
-    if (sq->is_fungus() && !defense && veh_def->triad() != TRIAD_AIR) {
-        if (!native) {
-            *VehBattleDisplayTerrain = label_get(338); // Fungus
-            defense = (has_project(FAC_PHOLUS_MUTAGEN, veh_def->faction_id)
-                || veh_def->is_native_unit()) ? 2 : 1;
-        }
+    if (defense) {
+        *VehBattleDisplayTerrain = label_get(91); // Rocky
+    }
+    if (!native && !defense && sq->is_fungus() && veh_def->triad() != TRIAD_AIR) {
+        *VehBattleDisplayTerrain = label_get(338); // Fungus
+        defense = (has_project(FAC_PHOLUS_MUTAGEN, veh_def->faction_id)
+            || veh_def->is_native_unit()) ? 2 : 1;
     }
     if (sq->items & BIT_FOREST && !defense && (!veh_atk || veh_atk->triad() == TRIAD_LAND)) {
         *VehBattleDisplayTerrain = label_get(291); // Forest
@@ -604,11 +604,9 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
                     offense = offense * 150 / 100;
                     add_bat(0, 50, label_get(338)); // Fungus
                 }
-                if (psi_combat & 2
-                && (veh_atk->weapon_type() == WPN_RESONANCE_LASER
-                || veh_atk->weapon_type() == WPN_RESONANCE_BOLT)) {
+                if (psi_combat & 2 && veh_atk->is_resonance_weapon()) {
                     offense = offense * (ResonanceWeaponValue + 100) / 100;
-                    add_bat(0, 25, label_get(1110)); // Resonance Attack
+                    add_bat(0, ResonanceWeaponValue, label_get(1110)); // Resonance Attack
                 }
                 if (psi_combat
                 && has_abil(veh_atk->unit_id, ABL_EMPATH)
@@ -666,14 +664,13 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
                 }
             } else if (Rules->combat_artillery_bonus_altitude && sq_atk && sq_def) {
                 if (alt_def > alt_atk) {
-                    int alt_modifier_def = (alt_def - alt_atk)
-                        * Rules->combat_artillery_bonus_altitude;
-                    defense = defense * (alt_modifier_def + 100) / 100;
-                    add_bat(1, alt_modifier_def, label_get(576)); // Altitude
+                    int modifier = (alt_def - alt_atk) * Rules->combat_artillery_bonus_altitude;
+                    defense = defense * (modifier + 100) / 100;
+                    add_bat(1, modifier, label_get(576)); // Altitude
                 } else if (alt_def < alt_atk) {
-                    int alt_mod_atk = (alt_atk - alt_def) * Rules->combat_artillery_bonus_altitude;
-                    offense = offense * (alt_mod_atk + 100) / 100;
-                    add_bat(0, alt_mod_atk, label_get(576)); // Altitude
+                    int modifier = (alt_atk - alt_def) * Rules->combat_artillery_bonus_altitude;
+                    offense = offense * (modifier + 100) / 100;
+                    add_bat(0, modifier, label_get(576)); // Altitude
                 }
             }
         }
@@ -880,11 +877,9 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
                 defense = defense * (Rules->combat_bonus_trance_vs_psi + 100) / 100;
                 add_bat(1, Rules->combat_bonus_trance_vs_psi, label_get(329)); // Trance
             }
-            int armor_id_def = veh_def->armor_type();
-            if (veh_id_atk >= 0 && psi_combat & 1
-            && (armor_id_def == ARM_RESONANCE_3_ARMOR || armor_id_def == ARM_RESONANCE_8_ARMOR)) {
+            if (veh_id_atk >= 0 && psi_combat & 1 && veh_def->is_resonance_armor()) {
                 defense = defense * (ResonanceArmorValue + 100) / 100;
-                add_bat(1, 25, label_get(1111)); // Resonance Def.
+                add_bat(1, ResonanceArmorValue, label_get(1111)); // Resonance Def.
             }
             // added veh_id_atk checks below when needed
             if (veh_id_atk >= 0 && !psi_combat
@@ -926,11 +921,11 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
                 add_bat(0, Rules->combat_bonus_vs_ship_port, label_get(335)); // In Port
             }
             if (veh_id_atk >= 0
-            && (armor_id_def == ARM_PULSE_3_ARMOR || armor_id_def == ARM_PULSE_8_ARMOR)
+            && veh_def->is_pulse_armor()
             && veh_atk->triad() == TRIAD_LAND
             && veh_atk->speed() > 1) {
                 defense = defense * (PulseArmorValue + 100) / 100;
-                add_bat(1, 25, label_get(1112)); // Pulse Defense
+                add_bat(1, PulseArmorValue, label_get(1112)); // Pulse Defense
             }
             if (veh_id_atk >= 0
             && Rules->combat_comm_jammer_vs_mobile

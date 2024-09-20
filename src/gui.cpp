@@ -192,7 +192,7 @@ void mouse_over_tile(POINT* p) {
 
         pInfoWin->iTileX = ptTile.x;
         pInfoWin->iTileY = ptTile.y;
-        StatusWin_on_redraw(pInfoWin);
+        StatusWin_on_redraw((Win*)pInfoWin);
         memcpy(&ptLastTile, &ptTile, sizeof(POINT));
     }
 }
@@ -1719,7 +1719,7 @@ int __cdecl mod_action_move(int veh_id, int x, int y)
             && !has_pact(veh->faction_id, Vehs[veh_id_tgt].faction_id)) {
                 int offset = radius_move2(veh->x, veh->y, x, y, TableRange[veh_range]);
                 if (offset >= 0) {
-                    *veh_attack_flags = 3;
+                    *VehAttackFlags = 3;
                     return battle_fight_1(veh_id, offset, 1, 1, 0);
                 }
             }

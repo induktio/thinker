@@ -362,7 +362,10 @@ void __cdecl mod_base_yield() {
     if (*BaseUpkeepState != 2) {
         for (int i = 0; i < MaxBaseSpecNum; i++) {
             int spc_id = base->specialist_type(i);
-            if (manage_workers || has_tech(Citizen[spc_id].obsol_tech, faction_id)) {
+            // Replace incorrect specialist types if any used
+            if (manage_workers || has_tech(Citizen[spc_id].obsol_tech, faction_id)
+            || !has_tech(Citizen[spc_id].preq_tech, faction_id)
+            || (!Citizen[spc_id].psych_bonus && base->pop_size < Rules->min_base_size_specialists)) {
                 base->specialist_modify(i, best_spc_id);
             }
         }

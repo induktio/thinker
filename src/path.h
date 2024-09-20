@@ -116,6 +116,7 @@ int path_distance(int x1, int y1, int x2, int y2, int unit_id, int faction_id);
 int path_cost(int x1, int y1, int x2, int y2, int unit_id, int faction_id, int max_cost);
 bool defend_tile(VEH* veh, MAP* sq);
 bool safe_path(TileSearch& ts, int faction_id, bool skip_owner);
+bool has_base_sites(TileSearch& ts, int x, int y, int faction_id, int triad);
 int route_distance(PMTable& tbl, int x1, int y1, int x2, int y2);
 int cargo_capacity(int x, int y, int faction_id);
 int move_to_base(int veh_id, bool ally);

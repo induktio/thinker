@@ -2,7 +2,6 @@
 #pragma pack(push, 1)
 
 enum Triad {
-    TRIAD_NONE = -1, // Thinker variable
     TRIAD_LAND = 0,
     TRIAD_SEA = 1,
     TRIAD_AIR = 2,
@@ -422,6 +421,15 @@ struct UNIT {
     bool is_prototyped() {
         return unit_flags & UNIT_PROTOTYPED;
     }
+    bool is_pulse_armor() {
+        return armor_id == ARM_PULSE_3_ARMOR || armor_id == ARM_PULSE_8_ARMOR;
+    }
+    bool is_resonance_armor() {
+        return armor_id == ARM_RESONANCE_3_ARMOR || armor_id == ARM_RESONANCE_8_ARMOR;
+    }
+    bool is_resonance_weapon() {
+        return weapon_id == WPN_RESONANCE_LASER || weapon_id == WPN_RESONANCE_BOLT;
+    }
     bool is_armored() { // include PSI armor
         return Armor[armor_id].defense_value != 1;
     }
@@ -527,6 +535,12 @@ struct VEH {
         // Current reactor array has only space for 4 variations
         return std::min(4, std::max(1, (int)Units[unit_id].reactor_id));
     }
+    int cur_hitpoints() {
+        if (is_artifact()) {
+            return 1;
+        }
+        return std::max(0, 10*reactor_type() - damage_taken);
+    }
     int armor_type() {
         return Units[unit_id].armor_id;
     }
@@ -541,6 +555,15 @@ struct VEH {
     }
     int defense_value() {
         return Units[unit_id].defense_value();
+    }
+    bool is_pulse_armor() {
+        return Units[unit_id].is_pulse_armor();
+    }
+    bool is_resonance_armor() {
+        return Units[unit_id].is_resonance_armor();
+    }
+    bool is_resonance_weapon() {
+        return Units[unit_id].is_resonance_weapon();
     }
     bool is_armored() {
         return Units[unit_id].is_armored();

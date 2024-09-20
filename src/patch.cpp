@@ -44,7 +44,7 @@ int __cdecl config_game_rand() {
 
 int __cdecl skip_action_destroy(int id) {
     veh_skip(id);
-    *veh_attack_flags = 0;
+    *VehAttackFlags = 0;
     return 0;
 }
 

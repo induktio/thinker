@@ -862,27 +862,6 @@ void move_upkeep(int faction, UpdateMode mode) {
     }
 }
 
-bool has_base_sites(int x, int y, int faction, int triad) {
-    assert(valid_player(faction));
-    assert(valid_triad(triad));
-    MAP* sq;
-    int area = 0;
-    int bases = 0;
-    int i = 0;
-    int limit = ((*CurrentTurn * x ^ y) & 7 ? 200 : 800);
-    TileSearch ts;
-    ts.init(x, y, triad, 2);
-    while (++i <= limit && (sq = ts.get_next()) != NULL) {
-        if (sq->is_base()) {
-            bases++;
-        } else if (can_build_base(ts.rx, ts.ry, faction, triad)) {
-            area++;
-        }
-    }
-    debug("has_base_sites %2d %2d triad: %d area: %d bases: %d\n", x, y, triad, area, bases);
-    return area > min(14, bases+4);
-}
-
 ResType want_convoy(int veh_id, int x, int y, int* score, MAP* sq) {
     VEH* veh = &Vehs[veh_id];
     BASE* base = &Bases[veh->home_base_id];
@@ -1144,7 +1123,8 @@ int colony_move(const int id) {
         }
         for (auto& m : iterate_tiles(veh->x, veh->y, 1, 9)) {
             if (allow_civ_move(m.x, m.y, faction, triad)
-            && has_base_sites(m.x, m.y, faction, triad) && !random(2)) {
+            && has_base_sites(ts, m.x, m.y, faction, triad)
+            && (!mapdata[{m.x, m.y}].target || !random(4))) {
                 debug("colony_trans %2d %2d -> %2d %2d\n", veh->x, veh->y, m.x, m.y);
                 return set_move_to(id, m.x, m.y);
             }
@@ -2153,13 +2133,15 @@ int make_landing(int veh_id) {
     int ty = -1;
     for (auto& m : iterate_tiles(veh->x, veh->y, 1, 9)) {
         if (!allow_move(m.x, m.y, veh->faction_id, TRIAD_LAND)
-        || has_pact(veh->faction_id, m.sq->owner)) {
+        || (has_pact(veh->faction_id, m.sq->owner)
+        && !reg_enemy_at(m.sq->region, veh->is_probe()))) {
             continue;
         }
         if (veh->is_combat_unit()
         && !mapnodes.count({m.x, m.y, NODE_SCOUT_SITE})
         && !mapnodes.count({m.x, m.y, NODE_NAVAL_BEACH})
-        && (random(8) && Continents[m.sq->region].pods <= Continents[m.sq->region].tile_count/32)) {
+        && random(8) > 4*reg_enemy_at(m.sq->region, false)
+        && Continents[m.sq->region].pods <= Continents[m.sq->region].tile_count/32) {
             continue;
         }
         int score = 16*mapnodes.count({m.x, m.y, NODE_NAVAL_BEACH})
@@ -2173,9 +2155,10 @@ int make_landing(int veh_id) {
     }
     if (tx >= 0) {
         debug("make_landing %2d %2d -> %2d %2d %s\n", veh->x, veh->y, tx, ty, veh->name());
-        return set_move_to(veh_id, tx, ty); // Save Private Ryan
+        set_move_to(veh_id, tx, ty); // Save Private Ryan
+        return true;
     }
-    return VEH_SYNC;
+    return false;
 }
 
 int trans_move(const int id) {
@@ -2249,17 +2232,21 @@ int trans_move(const int id) {
     }
     if (!at_base) {
         if (cargo > artifact && near_landing(id)) {
+            bool landed = false;
             for (int i = 0; i < *VehCount; i++) {
                 VEH* v = &Vehs[i];
                 if (veh->x == v->x && veh->y == v->y && i != id
-                && v->triad() == TRIAD_LAND && !v->is_artifact()) {
-                    make_landing(i);
+                && v->triad() == TRIAD_LAND && !v->is_artifact()
+                && make_landing(i)) {
+                    landed = true;
                 }
             }
-            if (veh->iter_count < 2) {
-                return VEH_SYNC;
+            if (landed) {
+                if (veh->iter_count < 2) {
+                    return VEH_SYNC;
+                }
+                return mod_veh_skip(id);
             }
-            return mod_veh_skip(id);
         }
         if (mapdata[{veh->x, veh->y}].safety < PM_SAFE
         && !mapnodes.count({veh->x, veh->y, NODE_NAVAL_PICK})
@@ -2747,7 +2734,8 @@ int combat_move(const int id) {
         return VEH_SKIP;
     }
     if (triad == TRIAD_LAND && mapnodes.count({veh->x, veh->y, NODE_NAVAL_END})) {
-        return make_landing(id);
+        make_landing(id);
+        return VEH_SYNC;
     }
     if (triad == TRIAD_LAND && is_ocean(veh_sq) && at_base && !has_transport(veh->x, veh->y, faction)) {
         return mod_veh_skip(id);

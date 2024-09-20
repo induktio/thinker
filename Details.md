@@ -53,13 +53,13 @@ To save the current queue to template, open a base and **right click** on the qu
 
 Summary of AI changes
 =====================
-Thinker fully controls the movement of most units, combat and non-combat alike, to manage the base placement and production much more effectively than usual. AI code for land, sea and air combat units has been almost entirely rewritten. When playing on lower difficulties, it might make sense to apply additional limits on AI expansion by using options such as `expansion_limit=10` and `expansion_autoscale=1` so the AI will expand roughly at the same speed as the player faction.
+Thinker introduces notable changes to the AI to manage the colonization and production much more effectively than usual which can result in changes on the difficulty curve. When playing on lower difficulties, it might make sense to apply additional limits on AI expansion by using options such as `expansion_limit=10` and `expansion_autoscale=1` so that the AI will expand roughly at the same speed as the player faction.
 
-New combat routines for land-based units will attempt to counter-attack nearby enemy units more often. If the odds are good enough, hasty attacks are executed more often than usual. The AI will fight the native units more aggressively, and it will also try to heal its units at monoliths.
+Thinker fully controls the movement of most units, combat and non-combat alike. Note that for player factions the automation applies mostly on non-combat units. For testing purposes it is also possible to run old/new AIs side-by-side. For example `factions_enabled=3` makes only the factions in the first 3 slots to use Thinker AI if they are not player-controlled. By default `factions_enabled=7` setting enables Thinker AI for all computer factions. Regardless of which AI is enabled, all of them should receive the same production bonuses that are set in the config file.
 
 Another novel addition has been naval invasions executed by the AI. This has been traditionally a weak spot for many AIs, since they lack the coordination between many units to pull off such strategies. Thinker however is capable of gathering an invasion fleet with many transports and using other combat ships as cover to move them into a landing zone. Combat ships will also use artillery attack on various targets much more than usual.
 
-Thinker prioritizes naval invasions if the closest enemy is located on another continent. Otherwise, most of the focus is spent on building land and air units. At any given time, only one priority landing zone can be active for the AI. Maximum distance for invasions depends slightly on pathfinding but it should be possible on all Huge maps.
+Thinker prioritizes naval invasions if the closest enemy is located on another continent. Otherwise, most of the focus is spent on building land and air units. At any given time, only one priority landing zone can be active for the AI. Improved combat routines for land-based units will attempt to counter-attack nearby enemy units more often. If the odds are good enough, hasty attacks are executed more often than usual. The AI will fight the native units more aggressively, and it will also try to heal its units at monoliths.
 
 Base garrisoning priorities are also handled entirely by Thinker which tries to prioritize vulnerable border bases much more than usual. Air units also utilize the same priorities when deciding where to rebase. You might notice there's less massive AI stacks being rebased around for no meaningful reason. Instead Thinker tries to rebase the aircraft in much smaller stacks to more bases so that they can cover a larger area.
 
@@ -71,12 +71,10 @@ Social AI feature will decide the social engineering models the AI factions will
 
 Tech balance feature will prioritize certain important techs for the AIs when choosing what to research, such as the requirements for formers, crawlers, recycling tanks, children's creches, and the 3 technologies to allow the production of more than 2 resources per square. If these techs are not available for research, the tech progression is unaffacted by this feature. It will also not affect player faction research in any way.
 
-For testing purposes it is also possible to run old/new AIs side-by-side. For example `factions_enabled=3` makes only the factions in the first 3 slots to use Thinker AI if they are not player-controlled. By default `factions_enabled=7` setting enables Thinker AI for all computer factions. Regardless of which AI is enabled, all of them should receive the same production bonuses that are set in the config file.
-
 
 Diplomacy changes
 =================
-For the most part, AI factions utilize vanilla game engine logic when deciding on any actions having to do with diplomacy. There are some notable exceptions where Thinker patches existing diplomacy dialogue and decision making.
+For the most part, AI factions utilize original game logic when deciding on any actions having to do with diplomacy. There are some notable exceptions where Thinker patches existing diplomacy dialogue and decision making.
 
 Energy loan dialogue ("generous schedule of loan payments") has been revamped to make better decisions on what kind of loans to grant. AI willingness for loan granting is now heavily dependent on treaty status, diplomatic friction, integrity blemishes, and the relative size of the factions (more powerful opponent factions are disliked). AI also has new dialogue when they reject a proposed loan.
 
@@ -418,7 +416,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 47. Modify Mind Control probe action to only subvert units inside the base and not on adjacent tiles to balance for the relatively cheap cost for this action.
 48. Modify Total Thought Control probe action to not set silently "want revenge" or "shall betray" flags which usually made the AI sneak attack. This action can be still used to subvert bases without declaring war but it applies a notable diplomatic penalty between the factions.
 49. Base production picker will not show Paradise Garden as buildable if the base already has Punishment Sphere.
-50. Clinical Immortality provides one extra talent per base instead of two as mentioned in the manual.
+50. Clinical Immortality provides one extra talent per base instead of two as mentioned in the manual. This change is enabled as part of the rewritten psych routines (base_psych).
 51. Fix issue where terrain detail display on the world map showed incorrect mineral output for aquatic factions.
 52. Fix monolith energy to not be limited by tile yield restrictions in the early game. This limitation did not apply on monolith nutrients/minerals.
 53. Fix base tile energy output being inconsistent when SE Economy value is between 3 and 4.

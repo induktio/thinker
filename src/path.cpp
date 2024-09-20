@@ -362,6 +362,26 @@ bool safe_path(TileSearch& ts, int faction_id, bool skip_owner) {
     return true;
 }
 
+bool has_base_sites(TileSearch& ts, int x, int y, int faction_id, int triad) {
+    assert(valid_player(faction_id));
+    assert(valid_triad(triad));
+    MAP* sq;
+    int area = 0;
+    int bases = 0;
+    int i = 0;
+    int limit = ((*CurrentTurn * x ^ y) & 7 ? 200 : 800);
+    ts.init(x, y, triad, 1);
+    while (++i <= limit && (sq = ts.get_next()) != NULL) {
+        if (sq->is_base()) {
+            bases++;
+        } else if (can_build_base(ts.rx, ts.ry, faction_id, triad)) {
+            area++;
+        }
+    }
+    debug("has_base_sites %2d %2d triad: %d area: %d bases: %d\n", x, y, triad, area, bases);
+    return area > min(10, bases+4);
+}
+
 int route_distance(PMTable& tbl, int x1, int y1, int x2, int y2) {
     Points visited;
     std::list<PathNode> items;

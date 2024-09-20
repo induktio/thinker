@@ -30,7 +30,6 @@ bool non_ally_in_tile(int x, int y, int faction);
 bool allow_move(int x, int y, int faction, int triad);
 bool allow_civ_move(int x, int y, int faction, int triad);
 bool can_build_base(int x, int y, int faction, int triad);
-bool has_base_sites(int x, int y, int faction, int triad);
 bool allow_scout(int faction, MAP* sq);
 bool allow_probe(int faction1, int faction2, bool is_enhanced);
 bool allow_attack(int faction1, int faction2, bool is_probe, bool is_enhanced);

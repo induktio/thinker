@@ -13,7 +13,7 @@ int find_project(int base_id, WItem& Wgov);
 bool unit_is_better(int unit_id1, int unit_id2);
 int unit_score(BASE* base, int unit_id, int psi_score, bool defend);
 int find_proto(int base_id, Triad triad, VehWeaponMode mode, bool defend);
-Triad select_colony(int base_id, int pods, bool build_ships);
+int select_colony(int base_id, int pods, bool build_ships);
 int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships);
 int select_build(int base_id);
 

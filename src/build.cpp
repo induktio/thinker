@@ -546,33 +546,38 @@ int find_proto(int base_id, Triad triad, VehWeaponMode mode, bool defend) {
     return best_id;
 }
 
-Triad select_colony(int base_id, int pods, bool build_ships) {
+int select_colony(int base_id, int pods, bool build_ships) {
+    TileSearch ts;
     BASE* base = &Bases[base_id];
-    bool land = has_base_sites(base->x, base->y, base->faction_id, TRIAD_LAND);
-    bool sea = has_base_sites(base->x, base->y, base->faction_id, TRIAD_SEA);
-    int limit = (*CurrentTurn < 60 || (!random(3) && (land || (build_ships && sea))) ? 2 : 1);
+    bool start = Factions[base->faction_id].base_count < min(16, 2 + *MapAreaSqRoot/4);
+    bool land = has_base_sites(ts, base->x, base->y, base->faction_id, TRIAD_LAND);
+    bool sea = has_base_sites(ts, base->x, base->y, base->faction_id, TRIAD_SEA);
+    int limit = (start || (!random(3) && (land || (build_ships && sea))) ? 2 : 1);
 
     if (pods >= limit) {
-        return TRIAD_NONE;
+        return -1;
     }
     if (is_ocean(base)) {
         for (const auto& m : iterate_tiles(base->x, base->y, 1, 9)) {
             if (land && (!m.sq->is_owned() || (m.sq->owner == base->faction_id && !random(6)))
             && (m.sq->veh_owner() < 0 || m.sq->veh_owner() == base->faction_id)) {
-                return TRIAD_LAND;
+                return find_proto(base_id, TRIAD_LAND, WMODE_COLONY, DEF);
             }
         }
         if (sea) {
-            return TRIAD_SEA;
+            return find_proto(base_id, TRIAD_SEA, WMODE_COLONY, DEF);
         }
     } else {
-        if (build_ships && sea && (!land || (*CurrentTurn > 50 && !random(3)))) {
-            return TRIAD_SEA;
-        } else if (land) {
-            return TRIAD_LAND;
+        bool cheap = build_ships && (best_reactor(base->faction_id) >= REC_FUSION);
+        if (build_ships && sea && (!land || !start || cheap)
+        && random(16) > 10 + 2*(land + start - cheap)) {
+            return find_proto(base_id, TRIAD_SEA, WMODE_COLONY, DEF);
+        }
+        if (land) {
+            return find_proto(base_id, TRIAD_LAND, WMODE_COLONY, DEF);
         }
     }
-    return TRIAD_NONE;
+    return -1;
 }
 
 int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships) {
@@ -912,6 +917,7 @@ int select_build(int base_id) {
         if (t == CrawlerUnit && allow_supply && has_wmode(faction, WMODE_SUPPLY)) {
             if ((choice = find_proto(base_id, TRIAD_LAND, WMODE_SUPPLY, DEF)) >= 0) {
                 score += max(0, 40 - base->mineral_surplus - base->nutrient_surplus);
+                score += 40*(all_crawlers < 4 + f->base_count/4);
                 push_item(base, builds, choice, score, --Wt);
                 continue;
             }
@@ -924,9 +930,7 @@ int select_build(int base_id) {
             }
         }
         if (t == ColonyUnit && allow_pods && pods < 2 && gov & GOV_MAY_PROD_COLONY_POD) {
-            Triad type = select_colony(base_id, pods, allow_ships);
-            if ((type == TRIAD_LAND || type == TRIAD_SEA)
-            && (choice = find_proto(base_id, type, WMODE_COLONY, DEF)) >= 0) {
+            if ((choice = select_colony(base_id, pods, allow_ships)) >= 0) {
                 score += clamp(*MapAreaSqRoot*2 - f->base_count, 0, 80);
                 push_item(base, builds, choice, score, --Wt);
                 continue;
@@ -977,7 +981,7 @@ int select_build(int base_id) {
             || (base->talent_total > 0 && !base->drone_total && !base->specialist_total)) {
                 continue;
             }
-            score += 80*drone_riots + 16*drones;
+            score += 80*drone_riots + max(16, 8*(5 - Facility[t].maint))*drones;
             score += 8*clamp(drones - base->talent_total, -4, 4);
         }
         if (t == FAC_NETWORK_NODE) {
