@@ -535,9 +535,15 @@ struct VEH {
         // Current reactor array has only space for 4 variations
         return std::min(4, std::max(1, (int)Units[unit_id].reactor_id));
     }
-    int cur_hitpoints() {
+    int max_hitpoints() {
         if (is_artifact()) {
             return 1;
+        }
+        return 10*reactor_type();
+    }
+    int cur_hitpoints() {
+        if (is_artifact()) {
+            return !damage_taken;
         }
         return std::max(0, 10*reactor_type() - damage_taken);
     }
@@ -608,6 +614,9 @@ struct VEH {
     bool is_visible(int faction) {
         return visibility & (1 << faction);
     }
+    bool is_invisible_lurker() {
+        return (flags & (VFLAG_INVISIBLE|VFLAG_LURKER)) == (VFLAG_INVISIBLE|VFLAG_LURKER);
+    }
     bool plr_owner() {
         return is_human(faction_id);
     }
@@ -616,7 +625,7 @@ struct VEH {
             || (x == waypoint_1_x && y == waypoint_1_y);
     }
     bool in_transit() {
-        return order == ORDER_SENTRY_BOARD && waypoint_1_x >= 0 && waypoint_1_y == 0;
+        return order == ORDER_SENTRY_BOARD && waypoint_1_x >= 0;
     }
     bool mid_damage() {
         return damage_taken > 2*Units[unit_id].reactor_id;
@@ -630,6 +639,10 @@ struct VEH {
     bool need_monolith() {
         return !is_battle_ogre() && (need_heals() || (morale < MORALE_ELITE
             && !(state & VSTATE_MONOLITH_UPGRADED) && offense_value() != 0));
+    }
+    void reset_order() {
+        order = ORDER_NONE;
+        state &= ~(VSTATE_UNK_2000000|VSTATE_UNK_1000000|VSTATE_EXPLORE|VSTATE_ON_ALERT);
     }
 };
 

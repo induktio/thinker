@@ -243,6 +243,7 @@ int __cdecl veh_kill_lift(int veh_id) {
             }
         }
     }
+    debug("veh_kill %d %d %d %d %s\n", veh->faction_id, veh_id, veh->x, veh->y, veh->name());
     return veh_lift(veh_id);
 }
 
@@ -1413,7 +1414,8 @@ bool can_level(int x, int y, int faction, int bonus, MAP* sq) {
         && !(sq->items & (BIT_MINE|BIT_FUNGUS|BIT_THERMAL_BORE))
         && sq->items & BIT_RIVER
         && !plans[faction].plant_fungus
-        && nearby_items(x, y, 0, 9, BIT_FARM|BIT_FOREST) < 2));
+        && nearby_items(x, y, 0, 9, BIT_FARM|BIT_FOREST)
+        < (sq->landmarks & LM_JUNGLE ? 4 : 2)));
 }
 
 bool can_river(int x, int y, int faction, MAP* sq) {
@@ -2374,8 +2376,8 @@ int trans_move(const int id) {
     return mod_veh_skip(id);
 }
 
-int choose_defender(int x, int y, int att_id, MAP* sq) {
-    int faction = Vehicles[att_id].faction_id;
+static int choose_defender(int x, int y, int atk_id, MAP* sq) {
+    int faction = Vehicles[atk_id].faction_id;
     int def_id = -1;
     if (!non_ally_in_tile(x, y, faction)) {
         return -1;
@@ -2394,36 +2396,37 @@ int choose_defender(int x, int y, int att_id, MAP* sq) {
     && !Vehicles[def_id].is_visible(faction))) {
         return -1;
     }
-    def_id = mod_best_defender(def_id, att_id, 0);
+    def_id = mod_best_defender(def_id, atk_id, 0);
     if (def_id >= 0 && !at_war(faction, Vehicles[def_id].faction_id)) {
         return -1;
     }
     return def_id;
 }
 
-int combat_value(int id, int power, int moves, int mov_rate) {
-    VEH* veh = &Vehicles[id];
-    int damage = veh->damage_taken / veh->reactor_type();
-    assert(moves > 0 && moves <= mov_rate);
-    return max(1, power * (10 - damage) * moves / mov_rate);
-}
-
-int flank_score(int x, int y, MAP* sq) {
+static int flank_score(int x, int y, MAP* sq) {
     return random(16) - 4*mapdata[{x, y}].enemy_dist
         + (sq && sq->items & (BIT_RIVER | BIT_ROAD | BIT_FOREST) ? 3 : 0)
         + (sq && sq->items & (BIT_SENSOR | BIT_BUNKER) ? 3 : 0);
 }
 
-double battle_eval(int id1, int id2, int moves, int mov_rate) {
+static int combat_value(int veh_id, int value, int moves, int mov_rate, bool reactor) {
+    VEH* veh = &Vehicles[veh_id];
+    int power = veh->reactor_type();
+    int damage = veh->damage_taken / power;
+    assert(moves > 0 && moves <= mov_rate);
+    return max(1, value * (reactor ? power : 1) * (10 - damage) * moves / mov_rate);
+}
+
+static double battle_eval(int id1, int id2, int moves, int mov_rate, bool reactor) {
     int s1;
     int s2;
     mod_battle_compute(id1, id2, &s1, &s2, 0);
-    int v1 = combat_value(id1, s1, moves, mov_rate);
-    int v2 = combat_value(id2, s2, mov_rate, mov_rate);
+    int v1 = combat_value(id1, s1, moves, mov_rate, reactor);
+    int v2 = combat_value(id2, s2, mov_rate, mov_rate, reactor);
     return 1.0*v1/v2;
 }
 
-double battle_priority(int id1, int id2, int dist, int moves, MAP* sq) {
+static double battle_priority(int id1, int id2, int dist, int moves, MAP* sq) {
     if (!sq) {
         return 0;
     }
@@ -2460,7 +2463,8 @@ double battle_priority(int id1, int id2, int dist, int moves, MAP* sq) {
         id1,
         id2,
         att_moves,
-        mov_rate
+        mov_rate,
+        non_psi && !conf.ignore_reactor_power
     );
     double v2 = (sq->owner == veh1->faction_id ? (sq->is_base_radius() ? 0.15 : 0.1) : 0.0)
         + (stack_damage ? 0.03 * mapdata[{veh2->x, veh2->y}].enemy : 0.0)
@@ -2671,7 +2675,7 @@ bool airdrop_move(const int id, MAP* sq) {
                     best_score = score;
                 }
             }
-            else if (allow_attack && veh_stack(base->x, base->y) < 0
+            else if (allow_attack && veh_who(base->x, base->y) < 0
             && base_range/4 < 2 + mapdata[{base->x, base->y}].unit_near
             && (base_range < 8 || sq->is_visible(faction))) {
                 // Prioritize closest undefended enemy bases

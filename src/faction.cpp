@@ -279,7 +279,8 @@ void __cdecl set_treaty(int faction1, int faction2, uint32_t treaty, bool add) {
             Factions[faction1].diplo_status[faction2] |= DIPLO_RENEW_INFILTRATOR;
             if (faction1 == MapWin->cOwner) {
                 ParseNumTable[0] = turns;
-                popp("modmenu", "SPYRENEW", 0, "infil_sm.pcx", 0);
+                parse_says(0, MFactions[faction2].noun_faction, -1, -1);
+                NetMsg_pop(NetMsg, "SPYRENEW", 5000, 0, 0);
             }
         }
     } else {

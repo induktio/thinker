@@ -23,9 +23,9 @@ int __cdecl can_arty(int unit_id, bool allow_sea_arty) {
 }
 
 int __cdecl has_abil(int unit_id, VehAblFlag ability) {
-    assert((!conf.manage_player_bases || unit_id >= 0) && unit_id < MaxProtoNum);
     int faction_id = unit_id / MaxProtoFactionNum;
-    // workaround fix for legacy base_build that may incorrectly use negative unit_id
+    // workaround fix for legacy base_build that may use incorrect unit_id
+    assert(!thinker_enabled(faction_id) || (unit_id >= 0 && unit_id < MaxProtoNum));
     if (unit_id < 0 || unit_id >= MaxProtoNum) {
         return false;
     }
@@ -123,6 +123,38 @@ bool can_repair(int unit_id) {
         && unit_id != BSC_BATTLE_OGRE_MK2 && unit_id != BSC_BATTLE_OGRE_MK3);
 }
 
+int __cdecl veh_who(int x, int y) {
+    MAP* sq = mapsq(x, y);
+    return (sq ? sq->veh_who() : -1);
+}
+
+int __cdecl veh_at(int x, int y) {
+    MAP* sq = mapsq(x, y);
+    if (sq && !sq->veh_in_tile()) {
+        return -1;
+    }
+    for (int veh_id = 0; veh_id < *VehCount; veh_id++) {
+        if (Vehs[veh_id].x == x && Vehs[veh_id].y == y) {
+            return veh_top(veh_id);
+        }
+    }
+    if (!sq) {
+        debug("VehLocError x: %d y: %d\n", x, y);
+        return -1;
+    }
+    if (!*VehBitError) {
+        debug("VehBitError x: %d y: %d\n", x, y);
+    }
+    if (*GameState & STATE_SCENARIO_EDITOR || *GameState & STATE_DEBUG_MODE || *MultiplayerActive) {
+        if (*VehBitError) {
+            return -1;
+        }
+        *VehBitError = 1;
+    }
+    rebuild_vehicle_bits();
+    return -1;
+}
+
 int __cdecl veh_top(int veh_id) {
     if (veh_id < 0) {
         return -1;
@@ -134,20 +166,44 @@ int __cdecl veh_top(int veh_id) {
     return top_veh_id;
 }
 
-/*
-Renamed from veh_at. This version never calls rebuild_vehicle_bits on failed searches.
-*/
-int __cdecl veh_stack(int x, int y) {
-    MAP* sq = mapsq(x, y);
-    if (!sq || !sq->veh_in_tile()) {
-        return -1; // invalid or empty map tile
+int __cdecl stack_fix(int veh_id) {
+    if (veh_id < 0 || !*MultiplayerActive
+    || (Vehs[veh_id].next_veh_id_stack < 0 && Vehs[veh_id].prev_veh_id_stack < 0)) {
+        return veh_id;
     }
-    for (int veh_id = 0; veh_id < *VehCount; veh_id++) {
-        if (Vehs[veh_id].x == x && Vehs[veh_id].y == y) {
-            return veh_top(veh_id);
+    for (int i = 0; i < *VehCount; i++) {
+        if (Vehs[veh_id].x == Vehs[i].x && Vehs[veh_id].y == Vehs[i].y) {
+            veh_promote(i);
+            stack_sort(veh_id);
         }
     }
-    return -1;
+    return veh_top(veh_id);
+}
+
+void __cdecl stack_sort(int veh_id) {
+    int16_t x = Vehs[veh_id].x;
+    int16_t y = Vehs[veh_id].y;
+    int next_veh_id = veh_top(veh_id);
+    int veh_id_put = -1;
+    int veh_id_loop;
+    if (veh_id >= 0 && next_veh_id >= 0) {
+        do {
+            veh_id_loop = Vehs[next_veh_id].next_veh_id_stack; // removed redundant < 0 check
+            if (veh_cargo(next_veh_id) || has_abil(Vehs[next_veh_id].unit_id, ABL_CARRIER)) {
+                veh_id_put = next_veh_id;
+                veh_put(next_veh_id, -3, -3);
+            }
+            next_veh_id = veh_id_loop;
+        } while (veh_id_loop >= 0);
+        stack_put(veh_id_put, x, y);
+    }
+}
+
+void __cdecl veh_promote(int veh_id) {
+    int veh_id_top = veh_top(veh_id);
+    if (veh_id_top >= 0 && veh_id_top != veh_id) {
+        veh_put(veh_id, Vehs[veh_id_top].x, Vehs[veh_id_top].y);
+    }
 }
 
 /*
@@ -255,6 +311,7 @@ Determine whether the specified unit is eligible for a monolith morale upgrade.
 int __cdecl want_monolith(int veh_id) {
     return veh_id >= 0 && !(Vehs[veh_id].state & VSTATE_MONOLITH_UPGRADED)
         && Vehs[veh_id].offense_value() != 0
+        && Vehs[veh_id].triad() != TRIAD_AIR
         && Vehs[veh_id].morale < MORALE_ELITE
         && mod_morale_veh(veh_id, true, 0) < MORALE_ELITE;
 }
@@ -922,10 +979,10 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
         if (combat) {
             if (!garrison) {
                 if (triad == TRIAD_LAND && wpn_v == 1) {
-                    strncat(buf, (*TextLabels)[146], 16); // Scout
+                    strncat(buf, label_get(146), MaxProtoNameLen); // Scout
                     strncat(buf, " ", 2);
                 } else if (triad == TRIAD_LAND && wpn_v == 2 && !psi_wpn && spd_v > 1) {
-                    strncat(buf, (*TextLabels)[182], 16); // Recon
+                    strncat(buf, label_get(182), MaxProtoNameLen); // Recon
                     strncat(buf, " ", 2);
                 } else if (triad == TRIAD_LAND || wpn_v != 1 || arm_v == 1) {
                     parse_wpn_name(buf, wpn, i > 0);
@@ -961,17 +1018,17 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
             }
             if (arty) {
                 if ((wpn_v + arm_v) & 4) {
-                    strncat(buf, (*TextLabels)[543], 16); // Artillery
+                    strncat(buf, label_get(543), MaxProtoNameLen); // Artillery
                 } else {
-                    strncat(buf, (*TextLabels)[544], 16); // Battery
+                    strncat(buf, label_get(544), MaxProtoNameLen); // Battery
                 }
                 strncat(buf, " ", 2);
             }
             if (marine) {
                 if ((wpn_v + arm_v) & 4) {
-                    strncat(buf, (*TextLabels)[614], 16); // Marines
+                    strncat(buf, label_get(614), MaxProtoNameLen); // Marines
                 } else {
-                    strncat(buf, (*TextLabels)[615], 16); // Invaders
+                    strncat(buf, label_get(615), MaxProtoNameLen); // Invaders
                 }
                 strncat(buf, " ", 2);
             }

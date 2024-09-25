@@ -43,7 +43,7 @@ int __cdecl config_game_rand() {
 }
 
 int __cdecl skip_action_destroy(int id) {
-    veh_skip(id);
+    mod_veh_skip(id);
     *VehAttackFlags = 0;
     return 0;
 }
@@ -536,6 +536,9 @@ bool patch_setup(Config* cf) {
     write_call(0x502A69, (int)mod_get_basic_defense); // battle_compute
     write_call(0x50474C, (int)mod_battle_compute); // best_defender
     write_call(0x506ADE, (int)mod_battle_fight_2); // battle_fight_1
+    write_call(0x568B1C, (int)mod_battle_fight_2); // air_power
+    write_call(0x5697AC, (int)mod_battle_fight_2); // air_power
+    write_call(0x56A2E2, (int)mod_battle_fight_2); // air_power
     write_call(0x506D07, (int)mod_best_defender); // battle_fight_2
     write_call(0x506EA6, (int)mod_battle_compute); // battle_fight_2
     write_call(0x5085E0, (int)mod_battle_compute); // battle_fight_2

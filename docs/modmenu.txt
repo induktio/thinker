@@ -103,7 +103,7 @@ $MSG1
 #SPYRENEW
 #xs 440
 #caption Operations Director
-Our probe team estimates the infiltration will expire after {$NUM0} turns.
+We estimate the infiltration on $MSG0 will expire after $NUM0 turns.
 
 #SPYLOST
 #xs 440

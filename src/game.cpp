@@ -34,6 +34,24 @@ bool valid_triad(int triad) {
     return (triad == TRIAD_LAND || triad == TRIAD_SEA || triad == TRIAD_AIR);
 }
 
+char* label_get(size_t index) {
+    return (*TextLabels)[index];
+}
+
+char* __cdecl parse_set(int faction_id) {
+    *gender_default = MFactions[faction_id].noun_gender;
+    *plurality_default = MFactions[faction_id].is_noun_plural;
+    return MFactions[faction_id].noun_faction;
+}
+
+int __cdecl parse_num(size_t index, int value) {
+    if (index > 9) {
+        return 3;
+    }
+    ParseNumTable[index] = value;
+    return 0;
+}
+
 int __cdecl game_start_turn() {
     // TODO: If config is changed, may return incorrect start turn
     return min(*CurrentTurn, (*GameRules & RULES_TIME_WARP ? conf.time_warp_start_turn : 0));

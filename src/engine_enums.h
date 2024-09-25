@@ -686,7 +686,7 @@ enum AIGoal {
     AI_GOAL_TERRAFORM_LAND = 9, // 'f', green ' ;
     AI_GOAL_UNK_3 = 11, // related to combat
     AI_GOAL_ECHELON_MIRROR = 13,
-    AI_GOAL_PRIORITY_COMBAT = 16, // possibly artillery related
+    AI_GOAL_PREV_DEFEND = 16,
     AI_GOAL_TERRAFORM_WATER = 25,
     AI_GOAL_UNK_4 = 41, // '^', white
     AI_GOAL_CONDENSER = 73,

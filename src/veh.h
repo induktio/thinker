@@ -10,8 +10,12 @@ bool has_orbital_drops(int faction);
 bool has_ability(int faction, VehAbl abl, VehChassis chs, VehWeapon wpn);
 bool can_repair(int unit_id);
 
+int __cdecl veh_at(int x, int y);
+int __cdecl veh_who(int x, int y);
 int __cdecl veh_top(int veh_id);
-int __cdecl veh_stack(int x, int y);
+int __cdecl stack_fix(int veh_id);
+void __cdecl stack_sort(int veh_id);
+void __cdecl veh_promote(int veh_id);
 int __cdecl proto_speed(int unit_id);
 int __cdecl veh_speed(int veh_id, bool skip_morale);
 int __cdecl veh_cargo(int veh_id);

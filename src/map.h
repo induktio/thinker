@@ -27,6 +27,11 @@ bool adjacent_region(int x, int y, int owner, int threshold, bool ocean);
 int clear_overlay(int x, int y);
 void refresh_overlay(std::function<int(int, int)> tile_value);
 
+template <class A, class B>
+int map_range(const A* a, const B* b) {
+    return map_range(a->x, a->y, b->x, b->y);
+}
+
 int __cdecl is_coast(int x, int y, bool is_base_radius);
 int __cdecl is_port(int base_id, bool is_base_radius);
 int __cdecl bad_reg(int region);
