@@ -2,11 +2,11 @@
 
 #include "main.h"
 
-enum VehCombatFlag {
-    VCOMBAT_UNK_1 = 0x1,
-    VCOMBAT_UNK_2 = 0x2,
-    VCOMBAT_UNK_8 = 0x8,
-    VCOMBAT_UNK_10 = 0x10,
+enum VehCombatType {
+    CT_CAN_ARTY = 0x1,
+    CT_WEAPON_ONLY = 0x2,
+    CT_AIR_DEFENSE = 0x8,
+    CT_INTERCEPT = 0x10,
 };
 
 const int PulseArmorValue = 25;
@@ -29,8 +29,8 @@ int __cdecl mod_get_basic_defense(int veh_id_def, int veh_id_atk, int psi_combat
 
 int __cdecl mod_best_defender(int veh_id_def, int veh_id_atk, int check_arty);
 int __cdecl battle_fight_parse_num(int index, int value);
-int __cdecl mod_battle_fight_2(int veh_id, int offset, int tx, int ty, int table_offset, int a6, int a7);
 int __cdecl terrain_defense(VEH* veh_def, VEH* veh_atk);
-void __cdecl add_bat(int type, int modifier, char* display_str);
+void __cdecl add_bat(int type, int modifier, const char* display_str);
 void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out, int* defense_out, int combat_type);
+int __cdecl mod_battle_fight_2(int veh_id, int offset, int tx, int ty, int table_offset, int option, int* def_id);
 
