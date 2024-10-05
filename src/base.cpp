@@ -349,7 +349,6 @@ void __cdecl mod_base_yield() {
     int worked_tiles = base->worked_tiles;
     std::vector<TileValue> choices;
 
-    int Wnutrient = 2 + (base->pop_size < Rules->min_base_size_specialists + 2);
     int Wenergy = 1 + (effic_val >= 6);
     int Wmineral = 3;
     if (base->defend_range > 0) {
@@ -409,9 +408,12 @@ void __cdecl mod_base_yield() {
             if (!choice) {
                 break;
             }
+            int Wnutrient = 1 + (can_grow || Nv < 0 || Mv < 2)
+                + (base->pop_size < Rules->min_base_size_specialists + 2);
             if (2*(spc.labs_bonus + spc.econ_bonus) + (can_riot ? 2 : 1) * spc.psych_bonus
             > Wnutrient*choice->nutrient + Wmineral*choice->mineral + Wenergy*choice->energy
-            && Nv >= (can_grow ? threshold : 0) && Mv >= (base->pop_size * Wmineral + 5) / 2) {
+            && Nv >= (can_grow ? threshold : 0) && Mv >= 2
+            && Mv + *BaseForcesMaintCost >= (base->pop_size * Wmineral + 5) / 2) {
                 break;
             }
             worked_tiles |= (1 << choice->i);
@@ -805,6 +807,10 @@ static void adjust_psych(BASE* base, int talent_val, bool force) {
         if (base->talent_total < pop_size) {
             base->talent_total++;
         }
+        if (base->talent_total + base->drone_total + base->superdrone_total > pop_size
+        && base->superdrone_total > 0) {
+            base->superdrone_total--;
+        }
         if (base->talent_total + base->drone_total > pop_size && base->drone_total > 0) {
             base->drone_total--;
         }
@@ -958,7 +964,7 @@ void __cdecl mod_base_psych(int base_id) {
         adjust_drone(base, -1);
     }
     if (has_fac_built(FAC_PARADISE_GARDEN, base_id)) {
-        adjust_psych(base, 2, 0);
+        adjust_psych(base, 2, 1);
     }
     if (f->SE_talent_pending > 0) {
         adjust_psych(base, f->SE_talent_pending, 0);
@@ -1107,9 +1113,9 @@ int __cdecl mod_base_growth() {
                 draw_tile(base->x, base->y, 2);
             } else if (base->pop_size >= pop_limit) {
                 if (!has_complex) {
-                    parse_say(1, Facility[FAC_HAB_COMPLEX].name, -1, -1);
+                    parse_says(1, Facility[FAC_HAB_COMPLEX].name, -1, -1);
                 } else if (!has_dome) {
-                    parse_say(1, Facility[FAC_HABITATION_DOME].name, -1, -1);
+                    parse_says(1, Facility[FAC_HABITATION_DOME].name, -1, -1);
                 }
                 if (!has_complex || !has_dome) {
                     if (!is_alien(faction_id)) {
@@ -1290,7 +1296,7 @@ void __cdecl mod_base_maint() {
                     set_fac((FacilityId)fac, *CurrentBaseID, false);
                     f->energy_credits = Facility[fac].cost
                         * cost_factor(faction_id, RSC_MINERAL, -1);
-                    parse_say(1, Facility[fac].name, -1, -1);
+                    parse_says(1, Facility[fac].name, -1, -1);
                     popb("POWERSHORT", 0x10000, 14, "genwarning_sm.pcx", 0);
                 }
             }
@@ -1794,6 +1800,29 @@ int energy_grid_output(int base_id) {
     return num/2;
 }
 
+int satellite_output(int satellites, int pop_size, bool full_value) {
+    if (full_value) {
+        return max(0, min(pop_size, satellites));
+    }
+    return max(0, min(pop_size, (satellites + 1) / 2));
+}
+
+bool satellite_bonus(int base_id, int* nutrient, int* mineral, int* energy) {
+    BASE& base = Bases[base_id];
+    Faction& f = Factions[base.faction_id];
+
+    if (f.satellites_nutrient > 0 || f.satellites_mineral > 0 || f.satellites_mineral > 0) {
+        bool full_value = has_facility(FAC_AEROSPACE_COMPLEX, base_id)
+            || has_project(FAC_SPACE_ELEVATOR, base.faction_id);
+
+        *nutrient += satellite_output(f.satellites_nutrient, base.pop_size, full_value);
+        *mineral += satellite_output(f.satellites_mineral, base.pop_size, full_value);
+        *energy += satellite_output(f.satellites_energy, base.pop_size, full_value);
+        return true;
+    }
+    return f.satellites_ODP > 0;
+}
+
 int __cdecl own_base_rank(int base_id) {
     assert(base_id >= 0 && base_id < *BaseCount);
     int value = Bases[base_id].energy_intake*MaxBaseNum + base_id;
@@ -2224,32 +2253,6 @@ int __cdecl fac_maint(int facility_id, int faction_id) {
         }
     }
     return facility.maint;
-}
-
-int satellite_output(int satellites, int pop_size, bool full_value) {
-    if (full_value) {
-        return max(0, min(pop_size, satellites));
-    }
-    return max(0, min(pop_size, (satellites + 1) / 2));
-}
-
-/*
-Calculate satellite bonuses and return true if any satellite is active.
-*/
-bool satellite_bonus(int base_id, int* nutrient, int* mineral, int* energy) {
-    BASE& base = Bases[base_id];
-    Faction& f = Factions[base.faction_id];
-
-    if (f.satellites_nutrient > 0 || f.satellites_mineral > 0 || f.satellites_mineral > 0) {
-        bool full_value = has_facility(FAC_AEROSPACE_COMPLEX, base_id)
-            || has_project(FAC_SPACE_ELEVATOR, base.faction_id);
-
-        *nutrient += satellite_output(f.satellites_nutrient, base.pop_size, full_value);
-        *mineral += satellite_output(f.satellites_mineral, base.pop_size, full_value);
-        *energy += satellite_output(f.satellites_energy, base.pop_size, full_value);
-        return true;
-    }
-    return f.satellites_ODP > 0;
 }
 
 

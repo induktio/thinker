@@ -400,7 +400,6 @@ fp_1int Console_iface_click2 = (fp_1int)0x51D720;
 FConsole Console_close = (FConsole)0x51D7D0;
 FConsole_init Console_init = (FConsole_init)0x51D890;
 
-
 FMapWin_clear MapWin_clear = (FMapWin_clear)0x462870;
 FMapWin MapWin_calculate_dimensions = (FMapWin)0x462980;
 FMapWin_pixel_to_tile MapWin_pixel_to_tile = (FMapWin_pixel_to_tile)0x463040;
@@ -562,6 +561,38 @@ FPath_territory Path_territory = (FPath_territory)0x59C3C0;
 FPath_continent Path_continent = (FPath_continent)0x59C520;
 FPath_continents Path_continents = (FPath_continents)0x59C790;
 FPath_sensors Path_sensors = (FPath_sensors)0x59CCA0;
+
+FNetDaemon_init NetDaemon_init = (FNetDaemon_init)0x52DF30;
+FGenVoid NetDaemon_hang_up = (FGenVoid)0x52E050;
+FGenVoid NetDaemon_send_game = (FGenVoid)0x52E900;
+FGenVoid NetDaemon_send_files = (FGenVoid)0x52ED40;
+FGenVoid NetDaemon_send_rules = (FGenVoid)0x52F520;
+FNetDaemon_game_checksum NetDaemon_game_checksum = (FNetDaemon_game_checksum)0x52F8E0;
+FGenVoid NetDaemon_receive = (FGenVoid)0x530320;
+FGenVoid NetDaemon_net_tasks = (FGenVoid)0x530360;
+FNetDaemon_wait NetDaemon_wait = (FNetDaemon_wait)0x5303B0;
+FNetDaemon_open_channel NetDaemon_open_channel = (FNetDaemon_open_channel)0x5304A0;
+FGenVoid NetDaemon_close_channel = (FGenVoid)0x530600;
+FNetDaemon_lock NetDaemon_lock = (FNetDaemon_lock)0x530630;
+FNetDaemon_add_lock NetDaemon_add_lock = (FNetDaemon_add_lock)0x530920;
+FGenVoid NetDaemon_add_global = (FGenVoid)0x530AA0;
+FGenVoid NetDaemon_unlock = (FGenVoid)0x530D00;
+FNetDaemon_lock_base NetDaemon_lock_base = (FNetDaemon_lock_base)0x530D50;
+FNetDaemon_unlock_base NetDaemon_unlock_base = (FNetDaemon_unlock_base)0x530E50;
+FNetDaemon_lock_veh NetDaemon_lock_veh = (FNetDaemon_lock_veh)0x531020;
+FGenVoid NetDaemon_unlock_veh = (FGenVoid)0x5310F0;
+FNetDaemon_automated_lock NetDaemon_automated_lock = (FNetDaemon_automated_lock)0x531150;
+FNetDaemon_await_exec NetDaemon_await_exec = (FNetDaemon_await_exec)0x531300;
+FGenVoid NetDaemon_await_synch = (FGenVoid)0x531480;
+FNetDaemon_await_diplo NetDaemon_await_diplo = (FNetDaemon_await_diplo)0x5315C0;
+FNetDaemon_maybe_lock NetDaemon_maybe_lock = (FNetDaemon_maybe_lock)0x531700;
+FNetDaemon_order_veh NetDaemon_order_veh = (FNetDaemon_order_veh)0x531780;
+FNetDaemon_veh_drop NetDaemon_veh_drop = (FNetDaemon_veh_drop)0x532140;
+FNetDaemon_action NetDaemon_action = (FNetDaemon_action)0x532570;
+FNetDaemon_send_message NetDaemon_send_message = (FNetDaemon_send_message)0x532940;
+FNetDaemon_synch NetDaemon_synch = (FNetDaemon_synch)0x532E00;
+FNetDaemon_fixup_message NetDaemon_fixup_message = (FNetDaemon_fixup_message)0x534330;
+FNetDaemon_process_message NetDaemon_process_message = (FNetDaemon_process_message)0x534400;
 
 fp_1int monument                 = (fp_1int)0x476A50;
 fp_none clear_monument           = (fp_none)0x476B30;
@@ -1261,7 +1292,7 @@ fp_none text_item_number         = (fp_none)0x5FD740;
 fp_none text_item_binary         = (fp_none)0x5FD7A0;
 fp_2int parse_string             = (fp_2int)0x625880;
 fp_2int parse_num                = (fp_2int)0x625E30;
-Fparse_says parse_say        = (Fparse_says)0x625E50;
-Fparse_says parse_says       = (Fparse_says)0x625EC0;
+fp_4int parse_say                = (fp_4int)0x625E50;
+fp_4int parse_says               = (fp_4int)0x625EC0;
 
 

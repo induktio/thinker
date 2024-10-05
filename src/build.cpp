@@ -309,7 +309,6 @@ int find_project(int base_id, WItem& Wgov) {
     int works = 0;
     int bases = f->base_count;
     int diplo = plans[faction].diplo_flags;
-    int similar_limit = (base->minerals_accumulated >= 80 ? 2 : 1);
     int unit_id = (gov & (GOV_MAY_PROD_AIR_COMBAT | GOV_MAY_PROD_AIR_DEFENSE)
         ? find_planet_buster(faction) : -1);
     int built_nukes = 0;
@@ -366,6 +365,7 @@ int find_project(int base_id, WItem& Wgov) {
             }
         }
     }
+    int similar_limit = (base->minerals_accumulated >= 50 ? 2 : 1);
     if (projs + nukes < min(3 + nuke_limit, bases/4)) {
         if (can_build(base_id, FAC_SUBSPACE_GENERATOR)) {
             return -FAC_SUBSPACE_GENERATOR;
@@ -879,7 +879,8 @@ int select_build(int base_id) {
                 for (const auto& m : iterate_tiles(base->x, base->y, 1, 21)) {
                     if (m.sq->owner == faction
                     && select_item(m.x, m.y, faction, FM_Auto_Full, m.sq) >= 0) {
-                        num++;
+                        num += (base->worked_tiles & (1 << m.i)
+                            && !(m.sq->items & (BIT_SIMPLE|BIT_ADVANCED)) ? 2 : 1);
                         sea += is_ocean(m.sq);
                     }
                 }
@@ -892,8 +893,9 @@ int select_build(int base_id) {
                 && Units[choice].triad() == TRIAD_AIR) {
                     push_item(base, builds, choice, score, --Wt);
                 }
-                if ((sea*2 >= num || sea_base) && has_ships(faction)
-                && (choice = find_proto(base_id, TRIAD_SEA, WMODE_TERRAFORM, DEF)) >= 0) {
+                if ((sea*2 >= num || sea_base)
+                && (choice = find_proto(base_id, TRIAD_SEA, WMODE_TERRAFORM, DEF)) >= 0
+                && Units[choice].triad() == TRIAD_SEA) {
                     push_item(base, builds, choice, score, --Wt);
                     continue;
                 }
@@ -967,9 +969,8 @@ int select_build(int base_id) {
             + (base->energy_surplus < 4 + 2*base->pop_size)
             + (base->energy_inefficiency > base->energy_surplus)
             + (base->energy_inefficiency > 2*base->energy_surplus)
-            - has_fac_built(FAC_RECREATION_COMMONS, base_id)
-            - has_fac_built(FAC_HOLOGRAM_THEATRE, base_id)
-            - has_fac_built(FAC_RESEARCH_HOSPITAL, base_id) < 3) {
+            - 2*has_fac_built(FAC_RECREATION_COMMONS, base_id)
+            - 2*has_fac_built(FAC_HOLOGRAM_THEATRE, base_id) < 3) {
                 continue;
             }
             score += 80*drone_riots + 16*drones + 4*turns;

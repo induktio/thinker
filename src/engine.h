@@ -474,7 +474,6 @@ typedef int(__cdecl *Fact_airdrop)(int veh_id, int x, int y, int flags);
 typedef int(__cdecl *Fact_destroy)(int veh_id, int flags, int x, int y);
 typedef int(__cdecl *Fact_gate)(int veh_id, int base_id);
 typedef int(__cdecl *Fhas_abil)(int unit_id, int ability_flag);
-typedef int(__cdecl *Fparse_says)(int index, const char* text, int gender, int plural);
 typedef int(__cdecl *Fhex_cost)(int unit_id, int faction_id, int x1, int y1, int x2, int y2, int a7);
 typedef void(__cdecl *Fname_base)(int faction_id, char* name, bool save_offset, bool sea_base);
 typedef int(__cdecl *Fveh_cost)(int item_id, int base_id, int* ptr);
@@ -1039,6 +1038,59 @@ extern FPath_continent Path_continent;
 extern FPath_continents Path_continents;
 extern FPath_sensors Path_sensors;
 
+typedef int(__thiscall *FNetDaemon_init)(void* This, int a2);
+typedef int(__thiscall *FNetDaemon_game_checksum)(void* This, int a2);
+typedef int(__thiscall *FNetDaemon_wait)(void* This, int a2, void* a3, int a4, int a5);
+typedef int(__thiscall *FNetDaemon_open_channel)(void* This, int a2, int a3);
+typedef int(__thiscall *FNetDaemon_lock)(void* This, int a2, int a3, int a4, int a5, int a6, int a7);
+typedef int(__thiscall *FNetDaemon_add_lock)(void* This, int a2, int a3, int a4);
+typedef int(__thiscall *FNetDaemon_lock_base)(void* This, int a2, int a3, int a4, int a5);
+typedef int(__thiscall *FNetDaemon_unlock_base)(void* This, int a2);
+typedef int(__thiscall *FNetDaemon_lock_veh)(void* This, void* a2, int a3, int a4, int a5, int a6);
+typedef int(__thiscall *FNetDaemon_automated_lock)(void* This, void* a2, int a3);
+typedef int(__thiscall *FNetDaemon_await_exec)(void* This, int a2);
+typedef int(__thiscall *FNetDaemon_await_diplo)(void* This, int a2);
+typedef int(__thiscall *FNetDaemon_maybe_lock)(void* This, int a2, int a3, int a4, int a5, int a6, int a7);
+typedef int(__thiscall *FNetDaemon_order_veh)(void* This, int a2, int a3, int a4);
+typedef int(__thiscall *FNetDaemon_veh_drop)(void* This, int a2, int a3, int a4);
+typedef int(__thiscall *FNetDaemon_action)(void* This, int a2, int a3);
+typedef int(__thiscall *FNetDaemon_send_message)(void* This, void* a2, int a3, int a4);
+typedef int(__thiscall *FNetDaemon_synch)(void* This, int a2, int a3, int a4, int a5, int a6, int a7, int a8);
+typedef int(__thiscall *FNetDaemon_fixup_message)(void* This, void* a2);
+typedef int(__fastcall *FNetDaemon_process_message)(void* This, int a2, int a3, int a4, int a5);
+
+extern FNetDaemon_init NetDaemon_init;
+extern FGenVoid NetDaemon_hang_up;
+extern FGenVoid NetDaemon_send_game;
+extern FGenVoid NetDaemon_send_files;
+extern FGenVoid NetDaemon_send_rules;
+extern FNetDaemon_game_checksum NetDaemon_game_checksum;
+extern FGenVoid NetDaemon_receive;
+extern FGenVoid NetDaemon_net_tasks;
+extern FNetDaemon_wait NetDaemon_wait;
+extern FNetDaemon_open_channel NetDaemon_open_channel;
+extern FGenVoid NetDaemon_close_channel;
+extern FNetDaemon_lock NetDaemon_lock;
+extern FNetDaemon_add_lock NetDaemon_add_lock;
+extern FGenVoid NetDaemon_add_global;
+extern FGenVoid NetDaemon_unlock;
+extern FNetDaemon_lock_base NetDaemon_lock_base;
+extern FNetDaemon_unlock_base NetDaemon_unlock_base;
+extern FNetDaemon_lock_veh NetDaemon_lock_veh;
+extern FGenVoid NetDaemon_unlock_veh;
+extern FNetDaemon_automated_lock NetDaemon_automated_lock;
+extern FNetDaemon_await_exec NetDaemon_await_exec;
+extern FGenVoid NetDaemon_await_synch;
+extern FNetDaemon_await_diplo NetDaemon_await_diplo;
+extern FNetDaemon_maybe_lock NetDaemon_maybe_lock;
+extern FNetDaemon_order_veh NetDaemon_order_veh;
+extern FNetDaemon_veh_drop NetDaemon_veh_drop;
+extern FNetDaemon_action NetDaemon_action;
+extern FNetDaemon_send_message NetDaemon_send_message;
+extern FNetDaemon_synch NetDaemon_synch;
+extern FNetDaemon_fixup_message NetDaemon_fixup_message;
+extern FNetDaemon_process_message NetDaemon_process_message;
+
 #pragma GCC diagnostic pop
 
 extern fp_1int monument;
@@ -1172,7 +1224,7 @@ extern fp_none sub_505D40;
 extern fp_none sub_505D60;
 extern Fbattle_kill battle_kill;
 extern Fbattle_kill battle_kill_stack;
-extern fp_1int promote;
+//extern fp_1int promote;
 extern fp_1int invasions;
 extern fp_4int interceptor;
 extern Fbattle_fight_1 battle_fight_1; // renamed
@@ -1739,7 +1791,7 @@ extern fp_none text_item_number;
 extern fp_none text_item_binary;
 extern fp_2int parse_string;
 //extern fp_2int parse_num;
-extern Fparse_says parse_say;
-extern Fparse_says parse_says;
+extern fp_4int parse_say;
+//extern fp_4int parse_says;
 
 

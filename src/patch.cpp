@@ -48,6 +48,25 @@ int __cdecl skip_action_destroy(int id) {
     return 0;
 }
 
+/*
+Change FORESTGROWS / KELPGROWS / PRODUCE popups into delayed notification items on the message log.
+*/
+int __cdecl alien_fauna_pop2(const char* label, const char* imagefile, int UNUSED(a3)) {
+    return NetMsg_pop(NetMsg, label, 5000, 0, imagefile);
+}
+
+int __cdecl base_production_popp(const char* textfile, const char* label, int a3, const char* imagefile, int a5) {
+    int item_id = (*CurrentBase ? (*CurrentBase)->item() : 0);
+    if (item_id == -FAC_SKY_HYDRO_LAB
+    || item_id == -FAC_ORBITAL_POWER_TRANS
+    || item_id == -FAC_NESSUS_MINING_STATION
+    || item_id == -FAC_ORBITAL_DEFENSE_POD
+    || item_id == -FAC_GEOSYNC_SURVEY_POD) {
+        return NetMsg_pop(NetMsg, label, 5000, 0, imagefile);
+    }
+    return popp(textfile, label, a3, imagefile, a5);
+}
+
 int __cdecl MapWin_gen_terrain_nearby_fungus(int x, int y) {
     MAP* sq;
     int k = 0;
@@ -431,6 +450,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x579A30, (int)add_goal);
     write_jump(0x579B70, (int)add_site);
     write_jump(0x579D80, (int)wipe_goals);
+    write_jump(0x579F80, (int)want_monolith);
     write_jump(0x591040, (int)mod_map_wipe);
     write_jump(0x592250, (int)mod_say_loc);
     write_jump(0x5BF1F0, (int)has_abil);
@@ -474,9 +494,12 @@ bool patch_setup(Config* cf) {
     write_call(0x579362, (int)mod_enemy_move);
     write_call(0x40F45A, (int)mod_base_draw);
     write_call(0x4672A7, (int)mod_base_draw);
+    write_call(0x4F2A4C, (int)base_production_popp); // #PRODUCE
+    write_call(0x522544, (int)alien_fauna_pop2); // #KELPGROWS
+    write_call(0x522555, (int)alien_fauna_pop2); // #FORESTGROWS
     write_call(0x559E21, (int)map_draw_strcmp); // veh_draw
     write_call(0x55B5E1, (int)map_draw_strcmp); // base_draw
-    write_call(0x5C0984, (int)veh_kill_lift);
+    write_call(0x5C0984, (int)veh_kill_lift); // veh_kill
     write_call(0x498720, (int)ReportWin_close_handler);
     write_call(0x408DBD, (int)BaseWin_draw_psych_strcat);
     write_call(0x40F8F8, (int)BaseWin_draw_farm_set_font);
@@ -639,6 +662,10 @@ bool patch_setup(Config* cf) {
     write_call(0x59C105, (int)mod_hex_cost); // Path::move
 
     // Prototypes and combat game mechanics
+    write_call(0x40E717, (int)breed_level); // BaseWin::draw_production
+    write_call(0x526366, (int)breed_level); // repair_phase
+    write_call(0x4FD320, (int)worm_level); // base_build
+    write_call(0x4FD3BC, (int)worm_level); // base_build
     write_call(0x4930F8, (int)mod_veh_avail); // ProdPicker::calculate
     write_call(0x4DED97, (int)mod_veh_avail); // Console::editor_veh
     write_call(0x4E4AE4, (int)mod_veh_avail); // base_first
@@ -789,7 +816,6 @@ bool patch_setup(Config* cf) {
             remove_call(0x4E5F96); // #BEGINPROJECT
             remove_call(0x4E5E0D); // #CHANGEPROJECT
             remove_call(0x4F4817); // #DONEPROJECT
-            remove_call(0x4F2A4C); // #PRODUCE (project/satellite)
         }
     }
     /*
@@ -985,6 +1011,10 @@ bool patch_setup(Config* cf) {
         write_call(0x49DE83, (int)ReportWin_draw_ops_color);
         write_call(0x49DEA5, (int)ReportWin_draw_ops_strcat);
     }
+    if (cf->render_probe_labels) {
+        memset((void*)0x559590, 0x90, 2);
+        memset((void*)0x5599DE, 0x90, 6);
+    }
 
     /*
     Find nearest base for returned probes in order_veh and probe functions.
@@ -1142,10 +1172,6 @@ bool patch_setup(Config* cf) {
         write_bytes(0x59F834, old_bytes_2, new_bytes_2, sizeof(new_bytes_2)); // probe
         write_call(0x59F83E, (int)probe_popup_start);
     }
-    if (cf->render_probe_labels) {
-        memset((void*)0x559590, 0x90, 2);
-        memset((void*)0x5599DE, 0x90, 6);
-    }
     if (cf->new_base_names) {
         write_call(0x4CFF47, (int)mod_name_base);
         write_call(0x4E4CFC, (int)mod_name_base);
@@ -1264,11 +1290,6 @@ bool patch_setup(Config* cf) {
     if (!cf->spawn_battle_ogres) {
         short_jump(0x57BC90);
     }
-    if (cf->collateral_damage_value != 3) {
-        const byte old_bytes[] = {0xB2, 0x03};
-        const byte new_bytes[] = {0xB2, (byte)cf->collateral_damage_value};
-        write_bytes(0x50AAA5, old_bytes, new_bytes, sizeof(new_bytes));
-    }
     if (!cf->event_perihelion) {
         short_jump(0x51F481);
     }
@@ -1358,14 +1379,19 @@ bool patch_setup(Config* cf) {
         write_bytes(0x4EBC85, old_bytes, new_bytes, sizeof(new_bytes));
     }
     if (cf->clean_minerals != 16) {
-        const byte old_bytes[] = {0x83, 0xC6, 0x10};
-        const byte new_bytes[] = {0x83, 0xC6, (byte)cf->clean_minerals};
+        const byte old_bytes[] = {0x83,0xC6,0x10};
+        const byte new_bytes[] = {0x83,0xC6,(byte)cf->clean_minerals};
         write_bytes(0x4E9E41, old_bytes, new_bytes, sizeof(new_bytes));
     }
     if (!cf->aquatic_bonus_minerals) {
         const byte old_bytes[] = {0x46};
         const byte new_bytes[] = {0x90};
         write_bytes(0x4E7604, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+    if (cf->collateral_damage_value != 3) {
+        const byte old_bytes[] = {0xB2,0x03};
+        const byte new_bytes[] = {0xB2,(byte)cf->collateral_damage_value};
+        write_bytes(0x50AAA5, old_bytes, new_bytes, sizeof(new_bytes));
     }
     if (cf->repair_minimal != 1) {
         const byte old_bytes[] = {0xC7,0x45,0xFC,0x01,0x00,0x00,0x00};

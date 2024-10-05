@@ -38,6 +38,8 @@ int stockpile_energy_active(int base_id);
 int terraform_eco_damage(int base_id);
 int mineral_output_modifier(int base_id);
 int energy_grid_output(int base_id);
+int satellite_output(int satellites, int pop_size, bool full_value);
+bool satellite_bonus(int base_id, int* nutrient, int* mineral, int* energy);
 int __cdecl own_base_rank(int base_id);
 int __cdecl mod_base_rank(int faction_id, int position);
 int __cdecl best_specialist(BASE* base, int econ_val, int labs_val, int psych_val);
@@ -58,6 +60,4 @@ int __cdecl has_fac(FacilityId item_id, int base_id, int queue_count);
 int __cdecl has_fac_built(FacilityId item_id, int base_id);
 void __cdecl set_fac(FacilityId item_id, int base_id, bool add);
 int __cdecl fac_maint(int facility_id, int faction_id);
-int satellite_output(int satellites, int pop_size, bool full_value);
-bool satellite_bonus(int base_id, int* nutrient, int* mineral, int* energy);
 

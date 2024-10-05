@@ -46,6 +46,8 @@ Ecological damage display on the base window has been updated to be more useful.
 
 Whenever the player instructs a former to build an improvement that replaces any other item in the tile, the game will display a warning dialog. This dialog can be skipped by toggling the warning option (warn_on_former_replace).
 
+To speed up the gameplay several user interface popups have been moved into delayed notifications that are also listed on the message log. These notificationa include satellite completion by any faction, forest/kelp growing near player bases and unit promotions after combat.
+
 When building or capturing a new base, the mod will automatically copy the saved build queue from **Template 1** to the new base. At maximum 8 items can be saved to the template, and the first item from the template will be automatically moved to current production choice when a new base is built or captured. Only the template saved to the first slot is checked, any other saved templates are ignored.
 
 To save the current queue to template, open a base and **right click** on the queue and select **Save current list to template**. This feature works in conjunction with the simple hurry cost option so that it's easy to start hurrying base production on the first turn without worrying about double cost mineral thresholds.
@@ -55,7 +57,7 @@ Summary of AI changes
 =====================
 Thinker introduces notable changes to the AI to manage the colonization and production much more effectively than usual which can result in changes on the difficulty curve. When playing on lower difficulties, it might make sense to apply additional limits on AI expansion by using options such as `expansion_limit=10` and `expansion_autoscale=1` so that the AI will expand roughly at the same speed as the player faction.
 
-Thinker fully controls the movement of most units, combat and non-combat alike. Note that for player factions the automation applies mostly on non-combat units. For testing purposes it is also possible to run old/new AIs side-by-side. For example `factions_enabled=3` makes only the factions in the first 3 slots to use Thinker AI if they are not player-controlled. By default `factions_enabled=7` setting enables Thinker AI for all computer factions. Regardless of which AI is enabled, all of them should receive the same production bonuses that are set in the config file.
+Thinker fully controls the movement of most units, combat and non-combat alike. For testing purposes it is also possible to run old/new AIs side-by-side. For example `factions_enabled=3` makes only the factions in the first 3 slots to use Thinker AI if they are not player-controlled. By default `factions_enabled=7` setting enables Thinker AI for all computer factions. Regardless of which AI is enabled, all of them should receive the same production bonuses that are set in the config file.
 
 Another novel addition has been naval invasions executed by the AI. This has been traditionally a weak spot for many AIs, since they lack the coordination between many units to pull off such strategies. Thinker however is capable of gathering an invasion fleet with many transports and using other combat ships as cover to move them into a landing zone. Combat ships will also use artillery attack on various targets much more than usual.
 
@@ -85,7 +87,7 @@ Base swapping dialogue has been adjusted to reject any base swaps where the AI w
 
 Player automation features
 ==========================
-It is possible to instruct Thinker to automate player-owned colony pods, crawlers and formers from `ALT+T` menu options. There's also a separate option to set Thinker manage governors in player-owned bases. Normally player base governors and unit automation would be handled by the original AI. However worker tile selection and specialist allocation is always managed by Thinker.
+It is possible to instruct Thinker to automate player-owned units from `ALT+T` menu options. There's also a separate option to set Thinker manage governors in player-owned bases. Normally player base governors and unit automation would be handled by the original AI. However worker tile selection and specialist allocation is always managed by Thinker.
 
 When enabled, use `Shift+A` shortcut to automate any specific unit and it will follow the same colonization or terraforming strategy as the AI factions. Colony pods will attempt to travel to a suitable location autonomously and deploy a base there. If this is not required, the units can be moved manually as well. Automated formers should follow the same settings listed in the Automation Preferences dialog. Crawlers will usually try to convoy nutrient or mineral resources depending on the base status.
 
@@ -357,9 +359,9 @@ Currently the features listed here may not be fully supported or may have issues
 2. Most notable limits in the game engine are 8 factions (one for native life), 512 bases, 2048 units, and 64 prototypes for each faction. These limits were fixed in the game binary at compilation time and are not feasible to change without a full open source port.
 3. Faction selection dialog in the game setup is limited to showing only the first 24 factions even if installed factions in alphax.txt exceed this number.
 4. Most custom settings in "Special Scenario Rules" should be supported even when starting new random maps. However these rules may cause inconsistent behaviour when used from the main menu: `No native life--fungus, mind worms, Planet, etc`, `Force current difficulty level`, and `Force player to play current faction`.
-5. While `collateral_damage_value` is set to 0, the game might still display messages about collateral damage being inflicted on units on the stack, but none of them will actually take any damage.
-6. DirectDraw mode is not supported while using thinker.exe launcher. In this case the game may fail to start properly unless `DirectDraw=0` config option is used.
-7. In rare cases needlejets that are set to automated air defense may disappear after ending their turn outside the base. This should not happen if the units are moved manually.
+5. DirectDraw mode is not supported while using thinker.exe launcher. In this case the game may fail to start properly unless `DirectDraw=0` config option is used.
+6. In rare cases needlejets that are set to automated air defense may disappear after ending their turn outside the base. This should not happen if the units are moved manually.
+7. Upgrading any units to predefined prototypes in alphax.txt is not supported due to game engine limitations. It is only possible to upgrade units to prototypes defined for the specific faction.
 
 
 Other patches included
@@ -421,7 +423,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 52. Fix monolith energy to not be limited by tile yield restrictions in the early game. This limitation did not apply on monolith nutrients/minerals.
 53. Fix base tile energy output being inconsistent when SE Economy value is between 3 and 4.
 54. Fix GSP defense bonus range sometimes not being accurate at three tiles like the manual implies.
-55. Fix inconsistent effects with Citizens Defense Force when the base tile is defended by an unit owned by third faction.
+55. Fix inconsistent effects with unit repair facilities and Citizens Defense Force when the base tile is defended by an unit owned by third faction. The facility or the secret project providing it must be built by the base owner for it to have an effect.
 
 
 Scient's patch

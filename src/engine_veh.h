@@ -362,7 +362,7 @@ enum VehState {
     VSTATE_ASSISTANT_WORM = 0x800000, // Int: Brood Trainer; Human player's 1st spawned Mind Worm
     VSTATE_UNK_1000000 = 0x1000000, // cleared in veh_wake
     VSTATE_UNK_2000000 = 0x2000000, // cleared in veh_wake
-    VSTATE_CRAWLING = 0x4000000, // cleared in repair_phase, flag also related to terraforming
+    VSTATE_WORKING = 0x4000000, // cleared in repair_phase, terraform action or convoy resources
     VSTATE_UNK_8000000 = 0x8000000, // cleared in veh_wake
     VSTATE_UNK_10000000 = 0x10000000,
     VSTATE_UNK_20000000 = 0x20000000,
@@ -493,7 +493,7 @@ struct VEH {
     int16_t waypoint_3_y;
     int16_t waypoint_4_y;
     uint8_t morale;
-    uint8_t terraforming_turns;
+    uint8_t terraform_turns;
     uint8_t order_auto_type;
     uint8_t visibility; // faction bitfield of who can currently see Veh excluding owner
     uint8_t moves_spent; // stored as road moves spent unless magtube_movement_rate > 0

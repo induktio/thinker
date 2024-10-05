@@ -52,6 +52,25 @@ int __cdecl parse_num(size_t index, int value) {
     return 0;
 }
 
+/*
+This function is the preferred, more generic version to be used instead of parse_say.
+*/
+int __cdecl parse_says(size_t index, const char* src, int gender, int plural) {
+   if (!src || index > 9) {
+       return 3;
+   }
+   if (gender < 0) {
+       gender = *gender_default;
+   }
+   ParseStrGender[index] = gender;
+   if (plural < 0) {
+       plural = *plurality_default;
+   }
+   ParseStrPlurality[index] = plural;
+   strncpy((char*)&ParseStrBuffer[index], src, StrBufLen);
+   return 0;
+}
+
 int __cdecl game_start_turn() {
     // TODO: If config is changed, may return incorrect start turn
     return min(*CurrentTurn, (*GameRules & RULES_TIME_WARP ? conf.time_warp_start_turn : 0));
@@ -439,7 +458,7 @@ void __cdecl mod_repair_phase(int faction_id) {
         veh->iter_count = 0;
         veh->moves_spent = 0;
         veh->flags &= ~VFLAG_UNK_1000;
-        veh->state &= ~(VSTATE_CRAWLING|VSTATE_UNK_2000|VSTATE_UNK_2);
+        veh->state &= ~(VSTATE_WORKING|VSTATE_UNK_2000|VSTATE_UNK_2);
 
         if (sq && !at_base) {
             if (veh->faction_id == MapWin->cOwner || veh->is_visible(MapWin->cOwner)) {
@@ -497,16 +516,14 @@ void __cdecl mod_repair_phase(int faction_id) {
         }
         if (base_id >= 0 && !Bases[base_id].drone_riots_active()) {
             value += conf.repair_base;
+            // Fix: consider secret projects built by the base owner instead of the veh owner
             if (!veh->is_native_unit()) {
-                if ((triad == TRIAD_LAND && (has_fac_built(FAC_COMMAND_CENTER, base_id)
-                || has_project(FAC_MARITIME_CONTROL_CENTER, faction_id)))
-                || (triad == TRIAD_SEA && (has_fac_built(FAC_NAVAL_YARD, base_id)
-                || has_project(FAC_MARITIME_CONTROL_CENTER, faction_id)))
-                || (triad == TRIAD_AIR && (has_fac_built(FAC_AEROSPACE_COMPLEX, base_id)
-                || has_project(FAC_CLOUDBASE_ACADEMY, faction_id)))) {
+                if ((triad == TRIAD_LAND && has_facility(FAC_COMMAND_CENTER, base_id))
+                || (triad == TRIAD_SEA && has_facility(FAC_NAVAL_YARD, base_id))
+                || (triad == TRIAD_AIR && has_facility(FAC_AEROSPACE_COMPLEX, base_id))) {
                     value += conf.repair_base_facility;
                 }
-            } else if (breed_mod(base_id, faction_id)) {
+            } else if (breed_level(base_id, faction_id)) {
                 value += conf.repair_base_native;
             }
         }

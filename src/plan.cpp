@@ -282,13 +282,13 @@ int satellite_goal(int faction_id, int item_id) {
 }
 
 void former_plans(int faction_id) {
-    bool former_fungus = (has_terra(faction_id, FORMER_PLANT_FUNGUS, TRIAD_LAND)
-        || has_terra(faction_id, FORMER_PLANT_FUNGUS, TRIAD_SEA));
+    bool former_fungus = (has_terra(FORMER_PLANT_FUNGUS, TRIAD_LAND, faction_id)
+        || has_terra(FORMER_PLANT_FUNGUS, TRIAD_SEA, faction_id));
     bool improv_fungus = (has_tech(Rules->tech_preq_ease_fungus_mov, faction_id)
         || has_tech(Rules->tech_preq_improv_fungus, faction_id)
         || has_project(FAC_XENOEMPATHY_DOME, faction_id));
     int value = fungus_yield(faction_id, RES_NONE)
-        - (has_terra(faction_id, FORMER_FOREST, TRIAD_LAND)
+        - (has_terra(FORMER_FOREST, TRIAD_LAND, faction_id)
         ? ResInfo->forest_sq_nutrient
         + ResInfo->forest_sq_mineral
         + ResInfo->forest_sq_energy : 2);

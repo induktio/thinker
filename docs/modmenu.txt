@@ -52,7 +52,7 @@ __Add polar caps on random maps.
 __Mirror maps along X axis.
 __Mirror maps along Y axis.
 Thinker manages player base governors.
-Thinker manages player colony pods/crawlers/formers.
+Thinker manages player automated units.
 Warn when manually replacing tile improvements.
 Show additional base details on world map.
 Show foreign treaty changes on popup window.

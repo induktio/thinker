@@ -316,6 +316,48 @@ int __cdecl want_monolith(int veh_id) {
         && mod_morale_veh(veh_id, true, 0) < MORALE_ELITE;
 }
 
+int __cdecl breed_level(int base_id, int faction_id) {
+    int value = 0;
+    if (has_project(FAC_XENOEMPATHY_DOME, faction_id)) {
+        value++;
+    }
+    if (has_project(FAC_PHOLUS_MUTAGEN, faction_id)) {
+        value++;
+    }
+    if (has_project(FAC_VOICE_OF_PLANET, faction_id)) {
+        value++;
+    }
+    if (has_fac_built(FAC_CENTAURI_PRESERVE, base_id)) {
+        value++;
+    }
+    if (has_fac_built(FAC_TEMPLE_OF_PLANET, base_id)) {
+        value++;
+    }
+    if (has_fac_built(FAC_BIOLOGY_LAB, base_id)) {
+        value++;
+    }
+    if (has_facility(FAC_BIOENHANCEMENT_CENTER, base_id)) {
+        value++; // The Cyborg Factory also possible
+    }
+    assert(value == breed_mod(base_id, faction_id));
+    return value;
+}
+
+int __cdecl worm_level(int base_id, int faction_id) {
+    int value = breed_level(base_id, faction_id);
+    if (MFactions[faction_id].rule_psi) {
+        value++;
+    }
+    if (has_project(FAC_DREAM_TWISTER, faction_id)) {
+        value++;
+    }
+    if (has_project(FAC_NEURAL_AMPLIFIER, faction_id)) {
+        value++;
+    }
+    assert(value == worm_mod(base_id, faction_id));
+    return value;
+}
+
 /*
 Determine the extra percent cost for building a prototype. Includes a check if the faction
 has the free prototype flag set or if the player is using one of the easier difficulties.
@@ -737,11 +779,14 @@ int __cdecl mod_veh_kill(int veh_id) {
 Skip vehicle turn by adjusting spent moves to maximum available moves.
 */
 int __cdecl mod_veh_skip(int veh_id) {
-    VEH* veh = &Vehicles[veh_id];
+    VEH* veh = &Vehs[veh_id];
     int moves = veh_speed(veh_id, 0);
 
     if (is_human(veh->faction_id)) {
         if (conf.activate_skipped_units) {
+            if (veh->is_former() && veh->order >= ORDER_FARM && veh->order < ORDER_MOVE_TO) {
+                veh->state |= VSTATE_WORKING;
+            }
             if (!veh->moves_spent && veh->order < ORDER_FARM
             && !(veh->state & (VSTATE_HAS_MOVED|VSTATE_MADE_AIRDROP))) {
                 veh->flags |= VFLAG_FULL_MOVE_SKIPPED;
@@ -765,22 +810,22 @@ int __cdecl mod_veh_skip(int veh_id) {
 }
 
 int __cdecl mod_veh_wake(int veh_id) {
-    VEH* veh = &Vehicles[veh_id];
-    if (veh->order >= ORDER_FARM && veh->order < ORDER_MOVE_TO && !(veh->state & VSTATE_CRAWLING)) {
+    VEH* veh = &Vehs[veh_id];
+    if (veh->order >= ORDER_FARM && veh->order < ORDER_MOVE_TO && !(veh->state & VSTATE_WORKING)) {
         veh->moves_spent = veh_speed(veh_id, 0) - Rules->move_rate_roads;
-        if (veh->terraforming_turns) {
-            int turns = veh->terraforming_turns - contribution(veh_id, veh->order - 4);
-            veh->terraforming_turns = max(0, turns);
+        if (veh->terraform_turns) {
+            veh->terraform_turns = max(0, veh->terraform_turns - contribution(veh_id, veh->order - 4));
         }
     }
-    if (veh->state & VSTATE_ON_ALERT && !(veh->state & VSTATE_HAS_MOVED) && veh->order_auto_type == ORDERA_ON_ALERT) {
+    if (veh->state & VSTATE_ON_ALERT && !(veh->state & VSTATE_HAS_MOVED)
+    && veh->order_auto_type == ORDERA_ON_ALERT) {
         veh->moves_spent = 0;
     }
     /*
-    Formers are a special case since they might not move but can build items immediately.
-    When formers build something, VSTATE_HAS_MOVED should be set to prevent them from moving twice per turn.
+    Formers are a special case since they can build items without moving on the same turn.
+    In this case VSTATE_HAS_MOVED or VSTATE_WORKING should be set to prevent them from moving twice per turn.
     */
-    if (conf.activate_skipped_units) {
+    if (conf.activate_skipped_units && is_human(veh->faction_id)) {
         if (veh->flags & VFLAG_FULL_MOVE_SKIPPED
         && !(veh->state & (VSTATE_HAS_MOVED|VSTATE_MADE_AIRDROP))) {
             veh->moves_spent = 0;
@@ -1140,7 +1185,7 @@ int set_move_to(int veh_id, int x, int y) {
     veh->order = ORDER_MOVE_TO;
     veh->status_icon = 'G';
     if (veh->is_former()) {
-        veh->terraforming_turns = 0;
+        veh->terraform_turns = 0;
     }
     mapnodes.erase({x, y, NODE_PATROL});
     mapnodes.erase({x, y, NODE_COMBAT_PATROL});

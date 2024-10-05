@@ -16,6 +16,7 @@ bool valid_triad(int triad);
 char* label_get(size_t index);
 char* __cdecl parse_set(int faction_id);
 int __cdecl parse_num(size_t index, int value);
+int __cdecl parse_says(size_t index, const char* src, int gender, int plural);
 int __cdecl game_start_turn();
 int __cdecl game_year(int n);
 int __cdecl in_box(int x, int y, RECT* rc);
