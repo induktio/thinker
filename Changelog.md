@@ -1,6 +1,28 @@
 
 # Thinker mod release changelog
 
+## Version 4.6 (2024-10-05)
+* Major rewrite on combat calculation routines. Most combat mechanics are still the same as before unless stated otherwise.
+* "Combat % -> attacking along road" is implemented to apply when attacking along roads or magtubes if the target is not a base or bunker.
+* Multiple Flechette Defenses are shown on one line using the actual modifier on combat status display.
+* Remove minor AI bonus which applied when former units were defending against native attacks.
+* Thinker also manages automated player combat units, probes and transports when this is enabled from options.
+* Automated formers will now complete Farm+Solar+Road or Mine+Road commands as usual and wait for new orders.
+* To speed up the gameplay several user interface popups have been moved into delayed notifications and added on the message log.
+* Turns to probe infiltration expiry is displayed on the message log instead of separate popup like previously.
+* Add options facility_defense_bonus and sensor_defense_ocean.
+* Remove redundant options perimeter_defense_bonus, tachyon_field_bonus, intercept_defense_bonus and modify_unit_morale.
+* Minor updates on psych calculation with facilities or secret projects adding more talents on the base.
+* Minor modifications on governor priorities for some basic facilities and Tree Farms.
+* Governor will switch to psych-related specialists more often if the base has many drones.
+* Governor always allocates workers to meet mineral support demand even if it causes drone riots.
+* Fix inconsistent effects with unit repair facilities and Citizens Defense Force when the base tile is defended by an unit owned by third faction.
+* Fix GSP defense bonus range sometimes not being accurate at three tiles like the manual implies.
+* Fix issue with formers sometimes being able to move after completing improvements on the same turn.
+* Fix issue where bases had specialists present which were not allowed by the game rules.
+* Fix transports sometimes not moving when being next to allied territory.
+
+
 ## Version 4.5 (2024-08-31)
 * Major adjustments on base governor to make additional priorities selectable for each base. Modify governor worker allocation to better take into account any psych-related issues and convert workers into specialists as needed.
 * Governor is able to choose from multiple specialist types based on social engineering choices and various factors. The default specialist type chosen by the game has less emphasis on psych compared to the original version.
