@@ -486,11 +486,11 @@ int find_proto(int base_id, Triad triad, VehWeaponMode mode, bool defend) {
     debug("find_proto faction: %d triad: %d mode: %d defend: %d\n", faction, triad, mode, defend);
 
     int gov = base->gov_config();
-    int psi_score = plans[faction].psi_score
+    int psi_score = (gov & GOV_MAY_PROD_NATIVE ? plans[faction].psi_score
         + has_fac_built(FAC_BROOD_PIT, base_id)
         + has_fac_built(FAC_BIOLOGY_LAB, base_id)
         + has_fac_built(FAC_CENTAURI_PRESERVE, base_id)
-        + has_fac_built(FAC_TEMPLE_OF_PLANET, base_id);
+        + has_fac_built(FAC_TEMPLE_OF_PLANET, base_id) : 0);
     bool prototypes = (gov & GOV_MAY_PROD_PROTOTYPE) || has_fac_built(FAC_SKUNKWORKS, base_id);
     bool combat = (mode == WMODE_COMBAT);
     bool pacifism = combat && triad == TRIAD_AIR
@@ -961,7 +961,7 @@ int select_build(int base_id) {
         }
         if (t == FAC_PUNISHMENT_SPHERE) {
             int turns = base->assimilation_turns_left;
-            if (!drone_riots && !turns && drones < base->pop_size/2) {
+            if (!(gov & GOV_MAY_FORCE_PSYCH) || (!drone_riots && !turns && drones < base->pop_size/2)) {
                 continue;
             }
             if (clamp((turns - 5) / 10, 0, 3)
@@ -970,7 +970,8 @@ int select_build(int base_id) {
             + (base->energy_inefficiency > base->energy_surplus)
             + (base->energy_inefficiency > 2*base->energy_surplus)
             - 2*has_fac_built(FAC_RECREATION_COMMONS, base_id)
-            - 2*has_fac_built(FAC_HOLOGRAM_THEATRE, base_id) < 3) {
+            - 2*has_fac_built(FAC_HOLOGRAM_THEATRE, base_id)
+            - 2*has_fac_built(FAC_NETWORK_NODE, base_id) < 3) {
                 continue;
             }
             score += 80*drone_riots + 16*drones + 4*turns;

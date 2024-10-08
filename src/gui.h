@@ -74,8 +74,9 @@ int __thiscall Credits_GraphicWin_init(
 int __thiscall BaseWin_popup_start(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
 int __cdecl BaseWin_ask_number(const char* label, int value, int a3);
-void __thiscall BaseWin_draw_misc_eco_damage(Buffer* This, char* buf, int x, int y, int len);
+int __thiscall BaseWin_gov_options(BaseWindow* This, int flag);
 void __thiscall BaseWin_draw_support(BaseWindow* This);
+void __thiscall BaseWin_draw_misc_eco_damage(Buffer* This, char* buf, int x, int y, int len);
 void __thiscall BaseWin_draw_farm_set_font(Buffer* This, Font* font, int a3, int a4, int a5);
 void __thiscall BaseWin_draw_energy_set_text_color(Buffer* This, int a2, int a3, int a4, int a5);
 void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, int opts);

@@ -419,6 +419,7 @@ int __cdecl mod_setup_player(int faction_id, int a2, int a3) {
     if (!*CurrentTurn) {
         // Update default governor settings
         f->base_governor_adv &= ~(GOV_MAY_PROD_SP|GOV_MAY_HURRY_PRODUCTION);
+        f->base_governor_adv |= GOV_MAY_PROD_NATIVE;
     }
     return 0;
 }

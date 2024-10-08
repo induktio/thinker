@@ -284,6 +284,15 @@ The infiltration status can be renewed once per turn for every opponent faction 
 Each social engineering value is treated as being from -3 to 3 even if it falls outside this range. In addition, infiltration lasts longer on maps larger than the standard size to balance for the longer travel distances. On Thinker and Transcend difficulty levels, the duration is reduced from normal values. The final time value is always at least 5 turns. For example, on Transcend difficulty, standard map, with two factions having equal ratings, the default infiltration period is 15 turns.
 
 
+Base psych changes
+==================
+In the original game benefits provided by Paradise Garden, Human Genome Project and Clinical Immortality sometimes did not match their description in the manual.
+Usually superdrones added by bureaucracy prevented new talents from being added on the base. In the modified routines enabled by default with `base_psych` option, these facilities provide more consistent effects.
+Clinical Immortality provides one extra talent per base as mentioned in the manual. However any bureaucracy or other drone effects on the first psych row remain the same as before.
+
+As an additional feature, psych energy allocation is not limited to twice the base size unlike in the original game. Any spending before this limit will provide similar effects as in the original game, but after that limit the marginal cost to pacify one drone is increased to 4 psych and it keeps increasing by 4 psych after each step. This makes it slightly easier for some factions to achieve golden ages while it still requires substantial psych spending.
+
+
 Recommended alphax.txt settings
 ===============================
 All alphax.txt files provided by Thinker contain some optional, minor edits as summarized below.
@@ -418,10 +427,10 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 47. Modify Mind Control probe action to only subvert units inside the base and not on adjacent tiles to balance for the relatively cheap cost for this action.
 48. Modify Total Thought Control probe action to not set silently "want revenge" or "shall betray" flags which usually made the AI sneak attack. This action can be still used to subvert bases without declaring war but it applies a notable diplomatic penalty between the factions.
 49. Base production picker will not show Paradise Garden as buildable if the base already has Punishment Sphere.
-50. Clinical Immortality provides one extra talent per base instead of two as mentioned in the manual. This change is enabled as part of the rewritten psych routines (base_psych).
-51. Fix issue where terrain detail display on the world map showed incorrect mineral output for aquatic factions.
-52. Fix monolith energy to not be limited by tile yield restrictions in the early game. This limitation did not apply on monolith nutrients/minerals.
-53. Fix base tile energy output being inconsistent when SE Economy value is between 3 and 4.
+50. Fix issue where terrain detail display on the world map showed incorrect mineral output for aquatic factions.
+51. Fix monolith energy to not be limited by tile yield restrictions in the early game. This limitation did not apply on monolith nutrients/minerals.
+52. Fix base tile energy output being inconsistent when SE Economy value is between 3 and 4.
+53. Fix issue with formers sometimes being able to move after completing improvements on the same turn.
 54. Fix GSP defense bonus range sometimes not being accurate at three tiles like the manual implies.
 55. Fix inconsistent effects with unit repair facilities and Citizens Defense Force when the base tile is defended by an unit owned by third faction. The facility or the secret project providing it must be built by the base owner for it to have an effect.
 

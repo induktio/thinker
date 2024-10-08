@@ -316,6 +316,22 @@ int __cdecl want_monolith(int veh_id) {
         && mod_morale_veh(veh_id, true, 0) < MORALE_ELITE;
 }
 
+/*
+Calculate the former rate to perform terrain enhancements. This is only called from veh_wake.
+*/
+int __cdecl veh_contribution(int veh_id, int terraform_id) {
+    int value = has_abil(Vehs[veh_id].unit_id, ABL_SUPER_TERRAFORMER) ? 4 : 2;
+    if (terraform_id == (ORDER_REMOVE_FUNGUS - 4) || terraform_id == (ORDER_PLANT_FUNGUS - 4)) {
+        if (has_project(FAC_XENOEMPATHY_DOME, Vehs[veh_id].faction_id)) {
+            value *= 2; // Doubled
+        }
+    } else if (has_project(FAC_WEATHER_PARADIGM, Vehs[veh_id].faction_id)) {
+        value = (value * 3) / 2; // +50%
+    }
+    assert(value == contribution(veh_id, terraform_id));
+    return value;
+}
+
 int __cdecl breed_level(int base_id, int faction_id) {
     int value = 0;
     if (has_project(FAC_XENOEMPATHY_DOME, faction_id)) {
@@ -777,6 +793,7 @@ int __cdecl mod_veh_kill(int veh_id) {
 
 /*
 Skip vehicle turn by adjusting spent moves to maximum available moves.
+Formers are a special case since they can build items without moving on the same turn.
 */
 int __cdecl mod_veh_skip(int veh_id) {
     VEH* veh = &Vehs[veh_id];
@@ -814,17 +831,13 @@ int __cdecl mod_veh_wake(int veh_id) {
     if (veh->order >= ORDER_FARM && veh->order < ORDER_MOVE_TO && !(veh->state & VSTATE_WORKING)) {
         veh->moves_spent = veh_speed(veh_id, 0) - Rules->move_rate_roads;
         if (veh->terraform_turns) {
-            veh->terraform_turns = max(0, veh->terraform_turns - contribution(veh_id, veh->order - 4));
+            veh->terraform_turns = max(0, veh->terraform_turns - veh_contribution(veh_id, veh->order - 4));
         }
     }
     if (veh->state & VSTATE_ON_ALERT && !(veh->state & VSTATE_HAS_MOVED)
     && veh->order_auto_type == ORDERA_ON_ALERT) {
         veh->moves_spent = 0;
     }
-    /*
-    Formers are a special case since they can build items without moving on the same turn.
-    In this case VSTATE_HAS_MOVED or VSTATE_WORKING should be set to prevent them from moving twice per turn.
-    */
     if (conf.activate_skipped_units && is_human(veh->faction_id)) {
         if (veh->flags & VFLAG_FULL_MOVE_SKIPPED
         && !(veh->state & (VSTATE_HAS_MOVED|VSTATE_MADE_AIRDROP))) {

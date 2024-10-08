@@ -1242,9 +1242,10 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                     if (!(f_def->diplo_status[i] & DIPLO_VENDETTA)
                     && (f_def->diplo_status[i] & DIPLO_COMMLINK)
                     && f_def->mil_strength_1 > Factions[i].mil_strength_1) {
-                        // Modify this condition to always increase the friction
-                        cause_friction(i, faction_id_def, 1);
                         treaty_on(i, faction_id_def, DIPLO_WANT_TO_TALK);
+                        if (Factions[i].diplo_status[faction_id_def] & DIPLO_UNK_800000) {
+                            cause_friction(faction_id_def, i, 3);
+                        }
                     }
                 }
             }
@@ -1403,8 +1404,9 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
     } else if (*GamePreferences & PREF_BSC_DONT_QUICK_MOVE_ENEMY_VEH) {
         render_battle |= render_tile;
     }
-    assert(veh_atk->faction_id != veh_def->faction_id);
     assert(veh_atk->x != veh_def->x || veh_atk->y != veh_def->y);
+    assert(veh_atk->faction_id != veh_def->faction_id
+        || (!faction_id_atk && veh_atk->unit_id == BSC_SPORE_LAUNCHER));
     assert(veh_atk->is_probe() || veh_def->is_artifact() || at_war(faction_id_atk, faction_id_def)
         || (!faction_id_atk && veh_atk->unit_id == BSC_SPORE_LAUNCHER));
 

@@ -1273,25 +1273,69 @@ Win* This, const char* filename, const char* label, int a4, int a5, int a6, int 
 
 #pragma GCC diagnostic pop
 
-void __thiscall BaseWin_draw_misc_eco_damage(Buffer* This, char* buf, int x, int y, int len)
+int __thiscall BaseWin_gov_options(BaseWindow* This, int flag)
 {
-    BASE* base = *CurrentBase;
-    Faction* f = &Factions[base->faction_id];
-    if (!conf.render_base_info || !strlen(label_eco_damage)) {
-        Buffer_write_l(This, buf, x, y, len);
-    } else {
-        int clean_mins = conf.clean_minerals + f->clean_minerals_modifier
-            + clamp(f->satellites_mineral, 0, (int)base->pop_size);
-        int damage = terraform_eco_damage(*CurrentBaseID);
-        int mins = base->mineral_intake_2 + damage/8;
-        int pct;
-        if (base->eco_damage > 0) {
-            pct = 100 + base->eco_damage;
-        } else {
-            pct = (clean_mins > 0 ? 100 * clamp(mins, 0, clean_mins) / clean_mins : 0);
+    int base_id = *CurrentBaseID;
+    if (base_id < 0 || base_id != This->oRender.base_id) {
+        assert(0);
+        return 1;
+    }
+    BASE* base = &Bases[base_id];
+    int worked_tiles = base->worked_tiles;
+    set_base(base_id);
+    base_compute(base_id);
+    if (*MultiplayerActive && !*ControlTurnC
+    && worked_tiles != base->worked_tiles
+    && !NetDaemon_lock_base(NetState, *CurrentBaseID, 0, -1, -1)) {
+        NetDaemon_unlock_base(NetState, *CurrentBaseID);
+    }
+    if (base->faction_id != MapWin->cOwner && !(*GameState & STATE_OMNISCIENT_VIEW)) {
+        return 1;
+    }
+    *DialogChoices = 0;
+    for (auto& p : BaseGovOptions) {
+        if (base->governor_flags & p[1]) {
+            *DialogChoices |= p[0];
         }
-        snprintf(buf, StrBufLen, label_eco_damage, pct);
-        Buffer_write_l(This, buf, x, y, strlen(buf));
+    }
+    parse_says(0, base->name, -1, -1);
+    if (NetDaemon_lock_base(NetState, base_id, 0, -1, -1)) {
+        return 1;
+    }
+    if (X_pop("modmenu", "GOVOPTIONS", -1, 0, 65, 0) >= 0) {
+        base->governor_flags &= (GOV_PRIORITY_CONQUER|GOV_PRIORITY_BUILD|GOV_PRIORITY_DISCOVER|GOV_PRIORITY_EXPLORE);
+        for (auto& p : BaseGovOptions) {
+            if (*DialogChoices & p[0]) {
+                base->governor_flags |= p[1];
+            }
+        }
+        Factions[base->faction_id].base_governor_adv = base->governor_flags;
+        if (!flag) {
+            if (base->governor_flags & GOV_ACTIVE) {
+                if (base->governor_flags & GOV_MANAGE_PRODUCTION) {
+                    base->state_flags &= ~BSTATE_UNK_80000000;
+                    base->queue_size = 0;
+                    base_reset(base_id, 1);
+                }
+                if (base->governor_flags & GOV_MANAGE_CITIZENS) {
+                    base->worked_tiles = 0;
+                    base->specialist_total = 0;
+                    base->specialist_adjust = 0;
+                    base_compute(1);
+                    // base_doctors() removed as obsolete
+                }
+            }
+            if (!(base->governor_flags & GOV_ACTIVE) || !(base->governor_flags & GOV_MANAGE_PRODUCTION)) {
+                draw_radius(base->x, base->y, 2, 2);
+            }
+        }
+        NetDaemon_unlock_base(NetState, base_id);
+        GraphicWin_redraw(BaseWin);
+        GraphicWin_redraw(MainWin);
+        return 0;
+    } else {
+        NetDaemon_unlock_base(NetState, base_id);
+        return 1;
     }
 }
 
@@ -1314,6 +1358,28 @@ void __thiscall BaseWin_draw_support(BaseWindow* This)
         0, 0, rc.left + 11, rc.top + 31, rc.right, rc.bottom);
     GraphicWin_soft_update((Win*)This, &rc);
     Buffer_set_clip(&This->oCanvas, &This->oCanvas.stRect[0]);
+}
+
+void __thiscall BaseWin_draw_misc_eco_damage(Buffer* This, char* buf, int x, int y, int len)
+{
+    BASE* base = *CurrentBase;
+    Faction* f = &Factions[base->faction_id];
+    if (!conf.render_base_info || !strlen(label_eco_damage)) {
+        Buffer_write_l(This, buf, x, y, len);
+    } else {
+        int clean_mins = conf.clean_minerals + f->clean_minerals_modifier
+            + clamp(f->satellites_mineral, 0, (int)base->pop_size);
+        int damage = terraform_eco_damage(*CurrentBaseID);
+        int mins = base->mineral_intake_2 + damage/8;
+        int pct;
+        if (base->eco_damage > 0) {
+            pct = 100 + base->eco_damage;
+        } else {
+            pct = (clean_mins > 0 ? 100 * clamp(mins, 0, clean_mins) / clean_mins : 0);
+        }
+        snprintf(buf, StrBufLen, label_eco_damage, pct);
+        Buffer_write_l(This, buf, x, y, strlen(buf));
+    }
 }
 
 int __cdecl BaseWin_ask_number(const char* label, int value, int a3)

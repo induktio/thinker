@@ -58,6 +58,33 @@ Show additional base details on world map.
 Show foreign treaty changes on popup window.
 Always minimise game window when not activated.
 
+#GOVOPTIONS
+#xs 440
+#caption Governor Settings for $BASENAME0
+#checkbox 21
+#itemlist
+Governor is active.
+Governor may use multiple priorities (e.g. Explore AND Discover), or no priorities.
+Governor sets new units to "fully automate".
+Governor manages citizens and specialists (including drone riots).
+Governor manages production.
+__Governor may produce scout/exploration units.
+__Governor may produce land combat units.
+__Governor may produce naval combat units.
+__Governor may produce air combat units.
+__Governor may produce native combat units.
+__Governor may produce land defense units.
+__Governor may produce air defense units.
+__Governor may produce prototypes.
+__Governor may produce transports.
+__Governor may produce probe teams.
+__Governor may produce terraformers.
+__Governor may produce colony pods.
+__Governor may produce base facilities.
+__Governor may produce psych facilities with side effects.
+__Governor may produce secret projects.
+__Governor may HURRY production.
+
 #HURRY
 #xs 400
 #caption Operations Director

@@ -511,6 +511,10 @@ bool patch_setup(Config* cf) {
     write_call(0x41B719, (int)BaseWin_staple_popp);
     write_call(0x41B771, (int)BaseWin_action_staple);
     write_call(0x41D99D, (int)BaseWin_click_staple);
+    write_call(0x41D75C, (int)BaseWin_gov_options);
+    write_call(0x497E05, (int)BaseWin_gov_options);
+    write_call(0x4A664E, (int)BaseWin_gov_options);
+    write_call(0x516E50, (int)BaseWin_gov_options);
     write_call(0x48CDA4, (int)popb_action_staple);
     write_call(0x4936F4, (int)ProdPicker_calculate_itoa);
     write_call(0x4AED04, (int)SocialWin_social_ai);

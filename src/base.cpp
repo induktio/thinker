@@ -5,7 +5,7 @@ static bool delay_base_riot = false;
 
 
 bool governor_enabled(int base_id) {
-    return conf.manage_player_bases && Bases[base_id].governor_flags & GOV_MANAGES_PRODUCTION;
+    return conf.manage_player_bases && Bases[base_id].governor_flags & GOV_MANAGE_PRODUCTION;
 }
 
 void __cdecl mod_base_reset(int base_id, bool has_gov) {
@@ -81,6 +81,8 @@ void __cdecl base_first(int base_id) {
 void __cdecl set_base(int base_id) {
     *CurrentBaseID = base_id;
     *CurrentBase = &Bases[base_id];
+    assert(!((*CurrentBase)->governor_flags &
+        (GOV_UNK_4|GOV_UNK_8|GOV_UNK_10|GOV_UNK_4000|GOV_UNK_10000000|GOV_UNK_20000000)));
 }
 
 void __cdecl base_compute(bool update_prev) {
@@ -305,8 +307,7 @@ void __cdecl mod_base_yield() {
     Faction* f = &Factions[base->faction_id];
     std::vector<TileValue> tiles;
     uint32_t gov = base->gov_config();
-    bool manage_workers = gov & GOV_ACTIVE && gov & GOV_MANAGES_CITIZENS_SPECS;
-
+    bool manage_workers = gov & GOV_ACTIVE && gov & GOV_MANAGE_CITIZENS;
     int32_t reserved = base_radius(base_id, tiles);
     base->worked_tiles &= (~reserved) | 1;
     base->state_flags &= ~BSTATE_UNK_8000;
@@ -818,7 +819,7 @@ static void adjust_psych(BASE* base, int talent_val, bool force) {
     if (talent_val > 0) {
         base->talent_total += talent_val;
     }
-    while (base->drone_total + base->talent_total + base->superdrone_total > pop_size) {
+    while (base->talent_total + base->drone_total + base->superdrone_total > pop_size) {
         if (base->talent_total > 0) {
             base->talent_total--;
             if (base->superdrone_total > 0) {
@@ -886,59 +887,66 @@ void __cdecl mod_base_psych(int base_id) {
 
     int rule_drone = 0;
     int rule_talent = 0;
-    int drone_limit = 0;
+    int drone_value = 0;
     int police_total = 0;
     int effic_drones = 0;
     int capture_drones = 0;
     int content_pop, base_limit;
     mod_psych_check(faction_id, &content_pop, &base_limit);
-    base->drone_total = clamp(base->pop_size - content_pop, 0, base->pop_size - base->specialist_total);
+    drone_value = max(0, base->pop_size - content_pop);
 
     if (base_limit) {
-        drone_limit = (base_id % base_limit + f->base_count - base_limit) / base_limit;
-        if (drone_limit > 0 && base->pop_size > 0) {
-            effic_drones = min(drone_limit, (int)base->pop_size);
-            adjust_drone(base, effic_drones);
-        }
+        int drone_limit = (base_id % base_limit + f->base_count - base_limit) / base_limit;
+        effic_drones = max(0, min(drone_limit, (int)base->pop_size));
     }
     if (base->assimilation_turns_left > 0) {
         // Former faction_id can be the same but this can be also used for scenarios
         int v1 = (base->pop_size + (is_human(faction_id) ? f->diff_level : 3) - 2) / 4;
         int v2 = (base->assimilation_turns_left + 9) / 10;
-        if (v1 > 0 && v2 > 0) {
-            capture_drones = min(v1, v2);
-            adjust_drone(base, capture_drones);
-        }
+        capture_drones = max(0, min(v1, v2));
+        drone_value += capture_drones;
     }
     if (m->rule_drone) {
         // Extra drone at base (per "param" citizens, rounded down)
-        rule_drone = (base->pop_size - base->specialist_total) / m->rule_drone;
-        adjust_drone(base, rule_drone);
+        rule_drone = base->pop_size / m->rule_drone;
+        drone_value += rule_drone;
     }
     if (m->rule_talent) {
         // Extra talent at base (per "param" citizens, rounded up)
         rule_talent = (m->rule_talent + base->pop_size - 1) / m->rule_talent;
-        adjust_psych(base, rule_talent, 0);
     }
     for (int i = 0; i < m->faction_bonus_count; i++) {
         // Number of drones per base made content
         if (m->faction_bonus_id[i] == FCB_NODRONE) {
-            adjust_drone(base, -m->faction_bonus_val1[i]);
+            drone_value = max(0, drone_value - m->faction_bonus_val1[i]);
+            break;
         }
     }
-    if (drone_limit >= 0) {
-        base->superdrone_total = min(base->superdrone_total,
-            max(0, drone_limit - !(capture_drones || m->rule_drone)));
+    base->drone_total = drone_value;
+    base->talent_total = rule_talent;
+    if (f->SE_talent_pending >= 0) {
+        base->talent_total += f->SE_talent_pending;
+    } else {
+        base->drone_total -= f->SE_talent_pending;
     }
+    base->drone_total = max(0, min(base->drone_total, (int)base->pop_size));
+    base->drone_total += effic_drones;
+    base->superdrone_total = base->drone_total - base->pop_size;
+    base->superdrone_total = max(0, min(base->superdrone_total, (int)base->pop_size));
+    base->drone_total = max(0, min(base->drone_total, (int)base->pop_size));
+
+    adjust_psych(base, 0, 0); // while (talent_total + drone_total + superdrone_total > pop_size)
     add_psych_row(base, 0); // Unmodified / Captured Base
 
-    // Original psych method limits effects at base size
+    // Original version limits psych allocation effects at twice the base size
     // Additional psych energy is used here for diminishing returns
     int psych_val = max(0, min(base->psych_total/2, base->pop_size - base->talent_total));
     int addon_val = base->psych_total/2 - psych_val;
-    while (addon_val >= 4) {
+    int addon_cost = 4;
+    while (addon_val >= addon_cost) {
         psych_val++;
-        addon_val /= 2;
+        addon_val -= addon_cost;
+        addon_cost += 4;
     }
     adjust_psych(base, psych_val, 0);
     add_psych_row(base, 1); // Psych
@@ -965,11 +973,6 @@ void __cdecl mod_base_psych(int base_id) {
     }
     if (has_fac_built(FAC_PARADISE_GARDEN, base_id)) {
         adjust_psych(base, 2, 1);
-    }
-    if (f->SE_talent_pending > 0) {
-        adjust_psych(base, f->SE_talent_pending, 0);
-    } else if (f->SE_talent_pending < 0) {
-        adjust_drone(base, -f->SE_talent_pending);
     }
     add_psych_row(base, 2); // Facilities
 
@@ -1131,7 +1134,7 @@ int __cdecl mod_base_growth() {
         if (base->nutrient_surplus >= 0
         || base->nutrients_accumulated < base->nutrient_surplus
         || base->nutrients_accumulated + 5 * base->nutrient_surplus >= 0
-        || ((base->governor_flags & GOV_ACTIVE) && (base->governor_flags & GOV_MANAGES_CITIZENS_SPECS))) {
+        || ((base->governor_flags & GOV_ACTIVE) && (base->governor_flags & GOV_MANAGE_CITIZENS))) {
             return 0;
         }
         // Base has nutrient deficit but the population will not be reduced yet
@@ -1239,7 +1242,7 @@ void __cdecl mod_base_drones() {
 
             if (!(base->state_flags & BSTATE_GOLDEN_AGE_ACTIVE)) {
                 bool manage = base->governor_flags & GOV_ACTIVE
-                    && base->governor_flags & GOV_MANAGES_CITIZENS_SPECS;
+                    && base->governor_flags & GOV_MANAGE_CITIZENS;
 
                 if (!is_alien(base->faction_id)) {
                     if (manage) {

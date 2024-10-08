@@ -19,6 +19,7 @@ void __cdecl veh_promote(int veh_id);
 int __cdecl proto_speed(int unit_id);
 int __cdecl veh_speed(int veh_id, bool skip_morale);
 int __cdecl veh_cargo(int veh_id);
+int __cdecl veh_contribution(int veh_id, int terraform_id);
 int __cdecl want_monolith(int veh_id);
 int __cdecl breed_level(int base_id, int faction_id);
 int __cdecl worm_level(int base_id, int faction_id);
