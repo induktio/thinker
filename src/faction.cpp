@@ -588,7 +588,6 @@ int __cdecl mod_social_ai(int faction_id, int a2, int a3, int a4, int a5, int a6
     int immunity = 0;
     int impunity = 0;
     int penalty = 0;
-    int def_value;
 
     if (is_human(faction_id) || !is_alive(faction_id)) {
         return 0;
@@ -601,15 +600,7 @@ int __cdecl mod_social_ai(int faction_id, int a2, int a3, int a4, int a5, int a6
         social_set(faction_id);
         return 0;
     }
-    if (!p->enemy_factions) {
-        def_value = clamp(f->AI_fight + f->AI_power + f->base_count/32, 0, 2);
-    } else {
-        def_value = clamp((int)(3.0f - p->enemy_base_range/8.0f)
-            + min(2, f->base_count/32)
-            + min(4, p->enemy_bases/2)
-            + min(2, p->captured_bases/2)
-            + min(2, p->enemy_factions/2), 1, 4);
-    }
+    int def_value = p->defense_modifier;
     bool has_nexus = has_temple(faction_id);
     assert(!memcmp(&f->SE_Politics, &f->SE_Politics_pending, 16));
 

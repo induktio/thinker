@@ -470,12 +470,8 @@ struct CRules {
     int32_t extra_cost_prototype_land;
     int32_t extra_cost_prototype_sea;
     int32_t extra_cost_prototype_air;
-    int32_t psi_combat_land_numerator;
-    int32_t psi_combat_sea_numerator;
-    int32_t psi_combat_air_numerator;
-    int32_t psi_combat_land_denominator;
-    int32_t psi_combat_sea_denominator;
-    int32_t psi_combat_air_denominator;
+    int32_t psi_combat_ratio_atk[3]; // Numerator: LAND, SEA, AIR
+    int32_t psi_combat_ratio_def[3]; // Denominator: LAND, SEA, AIR
     int32_t starting_energy_reserve;
     int32_t combat_bonus_intrinsic_base_def;
     int32_t combat_bonus_atk_road;
@@ -650,12 +646,12 @@ struct CChassis {
     int32_t defsv1_is_plural;
     int32_t defsv2_is_plural;
     int32_t defsv_is_plural_lrg;
-    char speed;
-    char triad;
-    char range;
-    char cargo;
-    char cost;
-    char missile;
+    int8_t speed;
+    int8_t triad;
+    int8_t range;
+    int8_t cargo;
+    int8_t cost;
+    int8_t missile;
     char sprite_flag_x_coord[8];
     char sprite_flag_y_coord[8];
     char sprite_unk1_x_coord[8];

@@ -23,12 +23,14 @@ int __cdecl veh_contribution(int veh_id, int terraform_id);
 int __cdecl want_monolith(int veh_id);
 int __cdecl breed_level(int base_id, int faction_id);
 int __cdecl worm_level(int base_id, int faction_id);
+int __cdecl transport_val(VehChassis chassis_id, VehAblFlag abls, VehReactor reactor_id);
 int __cdecl prototype_factor(int unit_id);
 int __cdecl mod_proto_cost(VehChassis chassis_id, VehWeapon weapon_id,
     VehArmor armor_id, VehAblFlag ability, VehReactor reactor_id);
 int __cdecl mod_base_cost(int unit_id);
 int __cdecl mod_veh_cost(int unit_id, int base_id, int32_t* has_proto_cost);
 int __cdecl mod_upgrade_cost(int faction_id, int new_unit_id, int old_unit_id);
+int __cdecl mod_upgrade_prototype(int faction_id, int new_unit_id, int old_unit_id, int flag);
 int __cdecl mod_veh_avail(int unit_id, int faction_id, int base_id);
 int __cdecl mod_stack_check(int veh_id, int type, int cond1, int cond2, int cond3);
 
@@ -42,6 +44,8 @@ int __cdecl create_proto(int faction, VehChassis chs, VehWeapon wpn, VehArmor ar
     VehAblFlag abls, VehReactor rec, VehPlan ai_plan);
 int __cdecl mod_is_bunged(int faction, VehChassis chs, VehWeapon wpn, VehArmor arm,
     VehAblFlag abls, VehReactor rec);
+void __cdecl mod_make_proto(int unit_id, VehChassis chassis_id,
+    VehWeapon weapon_id, VehArmor armor_id, VehAblFlag abls, VehReactor reactor_id);
 int __cdecl mod_name_proto(char* name, int unit_id, int faction_id,
     VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec);
 

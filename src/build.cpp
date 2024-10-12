@@ -35,7 +35,8 @@ int __cdecl mod_base_hurry() {
     int mins = mineral_cost(base_id, t) - b->minerals_accumulated;
     int cost = hurry_cost(base_id, t, mins);
     int turns = prod_turns(base_id, t);
-    int reserve = clamp(*CurrentTurn * f->base_count / 8, 20, 500)
+    int reserve = clamp(*CurrentTurn * f->base_count / 16, 20, 500)
+        * (conf.design_units && !player_gov && !(*CurrentTurn % 4) ? 2 : 1)
         * (!p->contacted_factions || is_project ? 1 : 4)
         * (b->defend_goal > 3 && p->enemy_factions > 0 ? 1 : 2)
         * (has_fac_built(FAC_HEADQUARTERS, base_id) ? 1 : 2) / 16;
@@ -396,18 +397,22 @@ bool unit_is_better(int unit_id1, int unit_id2) {
     assert(unit_id1 >= 0 && unit_id2 >= 0);
     UNIT* u1 = &Units[unit_id1];
     UNIT* u2 = &Units[unit_id2];
-    bool val = (u1->cost >= u2->cost
+    uint32_t abls_old = u1->ability_flags;
+    uint32_t abls_new = u2->ability_flags;
+    bool value = u1->cost >= u2->cost
         && proto_offense(unit_id1) >= 0
         && proto_offense(unit_id1) <= proto_offense(unit_id2)
         && proto_defense(unit_id1) <= proto_defense(unit_id2)
-        && Chassis[u1->chassis_id].speed <= Chassis[u2->chassis_id].speed
-        && (Chassis[u2->chassis_id].triad != TRIAD_AIR || u1->chassis_id == u2->chassis_id)
-        && !((u1->ability_flags & u2->ability_flags) ^ u1->ability_flags))
-        && (u1->ability_flags & ABL_SLOW) <= (u2->ability_flags & ABL_SLOW);
-    if (val) {
+        && (conf.ignore_reactor_power || u1->reactor_id <= u2->reactor_id)
+        && u1->speed() <= u2->speed()
+        && !(((abls_old & abls_new) ^ abls_old) & ~ABL_SLOW)
+        && (abls_old & ABL_ARTILLERY) == (abls_new & ABL_ARTILLERY)
+        && (u2->triad() != TRIAD_AIR || (u1->chassis_id == u2->chassis_id
+        && (abls_old & ABL_AIR_SUPERIORITY) == (abls_new & ABL_AIR_SUPERIORITY)));
+    if (value) {
         debug("unit_is_better %s -> %s\n", u1->name, u2->name);
     }
-    return val;
+    return value;
 }
 
 int unit_score(BASE* base, int unit_id, int psi_score, bool defend) {
@@ -1017,7 +1022,9 @@ int select_build(int base_id) {
         }
         if (t == FAC_GENEJACK_FACTORY || t == FAC_ROBOTIC_ASSEMBLY_PLANT
         || t == FAC_NANOREPLICATOR || t == FAC_QUANTUM_CONVERTER) {
-            if (3*base->mineral_intake_2 > 2*(conf.clean_minerals + f->clean_minerals_modifier)) {
+            int modifier = mineral_output_modifier(base_id);
+            if (modifier > (base->defend_goal > 2) + (Wgov.AI_wealth > 1) + (Wgov.AI_power > 1)
+            || base->mineral_intake*(modifier + 3) / 2 > conf.clean_minerals + f->clean_minerals_modifier) {
                 score -= 100;
             }
             score += 2*max(-80, (core_base ? 80 : 60) - base->mineral_intake_2);

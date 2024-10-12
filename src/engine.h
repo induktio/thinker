@@ -1441,7 +1441,7 @@ extern fp_2int weap_strat;
 extern fp_2int weap_val;
 extern fp_2int arm_val;
 extern fp_2int armor_val;
-extern fp_3int transport_val;
+//extern fp_3int transport_val;
 extern fp_2int say_offense;
 extern fp_2int say_defense;
 extern Fsay_stats2 say_stats_3;

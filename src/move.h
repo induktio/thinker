@@ -33,6 +33,7 @@ bool can_build_base(int x, int y, int faction, int triad);
 bool allow_scout(int faction, MAP* sq);
 bool allow_probe(int faction1, int faction2, bool is_enhanced);
 bool allow_attack(int faction1, int faction2, bool is_probe, bool is_enhanced);
+bool allow_combat(int x, int y, int faction, MAP* sq);
 bool allow_conv_missile(int veh_id, int enemy_veh_id, MAP* sq);
 bool can_airdrop(int veh_id, MAP* sq);
 bool allow_airdrop(int x, int y, int faction, bool combat, MAP* sq);

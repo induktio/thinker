@@ -344,6 +344,7 @@ struct AIPlans {
     int enemy_odp = 0;
     int enemy_sat = 0;
     int mil_strength = 0;
+    int defense_modifier = 0;
     float enemy_base_range = 0;
     float enemy_mil_factor = 0;
     int enemy_bases = 0;

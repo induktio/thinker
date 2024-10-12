@@ -35,7 +35,7 @@ void reset_state() {
     move_upkeep_faction = -1;
 }
 
-bool check_disband(int unit_id, int faction_id) {
+static bool check_disband(int unit_id, int faction_id) {
     Points bases;
     Points units;
     Points other;
@@ -63,6 +63,71 @@ bool check_disband(int unit_id, int faction_id) {
     return true;
 }
 
+static int upgrade_value(UNIT* new_unit, UNIT* old_unit) {
+    const int priority[][2] = {
+        {ABL_AAA, 7},
+        {ABL_COMM_JAMMER, 4},
+        {ABL_POLICE_2X, 3},
+        {ABL_TRANCE, 3},
+        {ABL_TRAINED, 2},
+    };
+    uint32_t abls_new = new_unit->ability_flags;
+    uint32_t abls_old = old_unit->ability_flags;
+    int atk_new = new_unit->offense_value();
+    int atk_old = old_unit->offense_value();
+    int def_new = new_unit->defense_value();
+    int def_old = old_unit->defense_value();
+    bool defend = def_old + (old_unit->speed() == 1) > atk_old;
+    int diff_val = (defend ? def_new - def_old : atk_new - atk_old);
+
+    if (old_unit != new_unit
+    && old_unit->chassis_id == new_unit->chassis_id
+    && old_unit->plan <= PLAN_RECON
+    && new_unit->plan <= PLAN_RECON
+    && atk_new >= atk_old && def_new >= def_old
+    && (defend == (def_new + (new_unit->speed() == 1) > atk_new))
+    && diff_val > (abls_new & ~abls_old ? 0 : 1)
+    && (max(atk_old, def_old) < 4 || diff_val >= max((atk_old + def_old)/2, 4))
+    && !(((abls_old & abls_new) ^ abls_old) & ~ABL_SLOW)
+    && (abls_old & ABL_ARTILLERY) == (abls_new & ABL_ARTILLERY)) {
+        int value = 4*(atk_new + def_new) - 2*new_unit->cost;
+        for (auto& p : priority) {
+            if (abls_new & p[0]) value += p[1];
+        }
+        return value;
+    }
+    return 0;
+}
+
+static void upgrade_units(int faction_id, int new_unit_id, int old_unit_id) {
+    Faction* f = &Factions[faction_id];
+    // Partial upgrades until energy reserves run out, MP mode not implemented
+    if (!*MultiplayerActive && faction_id > 0
+    && old_unit_id >= 0 && new_unit_id != old_unit_id
+    && new_unit_id / MaxProtoFactionNum == faction_id) {
+        int cost = 10 * mod_upgrade_cost(faction_id, new_unit_id, old_unit_id);
+        for (int i = 0; i < *VehCount; i++) {
+            VEH* veh = &Vehs[i];
+            if (veh->faction_id == faction_id && veh->unit_id == old_unit_id
+            && !veh->moves_spent && !veh->damage_taken && base_at(veh->x, veh->y) >= 0) {
+                if (f->energy_credits < cost + 50) {
+                    break;
+                }
+                f->energy_credits -= cost;
+                f->units_active[new_unit_id]++;
+                f->units_active[old_unit_id]--;
+                veh->unit_id = new_unit_id;
+                int morale_diff = (has_abil(new_unit_id, ABL_TRAINED) != 0)
+                    - (has_abil(old_unit_id, ABL_TRAINED) != 0);
+                veh->morale = clamp(veh->morale + morale_diff, 0, 6);
+                draw_tile(veh->x, veh->y, 1);
+                debug("upgrade_units %d %d %2d %2d cost: %d %s / %s\n",
+                    *CurrentTurn, faction_id, veh->x, veh->y, cost, Units[old_unit_id].name, veh->name());
+            }
+        }
+    }
+}
+
 void design_units(int faction_id) {
     if (!conf.design_units || !faction_id || is_human(faction_id)) {
         return;
@@ -81,8 +146,67 @@ void design_units(int faction_id) {
     VehAbl DefendAbls[] =
         {ABL_ID_AAA, ABL_ID_COMM_JAMMER, ABL_ID_POLICE_2X, ABL_ID_TRANCE, ABL_ID_TRAINED};
     bool twoabl = has_tech(Rules->tech_preq_allow_2_spec_abil, fc);
+    bool upgrade = !(*CurrentTurn % 4);
     int wpn_v = Weapon[wpn].offense_value;
+    int arm_v = Weapon[arm].offense_value;
 
+    if (upgrade) {
+        score_max_queue_t old_units;
+        std::vector<int> new_units;
+        for (int i = 0; i < MaxProtoNum; i++) {
+            UNIT* u = &Units[i];
+            if ((i / MaxProtoFactionNum == 0 || i / MaxProtoFactionNum == fc)
+            && u->is_active() && u->triad() == TRIAD_LAND
+            && u->offense_value() > 0 && u->defense_value() > 0) {
+                if (i / MaxProtoFactionNum == fc
+                && u->is_prototyped() && !(u->obsolete_factions & (1 << fc))) {
+                    new_units.push_back(i);
+                }
+                if (Factions[fc].units_active[i]) {
+                    int atk_val = u->offense_value();
+                    int def_val = u->defense_value();
+                    if ((u->obsolete_factions & (1 << fc))
+                    || (atk_val > def_val ? atk_val < wpn_v : def_val < arm_v)) {
+                        int score = (u->ability_flags & ~ABL_SLOW ? 0 : 4)
+                            + 4*(atk_val == 1) + 4*(def_val == 1) - atk_val - def_val - u->cost;
+                        old_units.push({i, score});
+                    }
+                }
+            }
+        }
+        while (!old_units.empty()) {
+            int old_score = old_units.top().score;
+            int old_unit_id = old_units.top().item_id;
+            int num = Factions[fc].units_active[old_unit_id];
+            old_units.pop();
+            UNIT* old_unit = &Units[old_unit_id];
+            int best_score = 0;
+            int best_id = -1;
+            for (int new_unit_id : new_units) {
+                UNIT* new_unit = &Units[new_unit_id];
+                int score;
+                if ((score = upgrade_value(new_unit, old_unit)) > best_score) {
+                    best_score = score;
+                    best_id = new_unit_id;
+                }
+            }
+            if (best_id >= 0 && num > 0) {
+                int cost_limit = clamp(plans[fc].defense_modifier/2 + 1, 1, 3)
+                    * max(0, Factions[fc].energy_credits - 20) / 4;
+                int cost = mod_upgrade_cost(fc, best_id, old_unit_id);
+                int total_cost = 10 * num * cost;
+                if (cost < 4 + min(5, Factions[fc].energy_credits/256)) {
+                    debug("upgrade_check %d %d count: %d cost: %d %s / %s\n",
+                        *CurrentTurn, fc, num, total_cost, old_unit->name, Units[best_id].name);
+                    if (total_cost < cost_limit) {
+                        mod_upgrade_prototype(fc, best_id, old_unit_id, 0);
+                    } else if (old_score > 0) {
+                        upgrade_units(faction_id, best_id, old_unit_id);
+                    }
+                }
+            }
+        }
+    }
     score_min_queue_t obsolete;
     int active = 0;
     for (int i = 0; i < MaxProtoNum; i++) {
@@ -102,13 +226,12 @@ void design_units(int faction_id) {
         }
     }
     if (active >= 60) {
-        bool disband = !(*CurrentTurn % 5);
         while (!obsolete.empty()) {
             int unit_id = obsolete.top().item_id;
             int score = obsolete.top().score;
             obsolete.pop();
             if (--active >= (score ? 56 : 48)
-            && (!score || (disband && check_disband(unit_id, fc)))) {
+            && (!score || (upgrade && check_disband(unit_id, fc)))) {
                 debug("retire_proto %d %d %3d %3d %3d %s\n", *CurrentTurn, fc,
                     unit_id, score, Factions[fc].units_active[unit_id], Units[unit_id].name);
                 retire_proto(unit_id, fc);
@@ -143,7 +266,7 @@ void design_units(int faction_id) {
                 && (rec >= REC_QUANTUM || Weapon[wpn].cost <= 6 * rec
                 || !arty.cost_increase_with_speed())
                 && arm_ship != ARM_NO_ARMOR ? ABL_AAA : ABL_NONE);
-            create_proto(fc, chs_ship, wpn, arm_ship, abls, rec, PLAN_OFFENSIVE);
+            create_proto(fc, chs_ship, wpn, arm_ship, abls, rec, PLAN_OFFENSE);
         }
         if (!long_range || arty.cost < -1 || arty.cost > 2) {
             VehArmor arm_ship = wpn_v >= 6 || rec >= REC_FUSION
@@ -151,7 +274,7 @@ void design_units(int faction_id) {
             VehAblFlag abls = has_ability(fc, ABL_ID_AAA, chs_ship, wpn)
                 && (rec >= REC_FUSION || (aaa.cost >= -1 && aaa.cost <= rec))
                 && arm_ship != ARM_NO_ARMOR ? ABL_AAA : ABL_NONE;
-            create_proto(fc, chs_ship, wpn, arm_ship, abls, rec, PLAN_OFFENSIVE);
+            create_proto(fc, chs_ship, wpn, arm_ship, abls, rec, PLAN_OFFENSE);
         }
     }
     if (arm != ARM_NO_ARMOR) {
@@ -172,11 +295,11 @@ void design_units(int faction_id) {
                 break;
             }
         }
-        create_proto(fc, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, abls, rec, PLAN_DEFENSIVE);
+        create_proto(fc, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, abls, rec, PLAN_DEFENSE);
 
         if (!(abls & ABL_POLICE_2X) && need_police(fc)
         && has_ability(fc, ABL_ID_POLICE_2X, CHS_INFANTRY, WPN_HAND_WEAPONS)) {
-            create_proto(fc, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, ABL_POLICE_2X, rec, PLAN_DEFENSIVE);
+            create_proto(fc, CHS_INFANTRY, WPN_HAND_WEAPONS, arm, ABL_POLICE_2X, rec, PLAN_DEFENSE);
         }
     }
     if (has_chassis(fc, CHS_NEEDLEJET)) {
@@ -189,7 +312,7 @@ void design_units(int faction_id) {
         if (has_ability(fc, ABL_ID_DISSOCIATIVE_WAVE, CHS_NEEDLEJET, wpn)
         && has_ability(fc, ABL_ID_AAA, CHS_INFANTRY, wpn)) {
             VehAblFlag abls = ABL_DISSOCIATIVE_WAVE | addon;
-            create_proto(fc, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, abls, rec, PLAN_OFFENSIVE);
+            create_proto(fc, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, abls, rec, PLAN_OFFENSE);
         }
     }
     if (has_weapon(fc, WPN_TERRAFORMING_UNIT) && rec >= REC_FUSION) {
@@ -312,8 +435,8 @@ void plans_upkeep(int faction_id) {
         int minerals[MaxBaseNum] = {};
         int population[MaxBaseNum] = {};
         Faction* f = &Factions[fc];
-
-        memset((void*)&plans[fc], 0, sizeof(AIPlans));
+        AIPlans* p = &plans[fc];
+        memset((void*)p, 0, sizeof(AIPlans));
         assert(!plans[fc].main_region);
         assert(plans[(fc+1)&7].main_region);
         update_main_region(faction_id);
@@ -333,51 +456,51 @@ void plans_upkeep(int faction_id) {
             if (veh->faction_id == faction_id) {
                 if (veh->is_combat_unit() || veh->is_probe() || veh->is_transport()) {
                     if (triad == TRIAD_LAND) {
-                        plans[fc].land_combat_units++;
+                        p->land_combat_units++;
                     } else if (triad == TRIAD_SEA) {
-                        plans[fc].sea_combat_units++;
+                        p->sea_combat_units++;
                     } else {
-                        plans[fc].air_combat_units++;
+                        p->air_combat_units++;
                     }
                     if (veh->is_probe()) {
-                        plans[fc].probe_units++;
+                        p->probe_units++;
                     }
                     if (veh->is_transport() && triad == TRIAD_SEA) {
-                        plans[fc].transport_units++;
+                        p->transport_units++;
                     }
                 }
                 if (veh->is_missile()) {
-                    plans[fc].missile_units++;
+                    p->missile_units++;
                 }
             }
         }
         debug("plans_totals %d %d bases: %3d land: %3d sea: %3d air: %3d "\
             "probe: %3d missile: %3d transport: %3d\n", *CurrentTurn, fc, f->base_count,
-            plans[fc].land_combat_units, plans[fc].sea_combat_units, plans[fc].air_combat_units,
-            plans[fc].probe_units, plans[fc].missile_units, plans[fc].transport_units);
+            p->land_combat_units, p->sea_combat_units, p->air_combat_units,
+            p->probe_units, p->missile_units, p->transport_units);
 
         for (int i = 1; i < MaxPlayerNum; i++) {
             if (fc != i && Factions[i].base_count > 0) {
                 if (has_treaty(fc, i, DIPLO_COMMLINK)) {
-                    plans[fc].contacted_factions++;
+                    p->contacted_factions++;
                 } else {
-                    plans[fc].unknown_factions++;
+                    p->unknown_factions++;
                 }
                 if (at_war(fc, i)) {
-                    plans[fc].enemy_factions++;
-                    plans[fc].enemy_odp += Factions[i].satellites_ODP;
-                    plans[fc].enemy_sat += Factions[i].satellites_nutrient;
-                    plans[fc].enemy_sat += Factions[i].satellites_mineral;
-                    plans[fc].enemy_sat += Factions[i].satellites_energy;
+                    p->enemy_factions++;
+                    p->enemy_odp += Factions[i].satellites_ODP;
+                    p->enemy_sat += Factions[i].satellites_nutrient;
+                    p->enemy_sat += Factions[i].satellites_mineral;
+                    p->enemy_sat += Factions[i].satellites_energy;
                 }
                 float factor = clamp((is_human(i) ? 2.0f : 1.0f)
                     * (has_treaty(fc, i, DIPLO_COMMLINK) ? 1.0f : 0.5f)
                     * (at_war(fc, i) ? 1.0f : (has_pact(fc, i) ? 0.1f : 0.25f))
-                    * (plans[fc].main_region == plans[i].main_region ? 1.5f : 1.0f)
+                    * (p->main_region == plans[i].main_region ? 1.5f : 1.0f)
                     * faction_might(i) / max(1, faction_might(fc)), 0.01f, 8.0f);
 
-                plans[fc].enemy_mil_factor = max(plans[fc].enemy_mil_factor, factor);
-                plans[fc].diplo_flags |= f->diplo_status[i];
+                p->enemy_mil_factor = max(p->enemy_mil_factor, factor);
+                p->diplo_flags |= f->diplo_status[i];
             }
         }
         int enemy_sum = 0;
@@ -411,34 +534,43 @@ void plans_upkeep(int faction_id) {
                 enemy_sum += enemy_range;
                 if (base->faction_id_former != faction_id
                 && at_war(faction_id, base->faction_id_former)) {
-                    plans[fc].captured_bases++;
+                    p->captured_bases++;
                 }
             } else if (base->faction_id_former == faction_id && at_war(faction_id, base->faction_id)) {
-                plans[fc].enemy_bases++;
+                p->enemy_bases++;
             }
         }
         assert(n == f->base_count);
-        plans[fc].enemy_base_range = (n > 0 ? (1.0f*enemy_sum)/n : MaxEnemyRange);
-        plans[fc].psi_score = psi_score(fc);
+        p->enemy_base_range = (n > 0 ? (1.0f*enemy_sum)/n : MaxEnemyRange);
+        p->psi_score = psi_score(fc);
+        if (!p->enemy_factions) {
+            p->defense_modifier = clamp(f->AI_fight + f->AI_power + f->base_count/32, 0, 2);
+        } else {
+            p->defense_modifier = clamp((int)(3.0f - p->enemy_base_range/8.0f)
+                + min(2, f->base_count/32)
+                + min(4, p->enemy_bases/2)
+                + min(2, p->captured_bases/2)
+                + min(2, p->enemy_factions/2), 1, 4);
+        }
         std::sort(minerals, minerals+n);
         std::sort(population, population+n);
         if (f->base_count >= 32) {
-            plans[fc].project_limit = max(5, minerals[n*3/4]);
+            p->project_limit = max(5, minerals[n*3/4]);
         } else {
-            plans[fc].project_limit = max(5, minerals[n*2/3]);
+            p->project_limit = max(5, minerals[n*2/3]);
         }
         bool full_value = has_tech(Facility[FAC_AEROSPACE_COMPLEX].preq_tech, faction_id)
             || has_project(FAC_CLOUDBASE_ACADEMY, faction_id)
             || has_project(FAC_SPACE_ELEVATOR, faction_id);
-        plans[fc].median_limit = max(5, minerals[n/2]);
-        plans[fc].satellite_goal = min(conf.max_satellites,
+        p->median_limit = max(5, minerals[n/2]);
+        p->satellite_goal = min(conf.max_satellites,
             population[n*7/8] * (full_value ? 1 : 2));
 
         debug("plans_upkeep %d %d proj_limit: %2d sat_goal: %2d psi: %2d keep_fungus: %d "\
             "plant_fungus: %d enemy_bases: %2d enemy_mil: %.4f enemy_range: %.4f\n",
-            *CurrentTurn, fc, plans[fc].project_limit, plans[fc].satellite_goal,
-            plans[fc].psi_score, plans[fc].keep_fungus, plans[fc].plant_fungus,
-            plans[fc].enemy_bases, plans[fc].enemy_mil_factor, plans[fc].enemy_base_range);
+            *CurrentTurn, fc, p->project_limit, p->satellite_goal,
+            p->psi_score, p->keep_fungus, p->plant_fungus,
+            p->enemy_bases, p->enemy_mil_factor, p->enemy_base_range);
     }
 }
 

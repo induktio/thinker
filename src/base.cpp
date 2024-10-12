@@ -171,17 +171,15 @@ void __cdecl mod_base_support() {
             veh->state &= ~(VSTATE_PACIFISM_FREE_SKIP|VSTATE_PACIFISM_DRONE|VSTATE_REQUIRES_SUPPORT);
 
             if (veh->offense_value() && (veh->offense_value() > 0 || veh->unit_id >= MaxProtoFactionNum)
-            && veh->plan() != PLAN_RECONNAISSANCE && veh->plan() != PLAN_PLANET_BUSTER) {
-                f->unk_46 += 1 + (veh->plan() == PLAN_OFFENSIVE || veh->plan() == PLAN_COMBAT);
+            && veh->plan() != PLAN_RECON && veh->plan() != PLAN_PLANET_BUSTER) {
+                f->unk_46 += 1 + (veh->plan() == PLAN_OFFENSE || veh->plan() == PLAN_COMBAT);
             }
             // Exclude probe, supply, artifact, fungal and tectonic missiles
             // Native units do not require support on fungus
             // However fungus is not rendered on tiles deeper than ocean shelf
             if (veh->plan() <= support_type) {
                 if (!has_abil(veh->unit_id, ABL_CLEAN_REACTOR)) {
-                    if (veh->unit_id >= MaxProtoFactionNum
-                    || (veh->offense_value() >= 0 || !sq->is_fungus())
-                    || sq->alt_level() < ALT_OCEAN_SHELF) {
+                    if (!veh->is_native_unit() || !sq->is_fungus()) {
                         (*BaseForcesSupported)++;
                         if (*BaseForcesSupported > SupportCosts[support_val][1]) {
                             veh->state |= VSTATE_REQUIRES_SUPPORT;
@@ -987,7 +985,7 @@ void __cdecl mod_base_psych(int base_id) {
         for (int i = 0; i < *VehCount; i++) {
             VEH* veh = &Vehs[i];
             if (veh->x == base->x && veh->y == base->y
-            && veh->triad() != TRIAD_SEA && veh->plan() <= PLAN_RECONNAISSANCE) {
+            && veh->triad() != TRIAD_SEA && veh->plan() <= PLAN_RECON) {
                 int value = val_police + (has_abil(veh->unit_id, ABL_POLICE_2X)
                     || (veh->is_native_unit() && m->rule_flags & RFLAG_WORMPOLICE));
                 units.push({value});
@@ -1753,6 +1751,9 @@ int terraform_eco_damage(int base_id) {
         if (m.sq->items & BIT_THERMAL_BORE) {
             num += 8;
         }
+        if (m.sq->items & BIT_ECH_MIRROR) {
+            num += 6;
+        }
         if (m.sq->items & BIT_CONDENSER) {
             num += 4;
         }
@@ -1855,11 +1856,16 @@ int __cdecl mod_base_rank(int faction_id, int position) {
     return intake.top().item_id;
 }
 
+/*
+Value comparisons start with INT_MIN to enable more generic code.
+Fix: original version skips check for obsol_tech while this is checked elsewhere.
+*/
 int __cdecl best_specialist(BASE* base, int econ_val, int labs_val, int psych_val) {
     int best_score = INT_MIN;
     int citizen_id = 0;
     for (int i = 0; i < MaxSpecialistNum; i++) {
         if (has_tech(Citizen[i].preq_tech, base->faction_id)
+        && !has_tech(Citizen[i].obsol_tech, base->faction_id)
         && (base->pop_size >= Rules->min_base_size_specialists || Citizen[i].psych_bonus)) {
             int score = econ_val * Citizen[i].econ_bonus
                 + labs_val * Citizen[i].labs_bonus

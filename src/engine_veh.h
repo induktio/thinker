@@ -122,10 +122,10 @@ enum VehWeaponMode {
 };
 
 enum VehPlan {
-    PLAN_OFFENSIVE = 0,
+    PLAN_OFFENSE = 0,
     PLAN_COMBAT = 1,
-    PLAN_DEFENSIVE = 2,
-    PLAN_RECONNAISSANCE = 3,
+    PLAN_DEFENSE = 2,
+    PLAN_RECON = 3,
     PLAN_AIR_SUPERIORITY = 4,
     PLAN_PLANET_BUSTER = 5,
     PLAN_NAVAL_SUPERIORITY = 6,
@@ -353,8 +353,8 @@ enum VehState {
     VSTATE_EXPLORE = 0x4000, // cleared in veh_wake
     VSTATE_UNK_8000 = 0x8000,
     VSTATE_UNK_10000 = 0x10000,
-    VSTATE_UNK_20000 = 0x20000,
-    VSTATE_UNK_40000 = 0x40000,
+    VSTATE_UNK_20000 = 0x20000, // veh_init
+    VSTATE_UNK_40000 = 0x40000, // veh_init
     VSTATE_USED_NERVE_GAS = 0x80000, // set/reset on attacking Veh after each attack
     VSTATE_UNK_100000 = 0x100000,
     VSTATE_PACIFISM_DRONE = 0x200000,
@@ -541,11 +541,21 @@ struct VEH {
         }
         return 10*reactor_type();
     }
-    int cur_hitpoints() {
+    int cur_hitpoints() { // Replace veh_health function
         if (is_artifact()) {
             return !damage_taken;
         }
         return std::max(0, 10*reactor_type() - damage_taken);
+    }
+    int lifecycle_value() {
+        return (flags & VFLAG_ADD_ONE_MORALE ? 1 : 0)
+            + (flags & VFLAG_ADD_TWO_MORALE ? 2 : 0);
+    }
+    void set_lifecycle_value(int level) {
+        level = std::min(3, std::max(0, level));
+        flags &= ~(VFLAG_ADD_ONE_MORALE|VFLAG_ADD_TWO_MORALE);
+        if (level & 1) flags |= VFLAG_ADD_ONE_MORALE;
+        if (level & 2) flags |= VFLAG_ADD_TWO_MORALE;
     }
     int armor_type() {
         return Units[unit_id].armor_id;

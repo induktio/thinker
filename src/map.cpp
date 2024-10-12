@@ -830,42 +830,39 @@ int __cdecl mod_goody_at(int x, int y) {
 /*
 This version adds support for modified territory borders (earlier bases claim tiles first).
 */
-int __cdecl mod_base_find3(int x, int y, int faction1, int region, int faction2, int faction3) {
-    int dist = 9999;
-    int result = -1;
-    bool border_fix = conf.territory_border_fix && region >= MaxRegionNum/2;
+int __cdecl mod_base_find3(int x, int y, int faction_id, int region, int faction_id_2, int faction_id_3) {
+    int base_dist = 9999;
+    int base_id = -1;
+    bool border_fix = conf.territory_border_fix && region >= MaxRegionLandNum;
 
     for (int i = 0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];
-        MAP* bsq = mapsq(base->x, base->y);
-
-        if (bsq && (region < 0 || bsq->region == region || border_fix)) {
-            if ((faction1 < 0 && (faction2 < 0 || faction2 != base->faction_id))
-            || (faction1 == base->faction_id)
-            || (faction2 == -2 && Factions[faction1].diplo_status[base->faction_id] & DIPLO_PACT)
-            || (faction2 >= 0 && faction2 == base->faction_id)) {
-                if (faction3 < 0 || base->faction_id == faction3 || base->visibility & (1 << faction3)) {
-                    int val = vector_dist(x, y, base->x, base->y);
-                    if (conf.territory_border_fix ? val < dist : val <= dist) {
-                        dist = val;
-                        result = i;
+        if (border_fix || region < 0 || region_at(base->x, base->y) == region) {
+            if (faction_id < 0 ? (faction_id_2 < 0 || base->faction_id != faction_id_2)
+            : (faction_id == base->faction_id
+            || (faction_id_2 == -2 ? has_treaty(faction_id, base->faction_id, DIPLO_PACT)
+            : (faction_id_2 >= 0 && faction_id_2 == base->faction_id)))) {
+                if (faction_id_3 < 0 || base->faction_id == faction_id_3
+                || base->visibility & (1 << faction_id_3)) {
+                    int dist = vector_dist(x, y, base->x, base->y);
+                    if (conf.territory_border_fix ? dist < base_dist : dist <= base_dist) {
+                        base_dist = dist;
+                        base_id = i;
                     }
                 }
             }
         }
     }
     if (DEBUG && !conf.territory_border_fix) {
-        int res = base_find3(x, y, faction1, region, faction2, faction3);
-        debug("base_find3 x: %2d y: %2d r: %2d %2d %2d %2d %2d %4d\n",
-              x, y, region, faction1, faction2, faction3, result, dist);
-        assert(res == result);
-        assert(*BaseFindDist == dist);
+        int value = base_find3(x, y, faction_id, region, faction_id_2, faction_id_3);
+        assert(base_id == value);
+        assert(base_dist == *BaseFindDist);
     }
     *BaseFindDist = 9999;
-    if (result >= 0) {
-        *BaseFindDist = dist;
+    if (base_id >= 0) {
+        *BaseFindDist = base_dist;
     }
-    return result;
+    return base_id;
 }
 
 int __cdecl mod_whose_territory(int faction_id, int x, int y, int* base_id, int ignore_comm) {
@@ -881,11 +878,7 @@ int __cdecl mod_whose_territory(int faction_id, int x, int y, int* base_id, int 
             return -1;
         }
         if (base_id) {
-            if (conf.territory_border_fix) {
-                *base_id = mod_base_find3(x, y, -1, sq->region, -1, -1);
-            } else {
-                *base_id = base_find3(x, y, -1, sq->region, -1, -1);
-            }
+            *base_id = mod_base_find3(x, y, -1, sq->region, -1, -1);
         }
     }
     return sq->owner;

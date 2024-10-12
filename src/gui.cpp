@@ -1684,7 +1684,7 @@ void __cdecl mod_say_loc(char* dest, int x, int y, int a4, int a5, int a6)
     }
     if (a4 != 0 && base_id < 0) {
         a6 = 0;
-        base_id = base_find3(x, y, -1, -1, -1, MapWin->cOwner);
+        base_id = mod_base_find3(x, y, -1, -1, -1, MapWin->cOwner);
         if (base_id >= 0) {
             strncat(dest, label_get(62), 32); // near
             strncat(dest, " ", 2);

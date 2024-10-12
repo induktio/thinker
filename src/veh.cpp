@@ -375,6 +375,23 @@ int __cdecl worm_level(int base_id, int faction_id) {
 }
 
 /*
+Calculate the transport capacity for the specified chassis, abilities and reactor.
+*/
+int __cdecl transport_val(VehChassis chassis_id, VehAblFlag abls, VehReactor reactor_id) {
+    int value = Chassis[chassis_id].cargo;
+    if (Chassis[chassis_id].triad == TRIAD_SEA) {
+        value *= reactor_id;
+    }
+    if (abls & ABL_SLOW) {
+        value /= 2; // -50%, rounded down
+    }
+    if (abls & ABL_HEAVY_TRANSPORT) {
+        value = (3 * value + 1) / 2; // +50%, rounded up
+    }
+    return value;
+}
+
+/*
 Determine the extra percent cost for building a prototype. Includes a check if the faction
 has the free prototype flag set or if the player is using one of the easier difficulties.
 */
@@ -597,6 +614,37 @@ int __cdecl mod_upgrade_cost(int faction_id, int new_unit_id, int old_unit_id) {
 }
 
 /*
+Fix issue with prototype upgrade not counting costs correctly for
+unit counts of more than 255. In this case unit upgrades will be disabled.
+*/
+int __cdecl mod_upgrade_prototype(int faction_id, int new_unit_id, int old_unit_id, int flag) {
+    UNIT* new_unit = &Units[new_unit_id];
+    UNIT* old_unit = &Units[old_unit_id];
+    int active = Factions[faction_id].units_active[old_unit_id];
+    if (conf.design_units && !is_human(faction_id) && (old_unit->plan > PLAN_RECON
+    || (conf.ignore_reactor_power && new_unit->offense_value() <= old_unit->offense_value()
+    && new_unit->defense_value() <= old_unit->defense_value()))) {
+        return 0; // Reduce non-important upgrades
+    }
+    int check = 0;
+    for (int i = 0; i < *VehCount; i++) {
+        if (Vehs[i].faction_id == faction_id && Vehs[i].unit_id == old_unit_id) {
+            check++;
+        }
+    }
+    assert(active == check);
+    assert(new_unit_id != old_unit_id);
+    assert(new_unit_id / MaxProtoFactionNum == faction_id);
+    if (new_unit_id != old_unit_id
+    && new_unit_id / MaxProtoFactionNum == faction_id && active == check) {
+        debug("upgrade_proto %d %d count: %d %s / %s\n", *CurrentTurn, faction_id,
+            active, Units[old_unit_id].name, Units[new_unit_id].name);
+        return upgrade_prototype(faction_id, new_unit_id, old_unit_id, flag);
+    }
+    return 0;
+}
+
+/*
 Check to see whether provided faction and base can build a specific prototype.
 Includes checks to prevent SMACX specific units from being built in SMAC mode.
 */
@@ -732,7 +780,7 @@ int __cdecl mod_stack_check(int veh_id, int type, int cond1, int cond2, int cond
             break;
         case 14:
             if ((cond1 < 0 || Vehs[i].faction_id == cond1)
-            && (Vehs[i].plan() == PLAN_COMBAT || Vehs[i].plan() == PLAN_DEFENSIVE)) {
+            && (Vehs[i].plan() == PLAN_COMBAT || Vehs[i].plan() == PLAN_DEFENSE)) {
                 value++;
             }
             break;
@@ -743,8 +791,8 @@ int __cdecl mod_stack_check(int veh_id, int type, int cond1, int cond2, int cond
             break;
         case 16:
             if ((cond1 < 0 || Vehs[i].faction_id == cond1)
-            && (Vehs[i].plan() == PLAN_COMBAT || Vehs[i].plan() == PLAN_DEFENSIVE
-            || Vehs[i].plan() == PLAN_RECONNAISSANCE)) {
+            && (Vehs[i].plan() == PLAN_COMBAT || Vehs[i].plan() == PLAN_DEFENSE
+            || Vehs[i].plan() == PLAN_RECON)) {
                 value++;
             }
             break;
@@ -915,6 +963,154 @@ VehAblFlag abls, VehReactor rec) {
         return 0;
     }
     return is_bunged(faction, chs, wpn, arm, abls, rec);
+}
+
+/*
+Create a new prototype. Sets initial values for everything except name and preq_tech.
+*/
+void __cdecl mod_make_proto(int unit_id, VehChassis chassis_id,
+VehWeapon weapon_id, VehArmor armor_id, VehAblFlag abls, VehReactor reactor_id) {
+    UNIT* unit = &Units[unit_id];
+    int faction_id = unit_id / MaxProtoFactionNum;
+    int option = 0;
+    debug("make_proto %d %d chs: %d rec: %d wpn: %2d arm: %2d %08X\n",
+        *CurrentTurn, unit_id, chassis_id, reactor_id, weapon_id, armor_id, abls);
+    if (unit_id >= MaxProtoFactionNum) {
+        bool cond1 = false;
+        bool cond2 = false;
+        bool cond3 = false;
+        int unit_id_loop;
+        for (int i = 0; i < 2*MaxProtoFactionNum; i++) {
+            unit_id_loop = i % MaxProtoFactionNum;
+            if (i >= MaxProtoFactionNum) {
+                unit_id_loop += unit_id - unit_id % MaxProtoFactionNum;
+            }
+            int flags_check = Units[unit_id_loop].unit_flags;
+            if (flags_check & UNIT_ACTIVE) {
+                if ((unit_id_loop < MaxProtoFactionNum
+                && has_tech(Units[unit_id_loop].preq_tech, faction_id))
+                || (unit_id_loop >= MaxProtoFactionNum
+                && (flags_check & UNIT_PROTOTYPED))) {
+                    int loop_weapon_id = Units[unit_id_loop].weapon_id;
+                    if (loop_weapon_id == weapon_id) {
+                        cond1 = true;
+                    }
+                    int loop_armor_id = Units[unit_id_loop].armor_id;
+                    if (loop_armor_id == armor_id) {
+                        cond2 = true;
+                    }
+                    int loop_chassis_id = Units[unit_id_loop].chassis_id;
+                    if (loop_chassis_id == chassis_id) {
+                        cond3 = true;
+                    }
+                    int off_rating = Weapon[weapon_id].offense_value;
+                    if (off_rating > 0 && Weapon[loop_weapon_id].offense_value >= off_rating) {
+                        cond1 = true;
+                    }
+                    int def_rating = Armor[armor_id].defense_value;
+                    if (def_rating > 0 && Armor[loop_armor_id].defense_value >= def_rating) {
+                        cond2 = true;
+                    }
+                    if (Chassis[chassis_id].triad == Chassis[loop_chassis_id].triad
+                    && Chassis[loop_chassis_id].speed >= Chassis[chassis_id].speed) {
+                        cond3 = true;
+                    }
+                }
+            }
+        }
+        if (cond1 && cond2 && cond3) {
+            option = (unit_id_loop >= MaxProtoFactionNum
+                && Units[unit_id_loop].unit_flags & UNIT_UNK_10) ? 3 : 1;
+        }
+    }
+    unit->chassis_id = (uint8_t)chassis_id;
+    unit->weapon_id = (uint8_t)weapon_id;
+    unit->armor_id = (uint8_t)armor_id;
+    unit->ability_flags = abls;
+    unit->reactor_id = (uint8_t)reactor_id;
+    unit->cost = (uint8_t)mod_proto_cost(chassis_id, weapon_id, armor_id, abls, reactor_id);
+    unit->carry_capacity = (Weapon[weapon_id].mode == WMODE_TRANSPORT)
+        ? (uint8_t)transport_val(chassis_id, abls, reactor_id) : 0;
+
+    if (Chassis[chassis_id].missile) {
+        if (Weapon[weapon_id].offense_value < 99) { // non-PB missiles
+            if (weapon_id == WPN_TECTONIC_PAYLOAD) {
+                unit->plan = PLAN_TECTONIC_MISSILE;
+                unit->group_id = 22;
+            } else if (weapon_id == WPN_FUNGAL_PAYLOAD) {
+                unit->plan = PLAN_FUNGAL_MISSILE;
+                unit->group_id = 23;
+            } else { // Conventional Payload
+                unit->plan = PLAN_OFFENSE;
+                unit->group_id = 13;
+            }
+        } else {
+            unit->plan = PLAN_PLANET_BUSTER;
+            unit->group_id = 14;
+        }
+    } else if (Weapon[weapon_id].mode >= WMODE_TRANSPORT) { // Non-combat
+        unit->plan = Weapon[weapon_id].mode;
+        unit->group_id = Weapon[weapon_id].mode + 32;
+    } else if (Chassis[chassis_id].triad == TRIAD_SEA) { // combat sea
+        unit->plan = PLAN_NAVAL_SUPERIORITY;
+        unit->group_id = 6; // same value as plan
+    } else if (Chassis[chassis_id].triad == TRIAD_AIR) { // combat air
+        if (has_abil(unit_id, ABL_AIR_SUPERIORITY)) {
+            unit->plan = PLAN_AIR_SUPERIORITY;
+            unit->group_id = 9;
+        } else {
+            unit->plan = PLAN_OFFENSE;
+            unit->group_id = 8;
+        }
+    } else { // TRIAD_LAND combat unit
+        unit->plan = PLAN_OFFENSE;
+        if (Armor[armor_id].defense_value > 1) {
+            unit->plan = PLAN_DEFENSE;
+        }
+        if (Weapon[weapon_id].offense_value >= Armor[armor_id].defense_value
+        && unit->plan == PLAN_DEFENSE) {
+            unit->plan = PLAN_COMBAT;
+        }
+        if (Chassis[chassis_id].speed > 1
+        && Weapon[weapon_id].offense_value > Armor[armor_id].defense_value) {
+            unit->plan = PLAN_OFFENSE;
+        }
+        if (abls & (ABL_ARTILLERY | ABL_DROP_POD | ABL_AMPHIBIOUS)) {
+            unit->plan = PLAN_OFFENSE;
+        }
+        unit->group_id = 3;
+        if (Armor[armor_id].defense_value > Weapon[weapon_id].offense_value) {
+            unit->group_id = 2;
+        }
+        if (Weapon[weapon_id].offense_value > Armor[armor_id].defense_value * 2) {
+            unit->group_id = 1;
+        }
+        if (Chassis[chassis_id].speed == 2) {
+            unit->group_id = 4;
+        } else if (Chassis[chassis_id].speed >= 3) {
+            unit->group_id = 5;
+        }
+        if (Weapon[weapon_id].offense_value == 1 && Armor[armor_id].defense_value == 1) {
+            if (Chassis[chassis_id].speed > 1) {
+                unit->plan = PLAN_RECON;
+            }
+            if (has_abil(unit_id, ABL_POLICE_2X)) {
+                unit->plan = PLAN_DEFENSE;
+            }
+            unit->group_id = 10;
+        }
+    }
+    unit->icon_offset = -1;
+    unit->obsolete_factions = 0;
+    unit->combat_factions = (unit_id >= MaxProtoFactionNum) ? (1 << faction_id) : -1;
+    unit->unit_flags = UNIT_ACTIVE;
+    if (option) {
+        if (option & 2) {
+            unit->unit_flags = (UNIT_UNK_100|UNIT_UNK_10|UNIT_PROTOTYPED|UNIT_ACTIVE);
+        } else {
+            unit->unit_flags = (UNIT_UNK_100|UNIT_PROTOTYPED|UNIT_ACTIVE);
+        }
+    }
 }
 
 void parse_abl_name(char* buf, const char* name, bool reduce) {

@@ -142,12 +142,12 @@ int mod_say_orders(char* buf, int veh_id) {
 }
 
 /*
-This is called from enemy_strategy to upgrade prototypes marked with obsolete_factions flag.
-Early upgrades are disabled to prevent unnecessary costs for any starting units.
+This is called from enemy_strategy to upgrade or remove units marked with obsolete_factions flag.
+Returning non-zero makes the function skip all additional actions on veh_id.
 */
 int __thiscall enemy_strategy_upgrade(Console* This, int veh_id) {
-    if (*CurrentTurn <= 20 + game_start_turn()) {
-        return 1; // skip upgrade
+    if (conf.factions_enabled >= Vehs[veh_id].faction_id) {
+        return 1;
     }
     return Console_upgrade(This, veh_id);
 }
@@ -443,6 +443,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x4EC3B0, (int)base_compute);
     write_jump(0x4F6510, (int)fac_maint);
     write_jump(0x500320, (int)drop_range);
+    write_jump(0x501350, (int)mod_morale_alien);
     write_jump(0x501500, (int)psi_factor);
     write_jump(0x527290, (int)mod_faction_upkeep);
     write_jump(0x55BB30, (int)set_treaty);
@@ -486,6 +487,7 @@ bool patch_setup(Config* cf) {
     write_call(0x5B341C, (int)mod_setup_player); // eliminate_player
     write_call(0x5B3C03, (int)mod_setup_player); // setup_game
     write_call(0x5B3C4C, (int)mod_setup_player); // setup_game
+    write_call(0x587424, (int)mod_read_basic_rules); // read_rules
     write_call(0x5B41E9, (int)mod_time_warp);
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
@@ -557,18 +559,6 @@ bool patch_setup(Config* cf) {
     write_call(0x5BEAC7, (int)mod_tech_rate); // tech_research
     write_call(0x4B497C, (int)mod_say_orders); // say_orders2
     write_call(0x4B5C27, (int)mod_say_orders); // StatusWin::draw_active
-    write_call(0x50211F, (int)mod_get_basic_offense); // battle_compute
-    write_call(0x50274A, (int)mod_get_basic_offense); // battle_compute
-    write_call(0x5044EB, (int)mod_get_basic_offense); // battle_compute
-    write_call(0x502A69, (int)mod_get_basic_defense); // battle_compute
-    write_call(0x50474C, (int)mod_battle_compute); // best_defender
-    write_call(0x506ADE, (int)mod_battle_fight_2); // battle_fight_1
-    write_call(0x568B1C, (int)mod_battle_fight_2); // air_power
-    write_call(0x5697AC, (int)mod_battle_fight_2); // air_power
-    write_call(0x56A2E2, (int)mod_battle_fight_2); // air_power
-    write_call(0x506D07, (int)mod_best_defender); // battle_fight_2
-    write_call(0x506EA6, (int)mod_battle_compute); // battle_fight_2
-    write_call(0x5085E0, (int)mod_battle_compute); // battle_fight_2
     write_call(0x4F7B82, (int)mod_base_research); // base_upkeep
     write_call(0x4CCF13, (int)mod_capture_base); // action_airdrop
     write_call(0x598778, (int)mod_capture_base); // order_veh
@@ -653,7 +643,25 @@ bool patch_setup(Config* cf) {
     write_call(0x4E88CA, (int)mod_energy_yield); // base_yield
     write_call(0x4E971F, (int)mod_energy_yield); // base_support
     write_call(0x56C856, (int)mod_energy_yield); // enemy_move
-    write_call(0x587424, (int)mod_read_basic_rules); // read_rules
+    write_call(0x46DB16, (int)mod_base_find3); // MapWin::click
+    write_call(0x4C94B8, (int)mod_base_find3); // terraform_cost
+    write_call(0x4CB104, (int)mod_base_find3); // action_destroy
+    write_call(0x4CB1F4, (int)mod_base_find3); // action_destroy
+    write_call(0x4CCC56, (int)mod_base_find3); // action_airdrop
+    write_call(0x4E3F8C, (int)mod_base_find3); // whose_territory
+    write_call(0x5224A0, (int)mod_base_find3); // alien_fauna
+    write_call(0x52293A, (int)mod_base_find3); // alien_fauna
+    write_call(0x523ED7, (int)mod_base_find3); // reset_territory
+    write_call(0x52417F, (int)mod_base_find3); // reset_territory
+    write_call(0x54AEA1, (int)mod_base_find3); // suggest_plan
+    write_call(0x54AF20, (int)mod_base_find3); // suggest_plan
+    write_call(0x563745, (int)mod_base_find3); // enemy_strategy
+    write_call(0x56B8F1, (int)mod_base_find3); // enemy_move
+    write_call(0x56B924, (int)mod_base_find3); // enemy_move
+    write_call(0x56E460, (int)mod_base_find3); // enemy_move
+    write_call(0x570C4B, (int)mod_base_find3); // enemy_move
+    write_call(0x5B19B3, (int)mod_base_find3); // setup_player
+    write_call(0x5C0609, (int)mod_base_find3); // veh_init
     write_call(0x467711, (int)mod_hex_cost); // MapWin::dest_line
     write_call(0x572518, (int)mod_hex_cost); // enemy_move
     write_call(0x5772D7, (int)mod_hex_cost); // enemy_move
@@ -666,10 +674,24 @@ bool patch_setup(Config* cf) {
     write_call(0x59C105, (int)mod_hex_cost); // Path::move
 
     // Prototypes and combat game mechanics
+    write_call(0x50211F, (int)mod_get_basic_offense); // battle_compute
+    write_call(0x50274A, (int)mod_get_basic_offense); // battle_compute
+    write_call(0x5044EB, (int)mod_get_basic_offense); // battle_compute
+    write_call(0x502A69, (int)mod_get_basic_defense); // battle_compute
+    write_call(0x50474C, (int)mod_battle_compute); // best_defender
+    write_call(0x506ADE, (int)mod_battle_fight_2); // battle_fight_1
+    write_call(0x568B1C, (int)mod_battle_fight_2); // air_power
+    write_call(0x5697AC, (int)mod_battle_fight_2); // air_power
+    write_call(0x56A2E2, (int)mod_battle_fight_2); // air_power
+    write_call(0x506D07, (int)mod_best_defender); // battle_fight_2
+    write_call(0x506EA6, (int)mod_battle_compute); // battle_fight_2
+    write_call(0x5085E0, (int)mod_battle_compute); // battle_fight_2
     write_call(0x40E717, (int)breed_level); // BaseWin::draw_production
     write_call(0x526366, (int)breed_level); // repair_phase
     write_call(0x4FD320, (int)worm_level); // base_build
     write_call(0x4FD3BC, (int)worm_level); // base_build
+    write_call(0x436796, (int)transport_val); // DesignWin::draw_unit_preview
+    write_call(0x5A5F3D, (int)transport_val); // make_proto
     write_call(0x4930F8, (int)mod_veh_avail); // ProdPicker::calculate
     write_call(0x4DED97, (int)mod_veh_avail); // Console::editor_veh
     write_call(0x4E4AE4, (int)mod_veh_avail); // base_first
@@ -681,18 +703,32 @@ bool patch_setup(Config* cf) {
     write_call(0x560E86, (int)mod_veh_avail); // enemy_capabilities
     write_call(0x5B30E1, (int)mod_veh_avail); // setup_player
     write_call(0x5808B3, (int)mod_is_bunged); // propose_proto
-    write_call(0x4364FB, (int)mod_name_proto);
-    write_call(0x4383B2, (int)mod_name_proto);
-    write_call(0x4383DE, (int)mod_name_proto);
-    write_call(0x43BE8F, (int)mod_name_proto);
-    write_call(0x43E06E, (int)mod_name_proto);
-    write_call(0x43E663, (int)mod_name_proto);
-    write_call(0x581044, (int)mod_name_proto);
-    write_call(0x5B301E, (int)mod_name_proto);
-    write_call(0x4D0ECF, (int)mod_upgrade_cost);
-    write_call(0x4D16D9, (int)mod_upgrade_cost);
-    write_call(0x4EFB76, (int)mod_upgrade_cost);
-    write_call(0x4EFEB9, (int)mod_upgrade_cost);
+    write_call(0x438354, (int)mod_make_proto); // DesignWin::design_it
+    write_call(0x580F6C, (int)mod_make_proto); // propose_proto
+    write_call(0x587364, (int)mod_make_proto); // read_units
+    write_call(0x5B2FED, (int)mod_make_proto); // setup_player
+    write_call(0x4364FB, (int)mod_name_proto); // DesignWin::draw_unit_preview
+    write_call(0x4383B2, (int)mod_name_proto); // DesignWin::design_it
+    write_call(0x4383DE, (int)mod_name_proto); // DesignWin::design_it
+    write_call(0x43BE8F, (int)mod_name_proto); // DesignWin::select_name
+    write_call(0x43E06E, (int)mod_name_proto); // DesignWin::draw_flash
+    write_call(0x43E663, (int)mod_name_proto); // DesignWin::setup_veh
+    write_call(0x581044, (int)mod_name_proto); // propose_proto
+    write_call(0x5B301E, (int)mod_name_proto); // setup_player
+    write_call(0x438DEF, (int)mod_upgrade_prototype); // DesignWin::on_button_clicked
+    write_call(0x4F061B, (int)mod_upgrade_prototype); // upgrade_prototypes
+    write_call(0x5843F5, (int)mod_upgrade_prototype); // design_workshop
+    write_call(0x4D0ECF, (int)mod_upgrade_cost); // Console::upgrade
+    write_call(0x4D16D9, (int)mod_upgrade_cost); // Console::upgrade
+    write_call(0x4EFB76, (int)mod_upgrade_cost); // do_upgrade
+    write_call(0x4EFEB9, (int)mod_upgrade_cost); // upgrade_prototype
+    write_call(0x42275A, (int)mod_offense_proto); // BattleWin::battle_report
+    write_call(0x5018AE, (int)mod_offense_proto); // get_basic_offense
+    write_call(0x569FF3, (int)mod_offense_proto); // air_power
+    write_call(0x57D5AD, (int)mod_offense_proto); // say_offense
+    write_call(0x4226D5, (int)mod_armor_proto); // BattleWin::battle_report
+    write_call(0x501C95, (int)mod_armor_proto); // get_basic_defense
+    write_call(0x57D703, (int)mod_armor_proto); // say_defense
     write_call(0x436ADD, (int)mod_proto_cost);
     write_call(0x43704C, (int)mod_proto_cost);
     write_call(0x5817C9, (int)mod_proto_cost);
@@ -729,16 +765,6 @@ bool patch_setup(Config* cf) {
     write_call(0x593D35, (int)mod_veh_cost);
     write_call(0x593F72, (int)mod_veh_cost);
     write_call(0x594B8E, (int)mod_veh_cost);
-    write_call(0x4C1DC0, (int)mod_morale_alien);
-    write_call(0x4DDF29, (int)mod_morale_alien);
-    write_call(0x4DDF6A, (int)mod_morale_alien);
-    write_call(0x501609, (int)mod_morale_alien);
-    write_call(0x501994, (int)mod_morale_alien);
-    write_call(0x5230AC, (int)mod_morale_alien);
-    write_call(0x5597BD, (int)mod_morale_alien);
-    write_call(0x5672C7, (int)mod_morale_alien);
-    write_call(0x595E61, (int)mod_morale_alien);
-    write_call(0x5C0E6D, (int)mod_morale_alien);
 
     // Redirect functions for foreign_treaty_popup option
     write_call(0x55DC00, (int)mod_NetMsg_pop); // enemies_treaty
@@ -1254,10 +1280,6 @@ bool patch_setup(Config* cf) {
     if (cf->facility_capture_fix) {
         remove_call(0x50D06A);
         remove_call(0x50D074);
-    }
-    if (cf->territory_border_fix || DEBUG) {
-        write_call(0x523ED7, (int)mod_base_find3);
-        write_call(0x52417F, (int)mod_base_find3);
     }
     if (cf->simple_hurry_cost) {
         short_jump(0x41900D);

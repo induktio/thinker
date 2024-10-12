@@ -191,7 +191,6 @@ int __cdecl mod_enemy_move(int veh_id) {
             }
         }
         if (move_upkeep_faction != veh->faction_id) {
-            former_plans(veh->faction_id);
             move_upkeep(veh->faction_id, UM_Player);
             move_upkeep_faction = veh->faction_id;
         }
@@ -492,7 +491,7 @@ For every faction, the continent with the oldest (lowest ID) land base
 is the main region. This base is usually but not always the headquarters.
 */
 void update_main_region(int faction) {
-    for (int i=1; i < MaxPlayerNum; i++) {
+    for (int i = 1; i < MaxPlayerNum; i++) {
         AIPlans& p = plans[i];
         p.main_region = -1;
         p.main_region_x = -1;
@@ -541,7 +540,7 @@ void update_main_region(int faction) {
         }
     }
     int min_dist = INT_MAX;
-    for (i=1; i < MaxPlayerNum; i++) {
+    for (i = 1; i < MaxPlayerNum; i++) {
         int dist = (plans[i].main_region_x < 0 ? MaxEnemyRange :
             map_range(p.main_region_x, p.main_region_y,
                 plans[i].main_region_x, plans[i].main_region_y));
@@ -564,13 +563,15 @@ void move_upkeep(int faction, UpdateMode mode) {
         return;
     }
     move_upkeep_faction = faction;
+    update_main_region(faction);
     build_tubes = has_terra(FORMER_MAGTUBE, TRIAD_LAND, faction);
+    if (mode == UM_Player) {
+        former_plans(faction);
+    }
     mapdata.clear();
     mapnodes.clear();
     region_enemy.clear();
     region_probe.clear();
-    update_main_region(faction);
-
     debug("move_upkeep %d region: %d x: %2d y: %2d naval: %d\n",
         faction, p.main_region, p.main_region_x, p.main_region_y, p.prioritize_naval);
 
@@ -705,9 +706,12 @@ void move_upkeep(int faction, UpdateMode mode) {
                 int k = 0;
                 ts.init(base->x, base->y, TS_TERRITORY_LAND);
                 while (++j <= 150 && k < 5 && (sq = ts.get_next()) != NULL) {
-                    if (sq->is_base()) {
-                        if (f.region_total_bases[sq->region] < 4
-                        || route_distance(mapdata, base->x, base->y, ts.rx, ts.ry) < 0) {
+                    if (sq->is_base() && sq->owner == faction) {
+                        int dist;
+                        int bases = f.region_total_bases[sq->region];
+                        if (bases < 4
+                        || (dist = route_distance(mapdata, base->x, base->y, ts.rx, ts.ry)) < 0
+                        || dist > map_range(base->x, base->y, ts.rx, ts.ry) + (bases < 16)) {
                             ts.adjust_roads(mapdata, 1);
                         }
                         k++;
@@ -1911,8 +1915,8 @@ bool allow_scout(int faction, MAP* sq) {
 }
 
 bool allow_probe(int faction1, int faction2, bool is_enhanced) {
-    int diplo = Factions[faction1].diplo_status[faction2];
-    if (faction1 != faction2) {
+    uint32_t diplo = Factions[faction1].diplo_status[faction2];
+    if (faction1 >= 0 && faction2 >= 0 && faction1 != faction2) {
         if (!(diplo & DIPLO_COMMLINK)) {
             return true;
         }
@@ -1925,6 +1929,8 @@ bool allow_probe(int faction1, int faction2, bool is_enhanced) {
         if (!(diplo & DIPLO_PACT)) {
             int value = 0;
             if (diplo & DIPLO_TREATY)
+                value -= (Factions[faction1].AI_fight < 0 ? 2 : 1);
+            if (plans[faction1].mil_strength*2 < plans[faction2].mil_strength)
                 value--;
             if (plans[faction1].mil_strength*3 < 2*plans[faction2].mil_strength)
                 value--;
@@ -1949,6 +1955,19 @@ bool allow_attack(int faction1, int faction2, bool is_probe, bool is_enhanced) {
         return allow_probe(faction1, faction2, is_enhanced);
     }
     return at_war(faction1, faction2);
+}
+
+bool allow_combat(int x, int y, int faction, MAP* sq) {
+    for (int i = 0; i < *VehCount; i++) {
+        VEH* veh = &Vehicles[i];
+        if (veh->x == x && veh->y == y && both_neutral(faction, veh->faction_id)
+        && has_treaty(faction, veh->faction_id, DIPLO_COMMLINK)) {
+            if (!veh->is_artifact() && (!veh->is_probe() || sq->owner != faction)) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 bool allow_conv_missile(int veh_id, int enemy_veh_id, MAP* sq) {
@@ -2035,7 +2054,6 @@ int garrison_goal(int x, int y, int faction, int triad) {
                 - (triad == TRIAD_SEA ? 2 : 0)
                 - (p.unknown_factions > 1 && p.contacted_factions < 2)
                 - random(2), 1, 5);
-            debug("garrison_goal %2d %2d %2d %s\n", x, y, goal, base->name);
             return goal;
         }
     }
@@ -2746,7 +2764,7 @@ int combat_move(const int id) {
     if (veh->is_probe() && veh->need_heals()) {
         return escape_move(id);
     }
-    if (!veh->at_target() && veh->iter_count < 2) {
+    if (!veh->at_target() && veh->iter_count < 4) {
         if (!mapdata[{veh->x, veh->y}].enemy_near && !veh->need_heals()) {
             for (auto& m : iterate_tiles(veh->x, veh->y, 1, 9)) {
                 if (mapnodes.count({m.x, m.y, NODE_PATROL})
@@ -2755,13 +2773,20 @@ int combat_move(const int id) {
                 }
             }
         }
-        bool replace_order = veh->is_probe()
-            && (sq = mapsq(veh->waypoint_1_x, veh->waypoint_1_y))
-            && sq->is_base()
-            && sq->owner != faction
+        bool keep_order = true;
+        if ((sq = mapsq(veh->waypoint_1_x, veh->waypoint_1_y)) != NULL) {
+            if (veh->is_probe() && sq->is_base() && sq->owner != faction
             && !has_pact(faction, sq->owner)
-            && !allow_probe(faction, sq->owner, is_enhanced);
-        if (!replace_order) {
+            && !allow_probe(faction, sq->owner, is_enhanced)) {
+                keep_order = false;
+            }
+            else if (combat && !sq->is_base()
+            && map_range(veh->x, veh->y, veh->waypoint_1_x, veh->waypoint_1_y) < 4
+            && !allow_combat(veh->waypoint_1_x, veh->waypoint_1_y, faction, sq)) {
+                keep_order = false;
+            }
+        }
+        if (keep_order) {
             return VEH_SYNC;
         }
     }

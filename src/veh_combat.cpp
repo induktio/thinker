@@ -51,7 +51,7 @@ static void combat_odds_fix(VEH* veh_atk, VEH* veh_def, int* attack_odds, int* d
 /*
 Calculate the psi combat factor for an attacking or defending unit.
 */
-int __cdecl psi_factor(int value, int faction_id, bool is_attack, bool is_fungal_twr) {
+int __cdecl psi_factor(int value, int faction_id, int is_attack, int is_fungal_twr) {
     int rule_psi = MFactions[faction_id].rule_psi;
     if (rule_psi) {
         value = ((rule_psi + 100) * value) / 100;
@@ -99,7 +99,7 @@ int __cdecl mod_morale_alien(int veh_id, int faction_id_vs_native) {
             int x2 = wrap(x + TableOffsetX[i]);
             int y2 = y + TableOffsetY[i];
             MAP* sq = mapsq(x2, y2);
-            if (sq && sq->is_fungus() && sq->alt_level() >= ALT_OCEAN_SHELF) {
+            if (sq && sq->is_fungus()) {
                 morale++;
             }
         }
@@ -131,12 +131,10 @@ int __cdecl mod_morale_alien(int veh_id, int faction_id_vs_native) {
             if (Vehs[veh_id].unit_id == BSC_LOCUSTS_OF_CHIRON) {
                 morale++;
             }
-            morale += (Vehs[veh_id].flags & VFLAG_ADD_ONE_MORALE ? 1 : 0);
-            morale += (Vehs[veh_id].flags & VFLAG_ADD_TWO_MORALE ? 2 : 0);
+            morale += Vehs[veh_id].lifecycle_value();
         }
     }
     morale = clamp(morale, 0, 6);
-//    assert(morale == morale_alien(veh_id, faction_id_vs_native));
     return morale;
 }
 
@@ -201,9 +199,63 @@ int __cdecl mod_morale_veh(int veh_id, int check_drone_riot, int faction_id_vs_n
 }
 
 /*
+Calculate the offense of the specified prototype. Optional param of the unit defending
+against (-1 to ignore) as well as whether artillery or missile combat is being utilized.
+*/
+int __cdecl mod_offense_proto(int unit_id, int veh_id_def, int is_bombard) {
+    UNIT* unit = &Units[unit_id];
+    int value;
+    if (unit->weapon_mode() == WMODE_PROBE
+    && veh_id_def >= 0 && Vehs[veh_id_def].plan() == PLAN_PROBE) {
+        value = 16; // probe attacking another probe
+    // Fix: veh_id_def -1 could cause out of bounds memory read on reactor struct
+    // due to lack of bounds checking when comparing veh_id_def unit_id to Spore Launcher
+    } else if ((is_bombard || (unit->offense_value() >= 0
+    && (veh_id_def < 0 || Vehs[veh_id_def].defense_value() >= 0)))
+    && (veh_id_def < 0 || Vehs[veh_id_def].unit_id != BSC_SPORE_LAUNCHER)
+    && unit_id != BSC_SPORE_LAUNCHER) {
+        int off_rating = abs(unit->offense_value());
+        if (unit->is_missile() && off_rating < 99) {
+            off_rating = (off_rating * 3) / 2;
+        }
+        value = (veh_id_def < 0) ? off_rating : off_rating * 8; // conventional
+    } else {
+        value = (veh_id_def < 0) ? Rules->psi_combat_ratio_atk[TRIAD_LAND] : // PSI
+           Rules->psi_combat_ratio_atk[Vehs[veh_id_def].triad()] * 8;
+    }
+    assert(value == offense_proto(unit_id, veh_id_def, is_bombard));
+    return value;
+}
+
+/*
+Calculate the defense of the specified prototype. Optional param if unit is being attacked
+(-1 to ignore) as well as whether artillery or missile combat is being utilized.
+*/
+int __cdecl mod_armor_proto(int unit_id, int veh_id_atk, int is_bombard) {
+    UNIT* unit = &Units[unit_id];
+    int value;
+    if (unit->weapon_mode() == WMODE_PROBE
+    && veh_id_atk >= 0 && Vehs[veh_id_atk].plan() == PLAN_PROBE) {
+        value = 16; // probe defending against another probe
+    // Fix: veh_id_def -1 could cause out of bounds memory read on reactor struct
+    // due to lack of bounds checking when comparing veh_id_def unit_id to Spore Launcher
+    } else if ((is_bombard && unit_id != BSC_SPORE_LAUNCHER
+    && (veh_id_atk < 0 || Vehs[veh_id_atk].unit_id != BSC_SPORE_LAUNCHER))
+    || (unit->defense_value() >= 0 && (veh_id_atk < 0 || Vehs[veh_id_atk].offense_value() >= 0))) {
+        int def_rating = clamp(unit->defense_value(), 1, 9999);
+        value = (veh_id_atk < 0) ? def_rating : def_rating * 8; // conventional
+    } else {
+        value = (veh_id_atk < 0) ? Rules->psi_combat_ratio_def[TRIAD_LAND] : // PSI
+            Rules->psi_combat_ratio_def[unit->triad()] * 8;
+    }
+    assert(value == armor_proto(unit_id, veh_id_atk, is_bombard));
+    return value;
+}
+
+/*
 Get the basic offense value for an attacking unit with an optional defender unit parameter.
 */
-int __cdecl mod_get_basic_offense(int veh_id_atk, int veh_id_def, int psi_combat_type, bool is_bombard, bool unk_tgl) {
+int __cdecl mod_get_basic_offense(int veh_id_atk, int veh_id_def, int psi_combat_type, int is_bombard, int unk_tgl) {
     // unk_tgl is only set to true in battle_compute when veh_id_atk and veh_id_def are switched places.
     int faction_id_atk = Vehs[veh_id_atk].faction_id;
     int unit_id_atk = Vehs[veh_id_atk].unit_id;
@@ -266,7 +318,7 @@ int __cdecl mod_get_basic_offense(int veh_id_atk, int veh_id_def, int psi_combat
 /*
 Get the basic defense value for a defending unit with an optional attacker unit parameter.
 */
-int __cdecl mod_get_basic_defense(int veh_id_def, int veh_id_atk, int psi_combat_type, bool is_bombard) {
+int __cdecl mod_get_basic_defense(int veh_id_def, int veh_id_atk, int psi_combat_type, int is_bombard) {
     int faction_id_def = Vehs[veh_id_def].faction_id;
     int unit_id_def = Vehs[veh_id_def].unit_id;
     int base_id_def = base_at(Vehs[veh_id_def].x, Vehs[veh_id_def].y);
@@ -1059,6 +1111,11 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
     if (veh_id_def >= 0) {
         veh_def = &Vehs[veh_id_def];
         faction_id_def = veh_def->faction_id;
+        // TODO: alien_move may assign units incorrect attack orders
+        if (DEBUG && option && faction_id_atk == faction_id_def) {
+            print_veh(veh_id_atk);
+            print_veh_stack(tx, ty);
+        }
         assert(faction_id_atk != faction_id_def || !option
             || (!faction_id_atk && veh_atk->unit_id == BSC_SPORE_LAUNCHER));
     } else {
@@ -1772,7 +1829,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
             StrBuffer[0] = '\0';
             say_stats_3(StrBuffer, veh_atk->unit_id);
             parse_says(4, StrBuffer, -1, -1);
-            int tgt_base_id = base_find3(tx, ty, -1, -1, -1, player_id);
+            int tgt_base_id = mod_base_find3(tx, ty, -1, -1, -1, player_id);
             if (tgt_base_id >= 0) {
                 parse_says(5, Bases[tgt_base_id].name, -1, -1);
             }
@@ -1836,7 +1893,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                 StrBuffer[0] = '\0';
                 say_stats_3(StrBuffer, veh_atk->unit_id);
                 parse_says(4, StrBuffer, -1, -1);
-                int tgt_base_id = base_find3(tx, ty, -1, -1, -1, player_id);
+                int tgt_base_id = mod_base_find3(tx, ty, -1, -1, -1, player_id);
                 if (tgt_base_id >= 0) {
                     parse_says(5, Bases[tgt_base_id].name, -1, -1);
                 }
@@ -1866,7 +1923,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
             StrBuffer[0] = '\0';
             say_stats_3(StrBuffer, veh_atk->unit_id);
             parse_says(4, StrBuffer, -1, -1);
-            int tgt_base_id = base_find3(tx, ty, -1, -1, -1, faction_id_def);
+            int tgt_base_id = mod_base_find3(tx, ty, -1, -1, -1, faction_id_def);
             if (tgt_base_id >= 0) {
                 parse_says(5, Bases[tgt_base_id].name, -1, -1);
             }
@@ -2015,10 +2072,8 @@ END_BATTLE:
         for (auto& m : iterate_tiles(tx, ty, 1, 9)) {
             for (int iter_veh_id = veh_at(m.x, m.y); iter_veh_id >= 0; ) {
                 if (!Vehs[iter_veh_id].faction_id) {
-                    uint16_t val1 = Vehs[iter_veh_id].flags;
-                    uint16_t val2 = (val1 >> 3) & 3;
-                    Vehs[iter_veh_id].flags = (val1 & ~(val2 << 3));
-                    Vehs[iter_veh_id].flags |= (clamp(val2 + 1, 0, 3) << 3);
+                    Vehs[iter_veh_id].set_lifecycle_value(
+                        Vehs[iter_veh_id].lifecycle_value() + 1);
                 }
                 iter_veh_id = Vehs[iter_veh_id].next_veh_id_stack;
             }
