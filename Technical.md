@@ -36,6 +36,55 @@ As a general troubleshooting feature, all Thinker builds also include a custom c
 writes output to `debug.txt` in the game folder if the game happens to crash for any reason.
 
 
+Original game mechanics
+=======================
+
+Spawning mind worms
+-------------------
+Whenever an unit not owned by the planet tries to enter a fungus tile that is not occupied by anyone, the game
+may decide to randomly spawn mind worms. The base chance this happens is determined by the following formula.
+BaseFindDist is the tile distance to the nearest base owned by any faction and MapNativeLifeForms is the
+native life option enumerated from 0 to 2. Fungus tiles adjacent to bases, tiles containing magtubes or
+amphibious units entering land tiles from sea will never spawn mind worms. If the faction has Xenoempathy Dome,
+mind worms are always skipped at least for non-combat units. If the tile has a supply pod, this feature is
+skipped since the supply pod may spawn mind worms on adjacent tiles instead.
+
+    Min(32, BaseFindDist) + 10 * MapNativeLifeForms
+
+This base chance is then modified by the following factors.
+These calculations are only performed using integers with the numbers truncating towards zero.
+
+* If the destination is ocean divide by 2 (or 4 when rare natives).
+* Having a road on the tile divides by 2.
+* Native unit entering the tile divides by 2 (predefined prototype with PSI attack).
+* If any previous land or sea unit (excluding planet-owned units) has entered the tile divide by 2 (or 4 when rare natives).
+* Sensors divide by 4 when on adjacent tiles and by 2 when they are at two tile distance.
+* All sensors in the range apply the effect separately. Garrisoned bases or tiles covered by GSP count as sensors.
+
+This chance is then rolled against Random(100). If the chance is equal or less than the random number,
+mind worms will not appear. This may always be skipped if the other factors divide the base chance towards zero.
+
+
+Atrocity details
+----------------
+The game makes a distinction between major and minor atrocities which have different effects on diplomacy.
+Using planet busters is the only thing that counts directly as major atrocity. Minor atrocities are obliterate base,
+using nerve gas on non-alien factions, nerve stapling bases, and probe team genetic warfare. If UN Charter is lifted
+or there are sunspots in effect, other factions will not learn about committed minor atrocities, with the exception
+being that if they are directed against population considered being from another faction, that faction will always
+learn about the atrocity and want revenge against the opponent.
+
+Every time a minor atrocity is committed, the game increments the variable for faction minor atrocities and checks
+the following condition. Difficulty level is a faction dependent setting enumerated from 0 to 5. As an exception
+nerve stapling bases that are assimilated or using nerve gas on non-base tiles will only increase minor atrocities
+once regardless of how many times it is committed.
+
+    MinorAtrocities > 4 * (8 - Faction->diff_level)
+
+If this is true, a major atrocity will also be created for the faction which usually carries notable
+diplomatic consequences. For player factions on transcend difficulty the threshold is more than 12.
+
+
 Tech tree visualization
 =======================
 As an additional feature, this repository includes a script written in Python 3 that can be used to visualize

@@ -290,7 +290,7 @@ In the original game benefits provided by Paradise Garden, Human Genome Project 
 Usually superdrones added by bureaucracy prevented new talents from being added on the base. In the modified routines enabled by default with `base_psych` option, these facilities provide more consistent effects.
 Clinical Immortality provides one extra talent per base as mentioned in the manual. However any bureaucracy or other drone effects on the first psych row remain the same as before.
 
-As an additional feature, psych energy allocation is not limited to twice the base size unlike in the original game. Any spending before this limit will provide similar effects as in the original game, but after that limit the marginal cost to pacify one drone is increased to 4 psych and it keeps increasing by 4 psych after each step. This makes it slightly easier for some factions to achieve golden ages while it still requires substantial psych spending.
+As an additional feature, psych energy allocation is not limited to twice the base size unlike in the original game. Any spending before this limit will provide similar effects as in the original game, but after that limit the marginal cost to pacify one drone or create more talents is increased to 4 psych and it keeps increasing by 4 psych after each step. This makes it slightly easier for some factions to achieve golden ages while it still requires substantial psych spending.
 
 
 Recommended alphax.txt settings
