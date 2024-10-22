@@ -31,6 +31,8 @@ int __cdecl mod_base_cost(int unit_id);
 int __cdecl mod_veh_cost(int unit_id, int base_id, int32_t* has_proto_cost);
 int __cdecl mod_upgrade_cost(int faction_id, int new_unit_id, int old_unit_id);
 int __cdecl mod_upgrade_prototype(int faction_id, int new_unit_id, int old_unit_id, int flag);
+void __cdecl part_upgrade(int faction_id, int new_unit_id, int old_unit_id);
+void __cdecl full_upgrade(int faction_id, int new_unit_id, int old_unit_id);
 int __cdecl mod_veh_avail(int unit_id, int faction_id, int base_id);
 int __cdecl mod_stack_check(int veh_id, int type, int cond1, int cond2, int cond3);
 

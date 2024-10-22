@@ -306,6 +306,7 @@ int target_priority(int x, int y, int faction, MAP* sq) {
     Faction& f = Factions[faction];
     AIPlans& p1 = plans[faction];
     AIPlans& p2 = plans[sq->owner];
+    BASE& base = Bases[f.base_id_attack_target];
     int score = 0;
 
     if (sq->is_owned()) {
@@ -318,16 +319,15 @@ int target_priority(int x, int y, int faction, MAP* sq) {
         if (is_human(sq->owner)) {
             score += (*GameRules & RULES_INTENSE_RIVALRY ? 400 : 200);
         }
-        if (f.base_id_attack_target >= 0
-        && Bases[f.base_id_attack_target].x == x
-        && Bases[f.base_id_attack_target].y == y) {
-            score += 400;
+        if (f.base_id_attack_target >= 0) {
+            assert(at_war(faction, base.faction_id));
+            score += 80*clamp(6 - map_range(base.x, base.y, x, y), 0, 4);
         }
         if (sq->is_base()) {
             int base_id = base_at(x, y);
             if (base_id >= 0) {
                 score += (has_fac_built(FAC_HEADQUARTERS, base_id) ? 100 : 0);
-                score += (Bases[base_id].is_objective() ? 100 : 0);
+                score += (is_objective(base_id) ? 100 : 0);
                 score += clamp(4*Bases[base_id].pop_size, 4, 64);
             }
             score += (mapdata[{x, y}].roads ? 150 : 0);
@@ -335,10 +335,8 @@ int target_priority(int x, int y, int faction, MAP* sq) {
         }
     }
     score += (sq->items & BIT_ROAD ? 60 : 0)
-        + (sq->items & BIT_FUNGUS && p1.keep_fungus ? 60 : 0)
-        + (sq->items & BIT_SENSOR && at_war(faction, sq->owner) ? 90 : 0)
+        + (sq->items & BIT_SENSOR && at_war(faction, sq->owner) ? 100 : 0)
         + (sq->is_rocky() || sq->items & (BIT_BUNKER | BIT_FOREST) ? 50 : 0);
-
     return score;
 }
 
@@ -754,7 +752,7 @@ void move_upkeep(int faction, UpdateMode mode) {
         for (int i = 0; i < *BaseCount; i++) {
             BASE* base = &Bases[i];
             if (base->faction_id == faction) {
-                values[i] = base->pop_size + (base->is_objective() ? 16 : 0)
+                values[i] = base->pop_size + (is_objective(i) ? 16 : 0)
                     + 16*has_fac_built(FAC_HEADQUARTERS, i)
                     + 8*mapdata[{base->x, base->y}].enemy_near
                     + (base->state_flags & BSTATE_COMBAT_LOSS_LAST_TURN ? 8 : 0)
@@ -1376,7 +1374,7 @@ bool can_sensor(int x, int y, int faction, MAP* sq) {
     if (sq->items & (BIT_MINE | BIT_SOLAR | BIT_SENSOR | BIT_ADVANCED)) {
         return false;
     }
-    if (sq->items & BIT_FUNGUS && !has_tech(Rules->tech_preq_improv_fungus, faction)) {
+    if (sq->is_fungus() && !has_tech(Rules->tech_preq_improv_fungus, faction)) {
         return false;
     }
     int i = 1;
@@ -1396,13 +1394,15 @@ bool can_sensor(int x, int y, int faction, MAP* sq) {
 bool keep_fungus(int x, int y, int faction, MAP* sq) {
     return plans[faction].keep_fungus
         && !(sq->items & (BIT_BASE_IN_TILE | BIT_MONOLITH))
+        && sq->alt_level() >= ALT_OCEAN_SHELF
         && nearby_items(x, y, 0, 9, BIT_FUNGUS)
-        < (sq->items & BIT_FUNGUS ? 1 : 0) + plans[faction].keep_fungus;
+        < (sq->is_fungus() ? 1 : 0) + plans[faction].keep_fungus;
 }
 
 bool plant_fungus(int x, int y, int faction, MAP* sq) {
     return plans[faction].plant_fungus
         && keep_fungus(x, y, faction, sq)
+        && sq->alt_level() >= ALT_OCEAN_SHELF
         && has_terra(FORMER_PLANT_FUNGUS, is_ocean(sq), faction);
 }
 
@@ -1437,7 +1437,7 @@ bool can_road(int x, int y, int faction, MAP* sq) {
     if (!sq->is_base_radius() && mapdata[{x, y}].roads < 1) {
         return false;
     }
-    if (sq->items & BIT_FUNGUS && (!has_tech(Rules->tech_preq_build_road_fungus, faction)
+    if (sq->is_fungus() && (!has_tech(Rules->tech_preq_build_road_fungus, faction)
     || (!build_tubes && has_project(FAC_XENOEMPATHY_DOME, faction)))) {
         return false;
     }
@@ -1486,7 +1486,7 @@ bool can_magtube(int x, int y, int faction, MAP* sq) {
         return false;
     }
     return mapdata[{x, y}].roads > 0 && sq->items & BIT_ROAD
-        && (!(sq->items & BIT_FUNGUS) || has_tech(Rules->tech_preq_build_road_fungus, faction));
+        && (!sq->is_fungus() || has_tech(Rules->tech_preq_build_road_fungus, faction));
 }
 
 int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
@@ -1496,6 +1496,7 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
     int alt = sq->alt_level();
     bool sea = alt < ALT_SHORE_LINE;
     bool road = can_road(x, y, faction, sq);
+    bool is_fungus = sq->is_fungus();
     bool rem_fungus = has_terra(FORMER_REMOVE_FUNGUS, sea, faction)
         && (!is_human(faction) || *GameMorePreferences & MPREF_AUTO_FORMER_REMOVE_FUNGUS);
 
@@ -1513,7 +1514,7 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
         return FORMER_NONE;
     }
     if (mode == FM_Remove_Fungus) {
-        if (items & BIT_FUNGUS && rem_fungus) {
+        if (is_fungus && rem_fungus) {
             return FORMER_REMOVE_FUNGUS;
         }
         return FORMER_NONE;
@@ -1531,7 +1532,7 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
         return (road ? FORMER_ROAD : FORMER_NONE);
     }
     if (mode == FM_Farm_Road || mode == FM_Mine_Road) {
-        if (items & BIT_FUNGUS) {
+        if (is_fungus) {
             if (has_terra(FORMER_REMOVE_FUNGUS, sea, faction)) {
                 return FORMER_REMOVE_FUNGUS;
             }
@@ -1572,7 +1573,7 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
     bool use_sensor = items & BIT_SENSOR && nearby_items(x, y, 0, 9, BIT_SENSOR) < 2;
     bool allow_farm = items & BIT_FARM || can_farm(x, y, faction, bonus, sq);
     bool allow_forest = items & BIT_FOREST || can_forest(x, y, faction, sq);
-    bool allow_fungus = items & BIT_FUNGUS || plant_fungus(x, y, faction, sq);
+    bool allow_fungus = is_fungus || plant_fungus(x, y, faction, sq);
     bool allow_borehole = items & BIT_THERMAL_BORE || can_borehole(x, y, faction, bonus, sq);
 
     int farm_val = (sea && allow_farm ? item_yield(x, y, faction, bonus, BIT_FARM) : 0);
@@ -1589,7 +1590,7 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
         assert(current >= 0 && v >= 0);
     }
     if (farm_val == max_val && sea && max_val > 0) {
-        if (items & BIT_FUNGUS) {
+        if (is_fungus) {
             return (rem_fungus ? FORMER_REMOVE_FUNGUS : FORMER_NONE);
         }
         if (farm_val > current && allow_farm && !(items & BIT_FARM)) {
@@ -1597,7 +1598,7 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
         }
     }
     if (forest_val == max_val && max_val > 0) {
-        if (items & BIT_FUNGUS) {
+        if (is_fungus) {
             return (rem_fungus ? FORMER_REMOVE_FUNGUS : FORMER_NONE);
         }
         if (items & BIT_FOREST) {
@@ -1608,7 +1609,7 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
         }
     }
     if (fungus_val == max_val && max_val > 0) {
-        if (items & BIT_FUNGUS) {
+        if (is_fungus) {
             return (can_sensor(x, y, faction, sq) ? FORMER_SENSOR : FORMER_NONE);
         }
         if (fungus_val > current + (bonus != RES_NONE) && allow_fungus) {
@@ -1616,7 +1617,7 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
         }
     }
     if (borehole_val == max_val && max_val > 0) {
-        if (items & BIT_FUNGUS) {
+        if (is_fungus) {
             return (rem_fungus ? FORMER_REMOVE_FUNGUS : FORMER_NONE);
         }
         if (items & BIT_THERMAL_BORE) {
@@ -1626,7 +1627,7 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
             return FORMER_THERMAL_BORE;
         }
     }
-    if (items & BIT_FUNGUS) {
+    if (is_fungus) {
         if (keep_fungus(x, y, faction, sq)) {
             return (can_sensor(x, y, faction, sq) ? FORMER_SENSOR : FORMER_NONE);
         }
@@ -1707,7 +1708,7 @@ int former_tile_score(int x, int y, int faction, MAP* sq) {
             score += p[1];
         }
     }
-    if (items & BIT_FUNGUS) {
+    if (sq->is_fungus()) {
         score += (items & BIT_ADVANCED ? 20 : 0);
         score += (plans[faction].keep_fungus ? -10 : -2);
         score += (plans[faction].plant_fungus && (items & BIT_ROAD) ? -8 : 0);
@@ -1718,7 +1719,7 @@ int former_tile_score(int x, int y, int faction, MAP* sq) {
         score += 8;
     }
     if (mapdata[{x, y}].roads > 0 && (!(items & BIT_ROAD) || (build_tubes && !(items & BIT_MAGTUBE)))) {
-        score += 12;
+        score += 15;
     }
     if (is_shore_level(sq) && mapnodes.count({x, y, NODE_GOAL_RAISE_LAND})) {
         score += 20;
@@ -2415,10 +2416,11 @@ static int choose_defender(int x, int y, int atk_id, MAP* sq) {
     return def_id;
 }
 
-static int flank_score(int x, int y, MAP* sq) {
+static int flank_score(int x, int y, bool native, MAP* sq) {
     return random(16) - 4*mapdata[{x, y}].enemy_dist
-        + (sq && sq->items & (BIT_RIVER | BIT_ROAD | BIT_FOREST) ? 3 : 0)
-        + (sq && sq->items & (BIT_SENSOR | BIT_BUNKER) ? 3 : 0);
+        + (sq->items & (BIT_RIVER | BIT_ROAD | BIT_FOREST) ? 4 : 0)
+        + (sq->items & (BIT_SENSOR | BIT_BUNKER) ? 4 : 0)
+        + (native && sq->is_fungus() ? 8 : 0);
 }
 
 static int combat_value(int veh_id, int value, int moves, int mov_rate, bool reactor) {
@@ -3122,6 +3124,7 @@ int combat_move(const int id) {
         }
     }
     if (tx >= 0) {
+        bool native = veh->is_native_unit();
         bool flank = !defend && path.dist > 1 && random(12) < min(8, mapdata[{tx, ty}].target);
         bool skip  = !defend && path.dist < 6 && !veh->is_probe() && (sq = mapsq(tx, ty))
             && (id2 = choose_defender(tx, ty, id, sq)) >= 0
@@ -3133,11 +3136,11 @@ int combat_move(const int id) {
         if (flank || skip) {
             tx = -1;
             ty = -1;
-            best_score = flank_score(veh->x, veh->y, veh_sq);
+            best_score = flank_score(veh->x, veh->y, native, veh_sq);
             ts.init(veh->x, veh->y, triad);
             while ((sq = ts.get_next()) != NULL && ts.dist <= 2) {
                 if (!sq->is_base() && allow_move(ts.rx, ts.ry, faction, triad)) {
-                    int score = flank_score(ts.rx, ts.ry, sq);
+                    int score = flank_score(ts.rx, ts.ry, native, sq);
                     if (score > best_score) {
                         tx = ts.rx;
                         ty = ts.ry;

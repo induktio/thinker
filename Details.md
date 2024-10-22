@@ -417,22 +417,22 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 37. Fix issue where Accelerated Start option may sometimes freeze the game when selecting a random secret project for Hive. Patched version will not assign Citizens Defense Force or Command Nexus for a faction that already has those facilities for free, unless all other choices among the first seven projects have been exhausted, also Empath Guild is always skipped.
 38. Disable legacy game startup code that spawned additional colony pods for factions if the difficulty level matched pre-defined rules. The same starting units can now be selected from the config file for all difficulty levels (skip_default_balance).
 39. Prevent the AI from making unnecessary trades where it sells their techs for maps owned by the player. The patch removes TRADETECH4 / TRADETECH5 dialogue paths making the AI usually demand a credit payment for any techs.
-40. Fix possible issues with inconsistent captured base facilities when some of the factions have free facilities defined for them.
-41. Fix some issues where AI declared war based on calculations using incorrect variables. AI is also less likely to declare war at early stages when it has only few bases built.
-42. Fix visual issues where the game sometimes did not update the map properly when recentering it offscreen on native resolution mode.
-43. Fix issues where the game would crash on resolutions not divisible by 8. If an unsupported resolution is used, the game will attempt to automatically switch to the closest supported size.
-44. Fix rendering bug that caused half of the bottom row map tiles to shift to the wrong side of screen when zoomed out.
-45. Fix datalinks window not showing the first character for Sea Formers units.
-46. Fix Mind Control issue when capturing bases that have non-allied units owned by a third faction inside them. In this case the units can't remain on the base tile and they are removed.
-47. Modify Mind Control probe action to only subvert units inside the base and not on adjacent tiles to balance for the relatively cheap cost for this action.
-48. Modify Total Thought Control probe action to not set silently "want revenge" or "shall betray" flags which usually made the AI sneak attack. This action can be still used to subvert bases without declaring war but it applies a notable diplomatic penalty between the factions.
-49. Base production picker will not show Paradise Garden as buildable if the base already has Punishment Sphere.
-50. Fix issue where terrain detail display on the world map showed incorrect mineral output for aquatic factions.
-51. Fix monolith energy to not be limited by tile yield restrictions in the early game. This limitation did not apply on monolith nutrients/minerals.
-52. Fix base tile energy output being inconsistent when SE Economy value is between 3 and 4.
-53. Fix issue with formers sometimes being able to move after completing improvements on the same turn.
-54. Fix GSP defense bonus range sometimes not being accurate at three tiles like the manual implies.
-55. Fix inconsistent effects with unit repair facilities and Citizens Defense Force when the base tile is defended by an unit owned by third faction. The facility or the secret project providing it must be built by the base owner for it to have an effect.
+40. Fix some issues where AI declared war based on calculations using incorrect variables. AI is also less likely to declare war at early stages when it has only few bases built.
+41. Fix visual issues where the game sometimes did not update the map properly when recentering it offscreen on native resolution mode.
+42. Fix issues where the game would crash on resolutions not divisible by 8. If an unsupported resolution is used, the game will attempt to automatically switch to the closest supported size.
+43. Fix rendering bug that caused half of the bottom row map tiles to shift to the wrong side of screen when zoomed out.
+44. Fix datalinks window not showing the first character for Sea Formers units.
+45. Fix Mind Control issue when capturing bases that have non-allied units owned by a third faction inside them. In this case the units can't remain on the base tile and they are removed.
+46. Modify Mind Control probe action to only subvert units inside the base and not on adjacent tiles to balance for the relatively cheap cost for this action.
+47. Modify Total Thought Control probe action to not set silently "want revenge" or "shall betray" flags which usually made the AI sneak attack. This action can be still used to subvert bases without declaring war but it applies a notable diplomatic penalty between the factions.
+48. Base production picker will not show Paradise Garden as buildable if the base already has Punishment Sphere.
+49. Fix issue where terrain detail display on the world map showed incorrect mineral output for aquatic factions.
+50. Fix monolith energy to not be limited by tile yield restrictions in the early game. This limitation did not apply on monolith nutrients/minerals.
+51. Fix base tile energy output being inconsistent when SE Economy value is between 3 and 4.
+52. Fix issue with formers sometimes being able to move after completing improvements on the same turn.
+53. Fix GSP defense bonus range sometimes not being accurate at three tiles like the manual implies.
+54. Fix inconsistent effects with unit repair facilities and Citizens Defense Force when the base tile is defended by an unit owned by third faction. The facility or the secret project providing it must be built by the base owner for it to have an effect.
+55. Fix issues where the game did not calculate upgrade costs correctly when the unit count exceeded 255. The costs will be applied correctly even if Security Nexus may show an inaccurate number.
 
 
 Scient's patch

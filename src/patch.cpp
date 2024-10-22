@@ -452,8 +452,21 @@ bool patch_setup(Config* cf) {
     write_jump(0x579B70, (int)add_site);
     write_jump(0x579D80, (int)wipe_goals);
     write_jump(0x579F80, (int)want_monolith);
-    write_jump(0x591040, (int)mod_map_wipe);
-    write_jump(0x592250, (int)mod_say_loc);
+    write_jump(0x591040, (int)map_wipe);
+    write_jump(0x592250, (int)say_loc);
+    write_jump(0x59D980, (int)prefs_get2);
+    write_jump(0x59DA20, (int)default_prefs);
+    write_jump(0x59DAA0, (int)default_prefs2);
+    write_jump(0x59DB20, (int)default_warn);
+    write_jump(0x59DB30, (int)default_rules);
+    write_jump(0x59DB40, (int)prefs_get);
+    write_jump(0x59DBD0, (int)prefs_fac_load);
+    write_jump(0x59DCF0, (int)prefs_load);
+    write_jump(0x59E510, (int)prefs_put2);
+    write_jump(0x59E530, (int)prefs_put);
+    write_jump(0x59E5D0, (int)prefs_save);
+    write_jump(0x59E950, (int)prefs_use);
+    write_jump(0x5AC060, (int)is_objective);
     write_jump(0x5BF1F0, (int)has_abil);
     write_jump(0x5BF310, (int)X_pop2);
     write_jump(0x5C0DB0, (int)can_arty);
@@ -502,6 +515,8 @@ bool patch_setup(Config* cf) {
     write_call(0x559E21, (int)map_draw_strcmp); // veh_draw
     write_call(0x55B5E1, (int)map_draw_strcmp); // base_draw
     write_call(0x5C0984, (int)veh_kill_lift); // veh_kill
+    write_call(0x43FE47, (int)DiploPop_spying); // DiploPop::draw_info
+    write_call(0x43FEA8, (int)DiploPop_spying); // DiploPop::draw_info
     write_call(0x498720, (int)ReportWin_close_handler);
     write_call(0x408DBD, (int)BaseWin_draw_psych_strcat);
     write_call(0x40F8F8, (int)BaseWin_draw_farm_set_font);
@@ -718,6 +733,8 @@ bool patch_setup(Config* cf) {
     write_call(0x438DEF, (int)mod_upgrade_prototype); // DesignWin::on_button_clicked
     write_call(0x4F061B, (int)mod_upgrade_prototype); // upgrade_prototypes
     write_call(0x5843F5, (int)mod_upgrade_prototype); // design_workshop
+    write_call(0x4F0447, (int)full_upgrade); // upgrade_prototype
+    write_call(0x536C34, (int)full_upgrade); // NetDaemon::process_message
     write_call(0x4D0ECF, (int)mod_upgrade_cost); // Console::upgrade
     write_call(0x4D16D9, (int)mod_upgrade_cost); // Console::upgrade
     write_call(0x4EFB76, (int)mod_upgrade_cost); // do_upgrade

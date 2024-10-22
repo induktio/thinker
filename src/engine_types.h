@@ -115,6 +115,30 @@ struct MAP {
     }
 };
 
+struct AlphaIniPref {
+    int32_t preferences;
+    int32_t more_preferences;
+    int32_t announce;
+    int32_t rules;
+    int32_t semaphore;
+    int32_t time_controls;
+    int32_t customize;
+    int32_t custom_world[7];
+};
+
+struct DefaultPref {
+    int32_t difficulty;
+    int32_t faction_id;
+    int32_t pad; // unused
+    int32_t map_type;
+    int32_t top_menu;
+};
+
+struct Label {
+    char** labels;
+    int label_count;
+};
+
 struct Landmark {
     int32_t x;
     int32_t y;

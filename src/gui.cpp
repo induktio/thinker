@@ -1673,7 +1673,7 @@ void __thiscall Console_editor_fungus(Console* UNUSED(This))
 Fix foreign base names being visible in unexplored tiles when issuing move to or patrol
 orders to the tiles. This version adds visibility checks for all base tiles.
 */
-void __cdecl mod_say_loc(char* dest, int x, int y, int a4, int a5, int a6)
+void __cdecl say_loc(char* dest, int x, int y, int a4, int a5, int a6)
 {
     int base_id = -1;
     MAP* sq;

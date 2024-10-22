@@ -2,7 +2,7 @@
 
 #include "main.h"
 
-enum {
+enum PopDialog {
     PopDialogCheckbox = 0x1, // Multiple choices
     PopDialogListChoice = 0x2, // Only one choice
     PopDialogTextInput = 0x4,
@@ -15,7 +15,7 @@ enum {
     PopDialogUnk100000 = 0x100000,
 };
 
-enum {
+enum DiploProposal {
     DiploProposalMakeGift = 1,
     DiploProposalMakePact = 2,
     DiploProposalMakeTreaty = 3,
@@ -31,7 +31,7 @@ enum {
     DiploProposalTradeCommlink = 13,
 };
 
-enum {
+enum DiploCounter {
     DiploCounterFriendship = 1, // goodwill and friendship
     DiploCounterNameAPrice = 2, // need but name your price
     DiploCounterThreaten = 3, // threaten with attack or cancel pact
@@ -41,9 +41,14 @@ enum {
     DiploCounterGiveBase = 8, // turn over one of my bases
 };
 
+void parse_gen_name(int faction_id, size_t title_value, size_t name_value);
+void parse_noun_name(int faction_id, size_t title_value, size_t name_value);
 int __cdecl X_pop2(const char* label, int a2);
 int __cdecl X_pop7(const char* label, int a2, int a3);
 int __cdecl X_pops4(const char* label, int a2, Sprite* a3, int a4);
+int __cdecl X_dialog(const char* label, int faction2);
+int __cdecl X_dialog(const char* filename, const char* label, int faction2);
+int __cdecl DiploPop_spying(int faction_id);
 int __cdecl mod_threaten(int faction1, int faction2);
 int __cdecl mod_base_swap(int faction1, int faction2);
 int __cdecl mod_energy_trade(int faction1, int faction2);

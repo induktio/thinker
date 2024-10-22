@@ -40,6 +40,7 @@ int mineral_output_modifier(int base_id);
 int energy_grid_output(int base_id);
 int satellite_output(int satellites, int pop_size, bool full_value);
 bool satellite_bonus(int base_id, int* nutrient, int* mineral, int* energy);
+int __cdecl is_objective(int base_id);
 int __cdecl own_base_rank(int base_id);
 int __cdecl mod_base_rank(int faction_id, int position);
 int __cdecl best_specialist(BASE* base, int econ_val, int labs_val, int psych_val);

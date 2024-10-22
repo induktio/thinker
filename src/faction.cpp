@@ -252,6 +252,7 @@ bool has_defenders(int x, int y, int faction_id) {
 }
 
 bool has_active_veh(int faction_id, VehPlan plan) {
+    assert(faction_id >= 0 && faction_id < MaxPlayerNum);
     for (int i = 0; i < *VehCount; i++) {
         VEH* veh = &Vehicles[i];
         if (veh->faction_id == faction_id && Units[veh->unit_id].plan == plan) {
@@ -259,6 +260,18 @@ bool has_active_veh(int faction_id, VehPlan plan) {
         }
     }
     return false;
+}
+
+int veh_count(int faction_id, int unit_id) {
+    assert(faction_id >= 0 && faction_id < MaxPlayerNum);
+    assert(unit_id >= 0 && unit_id < MaxProtoNum);
+    int num = 0;
+    for (int i = 0; i < *VehCount; i++) {
+        if (Vehs[i].faction_id == faction_id && Vehs[i].unit_id == unit_id) {
+            num++;
+        }
+    }
+    return num;
 }
 
 int find_hq(int faction_id) {

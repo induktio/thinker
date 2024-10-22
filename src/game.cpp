@@ -35,7 +35,7 @@ bool valid_triad(int triad) {
 }
 
 char* label_get(size_t index) {
-    return (*TextLabels)[index];
+    return (TextLabels->labels)[index];
 }
 
 char* __cdecl parse_set(int faction_id) {

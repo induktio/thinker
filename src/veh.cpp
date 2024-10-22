@@ -613,35 +613,192 @@ int __cdecl mod_upgrade_cost(int faction_id, int new_unit_id, int old_unit_id) {
     return cost;
 }
 
-/*
-Fix issue with prototype upgrade not counting costs correctly for
-unit counts of more than 255. In this case unit upgrades will be disabled.
-*/
 int __cdecl mod_upgrade_prototype(int faction_id, int new_unit_id, int old_unit_id, int flag) {
+    Faction* f = &Factions[faction_id];
     UNIT* new_unit = &Units[new_unit_id];
     UNIT* old_unit = &Units[old_unit_id];
-    int active = Factions[faction_id].units_active[old_unit_id];
-    if (conf.design_units && !is_human(faction_id) && (old_unit->plan > PLAN_RECON
-    || (conf.ignore_reactor_power && new_unit->offense_value() <= old_unit->offense_value()
-    && new_unit->defense_value() <= old_unit->defense_value()))) {
-        return 0; // Reduce non-important upgrades
-    }
-    int check = 0;
-    for (int i = 0; i < *VehCount; i++) {
-        if (Vehs[i].faction_id == faction_id && Vehs[i].unit_id == old_unit_id) {
-            check++;
-        }
-    }
-    assert(active == check);
     assert(new_unit_id != old_unit_id);
     assert(new_unit_id / MaxProtoFactionNum == faction_id);
-    if (new_unit_id != old_unit_id
-    && new_unit_id / MaxProtoFactionNum == faction_id && active == check) {
-        debug("upgrade_proto %d %d count: %d %s / %s\n", *CurrentTurn, faction_id,
-            active, Units[old_unit_id].name, Units[new_unit_id].name);
-        return upgrade_prototype(faction_id, new_unit_id, old_unit_id, flag);
+
+    if (*GameState & STATE_GAME_DONE && !(*GameState & STATE_FINAL_SCORE_DONE)) {
+        return 0;
     }
-    return 0;
+    // Fix issue with upgrade cost being incorrect for unit counts of more than 255.
+    int unit_cost = 10 * mod_upgrade_cost(faction_id, new_unit_id, old_unit_id);
+    int unit_count = veh_count(faction_id, old_unit_id);
+    int total_cost = unit_cost * unit_count;
+    bool prototyped = new_unit_id < MaxProtoFactionNum || new_unit->is_prototyped();
+
+    if (!total_cost && (flag || !is_human(faction_id))) {
+        return 0;
+    }
+    if (!is_human(faction_id)) {
+        // Simplify cost threshold for automatic upgrades
+        if (total_cost > f->energy_credits/4
+        || unit_cost >= 50 + min(50, f->energy_credits/32)) {
+            return 0;
+        }
+        // Reduce non-important upgrades
+        if (conf.design_units && (old_unit->plan > PLAN_RECON
+        || (conf.ignore_reactor_power && new_unit->offense_value() <= old_unit->offense_value()
+        && new_unit->defense_value() <= old_unit->defense_value()))) {
+            return 0;
+        }
+        goto DO_UPGRADE;
+    }
+    if (faction_id != MapWin->cOwner) {
+        return 0;
+    }
+    if (!total_cost) {
+        goto DO_UPGRADE;
+    }
+    StrBuffer[0] = '\0';
+    strncat(StrBuffer, old_unit->name, StrBufLen);
+    strncat(StrBuffer, " (", StrBufLen);
+    say_stats_2(StrBuffer, old_unit_id);
+    if (old_unit->ability_flags) {
+        strncat(StrBuffer, " ", StrBufLen);
+        for (int i = 0; i < MaxAbilityNum; i++) {
+            if (has_abil(old_unit_id, (VehAblFlag)(1 << i))) {
+                strncat(StrBuffer, Ability[i].abbreviation, StrBufLen);
+            }
+        }
+    }
+    strncat(StrBuffer, ")", StrBufLen);
+    parse_says(0, StrBuffer, -1, -1);
+    StrBuffer[0] = '\0';
+    strncat(StrBuffer, new_unit->name, StrBufLen);
+    strncat(StrBuffer, " (", StrBufLen);
+    say_stats_2(StrBuffer, new_unit_id);
+    if (new_unit->ability_flags) {
+        strncat(StrBuffer, " ", StrBufLen);
+        for (int i = 0; i < MaxAbilityNum; i++) {
+            if (has_abil(new_unit_id, (VehAblFlag)(1 << i))) {
+                strncat(StrBuffer, Ability[i].abbreviation, StrBufLen);
+            }
+        }
+    }
+    strncat(StrBuffer, ")", StrBufLen);
+    parse_says(1, StrBuffer, -1, -1);
+    parse_num(0, total_cost);
+    parse_num(1, f->energy_credits);
+    parse_num(2, unit_count);
+
+    const char* image_file;
+    switch (new_unit->triad()) {
+        case TRIAD_SEA: image_file = "navun_sm.pcx"; break;
+        case TRIAD_AIR: image_file = (is_alien(faction_id) ? "alair_sm.pcx" : "air_sm.pcx"); break;
+        default: image_file = (is_alien(faction_id) ? "alunit_sm.pcx" : "unit_sm.pcx"); break;
+    }
+    if (total_cost > f->energy_credits) {
+        if (flag && !(*GameWarnings & WARN_STOP_PROTOTYPE_COMPLETE)) {
+            return 0;
+        }
+        const char* text_label = (prototyped ? "UPGRADEPROTOCOST" : "UPGRADEPROTOCOST2");
+        popp(ScriptFile, text_label, 0, image_file, 0);
+        return 0;
+    } else {
+        const char* text_label = (prototyped ? "UPGRADEPROTO" : "UPGRADEPROTO2");
+        if (!*dword_90EA3C) {
+            int value = popp(ScriptFile, text_label, 0, image_file, 0);
+            if (!value) {
+                return 0;
+            }
+            if (value > 1) { // This dialog option is not visible by default
+                *dword_90EA3C = 1;
+            }
+        }
+    }
+DO_UPGRADE:
+    if (is_human(faction_id) && *MultiplayerActive) {
+        message_data(0x2411, 0, faction_id, new_unit_id, old_unit_id, 0);
+        if (NetDaemon_receive(NetState)) {
+            while (NetDaemon_receive(NetState));
+            return 1;
+        }
+    } else {
+        full_upgrade(faction_id, new_unit_id, old_unit_id);
+    }
+    return 1;
+}
+
+static void veh_upgrade(VEH* veh, int new_unit_id, int old_unit_id, int cost) {
+    Faction* f = &Factions[veh->faction_id];
+    f->energy_credits -= cost;
+    f->units_active[new_unit_id]++;
+    f->units_active[old_unit_id]--;
+    veh->unit_id = new_unit_id;
+    int morale_diff = (has_abil(new_unit_id, ABL_TRAINED) != 0)
+        - (has_abil(old_unit_id, ABL_TRAINED) != 0);
+    veh->morale = clamp(veh->morale + morale_diff, 0, 6);
+    assert(f->energy_credits >= 0);
+    debug("upgrade_unit %d %d %2d %2d cost: %d %s / %s\n",
+    *CurrentTurn, veh->faction_id, veh->x, veh->y, cost, Units[old_unit_id].name, veh->name());
+}
+
+/*
+Partial upgrades until energy reserves run out, MP mode not implemented.
+*/
+void __cdecl part_upgrade(int faction_id, int new_unit_id, int old_unit_id) {
+    Faction* f = &Factions[faction_id];
+    if (!*MultiplayerActive && faction_id > 0
+    && old_unit_id >= 0 && new_unit_id != old_unit_id
+    && new_unit_id / MaxProtoFactionNum == faction_id) {
+        int cost = 10 * mod_upgrade_cost(faction_id, new_unit_id, old_unit_id);
+        bool active = false;
+        for (int i = 0; i < *VehCount; i++) {
+            VEH* veh = &Vehs[i];
+            if (veh->faction_id == faction_id && veh->unit_id == old_unit_id
+            && !veh->moves_spent && !veh->damage_taken && base_at(veh->x, veh->y) >= 0) {
+                if (f->energy_credits < cost + 20) {
+                    break;
+                }
+                veh_upgrade(veh, new_unit_id, old_unit_id, cost);
+                active = true;
+            }
+        }
+        if (active) {
+            draw_map(1);
+        }
+    }
+}
+
+/*
+Full upgrade to new prototype, retire old prototype and update base queues.
+Total cost must be checked by the caller function.
+*/
+void __cdecl full_upgrade(int faction_id, int new_unit_id, int old_unit_id) {
+    int cost = 10 * mod_upgrade_cost(faction_id, new_unit_id, old_unit_id);
+    bool active = false;
+    for (int i = 0; i < *VehCount; i++) {
+        VEH* veh = &Vehs[i];
+        if (veh->faction_id == faction_id && veh->unit_id == old_unit_id) {
+            veh_upgrade(veh, new_unit_id, old_unit_id, cost);
+            active = true;
+        }
+    }
+    for (int i = *BaseCount-1; i >= 0; i--) {
+        BASE* base = &Bases[i];
+        if (base->faction_id == faction_id) {
+            for (int j = 0; j < 10 && j <= base->queue_size; j++) {
+                if (base->queue_items[j] == old_unit_id) {
+                    base->queue_items[j] = new_unit_id;
+                }
+            }
+        }
+    }
+    if (new_unit_id >= MaxProtoFactionNum && active) {
+        Units[new_unit_id].unit_flags |= UNIT_PROTOTYPED;
+    }
+    if (old_unit_id >= MaxProtoFactionNum) {
+        Units[old_unit_id].unit_flags &= ~UNIT_ACTIVE;
+    }
+    if (is_human(faction_id)) {
+        draw_map(1);
+    }
+    if (faction_id == MapWin->cOwner) {
+        Console_update_data(MapWin, 0);
+    }
 }
 
 /*
@@ -848,10 +1005,10 @@ int __cdecl mod_veh_skip(int veh_id) {
     int moves = veh_speed(veh_id, 0);
 
     if (is_human(veh->faction_id)) {
+        if (veh->is_former() && veh->order >= ORDER_FARM && veh->order < ORDER_MOVE_TO) {
+            veh->state |= VSTATE_WORKING;
+        }
         if (conf.activate_skipped_units) {
-            if (veh->is_former() && veh->order >= ORDER_FARM && veh->order < ORDER_MOVE_TO) {
-                veh->state |= VSTATE_WORKING;
-            }
             if (!veh->moves_spent && veh->order < ORDER_FARM
             && !(veh->state & (VSTATE_HAS_MOVED|VSTATE_MADE_AIRDROP))) {
                 veh->flags |= VFLAG_FULL_MOVE_SKIPPED;

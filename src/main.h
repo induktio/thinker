@@ -72,10 +72,10 @@
 #include <unordered_map>
 
 #define DLL_EXPORT extern "C" __declspec(dllexport)
-#define ModAppName "thinker"
 #define GameAppName "Alpha Centauri"
-#define ModIniFile ".\\thinker.ini"
 #define GameIniFile ".\\Alpha Centauri.ini"
+#define ModAppName "thinker"
+#define ModIniFile ".\\thinker.ini"
 
 #ifdef BUILD_DEBUG
 #ifdef assert
@@ -352,6 +352,7 @@ struct AIPlans {
 };
 
 #include "engine.h"
+#include "config.h"
 #include "strings.h"
 #include "faction.h"
 #include "random.h"

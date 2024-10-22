@@ -91,7 +91,7 @@ int __thiscall mod_MapWin_focus(Console* This, int x, int y);
 int __thiscall mod_MapWin_set_center(Console* This, int x, int y, int flag);
 int __thiscall ReportWin_close_handler(void* This);
 void __thiscall Console_editor_fungus(Console* UNUSED(This));
-void __cdecl mod_say_loc(char* dest, int x, int y, int a4, int a5, int a6);
+void __cdecl say_loc(char* dest, int x, int y, int a4, int a5, int a6);
 void __cdecl mod_diplomacy_caption(int faction1, int faction2);
 void __cdecl reset_netmsg_status();
 int __thiscall mod_NetMsg_pop(void* This, const char* label, int delay, int a4, const char* a5);

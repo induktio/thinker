@@ -27,9 +27,10 @@ bool both_neutral(int faction1, int faction2);
 bool both_non_enemy(int faction1, int faction2);
 bool want_revenge(int faction1, int faction2);
 bool allow_expand(int faction_id);
-bool has_active_veh(int faction_id, VehPlan plan);
 bool has_transport(int x, int y, int faction_id);
 bool has_defenders(int x, int y, int faction_id);
+bool has_active_veh(int faction_id, VehPlan plan);
+int veh_count(int faction_id, int unit_id);
 int find_hq(int faction_id);
 int faction_might(int faction_id);
 

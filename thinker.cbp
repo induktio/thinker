@@ -76,6 +76,8 @@
 		<Unit filename="src/base.h" />
 		<Unit filename="src/build.cpp" />
 		<Unit filename="src/build.h" />
+		<Unit filename="src/config.cpp" />
+		<Unit filename="src/config.h" />
 		<Unit filename="src/debug.cpp" />
 		<Unit filename="src/debug.h" />
 		<Unit filename="src/engine.cpp" />

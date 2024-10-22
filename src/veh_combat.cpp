@@ -1850,7 +1850,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
             cause_friction(sq->owner, faction_id_atk, -1);
         }
     }
-    // Removed likely unneeded feature that changed home_base_id when native faction is involded in combat
+    // Removed likely unneeded feature that changed home_base_id when native faction was involved in combat
     if (atk_alive) {
         // Added reactor type bounds checking
         offense_out = offense_out * veh_atk_last_hp * veh_atk->reactor_type() / veh_atk_hp;

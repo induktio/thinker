@@ -1539,6 +1539,11 @@ int __cdecl mod_base_kill(int base_id) {
     return 0;
 }
 
+/*
+Note that when a base is captured and either the former or current owner has
+free facilities defined for the faction, all of these facilities will be added
+on the base when it is captured, for example Hive bases always get Perimeter Defense.
+*/
 int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
     BASE* base = &Bases[base_id];
     int old_faction = base->faction_id;
@@ -1546,13 +1551,9 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
     int last_spoke = *CurrentTurn - Factions[faction].diplo_spoke[old_faction];
     bool vendetta = at_war(faction, old_faction);
     bool alien_fight = is_alien(faction) != is_alien(old_faction);
-    bool destroy_base = base->pop_size < 2;
+    bool destroy_base = base->pop_size < 2 && !is_objective(base_id);
     assert(base_id >= 0 && base_id < *BaseCount);
     assert(valid_player(faction) && faction != old_faction);
-    /*
-    Fix possible issues with inconsistent captured base facilities
-    when some of the factions have free facilities defined for them.
-    */
     set_base(base_id);
 
     if (!destroy_base && alien_fight) {
@@ -1825,6 +1826,26 @@ bool satellite_bonus(int base_id, int* nutrient, int* mineral, int* energy) {
         return true;
     }
     return f.satellites_ODP > 0;
+}
+
+int __cdecl is_objective(int base_id) {
+    if (*GameRules & RULES_SCN_VICT_ALL_BASE_COUNT_OBJ
+    || Bases[base_id].event_flags & BEVENT_OBJECTIVE) {
+        return true;
+    }
+    if (*GameRules & RULES_SCN_VICT_SP_COUNT_OBJ) {
+        for (int i = SP_ID_First; i <= SP_ID_Last; i++) {
+            if (project_base((FacilityId)i) == base_id) {
+                return true;
+            }
+        }
+    }
+    if (*GameState & STATE_SCN_VICT_BASE_FACIL_COUNT_OBJ
+    && *ScnVictFacilityObj >= 0 && *ScnVictFacilityObj <= 64
+    && has_fac_built((FacilityId)(*ScnVictFacilityObj), base_id)) {
+        return true;
+    }
+    return false;
 }
 
 int __cdecl own_base_rank(int base_id) {

@@ -47,7 +47,7 @@ uint32_t __cdecl code_at(int x, int y);
 void __cdecl code_set(int x, int y, int code);
 int __cdecl has_temple(int faction_id);
 int __cdecl near_landmark(int x, int y);
-void __cdecl mod_map_wipe();
+void __cdecl map_wipe();
 int __cdecl resource_yield(BaseResType type, int faction_id, int base_id, int x, int y);
 int __cdecl mod_crop_yield(int faction_id, int base_id, int x, int y, int flag);
 int __cdecl mod_mine_yield(int faction_id, int base_id, int x, int y, int flag);

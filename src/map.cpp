@@ -254,7 +254,7 @@ int __cdecl near_landmark(int x, int y) {
 Reset the map to a blank state. Original doesn't wipe unk_1 and owner fields.
 This is simplified by zeroing all fields first and then setting specific fields.
 */
-void __cdecl mod_map_wipe() {
+void __cdecl map_wipe() {
     *MapSeaLevel = 0;
     *MapSeaLevelCouncil = 0;
     *MapLandmarkCount = 0;
@@ -643,8 +643,8 @@ int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag
     }
     if (has_limit && value > 2 && !bonus_energy
     && !has_tech(Rules->tech_preq_allow_3_energy_sq, faction_id)) {
-        value = 2;
         *BaseTerraformReduce += (value - 2);
+        value = 2;
     }
     if (base_id >= 0) {
         if (Bases[base_id].event_flags & BEVENT_HEAT_WAVE) {
@@ -1327,7 +1327,7 @@ void __cdecl mod_world_monsoon(int x, int y) {
     int i = 0, j = 0, x2 = 0, y2 = 0, num = 0;
     const int y_a = *MapAreaY * 5/16;
     const int y_b = *MapAreaY * 11/16;
-    const int limit = max(1024, *MapAreaTiles) * (3 + *MapCloudCover) / 120;
+    const int limit = max(1024, *MapAreaTiles) * (2 + *MapCloudCover) / 128;
 
     for (y = 0; y < *MapAreaY; y++) {
         for (x = y&1; x < *MapAreaX; x+=2) {
@@ -1522,7 +1522,7 @@ void world_generate(uint32_t seed) {
         *GameState |= STATE_DEBUG_MODE;
     }
     MAP* sq;
-    mod_map_wipe();
+    map_wipe();
     ThinkerVars->map_random_value = seed;
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
@@ -1556,6 +1556,7 @@ void world_generate(uint32_t seed) {
     }
     game_srand(seed ^ 0xffff); // For game_rand function, terrain detail and landmark placement
     *MapRandomSeed = (seed % 0x7fff) + 1; // Must be non-zero, supply pod placement
+    *MapLandCoverage = 2 - *MapOceanCoverage;
 
     Points conts;
     uint32_t continents = clamp(*MapAreaSqRoot / 12, 4, 20);

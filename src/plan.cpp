@@ -99,35 +99,6 @@ static int upgrade_value(UNIT* new_unit, UNIT* old_unit) {
     return 0;
 }
 
-static void upgrade_units(int faction_id, int new_unit_id, int old_unit_id) {
-    Faction* f = &Factions[faction_id];
-    // Partial upgrades until energy reserves run out, MP mode not implemented
-    if (!*MultiplayerActive && faction_id > 0
-    && old_unit_id >= 0 && new_unit_id != old_unit_id
-    && new_unit_id / MaxProtoFactionNum == faction_id) {
-        int cost = 10 * mod_upgrade_cost(faction_id, new_unit_id, old_unit_id);
-        for (int i = 0; i < *VehCount; i++) {
-            VEH* veh = &Vehs[i];
-            if (veh->faction_id == faction_id && veh->unit_id == old_unit_id
-            && !veh->moves_spent && !veh->damage_taken && base_at(veh->x, veh->y) >= 0) {
-                if (f->energy_credits < cost + 50) {
-                    break;
-                }
-                f->energy_credits -= cost;
-                f->units_active[new_unit_id]++;
-                f->units_active[old_unit_id]--;
-                veh->unit_id = new_unit_id;
-                int morale_diff = (has_abil(new_unit_id, ABL_TRAINED) != 0)
-                    - (has_abil(old_unit_id, ABL_TRAINED) != 0);
-                veh->morale = clamp(veh->morale + morale_diff, 0, 6);
-                draw_tile(veh->x, veh->y, 1);
-                debug("upgrade_units %d %d %2d %2d cost: %d %s / %s\n",
-                    *CurrentTurn, faction_id, veh->x, veh->y, cost, Units[old_unit_id].name, veh->name());
-            }
-        }
-    }
-}
-
 void design_units(int faction_id) {
     if (!conf.design_units || !faction_id || is_human(faction_id)) {
         return;
@@ -177,9 +148,9 @@ void design_units(int faction_id) {
         while (!old_units.empty()) {
             int old_score = old_units.top().score;
             int old_unit_id = old_units.top().item_id;
-            int num = Factions[fc].units_active[old_unit_id];
-            old_units.pop();
+            int num = veh_count(fc, old_unit_id);
             UNIT* old_unit = &Units[old_unit_id];
+            old_units.pop();
             int best_score = 0;
             int best_id = -1;
             for (int new_unit_id : new_units) {
@@ -193,15 +164,15 @@ void design_units(int faction_id) {
             if (best_id >= 0 && num > 0) {
                 int cost_limit = clamp(plans[fc].defense_modifier/2 + 1, 1, 3)
                     * max(0, Factions[fc].energy_credits - 20) / 4;
-                int cost = mod_upgrade_cost(fc, best_id, old_unit_id);
-                int total_cost = 10 * num * cost;
-                if (cost < 4 + min(5, Factions[fc].energy_credits/256)) {
+                int cost = 10 * mod_upgrade_cost(fc, best_id, old_unit_id);
+                int total_cost = num * cost;
+                if (cost < 50 + min(50, Factions[fc].energy_credits/32)) {
                     debug("upgrade_check %d %d count: %d cost: %d %s / %s\n",
                         *CurrentTurn, fc, num, total_cost, old_unit->name, Units[best_id].name);
                     if (total_cost < cost_limit) {
-                        mod_upgrade_prototype(fc, best_id, old_unit_id, 0);
+                        full_upgrade(fc, best_id, old_unit_id);
                     } else if (old_score > 0) {
-                        upgrade_units(faction_id, best_id, old_unit_id);
+                        part_upgrade(fc, best_id, old_unit_id);
                     }
                 }
             }
