@@ -363,7 +363,7 @@ void __cdecl mod_base_yield() {
             // Replace incorrect specialist types if any used
             if (manage_workers || has_tech(Citizen[spc_id].obsol_tech, faction_id)
             || !has_tech(Citizen[spc_id].preq_tech, faction_id)
-            || (!Citizen[spc_id].psych_bonus && base->pop_size < Rules->min_base_size_specialists)) {
+            || (Citizen[spc_id].psych_bonus < 2 && base->pop_size < Rules->min_base_size_specialists)) {
                 base->specialist_modify(i, best_spc_id);
             }
         }
@@ -915,7 +915,7 @@ void __cdecl mod_base_psych(int base_id) {
     }
     for (int i = 0; i < m->faction_bonus_count; i++) {
         // Number of drones per base made content
-        if (m->faction_bonus_id[i] == FCB_NODRONE) {
+        if (m->faction_bonus_id[i] == RULE_NODRONE) {
             drone_value = max(0, drone_value - m->faction_bonus_val1[i]);
             break;
         }
@@ -1409,10 +1409,7 @@ int __cdecl mod_base_upkeep(int base_id) {
             && !Console_focus(MapWin, base->x, base->y, MapWin->cOwner)) {
                 draw_tiles(base->x, base->y, 2);
             }
-            MFaction* m = &MFactions[base->faction_id];
-            *gender_default = m->noun_gender;
-            *plurality_default = m->is_noun_plural;
-            parse_says(0, m->noun_faction, -1, -1);
+            parse_says(0, parse_set(base->faction_id), -1, -1);
             parse_says(1, base->name, -1, -1);
 
             if (conf.new_base_names) {
@@ -1526,7 +1523,13 @@ void find_relocate_base(int faction) {
         if (best_id >= 0) {
             BASE* b = &Bases[best_id];
             set_fac(FAC_HEADQUARTERS, best_id, 1);
-            draw_tile(b->x, b->y, 0);
+            if (!is_human(faction)) {
+                mod_base_reset(best_id, 0);
+            }
+            draw_tile(b->x, b->y, 2);
+            parse_says(1, Bases[best_id].name, -1, -1);
+            parse_says(2, parse_set(faction), -1, -1);
+            NetMsg_pop(NetMsg, "ESCAPED", 5000, 0, 0);
         }
     }
 }
@@ -1623,9 +1626,9 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
 Calculate the amount of content population before psych modifiers for the current faction.
 */
 int __cdecl base_psych_content_pop() {
-    int faction = (*CurrentBase)->faction_id;
-    assert(valid_player(faction));
-    if (is_human(faction)) {
+    int faction_id = (*CurrentBase)->faction_id;
+    assert(valid_player(faction_id));
+    if (is_human(faction_id)) {
         return conf.content_pop_player[*DiffLevel];
     }
     return conf.content_pop_computer[*DiffLevel];
@@ -1887,7 +1890,7 @@ int __cdecl best_specialist(BASE* base, int econ_val, int labs_val, int psych_va
     for (int i = 0; i < MaxSpecialistNum; i++) {
         if (has_tech(Citizen[i].preq_tech, base->faction_id)
         && !has_tech(Citizen[i].obsol_tech, base->faction_id)
-        && (base->pop_size >= Rules->min_base_size_specialists || Citizen[i].psych_bonus)) {
+        && (Citizen[i].psych_bonus >= 2 || base->pop_size >= Rules->min_base_size_specialists)) {
             int score = econ_val * Citizen[i].econ_bonus
                 + labs_val * Citizen[i].labs_bonus
                 + psych_val * Citizen[i].psych_bonus;
@@ -2185,8 +2188,8 @@ bool has_free_facility(FacilityId item_id, int faction_id) {
     MFaction& m = MFactions[faction_id];
     for (int i = 0; i < m.faction_bonus_count; i++) {
         if (m.faction_bonus_val1[i] == item_id
-        && (m.faction_bonus_id[i] == FCB_FREEFAC
-        || (m.faction_bonus_id[i] == FCB_FREEFAC_PREQ
+        && (m.faction_bonus_id[i] == RULE_FACILITY
+        || (m.faction_bonus_id[i] == RULE_FREEFAC
         && has_tech(Facility[item_id].preq_tech, faction_id)))) {
             return true;
         }
@@ -2276,8 +2279,8 @@ int __cdecl fac_maint(int facility_id, int faction_id) {
 
     for (int i = 0; i < meta.faction_bonus_count; i++) {
         if (meta.faction_bonus_val1[i] == facility_id
-        && (meta.faction_bonus_id[i] == FCB_FREEFAC
-        || (meta.faction_bonus_id[i] == FCB_FREEFAC_PREQ
+        && (meta.faction_bonus_id[i] == RULE_FACILITY
+        || (meta.faction_bonus_id[i] == RULE_FREEFAC
         && has_tech(facility.preq_tech, faction_id)))) {
             return 0;
         }

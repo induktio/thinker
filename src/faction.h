@@ -36,6 +36,18 @@ int faction_might(int faction_id);
 
 void __cdecl set_treaty(int faction1, int faction2, uint32_t treaty, bool add);
 void __cdecl set_agenda(int faction1, int faction2, uint32_t agenda, bool add);
+int __cdecl council_votes(int faction_id);
+int __cdecl eligible(int faction_id);
+int __cdecl great_beelzebub(int faction_id, int is_aggressive);
+int __cdecl great_satan(int faction_id, int is_aggressive);
+int __cdecl aah_ooga(int faction_id, int pact_faction_id);
+int __cdecl climactic_battle();
+int __cdecl at_climax(int faction_id);
+void __cdecl cause_friction(int faction_id, int faction_id_with, int friction);
+int __cdecl get_mood(int friction);
+int __cdecl reputation(int faction_id, int faction_id_with);
+int __cdecl get_patience(int faction_id_with, int faction_id);
+int __cdecl energy_value(int loan_principal);
 int __cdecl mod_social_cost(int faction_id, int* choices);
 int __cdecl mod_society_avail(int soc_category, int soc_model, int faction_id);
 int __cdecl mod_setup_player(int faction_id, int a2, int a3);

@@ -477,7 +477,7 @@ struct CRules {
     int32_t artillery_dmg_denominator;
     int32_t nutrient_cost_multi;
     int32_t mineral_cost_multi;
-    int32_t rules_tech_discovery_rate;
+    int32_t tech_discovery_rate;
     int32_t limit_mineral_inc_for_mine_wo_road;
     int32_t nutrient_effect_mine_sq;
     int32_t min_base_size_specialists;
@@ -529,7 +529,7 @@ struct CRules {
     int32_t retool_penalty_prod_change;
     int32_t retool_exemption;
     int32_t tgl_probe_steal_tech;
-    int32_t tgl_humans_always_contact_tcp;
+    int32_t tgl_humans_always_contact_net;
     int32_t tgl_humans_always_contact_pbem;
     int32_t max_dmg_percent_arty_base_bunker;
     int32_t max_dmg_percent_arty_open;
@@ -537,8 +537,8 @@ struct CRules {
     int32_t freq_global_warming_numerator;
     int32_t freq_global_warming_denominator;
     int32_t normal_start_year;
-    int32_t normal_ending_year_lowest_3_diff;
-    int32_t normal_ending_year_highest_3_diff;
+    int32_t normal_end_year_low_three_diff;
+    int32_t normal_end_year_high_three_diff;
     int32_t tgl_oblit_base_atrocity;
     int32_t base_size_subspace_gen;
     int32_t subspace_gen_req;
@@ -600,7 +600,7 @@ struct CFacility {
     int32_t cost;
     int32_t maint;
     int32_t preq_tech;
-    int32_t free;
+    int32_t free_tech;
     int32_t AI_fight;
     int32_t AI_growth;
     int32_t AI_tech;
@@ -611,7 +611,8 @@ struct CFacility {
 struct CTech {
     int32_t flags;
     char* name;
-    char short_name[12];
+    char short_name[8]; // up to 7 characters in length
+    int32_t padding; // unused
     int32_t AI_growth;
     int32_t AI_tech;
     int32_t AI_wealth;
@@ -635,7 +636,7 @@ struct CAbility {
     char* description;
     char* abbreviation;
     int32_t cost;
-    int32_t unk_1;
+    int32_t unk_1; // only referenced in NetDaemon::synch
     int32_t flags;
     int16_t preq_tech;
     int16_t pad;
@@ -702,7 +703,7 @@ struct CReactor {
     char* name;
     char* name_short;
     int16_t preq_tech;
-    int16_t padding;
+    int16_t power; // Fix: this value is not originally set
 };
 
 struct CWeapon {
@@ -756,17 +757,36 @@ struct CTimeControl {
     int32_t accumulated;
 };
 
+struct CSocialEffect {
+    int economy;
+    int efficiency;
+    int support;
+    int talent;
+    int morale;
+    int police;
+    int growth;
+    int planet;
+    int probe;
+    int industry;
+    int research;
+};
+
+struct CSocialParam {
+    char set1[24];
+    char set2[24];
+    char padding[56];
+};
+
 struct CSocialField {
     char* field_name;
     int32_t soc_preq_tech[4];
     char* soc_name[4];
-    int32_t effects[4][11];
+    CSocialEffect soc_effect[4];
 };
 
-struct CSocialEffect {
-    char set1[24];
-    char set2[24];
-    char padding[56];
+struct CMandate {
+    char* name;
+    char* name_caps;
 };
 
 struct CMight {

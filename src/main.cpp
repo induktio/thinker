@@ -187,6 +187,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->facility_capture_fix = atoi(value);
     } else if (MATCH("territory_border_fix")) {
         cf->territory_border_fix = atoi(value);
+    } else if (MATCH("facility_free_tech")) {
+        cf->facility_free_tech = atoi(value);
     } else if (MATCH("auto_relocate_hq")) {
         cf->auto_relocate_hq = atoi(value);
     } else if (MATCH("simple_hurry_cost")) {
@@ -383,12 +385,12 @@ int opt_handle_error(const char* section, const char* name) {
     return 0;
 }
 
-int opt_list_parse(int* ptr, char* buf, int len, int min_val) {
+int opt_list_parse(int32_t* dst, char* src, int num, int min_val) {
     const char *d=",";
     char *s, *p;
-    p = strtok_r(buf, d, &s);
-    for (int i = 0; i < len && p != NULL; i++, p = strtok_r(NULL, d, &s)) {
-        ptr[i] = max(min_val, atoi(p));
+    p = strtok_r(src, d, &s);
+    for (int i = 0; i < num && p != NULL; i++, p = strtok_r(NULL, d, &s)) {
+        dst[i] = max(min_val, atoi(p));
     }
     return 1;
 }
@@ -397,7 +399,7 @@ int cmd_parse(Config* cf) {
     int argc;
     LPWSTR* argv;
     argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-    for (int i=1; i<argc; i++) {
+    for (int i = 1; i < argc; i++) {
         if (wcscmp(argv[i], L"-smac") == 0) {
             cf->smac_only = 1;
         } else if (wcscmp(argv[i], L"-native") == 0) {
@@ -411,6 +413,19 @@ int cmd_parse(Config* cf) {
     return 1;
 }
 
+void exit_fail(int32_t addr) {
+    char buf[512];
+    snprintf(buf, sizeof(buf),
+        "Error while patching address %08X in the game binary.\n"
+        "This mod requires Alien Crossfire v2.0 terranx.exe in the same folder.", addr);
+    MessageBoxA(0, buf, MOD_VERSION, MB_OK | MB_ICONSTOP);
+    exit(EXIT_FAILURE);
+}
+
+void exit_fail() {
+    exit(EXIT_FAILURE);
+}
+
 DLL_EXPORT DWORD ThinkerModule() {
     return 0;
 }
@@ -421,17 +436,17 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             if (DEBUG && !(debug_log = fopen("debug.txt", "w"))) {
                 MessageBoxA(0, "Error while opening debug.txt file.",
                     MOD_VERSION, MB_OK | MB_ICONSTOP);
-                exit(EXIT_FAILURE);
+                exit_fail();
             }
             if (ini_parse("thinker.ini", option_handler, &conf) < 0) {
                 MessageBoxA(0, "Error while opening thinker.ini file.",
                     MOD_VERSION, MB_OK | MB_ICONSTOP);
-                exit(EXIT_FAILURE);
+                exit_fail();
             }
             if (!cmd_parse(&conf) || !patch_setup(&conf)) {
                 MessageBoxA(0, "Error while loading the game.",
                     MOD_VERSION, MB_OK | MB_ICONSTOP);
-                exit(EXIT_FAILURE);
+                exit_fail();
             }
             *EngineVersion = MOD_VERSION;
             *EngineDate = MOD_DATE;

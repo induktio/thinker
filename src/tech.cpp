@@ -32,11 +32,11 @@ void __cdecl mod_tech_effects(int faction_id) {
         }
     }
     for (int i = 0; i < m->faction_bonus_count; i++) {
-        if (m->faction_bonus_id[i] == FCB_FUNGNUTRIENT) {
+        if (m->faction_bonus_id[i] == RULE_FUNGNUTRIENT) {
             f->tech_fungus_nutrient += m->faction_bonus_val1[i];
-        } else if (m->faction_bonus_id[i] == FCB_FUNGMINERALS) {
+        } else if (m->faction_bonus_id[i] == RULE_FUNGMINERALS) {
             f->tech_fungus_mineral += m->faction_bonus_val1[i];
-        } else if (m->faction_bonus_id[i] == FCB_FUNGENERGY) {
+        } else if (m->faction_bonus_id[i] == RULE_FUNGENERGY) {
             f->tech_fungus_energy += m->faction_bonus_val1[i];
         }
     }
@@ -142,23 +142,325 @@ int __cdecl mod_tech_rate(int faction_id) {
     return (f->tech_cost > 0 ? f->tech_cost : 9999);
 }
 
-int __cdecl mod_tech_val(int tech_id, int faction_id, int flag) {
-    int value = tech_val(tech_id, faction_id, flag);
-    if (conf.tech_balance && thinker_enabled(faction_id)) {
-        if (tech_id == Weapon[WPN_TERRAFORMING_UNIT].preq_tech
-        || tech_id == Weapon[WPN_SUPPLY_TRANSPORT].preq_tech
-        || tech_id == Weapon[WPN_PROBE_TEAM].preq_tech
-        || tech_id == Facility[FAC_RECYCLING_TANKS].preq_tech
-        || tech_id == Facility[FAC_CHILDREN_CRECHE].preq_tech
-        || tech_id == Rules->tech_preq_allow_3_energy_sq
-        || tech_id == Rules->tech_preq_allow_3_minerals_sq
-        || tech_id == Rules->tech_preq_allow_3_nutrients_sq) {
-            value += 50;
+/*
+Craft an output string related to a specific technology. For techs outside the standard
+range, craft a string related to world map, comm links or prototypes.
+*/
+void __cdecl say_tech(char* output, int tech_id, int incl_category) {
+    char* buf = &output[strlen(output)];
+    if (tech_id < -1) {
+        snprintf(buf, LineBufLen, "%s", label_get(310)); // "Not Available"
+    } else if (tech_id < 0) {
+        snprintf(buf, LineBufLen, "%s", label_get(25)); // "NONE"
+    } else if (tech_id == 9999) {
+        snprintf(buf, LineBufLen, "%s", label_get(306)); // "World Map"
+    } else if (tech_id < MaxTechnologyNum) {
+        if (incl_category) {
+            snprintf(buf, LineBufLen, "%s (%s%d)", Tech[tech_id].name,
+                label_get(629 + tech_category(tech_id)), // 'E#', 'D#', 'B#', 'C#'
+                tech_level(tech_id, 0));
+        } else {
+            snprintf(buf, LineBufLen, "%s", Tech[tech_id].name);
         }
+    } else if (tech_id < 97) {
+        int faction_id = tech_id - MaxTechnologyNum;
+        if (*GameLanguage) {
+            snprintf(buf, LineBufLen, "%s (%s)", label_get(487), // 'Comm Frequency'
+                parse_set(faction_id));
+        } else {
+            snprintf(buf, LineBufLen, "%s %s",
+                MFactions[faction_id].adj_name_faction, label_get(487)); // 'Comm Frequency'
+        }
+    } else {
+        char* name = Units[tech_id - 97].name;
+        snprintf(buf, LineBufLen, "%s %s", name, label_get(185)); // 'Prototype'
     }
-    if (conf.debug_verbose) {
-        debug("tech_value %d %d value: %3d tech: %2d %s\n",
-        *CurrentTurn, faction_id, value, tech_id, Tech[tech_id].name);
+}
+
+/*
+Determine what category is the most important for tech_id.
+If there is a tie, the order of precedence is as follows: growth > tech > wealth > power.
+Return Value: Tech category id: growth (0), tech (1), wealth (2) or power (3).
+*/
+int __cdecl tech_category(int tech_id) {
+    int category = TCAT_GROWTH;
+    int value = Tech[tech_id].AI_growth;
+    if (Tech[tech_id].AI_tech > value) {
+        category = TCAT_TECH;
+        value = Tech[tech_id].AI_tech;
+    }
+    if (Tech[tech_id].AI_wealth > value) {
+        category = TCAT_WEALTH;
+        value = Tech[tech_id].AI_wealth;
+    }
+    return (Tech[tech_id].AI_power > value) ? TCAT_POWER : category;
+}
+
+/*
+Determine if preq_tech_id is a prerequisite of parent_tech_id within descending range.
+Return Value: Is preq_tech_id prerequisite of parent_tech_id? true/false
+*/
+int __cdecl tech_is_preq(int preq_tech_id, int parent_tech_id, int range) {
+    if (preq_tech_id < 0 || parent_tech_id < 0) {
+        return false;
+    }
+    if (preq_tech_id == parent_tech_id) {
+        return true;
+    }
+    if (range <= 0) {
+        return false;
+    }
+    return tech_is_preq(preq_tech_id, Tech[parent_tech_id].preq_tech1, range - 1)
+        || tech_is_preq(preq_tech_id, Tech[parent_tech_id].preq_tech2, range - 1);
+}
+
+/*
+Determine how valuable the specified tech_id is to a faction. This tech_id either corresponds
+to a technology (0-88), another faction (89-96) or a prototype (97-608). The 3rd parameter
+determines whether a simplistic or extended calculation is required for technology.
+Return Value: Value of tech_id to the specified faction
+*/
+int __cdecl mod_tech_val(int tech_id, int faction_id, int simple_calc) {
+    Faction* f = &Factions[faction_id];
+    MFaction* m = &MFactions[faction_id];
+    if (tech_id == 9999) {
+        return 2;
+    }
+    int value;
+    if (tech_id < MaxTechnologyNum) {
+        CTech* tech = &Tech[tech_id];
+        int enemy_count = 0;
+        for (int i = 1; i < MaxPlayerNum; i++) {
+            if (i != faction_id && has_treaty(faction_id, i, DIPLO_VENDETTA)) {
+                enemy_count++;
+            }
+        }
+        int factor_ai = 1;
+        if (!simple_calc) {
+            factor_ai = (*GameRules & RULES_BLIND_RESEARCH) ? 4 : 2;
+        }
+        value = tech->AI_growth * (factor_ai * f->AI_growth + 1)
+            + tech->AI_wealth * (factor_ai * f->AI_wealth + 1)
+            + tech->AI_tech * (factor_ai * f->AI_tech + 1)
+            + tech->AI_power * (factor_ai * f->AI_power + 1);
+        int base_count = Factions[faction_id].base_count;
+        if ((!tech->AI_power || (!f->AI_power && !enemy_count))
+        && (!tech->AI_tech || !f->AI_tech)
+        && (!tech->AI_wealth || !f->AI_wealth)
+        && (!tech->AI_growth || (!f->AI_growth && base_count >= 4))) {
+            value = (value + 1) / 2;
+        }
+        bool is_player = is_human(faction_id);
+        if (!is_player && !has_tech(tech_id, faction_id) && simple_calc) {
+            int owners = __builtin_popcount(TechOwners[tech_id]);
+            if (owners > 1) {
+                value += 2 - 2 * owners;
+            }
+            int search_lvl = 1;
+            for (int i = 0; i < MaxTechnologyNum; i++) {
+                if (has_tech(i, faction_id)) {
+                    int current_lvl = tech_level(i, 0);
+                    if (search_lvl < current_lvl) {
+                        search_lvl = current_lvl;
+                    }
+                }
+            }
+            int tech_id_lvl = tech_level(tech_id, 0);
+            if (tech_id_lvl < search_lvl) {
+                value = value * (tech_id_lvl + 1) / (search_lvl + 1);
+            }
+            if (value < 1) {
+                value = 1;
+            }
+        }
+        if (simple_calc) {
+            assert(value == tech_val(tech_id, faction_id, simple_calc));
+            return value;
+        }
+        if (base_count) {
+            for (int region = 1; region < MaxRegionLandNum; region++) {
+                if (!bad_reg(region)) {
+                    int pwr_base = f->region_total_bases[region] * tech->AI_power;
+                    int plan = f->region_base_plan[region];
+                    if (plan == PLAN_NAVAL_TRANSPORT && enemy_count && !is_player) {
+                        value += (pwr_base / base_count);
+                    } else if (plan == PLAN_DEFENSE) {
+                        value += (pwr_base * 4) / (base_count * (is_player + 1));
+                    } else if (plan == PLAN_OFFENSE) {
+                        value += (pwr_base * ((f->best_weapon_value
+                            >= f->enemy_best_weapon_value) ? 2 : 4))
+                             / (base_count * (is_player + 1));
+                    } else {
+                        for (int i = 1; i < MaxPlayerNum; i++) {
+                            if (i != faction_id && Factions[i].region_total_bases[region]
+                            && f->region_total_bases[region]
+                            && has_treaty(faction_id, i, DIPLO_COMMLINK)
+                            && (!has_treaty(faction_id, i, DIPLO_PACT | DIPLO_TREATY)
+                            || has_treaty(faction_id, i, DIPLO_WANT_REVENGE))) {
+                                value += (pwr_base / (base_count * (is_player + 1)));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (has_tech(tech_id, faction_id)) {
+            return value;
+        }
+        if (climactic_battle()
+        && tech_is_preq(tech_id, Facility[FAC_ASCENT_TO_TRANSCENDENCE].preq_tech, 2)) {
+            value *= 4;
+        }
+        if (f->SE_planet_base > 0 && f->AI_growth) {
+            if (tech_is_preq(tech_id, TECH_CentMed, 9999)) {
+                value *= 3;
+            }
+            if (tech_is_preq(tech_id, TECH_PlaEcon, 9999)) {
+                value *= 2;
+            }
+            if (tech_is_preq(tech_id, TECH_AlphCen, 3)) {
+                value *= 2;
+            }
+        }
+        if (f->SE_probe_base <= 0) {
+            if (tech_is_preq(tech_id, Facility[FAC_HUNTER_SEEKER_ALGORITHM].preq_tech, f->AI_tech + 2)) {
+                if (!f->AI_power) {
+                    value *= 2;
+                }
+                if (f->AI_tech) {
+                    value *= 2;
+                }
+            }
+        }
+        if (f->AI_growth && tech_is_preq(tech_id, TECH_DocInit, 2)) {
+            value *= 2;
+        }
+        if ((f->AI_wealth || !*MapCloudCover) && tech_is_preq(tech_id, TECH_EnvEcon, 9999)) {
+            value *= 2;
+        }
+        if (Tech[tech_id].flags & TFLAG_SECRETS && !TechOwners[tech_id]
+        && !(*GameRules & RULES_BLIND_RESEARCH)) {
+            value *= (f->AI_power + 1) * 2;
+        }
+        if (m->rule_psi > 0) {
+            if (tech_is_preq(tech_id, Facility[FAC_DREAM_TWISTER].preq_tech, 9999)) {
+                value *= 2;
+            }
+        } else {
+            int preq_tech_fusion = Reactor[REC_FUSION - 1].preq_tech;
+            if (tech_id == preq_tech_fusion) {
+                value *= 2;
+            }
+            if (tech_id == Reactor[REC_QUANTUM - 1].preq_tech) {
+                value *= 2;
+            }
+            if (tech_is_preq(tech_id, preq_tech_fusion, 9999)) {
+                value++;
+            }
+            if (tech_is_preq(tech_id, preq_tech_fusion, 1)
+            && !(*GameRules & RULES_BLIND_RESEARCH)) {
+                value *= 2;
+            }
+        }
+        int eco_dmg_unk = f->unk_47 / clamp(base_count, 1, 9999);
+        if (eco_dmg_unk > f->AI_power
+        && (tech_is_preq(tech_id, Facility[FAC_HYBRID_FOREST].preq_tech, 9999)
+        || tech_is_preq(tech_id, Facility[FAC_TREE_FARM].preq_tech, 9999)
+        || tech_is_preq(tech_id, Facility[FAC_CENTAURI_PRESERVE].preq_tech, 9999)
+        || tech_is_preq(tech_id, Facility[FAC_TEMPLE_OF_PLANET].preq_tech, 9999))) {
+            value += eco_dmg_unk;
+        }
+        if (m->rule_population > 0) {
+            if (tech_is_preq(tech_id, Facility[FAC_HAB_COMPLEX].preq_tech, 9999)) {
+                value *= 2;
+            } else if (*CurrentTurn > 250
+            && tech_is_preq(tech_id, Facility[FAC_HABITATION_DOME].preq_tech, 9999)) {
+                value = (value * 3) / 2;
+            }
+        }
+        if (f->AI_power) {
+            for (int i = 0; i < MaxWeaponNum; i++) {
+                if (Weapon[i].offense_value) {
+                    int weap_preq_tech = Weapon[i].preq_tech;
+                    if (tech_id == weap_preq_tech) {
+                        value *= (is_player + 3);
+                    } else if (tech_is_preq(tech_id, weap_preq_tech, 1)) {
+                        value *= (is_player + 2);
+                    }
+                }
+            }
+        }
+        if (f->AI_tech || !f->AI_power) {
+            for (int i = 0; i < MaxTechnologyNum; i++) {
+                if (!has_tech(i, faction_id) && Tech[i].flags & TFLAG_SECRETS
+                && !TechOwners[i] && tech_is_preq(tech_id, i, 1)) {
+                    value *= 3;
+                }
+            }
+        }
+        if (tech_is_preq(tech_id, Units[BSC_FORMERS].preq_tech, 9999)
+        && !has_tech(Units[BSC_FORMERS].preq_tech, faction_id)) {
+            value *= 2;
+            if (is_player) {
+                value *= 2;
+            }
+        }
+        if (tech_is_preq(tech_id, Chassis[CHS_FOIL].preq_tech, 9999)
+        && !has_tech(Chassis[CHS_FOIL].preq_tech, faction_id)) {
+            bool toggle = false;
+            for (int region = 1; region < MaxRegionLandNum; region++) {
+                if (f->region_total_bases[region]) {
+                    for (int i = 1; i < MaxPlayerNum; i++) {
+                        if (faction_id != i && !Factions[i].region_total_bases[region]) {
+                            toggle = true;
+                            break;
+                        }
+                    }
+                    if (toggle && f->region_visible_tiles[region]
+                    >= Continents[region].tile_count) {
+                        value *= 3;
+                        if (is_player) {
+                            value *= 2;
+                        }
+                        break;
+                    }
+                }
+            }
+            if (toggle) {
+                value = (value * 2) + 4;
+            }
+        }
+        assert(value == tech_val(tech_id, faction_id, simple_calc));
+        if (conf.tech_balance) {
+            if (tech_id == Weapon[WPN_TERRAFORMING_UNIT].preq_tech
+            || tech_id == Weapon[WPN_SUPPLY_TRANSPORT].preq_tech
+            || tech_id == Facility[FAC_RECYCLING_TANKS].preq_tech
+            || tech_id == Facility[FAC_CHILDREN_CRECHE].preq_tech
+            || tech_id == Facility[FAC_RECREATION_COMMONS].preq_tech
+            || tech_id == Rules->tech_preq_allow_3_nutrients_sq
+            || tech_id == Rules->tech_preq_allow_3_minerals_sq
+            || tech_id == Rules->tech_preq_allow_3_energy_sq) {
+                value += (enemy_count ? 20 : 40);
+            }
+        }
+    } else if (tech_id < 97) { // Factions
+        int factor = 1;
+        int faction_id_2 = tech_id - MaxTechnologyNum;
+        if (!mod_wants_to_attack(faction_id, faction_id_2, 0)) {
+            factor++;
+        }
+        if (!mod_wants_to_attack(faction_id_2, faction_id, 0)) {
+            factor++;
+        }
+        value = factor * (factor / (f->AI_fight + 2));
+        assert(value == tech_val(tech_id, faction_id, simple_calc));
+    } else {  // Prototypes
+        UNIT* u = &Units[tech_id - 97];
+        value = clamp(u->offense_value(), 1, 2)
+            + clamp(u->defense_value(), 1, 2)
+            + clamp((int)u->speed(), 1, 2)
+            + u->reactor_id - 2;
+        assert(value == tech_val(tech_id, faction_id, simple_calc));
     }
     return value;
 }
@@ -169,7 +471,8 @@ int __cdecl mod_tech_ai(int faction_id) {
     for (int i = 0; i < MaxTechnologyNum; i++) {
         if (mod_tech_avail(i, faction_id)) {
             int tech_value = mod_tech_val(i, faction_id, false);
-            int value;
+            debug("tech_val %d %d value: %3d tech: %2d %s\n",
+            *CurrentTurn, faction_id, tech_value, i, Tech[i].name);
             if (*GameRules & RULES_BLIND_RESEARCH) {
                 if (is_human(faction_id) && i == Units[BSC_FORMERS].preq_tech
                 && (Factions[faction_id].AI_growth || Factions[faction_id].AI_wealth)) {
@@ -179,7 +482,7 @@ int __cdecl mod_tech_ai(int faction_id) {
                 tech_value = preq ? (tech_value << 8) / preq : 0;
             }
             // Multiple functions might be related to network multiplayer
-            value = is_human(faction_id) ? game_random(0, tech_value + 1)
+            int value = is_human(faction_id) ? game_random(0, tech_value + 1)
                 : (tech_value > 0 ? game_rand() % (tech_value + 1) : 0);
             if (value > best_value) {
                 best_value = value;
@@ -190,6 +493,9 @@ int __cdecl mod_tech_ai(int faction_id) {
     return tech_id;
 }
 
+/*
+Calculate technology level for tech_id. Replaces function tech_recurse.
+*/
 int tech_level(int tech_id, int lvl) {
     if (tech_id < 0 || tech_id > TECH_TranT || lvl > TECH_TranT) {
         return lvl;
@@ -229,7 +535,7 @@ int tech_cost(int faction_id, int tech_id) {
         * *MapAreaSqRoot / 56.0
         * max(1, m->rule_techcost) / 100.0
         * (*GameRules & RULES_TECH_STAGNATION ? conf.tech_stagnate_rate / 100.0 : 1.0)
-        * 100.0 / max(1, Rules->rules_tech_discovery_rate)
+        * 100.0 / max(1, Rules->tech_discovery_rate)
         * (1.0 - 0.05*min(6, owners));
 
     debug("tech_cost %d %d base: %7.2f diff: %.2f cost: %7.2f "
@@ -240,5 +546,57 @@ int tech_cost(int faction_id, int tech_id) {
     return clamp((int)cost, 1, 99999999);
 }
 
+int tech_base_value(int tech_id, int faction_id) {
+    CTech& tech = Tech[tech_id];
+    Faction& plr = Factions[faction_id];
+    AIPlans& plan = plans[faction_id];
+    assert(valid_player(faction_id));
+    if (faction_id < 0 || tech_id < 0 || tech_id >= MaxTechnologyNum) {
+        return 0;
+    }
+    int def_value = (plan.enemy_base_range < 20) + plan.defense_modifier;
+    int level = clamp(tech_level(tech_id, 0), 1, 16);
+    int owners = __builtin_popcount(TechOwners[tech_id]);
+    int weights = (tech.flags & (TFLAG_IMPROVE_PROBE|TFLAG_INC_COMMERCE) ? 4 : 0)
+        + (plr.AI_growth + 1 + (plr.base_count < 8 + *MapAreaSqRoot/4)) * tech.AI_growth
+        + (plr.AI_power + 1 + (def_value > 2)) * tech.AI_power
+        + (plr.AI_tech + 1 + (plr.SE_research > 0)) * tech.AI_tech
+        + (plr.AI_wealth + 1 + (plr.SE_economy > 0)) * tech.AI_wealth;
+
+    for (int i = 0; i < MaxChassisNum; i++) {
+        if (Chassis[i].preq_tech == tech_id) {
+            weights += (Chassis[i].triad == TRIAD_AIR ? 8 : 4);
+        }
+    }
+    for (int i = 0; i < MaxAbilityNum; i++) {
+        if (Ability[i].preq_tech == tech_id && i != ABL_ID_SLOW && i != ABL_ID_CARRIER
+        && i != ABL_ID_REPAIR && i != ABL_ID_DEEP_PRESSURE_HULL && i != ABL_ID_HEAVY_TRANSPORT) {
+            weights += 4;
+        }
+    }
+    for (int i = 0; i < MaxWeaponNum; i++) {
+        if (Weapon[i].preq_tech == tech_id
+        && (!Weapon[i].offense_value || Weapon[i].offense_value > plr.best_weapon_value)) {
+            weights += 8;
+        }
+    }
+    for (int i = 0; i < MaxArmorNum; i++) {
+        if (Armor[i].preq_tech == tech_id && Armor[i].defense_value > plr.best_armor_value) {
+            weights += 4;
+        }
+    }
+    int value = (clamp(*CurrentTurn/2, 0, 80) + 25*level + 5*level*level)
+        * clamp(weights + 32, 32, 96) / 32;
+
+    if (*GameRules & RULES_TECH_STAGNATION) {
+        value = value * 3 / 2;
+    }
+    if (owners > 1) {
+        value = value * max(2, 7 - owners) / 8;
+    }
+    debugw("tech_base_value %d level: %d owners: %d weights: %d value: %d tech: %d %s\n",
+    faction_id, level, owners, weights, value, tech_id, Tech[tech_id].name);
+    return value;
+}
 
 

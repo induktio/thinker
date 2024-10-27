@@ -251,6 +251,13 @@ enum TechFlags {
     TFLAG_INC_NUTRIENT_FUNGUS = 0x100,
 };
 
+enum TechCategory {
+    TCAT_GROWTH = 0,
+    TCAT_TECH = 1,
+    TCAT_WEALTH = 2,
+    TCAT_POWER = 3,
+};
+
 enum GameState {
     STATE_GAME_DONE = 0x1,
     STATE_UNK_2 = 0x2,
@@ -425,26 +432,32 @@ enum DiffLevel {
     DIFF_TRANSCEND = 5,
 };
 
-enum FactionBonusType {
-    FCB_FREETECH = 0,
-    FCB_FREEUNIT = 1,
-    FCB_FREEFAC = 2,
-    FCB_SOCIAL = 3,
-    FCB_IMMUNITY = 4,
-    FCB_IMPUNITY = 5,
-    FCB_PENALTY = 6,
-    FCB_FUNGNUTRIENT = 7,
-    FCB_FUNGMINERALS = 8,
-    FCB_FUNGENERGY = 9,
-    FCB_ROBUST = 10,
-    FCB_VOTES = 11,
-    FCB_FREEFAC_PREQ = 12,
-    FCB_REVOLT = 13,
-    FCB_NODRONE = 14,
-    FCB_FREEABIL_PREQ = 15,
-    FCB_PROBECOST = 16,
-    FCB_DEFENSE = 17,
-    FCB_OFFENSE = 18,
+enum FactionGender {
+    GENDER_MALE = 0,
+    GENDER_FEMALE = 1,
+    GENDER_NEUTRAL = 2,
+};
+
+enum FactionRuleType {
+    RULE_TECH = 0,
+    RULE_UNIT = 1,
+    RULE_FACILITY = 2,
+    RULE_SOCIAL = 3,
+    RULE_IMMUNITY = 4,
+    RULE_IMPUNITY = 5,
+    RULE_PENALTY = 6,
+    RULE_FUNGNUTRIENT = 7,
+    RULE_FUNGMINERALS = 8,
+    RULE_FUNGENERGY = 9,
+    RULE_ROBUST = 10,
+    RULE_VOTES = 11,
+    RULE_FREEFAC = 12,
+    RULE_REVOLT = 13,
+    RULE_NODRONE = 14,
+    RULE_FREEABIL = 15,
+    RULE_PROBECOST = 16,
+    RULE_DEFENSE = 17,
+    RULE_OFFENSE = 18,
 };
 
 enum FactionRuleFlags {
@@ -548,6 +561,18 @@ enum PlayerFlagsExtended {
     PFLAG_EXT_STRAT_LOTS_MISSILES = 0x10,
     PFLAG_EXT_SHAMELESS_BETRAY_HUMANS = 0x20,
     PFLAG_EXT_STRAT_LOTS_ARTILLERY = 0x40,
+};
+
+enum PlayerMood {
+    MOOD_MAGNANIMOUS = 0,
+    MOOD_SOLICITOUS = 1,
+    MOOD_COOPERATIVE = 2,
+    MOOD_NONCOMMITTAL = 3,
+    MOOD_AMBIVALENT = 4,
+    MOOD_OBSTINATE = 5,
+    MOOD_QUARRELSOME = 6,
+    MOOD_BELLIGERENT = 7,
+    MOOD_SEETHING = 8,
 };
 
 enum MapItem {

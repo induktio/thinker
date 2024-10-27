@@ -71,7 +71,7 @@ Base hurry feature is able to use AI energy reserves to occasionally hurry base 
 
 Social AI feature will decide the social engineering models the AI factions will choose. It will attempt to take into account the various cumulative/non-linear effects of the society models and any bonuses provided by the secret projects. The AI is now capable of pop-booming if enough growth is attainable, and it will also try to avoid pacifist drones by switching out of SE models with too many police penalties. All the SE model effects are moddable because the AI is not hardcoded in any particular choices. This feature is also capable of managing all the custom factions.
 
-Tech balance feature will prioritize certain important techs for the AIs when choosing what to research, such as the requirements for formers, crawlers, recycling tanks, children's creches, and the 3 technologies to allow the production of more than 2 resources per square. If these techs are not available for research, the tech progression is unaffacted by this feature. It will also not affect player faction research in any way.
+Tech balance feature will prioritize certain important techs when choosing blind research targets, such as the requirements for formers, crawlers, recycling tanks, children's creches, recreation commons, and the 3 technologies to allow the production of more than 2 resources per square. If these techs are not available for research, the tech progression is unaffacted by this feature.
 
 
 Diplomacy changes
@@ -433,6 +433,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 53. Fix GSP defense bonus range sometimes not being accurate at three tiles like the manual implies.
 54. Fix inconsistent effects with unit repair facilities and Citizens Defense Force when the base tile is defended by an unit owned by third faction. The facility or the secret project providing it must be built by the base owner for it to have an effect.
 55. Fix issues where the game did not calculate upgrade costs correctly when the unit count exceeded 255. The costs will be applied correctly even if Security Nexus may show an inaccurate number.
+56. Patch the game to also parse "Free = No longer supported" techs defined for each facility. This causes new bases to have these facilities built for free when `facility_free_tech` option is enabled. This does not exclude facility maintenance costs.
 
 
 Scient's patch

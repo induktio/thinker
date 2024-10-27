@@ -2,6 +2,9 @@
 
 #include "main.h"
 
+extern const char* AlphaFile;
+extern const char* ScriptFile;
+
 const uint32_t DefaultBasePref = PREF_ADV_RADIO_BTN_NOT_SEL_SING_CLK | PREF_AUTO_FORMER_BUILD_ADV
     | PREF_AUTO_FORMER_PLANT_FORESTS | PREF_AUTO_END_MOVE_SPOT_VEH_WAR
     | PREF_AUTO_END_MOVE_SPOT_VEH_TRUCE | PREF_AUTO_END_MOVE_SPOT_VEH_TREATY
@@ -30,12 +33,27 @@ static_assert(DefaultMorePref == 0x327168, "");
 static_assert(DefaultWarnPref == 0x3C3A9, "");
 static_assert(DefaultRules == 0x1A0E, "");
 
+int __cdecl tech_name(char* name);
+int __cdecl chas_name(char* name);
+int __cdecl weap_name(char* name);
+int __cdecl arm_name(char* name);
+int __cdecl tech_item();
+int __cdecl read_basic_rules();
+int __cdecl read_tech();
+void __cdecl clear_faction(MFaction* plr);
+void __cdecl read_faction2(int faction_id);
+void __cdecl read_faction(MFaction* plr, int toggle);
+int __cdecl read_factions();
+void __cdecl noun_item(int32_t* gender, int32_t* plural);
+int __cdecl read_units();
+int __cdecl read_rules(int tgl_all_rules);
 char* __cdecl prefs_get2(const char* key_name, const char* default_value, int use_default);
+int __cdecl prefs_get(const char* key_name, int default_value, int use_default);
+void prefs_read(char* buf, size_t buf_len, const char* key_name, const char* default_value, int use_default);
 uint32_t __cdecl default_prefs();
 uint32_t __cdecl default_prefs2();
 uint32_t __cdecl default_warn();
 uint32_t __cdecl default_rules();
-int __cdecl prefs_get(const char* key_name, int default_value, int use_default);
 void __cdecl prefs_fac_load();
 void __cdecl prefs_load(int use_default);
 void __cdecl prefs_put2(const char* key_name, const char* value);

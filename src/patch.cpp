@@ -80,49 +80,6 @@ int __cdecl MapWin_gen_terrain_nearby_fungus(int x, int y) {
     return k;
 }
 
-int __cdecl mod_read_basic_rules() {
-    // read_basic_rules may be called multiple times
-    int value = read_basic_rules();
-    if (DEBUG && value == 0 && conf.magtube_movement_rate > 0) {
-        int reactor_value = REC_FISSION;
-        for (VehReactor r : {REC_FUSION, REC_QUANTUM, REC_SINGULARITY}) {
-            if (Reactor[r - 1].preq_tech != TECH_Disable) {
-                reactor_value = r;
-            }
-        }
-        for (int i = 0; i < MaxChassisNum; i++) {
-            if (Chassis[i].speed < 1 || Chassis[i].preq_tech == TECH_Disable) {
-                continue;
-            }
-            int multiplier = Rules->move_rate_roads * conf.magtube_movement_rate;
-            int base_speed = Chassis[i].speed + 1; // elite bonus
-            if (Chassis[i].triad == TRIAD_AIR) {
-                base_speed += 2*reactor_value; // triad bonus
-                if (!Chassis[i].missile) {
-                    if (Facility[FAC_CLOUDBASE_ACADEMY].preq_tech != TECH_Disable) {
-                        base_speed += 2;
-                    }
-                    if (Ability[ABL_ID_FUEL_NANOCELLS].preq_tech != TECH_Disable) {
-                        base_speed += 2;
-                    }
-                    if (Ability[ABL_ID_ANTIGRAV_STRUTS].preq_tech != TECH_Disable) {
-                        base_speed += 2*reactor_value;
-                    }
-                }
-            } else {
-                base_speed += 1; // antigrav struts
-            }
-            debug("chassis_speed %d %d %d %s\n",
-                i, base_speed, base_speed * multiplier, Chassis[i].offsv1_name);
-        }
-    }
-    if (value == 0 && conf.magtube_movement_rate > 0) {
-        conf.road_movement_rate = conf.magtube_movement_rate;
-        Rules->move_rate_roads *= conf.magtube_movement_rate;
-    }
-    return value;
-}
-
 /*
 Fix possible crash when say_orders is called without CurrentBase pointer being set.
 */
@@ -191,24 +148,6 @@ BOOL WINAPI ModPeekMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsg
     return PeekMessage(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, wRemoveMsg);
 }
 
-DWORD WINAPI ModGetPrivateProfileStringA(LPCSTR lpAppName, LPCSTR lpKeyName,
-LPCSTR lpDefault, LPSTR lpReturnedString, DWORD nSize, LPCSTR lpFileName)
-{
-//    debug("GET %s\t%s\t%s\n", lpAppName, lpKeyName, lpDefault);
-    if (!strcmp(lpAppName, GameAppName)) {
-        if (conf.directdraw >= 0 && !strcmp(lpKeyName, "DirectDraw")) {
-            strncpy(lpReturnedString, (conf.directdraw ? "1" : "0"), 2);
-            return 1;
-        }
-        if (conf.disable_opening_movie >= 0 && !strcmp(lpKeyName, "DisableOpeningMovie")) {
-            strncpy(lpReturnedString, (conf.disable_opening_movie ? "1" : "0"), 2);
-            return 1;
-        }
-    }
-    return GetPrivateProfileStringA(lpAppName, lpKeyName,
-        lpDefault, lpReturnedString, nSize, lpFileName);
-}
-
 /*
 Override Windows API call to give fake screensize values to SMACX to set the game resolution.
 */
@@ -228,15 +167,6 @@ ATOM WINAPI ModRegisterClassA(WNDCLASS* pstWndClass) {
     }
     pstWndClass->lpfnWndProc = ModWinProc;
     return RegisterClassA(pstWndClass);
-}
-
-void exit_fail(int32_t addr) {
-    char buf[512];
-    snprintf(buf, sizeof(buf),
-        "Error while patching address %08X in the game binary.\n"
-        "This mod requires Alien Crossfire v2.0 terranx.exe in the same folder.", addr);
-    MessageBoxA(0, buf, MOD_VERSION, MB_OK | MB_ICONSTOP);
-    exit(EXIT_FAILURE);
 }
 
 /*
@@ -394,7 +324,6 @@ bool patch_setup(Config* cf) {
     *(int32_t*)PeekMessageImport = (int32_t)ModPeekMessage;
     *(int32_t*)RegisterClassImport = (int32_t)ModRegisterClassA;
     *(int32_t*)GetSystemMetricsImport = (int32_t)ModGetSystemMetrics;
-    *(int32_t*)GetPrivateProfileStringAImport = (int32_t)ModGetPrivateProfileStringA;
 
     if (!VirtualProtect(AC_IMPORT_BASE, AC_IMPORT_LEN, oldattrs, &attrs)) {
         return false;
@@ -404,7 +333,7 @@ bool patch_setup(Config* cf) {
         return false;
     }
     // Apply Scient's Patch changes first
-    for(auto& item : AXPatchData) {
+    for (auto& item : AXPatchData) {
         uint8_t* addr = (uint8_t*)(item.address);
         if(*addr != item.old_byte && *addr != item.new_byte
         && (addr < AXSkipVerifyStart || addr > AXSkipVerifyEnd)) {
@@ -446,12 +375,35 @@ bool patch_setup(Config* cf) {
     write_jump(0x501350, (int)mod_morale_alien);
     write_jump(0x501500, (int)psi_factor);
     write_jump(0x527290, (int)mod_faction_upkeep);
+    write_jump(0x52AD30, (int)council_votes);
+    write_jump(0x52AE20, (int)eligible);
+    write_jump(0x539B70, (int)great_beelzebub);
+    write_jump(0x539C00, (int)great_satan);
+    write_jump(0x539D40, (int)aah_ooga);
+    write_jump(0x539E40, (int)climactic_battle);
+    write_jump(0x539EF0, (int)at_climax);
+    write_jump(0x53A030, (int)cause_friction);
+    write_jump(0x53A090, (int)get_mood);
+    write_jump(0x53A100, (int)reputation);
+    write_jump(0x53A150, (int)get_patience);
+    write_jump(0x53A1C0, (int)energy_value);
     write_jump(0x55BB30, (int)set_treaty);
     write_jump(0x55BBA0, (int)set_agenda);
     write_jump(0x579A30, (int)add_goal);
     write_jump(0x579B70, (int)add_site);
     write_jump(0x579D80, (int)wipe_goals);
     write_jump(0x579F80, (int)want_monolith);
+    write_jump(0x584D60, (int)tech_name);
+    write_jump(0x584E40, (int)chas_name);
+    write_jump(0x584F40, (int)weap_name);
+    write_jump(0x585030, (int)arm_name);
+    write_jump(0x585170, (int)read_basic_rules);
+    write_jump(0x585E30, (int)read_tech);
+    write_jump(0x586050, (int)read_faction2);
+    write_jump(0x586090, (int)read_faction);
+    write_jump(0x586F30, (int)read_factions);
+    write_jump(0x587240, (int)read_units);
+    write_jump(0x5873C0, (int)read_rules);
     write_jump(0x591040, (int)map_wipe);
     write_jump(0x592250, (int)say_loc);
     write_jump(0x59D980, (int)prefs_get2);
@@ -467,6 +419,8 @@ bool patch_setup(Config* cf) {
     write_jump(0x59E5D0, (int)prefs_save);
     write_jump(0x59E950, (int)prefs_use);
     write_jump(0x5AC060, (int)is_objective);
+    write_jump(0x5B9C40, (int)say_tech);
+    write_jump(0x5B9FE0, (int)tech_category);
     write_jump(0x5BF1F0, (int)has_abil);
     write_jump(0x5BF310, (int)X_pop2);
     write_jump(0x5C0DB0, (int)can_arty);
@@ -500,7 +454,6 @@ bool patch_setup(Config* cf) {
     write_call(0x5B341C, (int)mod_setup_player); // eliminate_player
     write_call(0x5B3C03, (int)mod_setup_player); // setup_game
     write_call(0x5B3C4C, (int)mod_setup_player); // setup_game
-    write_call(0x587424, (int)mod_read_basic_rules); // read_rules
     write_call(0x5B41E9, (int)mod_time_warp);
     write_call(0x52768A, (int)mod_turn_upkeep);
     write_call(0x52A4AD, (int)mod_turn_upkeep);
@@ -557,6 +510,40 @@ bool patch_setup(Config* cf) {
     write_call(0x57C0CC, (int)mod_tech_avail); // goody_box
     write_call(0x57D130, (int)mod_tech_avail); // study_artifact
     write_call(0x5BDC38, (int)mod_tech_avail); // tech_ai
+    write_call(0x486A1B, (int)mod_tech_val); // PickTech::pick
+    write_call(0x53E9B4, (int)mod_tech_val); // tech_analysis
+    write_call(0x53EA56, (int)mod_tech_val); // tech_analysis
+    write_call(0x53F34B, (int)mod_tech_val); // buy_council_vote
+    write_call(0x53F394, (int)mod_tech_val); // buy_council_vote
+    write_call(0x53F3C9, (int)mod_tech_val); // buy_council_vote
+    write_call(0x53F3FE, (int)mod_tech_val); // buy_council_vote
+    write_call(0x540250, (int)mod_tech_val); // buy_tech
+    write_call(0x54099D, (int)mod_tech_val); // energy_trade
+    write_call(0x5409C9, (int)mod_tech_val); // energy_trade
+    write_call(0x541D58, (int)mod_tech_val); // tech_trade
+    write_call(0x541D69, (int)mod_tech_val); // tech_trade
+    write_call(0x544861, (int)mod_tech_val); // propose_pact
+    write_call(0x54547F, (int)mod_tech_val); // propose_treaty
+    write_call(0x54561B, (int)mod_tech_val); // propose_treaty
+    write_call(0x5457B7, (int)mod_tech_val); // propose_treaty
+    write_call(0x546A35, (int)mod_tech_val); // propose_attack
+    write_call(0x546A63, (int)mod_tech_val); // propose_attack
+    write_call(0x546A94, (int)mod_tech_val); // propose_attack
+    write_call(0x546AC5, (int)mod_tech_val); // propose_attack
+    write_call(0x5489A4, (int)mod_tech_val); // make_gift
+    write_call(0x548AFD, (int)mod_tech_val); // make_gift
+    write_call(0x54D912, (int)mod_tech_val); // base_swap
+    write_call(0x552DE4, (int)mod_tech_val); // communicate
+    write_call(0x5540A5, (int)mod_tech_val); // communicate
+    write_call(0x554644, (int)mod_tech_val); // communicate
+    write_call(0x5548C0, (int)mod_tech_val); // communicate
+    write_call(0x554950, (int)mod_tech_val); // communicate
+    write_call(0x554974, (int)mod_tech_val); // communicate
+    write_call(0x55515E, (int)mod_tech_val); // communicate
+    write_call(0x556565, (int)mod_tech_val); // communicate
+    write_call(0x5582AC, (int)mod_tech_val); // communicate
+    write_call(0x55D521, (int)mod_tech_val); // enemies_trade_tech
+    write_call(0x55D622, (int)mod_tech_val); // enemies_trade_tech
     write_call(0x5BDC4C, (int)mod_tech_val); // tech_ai
     write_call(0x486655, (int)mod_tech_ai); // PickTech::pick
     write_call(0x5AEFA1, (int)mod_tech_ai); // time_warp
@@ -1184,7 +1171,7 @@ bool patch_setup(Config* cf) {
         || !FileExists("smac_mod/tutor.txt")) {
             MessageBoxA(0, "Error while opening smac_mod folder. Unable to start smac_only mode.",
                 MOD_VERSION, MB_OK | MB_ICONSTOP);
-            exit(EXIT_FAILURE);
+            exit_fail();
         }
         *(int32_t*)0x45F97A = 0;
         *(const char**)0x691AFC = ac_mod_alpha;
@@ -1298,25 +1285,29 @@ bool patch_setup(Config* cf) {
         remove_call(0x50D06A);
         remove_call(0x50D074);
     }
+    if (cf->auto_relocate_hq) {
+        const byte old_bytes[] = {0x0F, 0x84};
+        const byte new_bytes[] = {0x90, 0xE9}; // Disable #ESCAPED event
+        write_bytes(0x50C99D, old_bytes, new_bytes, sizeof(new_bytes));
+    }
     if (cf->simple_hurry_cost) {
         short_jump(0x41900D);
     }
     if (cf->eco_damage_fix) {
         const byte old_bytes[] = {0x84,0x05,0xE8,0x64,0x9A,0x00,0x74,0x24};
         write_bytes(0x4EA0B9, old_bytes, NULL, sizeof(old_bytes));
-
-        /* Patch Tree Farms to always increase the clean minerals limit. */
+        // Patch Tree Farms to always increase the clean minerals limit.
         const byte old_bytes_2[] = {0x85,0xC0,0x74,0x07};
         write_bytes(0x4F2AC6, old_bytes_2, NULL, sizeof(old_bytes_2));
     }
     if (!cf->spawn_fungal_towers) {
-        /* Spawn nothing in this case. */
+        // Spawn nothing in this case.
         remove_call(0x4F7143);
         remove_call(0x5C363F);
         remove_call(0x57BBC9);
     }
     if (!cf->spawn_spore_launchers) {
-        /* Patch the game to spawn Mind Worms instead. */
+        // Patch the game to spawn Mind Worms instead.
         short_jump(0x4F73DB);
         short_jump(0x4F74D3);
         short_jump(0x522808);

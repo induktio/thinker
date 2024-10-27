@@ -1159,8 +1159,7 @@ struct ButtonGroup {
     int field_90;
 };
 
-struct FlatButton {
-    BaseButton baseButton;
+struct FlatButton : BaseButton {
     int field_AB8;
     int field_ABC;
     int field_AC0;
@@ -2189,6 +2188,8 @@ static_assert(sizeof(Buffer) == 1416, "");
 static_assert(sizeof(Caviar) == 5072, "");
 static_assert(sizeof(Menu) == 2916, "");
 static_assert(sizeof(GraphicWin) == 2580, "");
+static_assert(sizeof(BaseButton) == 2744, "");
+static_assert(sizeof(FlatButton) == 2892, "");
 static_assert(sizeof(Console) == 149412, "");
 static_assert(sizeof(RenderWindow) == 168508, "");
 static_assert(sizeof(BaseWindow) == 293040, "");

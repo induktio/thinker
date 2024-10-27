@@ -9,9 +9,6 @@ bool ignore_goal(int type) {
         || type == AI_GOAL_SENSOR_ARRAY || type == AI_GOAL_DEFEND;
 }
 
-/*
-Original Offset: 00579A30
-*/
 void __cdecl add_goal(int faction, int type, int priority, int x, int y, int base_id) {
     if (!mapsq(x, y)) {
         return;
@@ -57,9 +54,6 @@ void __cdecl add_goal(int faction, int type, int priority, int x, int y, int bas
     }
 }
 
-/*
-Original Offset: 00579B70
-*/
 void __cdecl add_site(int faction, int type, int priority, int x, int y) {
     if ((x ^ y) & 1 && *GameState & STATE_DEBUG_MODE) {
         debug("Bad SITE %d %d %d\n", x, y, type);
@@ -107,9 +101,6 @@ void __cdecl add_site(int faction, int type, int priority, int x, int y) {
     }
 }
 
-/*
-Original Offset: 0x579D80
-*/
 void __cdecl wipe_goals(int faction) {
     for (int i = 0; i < MaxGoalsNum; i++) {
         Goal& goal = Factions[faction].goals[i];

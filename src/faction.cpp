@@ -89,19 +89,19 @@ bool has_terra(FormerItem frm_id, bool ocean, int faction_id) {
 }
 
 bool has_project(FacilityId item_id) {
-    assert(item_id >= SP_ID_First && item_id <= FAC_EMPTY_SP_64);
+    assert(item_id >= SP_ID_First && item_id <= SP_ID_Last);
     int base_id = SecretProjects[item_id - SP_ID_First];
     return base_id >= 0;
 }
 
 bool has_project(FacilityId item_id, int faction_id) {
-    assert(item_id >= SP_ID_First && item_id <= FAC_EMPTY_SP_64);
+    assert(item_id >= SP_ID_First && item_id <= SP_ID_Last);
     int base_id = SecretProjects[item_id - SP_ID_First];
     return base_id >= 0 && faction_id >= 0 && Bases[base_id].faction_id == faction_id;
 }
 
 int project_base(FacilityId item_id) {
-    assert(item_id >= SP_ID_First && item_id <= FAC_EMPTY_SP_64);
+    assert(item_id >= SP_ID_First && item_id <= SP_ID_Last);
     return SecretProjects[item_id - SP_ID_First];
 }
 
@@ -318,6 +318,279 @@ void __cdecl set_agenda(int faction1, int faction2, uint32_t agenda, bool add) {
 }
 
 /*
+Calculate faction's vote count. Used for Planetary Governor and Supreme Leader.
+Return Value: Faction vote count
+*/
+int __cdecl council_votes(int faction_id) {
+    if (is_alien(faction_id)) {
+        return 0;
+    }
+    int votes = 0;
+    for (int i = 0; i < *BaseCount; i++) {
+        if (Bases[i].faction_id == faction_id ) {
+            votes += Bases[i].pop_size;
+        }
+    }
+    if (has_project(FAC_EMPATH_GUILD, faction_id)) {
+        votes += votes / 2; // +50% votes
+    }
+    if (has_project(FAC_CLINICAL_IMMORTALITY, faction_id)) {
+        votes *= 2; // Doubles votes
+    }
+    int bonus_count = MFactions[faction_id].faction_bonus_count;
+    for (int i = 0; i < bonus_count; i++) {
+        if (MFactions[faction_id].faction_bonus_id[i] == RULE_VOTES) {
+            int votes_bonus = MFactions[faction_id].faction_bonus_val1[i];
+            if (votes_bonus >= 0) {
+                votes *= votes_bonus; // Peacekeeper bonus
+            }
+        }
+    }
+    return votes;
+}
+
+/*
+Check whether a faction's leader is eligible to be a Planetary Governor candidate.
+Return Value: Is the leader eligible (top two vote totals)? true/false
+*/
+int __cdecl eligible(int faction_id) {
+    if (is_alien(faction_id)) {
+        return false;
+    }
+    int votes = council_votes(faction_id);
+    int faction_count = 0;
+    for (int i = 1; i < MaxPlayerNum; i++) {
+        if (faction_id != i && is_alive(i) && council_votes(i) > votes) {
+            faction_count++;
+        }
+    }
+    return faction_count < 2;
+}
+
+/*
+Determine if the overall dominant human faction is a minor threat based on base count.
+Return Value: Is faction minor threat? true/false
+*/
+int __cdecl great_beelzebub(int faction_id, int is_aggressive) {
+    if (is_human(faction_id) && FactionRankings[7] == faction_id) {
+        int bases_threat = (*CurrentTurn + 25) / 50;
+        if (bases_threat < 4) {
+            bases_threat = 4;
+        }
+        if (Factions[faction_id].base_count > bases_threat
+        && (Factions[faction_id].diff_level > DIFF_SPECIALIST
+        || *GameRules & RULES_INTENSE_RIVALRY || is_aggressive)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/*
+Determine if the specified faction is considered a threat based on the game state and ranking.
+Return Value: Is the specified faction a threat? true/false
+*/
+int __cdecl great_satan(int faction_id, int is_aggressive) {
+    if (great_beelzebub(faction_id, is_aggressive)) {
+        bool intense_rivalry = (*GameRules & RULES_INTENSE_RIVALRY);
+        if (*CurrentTurn <= ((intense_rivalry ? 0
+        : (DIFF_TRANSCEND - Factions[faction_id].diff_level) * 50) + 100)) {
+            return false;
+        }
+        if (climactic_battle() && aah_ooga(faction_id, -1) == faction_id) {
+            return true;
+        }
+        int diff_factor;
+        int factor;
+        if (intense_rivalry) {
+            factor = 4;
+            diff_factor = DIFF_TRANSCEND;
+        } else if (Factions[faction_id].diff_level >= DIFF_LIBRARIAN
+            || *GameRules & RULES_VICTORY_CONQUEST || *ObjectiveReqVictory <= 1000) {
+            factor = 2;
+            diff_factor = DIFF_LIBRARIAN;
+        } else {
+            factor = 1;
+            diff_factor = DIFF_TALENT;
+        }
+        return (factor * FactionRankingsUnk[FactionRankings[7]]
+            >= diff_factor * FactionRankingsUnk[FactionRankings[6]]);
+    }
+    return false;
+}
+
+/*
+Check whether the specified faction is nearing the diplomatic victory requirements to be
+able to call a Supreme Leader vote. Optional 2nd parameter (0/-1 to disable) that specifies
+a faction to skip if they have a pact with faction from the 1st parameter.
+Return Value: faction_id if nearing diplomatic victory or zero
+*/
+int __cdecl aah_ooga(int faction_id, int pact_faction_id) {
+    if (!(*GameRules & RULES_VICTORY_DIPLOMATIC)) {
+        return 0; // Diplomatic Victory not allowed
+    }
+    int votes_total = 0;
+    for (int i = 1; i < MaxPlayerNum; i++) {
+        votes_total += council_votes(i);
+    }
+    int value = 0;
+    for (int i = 1; i < MaxPlayerNum; i++) {
+        if (i != pact_faction_id
+        && (pact_faction_id <= 0 || !has_treaty(i, pact_faction_id, DIPLO_PACT)
+        || !(*GameRules & RULES_VICTORY_COOPERATIVE))) {
+            int proposal_preq = Proposal[PROP_UNITE_SUPREME_LEADER].preq_tech;
+            if ((has_tech(proposal_preq, faction_id)
+            || (proposal_preq >= 0
+            && (has_tech(Tech[proposal_preq].preq_tech1, faction_id)
+            || has_tech(Tech[proposal_preq].preq_tech2, faction_id))))
+            && council_votes(i) * 2 >= votes_total && (!value || i == faction_id)) {
+                value = i;
+            }
+        }
+    }
+    return value;
+}
+
+/*
+Check if the human controlled player is nearing the endgame.
+Return Value: Is human player nearing endgame? true/false
+*/
+int __cdecl climactic_battle() {
+    for (int i = 1; i < MaxPlayerNum; i++) {
+        if (is_human(i) && Factions[i].corner_market_turn > *CurrentTurn) {
+            return true;
+        }
+    }
+    // Removed following code since this will always return false.
+    // This may have been disabled as a design decision rather than a bug.
+    // if (aah_ooga(0, -1)) { return true; }
+    assert(!aah_ooga(0, -1));
+
+    if (voice_of_planet()) { // Replace function ascending(0)
+        for (int i = 1; i < MaxPlayerNum; i++) {
+            if (is_human(i) && (has_tech(Facility[FAC_PSI_GATE].preq_tech, i)
+            || has_tech(Facility[FAC_VOICE_OF_PLANET].preq_tech, i))) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/*
+Determine if the specified AI faction is at the end game based on certain conditions.
+Return Value: Is the AI faction near victory? true/false
+*/
+int __cdecl at_climax(int faction_id) {
+    if (is_human(faction_id) || *GameState & STATE_GAME_DONE
+    || *DiffLevel == DIFF_CITIZEN || !climactic_battle()) {
+        return false;
+    }
+    if (aah_ooga(faction_id, faction_id)) {
+        return true;
+    }
+    for (int i = 1; i < MaxPlayerNum; i++) {
+        if (i != faction_id && Factions[faction_id].corner_market_turn > *CurrentTurn
+        && (!has_treaty(faction_id, i, DIPLO_PACT) || !(*GameRules & RULES_VICTORY_COOPERATIVE))) {
+            return true;
+        }
+    }
+    int sp_mins_them = 0;
+    int sp_mins_own = 0;
+    for (int i = 0; i < *BaseCount; i++) {
+        if (Bases[i].queue_items[0] == -FAC_ASCENT_TO_TRANSCENDENCE) {
+            int min_accum = Bases[i].minerals_accumulated;
+            if (Bases[i].faction_id == faction_id) {
+                if (sp_mins_own <= min_accum) {
+                    sp_mins_own = min_accum;
+                }
+            } else if (sp_mins_them <= min_accum) {
+                sp_mins_them = min_accum;
+            }
+        }
+    }
+    // Removed redundant ascending() check here
+    return sp_mins_them && sp_mins_them > sp_mins_own;
+}
+
+/*
+Add friction between the two specified factions.
+*/
+void __cdecl cause_friction(int faction_id, int faction_id_with, int friction) {
+    Faction* f = &Factions[faction_id];
+    f->diplo_friction[faction_id_with] = clamp(f->diplo_friction[faction_id_with] + friction, 0, 20);
+    if (*DiploFrictionFactionID == faction_id && *DiploFrictionFactionIDWith == faction_id_with) {
+        *DiploFriction = clamp(*DiploFriction + friction, 0, 20); // Fix: add variable bounding
+    }
+}
+
+/*
+Normalize the diplomatic friction value into a mood offset.
+Return Value: Mood (0-8)
+*/
+int __cdecl get_mood(int friction) {
+    if (friction <= 0) {
+        return MOOD_MAGNANIMOUS; // can be also displayed as "Submissive"
+    }
+    if (friction <= 2) {
+        return MOOD_SOLICITOUS;
+    }
+    if (friction <= 4) {
+        return MOOD_COOPERATIVE;
+    }
+    if (friction <= 8) {
+        return MOOD_NONCOMMITTAL;
+    }
+    if (friction <= 12) {
+        return MOOD_AMBIVALENT;
+    }
+    if (friction <= 15) {
+        return MOOD_OBSTINATE;
+    }
+    if (friction <= 17) {
+        return MOOD_QUARRELSOME;
+    }
+    return (friction > 19) + MOOD_BELLIGERENT; // or MOOD_SEETHING if condition is true
+}
+
+/*
+Calculate the negative reputation the specified faction has with another.
+Return Value: Bad reputation
+*/
+int __cdecl reputation(int faction_id, int faction_id_with) {
+    return clamp(Factions[faction_id].integrity_blemishes
+        - Factions[faction_id].diplo_gifts[faction_id_with], 0, 99);
+}
+
+/*
+Calculate the amount of patience the specified faction has with another.
+Return Value: Patience
+*/
+int __cdecl get_patience(int faction_id_with, int faction_id) {
+    if (has_treaty(faction_id, faction_id_with, DIPLO_VENDETTA)) {
+        return 1;
+    }
+    if (has_treaty(faction_id, faction_id_with, DIPLO_PACT)) {
+        return has_treaty(faction_id, faction_id_with, DIPLO_HAVE_SURRENDERED) ? 500 : 6;
+    }
+    return (has_treaty(faction_id, faction_id_with, DIPLO_TREATY) != 0)
+        - ((*DiploFriction + 3) / 8) + 3;
+}
+
+/*
+Calculate the amount of goodwill a loan will generate. This is used to reduce friction.
+Return Value: Goodwill (friction reduction amount)
+*/
+int __cdecl energy_value(int loan_principal) {
+    int goodwill = 0;
+    int divisor = 2;
+    for (int weight = 10, energy = loan_principal / 5; energy > 0; energy -= weight, weight = 20) {
+        goodwill += ((weight >= 0) ? ((energy > weight) ? weight : energy) : 0) / divisor++;
+    }
+    return (goodwill + 4) / 5;
+}
+
+/*
 Calculate the cost of the social upheaval for the specified faction.
 */
 int __cdecl mod_social_cost(int faction_id, int* choices) {
@@ -354,7 +627,7 @@ int __cdecl mod_society_avail(int soc_category, int soc_model, int faction_id) {
 int __cdecl mod_setup_player(int faction_id, int a2, int a3) {
     Faction* f = &Factions[faction_id];
     MFaction* m = &MFactions[faction_id];
-    debug("setup_player %d %d %d\n", faction_id, a2, a3);
+    debug("setup_player %d %d %d %d\n", *CurrentTurn, faction_id, a2, a3);
     if (!faction_id) {
         return setup_player(faction_id, a2, a3);
     }
@@ -462,7 +735,7 @@ int robust, int immunity, int impunity, int penalty) {
         for (int i = 0; i < MaxSocialCatNum; i++) {
             int j = (sf == i ? sm : (&f->SE_Politics)[i]);
             for (int k = 0; k < MaxSocialEffectNum; k++) {
-                int val = Social[i].effects[j][k];
+                int val = ((int32_t*)&SocialField[i].soc_effect[j])[k];
                 if ((1 << (i*4 + j)) & impunity) {
                     val = max(0, val);
                 } else if ((1 << (i*4 + j)) & penalty) {
@@ -618,16 +891,16 @@ int __cdecl mod_social_ai(int faction_id, int a2, int a3, int a4, int a5, int a6
     assert(!memcmp(&f->SE_Politics, &f->SE_Politics_pending, 16));
 
     for (int i = 0; i < m->faction_bonus_count; i++) {
-        if (m->faction_bonus_id[i] == FCB_ROBUST) {
+        if (m->faction_bonus_id[i] == RULE_ROBUST) {
             robust |= (1 << m->faction_bonus_val1[i]);
         }
-        if (m->faction_bonus_id[i] == FCB_IMMUNITY) {
+        if (m->faction_bonus_id[i] == RULE_IMMUNITY) {
             immunity |= (1 << m->faction_bonus_val1[i]);
         }
-        if (m->faction_bonus_id[i] == FCB_IMPUNITY) {
+        if (m->faction_bonus_id[i] == RULE_IMPUNITY) {
             impunity |= (1 << (m->faction_bonus_val1[i] * 4 + m->faction_bonus_val2[i]));
         }
-        if (m->faction_bonus_id[i] == FCB_PENALTY) {
+        if (m->faction_bonus_id[i] == RULE_PENALTY) {
             penalty |= (1 << (m->faction_bonus_val1[i] * 4 + m->faction_bonus_val2[i]));
         }
     }

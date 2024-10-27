@@ -389,7 +389,7 @@ int __cdecl mod_faction_upkeep(int faction_id) {
                 parse_says(2, m->noun_faction, -1, -1);
                 parse_says(3, m->adj_name_faction, -1, -1);
                 ParseNumTable[0] = game_year(f->corner_market_turn);
-                popp("SCRIPT", "CORNERWARNING", 0, "econwin_sm.pcx", 0);
+                popp(ScriptFile, "CORNERWARNING", 0, "econwin_sm.pcx", 0);
             }
         }
     }
@@ -420,7 +420,7 @@ int __cdecl mod_faction_upkeep(int faction_id) {
         && !(*GameState & (STATE_COUNCIL_HAS_CONVENED | STATE_DISPLAYED_COUNCIL_AVAIL_MSG))
         && can_call_council(faction_id, 0) && !(*GameState & STATE_GAME_DONE)) {
             *GameState |= STATE_DISPLAYED_COUNCIL_AVAIL_MSG;
-            popp("SCRIPT", "COUNCILOPEN", 0, "council_sm.pcx", 0);
+            popp(ScriptFile, "COUNCILOPEN", 0, "council_sm.pcx", 0);
         }
         if (!is_human(faction_id)) {
             call_council(faction_id);
@@ -714,7 +714,6 @@ Generate a base name. Uses additional base names from basenames folder.
 When faction base names are used, creates additional variations from basenames/generic.txt.
 First land/sea base always uses the first available name from land/sea names list.
 Vanilla name_base chooses sea base names in a sequential non-random order (this version is random).
-Original Offset: 004E4090
 */
 void __cdecl mod_name_base(int faction_id, char* name, bool save_offset, bool sea_base) {
     Faction& f = Factions[faction_id];

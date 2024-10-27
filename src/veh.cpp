@@ -40,7 +40,7 @@ int __cdecl has_abil(int unit_id, VehAblFlag ability) {
     }
     // Pirates > "Marine Detachment" ability for combat sea units with Adaptive Doctrine
     for (int i = 0; i < MFactions[faction_id].faction_bonus_count; i++) {
-        if (MFactions[faction_id].faction_bonus_id[i] == FCB_FREEABIL_PREQ) {
+        if (MFactions[faction_id].faction_bonus_id[i] == RULE_FREEABIL) {
             int abil_bonus_id = MFactions[faction_id].faction_bonus_val1[i];
             if (has_tech(Ability[abil_bonus_id].preq_tech, faction_id)
             && (ability & (1 << abil_bonus_id))) {
@@ -91,14 +91,14 @@ bool has_ability(int faction, VehAbl abl, VehChassis chs, VehWeapon wpn) {
     bool is_former = Weapon[wpn].mode == WMODE_TERRAFORM;
     bool is_probe = Weapon[wpn].mode == WMODE_PROBE;
 
-    if ((triad == TRIAD_LAND && ~F & AFLAG_ALLOWED_LAND_UNIT)
-    || (triad == TRIAD_SEA && ~F & AFLAG_ALLOWED_SEA_UNIT)
-    || (triad == TRIAD_AIR && ~F & AFLAG_ALLOWED_AIR_UNIT)) {
+    if ((triad == TRIAD_LAND && !(F & AFLAG_ALLOWED_LAND_UNIT))
+    || (triad == TRIAD_SEA && !(F & AFLAG_ALLOWED_SEA_UNIT))
+    || (triad == TRIAD_AIR && !(F & AFLAG_ALLOWED_AIR_UNIT))) {
         return false;
     }
-    if ((~F & AFLAG_ALLOWED_COMBAT_UNIT && is_combat)
-    || (~F & AFLAG_ALLOWED_TERRAFORM_UNIT && is_former)
-    || (~F & AFLAG_ALLOWED_NONCOMBAT_UNIT && !is_combat && !is_former)) {
+    if ((!(F & AFLAG_ALLOWED_COMBAT_UNIT) && is_combat)
+    || (!(F & AFLAG_ALLOWED_TERRAFORM_UNIT) && is_former)
+    || (!(F & AFLAG_ALLOWED_NONCOMBAT_UNIT) && !is_combat && !is_former)) {
         return false;
     }
     if ((F & AFLAG_NOT_ALLOWED_PROBE_TEAM && is_probe)
@@ -352,8 +352,9 @@ int __cdecl breed_level(int base_id, int faction_id) {
     if (has_fac_built(FAC_BIOLOGY_LAB, base_id)) {
         value++;
     }
-    if (has_facility(FAC_BIOENHANCEMENT_CENTER, base_id)) {
-        value++; // The Cyborg Factory also possible
+    if (has_fac_built(FAC_BIOENHANCEMENT_CENTER, base_id)
+    || has_project(FAC_CYBORG_FACTORY, faction_id)) {
+        value++;
     }
     assert(value == breed_mod(base_id, faction_id));
     return value;
@@ -732,6 +733,7 @@ static void veh_upgrade(VEH* veh, int new_unit_id, int old_unit_id, int cost) {
         - (has_abil(old_unit_id, ABL_TRAINED) != 0);
     veh->morale = clamp(veh->morale + morale_diff, 0, 6);
     assert(f->energy_credits >= 0);
+    assert(new_unit_id / MaxProtoFactionNum == veh->faction_id);
     debug("upgrade_unit %d %d %2d %2d cost: %d %s / %s\n",
     *CurrentTurn, veh->faction_id, veh->x, veh->y, cost, Units[old_unit_id].name, veh->name());
 }

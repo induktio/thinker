@@ -63,26 +63,21 @@ int count_format_args(const char* buf) {
     return num;
 }
 
-char* parse_str(char* buf, size_t len, const char* s1, const char* s2, const char* s3, const char* s4) {
-    buf[0] = '\0';
-    strncat(buf, s1, len);
-    if (s2) {
-        strncat(buf, " ", 2);
-        strncat(buf, s2, len);
+uint32_t btoi(const char* src) {
+    uint32_t value = 0;
+    while (*src == '0' || *src == '1') {
+        value = 2 * value + (*src == '1');
+        src++;
     }
-    if (s3) {
-        strncat(buf, " ", 2);
-        strncat(buf, s3, len);
+    return value;
+}
+
+char* strcpy_n(char* dst, size_t count, const char* src) {
+    if (count > 0) {
+        strncpy(dst, src, count);
+        dst[count - 1] = '\0';
     }
-    if (s4) {
-        strncat(buf, " ", 2);
-        strncat(buf, s4, len);
-    }
-    // strlen count does not include the first null character.
-    if (strlen(buf) > 0 && strlen(buf) < len) {
-        return buf;
-    }
-    return NULL;
+    return dst;
 }
 
 char* strtrail(char* s) {

@@ -526,33 +526,6 @@ int __cdecl battle_fight_parse_num(int index, int value) {
 }
 
 /*
-int __cdecl mod_battle_fight_2(int veh_id, int offset, int tx, int ty, int table_offset, int a6, int a7)
-{
-    VEH* veh = &Vehs[veh_id];
-    UNIT* u = &Units[veh->unit_id];
-    int cost = 0;
-    if (conf.chopper_attack_rate > 1 && conf.chopper_attack_rate < 256) {
-        if (u->triad() == TRIAD_AIR && u->range() == 1 && !u->is_missile()) {
-            int moves = veh_speed(veh_id, 0) - veh->moves_spent - Rules->move_rate_roads;
-            int addon = (conf.chopper_attack_rate - 1) * Rules->move_rate_roads;
-            if (moves > 0 && addon > 0) {
-                cost = min(moves, addon);
-                veh->moves_spent += cost;
-            }
-        }
-    }
-    // Non-zero return value indicates the battle was skipped (odds dialog, treaty dialog)
-    int prev_count = *VehCount;
-    int value = battle_fight_2(veh_id, offset, tx, ty, table_offset, a6, a7);
-    if (cost > 0 && (value == 1 || value == 2) && prev_count == *VehCount) {
-        assert(veh->moves_spent - cost >= 0);
-        veh->moves_spent -= cost;
-    }
-    return value;
-}
-*/
-
-/*
 This function replaces defense_value and uses less parameters for simplicity.
 */
 int __cdecl terrain_defense(VEH* veh_def, VEH* veh_atk)
@@ -707,7 +680,7 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
             }
             int bonus_count = MFactions[faction_id_atk].faction_bonus_count;
             for (int i = 0; i < bonus_count; i++) {
-                if (MFactions[faction_id_atk].faction_bonus_id[i] == FCB_OFFENSE) {
+                if (MFactions[faction_id_atk].faction_bonus_id[i] == RULE_OFFENSE) {
                     int rule_off_bonus = MFactions[faction_id_atk].faction_bonus_val1[i];
                     offense = offense * rule_off_bonus / 100;
                     add_bat(0, rule_off_bonus, label_get(1108)); // Alien Offense
@@ -753,7 +726,7 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
         defense = mod_get_basic_defense(veh_id_def, veh_id_atk, psi_combat, is_bombard);
         int bonus_count = MFactions[faction_id_def].faction_bonus_count;
         for (int i = 0; i < bonus_count; i++) {
-            if (MFactions[faction_id_def].faction_bonus_id[i] == FCB_DEFENSE) {
+            if (MFactions[faction_id_def].faction_bonus_id[i] == RULE_DEFENSE) {
                 int rule_def_bonus = MFactions[faction_id_def].faction_bonus_val1[i];
                 defense = defense * rule_def_bonus / 100;
                 add_bat(1, rule_def_bonus, label_get(1109)); // Alien Defense
@@ -1369,10 +1342,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
             BattleWin_clear(BattleWin);
             StatusWin_draw(StatusWin, veh_id_atk, veh_id_def, offense_out, defense_out, 0);
             *dword_8C6B3C = 1;
-            *plurality_default = 0;
-            *gender_default = m_atk->is_leader_female;
-            parse_says(0, m_atk->title_leader, -1, -1);
-            parse_says(1, m_atk->name_leader, -1, -1);
+            parse_gen_name(faction_id_atk, 0, 1);
             BattleWin_stop_timer(BattleWin);
             if (!popp(ScriptFile, "BADIDEA", 0, "hasty_sm.pcx", 0)) {
                 BattleWin_pulse_timer(BattleWin);
@@ -1391,10 +1361,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
             BattleWin_clear(BattleWin);
             StatusWin_draw(StatusWin, veh_id_atk, veh_id_def, offense_out, defense_out, 0);
             *dword_8C6B3C = 1;
-            *plurality_default = 0;
-            *gender_default = m_atk->is_leader_female;
-            parse_says(0, m_atk->title_leader, -1, -1);
-            parse_says(1, m_atk->name_leader, -1, -1);
+            parse_gen_name(faction_id_atk, 0, 1);
 
             StrBuffer[0] = '\0';
             snprintf(StrBuffer, StrBufLen, "%d.%d", offense_out >> 8, (10 * (offense_out & 0xFF)) >> 8);

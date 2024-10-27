@@ -116,9 +116,23 @@ const int MaxWeaponNum = 26;
 const int MaxArmorNum = 14;
 const int MaxReactorNum = 4;
 const int MaxAbilityNum = 29;
+const int MaxMoraleNum = 7;
+const int MaxDefenseModeNum = 3;
+const int MaxOffenseModeNum = 3;
+const int MaxOrderNum = 30;
+const int MaxPlanNum = 15;
+const int MaxTriadNum = 3;
 
+const int MaxResourceInfoNum = 9;
+const int MaxTimeControlNum = 6;
+const int MaxCompassNum = 8;
+const int MaxResourceNum = 4;
+const int MaxEnergyNum = 3;
+
+const int MaxMandateNum = 4;
 const int MaxFacilityNum = 64; // 0 slot unused
 const int MaxSecretProjectNum = 64;
+const int MaxTerrainNum = 20;
 const int MaxSocialCatNum = 4;
 const int MaxSocialModelNum = 4;
 const int MaxSocialEffectNum = 11;
@@ -128,6 +142,7 @@ const int MaxMoodNum = 9;
 const int MaxReputeNum = 8;
 const int MaxMightNum = 7;
 const int MaxBonusNameNum = 41;
+const int MaxProposalNum = 11;
 
 const int StrBufLen = 256;
 const int LineBufLen = 128;
@@ -245,6 +260,7 @@ struct Config {
     int early_research_start = 1; // unlisted option
     int facility_capture_fix = 1; // unlisted option
     int territory_border_fix = 1;
+    int facility_free_tech = 0;
     int auto_relocate_hq = 1;
     int simple_hurry_cost = 1;
     int eco_damage_fix = 1;
@@ -381,8 +397,10 @@ extern set_str_t movedlabels;
 extern map_str_t musiclabels;
 
 DLL_EXPORT DWORD ThinkerModule();
+void exit_fail(int32_t addr);
+void exit_fail();
 int opt_handle_error(const char* section, const char* name);
-int opt_list_parse(int* ptr, char* buf, int len, int min_val);
+int opt_list_parse(int32_t* dst, char* src, int num, int min_val);
 
 
 

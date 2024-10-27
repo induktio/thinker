@@ -489,7 +489,7 @@ int __cdecl mod_mine_yield(int faction_id, int base_id, int x, int y, int flag) 
         else {
             value += ResInfo->ocean_sq_mineral;
             if (alt == ALT_OCEAN_SHELF && MFactions[faction_id].is_aquatic()
-            && *ExpansionEnabled && conf.aquatic_bonus_minerals) {
+            && conf.aquatic_bonus_minerals) {
                 value++;
             }
             if (alt == ALT_OCEAN_SHELF || *ExpansionEnabled) {
