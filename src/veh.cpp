@@ -319,7 +319,7 @@ int __cdecl want_monolith(int veh_id) {
 /*
 Calculate the former rate to perform terrain enhancements. This is only called from veh_wake.
 */
-int __cdecl veh_contribution(int veh_id, int terraform_id) {
+int __cdecl contribution(int veh_id, int terraform_id) {
     int value = has_abil(Vehs[veh_id].unit_id, ABL_SUPER_TERRAFORMER) ? 4 : 2;
     if (terraform_id == (ORDER_REMOVE_FUNGUS - 4) || terraform_id == (ORDER_PLANT_FUNGUS - 4)) {
         if (has_project(FAC_XENOEMPATHY_DOME, Vehs[veh_id].faction_id)) {
@@ -328,50 +328,6 @@ int __cdecl veh_contribution(int veh_id, int terraform_id) {
     } else if (has_project(FAC_WEATHER_PARADIGM, Vehs[veh_id].faction_id)) {
         value = (value * 3) / 2; // +50%
     }
-    assert(value == contribution(veh_id, terraform_id));
-    return value;
-}
-
-int __cdecl breed_level(int base_id, int faction_id) {
-    int value = 0;
-    if (has_project(FAC_XENOEMPATHY_DOME, faction_id)) {
-        value++;
-    }
-    if (has_project(FAC_PHOLUS_MUTAGEN, faction_id)) {
-        value++;
-    }
-    if (has_project(FAC_VOICE_OF_PLANET, faction_id)) {
-        value++;
-    }
-    if (has_fac_built(FAC_CENTAURI_PRESERVE, base_id)) {
-        value++;
-    }
-    if (has_fac_built(FAC_TEMPLE_OF_PLANET, base_id)) {
-        value++;
-    }
-    if (has_fac_built(FAC_BIOLOGY_LAB, base_id)) {
-        value++;
-    }
-    if (has_fac_built(FAC_BIOENHANCEMENT_CENTER, base_id)
-    || has_project(FAC_CYBORG_FACTORY, faction_id)) {
-        value++;
-    }
-    assert(value == breed_mod(base_id, faction_id));
-    return value;
-}
-
-int __cdecl worm_level(int base_id, int faction_id) {
-    int value = breed_level(base_id, faction_id);
-    if (MFactions[faction_id].rule_psi) {
-        value++;
-    }
-    if (has_project(FAC_DREAM_TWISTER, faction_id)) {
-        value++;
-    }
-    if (has_project(FAC_NEURAL_AMPLIFIER, faction_id)) {
-        value++;
-    }
-    assert(value == worm_mod(base_id, faction_id));
     return value;
 }
 
@@ -1038,7 +994,7 @@ int __cdecl mod_veh_wake(int veh_id) {
     if (veh->order >= ORDER_FARM && veh->order < ORDER_MOVE_TO && !(veh->state & VSTATE_WORKING)) {
         veh->moves_spent = veh_speed(veh_id, 0) - Rules->move_rate_roads;
         if (veh->terraform_turns) {
-            veh->terraform_turns = max(0, veh->terraform_turns - veh_contribution(veh_id, veh->order - 4));
+            veh->terraform_turns = max(0, veh->terraform_turns - contribution(veh_id, veh->order - 4));
         }
     }
     if (veh->state & VSTATE_ON_ALERT && !(veh->state & VSTATE_HAS_MOVED)

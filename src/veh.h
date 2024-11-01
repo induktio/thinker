@@ -19,10 +19,8 @@ void __cdecl veh_promote(int veh_id);
 int __cdecl proto_speed(int unit_id);
 int __cdecl veh_speed(int veh_id, bool skip_morale);
 int __cdecl veh_cargo(int veh_id);
-int __cdecl veh_contribution(int veh_id, int terraform_id);
+int __cdecl contribution(int veh_id, int terraform_id);
 int __cdecl want_monolith(int veh_id);
-int __cdecl breed_level(int base_id, int faction_id);
-int __cdecl worm_level(int base_id, int faction_id);
 int __cdecl transport_val(VehChassis chassis_id, VehAblFlag abls, VehReactor reactor_id);
 int __cdecl prototype_factor(int unit_id);
 int __cdecl mod_proto_cost(VehChassis chassis_id, VehWeapon weapon_id,

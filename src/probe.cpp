@@ -3,6 +3,166 @@
 
 
 /*
+Calculate how vulnerable the coordinates are for the specified faction based on how far
+away this tile is from the faction headquarters.
+Return Value: Radial distance between coordinates and faction HQ or 12 if no HQ/bases
+*/
+int __cdecl vulnerable(int faction_id, int x, int y) {
+    int dist = 12; // default value for no bases or no HQ
+    for (int i = 0; i < *BaseCount; i++) {
+        if (Bases[i].faction_id == faction_id && has_fac_built(FAC_HEADQUARTERS, i)) {
+            dist = vector_dist(x, y, Bases[i].x, Bases[i].y);
+            break;
+        }
+    }
+    return dist;
+}
+
+/*
+Calculate the cost for the faction to corner the Global Energy Market (Economic Victory).
+Return Value: Cost to corner the Global Energy Market
+*/
+int __cdecl corner_market(int faction_id) {
+    int cost = 0;
+    for (int i = 0; i < *BaseCount; i++) {
+        BASE* base = &Bases[i];
+        if (base->faction_id != faction_id) {
+            if (!has_treaty(base->faction_id, faction_id, DIPLO_PACT)
+            || !has_treaty(base->faction_id, faction_id, DIPLO_HAVE_SURRENDERED)) {
+                cost += mod_mind_control(i, faction_id, true);
+            }
+        }
+    }
+    return max(1000, cost);
+}
+
+/*
+Calculate the amount of energy that can be stolen from a base based on its population.
+Return Value: Energy taken
+*/
+int __cdecl steal_energy(int base_id) {
+    BASE* base = &Bases[base_id];
+    int energy = Factions[base->faction_id].energy_credits;
+    return (energy <= 0) ? 0
+        : ((energy * Bases[base_id].pop_size) / (Factions[base->faction_id].pop_total + 1));
+}
+
+/*
+Calculate the cost for the faction to be able to mind control the specified base. The 3rd
+parameter determines if this cost is for cornering the market (true) or via probe (false).
+Return Value: Mind control cost
+*/
+int __cdecl mod_mind_control(int base_id, int faction_id, int is_corner_market) {
+    BASE* base = &Bases[base_id];
+    int dist = vulnerable(base->faction_id, base->x, base->y);
+    if (dist <= 0) {
+        if (!is_corner_market) {
+            return -1;
+        }
+        dist = 1;
+    }
+    if (has_fac_built(FAC_GENEJACK_FACTORY, base_id)) {
+        dist *= 2;
+    }
+    if (has_fac_built(FAC_CHILDREN_CRECHE, base_id)) {
+        dist /= 2;
+    }
+    if (has_fac_built(FAC_PUNISHMENT_SPHERE, base_id)) {
+        dist /= 2;
+    }
+    if (base->nerve_staple_turns_left) {
+        dist /= 2;
+    }
+    int veh_id = stack_fix(veh_at(base->x, base->y));
+    int cost = ((mod_stack_check(veh_id, 2, PLAN_COMBAT, -1, -1)
+        + mod_stack_check(veh_id, 2, PLAN_OFFENSE, -1, -1))
+        * (mod_stack_check(veh_id, 6, ABL_POLY_ENCRYPTION, -1, -1) + 1)
+        + Factions[faction_id].mind_control_total / 4 + base->pop_size)
+        * ((Factions[base->faction_id].corner_market_active
+        + Factions[base->faction_id].energy_credits + 1200) / (dist + 4));
+    if (!is_human(faction_id) && is_human(base->faction_id)) {
+        int diff = Factions[base->faction_id].diff_level;
+        if (diff > DIFF_LIBRARIAN) {
+            cost = (cost * 3) / diff;
+        }
+    }
+    bool is_pact = has_treaty(faction_id, base->faction_id, DIPLO_PACT);
+    if (is_corner_market) {
+        if (is_pact) {
+            cost /= 2;
+        }
+        if (has_treaty(faction_id, base->faction_id, DIPLO_TREATY)) {
+            cost /= 2;
+        }
+        int tech_comm_target = Factions[base->faction_id].tech_commerce_bonus;
+        tech_comm_target *= tech_comm_target;
+        int tech_comm_probe = Factions[faction_id].tech_commerce_bonus;
+        tech_comm_probe *= tech_comm_probe;
+        cost = (cost * (tech_comm_target + 1)) / (tech_comm_probe + 1);
+    } else if (is_pact) {
+        cost *= 2;
+    }
+    if (base->faction_id_former == faction_id) {
+        cost /= 2;
+    }
+    if (base->state_flags & BSTATE_DRONE_RIOTS_ACTIVE) {
+        cost /= 2;
+    }
+    if (base->state_flags & BSTATE_GOLDEN_AGE_ACTIVE) {
+        cost *= 2;
+    }
+    if (has_treaty(base->faction_id, faction_id, DIPLO_ATROCITY_VICTIM)) {
+        cost *= 2;
+    } else if (has_treaty(base->faction_id, faction_id, DIPLO_WANT_REVENGE)) {
+        cost += cost / 2;
+    }
+    assert(cost == mind_control(base_id, faction_id, is_corner_market));
+    return cost;
+}
+
+/*
+Calculate the success and survival rates for a probe action based on the probe's morale and
+the difficulty of the action. These are used to generate a chances probability string for
+provided index. A base_id is an optional parameter to factor in its probe defenses.
+Return Value: Success rate of probe
+*/
+int __cdecl mod_success_rates(size_t index, int morale, int diff_modifier, int base_id) {
+    char chances[32];
+    int success_rate;
+    if (diff_modifier < 0) {
+        snprintf(chances, 32, "100%%");
+        success_rate = diff_modifier;
+    } else {
+        if (morale < 1) {
+            morale = 1;
+        }
+        int prb_defense = (base_id >= 0 && has_fac_built(FAC_COVERT_OPS_CENTER, base_id)) ? 2 : 0;
+        prb_defense = clamp(Factions[*ProbeTargetFactionID].SE_probe + prb_defense, -2, 0);
+        int failure_rate = (diff_modifier * 100) / ((morale / 2) - prb_defense + 1);
+        if (*ProbeHasAlgoEnhancement && !*ProbeTargetHasHSA) {
+            failure_rate /= 2; // Algo Ench: failure cut in half when acting against normal targets
+        }
+        success_rate = 100 - failure_rate;
+        if (*ProbeTargetHasHSA) {
+            success_rate /= 2; // Chance of success is half what the chance would have been w/o HSA
+        }
+        int loss_rate = ((diff_modifier + 1) * 100) / (morale - prb_defense);
+        if (*ProbeHasAlgoEnhancement && !*ProbeTargetHasHSA) {
+            loss_rate /= 2;
+        }
+        int survival_rate = 100 - loss_rate;
+        if (*ProbeTargetHasHSA) {
+            survival_rate /= 2; // Fix: original had an erroneous 2nd hit to success_rate
+        }
+        // Original game did not display the other percentage if both are the same
+        snprintf(chances, 32, "%d%%, %d%%", success_rate, survival_rate);
+    }
+    parse_says(index, chances, -1, -1);
+    assert(success_rate == success_rates(index, morale, diff_modifier, base_id));
+    return success_rate;
+}
+
+/*
 Calculate current vehicle health only to determine
 the damage from genetic warfare probe team action.
 */

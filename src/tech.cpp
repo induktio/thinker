@@ -2,6 +2,76 @@
 #include "tech.h"
 
 
+int __cdecl has_tech(int tech_id, int faction_id) {
+    assert(faction_id >= 0 && faction_id < MaxPlayerNum);
+    assert(tech_id >= TECH_Disable && tech_id <= TECH_TranT);
+    if (faction_id <= 0) {
+        return false;
+    }
+    if (tech_id == TECH_None) {
+        return true;
+    }
+    if (tech_id < 0 || tech_id >= TECH_TranT
+    || Tech[tech_id].preq_tech1 == TECH_Disable
+    || (Tech[tech_id].preq_tech2 == TECH_Disable
+    && Tech[tech_id].preq_tech1 != TECH_None)) {
+        return false;
+    }
+    return (TechOwners[tech_id] & (1 << faction_id)) != 0;
+}
+
+/*
+Calculate technology level for tech_id. Replaces function tech_recurse.
+*/
+int __cdecl tech_level(int tech_id, int lvl) {
+    if (tech_id < 0 || tech_id > TECH_TranT || lvl > TECH_TranT) {
+        return lvl;
+    } else {
+        int v1 = tech_level(Tech[tech_id].preq_tech1, lvl + 1);
+        int v2 = tech_level(Tech[tech_id].preq_tech2, lvl + 1);
+        return max(v1, v2);
+    }
+}
+
+/*
+Determine what category is the most important for tech_id.
+If there is a tie, the order of precedence is as follows: growth > tech > wealth > power.
+Return Value: Tech category id: growth (0), tech (1), wealth (2) or power (3).
+*/
+int __cdecl tech_category(int tech_id) {
+    int category = TCAT_GROWTH;
+    int value = Tech[tech_id].AI_growth;
+    if (Tech[tech_id].AI_tech > value) {
+        category = TCAT_TECH;
+        value = Tech[tech_id].AI_tech;
+    }
+    if (Tech[tech_id].AI_wealth > value) {
+        category = TCAT_WEALTH;
+        value = Tech[tech_id].AI_wealth;
+    }
+    return (Tech[tech_id].AI_power > value) ? TCAT_POWER : category;
+}
+
+/*
+Check to see whether provided faction can research a specific technology.
+Includes checks to prevent SMACX specific techs from being researched in SMAC mode.
+*/
+int __cdecl mod_tech_avail(int tech_id, int faction_id) {
+    assert(faction_id >= 0 && faction_id < MaxPlayerNum && tech_id >= 0);
+    if (has_tech(tech_id, faction_id) || tech_id >= MaxTechnologyNum || (!*ExpansionEnabled
+    && (tech_id == TECH_PrPsych || tech_id == TECH_FldMod || tech_id == TECH_AdapDoc
+    || tech_id == TECH_AdapEco || tech_id == TECH_Bioadap || tech_id == TECH_SentRes
+    || tech_id == TECH_SecMani || tech_id == TECH_NewMiss || tech_id == TECH_BFG9000))) {
+        return false;
+    }
+    int preq_tech_1 = Tech[tech_id].preq_tech1;
+    int preq_tech_2 = Tech[tech_id].preq_tech2;
+    if (preq_tech_1 <= TECH_Disable || preq_tech_2 <= TECH_Disable) {
+        return false;
+    }
+    return (has_tech(preq_tech_1, faction_id) && has_tech(preq_tech_2, faction_id));
+}
+
 /*
 Calculate the tech related bonuses for commerce and resource production in fungus.
 */
@@ -56,26 +126,6 @@ void __cdecl mod_tech_effects(int faction_id) {
 }
 
 /*
-Check to see whether provided faction can research a specific technology.
-Includes checks to prevent SMACX specific techs from being researched in SMAC mode.
-*/
-int __cdecl mod_tech_avail(int tech_id, int faction_id) {
-    assert(faction_id >= 0 && faction_id < MaxPlayerNum && tech_id >= 0);
-    if (has_tech(tech_id, faction_id) || tech_id >= MaxTechnologyNum || (!*ExpansionEnabled
-    && (tech_id == TECH_PrPsych || tech_id == TECH_FldMod || tech_id == TECH_AdapDoc
-    || tech_id == TECH_AdapEco || tech_id == TECH_Bioadap || tech_id == TECH_SentRes
-    || tech_id == TECH_SecMani || tech_id == TECH_NewMiss || tech_id == TECH_BFG9000))) {
-        return false;
-    }
-    int preq_tech_1 = Tech[tech_id].preq_tech1;
-    int preq_tech_2 = Tech[tech_id].preq_tech2;
-    if (preq_tech_1 <= TECH_Disable || preq_tech_2 <= TECH_Disable) {
-        return false;
-    }
-    return (has_tech(preq_tech_1, faction_id) && has_tech(preq_tech_2, faction_id));
-}
-
-/*
 Original tech_research would apply undocumented AI research bonus to double the speed
 if the player faction is nearing the end game according to various conditions.
 This bonus is skipped when revised_tech_cost is enabled.
@@ -124,7 +174,7 @@ int __cdecl mod_tech_pick(int faction_id, int flag, int other_faction_id, const 
     int tech_id = tech_pick(faction_id, flag, other_faction_id, (int)label);
     if (other_faction_id < 0 && tech_id >= 0 && tech_id != f->tech_research_id) {
         if (conf.revised_tech_cost) {
-            f->tech_cost = tech_cost(faction_id, tech_id);
+            f->tech_cost = tech_cost(tech_id, faction_id);
         } else {
             f->tech_cost = -1; // Must be negative to reset the cost
             f->tech_cost = tech_rate(faction_id);
@@ -175,25 +225,6 @@ void __cdecl say_tech(char* output, int tech_id, int incl_category) {
         char* name = Units[tech_id - 97].name;
         snprintf(buf, LineBufLen, "%s %s", name, label_get(185)); // 'Prototype'
     }
-}
-
-/*
-Determine what category is the most important for tech_id.
-If there is a tie, the order of precedence is as follows: growth > tech > wealth > power.
-Return Value: Tech category id: growth (0), tech (1), wealth (2) or power (3).
-*/
-int __cdecl tech_category(int tech_id) {
-    int category = TCAT_GROWTH;
-    int value = Tech[tech_id].AI_growth;
-    if (Tech[tech_id].AI_tech > value) {
-        category = TCAT_TECH;
-        value = Tech[tech_id].AI_tech;
-    }
-    if (Tech[tech_id].AI_wealth > value) {
-        category = TCAT_WEALTH;
-        value = Tech[tech_id].AI_wealth;
-    }
-    return (Tech[tech_id].AI_power > value) ? TCAT_POWER : category;
 }
 
 /*
@@ -493,20 +524,8 @@ int __cdecl mod_tech_ai(int faction_id) {
     return tech_id;
 }
 
-/*
-Calculate technology level for tech_id. Replaces function tech_recurse.
-*/
-int tech_level(int tech_id, int lvl) {
-    if (tech_id < 0 || tech_id > TECH_TranT || lvl > TECH_TranT) {
-        return lvl;
-    } else {
-        int v1 = tech_level(Tech[tech_id].preq_tech1, lvl + 1);
-        int v2 = tech_level(Tech[tech_id].preq_tech2, lvl + 1);
-        return max(v1, v2);
-    }
-}
-
-int tech_cost(int faction_id, int tech_id) {
+int tech_cost(int tech_id, int faction_id) {
+    assert(valid_player(faction_id));
     MFaction* m = &MFactions[faction_id];
     int level = 1;
     int owners = 0;
@@ -534,8 +553,8 @@ int tech_cost(int faction_id, int tech_id) {
         * cost_diff
         * *MapAreaSqRoot / 56.0
         * max(1, m->rule_techcost) / 100.0
+        * conf.tech_rate_modifier / 100.0
         * (*GameRules & RULES_TECH_STAGNATION ? conf.tech_stagnate_rate / 100.0 : 1.0)
-        * 100.0 / max(1, Rules->tech_discovery_rate)
         * (1.0 - 0.05*min(6, owners));
 
     debug("tech_cost %d %d base: %7.2f diff: %.2f cost: %7.2f "
@@ -546,22 +565,41 @@ int tech_cost(int faction_id, int tech_id) {
     return clamp((int)cost, 1, 99999999);
 }
 
-int tech_base_value(int tech_id, int faction_id) {
+/*
+Replace tech_val for some parts of the diplomacy dialog related to tech trading.
+*/
+int __cdecl tech_alt_val(int tech_id, int faction_id, int flag) {
     CTech& tech = Tech[tech_id];
     Faction& plr = Factions[faction_id];
-    AIPlans& plan = plans[faction_id];
     assert(valid_player(faction_id));
     if (faction_id < 0 || tech_id < 0 || tech_id >= MaxTechnologyNum) {
         return 0;
     }
-    int def_value = (plan.enemy_base_range < 20) + plan.defense_modifier;
+    int def_value = plr.AI_fight + flag;
+    for (int i = 1; i < MaxPlayerNum; i++) {
+        if (i != faction_id && is_alive(i) && at_war(i, faction_id)) {
+            def_value += (Factions[i].base_count > plr.base_count);
+            def_value += (Factions[i].mil_strength_1 > plr.mil_strength_1);
+            def_value += (Factions[i].best_weapon_value > plr.best_weapon_value);
+        }
+    }
     int level = clamp(tech_level(tech_id, 0), 1, 16);
     int owners = __builtin_popcount(TechOwners[tech_id]);
     int weights = (tech.flags & (TFLAG_IMPROVE_PROBE|TFLAG_INC_COMMERCE) ? 4 : 0)
-        + (plr.AI_growth + 1 + (plr.base_count < 8 + *MapAreaSqRoot/4)) * tech.AI_growth
-        + (plr.AI_power + 1 + (def_value > 2)) * tech.AI_power
+        + 4*(tech_id == Rules->tech_preq_allow_3_nutrients_sq)
+        + 4*(tech_id == Rules->tech_preq_allow_3_minerals_sq)
+        + 4*(tech_id == Rules->tech_preq_allow_3_energy_sq)
+        + 4*(tech_id == Facility[FAC_SKY_HYDRO_LAB].preq_tech)
+        + 4*(tech_id == Facility[FAC_ORBITAL_POWER_TRANS].preq_tech)
+        + 4*(tech_id == Facility[FAC_NESSUS_MINING_STATION].preq_tech)
+        + 4*(tech_id == Facility[FAC_ORBITAL_DEFENSE_POD].preq_tech)
+        + 4*(tech_id == Facility[FAC_AEROSPACE_COMPLEX].preq_tech)
+        + 4*(tech_id == Facility[FAC_HAB_COMPLEX].preq_tech
+        && MFactions[faction_id].rule_population > 0)
+        + 2*((plr.AI_growth + 1 + (plr.base_count < 8 + *MapAreaSqRoot/4)) * tech.AI_growth
         + (plr.AI_tech + 1 + (plr.SE_research > 0)) * tech.AI_tech
-        + (plr.AI_wealth + 1 + (plr.SE_economy > 0)) * tech.AI_wealth;
+        + (plr.AI_wealth + 1 + (plr.SE_economy > 0)) * tech.AI_wealth
+        + (plr.AI_power + 1 + (def_value > 2)) * tech.AI_power);
 
     for (int i = 0; i < MaxChassisNum; i++) {
         if (Chassis[i].preq_tech == tech_id) {
@@ -574,27 +612,36 @@ int tech_base_value(int tech_id, int faction_id) {
             weights += 4;
         }
     }
+    for (int i = 0; i < MaxTerrainNum; i++) {
+        if (Terraform[i].preq_tech == tech_id) {
+            weights += 2;
+        }
+    }
     for (int i = 0; i < MaxWeaponNum; i++) {
         if (Weapon[i].preq_tech == tech_id
-        && (!Weapon[i].offense_value || Weapon[i].offense_value > plr.best_weapon_value)) {
+        && (!Weapon[i].offense_value || Weapon[i].offense_value >= plr.best_weapon_value)) {
             weights += 8;
         }
     }
     for (int i = 0; i < MaxArmorNum; i++) {
-        if (Armor[i].preq_tech == tech_id && Armor[i].defense_value > plr.best_armor_value) {
+        if (Armor[i].preq_tech == tech_id && Armor[i].defense_value >= plr.best_armor_value) {
             weights += 4;
         }
     }
-    int value = (clamp(*CurrentTurn/2, 0, 80) + 25*level + 5*level*level)
-        * clamp(weights + 32, 32, 96) / 32;
+    int limit = max(100, *CurrentTurn * *BaseCount / 10);
+    int value = (50*level + 8*level*level + clamp(*BaseCount / 4, 0, 80))
+        * clamp(weights + 32, 32, 96) / 32
+        * clamp(*MapAreaSqRoot, 30, 80) / 64
+        * clamp(100 + (conf.tech_rate_modifier - 100)/2, 50, 200) / 100;
+    value = (value - max(0, value - limit)/2);
 
     if (*GameRules & RULES_TECH_STAGNATION) {
-        value = value * 3 / 2;
+        value = value * clamp(100 + (conf.tech_stagnate_rate - 100)/2, 50, 200) / 100;
     }
     if (owners > 1) {
-        value = value * max(2, 7 - owners) / 8;
+        value = value * max(25, 100 - 15*owners) / 100;
     }
-    debugw("tech_base_value %d level: %d owners: %d weights: %d value: %d tech: %d %s\n",
+    debugw("tech_alt_val %d level: %d owners: %d weights: %d value: %d tech: %d %s\n",
     faction_id, level, owners, weights, value, tech_id, Tech[tech_id].name);
     return value;
 }

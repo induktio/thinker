@@ -141,6 +141,7 @@ const int MaxCitizenNum = 10;
 const int MaxMoodNum = 9;
 const int MaxReputeNum = 8;
 const int MaxMightNum = 7;
+const int MaxBonusNum = 8;
 const int MaxBonusNameNum = 41;
 const int MaxProposalNum = 11;
 
@@ -240,6 +241,7 @@ struct Config {
     int simple_cost_factor = 0;
     int revised_tech_cost = 1;
     int tech_cost_factor[MaxDiffNum] = {116,108,100,92,84,76};
+    int tech_rate_modifier = 100; // internal variable
     int tech_stagnate_rate = 200;
     int fast_fungus_movement = 0;
     int magtube_movement_rate = 0;
@@ -303,6 +305,7 @@ struct Config {
     int repair_battle_ogre = 0;
     LMConfig landmarks;
     int minimal_popups = 0; // unlisted option
+    int diplo_patience = 0; // internal variable
     int skip_random_factions = 0; // internal variable
     int faction_file_count = 14; // internal variable
     int reduced_mode = 0; // internal variable

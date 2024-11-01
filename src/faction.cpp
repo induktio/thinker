@@ -2,24 +2,6 @@
 #include "faction.h"
 
 
-bool has_tech(int tech_id, int faction_id) {
-    assert(faction_id >= 0 && faction_id < MaxPlayerNum);
-    assert(tech_id >= TECH_Disable && tech_id <= TECH_TranT);
-    if (faction_id <= 0) {
-        return false;
-    }
-    if (tech_id == TECH_None) {
-        return true;
-    }
-    if (tech_id < 0 || tech_id >= TECH_TranT
-    || Tech[tech_id].preq_tech1 == TECH_Disable
-    || (Tech[tech_id].preq_tech2 == TECH_Disable
-    && Tech[tech_id].preq_tech1 != TECH_None)) {
-        return false;
-    }
-    return TechOwners[tech_id] & (1 << faction_id);
-}
-
 bool has_chassis(int faction_id, VehChassis chs) {
     return has_tech(Chassis[chs].preq_tech, faction_id);
 }
@@ -176,16 +158,6 @@ bool has_pact(int faction1, int faction2) {
         && Factions[faction1].diplo_status[faction2] & DIPLO_PACT;
 }
 
-bool has_treaty(int faction1, int faction2, uint32_t treaty) {
-    return faction1 >= 0 && faction2 >= 0
-        && Factions[faction1].diplo_status[faction2] & treaty;
-}
-
-bool has_agenda(int faction1, int faction2, uint32_t agenda) {
-    return faction1 >= 0 && faction2 >= 0
-        && Factions[faction1].diplo_agenda[faction2] & agenda;
-}
-
 bool both_neutral(int faction1, int faction2) {
     return faction1 >= 0 && faction2 >= 0 && faction1 != faction2
         && !(Factions[faction1].diplo_status[faction2] & (DIPLO_PACT|DIPLO_VENDETTA));
@@ -300,7 +272,7 @@ void __cdecl set_treaty(int faction1, int faction2, uint32_t treaty, bool add) {
             Factions[faction1].diplo_status[faction2] |= DIPLO_RENEW_INFILTRATOR;
             if (faction1 == MapWin->cOwner) {
                 ParseNumTable[0] = turns;
-                parse_says(0, MFactions[faction2].noun_faction, -1, -1);
+                parse_says(0, parse_set(faction2), -1, -1);
                 NetMsg_pop(NetMsg, "SPYRENEW", 5000, 0, 0);
             }
         }
@@ -315,6 +287,18 @@ void __cdecl set_agenda(int faction1, int faction2, uint32_t agenda, bool add) {
     } else {
         Factions[faction1].diplo_agenda[faction2] &= ~agenda;
     }
+}
+
+int __cdecl has_treaty(int faction1, int faction2, uint32_t treaty) {
+    assert(faction1 >= 0 && faction1 < MaxPlayerNum);
+    assert(faction2 >= 0 && faction2 < MaxPlayerNum);
+    return Factions[faction1].diplo_status[faction2] & treaty;
+}
+
+int __cdecl has_agenda(int faction1, int faction2, uint32_t agenda) {
+    assert(faction1 >= 0 && faction1 < MaxPlayerNum);
+    assert(faction2 >= 0 && faction2 < MaxPlayerNum);
+    return Factions[faction1].diplo_agenda[faction2] & agenda;
 }
 
 /*
@@ -567,6 +551,9 @@ Calculate the amount of patience the specified faction has with another.
 Return Value: Patience
 */
 int __cdecl get_patience(int faction_id_with, int faction_id) {
+    if (DEBUG && conf.diplo_patience > 0) {
+        return conf.diplo_patience;
+    }
     if (has_treaty(faction_id, faction_id_with, DIPLO_VENDETTA)) {
         return 1;
     }
@@ -591,13 +578,107 @@ int __cdecl energy_value(int loan_principal) {
 }
 
 /*
-Calculate the cost of the social upheaval for the specified faction.
+Calculate the social engineering effect modifiers for the specified faction.
 */
-int __cdecl mod_social_cost(int faction_id, int* choices) {
+void __cdecl social_calc(CSocialCategory* category, CSocialEffect* effect,
+int faction_id, int UNUSED(toggle), int is_quick_calc) {
+    Faction* f = &Factions[faction_id];
+    MFaction* m = &MFactions[faction_id];
+    memset(effect, 0, sizeof(CSocialEffect));
+    for (int cat = 0; cat < MaxSocialCatNum; cat++) {
+        int model = *(&category->politics + cat);
+        assert(model >= 0 && model < MaxSocialModelNum);
+        for (int eff = 0; eff < MaxSocialEffectNum; eff++) {
+            int effect_val = *(&SocialField[cat].soc_effect[model].economy + eff);
+            if (effect_val < 0) {
+                if (cat == SOCIAL_C_FUTURE) {
+                    if (model == SOCIAL_M_CYBERNETIC) {
+                        if (has_project(FAC_NETWORK_BACKBONE, faction_id)) {
+                            effect_val = 0;
+                        }
+                    } else if (model == SOCIAL_M_THOUGHT_CONTROL) {
+                        if (has_project(FAC_CLONING_VATS, faction_id)) {
+                            effect_val = 0;
+                        }
+                    }
+                } else if (cat == SOCIAL_C_VALUES && model == SOCIAL_M_POWER
+                && has_project(FAC_CLONING_VATS, faction_id)) {
+                    effect_val = 0;
+                }
+                if (effect_val < 0) {
+                    for (int i = 0; i < m->faction_bonus_count; i++) {
+                        if (m->faction_bonus_val1[i] == cat
+                        && m->faction_bonus_val2[i] == model) {
+                            if (m->faction_bonus_id[i] == RULE_IMPUNITY) {
+                                *(&effect->economy + eff) -= effect_val; // negates neg effects
+                            } else if (m->faction_bonus_id[i] == RULE_PENALTY) {
+                                *(&effect->economy + eff) += effect_val; // doubles neg effects
+                            }
+                        }
+                    }
+                }
+            }
+            *(&effect->economy + eff) += effect_val;
+        }
+    }
+    if (!is_quick_calc) {
+        if (has_project(FAC_ASCETIC_VIRTUES, faction_id)) {
+            effect->police++;
+        }
+        if (has_project(FAC_LIVING_REFINERY, faction_id)) {
+            effect->support += 2;
+        }
+        if (has_temple(faction_id)) {
+            effect->planet++;
+            if (is_alien(faction_id)) {
+                effect->research++; // bonus documented in conceptsx.txt but not manual
+            }
+        }
+        CSocialEffect* effect_base = (CSocialEffect*)&f->SE_economy_base;
+        for (int eff = 0; eff < MaxSocialEffectNum; eff++) {
+            *(&effect->economy + eff) += *(&effect_base->economy + eff);
+        }
+        for (int i = 0; i < m->faction_bonus_count; i++) {
+            int bonus_id = m->faction_bonus_id[i];
+            int bonus_val = m->faction_bonus_val1[i];
+            if (bonus_id == RULE_IMMUNITY || bonus_id == RULE_ROBUST) {
+                int32_t* effect_value = (&effect->economy + bonus_val);
+                assert(bonus_val >= 0 && bonus_val < MaxSocialEffectNum);
+                if (bonus_id == RULE_IMMUNITY) { // cancels neg effects
+                    *effect_value = clamp(*effect_value, 0, 999);
+                } else if (bonus_id == RULE_ROBUST) { // halves neg effects
+                    if (*effect_value < 0) {
+                        *effect_value /= 2;
+                    }
+                }
+            }
+        }
+    }
+}
+
+/*
+Handle the social engineering turn upkeep for the specified faction.
+*/
+void __cdecl social_upkeep(int faction_id) {
+    Faction* f = &Factions[faction_id];
+    CSocialCategory* pending = (CSocialCategory*)&f->SE_Politics_pending;
+    CSocialCategory* current = (CSocialCategory*)&f->SE_Politics;
+    memcpy(current, pending, sizeof(CSocialCategory));
+    social_calc(pending, (CSocialEffect*)&f->SE_economy_pending, faction_id, false, false);
+    social_calc(pending, (CSocialEffect*)&f->SE_economy, faction_id, false, false);
+    social_calc(pending, (CSocialEffect*)&f->SE_economy_2, faction_id, true, false);
+    f->SE_upheaval_cost_paid = 0;
+}
+
+/*
+Calculate the cost of the social upheaval for the specified faction.
+Return Value: Social upheaval cost
+*/
+int __cdecl social_upheaval(int faction_id, CSocialCategory* choices) {
     Faction* f = &Factions[faction_id];
     int changes = 0;
     for (int i = 0; i < MaxSocialCatNum; i++) {
-        if (choices[i] != (&f->SE_Politics)[i]) {
+        if (*(&choices->politics + i) != (&f->SE_Politics)[i]) {
             changes++;
         }
     }
@@ -615,13 +696,14 @@ int __cdecl mod_social_cost(int faction_id, int* choices) {
 
 /*
 Check to see whether the faction can utilize a specific social category and model.
+Return Value: Is social category/model available to faction? true/false
 */
-int __cdecl mod_society_avail(int soc_category, int soc_model, int faction_id) {
+int __cdecl society_avail(int soc_category, int soc_model, int faction_id) {
     if (MFactions[faction_id].soc_opposition_category == soc_category
     && MFactions[faction_id].soc_opposition_model == soc_model) {
         return false;
     }
-    return has_tech(Social[soc_category].soc_preq_tech[soc_model], faction_id);
+    return has_tech(SocialField[soc_category].soc_preq_tech[soc_model], faction_id);
 }
 
 int __cdecl mod_setup_player(int faction_id, int a2, int a3) {
@@ -779,6 +861,9 @@ int robust, int immunity, int impunity, int penalty) {
             }
         }
     }
+    if (m->soc_priority_effect >= 0 && m->soc_priority_effect < MaxSocialEffectNum) {
+        sc += clamp(vals[m->soc_priority_effect], -4, 4);
+    }
     if (vals[ECO] >= 2) {
         sc += (vals[ECO] >= 4 ? 16 : 12);
     }
@@ -849,7 +934,7 @@ int robust, int immunity, int impunity, int penalty) {
             * clamp(vals[RES], -5, 5);
     }
 
-    debug("social_score %d %d %d %d %s\n", faction_id, sf, sm, sc, Social[sf].soc_name[sm]);
+    debug("social_score %d %d %d %d %s\n", faction_id, sf, sm, sc, SocialField[sf].soc_name[sm]);
     return sc;
 }
 
@@ -932,13 +1017,14 @@ int __cdecl mod_social_ai(int faction_id, int a2, int a3, int a4, int a5, int a6
     int score_diff = 1 + (*CurrentTurn + 11*faction_id) % 6;
     int sf = -1;
     int sm2 = -1;
+    CSocialCategory soc;
 
     for (int i = 0; i < MaxSocialCatNum; i++) {
         int sm1 = (&f->SE_Politics)[i];
         int sc1 = social_score(faction_id, i, sm1, def_value, pop_boom, has_nexus, robust, immunity, impunity, penalty);
 
         for (int j = 0; j < MaxSocialModelNum; j++) {
-            if (j == sm1 || !mod_society_avail(i, j, faction_id)) {
+            if (j == sm1 || !society_avail(i, j, faction_id)) {
                 continue;
             }
             int sc2 = social_score(faction_id, i, j, def_value, pop_boom, has_nexus, robust, immunity, impunity, penalty);
@@ -946,18 +1032,20 @@ int __cdecl mod_social_ai(int faction_id, int a2, int a3, int a4, int a5, int a6
                 sf = i;
                 sm2 = j;
                 score_diff = sc2 - sc1;
+                memcpy(&soc, &f->SE_Politics, sizeof(soc));
+                *(&soc.politics + sf) = sm2;
             }
         }
     }
-    int cost = (is_alien(faction_id) ? 36 : 24);
-    if (sf >= 0 && f->energy_credits > cost) {
+    int cost;
+    if (sf >= 0 && f->energy_credits > (cost = social_upheaval(faction_id, &soc))) {
         int sm1 = (&f->SE_Politics)[sf];
         (&f->SE_Politics_pending)[sf] = sm2;
         f->energy_credits -= cost;
         f->SE_upheaval_cost_paid += cost;
         debug("social_change %d %d %8s cost: %2d score_diff: %2d %s -> %s\n",
             *CurrentTurn, faction_id, m->filename,
-            cost, score_diff, Social[sf].soc_name[sm1], Social[sf].soc_name[sm2]);
+            cost, score_diff, SocialField[sf].soc_name[sm1], SocialField[sf].soc_name[sm2]);
     }
     social_set(faction_id);
     design_units(faction_id);

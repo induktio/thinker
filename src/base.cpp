@@ -1831,6 +1831,93 @@ bool satellite_bonus(int base_id, int* nutrient, int* mineral, int* energy) {
     return f.satellites_ODP > 0;
 }
 
+
+/*
+Calculate the non-native unit morale bonus modifier provided by the base and faction for a triad.
+Return Value: Morale bonus modifier
+*/
+int __cdecl morale_mod(int base_id, int faction_id, int triad) {
+    int value = 0;
+    if (triad == TRIAD_LAND) {
+        if (has_fac_built(FAC_COMMAND_CENTER, base_id)
+        || has_project(FAC_COMMAND_NEXUS, faction_id)) {
+            value = 2;
+        }
+    } else if (triad == TRIAD_SEA) {
+        if (has_fac_built(FAC_NAVAL_YARD, base_id)
+        || has_project(FAC_MARITIME_CONTROL_CENTER, faction_id)) {
+            value = 2;
+        }
+    } else if (triad == TRIAD_AIR) {
+        if (has_fac_built(FAC_AEROSPACE_COMPLEX, base_id)
+        || has_project(FAC_CLOUDBASE_ACADEMY, faction_id)) {
+            value = 2;
+        }
+    }
+    if (has_fac_built(FAC_BIOENHANCEMENT_CENTER, base_id)
+    || has_project(FAC_CYBORG_FACTORY, faction_id)) {
+        value += 2;
+    }
+    if (Factions[faction_id].SE_morale_pending < -1) {
+        value /= 2;
+    }
+    return value;
+}
+
+/*
+Calculate the count of lifecycle/psi bonuses that are provided by a base and faction.
+If this value is non-zero, native units at base will receive the facility bonus in repair_phase.
+Return Value: Native life modifier count
+*/
+int __cdecl breed_mod(int base_id, int faction_id) {
+    int value = 0;
+    if (has_project(FAC_XENOEMPATHY_DOME, faction_id)) {
+        value++;
+    }
+    if (has_project(FAC_PHOLUS_MUTAGEN, faction_id)) {
+        value++;
+    }
+    if (has_project(FAC_VOICE_OF_PLANET, faction_id)) {
+        value++;
+    }
+    if (has_fac_built(FAC_CENTAURI_PRESERVE, base_id)) {
+        value++;
+    }
+    if (has_fac_built(FAC_TEMPLE_OF_PLANET, base_id)) {
+        value++;
+    }
+    if (has_fac_built(FAC_BIOLOGY_LAB, base_id)) {
+        value++;
+    }
+    if (has_fac_built(FAC_BIOENHANCEMENT_CENTER, base_id)
+    || has_project(FAC_CYBORG_FACTORY, faction_id)) {
+        value++;
+    }
+    return value;
+}
+
+/*
+Calculate the new native unit lifecycle bonus modifier provided by a base and faction.
+Return Value: Lifecycle bonus
+*/
+int __cdecl worm_mod(int base_id, int faction_id) {
+    int value = breed_mod(base_id, faction_id);
+    if (MFactions[faction_id].rule_psi) {
+        value++;
+    }
+    if (has_project(FAC_DREAM_TWISTER, faction_id)) {
+        value++;
+    }
+    if (has_project(FAC_NEURAL_AMPLIFIER, faction_id)) {
+        value++;
+    }
+    return value;
+}
+
+/*
+Determine whether the base is considered an objective for scenario victory conditions.
+Return Value: Is base an objective? true/false
+*/
 int __cdecl is_objective(int base_id) {
     if (*GameRules & RULES_SCN_VICT_ALL_BASE_COUNT_OBJ
     || Bases[base_id].event_flags & BEVENT_OBJECTIVE) {
@@ -1864,6 +1951,10 @@ int __cdecl own_base_rank(int base_id) {
     return position;
 }
 
+/*
+Determine the faction base_id for the specified position sorted by the highest energy intake.
+Return Value: base_id for the specified rank position or -1 if position is unavailable
+*/
 int __cdecl mod_base_rank(int faction_id, int position) {
     score_max_queue_t intake;
     for (int i = 0; i < *BaseCount; i++) {
@@ -2270,7 +2361,7 @@ void __cdecl set_fac(FacilityId item_id, int base_id, bool add) {
 
 /*
 Calculate facility maintenance cost taking into account faction bonus facilities.
-Vanilla game calculates Command Center maintenance based on the current highest
+Original game calculates Command Center maintenance based on the current highest
 reactor level which is unnecessary to implement here.
 */
 int __cdecl fac_maint(int facility_id, int faction_id) {

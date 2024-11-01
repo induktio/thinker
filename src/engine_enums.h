@@ -438,6 +438,62 @@ enum FactionGender {
     GENDER_NEUTRAL = 2,
 };
 
+enum FactionMood {
+    MOOD_MAGNANIMOUS = 0,
+    MOOD_SOLICITOUS = 1,
+    MOOD_COOPERATIVE = 2,
+    MOOD_NONCOMMITTAL = 3,
+    MOOD_AMBIVALENT = 4,
+    MOOD_OBSTINATE = 5,
+    MOOD_QUARRELSOME = 6,
+    MOOD_BELLIGERENT = 7,
+    MOOD_SEETHING = 8,
+};
+
+enum FactionBonusName {
+    BN_TECH = 0,
+    BN_MORALE = 1,
+    BN_PSI = 2,
+    BN_FACILITY = 3,
+    BN_RESEARCH = 4,
+    BN_DRONE = 5,
+    BN_TALENT = 6,
+    BN_ENERGY = 7,
+    BN_INTEREST = 8,
+    BN_COMMERCE = 9,
+    BN_POPULATION = 10,
+    BN_HURRY = 11,
+    BN_UNIT = 12,
+    BN_TECHCOST = 13,
+    BN_SHARETECH = 14,
+    BN_TERRAFORM = 15,
+    BN_SOCIAL = 16,
+    BN_ROBUST = 17,
+    BN_IMMUNITY = 18,
+    BN_IMPUNITY = 19,
+    BN_PENALTY = 20,
+    BN_FUNGNUTRIENT = 21,
+    BN_FUNGMINERALS = 22,
+    BN_FUNGENERGY = 23,
+    BN_COMMFREQ = 24,
+    BN_MINDCONTROL = 25,
+    BN_FANATIC = 26,
+    BN_VOTES = 27,
+    BN_FREEPROTO = 28,
+    BN_AQUATIC = 29,
+    BN_ALIEN = 30,
+    BN_FREEFAC = 31,
+    BN_REVOLT = 32,
+    BN_NODRONE = 33,
+    BN_WORMPOLICE = 34,
+    BN_FREEABIL = 35,
+    BN_PROBECOST = 36,
+    BN_DEFENSE = 37,
+    BN_OFFENSE = 38,
+    BN_TECHSHARE = 39,
+    BN_TECHSTEAL = 40,
+};
+
 enum FactionRuleType {
     RULE_TECH = 0,
     RULE_UNIT = 1,
@@ -561,18 +617,6 @@ enum PlayerFlagsExtended {
     PFLAG_EXT_STRAT_LOTS_MISSILES = 0x10,
     PFLAG_EXT_SHAMELESS_BETRAY_HUMANS = 0x20,
     PFLAG_EXT_STRAT_LOTS_ARTILLERY = 0x40,
-};
-
-enum PlayerMood {
-    MOOD_MAGNANIMOUS = 0,
-    MOOD_SOLICITOUS = 1,
-    MOOD_COOPERATIVE = 2,
-    MOOD_NONCOMMITTAL = 3,
-    MOOD_AMBIVALENT = 4,
-    MOOD_OBSTINATE = 5,
-    MOOD_QUARRELSOME = 6,
-    MOOD_BELLIGERENT = 7,
-    MOOD_SEETHING = 8,
 };
 
 enum MapItem {

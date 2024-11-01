@@ -16,6 +16,7 @@ const int8_t NetVersion = 11; // Network multiplayer
 
 void write_jump(int32_t addr, int32_t func);
 void short_jump(int32_t addr);
+void long_jump(int32_t addr);
 void write_call(int32_t addr, int32_t func);
 void write_offset(int32_t addr, const void* offset);
 void write_bytes(int32_t addr, const byte* old_bytes, const byte* new_bytes, int32_t len);

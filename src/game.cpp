@@ -372,11 +372,10 @@ int __cdecl mod_faction_upkeep(int faction_id) {
         move_upkeep(faction_id, (is_human(faction_id) ? UM_Player : UM_Full));
         do_all_non_input();
 
-        if (!is_human(faction_id)) {
+        if (!is_human(faction_id) && *GameRules & RULES_VICTORY_ECONOMIC
+        && has_tech(Rules->tech_preq_economic_victory, faction_id)) {
             int cost = corner_market(faction_id);
-            if (!victory_done() && f->energy_credits > cost && f->corner_market_active < 1
-            && has_tech(Rules->tech_preq_economic_victory, faction_id)
-            && *GameRules & RULES_VICTORY_ECONOMIC) {
+            if (!victory_done() && f->corner_market_active <= 0 && f->energy_credits > cost) {
                 f->corner_market_turn = *CurrentTurn + Rules->turns_corner_global_energy_market;
                 f->corner_market_active = cost;
                 f->energy_credits -= cost;
@@ -399,8 +398,8 @@ int __cdecl mod_faction_upkeep(int faction_id) {
             base->state_flags &= ~(BSTATE_UNK_1 | BSTATE_HURRY_PRODUCTION);
         }
     }
-    f->energy_credits -= f->energy_cost;
-    f->energy_cost = 0;
+    f->energy_credits -= f->hurry_cost_total;
+    f->hurry_cost_total = 0;
     if (f->energy_credits < 0) {
         f->energy_credits = 0;
     }
@@ -519,7 +518,7 @@ void __cdecl mod_repair_phase(int faction_id) {
                 || (triad == TRIAD_AIR && has_facility(FAC_AEROSPACE_COMPLEX, base_id))) {
                     value += conf.repair_base_facility;
                 }
-            } else if (breed_level(base_id, faction_id)) {
+            } else if (breed_mod(base_id, faction_id)) {
                 value += conf.repair_base_native;
             }
         }

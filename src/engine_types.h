@@ -274,11 +274,11 @@ struct Faction {
     int32_t base_governor_adv; // default advanced Governor settings
     int32_t atrocities; // count committed by faction
     int32_t major_atrocities; // count committed by faction
-    int32_t subvert_total; // ? probe: mind control base (+4) / subvert unit (+1) total
-    int32_t diplo_subvert[8]; // ? probe: mind control base (+4) / subvert unit (+1) per faction
+    int32_t mind_control_total; // ? probe: mind control base (+4) / subvert unit (+1) total
+    int32_t diplo_mind_control[8]; // ? probe: mind control base (+4) / subvert unit (+1) per faction
     int32_t diplo_stolen_techs[8]; // probe: successfully procured research data (tech/map) per faction
     int32_t energy_credits;
-    int32_t energy_cost;
+    int32_t hurry_cost_total; // Net MP: Total paid energy to hurry production (current turn)
     int32_t SE_Politics_pending;
     int32_t SE_Economics_pending;
     int32_t SE_Values_pending;
@@ -344,8 +344,7 @@ struct Faction {
     int32_t tech_fungus_unused;
     int32_t SE_alloc_psych;
     int32_t SE_alloc_labs;
-    int32_t unk_25;
-    int32_t unk_26[11]; // unused
+    int32_t tech_pact_shared_goals[12]; // Bitfield; Suggested tech_id goals from pacts (TEAMTECH)
     int32_t tech_ranking; // Twice the number of techs discovered
     int32_t unk_27;
     int32_t ODP_deployed;
@@ -755,6 +754,13 @@ struct CTimeControl {
     int32_t extra;
     int32_t refresh;
     int32_t accumulated;
+};
+
+struct CSocialCategory {
+    int politics;
+    int economics;
+    int values;
+    int future;
 };
 
 struct CSocialEffect {

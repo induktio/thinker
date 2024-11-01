@@ -52,5 +52,5 @@ int __cdecl DiploPop_spying(int faction_id);
 int __cdecl mod_threaten(int faction1, int faction2);
 int __cdecl mod_base_swap(int faction1, int faction2);
 int __cdecl mod_energy_trade(int faction1, int faction2);
-int __cdecl mod_buy_tech(int faction1, int faction2, int counter_id, bool high_price, int proposal_id);
+int __cdecl mod_buy_tech(int faction1, int faction2, int counter_id, int high_price, int proposal_id);
 

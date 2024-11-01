@@ -225,6 +225,18 @@ void short_jump(int32_t addr) {
     }
 }
 
+/*
+Modify conditional long jump such that it is always taken.
+*/
+void long_jump(int32_t addr) {
+    if (*(uint16_t*)addr == 0x840F || *(uint16_t*)addr == 0x850F || *(uint16_t*)addr == 0x8C0F
+    || *(uint16_t*)addr == 0x8D0F || (*(uint16_t*)addr == 0x8E0F)) {
+        *(uint16_t*)addr = 0xE990;
+    } else if (*(uint16_t*)addr != 0xE990) {
+        exit_fail(addr);
+    }
+}
+
 void write_call(int32_t addr, int32_t func) {
     if (*(uint16_t*)addr == 0x15FF && *(int32_t*)(addr+2) + addr >= (int32_t)AC_IMAGE_BASE) {
         *(uint16_t*)addr = 0xE890;
@@ -364,6 +376,9 @@ bool patch_setup(Config* cf) {
     write_jump(0x4E4020, (int)mod_best_specialist);
     write_jump(0x4E4430, (int)mod_cost_factor);
     write_jump(0x4E4AA0, (int)base_first);
+    write_jump(0x4E6400, (int)morale_mod);
+    write_jump(0x4E65C0, (int)breed_mod);
+    write_jump(0x4E6740, (int)worm_mod);
     write_jump(0x4E80B0, (int)mod_base_yield);
     write_jump(0x4E9550, (int)mod_base_support);
     write_jump(0x4E9B70, (int)mod_base_nutrient);
@@ -374,6 +389,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x500320, (int)drop_range);
     write_jump(0x501350, (int)mod_morale_alien);
     write_jump(0x501500, (int)psi_factor);
+    write_jump(0x50C4B0, (int)steal_energy);
     write_jump(0x527290, (int)mod_faction_upkeep);
     write_jump(0x52AD30, (int)council_votes);
     write_jump(0x52AE20, (int)eligible);
@@ -417,8 +433,14 @@ bool patch_setup(Config* cf) {
     write_jump(0x59E510, (int)prefs_put2);
     write_jump(0x59E530, (int)prefs_put);
     write_jump(0x59E5D0, (int)prefs_save);
+    write_jump(0x59E980, (int)vulnerable);
+    write_jump(0x59EE50, (int)corner_market);
     write_jump(0x59E950, (int)prefs_use);
     write_jump(0x5AC060, (int)is_objective);
+    write_jump(0x5B4210, (int)social_calc);
+    write_jump(0x5B44D0, (int)social_upkeep);
+    write_jump(0x5B4550, (int)social_upheaval);
+    write_jump(0x5B4730, (int)society_avail);
     write_jump(0x5B9C40, (int)say_tech);
     write_jump(0x5B9FE0, (int)tech_category);
     write_jump(0x5BF1F0, (int)has_abil);
@@ -688,10 +710,6 @@ bool patch_setup(Config* cf) {
     write_call(0x506D07, (int)mod_best_defender); // battle_fight_2
     write_call(0x506EA6, (int)mod_battle_compute); // battle_fight_2
     write_call(0x5085E0, (int)mod_battle_compute); // battle_fight_2
-    write_call(0x40E717, (int)breed_level); // BaseWin::draw_production
-    write_call(0x526366, (int)breed_level); // repair_phase
-    write_call(0x4FD320, (int)worm_level); // base_build
-    write_call(0x4FD3BC, (int)worm_level); // base_build
     write_call(0x436796, (int)transport_val); // DesignWin::draw_unit_preview
     write_call(0x5A5F3D, (int)transport_val); // make_proto
     write_call(0x4930F8, (int)mod_veh_avail); // ProdPicker::calculate
@@ -733,42 +751,62 @@ bool patch_setup(Config* cf) {
     write_call(0x4226D5, (int)mod_armor_proto); // BattleWin::battle_report
     write_call(0x501C95, (int)mod_armor_proto); // get_basic_defense
     write_call(0x57D703, (int)mod_armor_proto); // say_defense
-    write_call(0x436ADD, (int)mod_proto_cost);
-    write_call(0x43704C, (int)mod_proto_cost);
-    write_call(0x5817C9, (int)mod_proto_cost);
-    write_call(0x581833, (int)mod_proto_cost);
-    write_call(0x581BB3, (int)mod_proto_cost);
-    write_call(0x581BCB, (int)mod_proto_cost);
-    write_call(0x582339, (int)mod_proto_cost);
-    write_call(0x582359, (int)mod_proto_cost);
-    write_call(0x582378, (int)mod_proto_cost);
-    write_call(0x582398, (int)mod_proto_cost);
-    write_call(0x5823B0, (int)mod_proto_cost);
-    write_call(0x582482, (int)mod_proto_cost);
-    write_call(0x58249A, (int)mod_proto_cost);
-    write_call(0x58254A, (int)mod_proto_cost);
-    write_call(0x5827E4, (int)mod_proto_cost);
-    write_call(0x582EC5, (int)mod_proto_cost);
-    write_call(0x582FEC, (int)mod_proto_cost);
-    write_call(0x5A5D35, (int)mod_proto_cost);
-    write_call(0x5A5F15, (int)mod_proto_cost);
-    write_call(0x40E666, (int)mod_veh_cost);
-    write_call(0x40E9C6, (int)mod_veh_cost);
-    write_call(0x418F75, (int)mod_veh_cost);
-    write_call(0x492D90, (int)mod_veh_cost);
-    write_call(0x493250, (int)mod_veh_cost);
-    write_call(0x49E097, (int)mod_veh_cost);
-    write_call(0x4F0B5E, (int)mod_veh_cost);
-    write_call(0x4F15DF, (int)mod_veh_cost);
-    write_call(0x4F4061, (int)mod_veh_cost);
-    write_call(0x4FA2AB, (int)mod_veh_cost);
-    write_call(0x4FA510, (int)mod_veh_cost);
-    write_call(0x4FD6B5, (int)mod_veh_cost);
-    write_call(0x56D38D, (int)mod_veh_cost);
-    write_call(0x57AB53, (int)mod_veh_cost);
-    write_call(0x593D35, (int)mod_veh_cost);
-    write_call(0x593F72, (int)mod_veh_cost);
-    write_call(0x594B8E, (int)mod_veh_cost);
+    write_call(0x436ADD, (int)mod_proto_cost); // DesignWin::draw_unit_preview
+    write_call(0x43704C, (int)mod_proto_cost); // DesignWin::draw_unit_preview
+    write_call(0x5817C9, (int)mod_proto_cost); // consider_designs
+    write_call(0x581833, (int)mod_proto_cost); // consider_designs
+    write_call(0x581BB3, (int)mod_proto_cost); // consider_designs
+    write_call(0x581BCB, (int)mod_proto_cost); // consider_designs
+    write_call(0x582339, (int)mod_proto_cost); // consider_designs
+    write_call(0x582359, (int)mod_proto_cost); // consider_designs
+    write_call(0x582378, (int)mod_proto_cost); // consider_designs
+    write_call(0x582398, (int)mod_proto_cost); // consider_designs
+    write_call(0x5823B0, (int)mod_proto_cost); // consider_designs
+    write_call(0x582482, (int)mod_proto_cost); // consider_designs
+    write_call(0x58249A, (int)mod_proto_cost); // consider_designs
+    write_call(0x58254A, (int)mod_proto_cost); // consider_designs
+    write_call(0x5827E4, (int)mod_proto_cost); // consider_designs
+    write_call(0x582EC5, (int)mod_proto_cost); // consider_designs
+    write_call(0x582FEC, (int)mod_proto_cost); // consider_designs
+    write_call(0x5A5D35, (int)mod_proto_cost); // base_cost
+    write_call(0x5A5F15, (int)mod_proto_cost); // make_proto
+    write_call(0x40E666, (int)mod_veh_cost); // BaseWin::draw_production
+    write_call(0x40E9C6, (int)mod_veh_cost); // BaseWin::draw_production
+    write_call(0x418F75, (int)mod_veh_cost); // BaseWin::hurry
+    write_call(0x492D90, (int)mod_veh_cost); // ProdPicker::unk3
+    write_call(0x493250, (int)mod_veh_cost); // ProdPicker::calculate
+    write_call(0x49E097, (int)mod_veh_cost); // ReportWin::draw_ops
+    write_call(0x4F0B5E, (int)mod_veh_cost); // base_production
+    write_call(0x4F15DF, (int)mod_veh_cost); // base_production
+    write_call(0x4F4061, (int)mod_veh_cost); // base_hurry
+    write_call(0x4FA2AB, (int)mod_veh_cost); // base_build
+    write_call(0x4FA510, (int)mod_veh_cost); // base_build
+    write_call(0x4FD6B5, (int)mod_veh_cost); // base_build
+    write_call(0x56D38D, (int)mod_veh_cost); // enemy_move
+    write_call(0x57AB53, (int)mod_veh_cost); // goody_box
+    write_call(0x593D35, (int)mod_veh_cost); // supply_options
+    write_call(0x593F72, (int)mod_veh_cost); // supply_options
+    write_call(0x594B8E, (int)mod_veh_cost); // order_veh
+    write_call(0x59EEA1, (int)mod_mind_control); // corner_market
+    write_call(0x5A20E8, (int)mod_mind_control); // probe
+    write_call(0x59FE9D, (int)mod_success_rates); // probe
+    write_call(0x59FEBB, (int)mod_success_rates); // probe
+    write_call(0x5A00EE, (int)mod_success_rates); // probe
+    write_call(0x5A010C, (int)mod_success_rates); // probe
+    write_call(0x5A03AD, (int)mod_success_rates); // probe
+    write_call(0x5A03C8, (int)mod_success_rates); // probe
+    write_call(0x5A077D, (int)mod_success_rates); // probe
+    write_call(0x5A07C5, (int)mod_success_rates); // probe
+    write_call(0x5A0BB1, (int)mod_success_rates); // probe
+    write_call(0x5A0CE8, (int)mod_success_rates); // probe
+    write_call(0x5A0F08, (int)mod_success_rates); // probe
+    write_call(0x5A10BE, (int)mod_success_rates); // probe
+    write_call(0x5A1EAC, (int)mod_success_rates); // probe
+    write_call(0x5A1EC8, (int)mod_success_rates); // probe
+    write_call(0x5A2B45, (int)mod_success_rates); // probe
+    write_call(0x5A2B64, (int)mod_success_rates); // probe
+    write_call(0x5A2F4B, (int)mod_success_rates); // probe
+    write_call(0x5A2F6C, (int)mod_success_rates); // probe
 
     // Redirect functions for foreign_treaty_popup option
     write_call(0x55DC00, (int)mod_NetMsg_pop); // enemies_treaty
@@ -1089,9 +1127,7 @@ bool patch_setup(Config* cf) {
     involved in a base capture by removing the event that spawns additional colony pods.
     */
     {
-        const byte old_bytes[] = {0x0F,0x84};
-        const byte new_bytes[] = {0x90,0xE9};
-        write_bytes(0x50D67A, old_bytes, new_bytes, sizeof(new_bytes));
+        long_jump(0x50D67A);
     }
 
     /*
@@ -1111,9 +1147,7 @@ bool patch_setup(Config* cf) {
     making the AI usually demand a credit payment for any techs.
     */
     {
-        const byte old_bytes[] = {0x0F,0x8D};
-        const byte new_bytes[] = {0x90,0xE9};
-        write_bytes(0x5414AA, old_bytes, new_bytes, sizeof(new_bytes));
+        long_jump(0x5414AA);
     }
 
     /*
@@ -1190,9 +1224,7 @@ bool patch_setup(Config* cf) {
         memset((void*)0x58B9F3, 0x90, 2);
     }
     if (cf->skip_drone_revolts) {
-        const byte old_bytes[] = {0x0F, 0x8E};
-        const byte new_bytes[] = {0x90, 0xE9};
-        write_bytes(0x4F5663, old_bytes, new_bytes, sizeof(new_bytes));
+        long_jump(0x4F5663);
     }
     if (cf->counter_espionage) {
         // Check for flag DIPLO_RENEW_INFILTRATOR when choosing the menu entries
@@ -1239,9 +1271,7 @@ bool patch_setup(Config* cf) {
         write_bytes(0x589081, old_bytes, new_bytes, sizeof(new_bytes));
     }
     if (cf->cult_early_start) {
-        const byte old_bytes[] = {0x0F,0x85};
-        const byte new_bytes[] = {0x90,0xE9};
-        write_bytes(0x589097, old_bytes, new_bytes, sizeof(new_bytes));
+        long_jump(0x589097);
     }
     if (cf->alien_early_start || cf->cult_early_start) {
         // Use default starting year instead of advancing by 5 turns
@@ -1286,9 +1316,7 @@ bool patch_setup(Config* cf) {
         remove_call(0x50D074);
     }
     if (cf->auto_relocate_hq) {
-        const byte old_bytes[] = {0x0F, 0x84};
-        const byte new_bytes[] = {0x90, 0xE9}; // Disable #ESCAPED event
-        write_bytes(0x50C99D, old_bytes, new_bytes, sizeof(new_bytes));
+        long_jump(0x50C99D); // Disable #ESCAPED event
     }
     if (cf->simple_hurry_cost) {
         short_jump(0x41900D);
@@ -1334,9 +1362,7 @@ bool patch_setup(Config* cf) {
         write_call(0x52064C, (int)zero_value);
         write_bytes(0x520651, old_bytes, new_bytes, sizeof(new_bytes));
     } else if (!cf->event_sunspots) { // Remove event
-        const byte old_bytes[] = {0x0F, 0x8C};
-        const byte new_bytes[] = {0x90, 0xE9};
-        write_bytes(0x520615, old_bytes, new_bytes, sizeof(new_bytes));
+        long_jump(0x520615);
     }
     if (cf->event_market_crash > 0) { // Reduce reserves only by 1/2 instead of 3/4
         const byte old_bytes[] = {0x99,0x83,0xE2,0x03,0x03,0xC2,0xC1,0xF8,0x02};

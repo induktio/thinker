@@ -752,6 +752,7 @@ void move_upkeep(int faction, UpdateMode mode) {
         for (int i = 0; i < *BaseCount; i++) {
             BASE* base = &Bases[i];
             if (base->faction_id == faction) {
+                if (!base->defend_goal) { base->pad_5 = 0; }
                 values[i] = base->pop_size + (is_objective(i) ? 16 : 0)
                     + 16*has_fac_built(FAC_HEADQUARTERS, i)
                     + 8*mapdata[{base->x, base->y}].enemy_near
@@ -1710,7 +1711,8 @@ int former_tile_score(int x, int y, int faction, MAP* sq) {
     }
     if (sq->is_fungus()) {
         score += (items & BIT_ADVANCED ? 20 : 0);
-        score += (plans[faction].keep_fungus ? -10 : -2);
+        score += (plans[faction].keep_fungus ? -8 :
+            (sq->is_rocky() ? clamp(mapdata[{x, y}].former - 2, 0, 10) : -2));
         score += (plans[faction].plant_fungus && (items & BIT_ROAD) ? -8 : 0);
     } else if (plans[faction].plant_fungus) {
         score += 8;

@@ -182,14 +182,16 @@ struct BASE {
     int16_t autoforward_land_base_id;
     int16_t autoforward_sea_base_id;
     int16_t autoforward_air_base_id;
-    int8_t defend_goal; // Thinker variable
-    int8_t defend_range; // Thinker variable
+    int16_t pad_5;
     int32_t talent_total;
     int32_t drone_total;
     int32_t superdrone_total;
     int32_t random_event_turns;
     int32_t nerve_staple_count;
-    int32_t pad_7;
+    int8_t defend_goal; // Thinker variable
+    int8_t defend_range; // Thinker variable
+    int8_t pad_6;
+    int8_t pad_7;
     int32_t pad_8;
 
     int item() {

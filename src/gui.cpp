@@ -719,7 +719,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             popp("modmenu", "GENERIC", 0, 0, 0);
         }
 
-    } else if (DEBUG && msg == WM_CHAR && wParam == 'm' && alt_key_down()) {
+    } else if (debug_cmd && wParam == 'm' && alt_key_down()) {
         conf.debug_verbose = !conf.debug_verbose;
         parse_says(0, MOD_VERSION, -1, -1);
         parse_says(1, (conf.debug_verbose ?
@@ -730,6 +730,13 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         conf.base_psych = !conf.base_psych;
         base_compute(1);
         BaseWin_on_redraw(BaseWin);
+
+    } else if (debug_cmd && wParam == 'p' && alt_key_down()) {
+        parse_says(0, "diplomatic patience", -1, -1);
+        int value = pop_ask_number("modmenu", "ASKNUMBER", conf.diplo_patience, 0);
+        if (!value) { // OK button pressed
+            conf.diplo_patience = max(0, ParseNumTable[0]);
+        }
 
     } else if (debug_cmd && wParam == 'c' && alt_key_down()
     && *GameState & STATE_SCENARIO_EDITOR && *GameState & STATE_OMNISCIENT_VIEW
@@ -1260,7 +1267,7 @@ Win* This, const char* filename, const char* label, int a4, int a5, int a6, int 
     Faction* f = &Factions[base->faction_id];
     int item_cost = mineral_cost(*CurrentBaseID, base->queue_items[0]);
     int minerals = item_cost - base->minerals_accumulated - max(0, base->mineral_surplus);
-    int credits = max(0, f->energy_credits - f->energy_cost);
+    int credits = max(0, f->energy_credits - f->hurry_cost_total);
     int cost = hurry_cost(*CurrentBaseID, base->queue_items[0], minerals);
     minimal_cost = min(credits, cost);
     if (item_cost <= base->minerals_accumulated) {

@@ -190,6 +190,7 @@ int base_trade_value(int base_id, int faction1, int faction2)
     if (is_objective(base_id)) {
         value *= 2;
     }
+    value = ((value + 25) / 25) * 25;
     debug("base_trade_value %s %d %d score: %d num_own: %d num_all: %d value: %d\n",
     base->name, faction1, faction2, score, num_own, num_all, value);
     flushlog();
@@ -305,8 +306,8 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
     if (is_pact && prop_counter != DiploCounterLoanPayment) {
         if (f_cmp.ranking > f_plr.ranking) {
             // Modify value for possible free gift for pact factions
-            int value = 25 * ((min(f_cmp.energy_credits/2 - 25,
-                f_cmp.base_count*4 + *CurrentTurn) + 24) / 25);
+            int value = 25 * (min(f_cmp.energy_credits/2 - 50,
+                f_cmp.energy_credits/16 + f_cmp.base_count*5 + *CurrentTurn) / 25);
             if (value < 25 || value > f_cmp.energy_credits/2
             || f_cmp.energy_credits <= 2 * f_plr.energy_credits
             || f_cmp.energy_credits <= 4 * *CurrentTurn
@@ -347,7 +348,7 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
             }
         }
         int reserve = max(0, min(f_cmp.energy_credits - 50 - 20*friction,
-            50*max(4, f_cmp.base_count + f_plr.base_count)));
+            f_cmp.energy_credits/16 + 40*max(4, f_cmp.base_count + f_plr.base_count)));
         int amount = (reserve
             * clamp(32 - friction - 4*diplo_relation(faction1, faction2)
             - 8*clamp(f_cmp.AI_fight, -1, 1)
@@ -394,25 +395,26 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
         parse_gen_name(faction1, 0, 1);
         // Replace faction label reference on Believers with more generic code
         if (*diplo_entry_id >= 0 && (!difficult || f_cmp.SE_research_base > -2)) {
-            int tech_value = tech_base_value(*diplo_entry_id, faction2);
-            int alt_tech_value = (*diplo_tech_id2 < 0 ? 0 : tech_base_value(*diplo_tech_id2, faction2));
-            int cost_limit = min(f_cmp.base_count*4 + *CurrentTurn, f_cmp.energy_credits / 4);
+            int tech_value = tech_alt_val(*diplo_entry_id, faction2, 0);
+            int alt_tech_value = (*diplo_tech_id2 < 0 ? 0 : tech_alt_val(*diplo_tech_id2, faction2, 0));
+            int cost_limit = min(f_cmp.energy_credits/4,
+                f_cmp.energy_credits/16 + f_cmp.base_count*5 + *CurrentTurn);
             int cost_value = tech_value
                 * clamp(64 - clamp(*DiploFriction, 0, 20)
                 - 8*diplo_relation(faction1, faction2)
                 - 4*f_plr.atrocities, 16, 96) / 64;
             if (f_plr.ranking > f_cmp.ranking) {
-                cost_value = cost_value * 3 / 4;
+                cost_value = cost_value * 7 / 8;
             }
             if (f_plr.pop_total > f_cmp.pop_total) {
-                cost_value = cost_value * 3 / 4;
+                cost_value = cost_value * 7 / 8;
             }
             if (is_pact) {
                 cost_value = cost_value * 5 / 4;
             } else if (is_treaty) {
                 cost_value = cost_value * 9 / 8;
             }
-            cost_value = clamp((min(cost_value / 2, cost_limit) / 10) * 10, 20, 200);
+            cost_value = clamp((min(cost_value / 4, cost_limit) / 25) * 25, 25, 1000);
 
             if (cost_value > f_cmp.energy_credits) { // Fix: check for sufficient energy to buy techs
                 X_dialog("REJSELLAFFORD", faction2);
@@ -469,7 +471,7 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
     return 0;
 }
 
-int __cdecl mod_buy_tech(int faction1, int faction2, int counter_id, bool high_price, int proposal_id)
+int __cdecl mod_buy_tech(int faction1, int faction2, int counter_id, int high_price, int proposal_id)
 {
     Faction& f_plr = Factions[faction1];
     Faction& f_cmp = Factions[faction2];
@@ -486,10 +488,11 @@ int __cdecl mod_buy_tech(int faction1, int faction2, int counter_id, bool high_p
             X_dialog(random(2) ? "REJTECHLATER0" : "REJTECHLATER1", faction2);
             return 1; // skip additional dialog replies
         }
-        int value = (tech_base_value(*diplo_tech_id1, faction2) + 20)
+        int value = (tech_alt_val(*diplo_tech_id1, faction2, 0) + 50)
+            * clamp(*DiffLevel + 3, 4, 8)
             * clamp(32 + clamp(*DiploFriction, 0, 20)
-            + 8*diplo_relation(faction1, faction2)
-            + 4*f_plr.atrocities, 16, 96) / 32;
+            + 4*diplo_relation(faction1, faction2)
+            + 2*f_plr.atrocities, 16, 96) / 256;
         if (f_plr.ranking > f_cmp.ranking) {
             value = value * 5 / 4;
         }
@@ -502,13 +505,13 @@ int __cdecl mod_buy_tech(int faction1, int faction2, int counter_id, bool high_p
             value = value * 7 / 8;
         }
         if (high_price) {
-            value = value * 3 / 2;
+            value = value * 5 / 4;
         }
-        if (conf.revised_tech_cost && f_plr.tech_research_id == *diplo_tech_id1) {
+        if (f_plr.tech_cost > 50 && f_plr.tech_research_id == *diplo_tech_id1) {
             value = (int)(value * (1.0 - clamp(
-                1.0 * f_plr.tech_accumulated / tech_cost(faction1, *diplo_tech_id1), 0.0, 0.7)));
+                1.0 * f_plr.tech_accumulated / f_plr.tech_cost, 0.0, 0.7)));
         }
-        value = clamp((value / 10) * 10, 20, 1000);
+        value = clamp((value / 25) * 25, 25, 10000);
 
         StrBuffer[0] = '\0';
         say_tech(StrBuffer, *diplo_tech_id1, 1);

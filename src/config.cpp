@@ -161,7 +161,7 @@ int __cdecl read_basic_rules() {
     }
     Rules->move_rate_roads = text_get_number(1, 100);
     Rules->nutrient_intake_req_citizen = text_get_number(0, 100);
-    text_get();
+    text_get(); // Read two numbers from same line
     Rules->artillery_dmg_numerator = clamp(text_item_number(), 1, 1000);
     Rules->artillery_dmg_denominator = clamp(text_item_number(), 1, 1000);
     Rules->artillery_max_rng = text_get_number(1, 8);
@@ -170,7 +170,7 @@ int __cdecl read_basic_rules() {
     Rules->mineral_cost_multi = text_get_number(1, 100);
     Rules->tech_discovery_rate = text_get_number(0, 1000);
     Rules->limit_mineral_inc_for_mine_wo_road = text_get_number(0, 100);
-    Rules->nutrient_effect_mine_sq = text_get_number(-1, 0); // Negative value reduces nutrient output
+    Rules->nutrient_effect_mine_sq = text_get_number(-1, 0);
     Rules->min_base_size_specialists = text_get_number(0, 100);
     Rules->drones_induced_genejack_factory = text_get_number(0, 100);
     Rules->pop_limit_wo_hab_complex = text_get_number(1, 100);
@@ -232,7 +232,7 @@ int __cdecl read_basic_rules() {
     Rules->max_dmg_percent_arty_base_bunker = text_get_number(10, 100);
     Rules->max_dmg_percent_arty_open = text_get_number(10, 100);
     Rules->max_dmg_percent_arty_sea = text_get_number(10, 100);
-    text_get(); // Read two numbers from same line
+    text_get();
     Rules->freq_global_warming_numerator = clamp(text_item_number(), 0, 1000);
     Rules->freq_global_warming_denominator = clamp(text_item_number(), 1, 1000);
     Rules->normal_start_year = text_get_number(0, 999999);
@@ -314,6 +314,10 @@ int __cdecl read_basic_rules() {
         conf.road_movement_rate = conf.magtube_movement_rate;
         Rules->move_rate_roads *= conf.magtube_movement_rate;
     }
+    if (!conf.revised_tech_cost) {
+        conf.tech_stagnate_rate = 150;
+    }
+    conf.tech_rate_modifier = 10000 / max(1, Rules->tech_discovery_rate);
     return false;
 }
 
@@ -402,6 +406,10 @@ void __cdecl read_faction2(int faction_id) {
     }
 }
 
+static bool is_bonus(const char* src, FactionBonusName index) {
+    return !_stricmp(src, BonusName[index].key);
+}
+
 /*
 Parse the 1st eight lines of the specified faction's file into a player structure. The
 toggle parameter will end the function early if set to 2 (original code never uses this).
@@ -433,29 +441,29 @@ void __cdecl read_faction(MFaction* plr, int toggle) {
     if (toggle == 2) {
         return;
     }
-    plr->AI_fight = text_item_number();
-    plr->AI_power = text_item_number();
-    plr->AI_tech = text_item_number();
-    plr->AI_wealth = text_item_number();
-    plr->AI_growth = text_item_number();
+    // Fix: added variable bounding for AI priorities since original code will not work otherwise
+    plr->AI_fight = clamp(text_item_number(), -1, 1);
+    plr->AI_power = clamp(text_item_number(), 0, 1);
+    plr->AI_tech = clamp(text_item_number(), 0, 1);
+    plr->AI_wealth = clamp(text_item_number(), 0, 1);
+    plr->AI_growth = clamp(text_item_number(), 0, 1);
     text_get();
-    char* parse_rule_check = text_item();
-    size_t len = strlen(parse_rule_check);
-    while (len) {
+    char* parse_check;
+    while (parse_check = text_item(), strlen(parse_check) > 0) {
         char parse_rule[StrBufLen];
-        strcpy_n(parse_rule, StrBufLen, parse_rule_check);
+        strcpy_n(parse_rule, StrBufLen, parse_check);
         char* parse_param = text_item();
-        if (!_stricmp(parse_rule, BonusName[0].key)) { // TECH
+        if (is_bonus(parse_rule, BN_TECH)) {
             // TODO: this will have issues if custom tech abbreviations starting with numbers are used
             int player_selected = atoi(parse_param);
-            if (!player_selected && plr->faction_bonus_count < 8) {
+            if (!player_selected && plr->faction_bonus_count < MaxBonusNum) {
                 plr->faction_bonus_id[plr->faction_bonus_count] = RULE_TECH;
                 plr->faction_bonus_val1[plr->faction_bonus_count] = tech_name(parse_param);
                 plr->faction_bonus_count++;
             } else {
                 plr->rule_tech_selected = player_selected;
             }
-        } else if (!_stricmp(parse_rule, BonusName[1].key)) { // MORALE
+        } else if (is_bonus(parse_rule, BN_MORALE)) {
             if (parse_param[0] == '+') {
                 parse_param++;
             }
@@ -464,44 +472,42 @@ void __cdecl read_faction(MFaction* plr, int toggle) {
             if (!plr->rule_morale) {
                 plr->rule_flags |= RFLAG_MORALE;
             }
-        } else if (!_stricmp(parse_rule, BonusName[3].key) && plr->faction_bonus_count < 8) {
-            // FACILITY
+        } else if (is_bonus(parse_rule, BN_FACILITY) && plr->faction_bonus_count < MaxBonusNum) {
             plr->faction_bonus_id[plr->faction_bonus_count] = RULE_FACILITY;
             plr->faction_bonus_val1[plr->faction_bonus_count] = atoi(parse_param);
             plr->faction_bonus_count++;
-        } else if (!_stricmp(parse_rule, BonusName[4].key)) { // RESEARCH
+        } else if (is_bonus(parse_rule, BN_RESEARCH)) {
             plr->rule_research = atoi(parse_param);
-        } else if (!_stricmp(parse_rule, BonusName[5].key)) { // DRONE
+        } else if (is_bonus(parse_rule, BN_DRONE)) {
             plr->rule_drone = atoi(parse_param);
-        } else if (!_stricmp(parse_rule, BonusName[6].key)) { // TALENT
+        } else if (is_bonus(parse_rule, BN_TALENT)) {
             plr->rule_talent = atoi(parse_param);
-        } else if (!_stricmp(parse_rule, BonusName[7].key)) { // ENERGY
+        } else if (is_bonus(parse_rule, BN_ENERGY)) {
             plr->rule_energy = atoi(parse_param);
-        } else if (!_stricmp(parse_rule, BonusName[8].key)) { // INTEREST
+        } else if (is_bonus(parse_rule, BN_INTEREST)) {
             plr->rule_flags |= RFLAG_INTEREST;
             plr->rule_interest = atoi(parse_param);
-        } else if (!_stricmp(parse_rule, BonusName[9].key)) { // COMMERCE
+        } else if (is_bonus(parse_rule, BN_COMMERCE)) {
             plr->rule_commerce = atoi(parse_param);
-        } else if (!_stricmp(parse_rule, BonusName[10].key)) { // POPULATION
+        } else if (is_bonus(parse_rule, BN_POPULATION)) {
             plr->rule_population = atoi(parse_param);
-        } else if (!_stricmp(parse_rule, BonusName[11].key)) { // HURRY
+        } else if (is_bonus(parse_rule, BN_HURRY)) {
             plr->rule_hurry = clamp(atoi(parse_param), 1, 1000);
-        } else if (!_stricmp(parse_rule, BonusName[13].key)) { // TECHCOST
+        } else if (is_bonus(parse_rule, BN_TECHCOST)) {
             plr->rule_techcost = atoi(parse_param);
-        } else if (!_stricmp(parse_rule, BonusName[12].key) && plr->faction_bonus_count < 8) {
-            // UNIT
+        } else if (is_bonus(parse_rule, BN_UNIT) && plr->faction_bonus_count < MaxBonusNum) {
             plr->faction_bonus_id[plr->faction_bonus_count] = RULE_UNIT;
             plr->faction_bonus_val1[plr->faction_bonus_count] = atoi(parse_param);
             plr->faction_bonus_count++;
-        } else if (!_stricmp(parse_rule, BonusName[2].key)) { // PSI
+        } else if (is_bonus(parse_rule, BN_PSI)) {
             plr->rule_psi = atoi(parse_param);
-        } else if (!_stricmp(parse_rule, BonusName[14].key)) { // SHARETECH
+        } else if (is_bonus(parse_rule, BN_SHARETECH)) {
             plr->rule_sharetech = atoi(parse_param);
-        } else if (!_stricmp(parse_rule, BonusName[15].key)) { // TERRAFORM
+        } else if (is_bonus(parse_rule, BN_TERRAFORM)) {
             plr->rule_flags |= RFLAG_TERRAFORM;
-        } else if ((!_stricmp(parse_rule, BonusName[16].key) // SOCIAL, ROBUST, IMMUNITY
-        || !_stricmp(parse_rule, BonusName[17].key)
-        || !_stricmp(parse_rule, BonusName[18].key)) && plr->faction_bonus_count < 8) {
+        } else if ((is_bonus(parse_rule, BN_SOCIAL)
+        || is_bonus(parse_rule, BN_ROBUST)
+        || is_bonus(parse_rule, BN_IMMUNITY)) && plr->faction_bonus_count < MaxBonusNum) {
             // Moved faction_bonus_count check to start rather than inner loop
             int value = 0;
             while (parse_param[0] == '+' || parse_param[0] == '-') {
@@ -513,11 +519,11 @@ void __cdecl read_faction(MFaction* plr, int toggle) {
             }
             for (int j = 0; j < MaxSocialEffectNum; j++) {
                 if (!_stricmp(SocialParam[j].set1, parse_param)) {
-                    if (!_stricmp(parse_rule, BonusName[17].key)) {
+                    if (is_bonus(parse_rule, BN_ROBUST)) {
                         plr->faction_bonus_id[plr->faction_bonus_count] = RULE_ROBUST;
                     } else {
                         plr->faction_bonus_id[plr->faction_bonus_count] =
-                            !_stricmp(parse_rule, BonusName[16].key) ? RULE_SOCIAL : RULE_IMMUNITY;
+                            is_bonus(parse_rule, BN_SOCIAL) ? RULE_SOCIAL : RULE_IMMUNITY;
                     }
                     plr->faction_bonus_val1[plr->faction_bonus_count] = j; // soc effect id
                     plr->faction_bonus_val2[plr->faction_bonus_count] = value; // value mod
@@ -525,97 +531,84 @@ void __cdecl read_faction(MFaction* plr, int toggle) {
                     break;
                 }
             }
-        } else if ((!_stricmp(parse_rule, BonusName[19].key) // IMPUNITY, PENALTY
-            || !_stricmp(parse_rule, BonusName[20].key)) && plr->faction_bonus_count < 8) {
+        } else if ((is_bonus(parse_rule, BN_IMPUNITY)
+        || is_bonus(parse_rule, BN_PENALTY)) && plr->faction_bonus_count < MaxBonusNum) {
             // Moved faction_bonus_count check to start rather than inner loop
             for (int j = 0; j < MaxSocialCatNum; j++) {
                 for (int k = 0; k < MaxSocialModelNum; k++) {
                     if (!_stricmp(parse_param, SocialField[j].soc_name[k])) {
                         plr->faction_bonus_id[plr->faction_bonus_count] =
-                            !_stricmp(parse_rule, BonusName[19].key) ? RULE_IMPUNITY : RULE_PENALTY;
+                            is_bonus(parse_rule, BN_IMPUNITY) ? RULE_IMPUNITY : RULE_PENALTY;
                         plr->faction_bonus_val1[plr->faction_bonus_count] = j; // category id
                         plr->faction_bonus_val2[plr->faction_bonus_count] = k; // model id
                         plr->faction_bonus_count++;
                     }
                 }
             }
-        } else if (!_stricmp(parse_rule, BonusName[21].key) && plr->faction_bonus_count < 8) {
-            // FUNGNUTRIENT
+        } else if (is_bonus(parse_rule, BN_FUNGNUTRIENT) && plr->faction_bonus_count < MaxBonusNum) {
             plr->faction_bonus_id[plr->faction_bonus_count] = RULE_FUNGNUTRIENT;
             plr->faction_bonus_val1[plr->faction_bonus_count] = atoi(parse_param);
             plr->faction_bonus_count++;
-        } else if (!_stricmp(parse_rule, BonusName[22].key) && plr->faction_bonus_count < 8) {
-            // FUNGMINERALS
+        } else if (is_bonus(parse_rule, BN_FUNGMINERALS) && plr->faction_bonus_count < MaxBonusNum) {
             plr->faction_bonus_id[plr->faction_bonus_count] = RULE_FUNGMINERALS;
             plr->faction_bonus_val1[plr->faction_bonus_count] = atoi(parse_param);
             plr->faction_bonus_count++;
-        } else if (!_stricmp(parse_rule, BonusName[23].key) && plr->faction_bonus_count < 8) {
-            // FUNGENERGY
+        } else if (is_bonus(parse_rule, BN_FUNGENERGY) && plr->faction_bonus_count < MaxBonusNum) {
             plr->faction_bonus_id[plr->faction_bonus_count] = RULE_FUNGENERGY;
             plr->faction_bonus_val1[plr->faction_bonus_count] = atoi(parse_param);
             plr->faction_bonus_count++;
-        } else if (!_stricmp(parse_rule, BonusName[24].key)) { // COMMFREQ
+        } else if (is_bonus(parse_rule, BN_COMMFREQ)) {
             plr->rule_flags |= RFLAG_COMMFREQ;
-        } else if (!_stricmp(parse_rule, BonusName[25].key)) { // MINDCONTROL
+        } else if (is_bonus(parse_rule, BN_MINDCONTROL)) {
             plr->rule_flags |= RFLAG_MINDCONTROL;
-        } else if (!_stricmp(parse_rule, BonusName[26].key)) { // FANATIC
+        } else if (is_bonus(parse_rule, BN_FANATIC)) {
             plr->rule_flags |= RFLAG_FANATIC;
-        } else if (!_stricmp(parse_rule, BonusName[27].key) && plr->faction_bonus_count < 8) {
-            // VOTES
+        } else if (is_bonus(parse_rule, BN_VOTES) && plr->faction_bonus_count < MaxBonusNum) {
             plr->faction_bonus_id[plr->faction_bonus_count] = RULE_VOTES;
             plr->faction_bonus_val1[plr->faction_bonus_count] = atoi(parse_param);
             plr->faction_bonus_count++;
-        } else if (!_stricmp(parse_rule, BonusName[28].key)) { // FREEPROTO
+        } else if (is_bonus(parse_rule, BN_FREEPROTO)) {
             plr->rule_flags |= RFLAG_FREEPROTO;
-        } else if (!_stricmp(parse_rule, BonusName[29].key)) { // AQUATIC
+        } else if (is_bonus(parse_rule, BN_AQUATIC)) {
             plr->rule_flags |= RFLAG_AQUATIC;
-        } else if (!_stricmp(parse_rule, BonusName[30].key)) { // ALIEN
+        } else if (is_bonus(parse_rule, BN_ALIEN)) {
             plr->rule_flags |= RFLAG_ALIEN;
-        } else if (!_stricmp(parse_rule, BonusName[31].key) && plr->faction_bonus_count < 8) {
-            // FREEFAC
+        } else if (is_bonus(parse_rule, BN_FREEFAC) && plr->faction_bonus_count < MaxBonusNum) {
             plr->faction_bonus_id[plr->faction_bonus_count] = RULE_FREEFAC;
             plr->faction_bonus_val1[plr->faction_bonus_count] = atoi(parse_param);
             plr->faction_bonus_count++;
-        } else if (!_stricmp(parse_rule, BonusName[32].key) && plr->faction_bonus_count < 8) {
-            // REVOLT
+        } else if (is_bonus(parse_rule, BN_REVOLT) && plr->faction_bonus_count < MaxBonusNum) {
             plr->faction_bonus_id[plr->faction_bonus_count] = RULE_REVOLT;
             plr->faction_bonus_val1[plr->faction_bonus_count] = atoi(parse_param);
             plr->faction_bonus_count++;
-        } else if (!_stricmp(parse_rule, BonusName[33].key) && plr->faction_bonus_count < 8) {
-            // NODRONE
+        } else if (is_bonus(parse_rule, BN_NODRONE) && plr->faction_bonus_count < MaxBonusNum) {
             plr->faction_bonus_id[plr->faction_bonus_count] = RULE_NODRONE;
             plr->faction_bonus_val1[plr->faction_bonus_count] = atoi(parse_param);
             plr->faction_bonus_count++;
-        } else if (!_stricmp(parse_rule, BonusName[34].key)) { // WORMPOLICE
+        } else if (is_bonus(parse_rule, BN_WORMPOLICE)) {
             plr->rule_flags |= RFLAG_WORMPOLICE;
-        } else if (!_stricmp(parse_rule, BonusName[35].key) && plr->faction_bonus_count < 8) {
-            // FREEABIL
+        } else if (is_bonus(parse_rule, BN_FREEABIL) && plr->faction_bonus_count < MaxBonusNum) {
             plr->faction_bonus_id[plr->faction_bonus_count] = RULE_FREEABIL;
             plr->faction_bonus_val1[plr->faction_bonus_count] = atoi(parse_param);
             plr->faction_bonus_count++;
-        } else if (!_stricmp(parse_rule, BonusName[36].key) && plr->faction_bonus_count < 8) {
-            // PROBECOST
+        } else if (is_bonus(parse_rule, BN_PROBECOST) && plr->faction_bonus_count < MaxBonusNum) {
             plr->faction_bonus_id[plr->faction_bonus_count] = RULE_PROBECOST;
             plr->faction_bonus_val1[plr->faction_bonus_count] = atoi(parse_param);
             plr->faction_bonus_count++;
-        } else if (!_stricmp(parse_rule, BonusName[37].key) && plr->faction_bonus_count < 8) {
-            // DEFENSE
+        } else if (is_bonus(parse_rule, BN_DEFENSE) && plr->faction_bonus_count < MaxBonusNum) {
             plr->faction_bonus_id[plr->faction_bonus_count] = RULE_DEFENSE;
             plr->faction_bonus_val1[plr->faction_bonus_count] = atoi(parse_param);
             plr->faction_bonus_count++;
-        } else if (!_stricmp(parse_rule, BonusName[38].key) && plr->faction_bonus_count < 8) {
-            // OFFENSE
+        } else if (is_bonus(parse_rule, BN_OFFENSE) && plr->faction_bonus_count < MaxBonusNum) {
             plr->faction_bonus_id[plr->faction_bonus_count] = RULE_OFFENSE;
             plr->faction_bonus_val1[plr->faction_bonus_count] = atoi(parse_param);
             plr->faction_bonus_count++;
-        } else if (!_stricmp(parse_rule, BonusName[39].key)) { // TECHSHARE
+        } else if (is_bonus(parse_rule, BN_TECHSHARE)) {
             plr->rule_flags |= RFLAG_TECHSHARE;
             plr->rule_sharetech = atoi(parse_param);
-        } else if (!_stricmp(parse_rule, BonusName[40].key)) { // TECHSTEAL
+        } else if (is_bonus(parse_rule, BN_TECHSTEAL)) {
             plr->rule_flags |= RFLAG_TECHSTEAL;
         }
-        parse_rule_check = text_item();
-        len = strlen(parse_rule_check);
     }
     // Societal Ideology + Anti-Ideology
     for (int i = 0; i < 2; i++) {
@@ -644,11 +637,11 @@ void __cdecl read_faction(MFaction* plr, int toggle) {
                 }
             }
         }
+        // Fix: Original code sets this value to -1, disabling AI Social Effect "Emphasis" value.
+        // No indication this was intentional.
         char* soc_effect = text_item();
         for (int j = 0; j < MaxSocialEffectNum; j++) {
             if (!_stricmp(SocialParam[j].set1, soc_effect)) {
-                // Fix: Original code sets this value to -1, disabling AI faction "Emphasis"
-                // value. No indication this was intentional.
                 *(&plr->soc_priority_effect + i) = j;
                 break;
             }
