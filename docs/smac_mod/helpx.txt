@@ -1090,9 +1090,9 @@ less than 1000m).
 
 #;SOIL
 #HELPTERRALAND1
-A {soil enricher} increases the $LINK<nutrient production=41> of a square by +1.
-Soil Enrichers can be built only in squares which already contain a
-$LINK<farm=90000>.
+A {soil enricher} increases the $LINK<nutrient output=41> of a square by
+{+50%} (rounded down), cumulative with other $LINK<farm=90000> bonuses.
+Soil Enrichers can be built only in squares which already contain a farm.
 
 #HELPTERRASEA1
 no

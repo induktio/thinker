@@ -25,6 +25,7 @@ Some of these options require extended debug mode.
     Alt+M   Toggle verbose logging mode on debug.txt.
     Alt+V   Iterate various TileSearch instances for the selected map tile.
     Alt+F   Iterate various move_upkeep overlays.
+    Alt+P   Set diplomatic patience for AI factions.
     Alt+Y   Toggle faction diplomacy treaty matrix display.
     Alt+X   Run pathfinding between two previous map tiles.
     Alt+Z   Print debug information for the selected map tile.
@@ -59,7 +60,8 @@ These calculations are only performed using integers with the numbers truncating
 * Native unit entering the tile divides by 2 (predefined prototype with PSI attack).
 * If any previous land or sea unit (excluding planet-owned units) has entered the tile divide by 2 (or 4 when rare natives).
 * Sensors divide by 4 when on adjacent tiles and by 2 when they are at two tile distance.
-* All sensors in the range apply the effect separately. Garrisoned bases or tiles covered by GSP count as sensors.
+* All sensors in the range apply the effect separately. Base tiles count as sensors.
+* If the base has GSP, in addition eight tiles near the base tile count as having a sensor.
 
 This chance is then rolled against Random(100). If the chance is equal or less than the random number,
 mind worms will not appear. This may always be skipped if the other factors divide the base chance towards zero.

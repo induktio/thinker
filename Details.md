@@ -80,9 +80,15 @@ For the most part, AI factions utilize original game logic when deciding on any 
 
 Energy loan dialogue ("generous schedule of loan payments") has been revamped to make better decisions on what kind of loans to grant. AI willingness for loan granting is now heavily dependent on treaty status, diplomatic friction, integrity blemishes, and the relative size of the factions (more powerful opponent factions are disliked). AI also has new dialogue when they reject a proposed loan.
 
-Tech trading for energy credits has been modified such that AIs will not offer to buy techs if they have less than 100 credits available. Also when the player offers to trade energy for techs, AIs will use a new tech valuation scheme that makes it a lot more expensive to buy later techs. Many similar factors as used in the energy loan dialogue affect how good the offered tech trades are.
-
 Base swapping dialogue has been adjusted to reject any base swaps where the AI would previously accept very disadvantageous trades for itself. AI can be willing to exchange bases for energy credits or another base that is worth more according to the same valuation. During multiplayer games base swapping is disabled altogether, unless the AI faction is an ally and has surrendered previously.
+
+Tech trading for energy credits has been modified such that AIs will not offer to buy techs if they do not have the necessary credits available. When techs are traded for credits, AIs will use a new tech valuation scheme that makes it more expensive to buy later techs. Many similar factors as used in the energy loan dialogue affect how good the offered tech trades are. Techs that are known by only one faction are the most valued in trading and they are adjusted by the following modifier.
+
+* 1 owner: 100% value
+* 2 owners: 70% value
+* 3 owners: 55% value
+* 4 owners: 40% value
+* 5 or more owners: 25% value
 
 
 Player automation features
@@ -433,7 +439,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 53. Fix GSP defense bonus range sometimes not being accurate at three tiles like the manual implies.
 54. Fix inconsistent effects with unit repair facilities and Citizens Defense Force when the base tile is defended by an unit owned by third faction. The facility or the secret project providing it must be built by the base owner for it to have an effect.
 55. Fix issues where the game did not calculate upgrade costs correctly when the unit count exceeded 255. The costs will be applied correctly even if Security Nexus may show an inaccurate number.
-56. Patch the game to also parse "Free = No longer supported" techs defined for each facility. This causes new bases to have these facilities built for free when `facility_free_tech` option is enabled. This does not exclude facility maintenance costs.
+56. Patch the game to also parse "Free Technology" defined for each facility. This causes new bases to have these facilities built for free when `facility_free_tech` option is enabled. This does not exclude facility maintenance costs.
 
 
 Scient's patch
@@ -476,28 +482,28 @@ The following binary fixes from Scient's patch are automatically applied at game
 22. ***Removed***
 23. [MISC] Fixed a registry check at startup (Vista/Win7) whether a complete installation has been performed. Prevents #FILEFIND_NOCD from being incorrectly displayed.
 24. [BUG] Units without the Amphibious Pods ability can no longer move to a land tile from a sea base without there being a transport in land tile.
-25. [BUG][SMAX] Prevent the Caretakers from being given the possibility of building secret project "Ascent to Transcendence" which goes against their philosphy and would cause them to declare war on themselves if built.  Problem with logic, code exists which should of prevented it from displaying but didn't.
+25. [BUG][SMAX] Prevent the Caretakers from being given the possibility of building secret project "Ascent to Transcendence" which goes against their philosphy and would cause them to declare war on themselves if built. Problem with logic, code exists which should of prevented it from displaying but didn't.
 26. [BUG] Allow tiles with more than one probe ability to evict probes (more than one unit, probe has to be top most) ; when evicting probe, only send top unit to home base -> prevents non-probe units from being booted as well. -> using same code used to return probes to base after successful mission
-27. [BUG][SMAX] Fixed bug when AI successfully completes probe action of freeing a captured faction leader (FREEWILLY/FREEWHO) where it would reset a non-captured faction.  The problem was that AI would always try to free the very first faction (usually PC) regardless of whether they were eliminated or not.  Fix now obtains all potential faction leaders to free and randomly picks one.
+27. [BUG][SMAX] Fixed bug when AI successfully completes probe action of freeing a captured faction leader (FREEWILLY/FREEWHO) where it would reset a non-captured faction. The problem was that AI would always try to free the very first faction (usually PC) regardless of whether they were eliminated or not. Fix now obtains all potential faction leaders to free and randomly picks one.
 28. [BUG][SMAX] Add references to use a new file (movlistx.txt) for SMAX specific info after secret project movies rather than one shared between SMAC/SMAX (movlist.txt).
 29. [MOD] Add "Nessus Canyon" landmark placement on random map generation.
-30. [BUG] Fixed "attacking along road" combat bonus in alpha/x.txt.  Set to 0 by default.
+30. [BUG] Fixed "attacking along road" combat bonus in alpha/x.txt. Set to 0 by default.
 31. [BUG/MOD] Fixed NEWRESOURCE and PETERSOUT events to display the correct corrosponding image to match resource type.
 32. [MOD] Add ability to set individual datalink entries for armor and reactors (ARMORDESC#/REACTORDESC#) in help/x.txt.
-33. [MOD] Enable the display of Sea Formers unit (UNITDESC4) in datalinks.  Also, hide '*' from showing in name.
-34. [BUG] Fixed logic in PB code to prevent ODP/Flechette defenses being called a 2nd time (with a chance for defenses to fail) even after PB had already been shot down.  Each faction has one chance to defend against incoming missile based on closest base or unit to PB blast.  However, there is secondary check to give the tile owner a chance to defend against PB even if they have no units or bases in this space.  This check didn't take into account whether or not PB had already been shot down.
+33. [MOD] Enable the display of Sea Formers unit (UNITDESC4) in datalinks. Also, hide '*' from showing in name.
+34. [BUG] Fixed logic in PB code to prevent ODP/Flechette defenses being called a 2nd time (with a chance for defenses to fail) even after PB had already been shot down. Each faction has one chance to defend against incoming missile based on closest base or unit to PB blast. However, there is secondary check to give the tile owner a chance to defend against PB even if they have no units or bases in this space. This check didn't take into account whether or not PB had already been shot down.
 35. [BUG/MOD][SMAX] Fungal Missiles would spawn MW in ocean tiles -> fix by spawning IoD instead and adding in one Sealurk instead of Fungal Tower.
 36. [BUG] Fixed a bug that would display NERVEGAS message even when attack on base failed -> checking attacker health
-37. [MOD] Add ability to set reactor (1-4) for #UNITS in alpha/x.txt (ex. "Colony Pod,..., 00000000000000000000000000,4" -> gives Colony Pods Singularity Engine).  To do so, just add comma after Abil with value of reactor you want for unit.  If no value is set, it defaults to "1" like original code.  For SMAX only, there are two exceptions for Battle Ogre MK2 and Battle Ogre MK3 where default isn't "1" but "2" and "3" respectively.  The Ogre default can still be overriden if you set a different reactor value in alpha/x.txt.
+37. [MOD] Add ability to set reactor (1-4) for #UNITS in alpha/x.txt (ex. "Colony Pod,..., 00000000000000000000000000,4" -> gives Colony Pods Singularity Engine). To do so, just add comma after Abil with value of reactor you want for unit. If no value is set, it defaults to "1" like original code. For SMAX only, there are two exceptions for Battle Ogre MK2 and Battle Ogre MK3 where default isn't "1" but "2" and "3" respectively. The Ogre default can still be overridden if you set a different reactor value in alpha/x.txt.
 38. [BUG] Allowing colony pods to be added to bases with fungus on tile ; allowing sea/land pods to be added to existing sea/land bases ignoring building restriction
 39. [BUG] #DISEMBARKFAIL wasn't being displayed due to incorrect logic check ; when you try to move a transport with no units on board (L) onto land this message should display (doesn't include moving into land base, does include two transports on same tile one without units and other with) -> update: added additonal check so #DISEMBARK code wasn't being particially loaded for non-transport units
-40. [BUG] Changing start date for Perihelion event to be 2160 from 2190.  This is to be consistent with info about Planet and cycle from readme regarding 80 year cycles (20 years near, 60 years far).
-41. [BUG][SMAX] FM would sometimes display #FUNGMOTIZED due to faction id of FM memory location would change and instead would use faction id of MW.  Fixed by storing faction id in variable.
+40. [BUG] Changing start date for Perihelion event to be 2160 from 2190. This is to be consistent with info about Planet and cycle from readme regarding 80 year cycles (20 years near, 60 years far).
+41. [BUG][SMAX] FM would sometimes display #FUNGMOTIZED due to faction id of FM memory location would change and instead would use faction id of MW. Fixed by storing faction id in variable.
 42. [CRASH] Under rare circumstances, the game would crash when an AI faction with no bases attempted to upgrade a unit.
-43. [BUG] Abandoning a base after building a colony pod no longer skips the base production of the next base.  This was caused by the upkeep function using incorrect base values after the abandoned base was destroyed.  Fixed so acts like #STARVE.
+43. [BUG] Abandoning a base after building a colony pod no longer skips the base production of the next base. This was caused by the upkeep function using incorrect base values after the abandoned base was destroyed. Fixed so acts like #STARVE.
 44. [BUG] Movement to and from pact bases should be identical to your own bases. Since a non-amphibious unit can move from a transport into your own sea base, it should be able to move from a transport into a pact mate's base.
-45. [BUG][SMAX] Interludes 6 and 7 would display incorrect string variables specific to Caretakers or Usurpers for non-Alien factions.  They now show correct values for human factions as well as Aliens.
-46. [BUG] Interlude 6 would sometimes be triggered by native life forms causing issues with variables and not making sense, this interlude (and it's follow up #7) are designed for another specific faction.  Add check to skip if faction killing unit is alien.
+45. [BUG][SMAX] Interludes 6 and 7 would display incorrect string variables specific to Caretakers or Usurpers for non-Alien factions. They now show correct values for human factions as well as Aliens.
+46. [BUG] Interlude 6 would sometimes be triggered by native life forms causing issues with variables and not making sense, this interlude (and it's follow up #7) are designed for another specific faction. Add check to skip if faction killing unit is alien.
 47. [BUG] Fixed display when scenario editor is enabled for changing former owner inside a base (#CHANGEFORMER) since menu didn't load correctly.
 48. [BUG] Fixed the parsing of the "Retool strictness" value in alpha/x.txt so "Never Free" works correctly. This would only apply if you wanted to give a retooling penalty when switching to "Secret Projects".
 49. [BUG][MOD] Factions with the FREEPROTO flag (Spartans) will gain free retooling in their bases as long as the production switch is within the same category (unit to unit, base facility to base facility) and they've discovered the necessary tech ("Advanced Subatomic Theory"). This is to resolve the issue with FREEPROTO factions never being able to gain the undocumented retooling ability of "Skunkworks" when it is fairly clear that they should.

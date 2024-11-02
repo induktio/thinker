@@ -49,6 +49,8 @@ from same folder with the game. Sometimes startup issues can be fixed by startin
 
 When starting the game with screen scaling set to something else than 100% some portion of the window may not be visible due to being
 clipped out of the screen. The game does not have proper support for screen scaling so as a workaround the scaling should be set to 100%.
+Sometimes opening/secret project video playback errors might be fixed by installing [DDrawCompat](https://github.com/narzoul/DDrawCompat)
+but otherwise it is not necessary.
 
 Alt-tabbing may sometimes not work by default in Alpha Centauri's GOG version. To re-enable alt-tab feature, follow these steps.
 First open a command prompt with administrator privileges in Alpha Centauri's installation folder. After entering the commands

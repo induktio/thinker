@@ -389,10 +389,10 @@ int __cdecl mod_crop_yield(int faction_id, int base_id, int x, int y, int flag) 
             }
         }
         if (sq->items & BIT_SOIL_ENRICHER) {
-            value += value / 2;
+            value += (conf.soil_improve_value ? conf.soil_improve_value : value / 2);
         }
         if (sq->items & BIT_CONDENSER) {
-            value += value / 2;
+            value += (conf.soil_improve_value ? conf.soil_improve_value : value / 2);
         }
         if (value > 2 && !bonus_nutrient && !(sq->items & BIT_CONDENSER)
         && (faction_id < 0 || !has_tech(Rules->tech_preq_allow_3_nutrients_sq, faction_id))) {
@@ -408,7 +408,8 @@ int __cdecl mod_crop_yield(int faction_id, int base_id, int x, int y, int flag) 
             value--;
         }
     }
-    assert(value == crop_yield(faction_id, base_id, x, y, flag));
+    assert((conf.soil_improve_value && sq->items & (BIT_CONDENSER|BIT_SOIL_ENRICHER))
+        || value == crop_yield(faction_id, base_id, x, y, flag));
     return value;
 }
 

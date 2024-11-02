@@ -276,6 +276,7 @@ struct Config {
     int event_perihelion = 1;
     int event_sunspots = 10;
     int event_market_crash = 1;
+    int soil_improve_value = 0;
     int aquatic_bonus_minerals = 1;
     int alien_guaranteed_techs = 1;
     int alien_early_start = 0;
