@@ -1,6 +1,26 @@
 
 # Thinker mod release changelog
 
+## Version 4.7 (2024-11-02)
+* Multiple changes on diplomacy related to tech/energy trading and free gifts for pact factions.
+* Pact status counts as infiltration on diplomacy window for purposes of displaying the energy reserves.
+* Add more choices on governor options for building psych facilities with side effects (Punishment Spheres) and native combat units.
+* Faction parser now checks social effect priority/opposition values. Previously these were always set to -1.
+* Patch the game to also parse "Free Technology" defined for each facility. This causes new bases to have these facilities built for free when facility_free_tech option is enabled. This does not exclude facility maintenance costs.
+* Game saves selected faction lists when smac_only is activated, although choosing alien factions is still unsupported in this game mode.
+* AI upgrades land combat units much more often. AI is also able to do partial upgrades if energy reserves are not sufficient to upgrade all units of one prototype at once.
+* AI formers build redundant roads less often between bases.
+* Add option to modify nutrient value for Soil Enrichers and Condensers.
+* Random map generator places slightly less jungle tiles than before.
+* Tech balance feature will also affect blind research for player factions. Recreation Commons tech is added on priorities.
+* Modify psych energy allocation effects after twice the base size. Any spending before this limit has the same effect as in the original game, but after that the marginal cost to reduce drones is significantly increased.
+* Fix issues with bureaucracy calculations on base_psych. Psych effects on the first row are now the same as in original game.
+* Fix some situations where AI unnecessarily attacked tiles containing only neutral units.
+* Fix original game skipping checks for specialist obsolete tech when allocating more than 16 specialists on one base.
+* Fix issues where the game did not calculate upgrade costs correctly when the unit count exceeded 255. The costs will be applied correctly even if Security Nexus may show an inaccurate number.
+* Fix config parser not limiting AI faction priority values to allowed range. If the values are incorrect, this would cause issues with the original code.
+
+
 ## Version 4.6 (2024-10-05)
 * Major rewrite on combat calculation routines. Most combat mechanics are still the same as before unless stated otherwise.
 * "Combat % -> attacking along road" is implemented to apply when attacking along roads or magtubes if the target is not a base or bunker.
