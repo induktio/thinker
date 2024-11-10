@@ -1699,28 +1699,27 @@ int former_tile_score(int x, int y, int faction, MAP* sq) {
     };
     int bonus = bonus_at(x, y);
     int score = (sq->landmarks & ~(LM_DUNES|LM_SARGASSO|LM_UNITY|LM_NEXUS) ? 4 : 0);
-    uint32_t items = sq->items;
 
-    if (bonus != RES_NONE && !(items & BIT_ADVANCED)) {
-        score += ((items & BIT_SIMPLE) ? 3 : 5) * (bonus == RES_NUTRIENT ? 3 : 2);
+    if (bonus != RES_NONE && !(sq->items & BIT_ADVANCED)) {
+        score += ((sq->items & BIT_SIMPLE) ? 3 : 5) * (bonus == RES_NUTRIENT ? 3 : 2);
     }
     for (const int* p : priority) {
-        if (items & p[0]) {
+        if (sq->items & p[0]) {
             score += p[1];
         }
     }
     if (sq->is_fungus()) {
-        score += (items & BIT_ADVANCED ? 20 : 0);
-        score += (plans[faction].keep_fungus ? -8 :
-            (sq->is_rocky() ? clamp(mapdata[{x, y}].former - 2, 0, 10) : -2));
-        score += (plans[faction].plant_fungus && (items & BIT_ROAD) ? -8 : 0);
+        score += (sq->items & BIT_ADVANCED ? 20 : 0);
+        score += (plans[faction].keep_fungus ? -8 : (sq->is_rocky() ? 2 : -2));
+        score += (plans[faction].plant_fungus && (sq->items & BIT_ROAD) ? -8 : 0);
     } else if (plans[faction].plant_fungus) {
         score += 8;
     }
-    if (items & (BIT_FOREST | BIT_SENSOR) && can_road(x, y, faction, sq)) {
+    if (sq->items & (BIT_FOREST | BIT_SENSOR) && can_road(x, y, faction, sq)) {
         score += 8;
     }
-    if (mapdata[{x, y}].roads > 0 && (!(items & BIT_ROAD) || (build_tubes && !(items & BIT_MAGTUBE)))) {
+    if (mapdata[{x, y}].roads > 0
+    && (!(sq->items & BIT_ROAD) || (build_tubes && !(sq->items & BIT_MAGTUBE)))) {
         score += 15;
     }
     if (is_shore_level(sq) && mapnodes.count({x, y, NODE_GOAL_RAISE_LAND})) {

@@ -2,15 +2,6 @@
 #include "patch.h"
 #include "patchdata.h"
 
-const char* ac_mod_alpha = "smac_mod\\alphax";
-const char* ac_mod_help = "smac_mod\\helpx";
-const char* ac_mod_tutor = "smac_mod\\tutor";
-const char* ac_mod_concepts = "smac_mod\\conceptsx";
-const char* ac_alpha = "alphax";
-const char* ac_opening = "opening";
-const char* ac_movlist = "movlist";
-const char* ac_movlist_txt = "movlist.txt";
-const char* ac_movlistx_txt = "movlistx.txt";
 const char* ac_genwarning_sm_pcx = "genwarning_sm.pcx";
 
 
@@ -393,6 +384,18 @@ bool patch_setup(Config* cf) {
     write_jump(0x527290, (int)mod_faction_upkeep);
     write_jump(0x52AD30, (int)council_votes);
     write_jump(0x52AE20, (int)eligible);
+    write_jump(0x5391C0, (int)net_treaty_on);
+    write_jump(0x539230, (int)net_treaty_off);
+    write_jump(0x5392A0, (int)net_set_treaty);
+    write_jump(0x539380, (int)net_agenda_off);
+    write_jump(0x5393F0, (int)net_set_agenda);
+    write_jump(0x539460, (int)net_energy);
+    write_jump(0x539510, (int)net_loan);
+    write_jump(0x539580, (int)net_maps);
+    write_jump(0x5395F0, (int)net_tech);
+    write_jump(0x539660, (int)net_pact_ends);
+    write_jump(0x539740, (int)net_cede_base);
+    write_jump(0x5397B0, (int)net_double_cross);
     write_jump(0x539B70, (int)great_beelzebub);
     write_jump(0x539C00, (int)great_satan);
     write_jump(0x539D40, (int)aah_ooga);
@@ -421,6 +424,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x587240, (int)read_units);
     write_jump(0x5873C0, (int)read_rules);
     write_jump(0x591040, (int)map_wipe);
+    write_jump(0x591E50, (int)synch_bit);
     write_jump(0x592250, (int)say_loc);
     write_jump(0x59D980, (int)prefs_get2);
     write_jump(0x59DA20, (int)default_prefs);
@@ -526,6 +530,7 @@ bool patch_setup(Config* cf) {
     write_call(0x5A4972, (int)probe_mind_control_range);
     write_call(0x5A4B8C, (int)probe_thought_control);
     write_call(0x561948, (int)enemy_strategy_upgrade);
+    write_call(0x5BBEB0, (int)tech_achieved_pop3);
     write_call(0x4868B2, (int)mod_tech_avail); // PickTech::pick
     write_call(0x4DFC41, (int)mod_tech_avail); // Console::editor_tech
     write_call(0x558246, (int)mod_tech_avail); // communicate
@@ -863,15 +868,7 @@ bool patch_setup(Config* cf) {
         write_call(0x48BA15, (int)mod_calc_dim);
     }
     if (cf->skip_random_factions) {
-        const char* filename = (cf->smac_only ? ac_mod_alpha : ac_alpha);
-        vec_str_t lines;
-        reader_file(lines, filename, "#FACTIONS", 100);
-        reader_file(lines, filename, "#NEWFACTIONS", 100);
-        reader_file(lines, filename, "#CUSTOMFACTIONS", 100);
-        cf->faction_file_count = lines.size();
-        debug("patch_setup factions: %d\n", cf->faction_file_count);
-
-        memset((void*)0x58B63C, 0x90, 10);
+        memset((void*)0x58B63C, 0x90, 10); // config_game
         write_call(0x58B526, (int)zero_value); // config_game
         write_call(0x58B539, (int)zero_value); // config_game
         write_call(0x58B632, (int)config_game_rand); // config_game
@@ -957,8 +954,8 @@ bool patch_setup(Config* cf) {
     /*
     Make sure the game engine can read movie settings from "movlistx.txt".
     */
-    if (FileExists(ac_movlist_txt) && !FileExists(ac_movlistx_txt)) {
-        CopyFile(ac_movlist_txt, ac_movlistx_txt, TRUE);
+    if (FileExists(MovlistTxtFile) && !FileExists(ExpMovlistTxtFile)) {
+        CopyFile(MovlistTxtFile, ExpMovlistTxtFile, TRUE);
     }
 
     /*
@@ -1199,32 +1196,32 @@ bool patch_setup(Config* cf) {
     }
 
     if (cf->smac_only) {
-        if (!FileExists("smac_mod/alphax.txt")
-        || !FileExists("smac_mod/conceptsx.txt")
-        || !FileExists("smac_mod/helpx.txt")
-        || !FileExists("smac_mod/tutor.txt")) {
+        if (!FileExists(ModAlphaTxtFile)
+        || !FileExists(ModHelpTxtFile)
+        || !FileExists(ModTutorTxtFile)
+        || !FileExists(ModConceptsTxtFile)) {
             MessageBoxA(0, "Error while opening smac_mod folder. Unable to start smac_only mode.",
                 MOD_VERSION, MB_OK | MB_ICONSTOP);
             exit_fail();
         }
         *(int32_t*)0x45F97A = 0;
-        *(const char**)0x691AFC = ac_mod_alpha;
-        *(const char**)0x691B00 = ac_mod_help;
-        *(const char**)0x691B14 = ac_mod_tutor;
-        write_offset(0x42B30E, ac_mod_concepts);
-        write_offset(0x42B49E, ac_mod_concepts);
-        write_offset(0x42C450, ac_mod_concepts);
-        write_offset(0x42C7C2, ac_mod_concepts);
-        write_offset(0x403BA8, ac_movlist);
-        write_offset(0x4BEF8D, ac_movlist);
-        write_offset(0x52AB68, ac_opening);
-        // Enable custom faction selection during the game setup.
+        *(const char**)0x691AFC = ModAlphaFile;
+        *(const char**)0x691B00 = ModHelpFile;
+        *(const char**)0x691B14 = ModTutorFile;
+        write_offset(0x42B30E, ModConceptsFile);
+        write_offset(0x42B49E, ModConceptsFile);
+        write_offset(0x42C450, ModConceptsFile);
+        write_offset(0x42C7C2, ModConceptsFile);
+        write_offset(0x403BA8, MovlistFile);
+        write_offset(0x4BEF8D, MovlistFile);
+        write_offset(0x52AB68, OpeningFile);
+        // Enable custom faction selection during the game setup / config_game
         memset((void*)0x58A5E1, 0x90, 6);
         memset((void*)0x58B76F, 0x90, 2);
         memset((void*)0x58B9F3, 0x90, 2);
     }
     if (cf->skip_drone_revolts) {
-        long_jump(0x4F5663);
+        long_jump(0x4F5663); // drone_riot
     }
     if (cf->counter_espionage) {
         // Check for flag DIPLO_RENEW_INFILTRATOR when choosing the menu entries

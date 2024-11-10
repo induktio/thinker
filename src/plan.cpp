@@ -274,13 +274,19 @@ void design_units(int faction_id) {
         }
     }
     if (has_chassis(fc, CHS_NEEDLEJET)) {
+        // TODO: propose_proto might have issues creating multiple similar variations
+        // ABL_DEEP_RADAR can be used to distinguish different prototypes
         VehAblFlag addon = twoabl && has_ability(fc, ABL_ID_DEEP_RADAR, CHS_NEEDLEJET, wpn)
             ? ABL_DEEP_RADAR : ABL_NONE;
         if (has_ability(fc, ABL_ID_AIR_SUPERIORITY, CHS_NEEDLEJET, wpn)) {
             VehAblFlag abls = ABL_AIR_SUPERIORITY | addon;
             create_proto(fc, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, abls, rec, PLAN_AIR_SUPERIORITY);
         }
-        if (has_ability(fc, ABL_ID_DISSOCIATIVE_WAVE, CHS_NEEDLEJET, wpn)
+        if (has_ability(fc, ABL_ID_NERVE_GAS, CHS_NEEDLEJET, wpn) && use_nerve_gas(fc)) {
+            VehAblFlag abls = ABL_NERVE_GAS | addon;
+            create_proto(fc, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, abls, rec, PLAN_OFFENSE);
+        }
+        else if (has_ability(fc, ABL_ID_DISSOCIATIVE_WAVE, CHS_NEEDLEJET, wpn)
         && has_ability(fc, ABL_ID_AAA, CHS_INFANTRY, wpn)) {
             VehAblFlag abls = ABL_DISSOCIATIVE_WAVE | addon;
             create_proto(fc, CHS_NEEDLEJET, wpn, ARM_NO_ARMOR, abls, rec, PLAN_OFFENSE);

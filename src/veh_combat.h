@@ -28,7 +28,9 @@ int __cdecl mod_get_basic_defense(int veh_id_def, int veh_id_atk, int psi_combat
 
 int __cdecl mod_best_defender(int veh_id_def, int veh_id_atk, int check_arty);
 int __cdecl battle_fight_parse_num(int index, int value);
-int __cdecl terrain_defense(VEH* veh_def, VEH* veh_atk);
+int terrain_defense(VEH* veh_def, VEH* veh_atk);
+bool use_nerve_gas(int faction_id_atk, int faction_id_def);
+bool use_nerve_gas(int faction_id_atk);
 void __cdecl promote(int veh_id);
 void __cdecl add_bat(int type, int modifier, const char* display_str);
 void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out, int* defense_out, int combat_type);

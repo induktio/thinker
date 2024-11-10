@@ -1,8 +1,21 @@
 
 #include "config.h"
 
-const char* AlphaFile = "ALPHAX";
-const char* ScriptFile = "SCRIPT";
+const char* AlphaFile = "alphax";
+const char* ScriptFile = "script";
+const char* ModAlphaFile = "smac_mod\\alphax";
+const char* ModHelpFile = "smac_mod\\helpx";
+const char* ModTutorFile = "smac_mod\\tutor";
+const char* ModConceptsFile = "smac_mod\\conceptsx";
+const char* ModAlphaTxtFile = "smac_mod\\alphax.txt";
+const char* ModHelpTxtFile = "smac_mod\\helpx.txt";
+const char* ModTutorTxtFile = "smac_mod\\tutor.txt";
+const char* ModConceptsTxtFile = "smac_mod\\conceptsx.txt";
+const char* OpeningFile = "opening";
+const char* MovlistFile = "movlist";
+const char* MovlistTxtFile = "movlist.txt";
+const char* ExpMovlistTxtFile = "movlistx.txt";
+
 
 char*  TextBufferFileName = (char* )0x9B7BA0;
 char*  TextBufferFilePath = (char* )0x9B7BF0;
@@ -12,6 +25,10 @@ char** TextBufferParsePtr = (char**)0x9B7CF8;
 char** TextBufferGetPtr   = (char**)0x9B7D00;
 char** TextBufferItemPtr  = (char**)0x9B7D04;
 
+
+static const char* alpha_file() {
+    return conf.smac_only ? ModAlphaFile : AlphaFile;
+}
 
 static char* prefs_get_binary(char* buf, int value) {
     size_t index = 0;
@@ -156,7 +173,7 @@ Parse the #RULES & #WORLDBUILDER sections inside the alpha(x).txt.
 Return Value: Was there an error? true/false
 */
 int __cdecl read_basic_rules() {
-    if (text_open(AlphaFile, "RULES")) {
+    if (text_open(alpha_file(), "RULES")) {
         return true;
     }
     Rules->move_rate_roads = text_get_number(1, 100);
@@ -241,7 +258,7 @@ int __cdecl read_basic_rules() {
     Rules->tgl_oblit_base_atrocity = text_get_number(0, 1); // Fix: Set min param to 0
     Rules->base_size_subspace_gen = text_get_number(1, 999); // SMACX only
     Rules->subspace_gen_req = text_get_number(1, 999); // SMACX only
-    if (text_open(AlphaFile, "WORLDBUILDER")) {
+    if (text_open(alpha_file(), "WORLDBUILDER")) {
         return true;
     }
     WorldBuilder->land_base = text_get_number(50, 4000);
@@ -326,7 +343,7 @@ Parse the #TECHNOLOGY section inside the alpha(x).txt with a duplicate entry che
 Return Value: Was there an error? true/false
 */
 int __cdecl read_tech() {
-    if (text_open(AlphaFile, "TECHNOLOGY")) {
+    if (text_open(alpha_file(), "TECHNOLOGY")) {
         return true;
     }
     for (int i = 0; i < MaxTechnologyNum; i++) {
@@ -346,7 +363,7 @@ int __cdecl read_tech() {
             }
         }
     }
-    if (text_open(AlphaFile, "TECHNOLOGY")) {
+    if (text_open(alpha_file(), "TECHNOLOGY")) {
         return true;
     }
     *TechValidCount = 0;
@@ -669,7 +686,7 @@ Parse the #BONUSNAMES, #FACTIONS, and #NEWFACTIONS sections inside the alpha(x).
 Return Value: Was there an error? true/false
 */
 int __cdecl read_factions() {
-    if (text_open(AlphaFile, "BONUSNAMES")) {
+    if (text_open(alpha_file(), "BONUSNAMES")) {
         return true;
     }
     for (int i = 0; i < MaxBonusNameNum; i++) {
@@ -678,7 +695,7 @@ int __cdecl read_factions() {
         }
         strcpy_n(BonusName[i].key, 24, text_item());
     }
-    if (text_open(AlphaFile, ExpansionEnabled ? "NEWFACTIONS" : "FACTIONS")) {
+    if (text_open(alpha_file(), conf.smac_only ? "FACTIONS" : "NEWFACTIONS")) {
         return true;
     }
     for (int i = 1; i < MaxPlayerNum; i++) {
@@ -690,53 +707,59 @@ int __cdecl read_factions() {
     // Original version checked for ExpansionEnabled but this is not
     // necessary because smac_only allows changing active faction lists.
     prefs_fac_load();
-    int faction_count = 14;
-    if (!text_open(AlphaFile, "CUSTOMFACTIONS")) { // get count of custom factions
+    conf.faction_file_count = 14;
+    if (!text_open(alpha_file(), "CUSTOMFACTIONS")) { // get count of custom factions
         text_get();
         for (char* custom = text_item(); *custom; custom = text_item()) {
-            faction_count++;
+            conf.faction_file_count++;
             text_get();
         }
     }
-    for (int i = 1; i < MaxPlayerNum; i++) {
+    debug("read_factions count: %d\n", conf.faction_file_count);
+    for (int i = 1; i < MaxPlayerNum; i++) { // Skip MFactions[0] used for native units
         if (!strcmp(MFactions[i].filename, "JENN282")) {
-            int faction_id;
+            int choice;
             do {
                 int rand_val = 0;
                 for (int j = 0; j < 1000; j++) {
-                    rand_val = random(faction_count);
+                    rand_val = random(conf.faction_file_count);
                     if ((1 << rand_val) & ~conf.skip_random_factions) {
                         break;
                     }
                 }
-                int faction_set = rand_val / 7; // 0: SMAC; 1: SMACX; 2+: custom
-                if (text_open(AlphaFile, !faction_set ? "FACTIONS" : (faction_set == 1)
-                ? "NEWFACTIONS" : "CUSTOMFACTIONS")) {
+                const char* label;
+                if (rand_val < 7) {
+                    label = "FACTIONS";
+                    choice = rand_val;
+                } else if (rand_val < 14) {
+                    label = "NEWFACTIONS";
+                    choice = rand_val - 7;
+                } else {
+                    label = "CUSTOMFACTIONS";
+                    choice = rand_val - 14;
+                }
+                if (text_open(alpha_file(), label)) {
                     return true;
                 }
-                faction_id = rand_val % 7;
-                for (int j = faction_id; j >= 0; j--) {
+                for (int j = choice; j >= 0; j--) {
                     text_get();
                 }
                 // Original version copied filename twice?
+                // This is most likely redundant debug feature that was left in the game
                 strcpy_n(MFactions[i].filename, 24, text_item());
                 strcpy_n(MFactions[i].search_key, 24, text_item());
                 for (int k = 1; k < MaxPlayerNum; k++) {
-                    if (i != k) {
-                        if (!strcmp(MFactions[i].filename, MFactions[k].filename)) {
-                            faction_id = -1;
-                            break;
-                        }
+                    if (i != k && !strcmp(MFactions[i].filename, MFactions[k].filename)) {
+                        choice = -1;
+                        break;
                     }
                 }
-                if (faction_id != -1) { // Skip MFactions[0] like below check
+                if (choice >= 0) {
                     read_faction(&MFactions[i], 0);
                     load_faction_art(i);
                 }
-            } while (faction_id == -1);
+            } while (choice < 0);
         } else {
-            // Removed check (&MFactions[i] != &MFactions[0]) since MFactions[0] is already skipped
-            // Moved this into same loop to increase performance with random factions
             read_faction(&MFactions[i], 0);
             load_faction_art(i);
         }
@@ -766,7 +789,7 @@ Parse the #UNITS section inside the alpha(x).txt.
 Return Value: Was there an error? true/false
 */
 int __cdecl read_units() {
-    if (text_open(AlphaFile, "UNITS")) {
+    if (text_open(alpha_file(), "UNITS")) {
         return true;
     }
     int total_units = text_get_number(0, MaxProtoFactionNum);
@@ -826,7 +849,7 @@ int __cdecl read_rules(int tgl_all_rules) {
     text_clear_index();
     text_make_index(ScriptFile);
     text_make_index(AlphaFile);
-    if (read_tech() || read_basic_rules() || text_open(AlphaFile, "TERRAIN")) {
+    if (read_tech() || read_basic_rules() || text_open(alpha_file(), "TERRAIN")) {
         return true;
     }
     for (int i = 0; i < MaxTerrainNum; i++) {
@@ -855,7 +878,7 @@ int __cdecl read_rules(int tgl_all_rules) {
         Order[i + 4].letter = text_item_string();
         Terraform[i].shortcuts = text_item_string();
     }
-    if (text_open(AlphaFile, "RESOURCEINFO")) {
+    if (text_open(alpha_file(), "RESOURCEINFO")) {
         return true;
     }
     for (int i = 0; i < MaxResourceInfoNum; i++) {
@@ -867,7 +890,7 @@ int __cdecl read_rules(int tgl_all_rules) {
         res[i*4 + 2] = text_item_number();
         res[i*4 + 3] = text_item_number();
     }
-    if (text_open(AlphaFile, "TIMECONTROLS")) {
+    if (text_open(alpha_file(), "TIMECONTROLS")) {
         return true;
     }
     for (int i = 0; i < MaxTimeControlNum; i++) {
@@ -881,7 +904,7 @@ int __cdecl read_rules(int tgl_all_rules) {
         TimeControl[i].refresh = text_item_number();
         TimeControl[i].accumulated = text_item_number();
     }
-    if (text_open(AlphaFile, "CHASSIS")) {
+    if (text_open(alpha_file(), "CHASSIS")) {
         return true;
     }
     for (int i = 0; i < MaxChassisNum; i++) {
@@ -906,7 +929,7 @@ int __cdecl read_rules(int tgl_all_rules) {
         Chassis[i].defsv_name_lrg = text_item_string();
         noun_item(&Chassis[i].defsv_gender_lrg, &Chassis[i].defsv_is_plural_lrg);
     }
-    if (text_open(AlphaFile, "REACTORS")) {
+    if (text_open(alpha_file(), "REACTORS")) {
         return true;
     }
     for (int i = 0; i < MaxReactorNum; i++) {
@@ -919,7 +942,7 @@ int __cdecl read_rules(int tgl_all_rules) {
         Reactor[i].power = (uint16_t)text_item_number();
         Reactor[i].preq_tech = (int16_t)tech_name(text_item());
     }
-    if (text_open(AlphaFile, "WEAPONS")) {
+    if (text_open(alpha_file(), "WEAPONS")) {
         return true;
     }
     for (int i = 0; i < MaxWeaponNum; i++) {
@@ -932,7 +955,7 @@ int __cdecl read_rules(int tgl_all_rules) {
         Weapon[i].icon = (int8_t)text_item_number();
         Weapon[i].preq_tech = (int16_t)tech_name(text_item());
     }
-    if (text_open(AlphaFile, "DEFENSES")) {
+    if (text_open(alpha_file(), "DEFENSES")) {
         return true;
     }
     for (int i = 0; i < MaxArmorNum; i++) {
@@ -944,7 +967,7 @@ int __cdecl read_rules(int tgl_all_rules) {
         Armor[i].cost = (uint8_t)text_item_number();
         Armor[i].preq_tech = (int16_t)tech_name(text_item());
     }
-    if (text_open(AlphaFile, "ABILITIES")) {
+    if (text_open(alpha_file(), "ABILITIES")) {
         return true;
     }
     for (int i = 0; i < MaxAbilityNum; i++) {
@@ -956,7 +979,7 @@ int __cdecl read_rules(int tgl_all_rules) {
         Ability[i].flags = text_item_binary();
         Ability[i].description = text_item_string();
     }
-    if (text_open(AlphaFile, "MORALE")) {
+    if (text_open(alpha_file(), "MORALE")) {
         return true;
     }
     for (int i = 0; i < MaxMoraleNum; i++) {
@@ -964,7 +987,7 @@ int __cdecl read_rules(int tgl_all_rules) {
         Morale[i].name = text_item_string();
         Morale[i].name_lifecycle = text_item_string();
     }
-    if (text_open(AlphaFile, "DEFENSEMODES")) {
+    if (text_open(alpha_file(), "DEFENSEMODES")) {
         return true;
     }
     for (int i = 0; i < MaxDefenseModeNum; i++) {
@@ -974,7 +997,7 @@ int __cdecl read_rules(int tgl_all_rules) {
         DefenseMode[i].abbrev = text_item_string();
         DefenseMode[i].letter = text_item_string();
     }
-    if (text_open(AlphaFile, "OFFENSEMODES")) {
+    if (text_open(alpha_file(), "OFFENSEMODES")) {
         return true;
     }
     for (int i = 0; i < MaxOffenseModeNum; i++) {
@@ -992,7 +1015,7 @@ int __cdecl read_rules(int tgl_all_rules) {
             return true;
         }
     }
-    if (text_open(AlphaFile, "FACILITIES")) {
+    if (text_open(alpha_file(), "FACILITIES")) {
         return true;
     }
     for (int i = 1; i <= SP_ID_Last; i++) { // Facility[0] is not used
@@ -1025,7 +1048,7 @@ int __cdecl read_rules(int tgl_all_rules) {
             Facility[i].AI_growth = text_item_number();
         }
     }
-    if (text_open(AlphaFile, "ORDERS")) { // Basic
+    if (text_open(alpha_file(), "ORDERS")) { // Basic
         return true;
     }
     for (int i = 0; i < MaxOrderNum; i++) {
@@ -1037,14 +1060,14 @@ int __cdecl read_rules(int tgl_all_rules) {
             Order[i].letter = text_item_string();
         }
     }
-    if (text_open(AlphaFile, "COMPASS")) {
+    if (text_open(alpha_file(), "COMPASS")) {
         return true;
     }
     for (int i = 0; i < MaxCompassNum; i++) {
         text_get();
         Compass[i] = text_item_string();
     }
-    if (text_open(AlphaFile, "PLANS")) {
+    if (text_open(alpha_file(), "PLANS")) {
         return true;
     }
     for (int i = 0; i < MaxPlanNum; i++) {
@@ -1053,14 +1076,14 @@ int __cdecl read_rules(int tgl_all_rules) {
         PlansShortName[i] = text_item_string();
         PlansFullName[i] = text_item_string();
     }
-    if (text_open(AlphaFile, "TRIAD")) {
+    if (text_open(alpha_file(), "TRIAD")) {
         return true;
     }
     for (int i = 0; i < MaxTriadNum; i++) {
         text_get();
         TriadName[i] = text_item_string();
     }
-    if (text_open(AlphaFile, "RESOURCES")) {
+    if (text_open(alpha_file(), "RESOURCES")) {
         return true;
     }
     for (int i = 0; i < MaxResourceNum; i++) {
@@ -1068,7 +1091,7 @@ int __cdecl read_rules(int tgl_all_rules) {
         ResName[i].name_singular = text_item_string();
         ResName[i].name_plural = text_item_string();
     }
-    if (text_open(AlphaFile, "ENERGY")) {
+    if (text_open(alpha_file(), "ENERGY")) {
         return true;
     }
     for (int i = 0; i < MaxEnergyNum; i++) {
@@ -1076,7 +1099,7 @@ int __cdecl read_rules(int tgl_all_rules) {
         Energy[i].abbrev = text_item_string();
         Energy[i].name = text_item_string();
     }
-    if (text_open(AlphaFile, "CITIZENS")) {
+    if (text_open(alpha_file(), "CITIZENS")) {
         return true;
     }
     for (int i = 0; i < MaxCitizenNum; i++) {
@@ -1091,7 +1114,7 @@ int __cdecl read_rules(int tgl_all_rules) {
             Citizen[i].labs_bonus = text_item_number();
         }
     }
-    if (text_open(AlphaFile, "SOCIO")) {
+    if (text_open(alpha_file(), "SOCIO")) {
         return true;
     }
     text_get();
@@ -1131,7 +1154,7 @@ int __cdecl read_rules(int tgl_all_rules) {
             }
         }
     }
-    if (text_open(AlphaFile, "DIFF")) { // Difficulty
+    if (text_open(alpha_file(), "DIFF")) { // Difficulty
         return true;
     }
     for (int i = 0; i < MaxDiffNum; i++) {
@@ -1141,7 +1164,7 @@ int __cdecl read_rules(int tgl_all_rules) {
     if (tgl_all_rules && read_factions()) {
         return true;
     }
-    if (text_open(AlphaFile, "MANDATE")) {
+    if (text_open(alpha_file(), "MANDATE")) {
         return true;
     }
     for (int i = 0; i < MaxMandateNum; i++) {
@@ -1149,21 +1172,21 @@ int __cdecl read_rules(int tgl_all_rules) {
         Mandate[i].name = text_item_string();
         Mandate[i].name_caps = text_item_string();
     }
-    if (text_open(AlphaFile, "MOOD")) {
+    if (text_open(alpha_file(), "MOOD")) {
         return true;
     }
     for (int i = 0; i < MaxMoodNum; i++) {
         text_get();
         Mood[i] = text_item_string();
     }
-    if (text_open(AlphaFile, "REPUTE")) {
+    if (text_open(alpha_file(), "REPUTE")) {
         return true;
     }
     for (int i = 0; i < MaxReputeNum; i++) {
         text_get();
         Repute[i] = text_item_string();
     }
-    if (text_open(AlphaFile, "MIGHT")) {
+    if (text_open(alpha_file(), "MIGHT")) {
         return true;
     }
     for (int i = 0; i < MaxMightNum; i++) {
@@ -1171,7 +1194,7 @@ int __cdecl read_rules(int tgl_all_rules) {
         Might[i].adj_start = text_item_string();
         Might[i].adj = text_item_string();
     }
-    if (text_open(AlphaFile, "PROPOSALS")) {
+    if (text_open(alpha_file(), "PROPOSALS")) {
         return true;
     }
     for (int i = 0; i < MaxProposalNum; i++) {
@@ -1180,7 +1203,7 @@ int __cdecl read_rules(int tgl_all_rules) {
         Proposal[i].preq_tech = tech_name(text_item());
         Proposal[i].description = text_item_string();
     }
-    if (text_open(AlphaFile, "NATURAL")) {
+    if (text_open(alpha_file(), "NATURAL")) {
         return true;
     }
     for (int i = 0; i < MaxNaturalNum; i++) {

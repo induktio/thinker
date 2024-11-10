@@ -806,12 +806,12 @@ static void adjust_psych(BASE* base, int talent_val, bool force) {
         if (base->talent_total < pop_size) {
             base->talent_total++;
         }
-        if (base->talent_total + base->drone_total + base->superdrone_total > pop_size
-        && base->superdrone_total > 0) {
-            base->superdrone_total--;
-        }
-        if (base->talent_total + base->drone_total > pop_size && base->drone_total > 0) {
-            base->drone_total--;
+        if (base->talent_total + base->drone_total + base->superdrone_total > pop_size) {
+            if (base->superdrone_total > 0) {
+                base->superdrone_total--;
+            } else if (base->drone_total > 0) {
+                base->drone_total--;
+            }
         }
     }
     if (talent_val > 0) {
@@ -826,7 +826,7 @@ static void adjust_psych(BASE* base, int talent_val, bool force) {
                 base->drone_total--;
             }
         } else {
-            if (base->drone_total <= 0 || base->drone_total <= pop_size) {
+            if (base->drone_total <= pop_size) {
                 base->superdrone_total = min(base->drone_total, base->superdrone_total);
                 break;
             }
@@ -889,6 +889,7 @@ void __cdecl mod_base_psych(int base_id) {
     int police_total = 0;
     int effic_drones = 0;
     int capture_drones = 0;
+    int facility_value = 0;
     int content_pop, base_limit;
     mod_psych_check(faction_id, &content_pop, &base_limit);
     drone_value = max(0, base->pop_size - content_pop);
@@ -950,25 +951,26 @@ void __cdecl mod_base_psych(int base_id) {
     add_psych_row(base, 1); // Psych
 
     if (has_fac_built(FAC_GENEJACK_FACTORY, base_id)) {
-        adjust_drone(base, Rules->drones_induced_genejack_factory);
+        facility_value += Rules->drones_induced_genejack_factory;
     }
     if (has_fac_built(FAC_RECREATION_COMMONS, base_id)) {
-        adjust_drone(base, -2);
+        facility_value -= 2;
     }
     if (has_fac_built(FAC_HOLOGRAM_THEATRE, base_id)
     || (has_project(FAC_VIRTUAL_WORLD, faction_id)
     && has_fac_built(FAC_NETWORK_NODE, base_id))) {
-        adjust_drone(base, -2);
+        facility_value -= 2;
     }
     if (has_project(FAC_PLANETARY_TRANSIT_SYSTEM, faction_id) && base->pop_size <= 3) {
-        adjust_drone(base, -1);
+        facility_value -= 1;
     }
     if (has_fac_built(FAC_RESEARCH_HOSPITAL, base_id)) {
-        adjust_drone(base, -1);
+        facility_value -= 1;
     }
     if (has_fac_built(FAC_NANOHOSPITAL, base_id)) {
-        adjust_drone(base, -1);
+        facility_value -= 1;
     }
+    adjust_drone(base, facility_value);
     if (has_fac_built(FAC_PARADISE_GARDEN, base_id)) {
         adjust_psych(base, 2, 1);
     }
@@ -1888,6 +1890,9 @@ int __cdecl breed_mod(int base_id, int faction_id) {
     }
     if (has_fac_built(FAC_BIOLOGY_LAB, base_id)) {
         value++;
+    }
+    if (has_fac_built(FAC_BROOD_PIT, base_id)) {
+        value++; // Original game did not include this contrary to datalinks documentation
     }
     if (has_fac_built(FAC_BIOENHANCEMENT_CENTER, base_id)
     || has_project(FAC_CYBORG_FACTORY, faction_id)) {

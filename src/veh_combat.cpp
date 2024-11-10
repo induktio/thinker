@@ -528,7 +528,7 @@ int __cdecl battle_fight_parse_num(int index, int value) {
 /*
 This function replaces defense_value and uses less parameters for simplicity.
 */
-int __cdecl terrain_defense(VEH* veh_def, VEH* veh_atk)
+int terrain_defense(VEH* veh_def, VEH* veh_atk)
 {
     MAP* sq;
     *VehBattleDisplayTerrain = NULL;
@@ -556,6 +556,38 @@ int __cdecl terrain_defense(VEH* veh_def, VEH* veh_atk)
         defense = 1;
     }
     return defense + 2;
+}
+
+/*
+Original game decision making for using nerve gas ability.
+*/
+bool use_nerve_gas(int faction_id_atk, int faction_id_def) {
+    Faction* f_atk = &Factions[faction_id_atk];
+    Faction* f_def = &Factions[faction_id_def];
+    int value = 0;
+    if (*GameRules & RULES_INTENSE_RIVALRY && (f_def->ranking > f_atk->ranking
+    || f_def->diplo_unk_4[faction_id_atk] > f_atk->diplo_unk_4[faction_id_def])) {
+        value = 3 * (f_atk->AI_fight + 1);
+    }
+    if ((f_atk->diplo_status[faction_id_def] & DIPLO_ATROCITY_VICTIM)
+    || (f_atk->player_flags & PFLAG_COMMIT_ATROCITIES_WANTONLY)
+    || (is_human(faction_id_def) && !un_charter())
+    || (is_human(faction_id_def)
+    && f_atk->diplo_status[faction_id_def] & DIPLO_WANT_REVENGE
+    && value + f_def->integrity_blemishes >= 6)) {
+        return true;
+    }
+    return false;
+}
+
+bool use_nerve_gas(int faction_id_atk) {
+    for (int i = 1; i < MaxPlayerNum; i++) {
+        if (i != faction_id_atk && is_alive(i) && !has_pact(faction_id_atk, i)
+        && use_nerve_gas(faction_id_atk, i)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void __cdecl add_bat(int type, int modifier, const char* display_str)
@@ -1186,18 +1218,8 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                 }
                 BattleWin_pulse_timer(BattleWin);
             }
-            else if (!is_human(faction_id_atk)) {
-                int value = (!(*GameRules & RULES_INTENSE_RIVALRY) || (f_def->ranking <= f_atk->ranking
-                    && f_def->diplo_unk_4[faction_id_atk] <= f_atk->diplo_unk_4[faction_id_def])
-                    ? 0 : 3 * (f_atk->AI_fight + 1));
-                if ((f_atk->diplo_status[faction_id_def] & DIPLO_ATROCITY_VICTIM)
-                || ((f_atk->player_flags & PFLAG_COMMIT_ATROCITIES_WANTONLY)
-                || (is_human(faction_id_def) && !un_charter())
-                || (is_human(faction_id_def)
-                && f_atk->diplo_status[faction_id_def] & DIPLO_WANT_REVENGE
-                && value + f_def->integrity_blemishes >= 6))) {
-                    veh_atk->state |= VSTATE_USED_NERVE_GAS;
-                }
+            else if (!is_human(faction_id_atk) && use_nerve_gas(faction_id_atk, faction_id_def)) {
+                veh_atk->state |= VSTATE_USED_NERVE_GAS;
             }
             if (*MultiplayerActive) {
                 synch_veh(veh_id_atk);
@@ -1528,8 +1550,8 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                 stack_veh(iter_veh_id, 2);
                 stack_kill(iter_veh_id);
                 iter_veh_id = stack_fix(veh_at(tx, ty));
-                Factions[faction_id_atk].diplo_unk_3[faction_id_def]++;
-                Factions[faction_id_atk].diplo_unk_4[faction_id_def]++;
+                f_atk->diplo_unk_3[faction_id_def]++;
+                f_atk->diplo_unk_4[faction_id_def]++;
             }
         }
         draw_tile_fixup(tx, ty, 1, 2);

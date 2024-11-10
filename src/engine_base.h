@@ -225,13 +225,6 @@ struct BASE {
         return is_human(faction_id) ? governor_flags : ~0u;
     }
     /*
-    This implementation is simplified to skip additional checks for these rules:
-    RULES_SCN_VICT_SP_COUNT_OBJ, STATE_SCN_VICT_BASE_FACIL_COUNT_OBJ.
-    */
-    bool is_objective() {
-        return (*GameRules & RULES_SCN_VICT_ALL_BASE_COUNT_OBJ ) || (event_flags & BEVENT_OBJECTIVE);
-    }
-    /*
     Specialist types (CCitizen, 4 bits per id) for the first 16 specialists in the base.
     These are assigned in base_yield and base_energy and chosen by best_specialist.
     */

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "main.h"
-#include "lib/FastNoiseLite.h"
 
 const int ManifoldHarmonicsBonus[][3] = {
     {0,0,0}, // Planet < 0
@@ -45,6 +44,7 @@ uint32_t __cdecl bit2_at(int x, int y);
 void __cdecl bit2_set(int x, int y, uint32_t items, bool add);
 uint32_t __cdecl code_at(int x, int y);
 void __cdecl code_set(int x, int y, int code);
+void __cdecl synch_bit(int x, int y, int faction_id);
 int __cdecl has_temple(int faction_id);
 int __cdecl near_landmark(int x, int y);
 void __cdecl map_wipe();
@@ -60,13 +60,6 @@ int __cdecl mod_whose_territory(int faction_id, int x, int y, int* base_id, int 
 int total_yield(int x, int y, int faction);
 int fungus_yield(int faction, ResType res_type);
 int item_yield(int x, int y, int faction, int bonus, MapItem item);
-bool locate_landmark(int* x, int* y, bool ocean);
-void __cdecl mod_world_monsoon(int x, int y);
-void __cdecl mod_world_borehole(int x, int y);
-void __cdecl mod_world_fossil(int x, int y);
-void world_generate(uint32_t seed);
-void console_world_generate(uint32_t seed);
 void __cdecl find_start(int faction, int* tx, int* ty);
-void __cdecl mod_world_build();
 void __cdecl mod_time_warp();
 

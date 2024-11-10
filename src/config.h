@@ -4,6 +4,18 @@
 
 extern const char* AlphaFile;
 extern const char* ScriptFile;
+extern const char* ModAlphaFile;
+extern const char* ModHelpFile;
+extern const char* ModTutorFile;
+extern const char* ModConceptsFile;
+extern const char* ModAlphaTxtFile;
+extern const char* ModHelpTxtFile;
+extern const char* ModTutorTxtFile;
+extern const char* ModConceptsTxtFile;
+extern const char* OpeningFile;
+extern const char* MovlistFile;
+extern const char* MovlistTxtFile;
+extern const char* ExpMovlistTxtFile;
 
 const uint32_t DefaultBasePref = PREF_ADV_RADIO_BTN_NOT_SEL_SING_CLK | PREF_AUTO_FORMER_BUILD_ADV
     | PREF_AUTO_FORMER_PLANT_FORESTS | PREF_AUTO_END_MOVE_SPOT_VEH_WAR

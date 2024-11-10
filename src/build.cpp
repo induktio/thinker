@@ -693,8 +693,9 @@ int select_build(int base_id) {
     int transports = 0;
     int landprobes = 0;
     int seaprobes = 0;
-    int defenders = 0;
     int artifacts = 0;
+    int defenders = 0;
+    int def_value = 0;
     int formers = 0;
     int scouts = 0;
     int pods = 0;
@@ -721,25 +722,25 @@ int select_build(int base_id) {
                 allow_supply = false;
             }
         }
+        int dist = map_range(base->x, base->y, veh->x, veh->y);
         if (veh->is_combat_unit() && veh->triad() == TRIAD_LAND) {
-            if (base->x == veh->x && base->y == veh->y) {
-                defenders += 2;
-            } else if (map_range(base->x, base->y, veh->x, veh->y) <= 1) {
-                defenders += 1;
+            if (dist <= 1) {
+                defenders += (base->x == veh->x && base->y == veh->y ? 2 : 1);
+                def_value = max(def_value, veh->defense_value());
             }
             if (veh->home_base_id == base_id) {
                 scouts++;
             }
         } else if (veh->is_former() && veh->home_base_id != base_id) {
-            if (map_range(base->x, base->y, veh->x, veh->y) <= 1) {
+            if (dist <= 1) {
                 near_formers++;
             }
         } else if (veh->is_supply()) {
             all_crawlers++;
-        } else if (veh->is_artifact() && map_range(base->x, base->y, veh->x, veh->y) <= 3) {
+        } else if (veh->is_artifact() && dist <= 3) {
             artifacts++;
         }
-        if (sea_base && veh->x == base->x && veh->y == base->y && veh->triad() == TRIAD_LAND) {
+        if (sea_base && base->x == veh->x && base->y == veh->y && veh->triad() == TRIAD_LAND) {
             if (veh->is_colony() || veh->is_former() || veh->is_supply()) {
                 need_ferry++;
             }
@@ -867,6 +868,13 @@ int select_build(int base_id) {
             }
         }
         if (t == CombatUnit && gov & GOV_ALLOW_COMBAT && minerals > reserve) {
+            if ((defenders <= 2) + (base->defend_goal >= 4) + (def_value < 4) > 1
+            && min(16, minerals) > random(32)
+            && (choice = find_proto(base_id, TRIAD_LAND, WMODE_COMBAT, DEF)) >= 0
+            && def_value < Units[choice].defense_value()
+            && (Units[choice].is_prototyped() || prod_count(choice, faction, base_id) == 0)) {
+                return choice;
+            }
             if ((choice = select_combat(base_id, landprobes+seaprobes, sea_base, allow_ships)) >= 0) {
                 if (random(256) < (int)(256 * Wthreat)) {
                     return choice;

@@ -33,6 +33,11 @@ int __cdecl X_pop2(const char* label, int a2)
     return X_pop(ScriptFile, label, -1, 0, 0, a2);
 }
 
+int __cdecl X_pop3(const char* filename, const char* label, int a3)
+{
+    return X_pop(filename, label, -1, 0, 0, a3);
+}
+
 int __cdecl X_pop7(const char* label, int a2, int a3)
 {
     return X_pop(ScriptFile, label, -1, 0, a2, a3);
@@ -64,6 +69,17 @@ int __cdecl DiploPop_spying(int faction_id)
     return has_treaty(MapWin->cOwner, faction_id, DIPLO_PACT|DIPLO_HAVE_INFILTRATOR)
         || has_project(FAC_EMPATH_GUILD, MapWin->cOwner)
         || (MapWin->cOwner == *GovernorFaction && !is_alien(faction_id));
+}
+
+/*
+Skip social engineering choices dialog SOCIETY while diplomacy is active.
+*/
+int __cdecl tech_achieved_pop3(const char* filename, const char* label, int a3)
+{
+    if (*DiploWinState) {
+        return 0;
+    }
+    return X_pop3(filename, label, a3);
 }
 
 /*
@@ -527,8 +543,8 @@ int __cdecl mod_buy_tech(int faction1, int faction2, int counter_id, int high_pr
             return 1;
         }
         if (X_dialog(random(2) ? "BUYTECH0" : "BUYTECH1", faction2) == 1) {
-            net_tech(faction1, *diplo_tech_id1, faction2, 1);
             net_energy(faction1, -value, faction2, value, 1);
+            net_tech(faction1, *diplo_tech_id1, faction2, 1);
         }
         return 1;
     }

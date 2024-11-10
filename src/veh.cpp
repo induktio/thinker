@@ -1052,9 +1052,10 @@ int __cdecl create_proto(int faction, VehChassis chs, VehWeapon wpn, VehArmor ar
 VehAblFlag abls, VehReactor rec, VehPlan ai_plan) {
     char name[256];
     mod_name_proto(name, -1, faction, chs, wpn, arm, abls, rec);
-    debug("create_proto %4d %d chs: %d rec: %d wpn: %2d arm: %2d %08X %s\n",
-        *CurrentTurn, faction, chs, rec, wpn, arm, abls, name);
-    return propose_proto(faction, chs, wpn, arm, abls, rec, ai_plan, (strlen(name) ? name : NULL));
+    int unit_id = propose_proto(faction, chs, wpn, arm, abls, rec, ai_plan, (strlen(name) ? name : NULL));
+    debug("create_proto %4d %d chs: %d rec: %d wpn: %2d arm: %2d %08X %d %s\n",
+        *CurrentTurn, faction, chs, rec, wpn, arm, abls, unit_id, name);
+    return unit_id;
 }
 
 /*

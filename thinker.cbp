@@ -106,8 +106,12 @@
 		<Unit filename="src/main.h" />
 		<Unit filename="src/map.cpp" />
 		<Unit filename="src/map.h" />
+		<Unit filename="src/mapgen.cpp" />
+		<Unit filename="src/mapgen.h" />
 		<Unit filename="src/move.cpp" />
 		<Unit filename="src/move.h" />
+		<Unit filename="src/net.cpp" />
+		<Unit filename="src/net.h" />
 		<Unit filename="src/patch.cpp" />
 		<Unit filename="src/patch.h" />
 		<Unit filename="src/patchdata.h" />
