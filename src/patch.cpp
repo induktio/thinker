@@ -328,6 +328,8 @@ void init_video_config(Config* cf) {
             prefs_put2("MoviePlayerArgs", "");
         } else {
             conf.video_player = 0;
+            prefs_put2("MoviePlayerPath", path);
+            prefs_put2("MoviePlayerArgs", args);
         }
     } else {
         conf.video_player = 2;

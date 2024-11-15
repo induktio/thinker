@@ -663,8 +663,8 @@ Recycling Tanks,               4, 0, Biogen,  EcoEng2,  Bonus Resources
 Perimeter Defense,             5, 0, DocLoy,  Disable,  Defense +100%
 Tachyon Field,                12, 2, ProbMec, Disable,  All Defense +100%
 Recreation Commons,            4, 1, Psych,   SentEco,  Fewer Drones
-Energy Bank,                   8, 1, IndEcon, QuanMac,  Economy Bonus
-Network Node,                  8, 1, InfNet,  HAL9000,  Labs Bonus
+Energy Bank,                   8, 1, IndEcon, Disable,  Economy Bonus
+Network Node,                  8, 1, InfNet,  Disable,  Labs Bonus
 Biology Lab,                   6, 1, CentEmp, Disable,  Research and PSI
 Skunkworks,                    6, 1, Subat,   Disable,  Prototypes Free
 Hologram Theatre,              6, 3, PlaNets, Disable,  Psych and Fewer Drones

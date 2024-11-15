@@ -17,6 +17,7 @@ These shortcuts are always available whether debug build is available or not.
     Alt+R       Toggle tile information update under cursor if smooth_scrolling is enabled.
     Alt+O       Enter a new value for random map generator when scenario editor mode is active.
     Alt+Enter   Switch between fullscreen and windowed mode unless desktop resolution is used in fullscreen.
+    Ctrl+H      Hurry current production with energy reserves when the base window is active.
 
 These developer mode shortcuts are only available if Thinker is using debug build.
 Some of these options require extended debug mode.

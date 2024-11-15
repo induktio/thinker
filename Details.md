@@ -28,6 +28,7 @@ Keyboard shortcuts
     Alt+R       Toggle tile information update under cursor if smooth_scrolling is enabled.
     Alt+O       Enter a new value for random map generator when scenario editor mode is active.
     Alt+Enter   Switch between fullscreen and windowed mode unless desktop resolution is used in fullscreen.
+    Ctrl+H      Hurry current production with energy reserves when the base window is active.
 
 
 User interface additions
@@ -290,10 +291,22 @@ The infiltration status can be renewed once per turn for every opponent faction 
 Each social engineering value is treated as being from -3 to 3 even if it falls outside this range. In addition, infiltration lasts longer on maps larger than the standard size to balance for the longer travel distances. On Thinker and Transcend difficulty levels, the duration is reduced from normal values. The final time value is always at least 5 turns. For example, on Transcend difficulty, standard map, with two factions having equal ratings, the default infiltration period is 15 turns.
 
 
+Free base facilities
+====================
+By default alphax.txt files contain entries for each facility labeled as "Free = Technology for free facility at new bases" some of which are enabled.
+These values were not parsed by the original game even though they were referenced in code that adds these facilities for free at newly built bases when the faction has discovered the specific technologies.
+This does not exclude facility maintenance costs unless the faction has these facilities granted for free in their faction definition.
+
+The modded version parses these entries from alphax.txt and adds the facilities on new bases if the technology is discovered.
+This feature can be always disabled by setting the free technologies to `Disable`. Recycling Tanks is free after discovery of Advanced Ecological Engineering (B7) and Recreation Commons is free after Sentient Econometrics (E11).
+The original game also included entries for free Network Node after Self-Aware Machines (D11) and Energy Bank after Quantum Machinery (B12) but these entries are disabled to limit the benefits received by building additional bases.
+
+
 Base psych changes
 ==================
 In the original game benefits provided by Paradise Garden, Human Genome Project and Clinical Immortality sometimes did not match their description in the manual.
 Usually superdrones added by bureaucracy prevented new talents from being added on the base. In the modified routines enabled by default with `base_psych` option, these facilities provide more consistent effects.
+If the base has many superdrones, these facilities and projects will suppress more drones than in the original game if the additional talents are not added directly.
 Clinical Immortality provides one extra talent per base as mentioned in the manual. However any bureaucracy or other drone effects on the first psych row remain the same as before.
 
 As an additional feature, psych energy allocation is not limited to twice the base size unlike in the original game. Any spending before this limit will provide similar effects as in the original game, but after that limit the marginal cost to pacify one drone or create more talents is increased to 4 psych and it keeps increasing by 4 psych after each step. This makes it slightly easier for some factions to achieve golden ages while it still requires substantial psych spending.
@@ -355,6 +368,13 @@ At most 10 custom factions can be listed in `#CUSTOMFACTIONS` because of limitat
 
 Compatibility with other mods
 =============================
+Custom programs can be used to play game movies if they have support for the appropriate wve format.
+[VLC](https://www.videolan.org/vlc/) is the recommended program for this and at startup the mod will attempt to detect if it is installed in the default folder.
+If it is not found, custom path can be set in `MoviePlayerPath` and command line options in `MoviePlayerArgs` in Alpha Centauri.ini. If these options are left empty, the game uses the default video player.
+If the lines are removed, the mod will reset to the default VLC installation path and options shown below when the game is restarted. Note that Thinker's video player options always override any other movie player settings used by PRACX.
+
+    C:\Program Files\VideoLAN\VLC\vlc.exe --fullscreen --video-on-top --play-and-exit --no-repeat --swscale-mode=2
+
 It should be possible to run both Thinker and [PRACX](https://github.com/DrazharLn/pracx) graphics enhancement patch at the same time. For easiest installation, download [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). However this combination of patches will not receive as much testing as the normal configuration, so some issues might occur.
 
 If any issues are encountered, first check if they occur with the vanilla game and/or Thinker without additional mods. Also some optional features provided by Thinker will be disabled while running PRACX because they would patch conflicting areas of the game binary. These disabled feature include:
@@ -439,7 +459,8 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 53. Fix GSP defense bonus range sometimes not being accurate at three tiles like the manual implies.
 54. Fix inconsistent effects with unit repair facilities and Citizens Defense Force when the base tile is defended by an unit owned by third faction. The facility or the secret project providing it must be built by the base owner for it to have an effect.
 55. Fix issues where the game did not calculate upgrade costs correctly when the unit count exceeded 255. The costs will be applied correctly even if Security Nexus may show an inaccurate number.
-56. Patch the game to also parse "Free Technology" defined for each facility. This causes new bases to have these facilities built for free when `facility_free_tech` option is enabled. This does not exclude facility maintenance costs.
+56. Patch the game to also parse "Free Technology" defined for each facility. This causes new bases to have these facilities built for free while it does not exclude facility maintenance costs.
+57. Faction config reader also parses social effect priority/opposition values (e.g. ECONOMY) defined for each faction. These may have minor effect on AI social engineering choices while original game always ignored these values.
 
 
 Scient's patch

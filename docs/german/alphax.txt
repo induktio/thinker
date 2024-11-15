@@ -646,8 +646,8 @@ Recyclingtanks,                 4,   0, Biogen,  EcoEng2, Bonus-Ressourcen
 Abwehrzone,                     5,   0, DocLoy,  Disable, Abwehr +100%
 Tachyonenfeld,                  12,  2, ProbMec, Disable, Gesamte Abwehr +100%
 Erholungsgebiet,                4,   1, Psych,   SentEco, Weniger Drohnen
-Energielager,                   8,   1, IndEcon, QuanMac, Wirtschafts-Bonus
-Netzwerkknoten,                 8,   1, InfNet,  HAL9000, Labor-Bonus
+Energielager,                   8,   1, IndEcon, Disable, Wirtschafts-Bonus
+Netzwerkknoten,                 8,   1, InfNet,  Disable, Labor-Bonus
 Biolabor,                       6,   1, CentEmp, Disable, Forschung und PSI
 Skunkworks,                     6,   1, Subat,   Disable, Prototypen gratis
 Holo-Theater,                   6,   3, PlaNets, Disable, Psycho und weniger Drohnen
