@@ -183,6 +183,7 @@ struct Config {
     int window_width = 1024;
     int window_height = 768;
     int minimised = 0; // internal variable
+    int video_player = 2; // internal variable
     int playing_movie = 0;  // internal variable
     int screen_width = 1024; // internal variable
     int screen_height = 768; // internal variable
@@ -262,7 +263,6 @@ struct Config {
     int early_research_start = 1; // unlisted option
     int facility_capture_fix = 1; // unlisted option
     int territory_border_fix = 1;
-    int facility_free_tech = 0;
     int auto_relocate_hq = 1;
     int simple_hurry_cost = 1;
     int eco_damage_fix = 1;

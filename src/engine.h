@@ -36,6 +36,7 @@ struct MFaction;
 extern MFaction* MFactions;
 extern int* GameState;
 extern int* GameRules;
+extern const int MaxProtoNum;
 extern const int MaxPlayerNum;
 extern const int MaxBaseSpecNum;
 extern const int MaxProtoFactionNum;
@@ -407,7 +408,7 @@ extern uint8_t** MapAbstract;
 extern Continent* Continents;
 extern Landmark* Landmarks;
 extern Console* MapWin;
-extern Win* BaseWin;
+extern BaseWindow* BaseWin;
 extern Win* BattleWin;
 extern Win* CouncilWin;
 extern Win* DatalinkWin;
@@ -541,9 +542,6 @@ extern FGenWin BaseWin_focus;
 extern FBaseWin_zoom BaseWin_zoom;
 extern FGenWin BaseWin_nerve_staple;
 extern FGenWin BaseWin_on_redraw;
-extern fp_none help_any;
-extern fp_2int help_topic;
-extern fp_3int help_create_link;
 extern FGenWin GraphicWin_redraw;
 extern FGenVoid SubInterface_delete_iface_mode;
 extern FGenVoid SubInterface_set_iface_mode;
@@ -751,7 +749,7 @@ extern fp_1int Console_iface_click2;
 extern FConsole Console_close;
 extern FConsole_init Console_init;
 
-typedef int(__thiscall *FMapWin_clear)(Console* This, int a2);
+typedef int(__thiscall *FMapWin_MapWin)(Console* This, int a2);
 typedef int(__thiscall *FMapWin_tile_to_pixel)(Console* This, int x, int y, long* px, long* py);
 typedef int(__thiscall *FMapWin_pixel_to_tile)(Console* This, int x, int y, long* px, long* py);
 typedef int(__thiscall *FMapWin_gen_terrain_poly)(
@@ -774,7 +772,8 @@ typedef int(__thiscall *FMapWin_get_point_light)(Console* This, int a2, int a3, 
 typedef int(__thiscall *FMapWin_init2)(Console* This, int a2, int a3, int a4);
 typedef int(__thiscall *FMapWin_init)(Console* This, int a2, int a3);
 
-extern FMapWin_clear MapWin_clear;
+extern FMapWin_MapWin MapWin_MapWin;
+extern FMapWin_MapWin MapWin_clear;
 extern FMapWin MapWin_calculate_dimensions;
 extern FMapWin_pixel_to_tile MapWin_pixel_to_tile;
 extern FMapWin_tile_to_pixel MapWin_tile_to_pixel;
@@ -1135,6 +1134,20 @@ extern FNetDaemon_send_message NetDaemon_send_message;
 extern FNetDaemon_synch NetDaemon_synch;
 extern FNetDaemon_fixup_message NetDaemon_fixup_message;
 extern FNetDaemon_process_message NetDaemon_process_message;
+
+extern fp_1int wave_it;
+extern fp_none ok_callback;
+extern fp_1int load_music;
+extern fp_1int ambience;
+extern fp_1int ambience_veh;
+extern fp_1int hall_of_fame;
+extern fp_2int tech_heck;
+extern fp_4int help_tech_info;
+extern fp_3int help_tech_info2;
+extern fp_1int help_project;
+extern fp_none help_any;
+extern fp_2int help_topic;
+extern fp_3int help_create_link;
 
 extern fp_none load_voxels;
 extern fp_none load_palette;

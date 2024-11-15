@@ -18,7 +18,7 @@ void reader_path(vec_str_t& lines, const char* filename, const char* section, si
         } else if (start && line[0] == '#') {
             break;
         } else if (start && line[0] != ';') {
-            char* p = strstrip(line);
+            char* p = strtrim(line);
             // Truncate long lines to max_len (including null)
             if (strlen(p) > 0 && p[0] != ';') {
                 if (strlen(p) >= max_len) {
@@ -41,7 +41,7 @@ void reader_file(vec_str_t& lines, const char* filename, const char* section, si
 
 void parse_format_args(char* buf, const char* src, int args_count, size_t max_len) {
     int num = count_format_args(src);
-    if (num >= 0 && num <= args_count) {
+    if (num >= 0 && num <= args_count && max_len > 0) {
         strncpy(buf, src, max_len);
         buf[max_len-1] = '\0';
     }
@@ -95,7 +95,7 @@ char* strtrail(char* s) {
     return s;
 }
 
-char* strstrip(char* s) {
+char* strtrim(char* s) {
     size_t size;
     char* end;
     size = strlen(s);
@@ -111,5 +111,16 @@ char* strstrip(char* s) {
         s++;
     }
     return s;
+}
+
+void strtrim(std::string& dst, const std::string& src) {
+    std::string::const_iterator a = src.begin(), b = src.end();
+    while (isspace(*a)) {
+        ++a;
+    }
+    while (a < b && isspace(*(b-1))) {
+        --b;
+    }
+    dst.assign(a, b);
 }
 

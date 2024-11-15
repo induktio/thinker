@@ -19,6 +19,7 @@ const int GeosyncSurveyPodRange = 3;
 int __cdecl psi_factor(int value, int faction_id, int is_attack, int is_fungal_twr);
 int __cdecl battle_kill_credits(int veh_id);
 
+void __cdecl mod_say_morale2(char* output, int veh_id, int faction_id_vs_native);
 int __cdecl mod_morale_alien(int veh_id, int faction_id_vs_native);
 int __cdecl mod_morale_veh(int veh_id, int check_drone_riot, int faction_id_vs_native);
 int __cdecl mod_offense_proto(int unit_id, int veh_id_def, int is_bombard);

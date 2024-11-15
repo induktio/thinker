@@ -9,4 +9,5 @@ int count_format_args(const char* buf);
 uint32_t btoi(const char* src);
 char* strcpy_n(char* dst, size_t count, const char* src);
 char* strtrail(char* s);
-char* strstrip(char* s);
+char* strtrim(char* s);
+void strtrim(std::string& dst, const std::string& src);

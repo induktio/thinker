@@ -1033,12 +1033,7 @@ int __cdecl read_rules(int tgl_all_rules) {
         checks this value and sets the free facility only for new bases built after discovering the
         tech. It looks like existing bases do not get it.
         */
-        if (conf.facility_free_tech) {
-            Facility[i].free_tech = tech_name(text_item());
-        } else {
-            Facility[i].free_tech = TECH_Disable;
-            text_item();
-        }
+        Facility[i].free_tech = tech_name(text_item());
         Facility[i].effect = text_item_string();
         if (i >= SP_ID_First) {
             Facility[i].AI_fight = text_item_number();
@@ -1337,16 +1332,16 @@ void __cdecl prefs_load(int use_default) {
         prefs |= PREF_BSC_TUTORIAL_MSGS;
     }
     prefs_read(dst, StrBufLen, "Preferences", prefs_get_binary(src, prefs), use_default);
-    AlphaIniPrefs->preferences = btoi(strstrip(dst));
+    AlphaIniPrefs->preferences = btoi(strtrim(dst));
     prefs_read(dst, StrBufLen, "More Preferences", prefs_get_binary(src, default_prefs2()), use_default);
-    AlphaIniPrefs->more_preferences = btoi(strstrip(dst));
+    AlphaIniPrefs->more_preferences = btoi(strtrim(dst));
     prefs_read(dst, StrBufLen, "Semaphore", "00000000", use_default);
-    AlphaIniPrefs->semaphore = btoi(strstrip(dst));
+    AlphaIniPrefs->semaphore = btoi(strtrim(dst));
     AlphaIniPrefs->customize = prefs_get("Customize", 0, false);
     prefs_read(dst, StrBufLen, "Rules", prefs_get_binary(src, default_rules()), use_default);
-    AlphaIniPrefs->rules = btoi(strstrip(dst));
+    AlphaIniPrefs->rules = btoi(strtrim(dst));
     prefs_read(dst, StrBufLen, "Announce", prefs_get_binary(src, default_warn()), use_default);
-    AlphaIniPrefs->announce = btoi(strstrip(dst));
+    AlphaIniPrefs->announce = btoi(strtrim(dst));
     prefs_read(dst, StrBufLen, "Custom World", "2, 1, 1, 1, 1, 1, 1,", use_default);
     opt_list_parse(&AlphaIniPrefs->custom_world[0], dst, 7, 0);
     AlphaIniPrefs->time_controls = prefs_get("Time Controls", 1, use_default);

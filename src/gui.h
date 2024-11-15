@@ -26,6 +26,9 @@ extern char label_eco_damage[StrBufLen];
 extern char label_base_surplus[StrBufLen];
 extern char label_unit_reactor[4][StrBufLen];
 
+extern std::string video_player_path;
+extern std::string video_player_args;
+
 // Bottom middle UI console size in pixels
 const int ConsoleHeight = 219;
 const int ConsoleWidth = 1024;
@@ -49,6 +52,11 @@ const int ColorMagenta = 253;
 const int ColorCyan = 254;
 const int ColorWhite = 255;
 
+bool shift_key_down();
+bool ctrl_key_down();
+bool alt_key_down();
+bool win_has_focus();
+int __thiscall Win_is_visible(Win* This);
 LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 int __cdecl mod_Win_init_class(const char* lpWindowName);
 void __cdecl mod_amovie_project(const char* name);
@@ -61,7 +69,6 @@ int __cdecl mod_blink_timer();
 void __cdecl mod_turn_timer();
 int __thiscall mod_calc_dim(Console* This);
 int __thiscall mod_gen_map(Console* This, int iOwner, int fUnitsOnly);
-int __thiscall Win_is_visible(Win* This);
 void __thiscall MapWin_gen_overlays(Console* This, int x, int y);
 void refresh_overlay(std::function<int32_t(int32_t, int32_t)> tile_value);
 int __thiscall SetupWin_buffer_draw(Buffer* src, Buffer* dst, int a3, int a4, int a5, int a6, int a7);

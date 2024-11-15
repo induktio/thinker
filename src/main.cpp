@@ -28,10 +28,9 @@ map_str_t musiclabels;
 
 int option_handler(void* user, const char* section, const char* name, const char* value) {
     #define MATCH(n) strcmp(name, n) == 0
-    char buf[INI_MAX_LINE] = {};
+    char buf[INI_MAX_LINE];
     Config* cf = (Config*)user;
-    strncpy(buf, value, INI_MAX_LINE);
-    buf[INI_MAX_LINE-1] = '\0';
+    strcpy_n(buf, INI_MAX_LINE, value);
 
     if (strcmp(section, "thinker") != 0) {
         return opt_handle_error(section, name);
@@ -187,8 +186,6 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->facility_capture_fix = atoi(value);
     } else if (MATCH("territory_border_fix")) {
         cf->territory_border_fix = atoi(value);
-    } else if (MATCH("facility_free_tech")) {
-        cf->facility_free_tech = atoi(value);
     } else if (MATCH("auto_relocate_hq")) {
         cf->auto_relocate_hq = atoi(value);
     } else if (MATCH("simple_hurry_cost")) {
@@ -350,15 +347,15 @@ int option_handler(void* user, const char* section, const char* name, const char
             }
         }
     } else if (MATCH("script_label")) {
-        char* p = strupr(strstrip(buf));
+        char* p = strupr(strtrim(buf));
         debug("script_label %s\n", p);
         movedlabels.insert(p);
     } else if (MATCH("music_label")) {
         char *p, *s, *k, *v;
         if ((p = strtok_r(buf, ",", &s)) != NULL) {
-            k = strstrip(p);
+            k = strtrim(p);
             if ((p = strtok_r(NULL, ",", &s)) != NULL) {
-                v = strstrip(p);
+                v = strtrim(p);
                 if (strlen(k) && strlen(v)) {
                     debug("music_label %s = %s\n", k, v);
                     musiclabels[k] = v;

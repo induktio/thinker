@@ -27,21 +27,20 @@ int __cdecl mod_base_hurry() {
         }
         hurry_option = conf.base_hurry;
     }
-    if (hurry_option < (is_project ? 2 : 1)
-    || t == -FAC_STOCKPILE_ENERGY || t < -SP_ID_Last
-    || b->state_flags & (BSTATE_PRODUCTION_DONE | BSTATE_HURRY_PRODUCTION)) {
+    if (hurry_option < (is_project ? 2 : 1) || !b->can_hurry_item()) {
         return 0;
     }
     int mins = mineral_cost(base_id, t) - b->minerals_accumulated;
     int cost = hurry_cost(base_id, t, mins);
     int turns = prod_turns(base_id, t);
+    int credits = max(0, f->energy_credits - f->hurry_cost_total);
     int reserve = clamp(*CurrentTurn * f->base_count / 16, 20, 500)
         * (conf.design_units && !player_gov && !(*CurrentTurn % 4) ? 2 : 1)
         * (!p->contacted_factions || is_project ? 1 : 4)
         * (b->defend_goal > 3 && p->enemy_factions > 0 ? 1 : 2)
         * (has_fac_built(FAC_HEADQUARTERS, base_id) ? 1 : 2) / 16;
 
-    if (!is_cheap || mins < 1 || cost < 1 || f->energy_credits - cost < reserve) {
+    if (!is_cheap || mins < 1 || cost < 1 || credits - cost < reserve) {
         return 0;
     }
     if (is_project) {
@@ -83,7 +82,7 @@ int __cdecl mod_base_hurry() {
             - b->mineral_surplus/2 - delay*b->mineral_surplus;
         cost = hurry_cost(base_id, t, mins);
 
-        if (cost > 0 && cost < f->energy_credits && mins > 0 && mins > b->mineral_surplus) {
+        if (cost > 0 && cost < credits && mins > 0 && mins > b->mineral_surplus) {
             hurry_item(base_id, mins, cost);
             if (DEBUG && conf.minimal_popups) {
                 return 1;

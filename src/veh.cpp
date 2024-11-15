@@ -72,19 +72,19 @@ int __cdecl arty_range(int unit_id) {
     return 0;
 }
 
-int __cdecl drop_range(int faction) {
-    if (!has_orbital_drops(faction)) {
+int __cdecl drop_range(int faction_id) {
+    if (!has_orbital_drops(faction_id)) {
         return max(0, Rules->max_airdrop_rng_wo_orbital_insert);
     }
     return max(*MapAreaX, *MapAreaY);
 }
 
-bool has_orbital_drops(int faction) {
-    return has_tech(Rules->tech_preq_orb_insert_wo_space, faction)
-        || has_project(FAC_SPACE_ELEVATOR, faction);
+bool has_orbital_drops(int faction_id) {
+    return has_tech(Rules->tech_preq_orb_insert_wo_space, faction_id)
+        || has_project(FAC_SPACE_ELEVATOR, faction_id);
 }
 
-bool has_ability(int faction, VehAbl abl, VehChassis chs, VehWeapon wpn) {
+bool has_ability(int faction_id, VehAbl abl, VehChassis chs, VehWeapon wpn) {
     int F = Ability[abl].flags;
     int triad = Chassis[chs].triad;
     bool is_combat = Weapon[wpn].offense_value != 0;
@@ -114,7 +114,7 @@ bool has_ability(int faction, VehAbl abl, VehChassis chs, VehWeapon wpn) {
     if (F & AFLAG_NOT_ALLOWED_PSI_UNIT && Weapon[wpn].offense_value < 0) {
         return false;
     }
-    return has_tech(Ability[abl].preq_tech, faction);
+    return has_tech(Ability[abl].preq_tech, faction_id);
 }
 
 bool can_repair(int unit_id) {
@@ -297,7 +297,7 @@ Calculate the cargo capacity of a unit. This version removes a redundant referen
 Spore Launchers which was never triggered since their carry_capacity was set to zero.
 */
 int __cdecl veh_cargo(int veh_id) {
-    VEH* v = &Vehicles[veh_id];
+    VEH* v = &Vehs[veh_id];
     UNIT* u = &Units[v->unit_id];
     if (u->carry_capacity && v->unit_id < MaxProtoFactionNum && u->offense_value() < 0) {
         return v->morale + 1;
@@ -306,14 +306,16 @@ int __cdecl veh_cargo(int veh_id) {
 }
 
 /*
-Determine whether the specified unit is eligible for a monolith morale upgrade.
+Determine whether the specified unit is eligible for monolith healing or morale upgrade.
 */
 int __cdecl want_monolith(int veh_id) {
-    return veh_id >= 0 && !(Vehs[veh_id].state & VSTATE_MONOLITH_UPGRADED)
-        && Vehs[veh_id].offense_value() != 0
-        && Vehs[veh_id].triad() != TRIAD_AIR
-        && Vehs[veh_id].morale < MORALE_ELITE
-        && mod_morale_veh(veh_id, true, 0) < MORALE_ELITE;
+    VEH* veh = &Vehs[veh_id];
+    return veh_id >= 0 && veh->triad() != TRIAD_AIR
+        && ((veh->damage_taken && can_repair(veh->unit_id))
+        || (!(veh->state & VSTATE_MONOLITH_UPGRADED)
+        && veh->offense_value() != 0
+        && veh->morale < MORALE_ELITE
+        && mod_morale_veh(veh_id, true, 0) < MORALE_ELITE));
 }
 
 /*
@@ -936,8 +938,8 @@ int __cdecl mod_stack_check(int veh_id, int type, int cond1, int cond2, int cond
     return value;
 }
 
-int __cdecl mod_veh_init(int unit_id, int faction, int x, int y) {
-    int veh_id = veh_init(unit_id, faction, x, y);
+int __cdecl mod_veh_init(int unit_id, int faction_id, int x, int y) {
+    int veh_id = veh_init(unit_id, faction_id, x, y);
     if (veh_id >= 0) {
         Vehicles[veh_id].home_base_id = -1;
         // Set these flags to disable any non-Thinker unit automation.
@@ -952,6 +954,21 @@ int __cdecl mod_veh_kill(int veh_id) {
     debug("disband %2d %2d %s\n", veh->x, veh->y, veh->name());
     veh_kill(veh_id);
     return VEH_SKIP;
+}
+
+/*
+Check if the land unit inside an air transport can disembark.
+The transport must be in either a base or an airbase to do so.
+*/
+int __cdecl mod_veh_jail(int veh_id) {
+    VEH* veh = &Vehs[veh_id];
+    MAP* sq = mapsq(veh->x, veh->y);
+    if (veh->triad() == TRIAD_LAND && veh->order == ORDER_SENTRY_BOARD
+    && veh->waypoint_1_x >= 0 && Vehs[veh->waypoint_1_x].triad() == TRIAD_AIR
+    && sq && !sq->is_airbase()) { // Fix: also allow airbases with owner = 0
+        return true;
+    }
+    return false;
 }
 
 /*
@@ -1048,28 +1065,28 @@ int __cdecl probe_return_base(int UNUSED(x), int UNUSED(y), int veh_id) {
     return find_return_base(veh_id);
 }
 
-int __cdecl create_proto(int faction, VehChassis chs, VehWeapon wpn, VehArmor arm,
+int __cdecl create_proto(int faction_id, VehChassis chs, VehWeapon wpn, VehArmor arm,
 VehAblFlag abls, VehReactor rec, VehPlan ai_plan) {
     char name[256];
-    mod_name_proto(name, -1, faction, chs, wpn, arm, abls, rec);
-    int unit_id = propose_proto(faction, chs, wpn, arm, abls, rec, ai_plan, (strlen(name) ? name : NULL));
+    mod_name_proto(name, -1, faction_id, chs, wpn, arm, abls, rec);
+    int unit_id = propose_proto(faction_id, chs, wpn, arm, abls, rec, ai_plan, (strlen(name) ? name : NULL));
     debug("create_proto %4d %d chs: %d rec: %d wpn: %2d arm: %2d %08X %d %s\n",
-        *CurrentTurn, faction, chs, rec, wpn, arm, abls, unit_id, name);
+        *CurrentTurn, faction_id, chs, rec, wpn, arm, abls, unit_id, name);
     return unit_id;
 }
 
 /*
 This function is only called from propose_proto to skip prototypes that are invalid.
 */
-int __cdecl mod_is_bunged(int faction, VehChassis chs, VehWeapon wpn, VehArmor arm,
+int __cdecl mod_is_bunged(int faction_id, VehChassis chs, VehWeapon wpn, VehArmor arm,
 VehAblFlag abls, VehReactor rec) {
     int triad = Chassis[chs].triad;
     int arm_v = Armor[arm].defense_value;
     int wpn_v = Weapon[wpn].offense_value;
     debug("propose_proto %3d %d chs: %d rec: %d wpn: %2d arm: %2d %08X\n",
-        *CurrentTurn, faction, chs, rec, wpn, arm, abls);
+        *CurrentTurn, faction_id, chs, rec, wpn, arm, abls);
 
-    if (!is_human(faction)) {
+    if (!is_human(faction_id)) {
         if (conf.design_units) {
             if (triad == TRIAD_SEA && wpn_v > 0 && arm_v > 3
             && arm_v > wpn_v + 1) {
@@ -1078,7 +1095,7 @@ VehAblFlag abls, VehReactor rec) {
         }
         return 0;
     }
-    return is_bunged(faction, chs, wpn, arm, abls, rec);
+    return is_bunged(faction_id, chs, wpn, arm, abls, rec);
 }
 
 /*
@@ -1436,46 +1453,39 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
     return 0;
 }
 
-VehArmor best_armor(int faction, int max_cost) {
-    int ci = ARM_NO_ARMOR;
-    int cv = 0;
+VehArmor best_armor(int faction_id, int max_cost) {
+    int best_id = ARM_NO_ARMOR;
     for (int i = ARM_NO_ARMOR; i <= ARM_RESONANCE_8_ARMOR; i++) {
-        if (has_tech(Armor[i].preq_tech, faction)) {
-            int iv = Armor[i].defense_value;
+        if (has_tech(Armor[i].preq_tech, faction_id)) {
             int cost = Armor[i].cost;
-            if (max_cost >= 0 && (cost > max_cost || cost > iv + 3)) {
+            if (max_cost > 0 && (cost > max_cost || cost > Armor[i].defense_value + 3)) {
                 continue;
             }
-            iv = iv * ((i == ARM_PULSE_3_ARMOR || i == ARM_PULSE_8_ARMOR
-                || i == ARM_RESONANCE_3_ARMOR || i == ARM_RESONANCE_8_ARMOR) ? 5 : 4);
-            if (iv > cv) {
-                cv = iv;
-                ci = i;
+            int diff = Armor[i].defense_value - Armor[best_id].defense_value;
+            if (diff > 0 || (diff == 0 && Armor[best_id].cost >= cost)) {
+                best_id = i;
             }
         }
     }
-    return (VehArmor)ci;
+    return (VehArmor)best_id;
 }
 
-VehWeapon best_weapon(int faction) {
-    int ci = WPN_HAND_WEAPONS;
-    int cv = 0;
+VehWeapon best_weapon(int faction_id) {
+    int best_id = WPN_HAND_WEAPONS;
     for (int i = WPN_HAND_WEAPONS; i <= WPN_STRING_DISRUPTOR; i++) {
-        if (has_tech(Weapon[i].preq_tech, faction)) {
-            int iv = Weapon[i].offense_value
-                * ((i == WPN_RESONANCE_LASER || i == WPN_RESONANCE_BOLT) ? 5 : 4);
-            if (iv > cv) {
-                cv = iv;
-                ci = i;
+        if (has_tech(Weapon[i].preq_tech, faction_id)) {
+            int diff = Weapon[i].offense_value - Weapon[best_id].offense_value;
+            if (diff > 0 || (diff == 0 && Weapon[best_id].cost >= Weapon[i].cost)) {
+                best_id = i;
             }
         }
     }
-    return (VehWeapon)ci;
+    return (VehWeapon)best_id;
 }
 
-VehReactor best_reactor(int faction) {
+VehReactor best_reactor(int faction_id) {
     for (VehReactor r : {REC_SINGULARITY, REC_QUANTUM, REC_FUSION}) {
-        if (has_tech(Reactor[r - 1].preq_tech, faction)) {
+        if (has_tech(Reactor[r - 1].preq_tech, faction_id)) {
             return r;
         }
     }
@@ -1488,8 +1498,8 @@ int proto_offense(int unit_id) {
     int w = (conf.ignore_reactor_power ? (int)REC_FISSION : u->reactor_id);
     if (u->is_missile() && !u->is_planet_buster()) {
         // Conv missiles might have nominally low attack rating
-        int faction = unit_id / MaxProtoFactionNum;
-        int max_value = max(1, (int)Weapon[best_weapon(faction)].offense_value);
+        int faction_id = unit_id / MaxProtoFactionNum;
+        int max_value = max(1, (int)Weapon[best_weapon(faction_id)].offense_value);
         return max_value * w;
     }
     return Weapon[u->weapon_id].offense_value * w;

@@ -1668,20 +1668,24 @@ int prod_turns(int base_id, int item_id) {
 }
 
 int mineral_cost(int base_id, int item_id) {
-    assert(base_id >= 0 && base_id < *BaseCount);
-    // Take possible prototype costs into account in veh_cost
-    int factor = mod_cost_factor(Bases[base_id].faction_id, RSC_MINERAL, -1);
-    if (item_id >= 0) {
-        return mod_veh_cost(item_id, base_id, 0) * factor;
-    } else {
-        return Facility[-item_id].cost * factor;
+    bool valid = base_id >= 0 && base_id < *BaseCount
+        && item_id >= -SP_ID_Last && item_id < MaxProtoNum;
+    if (valid) {
+        // Take possible prototype costs into account in veh_cost
+        int factor = mod_cost_factor(Bases[base_id].faction_id, RSC_MINERAL, -1);
+        if (item_id >= 0) {
+            return mod_veh_cost(item_id, base_id, 0) * factor;
+        } else {
+            return Facility[-item_id].cost * factor;
+        }
     }
+    assert(valid);
+    return 0;
 }
 
 int hurry_cost(int base_id, int item_id, int hurry_mins) {
     BASE* b = &Bases[base_id];
     MFaction* m = &MFactions[b->faction_id];
-    assert(base_id >= 0 && base_id < *BaseCount);
     int mins = max(0, mineral_cost(base_id, item_id) - b->minerals_accumulated);
     int cost = (item_id < 0 ? 2*mins : mins*mins/20 + 2*mins);
 

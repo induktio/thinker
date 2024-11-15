@@ -591,7 +591,10 @@ struct VEH {
         return Units[unit_id].is_garrison_unit();
     }
     bool is_native_unit() {
-        return unit_id < MaxProtoFactionNum && Units[unit_id].is_psi_unit();
+        // Multiple original functions consider Spore Launchers as a special case
+        // but this only takes effect if their weapon is changed to non-psi in config.
+        return unit_id < MaxProtoFactionNum
+            && (unit_id == BSC_SPORE_LAUNCHER || offense_value() < 0);
     }
     bool is_battle_ogre() {
         return unit_id == BSC_BATTLE_OGRE_MK1 || unit_id == BSC_BATTLE_OGRE_MK2
@@ -647,8 +650,9 @@ struct VEH {
         return mid_damage() && can_repair(unit_id);
     }
     bool need_monolith() {
-        return !is_battle_ogre() && (need_heals() || (morale < MORALE_ELITE
-            && !(state & VSTATE_MONOLITH_UPGRADED) && offense_value() != 0));
+        return triad() != TRIAD_AIR
+            && (need_heals() || (!(state & VSTATE_MONOLITH_UPGRADED)
+            && morale < MORALE_ELITE && offense_value() != 0));
     }
     void reset_order() {
         order = ORDER_NONE;

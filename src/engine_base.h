@@ -225,6 +225,15 @@ struct BASE {
         return is_human(faction_id) ? governor_flags : ~0u;
     }
     /*
+    When drone riots are active game only allows hurrying facilities (excluding projects/satellites).
+    */
+    bool can_hurry_item() {
+        return queue_items[0] != -FAC_STOCKPILE_ENERGY
+            && !(state_flags & BSTATE_HURRY_PRODUCTION)
+            && (!(state_flags & BSTATE_DRONE_RIOTS_ACTIVE)
+            || (queue_items[0] < 0 && queue_items[0] > -FAC_SKY_HYDRO_LAB));
+    }
+    /*
     Specialist types (CCitizen, 4 bits per id) for the first 16 specialists in the base.
     These are assigned in base_yield and base_energy and chosen by best_specialist.
     */

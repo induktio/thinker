@@ -874,6 +874,37 @@ struct Sprite {
     int fObj1Exists;
 };
 
+struct Texture {
+    char* pcBits;
+    int iWidth;
+    int iHeight;
+    int dwordC;
+    int dword10;
+    int iWidthLess1;
+    int dword18;
+    int dword1C;
+    int iHeightLess1;
+    int dword24;
+    int iHeightLess1_2;
+    int dword2C;
+    int dword30;
+    int dword34;
+    int dword38;
+    int iWidthLess1_2;
+    int dword40;
+    int iWidthLess1_3;
+    int iCenterY;
+    int iWidthLess1_4;
+    int iHeightLess1_3;
+    int iCenterX;
+    int iHeightLess1_4;
+    int dword5C;
+    int iHeightLess1_5;
+    int dword64;
+    int iCenterY_2;
+    int fNotMalloced;
+};
+
 struct Win {
     int* vtbl;
     int field_4;
@@ -1013,37 +1044,6 @@ struct GraphicWin {
     int field_A10;
 };
 
-struct CImage {
-    char* pcBits;
-    int iWidth;
-    int iHeight;
-    int dwordC;
-    int dword10;
-    int iWidthLess1;
-    int dword18;
-    int dword1C;
-    int iHeightLess1;
-    int dword24;
-    int iHeightLess1_2;
-    int dword2C;
-    int dword30;
-    int dword34;
-    int dword38;
-    int iWidthLess1_2;
-    int dword40;
-    int iWidthLess1_3;
-    int iCenterY;
-    int iWidthLess1_4;
-    int iHeightLess1_3;
-    int iCenterX;
-    int iHeightLess1_4;
-    int dword5C;
-    int iHeightLess1_5;
-    int dword64;
-    int iCenterY_2;
-    int fNotMalloced;
-};
-
 struct CClass3B {
     GraphicWin oWinBuffed;
     int field_A14;
@@ -1115,7 +1115,7 @@ struct TTilePos {
     char field_B;
 };
 
-struct TextureStore {
+struct NameNode {
     int field_0;
     int field_4;
     int field_8[150];
@@ -1314,7 +1314,7 @@ struct Console {
     int* vtbl;
     TTilePos* paTilePos;
     int field_8;
-    TextureStore oUnknown[201];
+    NameNode oUnknown[201];
     int iZoomX2;
     int iWhatToDrawFlags;
     int iDrawToggleA;
@@ -1709,8 +1709,7 @@ struct RenderWindow {
     int field_29000[143];
 };
 
-struct BaseWindow {
-    Win oWinBase;
+struct BaseWindow : Win {
     Buffer oCanvas;
     int field_9CC;
     int field_9D0;
@@ -2154,8 +2153,9 @@ typedef Menu CMainMenu;
 typedef Buffer CCanvas;
 typedef Time CTimer;
 typedef Font CFont;
-typedef TextureStore CMainArrayItem;
 typedef Sprite CSprite;
+typedef Texture CImage;
+typedef NameNode CMainArrayItem;
 typedef SpotList CHitBoxList;
 typedef Spot CHitBox;
 typedef Heap CMemAllocator;
@@ -2173,8 +2173,7 @@ typedef Palette CPalette;
 //CListItem
 //CMenu
 //CMenuItem
-//CMainMenuItem
-//CImage
+//CMainMenuItem / used with PullDown
 //CMainWnd
 
 static_assert(sizeof(Spot) == 24, "");
@@ -2182,7 +2181,8 @@ static_assert(sizeof(SpotList) == 12, "");
 static_assert(sizeof(Font) == 40, "");
 static_assert(sizeof(Time) == 40, "");
 static_assert(sizeof(Sprite) == 44, "");
-static_assert(sizeof(TextureStore) == 608, "");
+static_assert(sizeof(Texture) == 112, "");
+static_assert(sizeof(NameNode) == 608, "");
 static_assert(sizeof(Win) == 1092, "");
 static_assert(sizeof(Buffer) == 1416, "");
 static_assert(sizeof(Caviar) == 5072, "");

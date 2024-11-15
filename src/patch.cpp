@@ -307,6 +307,35 @@ void init_video_config(Config* cf) {
         cf->window_width = w_width;
         cf->window_height = w_height;
     }
+    char buf_path[1024];
+    char buf_args[1024];
+    prefs_read(buf_path, 1024, "MoviePlayerPath", "C:\\Program Files\\VideoLAN\\VLC\\vlc.exe", 0);
+    prefs_read(buf_args, 1024, "MoviePlayerArgs",
+        "--fullscreen --video-on-top --play-and-exit --no-repeat --swscale-mode=2", 0);
+    char* path = strtrim(&buf_path[0]);
+    char* args = strtrim(&buf_args[0]);
+    if (!strlen(path)) {
+        conf.video_player = 1;
+    } else if (!FileExists(path)) {
+        int value = MessageBoxA(0,
+            "Error while loading MoviePlayerPath from Alpha Centauri.ini.\n"\
+            "Select YES to reset game to the default video player.\n"\
+            "Select NO to skip video playback temporarily.",
+            MOD_VERSION, MB_YESNO | MB_ICONWARNING);
+        if (value == IDYES) {
+            conf.video_player = 1;
+            prefs_put2("MoviePlayerPath", "");
+            prefs_put2("MoviePlayerArgs", "");
+        } else {
+            conf.video_player = 0;
+        }
+    } else {
+        conf.video_player = 2;
+        video_player_path = std::string(path);
+        video_player_args = std::string(args);
+        prefs_put2("MoviePlayerPath", path);
+        prefs_put2("MoviePlayerArgs", args);
+    }
 }
 
 bool patch_setup(Config* cf) {
@@ -452,6 +481,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x5C0DB0, (int)can_arty);
     write_jump(0x5C0E40, (int)mod_morale_veh);
     write_jump(0x5C1540, (int)veh_speed);
+    write_jump(0x5C1C40, (int)mod_veh_jail);
     write_jump(0x5C1D20, (int)mod_veh_skip);
     write_jump(0x5C1D70, (int)mod_veh_wake);
     write_jump(0x626250, (int)log_say2);
@@ -480,9 +510,9 @@ bool patch_setup(Config* cf) {
     write_call(0x5B341C, (int)mod_setup_player); // eliminate_player
     write_call(0x5B3C03, (int)mod_setup_player); // setup_game
     write_call(0x5B3C4C, (int)mod_setup_player); // setup_game
-    write_call(0x5B41E9, (int)mod_time_warp);
-    write_call(0x52768A, (int)mod_turn_upkeep);
-    write_call(0x52A4AD, (int)mod_turn_upkeep);
+    write_call(0x5B41E9, (int)mod_time_warp);  // setup_game
+    write_call(0x52768A, (int)mod_turn_upkeep); // control_turn
+    write_call(0x52A4AD, (int)mod_turn_upkeep); // net_control_turn
     write_call(0x527039, (int)mod_base_upkeep);
     write_call(0x4F7A38, (int)mod_base_hurry);
     write_call(0x579362, (int)mod_enemy_move);
@@ -496,6 +526,21 @@ bool patch_setup(Config* cf) {
     write_call(0x5C0984, (int)veh_kill_lift); // veh_kill
     write_call(0x43FE47, (int)DiploPop_spying); // DiploPop::draw_info
     write_call(0x43FEA8, (int)DiploPop_spying); // DiploPop::draw_info
+    write_call(0x403BD4, (int)mod_amovie_project); // amovie_project2
+    write_call(0x4F2B4B, (int)mod_amovie_project); // base_production
+    write_call(0x524D06, (int)mod_amovie_project); // end_of_game
+    write_call(0x524D28, (int)mod_amovie_project); // end_of_game
+    write_call(0x5253F5, (int)mod_amovie_project); // end_of_game
+    write_call(0x525407, (int)mod_amovie_project); // end_of_game
+    write_call(0x52AB6D, (int)mod_amovie_project); // control_game
+    write_call(0x5B3681, (int)mod_amovie_project); // eliminate_player
+    write_call(0x445846, (int)load_music_strcmpi);
+    write_call(0x445898, (int)load_music_strcmpi);
+    write_call(0x4458EE, (int)load_music_strcmpi);
+    write_call(0x445956, (int)load_music_strcmpi);
+    write_call(0x4459C1, (int)load_music_strcmpi);
+    write_call(0x445A2F, (int)load_music_strcmpi);
+    write_call(0x445AB2, (int)load_music_strcmpi);
     write_call(0x498720, (int)ReportWin_close_handler);
     write_call(0x408DBD, (int)BaseWin_draw_psych_strcat);
     write_call(0x40F8F8, (int)BaseWin_draw_farm_set_font);
@@ -703,6 +748,8 @@ bool patch_setup(Config* cf) {
     write_call(0x59C105, (int)mod_hex_cost); // Path::move
 
     // Prototypes and combat game mechanics
+    write_call(0x4B43D0, (int)mod_say_morale2); // say_morale
+    write_call(0x4B51BE, (int)mod_say_morale2); // StatusWin::draw_active
     write_call(0x50211F, (int)mod_get_basic_offense); // battle_compute
     write_call(0x50274A, (int)mod_get_basic_offense); // battle_compute
     write_call(0x5044EB, (int)mod_get_basic_offense); // battle_compute
@@ -820,16 +867,7 @@ bool patch_setup(Config* cf) {
     write_call(0x55CB33, (int)mod_NetMsg_pop); // enemies_war
     write_call(0x597141, (int)mod_NetMsg_pop); // order_veh
 
-    // Custom ambient music option
-    write_call(0x445846, (int)load_music_strcmpi);
-    write_call(0x445898, (int)load_music_strcmpi);
-    write_call(0x4458EE, (int)load_music_strcmpi);
-    write_call(0x445956, (int)load_music_strcmpi);
-    write_call(0x4459C1, (int)load_music_strcmpi);
-    write_call(0x445A2F, (int)load_music_strcmpi);
-    write_call(0x445AB2, (int)load_music_strcmpi);
-
-    // Modify popup dialog entries
+    // Redirect popup dialog entries
     write_call(0x4063CB, (int)mod_BasePop_start); // Popup::start
     write_call(0x40649A, (int)mod_BasePop_start); // Popup::start
     write_call(0x4064BE, (int)mod_BasePop_start); // Popup::start
@@ -840,20 +878,8 @@ bool patch_setup(Config* cf) {
     write_call(0x62794B, (int)mod_BasePop_start); // pop_ask
     write_call(0x627C90, (int)mod_BasePop_start); // pop_ask_number
 
-    if (cf->directdraw) {
-        *(int32_t*)0x45F9EF = cf->window_width;
-        *(int32_t*)0x45F9F4 = cf->window_height;
-    }
     if (!cf->reduced_mode) {
         write_call(0x62D3EC, (int)mod_Win_init_class);
-        write_call(0x403BD4, (int)mod_amovie_project); // amovie_project2
-        write_call(0x4F2B4B, (int)mod_amovie_project); // base_production
-        write_call(0x524D06, (int)mod_amovie_project); // end_of_game
-        write_call(0x524D28, (int)mod_amovie_project); // end_of_game
-        write_call(0x5253F5, (int)mod_amovie_project); // end_of_game
-        write_call(0x525407, (int)mod_amovie_project); // end_of_game
-        write_call(0x52AB6D, (int)mod_amovie_project); // control_game
-        write_call(0x5B3681, (int)mod_amovie_project); // eliminate_player
     }
     if (cf->smooth_scrolling) {
         write_offset(0x50F3DC, (void*)mod_blink_timer);

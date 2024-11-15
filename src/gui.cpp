@@ -11,9 +11,12 @@ char label_stockpile_energy[StrBufLen] = "Stockpile: %d per turn";
 char label_sat_nutrient[StrBufLen] = "N +%d";
 char label_sat_mineral[StrBufLen] = "M +%d";
 char label_sat_energy[StrBufLen] = "E +%d";
-char label_eco_damage[StrBufLen] = "";
-char label_base_surplus[StrBufLen] = "";
+char label_eco_damage[StrBufLen] = "Eco-Damage: %d%%";
+char label_base_surplus[StrBufLen] = "Surplus: %d / %d / %d";
 char label_unit_reactor[4][StrBufLen] = {};
+
+std::string video_player_path = "";
+std::string video_player_args = "";
 
 static int minimal_cost = 0;
 static int base_zoom_factor = -14;
@@ -138,6 +141,22 @@ CMAP_GETCORNERYOFFSET_F        pfncMapGetCornerYOffset =        (CMAP_GETCORNERY
 // End of PRACX definitions
 
 
+bool shift_key_down() {
+    return GetAsyncKeyState(VK_SHIFT) < 0;
+}
+
+bool ctrl_key_down() {
+    return GetAsyncKeyState(VK_CONTROL) < 0;
+}
+
+bool alt_key_down() {
+    return GetAsyncKeyState(VK_MENU) < 0;
+}
+
+bool win_has_focus() {
+    return GetFocus() == *phWnd;
+}
+
 int __thiscall Win_is_visible(Win* This) {
     bool value = (This->iSomeFlag & WIN_VISIBLE)
         && (!This->poParent || Win_is_visible(This->poParent));
@@ -160,18 +179,6 @@ static GameWinState current_window() {
         }
     }
     return GW_None;
-}
-
-static bool win_has_focus() {
-    return GetFocus() == *phWnd;
-}
-
-static bool alt_key_down() {
-    return GetAsyncKeyState(VK_MENU) < 0;
-}
-
-static bool ctrl_key_down() {
-    return GetAsyncKeyState(VK_CONTROL) < 0;
 }
 
 static void base_resource_zoom(bool zoom_in) {
@@ -579,7 +586,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
         return WinProc(hwnd, msg, wParam, lParam);
 
-    } else if (msg == WM_MOVIEOVER && !conf.reduced_mode) {
+    } else if (msg == WM_MOVIEOVER) {
         conf.playing_movie = false;
         set_video_mode(1);
 
@@ -643,14 +650,35 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
     } else if (msg == WM_KEYDOWN && (wParam == VK_LEFT || wParam == VK_RIGHT)
     && ctrl_key_down() && current_window() == GW_Base) {
-        int32_t value = ((BaseWindow*)BaseWin)->oRender.iResWindowTab;
+        int32_t value = BaseWin->oRender.iResWindowTab;
         if (wParam == VK_LEFT) {
             value = (value + 1) % 3;
         } else {
             value = (value + 2) % 3;
         }
-        ((BaseWindow*)BaseWin)->oRender.iResWindowTab = value;
+        BaseWin->oRender.iResWindowTab = value;
         GraphicWin_redraw(BaseWin);
+
+    } else if (msg == WM_KEYDOWN && wParam == 'H' && ctrl_key_down()
+    && !*MultiplayerActive && current_window() == GW_Base && *CurrentBaseID >= 0
+    && Bases[*CurrentBaseID].faction_id == MapWin->cOwner) {
+        BASE* base = &Bases[*CurrentBaseID];
+        Faction* f = &Factions[base->faction_id];
+        int mins = max(0, mineral_cost(*CurrentBaseID, base->item()) - base->minerals_accumulated);
+        int cost = hurry_cost(*CurrentBaseID, base->item(), mins);
+        if (base->can_hurry_item() && cost > 0 && mins > 0) {
+            if (max(0, f->energy_credits - f->hurry_cost_total) >= cost) {
+                f->energy_credits -= cost;
+                base->minerals_accumulated += mins;
+                base->state_flags |= BSTATE_HURRY_PRODUCTION;
+                GraphicWin_redraw(BaseWin);
+                ok_callback();
+            } else {
+                wave_it(9); // Insufficient energy
+            }
+        } else if (cost > 0 && mins > 0) {
+            wave_it(8); // Cannot execute order
+        }
 
     } else if (conf.smooth_scrolling && msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) {
         if (current_window() != GW_World || !win_has_focus()) {
@@ -831,8 +859,24 @@ int __cdecl mod_Win_init_class(const char* lpWindowName)
 
 void __cdecl mod_amovie_project(const char* name)
 {
-    conf.playing_movie = true;
-    amovie_project(name);
+    if (!strlen(name) || !conf.video_player) {
+        return;
+    } else if (conf.video_player == 1) {
+        conf.playing_movie = true;
+        amovie_project(name);
+    } else if (conf.video_player == 2) {
+        conf.playing_movie = true;
+        PROCESS_INFORMATION pi = {};
+        STARTUPINFO si = {};
+        std::string cmd = "\"" + video_player_path + "\" " + video_player_args
+            + " .\\movies\\" + std::string(name) + ".wve";
+        if (CreateProcessA(NULL, (char*)cmd.c_str(),
+        NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
+            WaitForSingleObject(pi.hProcess, INFINITE);
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+        }
+    }
     if (*phWnd) {
         PostMessage(*phWnd, WM_MOVIEOVER, 0, 0);
     }
@@ -1280,6 +1324,12 @@ Win* This, const char* filename, const char* label, int a4, int a5, int a6, int 
 
 #pragma GCC diagnostic pop
 
+int __cdecl BaseWin_ask_number(const char* label, int value, int a3)
+{
+    ParseNumTable[0] = value;
+    return pop_ask_number(ScriptFile, label, minimal_cost, a3);
+}
+
 int __thiscall BaseWin_gov_options(BaseWindow* This, int flag)
 {
     int base_id = *CurrentBaseID;
@@ -1389,17 +1439,11 @@ void __thiscall BaseWin_draw_misc_eco_damage(Buffer* This, char* buf, int x, int
     }
 }
 
-int __cdecl BaseWin_ask_number(const char* label, int value, int a3)
-{
-    ParseNumTable[0] = value;
-    return pop_ask_number(ScriptFile, label, minimal_cost, a3);
-}
-
 void __thiscall BaseWin_draw_farm_set_font(Buffer* This, Font* font, int a3, int a4, int a5)
 {
     char buf[StrBufLen] = {};
     // Base resource window coordinates including button row
-    RECT* rc = &((BaseWindow*)BaseWin)->oRender.rResWindow;
+    RECT* rc = &BaseWin->oRender.rResWindow;
     int x1 = rc->left;
     int y1 = rc->top;
     int x2 = rc->right;
