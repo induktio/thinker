@@ -704,6 +704,8 @@ enum MapLandmark {
     LM_NEXUS = 0x2000,
     LM_UNITY = 0x4000,
     LM_FOSSIL = 0x8000,
+    LM_UNK_400000 = 0x400000, // set_dirty()
+    LM_DISABLE = 0x80000000, // most landmark effects skipped
 };
 
 enum TerrainAltitude {

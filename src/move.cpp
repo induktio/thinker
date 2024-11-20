@@ -2505,9 +2505,11 @@ int aircraft_move(const int id) {
     MAP* sq = mapsq(veh->x, veh->y);
     UNIT* u = &Units[veh->unit_id];
     AIPlans& p = plans[veh->faction_id];
-    const bool at_base = sq->is_base();
+    const bool at_base = sq->is_airbase();
     const bool missile = u->is_missile();
     const bool gravship = !missile && !u->range();
+    const bool refuel = !missile && u->range() && u->range() <= veh->movement_turns + 1;
+    const bool base_only = refuel && (u->range() > 1 || veh->high_damage());
     const int faction = veh->faction_id;
     const int moves = veh_speed(id, 0) - veh->moves_spent;
     const int max_range = max(0, moves / Rules->move_rate_roads);
@@ -2516,17 +2518,18 @@ int aircraft_move(const int id) {
     if (!veh->at_target()) {
         return VEH_SYNC;
     }
-    // Needlejets may end the turn outside base, in that case they have to refuel
-    if (!missile && !at_base && u->range() == 2) { // CHS_NEEDLEJET
-        if (veh->iter_count == 0 && ++veh->iter_count) {
-            return move_to_base(id, true);
-        }
-    }
-    if (!missile && !at_base && u->range() == 1 && veh->mid_damage()) { // CHS_COPTER
-        max_dist /= (veh->high_damage() ? 4 : 2);
-    }
     if (!missile && at_base && veh->mid_damage()) {
         max_dist /= 2;
+    }
+    if (refuel) {
+        if (at_base && base_only) {
+            max_dist = 1;
+            assert(veh->moves_spent > 0 || u->range() == 1);
+        } else if (base_only) {
+            return move_to_base(id, true);
+        } else if (u->range() == 1 && veh->mid_damage()) {
+            max_dist /= 2;
+        }
     }
     int i = 0;
     int tx = -1;
@@ -2554,7 +2557,7 @@ int aircraft_move(const int id) {
             }
             double odds = battle_priority(id, id2, ts.dist - 1, moves, sq);
             if (odds > best_odds) {
-                if (tx < 0) {
+                if (tx < 0 && !base_only) {
                     max_dist = min(ts.dist + 2, max_dist);
                 }
                 tx = ts.rx;
@@ -2562,15 +2565,18 @@ int aircraft_move(const int id) {
                 best_odds = odds;
             }
         }
+        else if (missile || base_only) {
+            continue;
+        }
         else if (gravship && sq->is_base() && at_war(faction, sq->owner)
         && sq->veh_who() < 0 && mapdata[{ts.rx, ts.ry}].target < 2 + random(16)) {
             return set_move_to(id, ts.rx, ts.ry);
         }
-        else if (!missile && tx < 0 && mapnodes.count({ts.rx, ts.ry, NODE_COMBAT_PATROL})
+        else if (tx < 0 && mapnodes.count({ts.rx, ts.ry, NODE_COMBAT_PATROL})
         && ts.dist + 4*veh->mid_damage() + 8*veh->high_damage() < random(16)) {
             return set_move_to(id, ts.rx, ts.ry);
         }
-        else if (missile || non_ally_in_tile(ts.rx, ts.ry, faction) || veh->high_damage()) {
+        else if (non_ally_in_tile(ts.rx, ts.ry, faction) || veh->high_damage()) {
             continue;
         }
         else if (tx < 0 && allow_scout(faction, sq)) {
@@ -2584,7 +2590,7 @@ int aircraft_move(const int id) {
     }
     if (tx >= 0) {
         int range = map_range(veh->x, veh->y, tx, ty);
-        if (range > 1 && (!missile || veh->moves_spent)) {
+        if (range > 1 && !at_base && (!missile || veh->moves_spent)) {
             for (auto& m : iterate_tiles(veh->x, veh->y, 1, 9)) {
                 if (!m.sq->is_base() && !non_ally_in_tile(m.x, m.y, faction)
                 && map_range(m.x, m.y, tx, ty) < range) {
@@ -2604,7 +2610,7 @@ int aircraft_move(const int id) {
     int score;
     int best_score = INT_MIN;
     // Missiles have to always end their turn inside base
-    max_dist = max_range * (missile || veh->mid_damage() ? 1 : 2);
+    max_dist = max_range * (missile || base_only ? 1 : 2);
 
     if (move_naval && !missile && (u->range() != 1 || !veh->mid_damage())) {
         debug("aircraft_invade %2d %2d -> %2d %2d\n",

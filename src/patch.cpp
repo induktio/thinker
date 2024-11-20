@@ -307,36 +307,58 @@ void init_video_config(Config* cf) {
         cf->window_width = w_width;
         cf->window_height = w_height;
     }
+    const char* DefaultPaths[] = {
+        "C:\\Program Files\\VideoLAN\\VLC\\vlc.exe",
+        "C:\\Program Files (x86)\\VideoLAN\\VLC\\vlc.exe",
+    };
     char buf_path[1024];
     char buf_args[1024];
-    prefs_read(buf_path, 1024, "MoviePlayerPath", "C:\\Program Files\\VideoLAN\\VLC\\vlc.exe", 0);
-    prefs_read(buf_args, 1024, "MoviePlayerArgs",
-        "--fullscreen --video-on-top --play-and-exit --no-repeat --swscale-mode=2", 0);
+    GetPrivateProfileStringA(GameAppName, "MoviePlayerPath", "<DEFAULT>", buf_path, 1024, GameIniFile);
+    GetPrivateProfileStringA(GameAppName, "MoviePlayerArgs",
+        "--fullscreen --video-on-top --play-and-exit --no-repeat --swscale-mode=2", buf_args, 1024, GameIniFile);
+
     char* path = strtrim(&buf_path[0]);
     char* args = strtrim(&buf_args[0]);
     if (!strlen(path)) {
         conf.video_player = 1;
-    } else if (!FileExists(path)) {
-        int value = MessageBoxA(0,
-            "Error while loading MoviePlayerPath from Alpha Centauri.ini.\n"\
-            "Select YES to reset game to the default video player.\n"\
-            "Select NO to skip video playback temporarily.",
-            MOD_VERSION, MB_YESNO | MB_ICONWARNING);
-        if (value == IDYES) {
-            conf.video_player = 1;
-            prefs_put2("MoviePlayerPath", "");
-            prefs_put2("MoviePlayerArgs", "");
-        } else {
-            conf.video_player = 0;
+    } else {
+        bool found = false;
+        if (!strcmp(path, "<DEFAULT>")) {
+            for (auto& cur_path : DefaultPaths) {
+                if (FileExists(cur_path)) {
+                    conf.video_player = 2;
+                    video_player_path = std::string(cur_path);
+                    video_player_args = std::string(args);
+                    prefs_put2("MoviePlayerPath", cur_path);
+                    prefs_put2("MoviePlayerArgs", args);
+                    found = true;
+                    break;
+                }
+            }
+        } else if (FileExists(path)) {
+            conf.video_player = 2;
+            video_player_path = std::string(path);
+            video_player_args = std::string(args);
             prefs_put2("MoviePlayerPath", path);
             prefs_put2("MoviePlayerArgs", args);
+            found = true;
         }
-    } else {
-        conf.video_player = 2;
-        video_player_path = std::string(path);
-        video_player_args = std::string(args);
-        prefs_put2("MoviePlayerPath", path);
-        prefs_put2("MoviePlayerArgs", args);
+        if (!found) {
+            int value = MessageBoxA(0,
+                "Video player not found from MoviePlayerPath in Alpha Centauri.ini.\n"\
+                "Select YES to reset game to the default video player.\n"\
+                "Select NO to skip video playback temporarily.",
+                MOD_VERSION, MB_YESNO | MB_ICONWARNING);
+            if (value == IDYES) {
+                conf.video_player = 1;
+                prefs_put2("MoviePlayerPath", "");
+                prefs_put2("MoviePlayerArgs", "");
+            } else {
+                conf.video_player = 0;
+                prefs_put2("MoviePlayerPath", "<DEFAULT>");
+                prefs_put2("MoviePlayerArgs", args);
+            }
+        }
     }
 }
 

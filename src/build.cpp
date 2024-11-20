@@ -1049,7 +1049,7 @@ int select_build(int base_id) {
             score -= defend_range;
         }
         if ((t == FAC_PERIMETER_DEFENSE && sea_base) || (t == FAC_NAVAL_YARD && !sea_base)) {
-            score -= 40;
+            score -= 80;
         }
         if (t == FAC_PERIMETER_DEFENSE || t == FAC_TACHYON_FIELD
         || t == FAC_GEOSYNC_SURVEY_POD || t == FAC_FLECHETTE_DEFENSE_SYS) {

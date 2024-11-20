@@ -176,6 +176,57 @@ int __cdecl x_dist(int x1, int x2) {
     return dist;
 }
 
+int __cdecl alt_at(int x, int y) {
+    return mapsq(x, y)->alt_level();
+}
+
+int __cdecl alt_detail_at(int x, int y) {
+    return mapsq(x, y)->contour;
+}
+
+void __cdecl alt_put_detail(int x, int y, uint8_t detail) {
+    mapsq(x, y)->contour = detail;
+}
+
+void __cdecl world_alt_put_detail(int x, int y) {
+    alt_put_detail(x, y, (uint8_t)AltNatural[3]);
+}
+
+int __cdecl alt_natural(int x, int y) {
+    int detail = alt_detail_at(x, y) - *MapSeaLevel;
+    int alt = ALT_THREE_ABOVE_SEA;
+    while (alt > 0 && detail < AltNatural[alt]) {
+        alt--;
+    }
+    return alt;
+}
+
+int __cdecl temp_at(int x, int y) {
+    return mapsq(x, y)->climate & 7;
+}
+
+void __cdecl temp_set(int x, int y, uint8_t value) {
+    MAP* sq = mapsq(x, y);
+    sq->climate &= 0xF8;
+    sq->climate |= value & 7;
+}
+
+void __cdecl climate_set(int x, int y, uint8_t rainfall) {
+    MAP* sq = mapsq(x, y);
+    sq->climate &= 0xE7;
+    sq->climate |= (rainfall & 3) << 3;
+    sq->landmarks |= LM_UNK_400000;
+    *GameDrawState |= 1;
+}
+
+void __cdecl rocky_set(int x, int y, uint8_t rocky) {
+    MAP* sq = mapsq(x, y);
+    sq->val3 &= 0x3F;
+    sq->val3 |= rocky << 6;
+    sq->landmarks |= LM_UNK_400000;
+    *GameDrawState |= 1;
+}
+
 uint32_t __cdecl bit_at(int x, int y) {
     MAP* sq = mapsq(x, y);
     return sq ? sq->items : 0;
@@ -197,27 +248,28 @@ void __cdecl bit_set(int x, int y, uint32_t items, bool add) {
 
 uint32_t __cdecl bit2_at(int x, int y) {
     MAP* sq = mapsq(x, y);
-    return (sq ? *((uint32_t*)&sq->landmarks) : 0);
+    return (sq ? sq->landmarks : 0);
 }
 
 void __cdecl bit2_set(int x, int y, uint32_t items, bool add) {
     MAP* sq = mapsq(x, y);
     if (add) {
-        *((uint32_t*)&sq->landmarks) |= items;
+        sq->landmarks |= items;
     } else {
-        *((uint32_t*)&sq->landmarks) &= ~items;
+        sq->landmarks &= ~items;
     }
 }
 
 uint32_t __cdecl code_at(int x, int y) {
     MAP* sq = mapsq(x, y);
-    return (sq ? sq->art_ref_id : 0);
+    return (sq ? sq->code_at() : 0);
 }
 
 void __cdecl code_set(int x, int y, int code) {
     MAP* sq = mapsq(x, y);
     if (sq) {
-        sq->art_ref_id = code;
+        sq->landmarks &= 0xFFFFFF;
+        sq->landmarks |= (code << 24);
         *GameDrawState |= 4;
     }
 }
@@ -238,7 +290,7 @@ int __cdecl has_temple(int faction_id) {
         for (int x = y&1; x < *MapAreaX; x += 2) {
             MAP* sq = mapsq(x, y);
             if (sq && sq->landmarks & LM_NEXUS
-            && sq->art_ref_id == 0 && sq->owner == faction_id
+            && sq->code_at() == 0 && sq->owner == faction_id
             && sq->visibility & (1 << faction_id)) {
                 return true;
             }
@@ -247,15 +299,16 @@ int __cdecl has_temple(int faction_id) {
     return false;
 }
 
-int __cdecl near_landmark(int x, int y) {
-    for (int i = 0; i < TableRange[8]; i++) {
-        int x2 = wrap(x + TableOffsetX[i]);
-        int y2 = y + TableOffsetY[i];
-        if (code_at(x2, y2)) {
-            return true;
-        }
+int __cdecl new_landmark(int x, int y, const char* name) {
+    int offset = *MapLandmarkCount;
+    if (offset >= MaxLandmarkNum) {
+        return -1;
     }
-    return false;
+    *MapLandmarkCount += 1;
+    Landmarks[offset].x = x;
+    Landmarks[offset].y = y;
+    strcpy_n(&Landmarks[offset].name[0], 32, name);
+    return offset;
 }
 
 /*
@@ -304,7 +357,7 @@ int __cdecl mod_crop_yield(int faction_id, int base_id, int x, int y, int flag) 
     bool is_base = sq->is_base();
     int planet = Factions[faction_id].SE_planet_pending;
 
-    if ((alt >= ALT_SHORE_LINE && sq->landmarks & LM_JUNGLE && !(sq->art_ref_id & 0x80))
+    if ((alt >= ALT_SHORE_LINE && sq->landmarks & LM_JUNGLE && !(sq->landmarks & LM_DISABLE))
     || (alt < ALT_SHORE_LINE && sq->landmarks & LM_FRESH)) {
         bonus_landmark = true;
     }
@@ -433,11 +486,11 @@ int __cdecl mod_mine_yield(int faction_id, int base_id, int x, int y, int flag) 
     int alt = sq->alt_level();
     int planet = Factions[faction_id].SE_planet_pending;
 
-    if ((sq->landmarks & LM_CRATER && sq->art_ref_id < 9)
-    || (sq->landmarks & LM_VOLCANO && sq->art_ref_id < 9)
-    || (sq->landmarks & LM_FOSSIL && sq->art_ref_id < 6)
+    if ((sq->landmarks & LM_CRATER && sq->code_at() < 9)
+    || (sq->landmarks & LM_VOLCANO && sq->code_at() < 9)
+    || (sq->landmarks & LM_FOSSIL && sq->code_at() < 6)
     || (sq->landmarks & LM_CANYON)) {
-        bonus_landmark = !(sq->art_ref_id & 0x80);
+        bonus_landmark = !(sq->landmarks & LM_DISABLE);
     }
     int value = bonus_landmark + (bonus_mineral ? ResInfo->bonus_sq_mineral : 0);
 
@@ -635,9 +688,9 @@ int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag
         if (bonus_energy) {
             value += ResInfo->bonus_sq_energy;
         }
-        if ((sq->landmarks & LM_VOLCANO && sq->art_ref_id < 9)
+        if ((sq->landmarks & LM_VOLCANO && sq->code_at() < 9)
         || sq->landmarks & (LM_URANIUM|LM_GEOTHERMAL|LM_RIDGE)) {
-            value += !(sq->art_ref_id & 0x80);
+            value += !(sq->landmarks & LM_DISABLE);
         }
         if (base_id >= 0 && project_base(FAC_MERCHANT_EXCHANGE) == base_id) {
             value++;
@@ -771,6 +824,60 @@ int __cdecl mod_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, in
         }
     }
     return value;
+}
+
+/*
+Determine the tile mineral count that translates to rockiness.
+Return Value: 0 (Flat), 1 (Rolling), 2 (Rocky)
+*/
+int __cdecl mod_minerals_at(int x, int y) {
+    if (!y || y == (*MapAreaY - 1)) {
+        return 2;
+    }
+    MAP* sq = mapsq(x, y);
+    int alt = sq->alt_level();
+    int avg = (x + y) / 2;
+    int val1 = (x - avg) / 2 + 2 * ((x - avg) / 2) + 2 * (avg / 2) + *MapRandomSeed;
+    int val2 = ((byte)val1 - 2 * (((byte)x - (byte)avg) & 1) - (avg & 1)) & 3;
+    int val3 = (alt - 3 >= 0 ? alt - 3 : 3 - alt) - (alt < 3);
+    if (val3 == 0) {
+        if (val2 == 0) {
+            return 1;
+        }
+        if (val2 == 1 || val2 == 3) {
+            return 0;
+        }
+        if (val2 == 2) {
+            return (val1 & 4 ? 2 : 1);
+        }
+        return ~val2 & 1;
+    } else if (val3 == 1) {
+        if (!val2) {
+            return 0;
+        }
+        if (!(val2 - 1)) {
+            return 1;
+        }
+        if ((val2 - 1) != 1) {
+            return 2;
+        }
+        return 1;
+    } else if (val3 == 2) {
+        if (!val2) {
+            return 0;
+        }
+        if (val2 == 1) {
+            return 1;
+        }
+        return 2;
+    } else if (val3 == 3) {
+        if (val2 < 0 || val2 > 1) {
+            return 2;
+        }
+        return 1;
+    } else {
+        return ~val2 & 1;
+    }
 }
 
 /*
@@ -943,15 +1050,15 @@ int item_yield(int x, int y, int faction, int bonus, MapItem item) {
         if (sq->items & BIT_RIVER && !is_ocean(sq)) {
             E++;
         }
-        if (sq->landmarks & LM_CRATER && sq->art_ref_id < 9) { M++; }
-        if (sq->landmarks & LM_VOLCANO && sq->art_ref_id < 9) { M++; E++; }
+        if (sq->landmarks & LM_CRATER && sq->code_at() < 9) { M++; }
+        if (sq->landmarks & LM_VOLCANO && sq->code_at() < 9) { M++; E++; }
         if (sq->landmarks & LM_JUNGLE) { N++; }
         if (sq->landmarks & LM_URANIUM) { E++; }
         if (sq->landmarks & LM_FRESH && is_ocean(sq)) { N++; }
         if (sq->landmarks & LM_GEOTHERMAL) { E++; }
         if (sq->landmarks & LM_RIDGE) { E++; }
         if (sq->landmarks & LM_CANYON) { M++; }
-        if (sq->landmarks & LM_FOSSIL && sq->art_ref_id < 6) { M++; }
+        if (sq->landmarks & LM_FOSSIL && sq->code_at() < 6) { M++; }
         if (Factions[faction].SE_economy_pending >= 2) {
             E++;
         }

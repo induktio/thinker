@@ -493,7 +493,7 @@ struct VEH {
     int16_t waypoint_3_y;
     int16_t waypoint_4_y;
     uint8_t morale;
-    uint8_t terraform_turns;
+    uint8_t movement_turns;
     uint8_t order_auto_type;
     uint8_t visibility; // faction bitfield of who can currently see Veh excluding owner
     uint8_t moves_spent; // stored as road moves spent unless magtube_movement_rate > 0
@@ -590,11 +590,12 @@ struct VEH {
     bool is_garrison_unit() {
         return Units[unit_id].is_garrison_unit();
     }
+    // Determine if native unit modifiers apply in this case. Multiple original functions
+    // may check separately unit_id == BSC_SPORE_LAUNCHER for native units but this condition
+    // is redundant since they will always have PSI weapon equipped in the default config.
+    // However this condition is not always present and it is removed here for consistency.
     bool is_native_unit() {
-        // Multiple original functions consider Spore Launchers as a special case
-        // but this only takes effect if their weapon is changed to non-psi in config.
-        return unit_id < MaxProtoFactionNum
-            && (unit_id == BSC_SPORE_LAUNCHER || offense_value() < 0);
+        return unit_id < MaxProtoFactionNum && Units[unit_id].offense_value() < 0;
     }
     bool is_battle_ogre() {
         return unit_id == BSC_BATTLE_OGRE_MK1 || unit_id == BSC_BATTLE_OGRE_MK2

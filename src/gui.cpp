@@ -772,9 +772,9 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         uint32_t prev_state = MapWin->iWhatToDrawFlags;
         MapWin->iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
         refresh_overlay(code_at);
-        int value = pop_ask_number("modmenu", "MAPGEN", sq->art_ref_id, 0);
+        int value = pop_ask_number("modmenu", "MAPGEN", sq->code_at(), 0);
         if (!value) { // OK button pressed
-            sq->art_ref_id = ParseNumTable[0];
+            code_set(MapWin->iTileX, MapWin->iTileY, ParseNumTable[0]);
         }
         refresh_overlay(clear_overlay);
         MapWin->iWhatToDrawFlags = prev_state;
@@ -1689,7 +1689,7 @@ int __thiscall ReportWin_close_handler(void* This)
 
 /*
 Fix potential crash when a game is loaded after using Edit Map > Generate/Remove Fungus > No Fungus.
-Vanilla version changed MapWin->cOwner variable for unknown reason.
+Original version changed MapWin->cOwner variable for unknown reason which is skipped.
 */
 void __thiscall Console_editor_fungus(Console* UNUSED(This))
 {
@@ -1701,9 +1701,8 @@ void __thiscall Console_editor_fungus(Console* UNUSED(This))
             MAP* sq = *MapTiles;
             for (int i = 0; i < *MapAreaTiles; ++i, ++sq) {
                 sq->items &= ~BIT_FUNGUS;
-                // Update visible tile items
                 for (int j = 1; j < 8; ++j) {
-                    *((uint32_t*)&sq->landmarks + j) = sq->items;
+                    sq->visible_items[j - 1] = sq->items;
                 }
             }
         }

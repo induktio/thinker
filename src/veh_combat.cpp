@@ -97,7 +97,7 @@ void __cdecl mod_say_morale2(char* output, int veh_id, int faction_id_vs_native)
     }
     if (veh->plan() < PLAN_COLONY) {
         int morale_modifier = 0;
-        int morale_penalty = morale > 0 && veh->home_base_id >= 0
+        int morale_penalty = !native_unit && morale > 0 && veh->home_base_id >= 0
             && Bases[veh->home_base_id].state_flags & BSTATE_DRONE_RIOTS_ACTIVE
             && !(MFactions[faction_id].rule_flags & RFLAG_MORALE);
         int base_id = base_at(Vehs[veh_id].x, Vehs[veh_id].y);
@@ -1547,7 +1547,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                 veh_def->damage_taken += damage_value;
                 veh_def->state |= VSTATE_HAS_MOVED;
                 if (veh_def->is_former()) {
-                    veh_def->terraform_turns = 0;
+                    veh_def->movement_turns = 0;
                 }
                 if (base_id < 0) {
                     veh_def->state |= VSTATE_UNK_8; // Veh needs repair for AI?
@@ -2222,7 +2222,7 @@ END_BATTLE:
     || veh_range == 0) {
         return result;
     }
-    return (veh->terraform_turns + 1 < veh_range ? result : 1);
+    return (veh->movement_turns + 1 < veh_range ? result : 1);
 }
 
 

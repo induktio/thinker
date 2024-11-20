@@ -190,10 +190,9 @@ void check_zeros(uint8_t* ptr, size_t len) {
 void print_map(int x, int y) {
     MAP* m = mapsq(x, y);
     debug("MAP %3d %3d owner: %2d bonus: %d reg: %3d cont: %3d clim: %02x val2: %02x val3: %02x "\
-        "vis: %02x unk1: %02x unk2: %02x art: %02x items: %08x lm: %04x\n",
+        "vis: %02x unk1: %02x items: %08x lm: %08x\n",
         x, y, m->owner, bonus_at(x, y), m->region, m->contour, m->climate, m->val2, m->val3,
-        m->visibility, m->unk_1, m->unk_2, m->art_ref_id,
-        m->items, m->landmarks);
+        m->visibility, m->unk_1, m->items, m->landmarks);
 }
 
 void print_veh_stack(int x, int y) {
@@ -210,13 +209,13 @@ void print_veh(int id) {
     VEH* v = &Vehicles[id];
     debug("VEH %30s u: %3d v: %4d owner: %d base: %3d order: %2d %2d %c %3d %3d -> %3d %3d "
         "next: %4d prev: %4d moves: %2d speed: %2d damage: %2d "
-        "state: %08x flags: %04x vis: %02x mor: %d iter: %d angle: %d\n",
+        "state: %08x flags: %04x vis: %02x mor: %d turns: %d iter: %d\n",
         Units[v->unit_id].name, v->unit_id, id, v->faction_id, v->home_base_id,
         v->order, v->order_auto_type, (v->status_icon ? v->status_icon : ' '),
         v->x, v->y, v->waypoint_1_x, v->waypoint_1_y,
         v->next_veh_id_stack, v->prev_veh_id_stack, v->moves_spent, veh_speed(id, 0),
         v->damage_taken, v->state, v->flags, v->visibility, v->morale,
-        v->iter_count, v->rotate_angle);
+        v->movement_turns, v->iter_count);
 }
 
 void print_unit(int id) {

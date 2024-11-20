@@ -27,11 +27,15 @@ struct MAP {
     uint8_t unk_1; // flags? bitfield
     int8_t owner;
     uint32_t items;
-    uint16_t landmarks;
-    uint8_t unk_2; // 0x40 = set_dirty()
-    uint8_t art_ref_id;
+    uint32_t landmarks;
     uint32_t visible_items[7];
 
+    int alt_level() {
+        return climate >> 5;
+    }
+    int code_at() {
+        return landmarks >> 24;
+    }
     bool is_visible(int faction) {
         return visibility & (1 << faction);
     }
@@ -62,9 +66,6 @@ struct MAP {
     bool is_fungus() {
         return items & BIT_FUNGUS && alt_level() >= ALT_OCEAN_SHELF;
     }
-    int alt_level() {
-        return climate >> 5;
-    }
     bool is_rocky() {
         return val3 & TILE_ROCKY && alt_level() >= ALT_SHORE_LINE;
     }
@@ -84,7 +85,7 @@ struct MAP {
         return climate & (TILE_MOIST | TILE_RAINY);
     }
     bool volcano_center() {
-        return landmarks & LM_VOLCANO && art_ref_id == 0;
+        return landmarks & LM_VOLCANO && code_at() == 0;
     }
     bool veh_in_tile() {
         return items & BIT_VEH_IN_TILE;

@@ -1010,8 +1010,8 @@ int __cdecl mod_veh_wake(int veh_id) {
     VEH* veh = &Vehs[veh_id];
     if (veh->order >= ORDER_FARM && veh->order < ORDER_MOVE_TO && !(veh->state & VSTATE_WORKING)) {
         veh->moves_spent = veh_speed(veh_id, 0) - Rules->move_rate_roads;
-        if (veh->terraform_turns) {
-            veh->terraform_turns = max(0, veh->terraform_turns - contribution(veh_id, veh->order - 4));
+        if (veh->movement_turns) {
+            veh->movement_turns = max(0, veh->movement_turns - contribution(veh_id, veh->order - 4));
         }
     }
     if (veh->state & VSTATE_ON_ALERT && !(veh->state & VSTATE_HAS_MOVED)
@@ -1520,7 +1520,7 @@ int set_move_to(int veh_id, int x, int y) {
     veh->order = ORDER_MOVE_TO;
     veh->status_icon = 'G';
     if (veh->is_former()) {
-        veh->terraform_turns = 0;
+        veh->movement_turns = 0;
     }
     mapnodes.erase({x, y, NODE_PATROL});
     mapnodes.erase({x, y, NODE_COMBAT_PATROL});
