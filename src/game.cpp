@@ -160,49 +160,6 @@ int __cdecl mod_cost_factor(int faction_id, BaseResType type, int base_id) {
     return value;
 }
 
-/*
-Calculate the energy loss/inefficiency for the given energy intake in the base.
-This function modifies the parameters to avoid writing on the global game state.
-*/
-int __cdecl mod_black_market(int base_id, int energy, int* effic_energy_lost) {
-    BASE* base = &Bases[base_id];
-    if (energy <= 0) {
-        return 0;
-    }
-    int dist_hq;
-    int head_id = find_hq(base->faction_id);
-    if (head_id >= 0) {
-        dist_hq = vector_dist(Bases[head_id].x, Bases[head_id].y, base->x, base->y);
-    } else {
-        dist_hq = 16;
-    }
-    if (dist_hq == 0) {
-        return 0;
-    }
-    bool has_creche = has_fac_built(FAC_CHILDREN_CRECHE, base_id);
-    if (effic_energy_lost != NULL) {
-        for (int i = 0; i < 9; i++) {
-            int factor;
-            if (has_creche) {
-                factor = 10 - i; // +2 on efficiency scale
-            } else {
-                factor = 8 - i;
-            }
-            if (factor <= 0) {
-                effic_energy_lost[i] += energy;
-            } else {
-                effic_energy_lost[i] += energy * dist_hq / (8 * factor);
-            }
-        }
-    }
-    int factor = 4 + Factions[base->faction_id].SE_effic_pending
-        + (has_creche ? 2 : 0); // +2 on efficiency scale
-    if (factor <= 0) {
-        return energy;
-    }
-    return clamp(energy * dist_hq / (8 * factor), 0, energy);
-}
-
 void init_world_config() {
     ThinkerVars->game_time_spent = 0;
     /*

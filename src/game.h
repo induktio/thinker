@@ -22,7 +22,6 @@ int __cdecl game_year(int n);
 int __cdecl in_box(int x, int y, RECT* rc);
 void __cdecl bitmask(uint32_t input, uint32_t* offset, uint32_t* mask);
 int __cdecl mod_cost_factor(int faction_id, BaseResType type, int base_id);
-int __cdecl mod_black_market(int base_id, int energy, int* effic_energy_lost);
 
 void show_rules_menu();
 void init_world_config();

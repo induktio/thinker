@@ -23,13 +23,6 @@ int __cdecl X_pop2(const char* label, int a2)
     if (!conf.warn_on_former_replace && !strcmp(label, "MIMIMI")) {
         return 1;
     }
-    /*
-    Disable unnecessary warning if the map is larger than 128x128.
-    In any case the dialog will limit all map sizes to 256x256.
-    */
-    if (!strcmp(label, "VERYLARGEMAP")) {
-        return 0;
-    }
     return X_pop(ScriptFile, label, -1, 0, 0, a2);
 }
 

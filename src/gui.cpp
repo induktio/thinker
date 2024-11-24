@@ -1372,7 +1372,7 @@ int __thiscall BaseWin_gov_options(BaseWindow* This, int flag)
                 if (base->governor_flags & GOV_MANAGE_PRODUCTION) {
                     base->state_flags &= ~BSTATE_UNK_80000000;
                     base->queue_size = 0;
-                    base_reset(base_id, 1);
+                    mod_base_reset(base_id, 1);
                 }
                 if (base->governor_flags & GOV_MANAGE_CITIZENS) {
                     base->worked_tiles = 0;

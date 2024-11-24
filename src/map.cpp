@@ -177,11 +177,21 @@ int __cdecl x_dist(int x1, int x2) {
 }
 
 int __cdecl alt_at(int x, int y) {
-    return mapsq(x, y)->alt_level();
+    MAP* sq = mapsq(x, y);
+    if (sq) {
+        return sq->alt_level();
+    }
+    assert(sq);
+    return 0;
 }
 
 int __cdecl alt_detail_at(int x, int y) {
-    return mapsq(x, y)->contour;
+    MAP* sq = mapsq(x, y);
+    if (sq) {
+        return sq->contour;
+    }
+    assert(sq);
+    return 0;
 }
 
 void __cdecl alt_put_detail(int x, int y, uint8_t detail) {
@@ -192,6 +202,22 @@ void __cdecl world_alt_put_detail(int x, int y) {
     alt_put_detail(x, y, (uint8_t)AltNatural[3]);
 }
 
+/*
+Calculate the elevation of the specified tile.
+Return Value: Elevation (bounded to: -3000 to 3500)
+*/
+int __cdecl elev_at(int x, int y) {
+    int contour = alt_detail_at(x, y);
+    int elev = 50 * (contour - ElevDetail[3] - *MapSeaLevel);
+    elev += (contour <= ElevDetail[alt_at(x, y)]) ? 10
+        : (x * 113 + y * 217 + *MapSeaLevel * 301) % 50;
+    return clamp(elev, -3000, 3500);
+}
+
+/*
+Calculate the natural altitude of the specified tile.
+Return Value: Natural altitude on a scale from 0 (ocean trench) to 6 (mountain tops)
+*/
 int __cdecl alt_natural(int x, int y) {
     int detail = alt_detail_at(x, y) - *MapSeaLevel;
     int alt = ALT_THREE_ABOVE_SEA;
@@ -199,6 +225,19 @@ int __cdecl alt_natural(int x, int y) {
         alt--;
     }
     return alt;
+}
+
+/*
+Set both the altitude and natural altitude for the specified tile.
+The altitude_natural parameter can be between 0 to 9.
+*/
+void __cdecl alt_set_both(int x, int y, int altitude_natural) {
+    assert(altitude_natural >= 0 && altitude_natural <= 9);
+    alt_set(x, y, altitude_natural);
+    if (alt_natural(x, y) != altitude_natural) {
+        alt_put_detail(x, y, (uint8_t)(AltNatural[altitude_natural] + *MapSeaLevel
+            + map_rand.get(AltNatural[altitude_natural + 1] - AltNatural[altitude_natural])));
+    }
 }
 
 int __cdecl temp_at(int x, int y) {
@@ -1174,13 +1213,13 @@ bool valid_start(int faction, int iter, int x, int y) {
         return false;
     }
     // LM_FRESH landmark is incorrectly used on some maps
-    if (aquatic != is_ocean(sq) || (sq->landmarks & ~LM_FRESH && iter < 150)) {
+    if (aquatic != is_ocean(sq) || (sq->landmarks & ~LM_FRESH && iter < 160)) {
         return false;
     }
     if ((goody_at(x, y) > 0 || bonus_at(x, y) > 0) && iter < 200) {
         return false;
     }
-    if (min_range(natives, x, y) < max(4, 8 - iter/32)) {
+    if (min_range(natives, x, y) < max(4, 8 - iter/32) - (iter >= 200)) {
         return false;
     }
     if (min_range(spawns, x, y) < max(limit, *MapAreaSqRoot/4 + 8 - iter/8)) {

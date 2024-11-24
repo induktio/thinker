@@ -361,14 +361,17 @@ void __cdecl mod_world_ruin(int x, int y) {
         MAP* sq = mapsq(x2, y2);
         if (sq) {
             world_alt_set(x2, y2, ALT_SHORE_LINE, true);
-            if (is_ocean(mapsq(x2, y))) {
+            if (is_ocean(sq)) {
                 if (i && i < 9) {
-                    bit_set(x2, y2, BIT_MONOLITH, true); // in ocean tiles?
+                    bit_set(x2, y2, BIT_MONOLITH, true);
                 }
             } else {
-                bit_set(x2, y, BIT_FUNGUS | BIT_SUPPLY_REMOVE, true);
+                bit_set(x2, y2, BIT_FUNGUS | BIT_SUPPLY_REMOVE, true);
                 if (!i) {
                     bit_set(x2, y2, BIT_FUNGUS, false);
+                    if (sq->is_rocky()) { // Remove rocky tiles from the center
+                        rocky_set(x2, y2, LEVEL_FLAT);
+                    }
                 } else if (i < 9) {
                     bit_set(x2, y2, BIT_MONOLITH, true);
                 }
@@ -736,12 +739,47 @@ void __cdecl mod_world_geothermal(int x, int y) {
 }
 
 static float world_fractal(FastNoiseLite& noise, int x, int y) {
-    float val = 1.0f * noise.GetNoise(3.0f*x, 2.0f*y)
+    float value = 1.0f * noise.GetNoise(3.0f*x, 2.0f*y)
         + 0.3f * (2 + *MapErosiveForces) * noise.GetNoise(-6.0f*x, -4.0f*y);
-    if (x < 8 && *MapAreaX >= 32 && !map_is_flat()) {
-        val = x/8.0f * val + (1.0f - x/8.0f) * world_fractal(noise, *MapAreaX + x, y);
+    if (x < 8 && *MapAreaX >= 16 && !map_is_flat()) {
+        value = x/8.0f * value + (1.0f - x/8.0f) * world_fractal(noise, *MapAreaX + x, y);
     }
-    return val;
+    return value;
+}
+
+/*
+Replace original WorldBuilder fungus placement method. This still produces similar
+fungus density given the same parameters but the placement patterns are altered.
+*/
+static void mod_world_fungus(FastNoiseLite& noise) {
+    int WBvalue = WorldBuilder->fungus * (*MapNativeLifeForms - 1);
+    int FTvalue = conf.spawn_fungal_towers >= 10 ? min(2048, conf.spawn_fungal_towers) : 40;
+    for (int y = 0; y < *MapAreaY; y++) {
+        for (int x = y&1; x < *MapAreaX; x+=2) {
+            MAP* sq = mapsq(x, y);
+            int value = clamp((int)(50.0f + 50.0f*noise.GetNoise(-6.0f*(256+x), 6.0f*y)), 0, 100);
+            if ((sq->landmarks & (LM_VOLCANO|LM_DISABLE)) != LM_VOLCANO || sq->code_at() >= 0x90) {
+                if ((value < 20 - WBvalue || value > 2 * WBvalue + 25)
+                && (value < 40 - WBvalue || value > 2 * WBvalue + 45)
+                && (value < 60 - WBvalue || value > 2 * WBvalue + 65)) {
+                    if (y && y != *MapAreaY - 1) {
+                        continue;
+                    }
+                    if (!map_rand.get(2)) {
+                        continue;
+                    }
+                }
+                if (!sq->is_rocky()) { // Later world_rocky can change the tile
+                    sq->items |= BIT_FUNGUS;
+                    sq->items &= ~TerraformRules[FORMER_PLANT_FUNGUS][1];
+                    if (!map_rand.get(FTvalue) && !is_ocean(sq)
+                    && *ExpansionEnabled && conf.spawn_fungal_towers) {
+                        veh_init(BSC_FUNGAL_TOWER, 0, x, y);
+                    }
+                }
+            }
+        }
+    }
 }
 
 void __cdecl mod_world_build() {
@@ -895,9 +933,9 @@ void world_generate(uint32_t seed) {
         }
     }
     debug("world_build seed: %10u size: %d x: %d y: %d "\
-    "ocean: %d erosion: %d cloud: %d sea_level: %d level_mod: %d\n",
-    seed, *MapSizePlanet, *MapAreaX, *MapAreaY, *MapOceanCoverage,
-    *MapErosiveForces, *MapCloudCover, conf.world_sea_levels[*MapOceanCoverage], level_mod);
+    "ocean: %d hills: %d native: %d cloud: %d sea_level: %d level_mod: %d\n",
+    seed, *MapSizePlanet, *MapAreaX, *MapAreaY, *MapOceanCoverage, *MapErosiveForces,
+    *MapNativeLifeForms, *MapCloudCover, conf.world_sea_levels[*MapOceanCoverage], level_mod);
 
     if (conf.world_polar_caps) {
         mod_world_polar_caps();
@@ -943,7 +981,7 @@ void world_generate(uint32_t seed) {
     }
     world_temperature();
     mod_world_riverbeds();
-    world_fungus();
+    mod_world_fungus(noise);
     Path_continents(Paths);
 
     LMConfig lm;

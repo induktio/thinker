@@ -164,8 +164,6 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->nerve_staple_mod = atoi(value);
     } else if (MATCH("delay_drone_riots")) {
         cf->delay_drone_riots = atoi(value);
-    } else if (MATCH("skip_drone_revolts")) {
-        cf->skip_drone_revolts = atoi(value);
     } else if (MATCH("activate_skipped_units")) {
         cf->activate_skipped_units = atoi(value);
     } else if (MATCH("counter_espionage")) {
@@ -430,6 +428,7 @@ DLL_EXPORT DWORD ThinkerModule() {
 }
 
 DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LPVOID UNUSED(lpvReserved)) {
+    size_t seed;
     switch (fdwReason) {
         case DLL_PROCESS_ATTACH:
             if (DEBUG && !(debug_log = fopen("debug.txt", "w"))) {
@@ -449,8 +448,10 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             }
             *EngineVersion = MOD_VERSION;
             *EngineDate = MOD_DATE;
-            random_reseed(GetTickCount());
-            debug("random_reseed %u\n", random_state());
+            seed = GetTickCount();
+            random_reseed(seed);
+            map_rand.reseed(seed ^ 0xff);
+            debug("random_reseed %u\n", seed);
             flushlog();
             break;
 

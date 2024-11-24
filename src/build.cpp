@@ -97,14 +97,16 @@ int __cdecl mod_base_hurry() {
         }
         return 0;
     }
-    if (t < 0 && turns > 1 && cost < f->energy_credits/8) {
-        if (t == -FAC_RECYCLING_TANKS || t == -FAC_PRESSURE_DOME
-        || t == -FAC_TREE_FARM || t == -FAC_HEADQUARTERS) {
-            return hurry_item(base_id, mins, cost);
-        }
+    if (t < 0 && (turns > 1 || b->drone_riots_active()) && cost < f->energy_credits/4) {
         if ((t == -FAC_RECREATION_COMMONS || t == -FAC_PUNISHMENT_SPHERE
         || (t == -FAC_NETWORK_NODE && has_project(FAC_VIRTUAL_WORLD, b->faction_id)))
         && b->drone_total + b->specialist_adjust > b->talent_total) {
+            return hurry_item(base_id, mins, cost);
+        }
+    }
+    if (t < 0 && turns > 1 && cost < f->energy_credits/8) {
+        if (t == -FAC_RECYCLING_TANKS || t == -FAC_PRESSURE_DOME
+        || t == -FAC_TREE_FARM || t == -FAC_HEADQUARTERS) {
             return hurry_item(base_id, mins, cost);
         }
         if (t == -FAC_CHILDREN_CRECHE && base_unused_space(base_id) > 2) {

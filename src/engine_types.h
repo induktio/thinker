@@ -137,7 +137,7 @@ struct DefaultPref {
 
 struct Label {
     char** labels;
-    int label_count;
+    int32_t label_count;
 };
 
 struct Landmark {
@@ -156,17 +156,17 @@ struct Continent {
 };
 
 struct Path {
-    int* mapTable;
+    int32_t* mapTable;
     int16_t* xTable;
     int16_t* yTable;
-    int index1; // specific territory count
-    int index2; // overall territory count
-    int faction_id1;
-    int xDst;
-    int yDst;
-    int field_20;
-    int faction_id2;
-    int unit_id;
+    int32_t index1; // specific territory count
+    int32_t index2; // overall territory count
+    int32_t faction_id1;
+    int32_t xDst;
+    int32_t yDst;
+    int32_t field_20;
+    int32_t faction_id2;
+    int32_t unit_id;
 };
 
 struct MFaction {
@@ -758,24 +758,24 @@ struct CTimeControl {
 };
 
 struct CSocialCategory {
-    int politics;
-    int economics;
-    int values;
-    int future;
+    int32_t politics;
+    int32_t economics;
+    int32_t values;
+    int32_t future;
 };
 
 struct CSocialEffect {
-    int economy;
-    int efficiency;
-    int support;
-    int talent;
-    int morale;
-    int police;
-    int growth;
-    int planet;
-    int probe;
-    int industry;
-    int research;
+    int32_t economy;
+    int32_t efficiency;
+    int32_t support;
+    int32_t talent;
+    int32_t morale;
+    int32_t police;
+    int32_t growth;
+    int32_t planet;
+    int32_t probe;
+    int32_t industry;
+    int32_t research;
 };
 
 struct CSocialParam {

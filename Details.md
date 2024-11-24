@@ -121,7 +121,7 @@ All landmarks that are placed on random maps can also be configured from `thinke
 
 It is also possible to place multiple similar landmarks if the corresponding landmark option is set to some value greater than one. When playing on smaller maps, it might make more sense to disable some additional landmarks, as otherwise the map generator may skip placing some landmarks due to not having enough space.
 
-The new map generator is entirely different from the vanilla version, so it does not parse the variables specified in `alphax.txt` WorldBuilder section. Only in limited cases, such as fungus placement, WorldBuilder variables might be used by the game engine when the new map generator is enabled.
+The new map generator is entirely different from the original version, so it does not use most variables specified in `alphax.txt` WorldBuilder section. Only in limited cases, such as river or fungus placement, WorldBuilder variables might be used by the game engine when the new map generator is enabled.
 
 Thinker's `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on Huge map sizes.
 
@@ -433,7 +433,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 27. Patch Stockpile Energy when it enabled double production if the base produces one item and then switches to Stockpile Energy on the same turn gaining additional credits.
 28. Patch Energy Market Crash event to reduce energy reserves only by 1/2 instead of 3/4. Optionally the event can also be disabled entirely (event_market_crash).
 29. Bases that have sufficient drone control facilities before the growth phase can grow without triggering possible drone riots on the same turn (delay_drone_riots).
-30. Disable drone revolt event which sometimes caused rioting player-owned bases to join other factions while this did not happen on AI factions (skip_drone_revolts).
+30. Remove drone revolt event due to issues with the original code. Sometimes this caused rioting player-owned bases to join other factions while this did not happen on AI factions.
 31. Patch captured base extra drone effect to last a variable time from 20 to 50 turns depending on the captured base size. The AI will also rename captured bases only after they are fully assimilated.
 32. When a base is captured that was previously owned by active third faction and the time to assimilate the base was more than zero, the previous owner is preserved after capture.
 33. Fix diplomacy dialog appearing multiple times when both human and alien factions are involved in a base capture by removing the event that spawns additional colony pods.

@@ -193,6 +193,16 @@ void write_byte(int32_t addr, byte old_byte, byte new_byte) {
     *(byte*)addr = new_byte;
 }
 
+void write_word(int32_t addr, int32_t old_word, int32_t new_word) {
+    if (addr < (int32_t)AC_IMAGE_BASE) {
+        exit_fail(addr);
+    }
+    if (*(int32_t*)addr != old_word && *(int32_t*)addr != new_word) {
+        exit_fail(addr);
+    }
+    *(int32_t*)addr = new_word;
+}
+
 /*
 Check before patching that the locations contain expected data.
 */
@@ -311,11 +321,11 @@ void init_video_config(Config* cf) {
         "C:\\Program Files\\VideoLAN\\VLC\\vlc.exe",
         "C:\\Program Files (x86)\\VideoLAN\\VLC\\vlc.exe",
     };
-    char buf_path[1024];
-    char buf_args[1024];
-    GetPrivateProfileStringA(GameAppName, "MoviePlayerPath", "<DEFAULT>", buf_path, 1024, GameIniFile);
+    char buf_path[4096] = {};
+    char buf_args[4096] = {};
+    GetPrivateProfileStringA(GameAppName, "MoviePlayerPath", "<DEFAULT>", buf_path, 4096, GameIniFile);
     GetPrivateProfileStringA(GameAppName, "MoviePlayerArgs",
-        "--fullscreen --video-on-top --play-and-exit --no-repeat --swscale-mode=2", buf_args, 1024, GameIniFile);
+        "--fullscreen --video-on-top --play-and-exit --no-repeat --swscale-mode=2", buf_args, 4096, GameIniFile);
 
     char* path = strtrim(&buf_path[0]);
     char* args = strtrim(&buf_args[0]);
@@ -550,6 +560,11 @@ bool patch_setup(Config* cf) {
     write_call(0x5C0984, (int)veh_kill_lift); // veh_kill
     write_call(0x43FE47, (int)DiploPop_spying); // DiploPop::draw_info
     write_call(0x43FEA8, (int)DiploPop_spying); // DiploPop::draw_info
+    write_call(0x4B72C0, (int)elev_at); // StatusWin::draw_status
+    write_call(0x57C419, (int)alt_set_both); // goody_box
+    write_call(0x5C2073, (int)alt_set_both); // world_alt_set
+    write_call(0x5C2148, (int)alt_set_both); // world_alt_set
+    write_call(0x5C22C3, (int)alt_set_both); // world_alt_set
     write_call(0x403BD4, (int)mod_amovie_project); // amovie_project2
     write_call(0x4F2B4B, (int)mod_amovie_project); // base_production
     write_call(0x524D06, (int)mod_amovie_project); // end_of_game
@@ -947,6 +962,15 @@ bool patch_setup(Config* cf) {
     write_byte(0x4E3222, 9, NetVersion); // AlphaNet::setup
     write_byte(0x52AA5C, 9, NetVersion); // control_game
     write_byte(0x627C8B, 9, 11); // pop_ask_number maximum length
+    /*
+    Allow custom map sizes up to 512x512. Warning dialog will be displayed if size exceeds 256x256.
+    */
+    write_word(0x58D3A2, 256, 512); // size_of_planet
+    write_word(0x58D3A9, 256, 512); // size_of_planet
+    write_word(0x58D3BB, 256, 512); // size_of_planet
+    write_word(0x58D3C2, 256, 512); // size_of_planet
+    write_word(0x58D3CF, 128, 256); // size_of_planet
+    write_word(0x58D3D7, 128, 256); // size_of_planet
 
     /*
     Hide unnecessary region_base_plan display next to base names in debug mode.
@@ -1269,9 +1293,6 @@ bool patch_setup(Config* cf) {
         memset((void*)0x58A5E1, 0x90, 6);
         memset((void*)0x58B76F, 0x90, 2);
         memset((void*)0x58B9F3, 0x90, 2);
-    }
-    if (cf->skip_drone_revolts) {
-        long_jump(0x4F5663); // drone_riot
     }
     if (cf->counter_espionage) {
         // Check for flag DIPLO_RENEW_INFILTRATOR when choosing the menu entries

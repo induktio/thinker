@@ -127,9 +127,9 @@ struct BASE {
     int8_t faction_id;
     int8_t faction_id_former;
     int8_t pop_size;
-    int8_t assimilation_turns_left;
-    int8_t nerve_staple_turns_left;
-    int8_t ai_plan_status;
+    uint8_t assimilation_turns_left;
+    uint8_t nerve_staple_turns_left;
+    uint8_t ai_plan_status;
     uint8_t visibility;
     int8_t factions_pop_size_intel[8];
     char name[25];

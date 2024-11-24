@@ -326,7 +326,7 @@ void __cdecl mod_base_yield() {
     bool need_labs = !has_fac_built(FAC_PUNISHMENT_SPHERE, base_id);
     bool pacifism = can_riot && SE_police <= -3 && *BaseVehPacifismCount > 0;
     int threshold = Rules->nutrient_intake_req_citizen * (base_pop_boom(base_id) ? 1 : 2);
-    int effic_val = 16 - mod_black_market(base_id, 16, 0);
+    int effic_val = 16 - energy_intake_lost(base_id, 16, 0);
     int alloc_econ = 10 - f->SE_alloc_labs - f->SE_alloc_psych;
     int econ_val = 4 + (alloc_econ > f->SE_alloc_labs);
     int labs_val = 2 + 2*(need_labs && f->SE_alloc_labs > 0) + (alloc_econ <= f->SE_alloc_labs);
@@ -643,14 +643,12 @@ void __cdecl mod_base_energy() {
     base->energy_intake_2 += commerce;
     base->energy_intake_2 += energygrid;
 
-    base->energy_inefficiency = mod_black_market(base_id, base->energy_intake_2 - base->energy_consumption,
+    base->energy_inefficiency = energy_intake_lost(base_id, base->energy_intake_2 - base->energy_consumption,
         (*BaseUpkeepState == 1 ? f->unk_43 : NULL));
     base->energy_surplus = base->energy_intake_2 - base->energy_consumption - base->energy_inefficiency;
 
     if (*BaseUpkeepState == 1) {
         f->energy_surplus_total += clamp(base->energy_surplus, 0, 99999);
-    } else {
-        assert(base->energy_inefficiency == black_market(base->energy_intake_2 - base->energy_consumption));
     }
     // Non-multiplied energy intake is always limited to this range
     int total_energy = clamp(base->energy_surplus, 0, 9999);
@@ -1034,6 +1032,24 @@ void __cdecl mod_base_psych(int base_id) {
     effic_drones, capture_drones, police_total, psych_val);
 }
 
+void __cdecl mod_base_energy_costs() {
+    BASE* base = *CurrentBase;
+    if (base && base->energy_surplus < 0) {
+        MAP* sq;
+        for (int i = 0; i < *VehCount; i++) {
+            VEH* veh = &Vehs[i];
+            if (veh->faction_id == base->faction_id
+            && veh->plan() == PLAN_SUPPLY
+            && veh->order == ORDER_CONVOY
+            && veh->order_auto_type == RSC_ENERGY
+            && (sq = mapsq(veh->x, veh->y))
+            && sq->is_base()) {
+                veh->order = ORDER_NONE;
+            }
+        }
+    }
+}
+
 /*
 Remove labs start delay from factions with negative SE Research value
 or when playing on two lowest difficulty levels.
@@ -1122,9 +1138,9 @@ int __cdecl mod_base_growth() {
                 }
                 if (!has_complex || !has_dome) {
                     if (!is_alien(faction_id)) {
-                        popb("POPULATIONLIMIT", 2048, 16, "pop_sm.pcx", 0);
+                        popb("POPULATIONLIMIT", WARN_STOP_POP_LIMIT_REACHED, 16, "pop_sm.pcx", 0);
                     } else {
-                        popb("POPULATIONLIMIT", 2048, 16, "al_pop_sm.pcx", 0);
+                        popb("POPULATIONLIMIT", WARN_STOP_POP_LIMIT_REACHED, 16, "al_pop_sm.pcx", 0);
                     }
                 }
                 base->nutrients_accumulated = nutrient_cost / 2;
@@ -1172,7 +1188,7 @@ int __cdecl mod_base_growth() {
                     popb("LOWNUTRIENTSPEC2", 0, -1, imagefile, 0);
                 }
             } else {
-                popb("LOWNUTRIENT", 128, 16, imagefile, 0);
+                popb("LOWNUTRIENT", WARN_STOP_NUTRIENT_SHORTAGE, 16, imagefile, 0);
             }
         }
         return 0; // Always return here
@@ -1192,9 +1208,9 @@ int __cdecl mod_base_growth() {
             }
         }
         if (!is_alien(faction_id)) {
-            popb("STARVE", 0x4000, 14, "starv_sm.pcx", 0);
+            popb("STARVE", WARN_STOP_STARVATION, 14, "starv_sm.pcx", 0);
         } else {
-            popb("STARVE", 0x4000, 14, "al_starv_sm.pcx", 0);
+            popb("STARVE", WARN_STOP_STARVATION, 14, "al_starv_sm.pcx", 0);
         }
         if (base->pop_size > 1 || !is_objective(base_id)) {
             base->pop_size--;
@@ -1211,6 +1227,80 @@ int __cdecl mod_base_growth() {
     return 0;
 }
 
+void __cdecl mod_drone_riot() {
+    BASE* base = *CurrentBase;
+    Faction* f = &Factions[base->faction_id];
+    MFaction* m = &MFactions[base->faction_id];
+    bool manage_workers = base->governor_flags & GOV_ACTIVE
+        && base->governor_flags & GOV_MANAGE_CITIZENS;
+    bool start_riots = !(base->state_flags & BSTATE_DRONE_RIOTS_ACTIVE);
+    base->state_flags |= BSTATE_DRONE_RIOTS_ACTIVE;
+
+    if (start_riots) {
+        draw_tile(base->x, base->y, 2);
+    }
+    if (!start_riots || !manage_workers) {
+        if (!is_alien(base->faction_id)) {
+            popb("DRONERIOTS", WARN_STOP_DRONE_RIOTS, 17, "drone_sm.pcx", 0);
+        } else {
+            popb("DRONERIOTS", WARN_STOP_DRONE_RIOTS, 17, "ALdrone_sm.pcx", 0);
+        }
+    } else {
+        if (!is_alien(base->faction_id)) {
+            popb("DRONERIOTS2", 0, 17, "drone_sm.pcx", 0);
+        } else {
+            popb("DRONERIOTS2", 0, 17, "ALdrone_sm.pcx", 0);
+        }
+    }
+    if (start_riots) {
+        if (!is_human(base->faction_id)) {
+            mod_base_reset(*CurrentBaseID, 0);
+        }
+        return; // Facilities cannot be destroyed on the first drone riot turn
+    }
+    int SE_police = base->SE_police(SE_Pending);
+    if ((SE_police + 6 <= 0 || !(game_rand() % (SE_police + 7)))
+    && !has_fac_built(FAC_HEADQUARTERS, *CurrentBaseID)
+    && base->assimilation_turns_left < 45 && f->base_count > 1) {
+        if (base->pop_size < 4 && game_rand() % 3) {
+            return;
+        }
+        // Remove drone revolt event due to issues with the original code
+        // This modifier is adjusted because the code assumed drone revolts as an alternative
+        int modifier = base->pop_size + f->diff_level + f->ranking + 8;
+        int iter = 0;
+        int facility_id;
+        while (true) {
+            bool allow_remove = true;
+            facility_id = game_rand() % 70;
+            for (int i = 0; i < m->faction_bonus_count; i++) {
+                if (m->faction_bonus_val1[i] == facility_id
+                && (m->faction_bonus_id[i] == RULE_FACILITY
+                || (m->faction_bonus_id[i] == RULE_FREEFAC
+                && has_tech(Facility[facility_id].preq_tech, base->faction_id)))) {
+                    allow_remove = false;
+                }
+            }
+            if (facility_id > FAC_HEADQUARTERS && facility_id < FAC_SKY_HYDRO_LAB) {
+                if (allow_remove && has_fac_built((FacilityId)facility_id, *CurrentBaseID)) {
+                    set_fac((FacilityId)facility_id, *CurrentBaseID, false);
+                    parse_says(1, Facility[facility_id].name, -1, -1);
+                    if (!is_alien(base->faction_id)) {
+                        popb("DRONERIOT", WARN_STOP_DRONE_RIOTS, -1, "drone_sm.pcx", 0);
+                    } else {
+                        popb("DRONERIOT", WARN_STOP_DRONE_RIOTS, -1, "ALdrone_sm.pcx", 0);
+                    }
+                    return;
+                }
+            }
+            if (++iter > modifier) {
+                // Skip drone revolt event here if no facility gets destroyed
+                return;
+            }
+        }
+    }
+}
+
 void __cdecl mod_base_drones() {
     BASE* base = *CurrentBase;
 
@@ -1218,9 +1308,9 @@ void __cdecl mod_base_drones() {
         if (!(base->state_flags & BSTATE_GOLDEN_AGE_ACTIVE)) {
             base->state_flags |= BSTATE_GOLDEN_AGE_ACTIVE;
             if (!is_alien(base->faction_id)) {
-                popb("GOLDENAGE", 32, -1, "talent_sm.pcx", 0);
+                popb("GOLDENAGE", WARN_STOP_GOLDEN_AGE, -1, "talent_sm.pcx", 0);
             } else {
-                popb("GOLDENAGE", 32, -1, "Alopdir.pcx", 0);
+                popb("GOLDENAGE", WARN_STOP_GOLDEN_AGE, -1, "Alopdir.pcx", 0);
             }
         }
     } else if (base->state_flags & BSTATE_GOLDEN_AGE_ACTIVE) {
@@ -1228,9 +1318,9 @@ void __cdecl mod_base_drones() {
         if (base->drone_total <= base->talent_total) {
             // Notify end of golden age without drone riots
             if (!is_alien(base->faction_id)) {
-                popb("GOLDENAGEOVER", 64, -1, "talent_sm.pcx", 0);
+                popb("GOLDENAGEOVER", WARN_STOP_GOLDEN_AGE_END, -1, "talent_sm.pcx", 0);
             } else {
-                popb("GOLDENAGEOVER", 64, -1, "Alopdir.pcx", 0);
+                popb("GOLDENAGEOVER", WARN_STOP_GOLDEN_AGE_END, -1, "Alopdir.pcx", 0);
             }
         }
     }
@@ -1248,12 +1338,12 @@ void __cdecl mod_base_drones() {
                     if (manage) {
                         popb("DRONERIOTSOVER2", 0, 51, "talent_sm.pcx", 0);
                     } else {
-                        popb("DRONERIOTSOVER", 16, 51, "talent_sm.pcx", 0);
+                        popb("DRONERIOTSOVER", WARN_STOP_DRONE_RIOTS_END, 51, "talent_sm.pcx", 0);
                     }
                 } else if (manage) {
                     popb("DRONERIOTSOVER2", 0, 51, "Alopdir.pcx", 0);
                 } else {
-                    popb("DRONERIOTSOVER", 16, 51, "Alopdir.pcx", 0);
+                    popb("DRONERIOTSOVER", WARN_STOP_DRONE_RIOTS_END, 51, "Alopdir.pcx", 0);
                 }
             }
             if (!is_human(base->faction_id)) {
@@ -1264,7 +1354,7 @@ void __cdecl mod_base_drones() {
     } else if (!delay_base_riot) {
         // Normally drone riots would always happen here if there are sufficient drones
         // but delay_drone_riots option can postpone it for one turn.
-        drone_riot();
+        mod_drone_riot();
     }
 }
 
@@ -1300,7 +1390,7 @@ void __cdecl mod_base_maint() {
                     f->energy_credits = Facility[fac].cost
                         * cost_factor(faction_id, RSC_MINERAL, -1);
                     parse_says(1, Facility[fac].name, -1, -1);
-                    popb("POWERSHORT", 0x10000, 14, "genwarning_sm.pcx", 0);
+                    popb("POWERSHORT", WARN_STOP_ENERGY_SHORTAGE, 14, "genwarning_sm.pcx", 0);
                 }
             }
         }
@@ -1361,7 +1451,7 @@ int __cdecl mod_base_upkeep(int base_id) {
         if ((*CurrentBase)->faction_id != faction_id) {
             return 1; // drone_riot may change base ownership if revolt is active
         }
-        base_energy_costs();
+        mod_base_energy_costs();
         if (conf.early_research_start || *CurrentTurn > 5
         || *MultiplayerActive || !(*GamePreferences & PREF_BSC_TUTORIAL_MSGS)) {
             mod_base_research();
@@ -1814,6 +1904,59 @@ int energy_grid_output(int base_id) {
     return num/2;
 }
 
+/*
+Calculate the energy loss/inefficiency for the given energy intake in the base.
+This function replaces black_market and modifies the parameters to avoid writing on the game state.
+Original version always used dist=16 when the faction does not have headquarters active.
+*/
+int energy_intake_lost(int base_id, int energy, int32_t* effic_energy_lost) {
+    BASE* base = &Bases[base_id];
+    int value;
+    int dist_hq = 9999;
+    bool found = false;
+    if (energy <= 0) {
+        value = 0;
+    } else {
+        for (int i = 0; i < *BaseCount; i++) {
+            if (Bases[i].faction_id == base->faction_id && has_fac_built(FAC_HEADQUARTERS, i)) {
+                int dist = vector_dist(Bases[i].x, Bases[i].y, base->x, base->y);
+                dist_hq = min(dist, dist_hq);
+                found = true;
+            }
+        }
+    }
+    if (dist_hq == 0) {
+        value = 0;
+    } else if (energy > 0) {
+        if (dist_hq == 9999) {
+            dist_hq = clamp(Factions[base->faction_id].base_count/4 + 8, 16, 32);
+        }
+        bool has_creche = has_fac_built(FAC_CHILDREN_CRECHE, base_id);
+        if (effic_energy_lost) {
+            for (int i = 0; i < 9; i++) {
+                int factor;
+                if (has_creche) {
+                    factor = 10 - i; // +2 on efficiency scale
+                } else {
+                    factor = 8 - i;
+                }
+                if (factor <= 0) {
+                    effic_energy_lost[i] += energy;
+                } else {
+                    effic_energy_lost[i] += energy * dist_hq / (8 * factor);
+                }
+            }
+        }
+        int factor = 4 + Factions[base->faction_id].SE_effic_pending
+            + (has_creche ? 2 : 0); // +2 on efficiency scale
+        value = (factor <= 0 ? energy : clamp(energy * dist_hq / (8 * factor), 0, energy));
+    }
+    if (found && !effic_energy_lost) {
+        assert(value == black_market(energy));
+    }
+    return value;
+}
+
 int satellite_output(int satellites, int pop_size, bool full_value) {
     if (full_value) {
         return max(0, min(pop_size, satellites));
@@ -1836,7 +1979,6 @@ bool satellite_bonus(int base_id, int* nutrient, int* mineral, int* energy) {
     }
     return f.satellites_ODP > 0;
 }
-
 
 /*
 Calculate the non-native unit morale bonus modifier provided by the base and faction for a triad.
