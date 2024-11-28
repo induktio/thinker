@@ -1,6 +1,24 @@
 
 # Thinker mod release changelog
 
+## Version 4.8 (2024-11-28)
+* Add new shortcut Ctrl+H for hurrying production when the base window is active.
+* It is now possible to set custom video player options in Alpha Centauri.ini. The mod will attempt to detect VLC from default install location at startup and display a dialog if it is not found.
+* Fungal Tower spawning frequency can be adjusted with new_world_builder by changing spawn_fungal_towers option.
+* Remove option facility_free_tech when this can be adjusted from alphax.txt. Recycling Tanks is free after discovery of Advanced Ecological Engineering (B7) and Recreation Commons is free after Sentient Econometrics (E11).
+* Remove option skip_drone_revolts due to issues with the original code. This event is now always disabled in the mod.
+* Scenario editor allows creating map sizes larger than 256x256. However in this case a warning dialog will be displayed.
+* When the faction does not have HQ active, inefficiency distance to HQ is scaled higher than normal when the faction base count exceeds 32.
+* Restore original psych calculation for Genejack Factory.
+* Social engineering choices dialog is skipped when acquiring a new tech during diplomacy.
+* AI tries to build prototype combat units more often when there are less defenders.
+* Minor changes on unit morale display related to Children's Creche, Brood Pit and Headquarters effects.
+* Headquarters and Children's Creche description on datalinks is updated to be more accurate.
+* Fix missing Brood Pit lifecycle bonus for new native units created at a base.
+* Fix issue with AI aircraft pathing where refueling range was miscalculated.
+* Fix game using wrong config files when smac-in-smacx mod is active.
+
+
 ## Version 4.7 (2024-11-02)
 * Multiple changes on diplomacy related to tech/energy trading and free gifts for pact factions.
 * Pact status counts as infiltration on diplomacy window for purposes of displaying the energy reserves.
