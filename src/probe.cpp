@@ -256,7 +256,7 @@ int probe_upkeep(int faction1)
     }
     for (int faction2 = 1; faction2 < MaxPlayerNum; faction2++) {
         if (faction1 != faction2 && is_alive(faction2)) {
-            debug("probe_upkeep %3d %d %d spying: %d ends: %d\n",
+            debug("probe_upkeep %d %d %d spying: %d ends: %d\n",
                 *CurrentTurn, faction1, faction2,
                 has_treaty(faction1, faction2, DIPLO_HAVE_INFILTRATOR),
                 MFactions[faction1].thinker_probe_end_turn[faction2]

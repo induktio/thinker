@@ -753,7 +753,7 @@ fungus density given the same parameters but the placement patterns are altered.
 */
 static void mod_world_fungus(FastNoiseLite& noise) {
     int WBvalue = WorldBuilder->fungus * (*MapNativeLifeForms - 1);
-    int FTvalue = conf.spawn_fungal_towers >= 10 ? min(2048, conf.spawn_fungal_towers) : 40;
+    int FTvalue = conf.spawn_fungal_towers > 1 ? clamp(conf.spawn_fungal_towers, 8, 1024) : 40;
     for (int y = 0; y < *MapAreaY; y++) {
         for (int x = y&1; x < *MapAreaX; x+=2) {
             MAP* sq = mapsq(x, y);
@@ -845,12 +845,12 @@ void world_generate(uint32_t seed) {
         MapWin_clear_terrain(MapWin);
         draw_map(1);
     }
-    game_srand(seed ^ 0xffff); // For game_rand function, terrain fungus placement
+    game_srand(seed ^ 0xffff); // For game_rand function, used by alt_set / alt_set_both
     *MapRandomSeed = (seed % 0x7fff) + 1; // Must be non-zero, supply pod placement
     *MapLandCoverage = 2 - *MapOceanCoverage;
 
     Points conts;
-    uint32_t continents = clamp(*MapAreaSqRoot / 12, 4, 20);
+    size_t continents = clamp(*MapAreaSqRoot / 12, 4, 20);
     int levels[256] = {};
     int x = 0, y = 0, i = 0;
 

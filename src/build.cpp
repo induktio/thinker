@@ -97,7 +97,7 @@ int __cdecl mod_base_hurry() {
         }
         return 0;
     }
-    if (t < 0 && (turns > 1 || b->drone_riots_active()) && cost < f->energy_credits/4) {
+    if (t < 0 && (turns > 1 || b->drone_riots_active()) && cost < f->energy_credits/8) {
         if ((t == -FAC_RECREATION_COMMONS || t == -FAC_PUNISHMENT_SPHERE
         || (t == -FAC_NETWORK_NODE && has_project(FAC_VIRTUAL_WORLD, b->faction_id)))
         && b->drone_total + b->specialist_adjust > b->talent_total) {
@@ -122,16 +122,17 @@ int __cdecl mod_base_hurry() {
             return hurry_item(base_id, mins, cost);
         }
     }
-    if (t >= 0 && turns > 1 && cost < f->energy_credits/4) {
+    if (t >= 0 && turns > 1 && cost < f->energy_credits/4 && mins < 45) {
         if (Units[t].is_combat_unit()) {
-            int val = (b->defend_goal > 2)
-                + (b->defend_goal > 3)
+            int val = (cost < f->energy_credits/8)
+                + (cost < f->energy_credits/16)
                 + (p->enemy_bases > 0)
                 + (p->enemy_factions > 0)
-                + (at_war(b->faction_id, MapWin->cOwner) > 0)
-                + (cost < f->energy_credits/16)
+                + (b->defend_goal > 2)
+                + (b->defend_range < 10)
+                + ((b->state_flags & BSTATE_COMBAT_LOSS_LAST_TURN) != 0)
                 + 2*(!has_defenders(b->x, b->y, b->faction_id));
-            if (val > 3) {
+            if (val > 4) {
                 return hurry_item(base_id, mins, cost);
             }
         }

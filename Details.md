@@ -461,6 +461,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 55. Fix issues where the game did not calculate upgrade costs correctly when the unit count exceeded 255. The costs will be applied correctly even if Security Nexus may show an inaccurate number.
 56. Patch the game to also parse "Free Technology" defined for each facility. This causes new bases to have these facilities built for free while it does not exclude facility maintenance costs.
 57. Faction config reader also parses social effect priority/opposition values (e.g. ECONOMY) defined for each faction. These may have minor effect on AI social engineering choices while original game always ignored these values.
+58. Modify energy inefficiency formula when the faction does not have headquarters active in which case distance is always treated at least 16. When the faction base count is between 32 and 96, this default distance increases linearly from 16 to 32.
 
 
 Scient's patch

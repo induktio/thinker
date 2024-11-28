@@ -218,4 +218,19 @@ Build base anyway.
 Sea enhancements can only be built here after you have researched
 Advanced Ecological Engineering.
 
+#HELPFAC1
+Administrative center of your colony.
+$LINK<+1 ENERGY=43>. No $LINK<inefficiency=25>.
+Units defending here will receive a $LINK<+1 MORALE=11> modifier.
+^
+Enemy $LINK<probe teams=30006> may not attempt mind control here.
+
+#HELPFAC2
+Base receives +2 on $LINK<GROWTH=130006> scale and +2 on
+$LINK<EFFICIENCY=130001> scale when determining the $LINK<inefficiency=25>.
+All negative $LINK<MORALE=130004> effects are cancelled for units in
+base square; instead such units receive a +1 MORALE modifier.
+^
+Reduces base's vulnerability to enemy mind control.
+
 # ; This line must remain at end of file

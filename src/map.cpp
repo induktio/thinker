@@ -235,8 +235,9 @@ void __cdecl alt_set_both(int x, int y, int altitude_natural) {
     assert(altitude_natural >= 0 && altitude_natural <= 9);
     alt_set(x, y, altitude_natural);
     if (alt_natural(x, y) != altitude_natural) {
-        alt_put_detail(x, y, (uint8_t)(AltNatural[altitude_natural] + *MapSeaLevel
-            + map_rand.get(AltNatural[altitude_natural + 1] - AltNatural[altitude_natural])));
+        int offset = AltNatural[altitude_natural + 1] - AltNatural[altitude_natural];
+        alt_put_detail(x, y, (uint8_t)(*MapSeaLevel + AltNatural[altitude_natural]
+            + (offset > 1 ? game_rand() % offset : 0)));
     }
 }
 
@@ -1039,20 +1040,20 @@ int __cdecl mod_whose_territory(int faction_id, int x, int y, int* base_id, int 
     return sq->owner;
 }
 
-int total_yield(int x, int y, int faction) {
-    return mod_crop_yield(faction, -1, x, y, 0)
-        + mod_mine_yield(faction, -1, x, y, 0)
-        + mod_energy_yield(faction, -1, x, y, 0);
+int total_yield(int x, int y, int faction_id) {
+    return mod_crop_yield(faction_id, -1, x, y, 0)
+        + mod_mine_yield(faction_id, -1, x, y, 0)
+        + mod_energy_yield(faction_id, -1, x, y, 0);
 }
 
-int fungus_yield(int faction, ResType res_type) {
-    Faction* f = &Factions[faction];
+int fungus_yield(int faction_id, ResType res_type) {
+    Faction* f = &Factions[faction_id];
     int p = clamp(f->SE_planet_pending, -3, 0);
     int N = clamp(f->tech_fungus_nutrient + p, 0, 99);
     int M = clamp(f->tech_fungus_mineral + p, 0, 99);
     int E = clamp(f->tech_fungus_energy + p + (f->SE_economy_pending >= 2), 0, 99);
 
-    if (has_project(FAC_MANIFOLD_HARMONICS, faction)) {
+    if (has_project(FAC_MANIFOLD_HARMONICS, faction_id)) {
         int m = clamp(f->SE_planet_pending + 1, 0, 4);
         N += ManifoldHarmonicsBonus[m][0];
         M += ManifoldHarmonicsBonus[m][1];
@@ -1070,7 +1071,7 @@ int fungus_yield(int faction, ResType res_type) {
     return N+M+E;
 }
 
-int item_yield(int x, int y, int faction, int bonus, MapItem item) {
+int item_yield(int x, int y, int faction_id, int bonus, MapItem item) {
     MAP* sq = mapsq(x, y);
     if (!sq) {
         return 0;
@@ -1098,7 +1099,7 @@ int item_yield(int x, int y, int faction, int bonus, MapItem item) {
         if (sq->landmarks & LM_RIDGE) { E++; }
         if (sq->landmarks & LM_CANYON) { M++; }
         if (sq->landmarks & LM_FOSSIL && sq->code_at() < 6) { M++; }
-        if (Factions[faction].SE_economy_pending >= 2) {
+        if (Factions[faction_id].SE_economy_pending >= 2) {
             E++;
         }
     }
@@ -1114,9 +1115,9 @@ int item_yield(int x, int y, int faction, int bonus, MapItem item) {
         N -= (N > 0);
     }
     else if (item == BIT_FUNGUS) {
-        N = fungus_yield(faction, RES_NUTRIENT);
-        M = fungus_yield(faction, RES_MINERAL);
-        E = fungus_yield(faction, RES_ENERGY);
+        N = fungus_yield(faction_id, RES_NUTRIENT);
+        M = fungus_yield(faction_id, RES_MINERAL);
+        E = fungus_yield(faction_id, RES_ENERGY);
     }
     else if (item == BIT_FARM && is_ocean(sq)) {
         N += ResInfo->ocean_sq_nutrient + ResInfo->improved_sea_nutrient;
@@ -1124,7 +1125,7 @@ int item_yield(int x, int y, int faction, int bonus, MapItem item) {
         E += ResInfo->ocean_sq_energy;
         if (sq->items & BIT_MINE) {
             M += ResInfo->improved_sea_mineral
-                + has_tech(Rules->tech_preq_mining_platform_bonus, faction);
+                + has_tech(Rules->tech_preq_mining_platform_bonus, faction_id);
             N -= (N > 0);
         }
         if (sq->items & BIT_SOLAR) {
@@ -1135,26 +1136,26 @@ int item_yield(int x, int y, int faction, int bonus, MapItem item) {
         assert(0);
     }
     if (N > 2 && bonus != RES_NUTRIENT
-    && !has_tech(Rules->tech_preq_allow_3_nutrients_sq, faction)) {
+    && !has_tech(Rules->tech_preq_allow_3_nutrients_sq, faction_id)) {
         N = 2;
     }
     if (M > 2 && bonus != RES_MINERAL
-    && !has_tech(Rules->tech_preq_allow_3_minerals_sq, faction)) {
+    && !has_tech(Rules->tech_preq_allow_3_minerals_sq, faction_id)) {
         M = 2;
     }
     if (E > 2 && bonus != RES_ENERGY
-    && !has_tech(Rules->tech_preq_allow_3_energy_sq, faction)) {
+    && !has_tech(Rules->tech_preq_allow_3_energy_sq, faction_id)) {
         E = 2;
     }
     if (conf.debug_verbose) {
         debug("item_yield %2d %2d %08X faction: %d bonus: %d planet: %d N: %d M: %d E: %d prev: %d\n",
-        x, y, item, faction, bonus, Factions[faction].SE_planet_pending,
-        N, M, E, total_yield(x, y, faction));
+        x, y, item, faction_id, bonus, Factions[faction_id].SE_planet_pending,
+        N, M, E, total_yield(x, y, faction_id));
     }
     return N+M+E;
 }
 
-void process_map(int faction, int k) {
+void process_map(int faction_id, int k) {
     spawns.clear();
     natives.clear();
     goodtiles.clear();
@@ -1188,7 +1189,7 @@ void process_map(int faction, int k) {
         if (v->faction_id == 0) {
             natives.insert({v->x, v->y});
         }
-        if (v->faction_id != 0 && v->faction_id != faction) {
+        if (v->faction_id != 0 && v->faction_id != faction_id) {
             spawns.insert({v->x, v->y});
         }
     }
@@ -1199,10 +1200,11 @@ void process_map(int faction, int k) {
         *MapAreaX, *MapAreaY, *MapAreaSqRoot, *MapAreaTiles, goodtiles.size());
 }
 
-bool valid_start(int faction, int iter, int x, int y) {
+bool valid_start(int faction_id, int iter, int x, int y) {
     MAP* sq = mapsq(x, y);
-    bool aquatic = MFactions[faction].is_aquatic();
-    int limit = max((*MapAreaTiles < 1600 ? 5 : 7), 8 - iter/80);
+    bool aquatic = MFactions[faction_id].is_aquatic();
+    int native_limit = (goodtiles.size() > 0 ? 3 : 2) + ((int)natives.size() < *MapAreaTiles/80);
+    int spawn_limit = max((*MapAreaTiles < 1600 ? 5 : 7), 8 - iter/80);
     int min_sc = 80 - iter/4;
     int sea = 0;
     int sc = 0;
@@ -1216,13 +1218,13 @@ bool valid_start(int faction, int iter, int x, int y) {
     if (aquatic != is_ocean(sq) || (sq->landmarks & ~LM_FRESH && iter < 160)) {
         return false;
     }
-    if ((goody_at(x, y) > 0 || bonus_at(x, y) > 0) && iter < 200) {
+    if ((goody_at(x, y) > 0 || bonus_at(x, y) > 0) && iter < 160) {
         return false;
     }
-    if (min_range(natives, x, y) < max(4, 8 - iter/32) - (iter >= 200)) {
+    if (min_range(natives, x, y) < max(native_limit, 8 - iter/16)) {
         return false;
     }
-    if (min_range(spawns, x, y) < max(limit, *MapAreaSqRoot/4 + 8 - iter/8)) {
+    if (min_range(spawns, x, y) < max(spawn_limit, *MapAreaSqRoot/4 + 8 - iter/8)) {
         return false;
     }
     if (aquatic) {
@@ -1278,7 +1280,7 @@ bool valid_start(int faction, int iter, int x, int y) {
         }
     }
     debug("find_score %d %d x: %3d y: %3d xd: %d yd: %d min: %d score: %d\n",
-        faction, iter, x, y, xd, yd, min_sc, sc);
+        faction_id, iter, x, y, xd, yd, min_sc, sc);
 
     if (!aquatic && iter < 100) { // Avoid spawns without sufficient land nearby
         if (sea > 20) {
@@ -1291,13 +1293,13 @@ bool valid_start(int faction, int iter, int x, int y) {
     return sc >= min_sc;
 }
 
-void apply_nutrient_bonus(int faction, int* x, int* y) {
+void apply_nutrient_bonus(int faction_id, int* x, int* y) {
     MAP* sq;
     Points addon;
     Points places;
     Points allpods;
     Points rivers;
-    bool aquatic = MFactions[faction].is_aquatic();
+    bool aquatic = MFactions[faction_id].is_aquatic();
     int adjust = (aquatic ? 0 : 8);
     int nutrient = 0;
     int num = 0;
@@ -1315,7 +1317,7 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
                 if (m.sq->is_rocky()) {
                     rocky_set(m.x, m.y, LEVEL_ROLLING);
                 }
-                synch_bit(m.x, m.y, faction);
+                synch_bit(m.x, m.y, faction_id);
                 nutrient++;
             } else if (!goody && bonus == RES_NONE
             && adjust > 0 && m.sq->items & BIT_RIVER) {
@@ -1324,7 +1326,7 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
                 }
                 if (m.i > 0 && m.i <= adjust
                 && m.sq->region == region_at(*x, *y)
-                && can_build_base(m.x, m.y, faction, TRIAD_LAND)
+                && can_build_base(m.x, m.y, faction_id, TRIAD_LAND)
                 && min_range(spawns, m.x, m.y) >= 8) {
                     rivers.insert({m.x, m.y});
                 }
@@ -1360,7 +1362,7 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
         if (sq->is_rocky()) {
             rocky_set(t.x, t.y, LEVEL_ROLLING);
         }
-        synch_bit(t.x, t.y, faction);
+        synch_bit(t.x, t.y, faction_id);
         num++;
     }
     // Adjust position to adjacent river if currently not on river
@@ -1371,15 +1373,15 @@ void apply_nutrient_bonus(int faction, int* x, int* y) {
     }
 }
 
-void __cdecl find_start(int faction, int* tx, int* ty) {
-    bool aquatic = MFactions[faction].is_aquatic();
+void __cdecl find_start(int faction_id, int* tx, int* ty) {
+    bool aquatic = MFactions[faction_id].is_aquatic();
     int x = 0;
     int y = 0;
     int i = 0;
     int k = (*MapAreaY < 80 ? 4 : 8);
-    process_map(faction, k/2);
+    process_map(faction_id, k/2);
 
-    while (++i <= 500) {
+    while (++i <= 800) {
         if (!aquatic && goodtiles.size() > 0 && i <= 200) {
             auto t = pick_random(goodtiles);
             y = t.y;
@@ -1388,10 +1390,9 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
             y = (random(*MapAreaY - k*2) + k);
             x = (random(*MapAreaX) & (~1)) + (y&1);
         }
-        debug("find_iter  %d %d x: %3d y: %3d\n", faction, i, x, y);
-        if (valid_start(faction, i, x, y)) {
+        if (valid_start(faction_id, i, x, y)) {
             if (conf.nutrient_bonus > 0) {
-                apply_nutrient_bonus(faction, &x, &y);
+                apply_nutrient_bonus(faction_id, &x, &y);
             }
             // No unity scattering can normally spawn pods at two tile range from the start
             if (*GameRules & RULES_NO_UNITY_SCATTERING && conf.rare_supply_pods > 1) {
@@ -1405,7 +1406,7 @@ void __cdecl find_start(int faction, int* tx, int* ty) {
         }
     }
     site_set(*tx, *ty, world_site(*tx, *ty, 0));
-    debug("find_start %d %d x: %3d y: %3d range: %d\n", faction, i, *tx, *ty, min_range(spawns, *tx, *ty));
+    debug("find_start %d %d x: %3d y: %3d range: %d\n", faction_id, i, *tx, *ty, min_range(spawns, *tx, *ty));
     flushlog();
 }
 

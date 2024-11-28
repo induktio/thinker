@@ -1928,7 +1928,7 @@ int energy_intake_lost(int base_id, int energy, int32_t* effic_energy_lost) {
     if (dist_hq == 0) {
         value = 0;
     } else if (energy > 0) {
-        if (dist_hq == 9999) {
+        if (!found) {
             dist_hq = clamp(Factions[base->faction_id].base_count/4 + 8, 16, 32);
         }
         bool has_creche = has_fac_built(FAC_CHILDREN_CRECHE, base_id);

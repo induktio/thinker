@@ -205,14 +205,14 @@ int __cdecl mod_morale_alien(int veh_id, int faction_id_vs_native) {
 Calculate unit morale. TODO: Determine if 2nd param is a toggle for display vs actual morale.
 */
 int __cdecl mod_morale_veh(int veh_id, int check_drone_riot, int faction_id_vs_native) {
-    int faction_id = Vehs[veh_id].faction_id;
-    int unit_id = Vehs[veh_id].unit_id;
-    int home_base_id = Vehs[veh_id].home_base_id;
+    VEH* veh = &Vehs[veh_id];
+    int faction_id = veh->faction_id;
+    int home_base_id = veh->home_base_id;
     int value;
     if (!faction_id) {
         return mod_morale_alien(veh_id, faction_id_vs_native);
     }
-    if (Units[unit_id].plan == PLAN_PROBE) {
+    if (veh->plan() == PLAN_PROBE) {
         int probe_morale = clamp(Factions[faction_id].SE_probe, 0, 3);
         probe_morale += has_project(FAC_TELEPATHIC_MATRIX, faction_id) ? 2 : 0;
         for (int i = 0; i < MaxTechnologyNum; i++) {
@@ -220,12 +220,12 @@ int __cdecl mod_morale_veh(int veh_id, int check_drone_riot, int faction_id_vs_n
                 probe_morale++;
             }
         }
-        probe_morale += Vehs[veh_id].morale;
+        probe_morale += veh->morale;
         value = clamp(probe_morale, 2, 6);
         return value;
     }
-    if (unit_id < MaxProtoFactionNum && Units[unit_id].offense_value() < 0) {
-        value = clamp((int)Vehs[veh_id].morale, 0, 6); // Basic Psi Veh
+    if (veh->unit_id < MaxProtoFactionNum && veh->offense_value() < 0) {
+        value = clamp((int)veh->morale, 0, 6); // Basic Psi Veh
         return value;
     }
     // everything else
@@ -257,7 +257,7 @@ int __cdecl mod_morale_veh(int veh_id, int check_drone_riot, int faction_id_vs_n
         // Fix: removed premature range bounding negating negative morale effects
         morale_modifier--;
     }
-    value = clamp(Vehs[veh_id].morale + morale_modifier, 0, 6);
+    value = clamp(veh->morale + morale_modifier, 0, 6);
     return value;
 }
 

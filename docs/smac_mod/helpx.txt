@@ -203,16 +203,16 @@ Terraform
 
 #; Headquarters
 #HELPFAC1
-Administrative center of your colony. $LINK<+1 ENERGY=43>.
-No $LINK<inefficiency=25>.
-Enemy $LINK<probe teams=30006> may not attempt mind control here.
+Administrative center of your colony.
+$LINK<+1 ENERGY=43>. No $LINK<inefficiency=25>.
+Units defending here will receive a $LINK<+1 MORALE=11> modifier.
 ^
-Units defending here will gain $LINK<+1 Morale=11> increase.
+Enemy $LINK<probe teams=30006> may not attempt mind control here.
 
 #; Children's Creche
 #HELPFAC2
 Base receives +2 on $LINK<GROWTH=130006> scale and +2 on
-$LINK<EFFICIENCY=130001> scale when determining the inefficiency.
+$LINK<EFFICIENCY=130001> scale when determining the $LINK<inefficiency=25>.
 All negative $LINK<MORALE=130004> effects are cancelled for units in
 base square; instead such units receive a +1 MORALE modifier.
 ^
@@ -926,9 +926,9 @@ Increasing this value will increase your $LINK<energy=43> flow.
 ^ 0, Standard energy rates
 ^ 1, +1 energy each base
 ^ 2, +1 energy each square!
-^ 3, +1 energy/sq; +2 energy/base +1 commerce rating!!
-^ 4, +1 energy/sq; +4 energy/base; +2 commerce!!!
-^ 5, +1 energy/sq; +4 energy/base; +3 commerce
+^ 3, +1 energy each square; +1 commerce rating!!
+^ 4, +1 energy/sq; +2 energy/base; +2 commerce!!!
+^ 5, +1 energy/sq; +4 energy/base; +3 commerce!!!!
 
 #;EFFIC
 #HELPEFFECT1
