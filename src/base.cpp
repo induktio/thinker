@@ -96,6 +96,131 @@ void __cdecl base_compute(bool update_prev) {
     }
 }
 
+/*
+Calculate nutrient/mineral cost factors for base production.
+If the player faction is ranked first in the original game, the AI factions will get
+additional growth/industry bonuses. This can be optionally skipped with simple_cost_factor option.
+*/
+int __cdecl mod_cost_factor(int faction_id, BaseResType type, int base_id) {
+    int value;
+    int multiplier = (type == RSC_NUTRIENT ?
+        Rules->nutrient_cost_multi : Rules->mineral_cost_multi);
+
+    if (is_human(faction_id)) {
+        value = multiplier;
+    } else {
+        value = CostRatios[*DiffLevel];
+        if (!conf.simple_cost_factor) {
+            value -= (great_satan(FactionRankings[7], 0) != 0);
+            value -= (!*MultiplayerActive && is_human(FactionRankings[7]));
+        }
+        value = multiplier * value / 10;
+    }
+    if (*MapSizePlanet == 0) {
+        value = 8 * value / 10;
+    } else if (*MapSizePlanet == 1) {
+        value = 9 * value / 10;
+    }
+    if (type == RSC_MINERAL) {
+        switch (Factions[faction_id].SE_industry_pending) {
+            case -7:
+            case -6:
+            case -5:
+            case -4:
+            case -3:
+                value = (13 * value + 9) / 10;
+                break;
+            case -2:
+                value = (6 * value + 4) / 5;
+                break;
+            case -1:
+                value = (11 * value + 9) / 10;
+                break;
+            case 0:
+                break;
+            case 1:
+                value = (9 * value + 9) / 10;
+                break;
+            case 2:
+                value = (4 * value + 4) / 5;
+                break;
+            case 3:
+                value = (7 * value + 9) / 10;
+                break;
+            case 4:
+                value = (3 * value + 4) / 5;
+                break;
+            default: // +5 Industry or better
+                value = (value + 1) / 2;
+        }
+    } else if (type == RSC_NUTRIENT) {
+        int growth = Factions[faction_id].SE_growth_pending;
+        if (base_id >= 0) {
+            growth = Bases[base_id].SE_growth(SE_Pending);
+        }
+        value = (value * (10 - clamp(growth, -2, 5)) + 9) / 10;
+    }
+    return value;
+}
+
+/*
+Determine if the specified base has any restrictions around production item retooling.
+Return Value: Fixed value (-1, 0, 1, 2, 3, -70) or item_id
+*/
+int __cdecl mod_base_making(int item_id, int base_id) {
+    int retool = Rules->retool_strictness;
+    int faction_id = Bases[base_id].faction_id;
+    if ((has_fac_built(FAC_SKUNKWORKS, base_id)
+    || (MFactions[faction_id].rule_flags & RFLAG_FREEPROTO
+    && has_tech(Facility[FAC_SKUNKWORKS].preq_tech, faction_id)))
+    && retool >= 1) { // Do not override if retool strictness is already set to Always Free
+        retool = 1; // Skunkworks or FREEPROTO + prerequisite tech > 'Free in Category'
+    }
+    int value = 1; // Default return value if no other condition applies
+    if (item_id < 0) {
+        int queue_id = Bases[base_id].queue_items[0];
+        if (queue_id < 0 && queue_id >= -Fac_ID_Last
+        && has_fac_built((FacilityId)-queue_id, base_id)) {
+            value = -1; // Facility already completed, no retool penalty to change
+        }
+    }
+    if (value < 0) {
+        // No retool penalty
+    } else if (retool == 0) { // Always Free
+        value = 0;
+    } else if (retool == 1) { // Free in Category
+        if (item_id >= 0) {
+            value = 0;
+        } else {
+            value = (item_id > -SP_ID_First ? (item_id >= -Fac_ID_Last) + 2 : 1);
+        }
+    } else if (retool == 2) { // Free switching between SPs (default behavior)
+        value = (item_id <= -SP_ID_First ? -SP_ID_First : item_id);
+    } else if (retool == 3) { // Never Free
+        value = item_id;
+    }
+    assert(value == base_making(item_id, base_id));
+    return value;
+}
+
+/*
+Calculate the mineral loss if the production were changed at the specified base.
+Return Value: Minerals that would be lost or 0 if not applicable.
+*/
+int __cdecl mod_base_lose_minerals(int base_id, int UNUSED(item_id)) {
+    BASE* base = &Bases[base_id];
+    int min_accum = base->minerals_accumulated_2;
+    if (Rules->retool_penalty_prod_change
+    && is_human(base->faction_id)
+    && min_accum > Rules->retool_exemption
+    && mod_base_making(base->production_id_last, base_id)
+    != mod_base_making(base->queue_items[0], base_id)) {
+        return min_accum - (100 - Rules->retool_penalty_prod_change)
+            * (min_accum - Rules->retool_exemption) / 100 - Rules->retool_exemption;
+    }
+    return 0;
+}
+
 int __cdecl mod_base_production() {
     int base_id = *CurrentBaseID;
     BASE* base = &Bases[base_id];
@@ -128,6 +253,7 @@ void __cdecl mod_base_support() {
         {1, max((int)base->pop_size, 4)}, // 3, Support 4 units OR up to base size for free!!
     };
     const int support_val = clamp(f->SE_support_pending + 4, 0, 7);
+    const int support_mod = (is_human(base->faction_id) ? 0 : conf.unit_support_bonus[*DiffLevel]);
     const int support_type = (conf.modify_unit_support == 1 ? PLAN_SUPPLY :
         (conf.modify_unit_support == 2 ? PLAN_PROBE : PLAN_TERRAFORM));
     const int SE_police = base->SE_police(SE_Pending);
@@ -181,7 +307,7 @@ void __cdecl mod_base_support() {
                 if (!has_abil(veh->unit_id, ABL_CLEAN_REACTOR)) {
                     if (!veh->is_native_unit() || !sq->is_fungus()) {
                         (*BaseForcesSupported)++;
-                        if (*BaseForcesSupported > SupportCosts[support_val][1]) {
+                        if (*BaseForcesSupported > support_mod + SupportCosts[support_val][1]) {
                             veh->state |= VSTATE_REQUIRES_SUPPORT;
                             (*BaseForcesMaintCount)++;
                             (*BaseForcesMaintCost) += SupportCosts[support_val][0];
@@ -935,15 +1061,15 @@ void __cdecl mod_base_psych(int base_id) {
     adjust_psych(base, 0, 0); // while (talent_total + drone_total + superdrone_total > pop_size)
     add_psych_row(base, 0); // Unmodified / Captured Base
 
-    // Original version limits psych allocation effects at twice the base size
-    // Additional psych energy is used here for diminishing returns
+    // Original version (psych_val) limits psych allocation effects at twice the base size
+    // Additional psych energy (addon_val) is used here with diminishing returns
     int psych_val = max(0, min(base->psych_total/2, base->pop_size - base->talent_total));
     int addon_val = base->psych_total/2 - psych_val;
-    int addon_cost = 4;
+    int addon_cost = 2;
     while (addon_val >= addon_cost) {
         psych_val++;
         addon_val -= addon_cost;
-        addon_cost += 4;
+        addon_cost += 2;
     }
     adjust_psych(base, psych_val, 0);
     add_psych_row(base, 1); // Psych

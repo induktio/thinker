@@ -489,6 +489,10 @@ bool patch_setup(Config* cf) {
     write_jump(0x591040, (int)map_wipe);
     write_jump(0x591E50, (int)synch_bit);
     write_jump(0x592250, (int)say_loc);
+    write_jump(0x592550, (int)find_landmark);
+    write_jump(0x592600, (int)new_landmark);
+    write_jump(0x592650, (int)valid_landmark);
+    write_jump(0x5926F0, (int)kill_landmark);
     write_jump(0x59D980, (int)prefs_get2);
     write_jump(0x59DA20, (int)default_prefs);
     write_jump(0x59DAA0, (int)default_prefs2);
@@ -712,6 +716,19 @@ bool patch_setup(Config* cf) {
     write_call(0x4F077E, (int)mod_facility_avail); // base_queue
     write_call(0x4FD920, (int)mod_facility_avail); // base_build
     write_call(0x4FF2D4, (int)mod_facility_avail); // base_build
+    write_call(0x4FD672, (int)mod_base_lose_minerals); // base_build
+    write_call(0x4FEF55, (int)mod_base_lose_minerals); // base_build
+    write_call(0x4FF909, (int)mod_base_lose_minerals); // base_build
+    write_call(0x4179A8, (int)mod_base_making); // BaseWin::production
+    write_call(0x4179BC, (int)mod_base_making); // BaseWin::production
+    write_call(0x417A2E, (int)mod_base_making); // BaseWin::production
+    write_call(0x417A3F, (int)mod_base_making); // BaseWin::production
+    write_call(0x4932D3, (int)mod_base_making); // ProdPicker::calculate
+    write_call(0x4932E5, (int)mod_base_making); // ProdPicker::calculate
+    write_call(0x49365A, (int)mod_base_making); // ProdPicker::calculate
+    write_call(0x49366B, (int)mod_base_making); // ProdPicker::calculate
+    write_call(0x4E5B06, (int)mod_base_making); // base_change
+    write_call(0x4E5B1B, (int)mod_base_making); // base_change
     write_call(0x52B0E1, (int)mod_wants_to_attack); // wants_prop
     write_call(0x52B0F4, (int)mod_wants_to_attack); // wants_prop
     write_call(0x52B21A, (int)mod_wants_to_attack); // wants_prop
@@ -793,14 +810,16 @@ bool patch_setup(Config* cf) {
     write_call(0x50274A, (int)mod_get_basic_offense); // battle_compute
     write_call(0x5044EB, (int)mod_get_basic_offense); // battle_compute
     write_call(0x502A69, (int)mod_get_basic_defense); // battle_compute
+    write_call(0x506D07, (int)mod_best_defender); // battle_fight_2
     write_call(0x50474C, (int)mod_battle_compute); // best_defender
+    write_call(0x506EA6, (int)mod_battle_compute); // battle_fight_2
+    write_call(0x5085E0, (int)mod_battle_compute); // battle_fight_2
     write_call(0x506ADE, (int)mod_battle_fight_2); // battle_fight_1
     write_call(0x568B1C, (int)mod_battle_fight_2); // air_power
     write_call(0x5697AC, (int)mod_battle_fight_2); // air_power
     write_call(0x56A2E2, (int)mod_battle_fight_2); // air_power
-    write_call(0x506D07, (int)mod_best_defender); // battle_fight_2
-    write_call(0x506EA6, (int)mod_battle_compute); // battle_fight_2
-    write_call(0x5085E0, (int)mod_battle_compute); // battle_fight_2
+    write_call(0x4CACFD, (int)mod_battle_fight); // action_destroy
+    write_call(0x567234, (int)mod_battle_fight); // alien_move
     write_call(0x436796, (int)transport_val); // DesignWin::draw_unit_preview
     write_call(0x5A5F3D, (int)transport_val); // make_proto
     write_call(0x4930F8, (int)mod_veh_avail); // ProdPicker::calculate

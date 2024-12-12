@@ -1091,6 +1091,26 @@ void __cdecl promote(int veh_id) {
     }
 }
 
+int __cdecl mod_battle_fight(int veh_id, int offset, int table_offset, int option, int* def_id)
+{
+    VEH* veh = &Vehs[veh_id];
+    int x2, y2;
+    if (table_offset) {
+        x2 = wrap(veh->x + TableOffsetX[offset]);
+        y2 = veh->y + TableOffsetY[offset];
+    } else {
+        x2 = wrap(veh->x + BaseOffsetX[offset]);
+        y2 = veh->y + BaseOffsetY[offset];
+    }
+    for (int i = 0; i < *VehCount; i++) {
+        if (Vehs[i].x == x2 && Vehs[i].y == y2 && Vehs[i].faction_id == veh->faction_id) {
+            // Skip alien_move or action_destroy artillery attack on friendly units
+            return 0;
+        }
+    }
+    return mod_battle_fight_2(veh_id, offset, x2, y2, table_offset, option, def_id);
+}
+
 int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int table_offset, int option, int* def_id)
 {
     const int player_id = MapWin->cOwner;
@@ -1148,13 +1168,11 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
     if (veh_id_def >= 0) {
         veh_def = &Vehs[veh_id_def];
         faction_id_def = veh_def->faction_id;
-        // TODO: alien_move may assign units incorrect attack orders
         if (DEBUG && option && faction_id_atk == faction_id_def) {
             print_veh(veh_id_atk);
             print_veh_stack(tx, ty);
         }
-        assert(faction_id_atk != faction_id_def || !option
-            || (!faction_id_atk && veh_atk->unit_id == BSC_SPORE_LAUNCHER));
+        assert(faction_id_atk != faction_id_def || !option);
     } else {
         assert(veh_id_def >= 0);
         return 2;
@@ -1483,10 +1501,8 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
         render_battle |= render_tile;
     }
     assert(veh_atk->x != veh_def->x || veh_atk->y != veh_def->y);
-    assert(veh_atk->faction_id != veh_def->faction_id
-        || (!faction_id_atk && veh_atk->unit_id == BSC_SPORE_LAUNCHER));
-    assert(veh_atk->is_probe() || veh_def->is_artifact() || at_war(faction_id_atk, faction_id_def)
-        || (!faction_id_atk && veh_atk->unit_id == BSC_SPORE_LAUNCHER));
+    assert(veh_atk->faction_id != veh_def->faction_id);
+    assert(veh_atk->is_probe() || veh_def->is_artifact() || at_war(faction_id_atk, faction_id_def));
 
     if (combat_type == CT_CAN_ARTY) {
         assert(can_arty(veh_atk->unit_id, true));

@@ -35,5 +35,6 @@ bool use_nerve_gas(int faction_id_atk);
 void __cdecl promote(int veh_id);
 void __cdecl add_bat(int type, int modifier, const char* display_str);
 void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out, int* defense_out, int combat_type);
+int __cdecl mod_battle_fight(int veh_id, int offset, int table_offset, int option, int* def_id);
 int __cdecl mod_battle_fight_2(int veh_id, int offset, int tx, int ty, int table_offset, int option, int* def_id);
 

@@ -409,8 +409,9 @@ void plans_upkeep(int faction_id) {
         plan_upkeep_turn = *CurrentTurn;
     }
     if (thinker_enabled(faction_id) || governor) {
-        int minerals[MaxBaseNum] = {};
-        int population[MaxBaseNum] = {};
+        int base_pop[MaxBaseNum] = {};
+        int base_min[MaxBaseNum] = {};
+        int base_eng[MaxBaseNum] = {};
         Faction* f = &Factions[fc];
         AIPlans* p = &plans[fc];
         memset((void*)p, 0, sizeof(AIPlans));
@@ -486,8 +487,9 @@ void plans_upkeep(int faction_id) {
             BASE* base = &Bases[i];
             MAP* sq;
             if (base->faction_id == faction_id) {
-                population[n] = base->pop_size;
-                minerals[n] = base->mineral_surplus;
+                base_pop[n] = base->pop_size;
+                base_min[n] = base->mineral_surplus;
+                base_eng[n] = base->energy_surplus;
                 n++;
                 // Update enemy base threat distances
                 int base_region = region_at(base->x, base->y);
@@ -529,19 +531,21 @@ void plans_upkeep(int faction_id) {
                 + min(2, p->captured_bases/2)
                 + min(2, p->enemy_factions/2), 1, 4);
         }
-        std::sort(minerals, minerals+n);
-        std::sort(population, population+n);
+        std::sort(base_pop, base_pop+n);
+        std::sort(base_min, base_min+n);
+        std::sort(base_eng, base_eng+n);
         if (f->base_count >= 32) {
-            p->project_limit = max(5, minerals[n*3/4]);
+            p->project_limit = max(5, base_min[n*3/4]);
         } else {
-            p->project_limit = max(5, minerals[n*2/3]);
+            p->project_limit = max(5, base_min[n*2/3]);
         }
         bool full_value = has_tech(Facility[FAC_AEROSPACE_COMPLEX].preq_tech, faction_id)
             || has_project(FAC_CLOUDBASE_ACADEMY, faction_id)
             || has_project(FAC_SPACE_ELEVATOR, faction_id);
-        p->median_limit = max(5, minerals[n/2]);
+        p->median_limit = max(5, base_min[n/2]);
+        p->energy_limit = max(15, base_eng[n*3/4]);
         p->satellite_goal = min(conf.max_satellites,
-            population[n*7/8] * (full_value ? 1 : 2));
+            base_pop[n*7/8] * (full_value ? 1 : 2));
 
         debug("plans_upkeep %d %d proj_limit: %2d sat_goal: %2d psi: %2d keep_fungus: %d "\
             "plant_fungus: %d enemy_bases: %2d enemy_mil: %.4f enemy_range: %.4f\n",

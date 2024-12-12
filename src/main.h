@@ -293,6 +293,7 @@ struct Config {
     int collateral_damage_value = 3;
     int content_pop_player[MaxDiffNum] = {6,5,4,3,2,1};
     int content_pop_computer[MaxDiffNum] = {3,3,3,3,3,3};
+    int unit_support_bonus[MaxDiffNum] = {0,0,0,0,0,0};
     int repair_minimal = 1;
     int repair_fungus = 2;
     int repair_friendly = 1;
@@ -352,6 +353,7 @@ struct AIPlans {
     */
     int project_limit = 5;
     int median_limit = 5;
+    int energy_limit = 15;
     /*
     PSI combat units are only selected for production if this score is higher than zero.
     Higher values will make the prototype picker choose these units more often.

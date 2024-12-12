@@ -109,27 +109,37 @@ int __cdecl mod_base_hurry() {
         || t == -FAC_TREE_FARM || t == -FAC_HEADQUARTERS) {
             return hurry_item(base_id, mins, cost);
         }
-        if (t == -FAC_CHILDREN_CRECHE && base_unused_space(base_id) > 2) {
+        if (t == -FAC_CHILDREN_CRECHE && base_unused_space(base_id) > 2
+        && b->nutrient_surplus > 0 && f->SE_growth_pending < 6) {
             return hurry_item(base_id, mins, cost);
         }
-        if (t == -FAC_HAB_COMPLEX && base_unused_space(base_id) == 0) {
+        if ((t == -FAC_HAB_COMPLEX || t == -FAC_HABITATION_DOME)
+        && base_unused_space(base_id) == 0 && b->nutrient_surplus > 0) {
             return hurry_item(base_id, mins, cost);
         }
-        if (t == -FAC_PERIMETER_DEFENSE && b->defend_goal > 2 && p->enemy_factions > 0) {
+        if ((t == -FAC_GENEJACK_FACTORY || t == -FAC_ROBOTIC_ASSEMBLY_PLANT
+        || t == -FAC_NANOREPLICATOR || t == -FAC_QUANTUM_CONVERTER)
+        && b->mineral_intake > Facility[-t].cost + 2*Facility[-t].maint
+        && b->mineral_intake_2 < 40) {
             return hurry_item(base_id, mins, cost);
         }
-        if (t == -FAC_AEROSPACE_COMPLEX && has_tech(TECH_Orbital, b->faction_id)) {
+        if (t == -FAC_PERIMETER_DEFENSE && b->defend_range < 12 && p->enemy_factions > 0) {
+            return hurry_item(base_id, mins, cost);
+        }
+        if (t == -FAC_AEROSPACE_COMPLEX
+        && (f->satellites_ODP > 0 || f->satellites_nutrient > 0
+        || f->satellites_mineral > 0 || f->satellites_energy > 0)) {
             return hurry_item(base_id, mins, cost);
         }
     }
-    if (t >= 0 && turns > 1 && cost < f->energy_credits/4 && mins < 45) {
+    if (t >= 0 && turns > 1 && cost < f->energy_credits/8 && mins < 35) {
         if (Units[t].is_combat_unit()) {
-            int val = (cost < f->energy_credits/8)
-                + (cost < f->energy_credits/16)
+            int val = (cost < f->energy_credits/16)
                 + (p->enemy_bases > 0)
                 + (p->enemy_factions > 0)
                 + (b->defend_goal > 2)
-                + (b->defend_range < 10)
+                + (b->defend_range < 8)
+                + (b->defend_range < 12)
                 + ((b->state_flags & BSTATE_COMBAT_LOSS_LAST_TURN) != 0)
                 + 2*(!has_defenders(b->x, b->y, b->faction_id));
             if (val > 4) {
@@ -833,8 +843,9 @@ int select_build(int base_id) {
         {FAC_EMPTY_FACILITY_45,      0, 2, 2, 0, 0},
     };
     score_max_queue_t builds;
-    int Wenergy = has_fac_built(FAC_PUNISHMENT_SPHERE, base_id) ? 1 : 2;
     int Wt = 8;
+    int Wenergy = (has_fac_built(FAC_PUNISHMENT_SPHERE, base_id) ? 1 : 2)
+        * (base->energy_surplus >= max(p->energy_limit, 2*base->energy_inefficiency) ? 2 : 1);
 
     for (const auto& item : build_order) {
         const int t = item.item_id;
@@ -997,6 +1008,9 @@ int select_build(int base_id) {
             if ((base->pop_size <= content_pop_value && !base->drone_total && !base->specialist_total)
             || (base->talent_total > 0 && !base->drone_total && !base->specialist_total)) {
                 continue;
+            }
+            if (Facility[t].cost + 2*Facility[t].maint < 10) {
+                score += (base->specialist_adjust > 0 && base->pop_size > 3 ? 40 : 0);
             }
             score += 80*drone_riots + max(16, 8*(5 - Facility[t].maint))*drones;
             score += 8*clamp(drones - base->talent_total, -4, 4);

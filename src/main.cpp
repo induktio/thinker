@@ -250,6 +250,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         opt_list_parse(cf->content_pop_player, buf, MaxDiffNum, 0);
     } else if (MATCH("content_pop_computer")) {
         opt_list_parse(cf->content_pop_computer, buf, MaxDiffNum, 0);
+    } else if (MATCH("unit_support_bonus")) {
+        opt_list_parse(cf->unit_support_bonus, buf, MaxDiffNum, 0);
     } else if (MATCH("repair_minimal")) {
         cf->repair_minimal = clamp(atoi(value), 0, 10);
     } else if (MATCH("repair_fungus")) {

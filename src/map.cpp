@@ -339,6 +339,30 @@ int __cdecl has_temple(int faction_id) {
     return false;
 }
 
+/*
+Search for the first landmark found within the radius range of the specified tile.
+Return Value: Landmark offset or -1 if none found
+*/
+int __cdecl find_landmark(int x, int y, size_t range_offset) {
+    int offset = TableRange[range_offset];
+    for (int i = 0; i < offset; i++) {
+        int x2 = wrap(x + TableOffsetX[i]);
+        int y2 = y + TableOffsetY[i];
+        if (mapsq(x2, y2)) {
+            for (int lm = 0; lm < *MapLandmarkCount; lm++) {
+                if (x2 == Landmarks[lm].x && y2 == Landmarks[lm].y) {
+                    return lm;
+                }
+            }
+        }
+    }
+    return -1;
+}
+
+/*
+Set up a new landmark with the provided name at the specified tile.
+Return Value: Landmark offset or -1 if max landmark count is reached
+*/
 int __cdecl new_landmark(int x, int y, const char* name) {
     int offset = *MapLandmarkCount;
     if (offset >= MaxLandmarkNum) {
@@ -349,6 +373,39 @@ int __cdecl new_landmark(int x, int y, const char* name) {
     Landmarks[offset].y = y;
     strcpy_n(&Landmarks[offset].name[0], 32, name);
     return offset;
+}
+
+/*
+Check whether the specified faction has permission to name a landmark on the provided tile.
+Return Value: Does the faction have control of the tile to set a landmark? true/false
+*/
+int __cdecl valid_landmark(int x, int y, int faction_id) {
+    MAP* sq;
+    int owner = *MultiplayerActive ? (sq = mapsq(x, y), sq ? sq->owner : -1)
+        : mod_whose_territory(faction_id, x, y, NULL, false);
+    if (owner == faction_id) {
+        return true;
+    }
+    if (owner > 0) {
+        return false;
+    }
+    int base_id = base_find(x, y);
+    return base_id < 0 || Bases[base_id].faction_id == faction_id;
+}
+
+/*
+Remove the landmark at the specified tile.
+*/
+void __cdecl kill_landmark(int x, int y) {
+    int remove_id = find_landmark(x, y, 1);
+    if (remove_id >= 0) {
+        if (remove_id < (*MapLandmarkCount - 1)) {
+            memmove_s(&Landmarks[remove_id], sizeof(Landmark) * MaxLandmarkNum,
+                &Landmarks[remove_id + 1],
+                sizeof(Landmark) * (*MapLandmarkCount - remove_id - 1));
+        }
+        *MapLandmarkCount -= 1;
+    }
 }
 
 /*

@@ -21,7 +21,6 @@ int __cdecl game_start_turn();
 int __cdecl game_year(int n);
 int __cdecl in_box(int x, int y, RECT* rc);
 void __cdecl bitmask(uint32_t input, uint32_t* offset, uint32_t* mask);
-int __cdecl mod_cost_factor(int faction_id, BaseResType type, int base_id);
 
 void show_rules_menu();
 void init_world_config();
