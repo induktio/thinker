@@ -560,6 +560,7 @@ int search_route(TileSearch& ts, int veh_id, int* tx, int* ty) {
     bool combat = veh->is_combat_unit();
     bool scout = combat && !bad_reg(veh_reg)
         && Continents[veh_reg].pods > Continents[veh_reg].tile_count/32;
+    bool at_base = sq->is_base() && sq->owner == veh->faction_id;
     bool same_reg = false;
     bool has_gate = false;
     int best_score = INT_MIN;
@@ -611,14 +612,16 @@ int search_route(TileSearch& ts, int veh_id, int* tx, int* ty) {
                 py = base->y;
                 best_score = score;
             }
-            if(veh->x == base->x && veh->y == base->y && can_use_teleport(i)) {
+            if (veh->x == base->x && veh->y == base->y && can_use_teleport(i)) {
                 has_gate = true;
             }
         }
     }
     ts.init(veh->x, veh->y, TS_TERRITORY_PACT);
     best_score = INT_MIN;
-
+    if (at_base && veh->is_artifact()) {
+        best_score = route_score(veh, veh->x, veh->y, 1, sq);
+    }
     while ((sq = ts.get_next()) != NULL) {
         if (ts.dist == 1 && (!combat || !scout)
         && mapnodes.count({ts.rx, ts.ry, NODE_NAVAL_PICK})
@@ -630,7 +633,7 @@ int search_route(TileSearch& ts, int veh_id, int* tx, int* ty) {
                 return true;
             }
             if (!veh->iter_count || random(4)) {
-                debug("search_route wait %2d %2d\n", ts.rx, ts.ry);
+                debug("search_route skip %2d %2d\n", ts.rx, ts.ry);
                 return false;
             }
         }
@@ -674,7 +677,7 @@ int search_route(TileSearch& ts, int veh_id, int* tx, int* ty) {
             return true;
         }
     }
-    if (px >= 0 && !same_reg) {
+    if (px >= 0 && !same_reg && (!at_base || !veh->is_artifact())) {
         PointList start;
         start.push_front({px, py});
         ts.init(px, py, TS_TERRITORY_PACT);

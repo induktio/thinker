@@ -861,8 +861,10 @@ int robust, int immunity, int impunity, int penalty) {
             }
         }
     }
+    // AIs also take into account Social Effect priorities whenever social_ai_bias >= 10
     if (m->soc_priority_effect >= 0 && m->soc_priority_effect < MaxSocialEffectNum) {
-        sc += clamp(vals[m->soc_priority_effect], -4, 4);
+        sc += clamp(vals[m->soc_priority_effect], -4, 4)
+            * clamp(conf.social_ai_bias / 10, 0, 2);
     }
     if (vals[ECO] >= 2) {
         sc += (vals[ECO] >= 4 ? 16 : 12);

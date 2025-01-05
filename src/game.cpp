@@ -125,6 +125,21 @@ void init_save_game(int faction_id) {
     m->thinker_unused[1] = 0;
     m->thinker_unused[2] = 0;
     /*
+    COMMFREQ = Gets an extra comm frequency (another faction to talk to) at beginning of game.
+    */
+    if (m->rule_flags & RFLAG_COMMFREQ && *CurrentTurn == 1) {
+        std::set<int> plrs;
+        for (int i = 1; i < MaxPlayerNum; i++) {
+            if (faction_id != i && is_alive(i)) {
+                plrs.insert({i});
+            }
+        }
+        if (plrs.size()) {
+            int plr_id = pick_random(plrs);
+            net_set_treaty(faction_id, plr_id, DIPLO_COMMLINK, 1, 0);
+        }
+    }
+    /*
     Remove invalid prototypes from the savegame.
     This also attempts to repair invalid vehicle stacks to prevent game crashes.
     Stack iterators should never contain infinite loops or vehicles from multiple tiles.

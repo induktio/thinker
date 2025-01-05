@@ -1265,6 +1265,9 @@ Get the default value for the 1st set of preferences.
 */
 uint32_t __cdecl default_prefs() {
     uint32_t base_prefs = DefaultBasePref;
+    if (conf.ignore_reactor_power) {
+        base_prefs &= ~PREF_BSC_AUTO_DESIGN_VEH;
+    }
     return prefs_get("Laptop", 0, false) ? base_prefs :
         base_prefs | PREF_AV_SECRET_PROJECT_MOVIES | PREF_AV_SLIDING_WINDOWS | PREF_AV_MAP_ANIMATIONS;
 }
@@ -1274,6 +1277,10 @@ Get the default value for the 2nd set of preferences.
 */
 uint32_t __cdecl default_prefs2() {
     uint32_t base_prefs2 = DefaultMorePref;
+    if (conf.ignore_reactor_power) {
+        // Skip possibly redundant upgrade prototype dialogs when new reactor techs are discovered
+        base_prefs2 &= ~MPREF_BSC_AUTO_PRUNE_OBS_VEH;
+    }
     return prefs_get("Laptop", 0, false) ? base_prefs2 : base_prefs2 | MPREF_AV_SLIDING_SCROLLBARS;
 }
 

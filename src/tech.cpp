@@ -512,7 +512,7 @@ int __cdecl mod_tech_ai(int faction_id) {
                 int preq = tech_level(i, 0); // Replaces tech_recurse
                 tech_value = preq ? (tech_value << 8) / preq : 0;
             }
-            // Multiple functions might be related to network multiplayer
+            // TODO: investigate if multiple random functions are necessary
             int value = is_human(faction_id) ? game_random(0, tech_value + 1)
                 : (tech_value > 0 ? game_rand() % (tech_value + 1) : 0);
             if (value > best_value) {

@@ -1055,12 +1055,12 @@ void show_mod_stats()
     int total_pop = 0,
         total_minerals = 0,
         total_energy = 0,
+        faction_bases = 0,
         faction_pop = 0,
         faction_units = 0,
         faction_minerals = 0,
         faction_energy = 0;
 
-    Faction* f = &Factions[MapWin->cOwner];
     for (int i = 0; i < *BaseCount; ++i) {
         BASE* b = &Bases[i];
         int mindiv = (has_project(FAC_SPACE_ELEVATOR, b->faction_id)
@@ -1069,6 +1069,7 @@ void show_mod_stats()
              || b->item() == -FAC_ORBITAL_POWER_TRANS
              || b->item() == -FAC_SKY_HYDRO_LAB) ? 2 : 1);
         if (b->faction_id == MapWin->cOwner) {
+            faction_bases++;
             faction_pop += b->pop_size;
             faction_minerals += b->mineral_intake_2 / mindiv;
             faction_energy += b->energy_intake_2;
@@ -1088,9 +1089,9 @@ void show_mod_stats()
     ParseNumTable[2] = total_pop;
     ParseNumTable[3] = total_minerals;
     ParseNumTable[4] = total_energy;
-    ParseNumTable[5] = f->base_count;
+    ParseNumTable[5] = faction_bases;
     ParseNumTable[6] = faction_units;
-    ParseNumTable[7] = f->pop_total;
+    ParseNumTable[7] = faction_pop;
     ParseNumTable[8] = faction_minerals;
     ParseNumTable[9] = faction_energy;
     popp("modmenu", "STATS", 0, "markbm_sm.pcx", 0);
