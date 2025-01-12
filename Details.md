@@ -221,6 +221,8 @@ Cost to Change Society. The cost to change social engineering is affected by the
 
 Hurry and upgrade formulas
 ==========================
+![Hurry dialog displays the minimum cost to complete production on the next turn.](/tools/hurry_dialog.png)
+
 To ease calculations, `simple_hurry_cost` option removes the double cost penalty from production hurrying when the accumulated minerals are less than the Retool penalty set in alphax.txt. Otherwise the hurry cost formula is equal to the vanilla game mechanics.
 
 In both cases, rushing facilities cost 2 credits per mineral and secret projects cost 4 credits per mineral. In addition secret projects have a second double cost penalty if the accumulated minerals are less than 40.
@@ -467,6 +469,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 56. Patch the game to also parse "Free Technology" defined for each facility. This causes new bases to have these facilities built for free while it does not exclude facility maintenance costs.
 57. Faction config reader also parses social effect priority/opposition values (e.g. ECONOMY) defined for each faction. These may have minor effect on AI social engineering choices while original game always ignored these values.
 58. Modify energy inefficiency formula when the faction does not have headquarters active in which case distance is always treated at least 16. When the faction base count is between 32 and 96, this default distance increases linearly from 16 to 32.
+59. Enable COMMFREQ faction ability to grant one extra comm frequency at the game start. Previously this ability was skipped by the game.
 
 
 Scient's patch

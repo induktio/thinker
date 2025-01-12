@@ -709,7 +709,7 @@ int __cdecl society_avail(int soc_category, int soc_model, int faction_id) {
 int __cdecl mod_setup_player(int faction_id, int a2, int a3) {
     Faction* f = &Factions[faction_id];
     MFaction* m = &MFactions[faction_id];
-    debug("setup_player %d %d %d %d\n", *CurrentTurn, faction_id, a2, a3);
+    debug("setup_player %d %d %d %d %s\n", *CurrentTurn, faction_id, a2, a3, m->filename);
     if (!faction_id) {
         return setup_player(faction_id, a2, a3);
     }

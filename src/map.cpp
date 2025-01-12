@@ -1262,11 +1262,6 @@ bool valid_start(int faction_id, int iter, int x, int y) {
     bool aquatic = MFactions[faction_id].is_aquatic();
     int native_limit = (goodtiles.size() > 0 ? 3 : 2) + ((int)natives.size() < *MapAreaTiles/80);
     int spawn_limit = max((*MapAreaTiles < 1600 ? 5 : 7), 8 - iter/80);
-    int min_sc = 80 - iter/4;
-    int sea = 0;
-    int sc = 0;
-    int xd = 0;
-    int yd = 0;
 
     if (!sq || sq->items & BIT_BASE_DISALLOWED || (sq->is_rocky() && !is_ocean(sq))) {
         return false;
@@ -1281,7 +1276,13 @@ bool valid_start(int faction_id, int iter, int x, int y) {
     if (min_range(natives, x, y) < max(native_limit, 8 - iter/16)) {
         return false;
     }
-    if (min_range(spawns, x, y) < max(spawn_limit, *MapAreaSqRoot/4 + 8 - iter/8)) {
+    int spawn_range = min_range(spawns, x, y);
+    int min_sc = 80 - iter/4 + 20 * max(0, 11 - spawn_range);
+    int sea = 0;
+    int sc = 0;
+    int xd = 0;
+    int yd = 0;
+    if (spawn_range < clamp(*MapAreaSqRoot/4 + 10 - iter/8, spawn_limit, 32)) {
         return false;
     }
     if (aquatic) {

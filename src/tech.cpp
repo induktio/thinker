@@ -282,6 +282,7 @@ int __cdecl mod_tech_val(int tech_id, int faction_id, int simple_calc) {
             value = (value + 1) / 2;
         }
         bool is_player = is_human(faction_id);
+        int tech_id_lvl = tech_level(tech_id, 0);
         if (!is_player && !has_tech(tech_id, faction_id) && simple_calc) {
             int owners = __builtin_popcount(TechOwners[tech_id]);
             if (owners > 1) {
@@ -296,7 +297,6 @@ int __cdecl mod_tech_val(int tech_id, int faction_id, int simple_calc) {
                     }
                 }
             }
-            int tech_id_lvl = tech_level(tech_id, 0);
             if (tech_id_lvl < search_lvl) {
                 value = value * (tech_id_lvl + 1) / (search_lvl + 1);
             }
@@ -463,15 +463,17 @@ int __cdecl mod_tech_val(int tech_id, int faction_id, int simple_calc) {
         }
         assert(value == tech_val(tech_id, faction_id, simple_calc));
         if (conf.tech_balance) {
-            if (tech_id == Weapon[WPN_TERRAFORMING_UNIT].preq_tech
-            || tech_id == Weapon[WPN_SUPPLY_TRANSPORT].preq_tech
+            bool high_cost = conf.revised_tech_cost && tech_id_lvl > 2;
+            if (tech_id == Weapon[WPN_TERRAFORMING_UNIT].preq_tech) {
+                value += (high_cost ? 60 : 120);
+            } else if (tech_id == Weapon[WPN_SUPPLY_TRANSPORT].preq_tech
             || tech_id == Facility[FAC_RECYCLING_TANKS].preq_tech
             || tech_id == Facility[FAC_CHILDREN_CRECHE].preq_tech
             || tech_id == Facility[FAC_RECREATION_COMMONS].preq_tech
             || tech_id == Rules->tech_preq_allow_3_nutrients_sq
             || tech_id == Rules->tech_preq_allow_3_minerals_sq
             || tech_id == Rules->tech_preq_allow_3_energy_sq) {
-                value += (enemy_count ? 20 : 40);
+                value += (high_cost ? 20 : 40);
             }
         }
     } else if (tech_id < 97) { // Factions
@@ -586,6 +588,7 @@ int __cdecl tech_alt_val(int tech_id, int faction_id, int flag) {
     int level = clamp(tech_level(tech_id, 0), 1, 16);
     int owners = __builtin_popcount(TechOwners[tech_id]);
     int weights = (tech.flags & (TFLAG_IMPROVE_PROBE|TFLAG_INC_COMMERCE) ? 4 : 0)
+        + 4*(tech_id == Weapon[WPN_TERRAFORMING_UNIT].preq_tech)
         + 4*(tech_id == Rules->tech_preq_allow_3_nutrients_sq)
         + 4*(tech_id == Rules->tech_preq_allow_3_minerals_sq)
         + 4*(tech_id == Rules->tech_preq_allow_3_energy_sq)

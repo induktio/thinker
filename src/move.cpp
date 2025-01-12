@@ -2839,7 +2839,7 @@ int combat_move(const int id) {
     Current minimum odds for the unit to engage in any combat.
     Tolerate worse odds if the faction has many more expendable units available.
     */
-    double best_odds = (at_base && defenders < 1 ? 1.4 : 1.2)
+    double best_odds = (at_base && defenders < 1 ? 1.5 : 1.2)
         - (at_enemy ? 0.15 : 0)
         - 0.008*min(50, mapdata[{veh->x, veh->y}].unit_near)
         - 0.0005*min(500, p.land_combat_units + p.sea_combat_units);

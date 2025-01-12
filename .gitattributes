@@ -1,5 +1,5 @@
 # normalize source files to use lf
-* eol=lf
+* text=auto eol=lf
 *.c eol=lf
 *.cc eol=lf
 *.cpp eol=lf

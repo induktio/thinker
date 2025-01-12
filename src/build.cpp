@@ -862,7 +862,7 @@ int select_build(int base_id) {
         }
         if (t == Satellites && gov & GOV_MAY_PROD_FACILITIES && minerals >= p->median_limit) {
             if ((choice = find_satellite(base_id)) != 0) {
-                score += 2*min(40, f->base_count - 10);
+                score += 4*min(40, f->base_count - 5);
                 push_item(base, builds, choice, score, --Wt);
                 continue;
             }
