@@ -768,7 +768,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
     } else if (debug_cmd && wParam == 'c' && alt_key_down()
     && *GameState & STATE_SCENARIO_EDITOR && *GameState & STATE_OMNISCIENT_VIEW
-    && (sq = mapsq(MapWin->iTileX, MapWin->iTileY)) && sq->landmarks) {
+    && (sq = mapsq(MapWin->iTileX, MapWin->iTileY)) && sq->lm_items()) {
         uint32_t prev_state = MapWin->iWhatToDrawFlags;
         MapWin->iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
         refresh_overlay(code_at);

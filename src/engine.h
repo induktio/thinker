@@ -535,6 +535,7 @@ typedef int(__thiscall *FNetMsg_pop)(
     void* This, const char* label, int delay, int a4, const char* filename);
 typedef int(__cdecl *FNetMsg_pop2)(const char* label, const char* filename);
 typedef int(__thiscall *FBaseButton_text)(BaseButton* This, char* text);
+typedef int(__cdecl *Fgame_fgets)(char* buf, int len, FILE* file);
 
 extern FGenString amovie_project;
 extern FPOP2 POP2;
@@ -576,6 +577,7 @@ extern fp_2int game_random; // renamed, seeded by game_reseed
 extern fp_1int game_reseed; // renamed
 extern fp_none game_rand;   // renamed, seeded by game_srand
 extern fp_1int game_srand;  // renamed
+extern Fgame_fgets game_fgets; // renamed, standard library call
 
 typedef int(__thiscall *FConsole)(Console* This);
 typedef int(__thiscall *FConsole_new_base)(Console* This, int a2);
@@ -1867,12 +1869,12 @@ extern fp_none text_shutdown;
 extern fp_none text_dtor;
 extern fp_none text_close;
 extern Ftext_open text_open;
-extern fp_none text_get;
-extern fp_none text_string;
-extern Ftext_item text_item;
-extern Ftext_item text_item_string;
-extern fp_none text_item_number;
-extern fp_none text_item_binary;
+//extern fp_none text_get;
+//extern fp_none text_string;
+//extern Ftext_item text_item;
+//extern Ftext_item text_item_string;
+//extern fp_none text_item_number;
+//extern fp_none text_item_binary;
 extern FGenString text_make_index;
 extern fp_none text_clear_index;
 extern FStrings Strings_Strings;

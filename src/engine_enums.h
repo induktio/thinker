@@ -550,8 +550,8 @@ enum DiploStatus {
     DIPLO_RENEW_INFILTRATOR = 0x8000, // infiltration done on this turn
     DIPLO_UNK_10000 = 0x10000, // "informal" truce status?
     DIPLO_UNK_20000 = 0x20000,
-    DIPLO_ATROCITY_VICTIM = 0x40000,
-    DIPLO_UNK_80000 = 0x80000,
+    DIPLO_ATROCITY_VICTIM = 0x40000, // atrocity / major_atrocity
+    DIPLO_MAJOR_ATROCITY_VICTIM = 0x80000, // major_atrocity
     DIPLO_UNK_100000 = 0x100000,
     DIPLO_UNK_200000 = 0x200000,
     DIPLO_UNK_400000 = 0x400000,

@@ -41,6 +41,33 @@ writes output to `debug.txt` in the game folder if the game happens to crash for
 Original game mechanics
 =======================
 
+Faction definition files
+------------------------
+Due to limitations in the savegame format, the faction txt file parser is able to read only up to eight different
+special rules with separate parameters for each faction. Any additional parameter-specific rules encountered in
+the faction file are simply ignored. All of the rules limited in number are listed below.
+
+* TECH (when used with alphabetic tech keys and not numbers)
+* FACILITY
+* UNIT
+* SOCIAL
+* ROBUST
+* IMMUNITY
+* IMPUNITY
+* PENALTY
+* FUNGNUTRIENT
+* FUNGMINERALS
+* FUNGENERGY
+* VOTES
+* FREEFAC
+* REVOLT
+* NODRONE
+* FREEABIL
+* PROBECOST
+* DEFENSE
+* OFFENSE
+
+
 Spawning mind worms
 -------------------
 Whenever an unit not owned by the planet tries to enter a fungus tile that is not occupied by anyone, the game

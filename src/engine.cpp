@@ -294,6 +294,7 @@ fp_2int game_random                        = (fp_2int              )0x625810;
 fp_1int game_reseed                        = (fp_1int              )0x6257E0;
 fp_none game_rand                          = (fp_none              )0x64601D;
 fp_1int game_srand                         = (fp_1int              )0x538FB0;
+Fgame_fgets game_fgets                     = (Fgame_fgets          )0x64726A;
 
 FConsole_new_base Console_new_base = (FConsole_new_base)0x4CF7C0;
 FConsole_skip Console_skip = (FConsole_skip)0x4D0450;

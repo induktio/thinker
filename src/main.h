@@ -55,8 +55,9 @@
 #endif
 
 #include <assert.h>
-#include <stdint.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <windows.h>
 #include <limits.h>
 #include <time.h>

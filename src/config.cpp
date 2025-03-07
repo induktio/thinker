@@ -20,14 +20,19 @@ const char* ExpMovlistTxtFile = "movlistx.txt";
 char*  TextBufferFileName = (char* )0x9B7BA0;
 char*  TextBufferFilePath = (char* )0x9B7BF0;
 char** TextBufferPosition = (char**)0x9B7CF0;
-FILE*  TextBufferFile     = (FILE* )0x9B7CF4;
+FILE** TextBufferFile     = (FILE**)0x9B7CF4;
 char** TextBufferParsePtr = (char**)0x9B7CF8;
+char** TextBufferParseTmp = (char**)0x9B7CFC;
 char** TextBufferGetPtr   = (char**)0x9B7D00;
 char** TextBufferItemPtr  = (char**)0x9B7D04;
 
 
 static const char* alpha_file() {
     return conf.smac_only ? ModAlphaFile : AlphaFile;
+}
+
+static void __cdecl set_language(int value) {
+    *GameLanguage = value;
 }
 
 static char* prefs_get_binary(char* buf, int value) {
@@ -50,13 +55,52 @@ static char* Text_update() {
     return *TextBufferGetPtr;
 }
 
+static char* text_get() {
+    if (feof(*TextBufferFile)) {
+        (*TextBufferParsePtr)[0] = '\0';
+        return NULL;
+    } else if (game_fgets(*TextBufferParsePtr, 511, *TextBufferFile)) {
+        kill_lf(*TextBufferParsePtr);
+        purge_spaces(*TextBufferParsePtr);
+        *TextBufferPosition = *TextBufferParsePtr;
+        return *TextBufferParsePtr;
+    } else {
+        (*TextBufferParsePtr)[0] = '\0';
+        return *TextBufferParsePtr;
+    }
+}
+
+static char* text_item() {
+    char* dst = *TextBufferParseTmp;
+    char** src = TextBufferPosition;
+    while (**src != '\0' && **src != ',') {
+        *dst = **src;
+        dst++;
+        (*src)++;
+    }
+    *dst = '\0';
+    if (**src) {
+        (*src)++;
+    }
+    purge_spaces(*TextBufferParseTmp);
+    return *TextBufferParseTmp;
+}
+
+static char* text_item_string() {
+    return Strings_put(TextTable, text_item());
+}
+
+static int text_item_number() {
+    return stoi(text_item());
+}
+
+static int text_item_binary() {
+    return btoi(text_item());
+}
+
 static int __cdecl text_get_number(int min_val, int max_val) {
     text_get();
     return clamp(text_item_number(), min_val, max_val);
-}
-
-static void __cdecl set_language(int value) {
-    *GameLanguage = value;
 }
 
 /*
@@ -625,8 +669,11 @@ void __cdecl read_faction(MFaction* plr, int toggle) {
             plr->rule_sharetech = atoi(parse_param);
         } else if (is_bonus(parse_rule, BN_TECHSTEAL)) {
             plr->rule_flags |= RFLAG_TECHSTEAL;
+        } else {
+            debug("read_faction %s skip: %s\n", plr->filename, parse_rule);
         }
     }
+    debug("read_faction %s bonus: %d\n", plr->filename, plr->faction_bonus_count);
     // Societal Ideology + Anti-Ideology
     for (int i = 0; i < 2; i++) {
         *(&plr->soc_priority_category + i) = -1;

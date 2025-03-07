@@ -1232,7 +1232,7 @@ void process_map(int faction_id, int k) {
             }
             // LM_FRESH landmark is ignored for this check
             if (!is_ocean(sq) && !sq->is_rocky() && !sq->is_fungus()
-            && sq->is_land_region() && !(sq->landmarks & ~LM_FRESH)
+            && sq->is_land_region() && !(sq->lm_items() & ~LM_FRESH)
             && Continents[sq->region].tile_count >= limit) {
                 goodtiles.insert({x, y});
             }
@@ -1267,7 +1267,7 @@ bool valid_start(int faction_id, int iter, int x, int y) {
         return false;
     }
     // LM_FRESH landmark is incorrectly used on some maps
-    if (aquatic != is_ocean(sq) || (sq->landmarks & ~LM_FRESH && iter < 160)) {
+    if (aquatic != is_ocean(sq) || ((sq->lm_items() & ~LM_FRESH) && iter < 160)) {
         return false;
     }
     if ((goody_at(x, y) > 0 || bonus_at(x, y) > 0) && iter < 160) {
@@ -1337,7 +1337,7 @@ bool valid_start(int faction_id, int iter, int x, int y) {
             sc += 8;
         }
     }
-    debug("find_score %d %d x: %3d y: %3d xd: %d yd: %d min: %d score: %d\n",
+    debug("find_score %d %3d x: %3d y: %3d xd: %d yd: %d min: %d score: %d\n",
         faction_id, iter, x, y, xd, yd, min_sc, sc);
 
     if (!aquatic && iter < 100) { // Avoid spawns without sufficient land nearby
@@ -1464,7 +1464,8 @@ void __cdecl find_start(int faction_id, int* tx, int* ty) {
         }
     }
     site_set(*tx, *ty, world_site(*tx, *ty, 0));
-    debug("find_start %d %d x: %3d y: %3d range: %d\n", faction_id, i, *tx, *ty, min_range(spawns, *tx, *ty));
+    debug("find_start %d %3d x: %3d y: %3d range: %d\n",
+        faction_id, i, *tx, *ty, min_range(spawns, *tx, *ty));
     flushlog();
 }
 

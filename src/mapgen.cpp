@@ -262,7 +262,7 @@ void __cdecl mod_world_monsoon(int x, int y) {
             }
             tiles[{x, y}].sea = sq->alt_level() < ALT_SHORE_LINE
                 && Continents[sq->region].tile_count > 15;
-            tiles[{x, y}].valid = !sq->landmarks
+            tiles[{x, y}].valid = !sq->lm_items()
                 && (sq->alt_level() == ALT_SHORE_LINE || sq->alt_level() == ALT_ONE_ABOVE_SEA);
         }
     }

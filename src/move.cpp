@@ -1053,8 +1053,8 @@ int base_tile_score(int x, int y, int faction, MAP* sq) {
         if (!m.sq->is_base()) {
             int alt = sq->alt_level();
             score += (bonus_at(m.x, m.y) ? 6 : 0);
-            if (m.sq->landmarks & ~(LM_DUNES|LM_SARGASSO|LM_UNITY)) {
-                score += (m.sq->landmarks & LM_JUNGLE ? 3 : 2);
+            if (m.sq->lm_items() & ~(LM_DUNES|LM_SARGASSO|LM_UNITY)) {
+                score += (m.sq->lm_items() & LM_JUNGLE ? 3 : 2);
             }
             if (m.i <= 8) { // Only adjacent tiles
                 if (sea_colony && m.sq->is_land_region()
@@ -1698,7 +1698,7 @@ int former_tile_score(int x, int y, int faction, MAP* sq) {
         {BIT_THERMAL_BORE, -8},
     };
     int bonus = bonus_at(x, y);
-    int score = (sq->landmarks & ~(LM_DUNES|LM_SARGASSO|LM_UNITY|LM_NEXUS) ? 4 : 0);
+    int score = (sq->lm_items() & ~(LM_DUNES|LM_SARGASSO|LM_UNITY|LM_NEXUS) ? 4 : 0);
 
     if (bonus != RES_NONE && !(sq->items & BIT_ADVANCED)) {
         score += ((sq->items & BIT_SIMPLE) ? 3 : 5) * (bonus == RES_NUTRIENT ? 3 : 2);

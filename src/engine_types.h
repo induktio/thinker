@@ -36,6 +36,9 @@ struct MAP {
     int code_at() {
         return landmarks >> 24;
     }
+    int lm_items() {
+        return landmarks & 0xFFFF;
+    }
     bool is_visible(int faction) {
         return visibility & (1 << faction);
     }
