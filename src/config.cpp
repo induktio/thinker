@@ -16,16 +16,29 @@ const char* MovlistFile = "movlist";
 const char* MovlistTxtFile = "movlist.txt";
 const char* ExpMovlistTxtFile = "movlistx.txt";
 
+char*  const FileFindPathLast   = (char* )0x9B8398;
+char*  const TextBufferFileName = (char* )0x9B7BA0;
+char*  const TextBufferFilePath = (char* )0x9B7BF0;
+char** const TextBufferPosition = (char**)0x9B7CF0;
+FILE** const TextBufferFile     = (FILE**)0x9B7CF4;
+char** const TextBufferParsePtr = (char**)0x9B7CF8;
+char** const TextBufferParseTmp = (char**)0x9B7CFC;
+char** const TextBufferGetPtr   = (char**)0x9B7D00;
+char** const TextBufferItemPtr  = (char**)0x9B7D04;
 
-char*  TextBufferFileName = (char* )0x9B7BA0;
-char*  TextBufferFilePath = (char* )0x9B7BF0;
-char** TextBufferPosition = (char**)0x9B7CF0;
-FILE** TextBufferFile     = (FILE**)0x9B7CF4;
-char** TextBufferParsePtr = (char**)0x9B7CF8;
-char** TextBufferParseTmp = (char**)0x9B7CFC;
-char** TextBufferGetPtr   = (char**)0x9B7D00;
-char** TextBufferItemPtr  = (char**)0x9B7D04;
+class TextBuffer {
+public:
+    char FileName[80]; // Engine limit
+    char FilePath[256]; // Engine limit
+    char Srcbuf[1024];
+    char Dstbuf[1024];
+    char* Position;
+    FILE* File;
+    char* const SrcPtr = (char*)&Srcbuf; // ParsePtr / GetPtr
+    char* const DstPtr = (char*)&Dstbuf; // ParseTmp
+};
 
+static TextBuffer Text = {};
 
 static const char* alpha_file() {
     return conf.smac_only ? ModAlphaFile : AlphaFile;
@@ -49,30 +62,92 @@ static char* prefs_get_binary(char* buf, int value) {
     return buf;
 }
 
-static char* Text_update() {
-    assert(*TextBufferParsePtr == *TextBufferGetPtr);
-    *TextBufferPosition = *TextBufferGetPtr;
-    return *TextBufferGetPtr;
+static FILE* env_open(const char* path, const char* mode) {
+    char* path_alt = filefind_get(path);
+    return fopen(path_alt ?  path_alt : path, mode);
+}
+
+static void text_close() {
+    if (Text.File) {
+        fclose(Text.File);
+        Text.File = NULL;
+    }
+}
+
+static int text_open(const char* filename, const char* label) {
+    debug("text_open %s / %s\n", filename, label);
+    bool is_seeking = false;
+    if (filename) {
+        if (!strchr(filename, '.')) {
+            snprintf(Text.FileName, 80, "%s.txt", filename);
+        } else {
+            snprintf(Text.FileName, 80, filename);
+        }
+        text_close();
+        Text.File = env_open(Text.FileName, "rt");
+        if (!Text.File) {
+            return true;
+        }
+        snprintf(Text.FilePath, 256, FileFindPathLast);
+    } else if (Text.File) {
+        is_seeking = true;
+    } else {
+        Text.File = env_open(Text.FileName, "rt");
+        if (!Text.File) {
+            return true;
+        }
+        snprintf(Text.FilePath, 256, FileFindPathLast);
+    }
+    if (!label) {
+        return false;
+    }
+    // Removed text_search_index as redundant
+    char sect_header[StrBufLen];
+    snprintf(sect_header, StrBufLen, "#%s", label);
+    do {
+        if (feof(Text.File)) {
+            if (is_seeking) {
+                is_seeking = false;
+                rewind(Text.File);
+            } else {
+                text_close();
+                return true;
+            }
+        }
+        if (!fgets(Text.SrcPtr, 511, Text.File)) {
+            text_close();
+            return true;
+        }
+        kill_lf(Text.SrcPtr);
+        purge_spaces(Text.SrcPtr);
+    } while (_stricmp(sect_header, Text.SrcPtr));
+    Text.Position = Text.SrcPtr;
+    return false;
+}
+
+static char* text_update() {
+    Text.Position = Text.SrcPtr;
+    return Text.SrcPtr;
 }
 
 static char* text_get() {
-    if (feof(*TextBufferFile)) {
-        (*TextBufferParsePtr)[0] = '\0';
+    if (feof(Text.File)) {
+        Text.SrcPtr[0] = '\0';
         return NULL;
-    } else if (game_fgets(*TextBufferParsePtr, 511, *TextBufferFile)) {
-        kill_lf(*TextBufferParsePtr);
-        purge_spaces(*TextBufferParsePtr);
-        *TextBufferPosition = *TextBufferParsePtr;
-        return *TextBufferParsePtr;
+    } else if (fgets(Text.SrcPtr, 511, Text.File)) {
+        kill_lf(Text.SrcPtr);
+        purge_spaces(Text.SrcPtr);
+        Text.Position = Text.SrcPtr;
+        return Text.SrcPtr;
     } else {
-        (*TextBufferParsePtr)[0] = '\0';
-        return *TextBufferParsePtr;
+        Text.SrcPtr[0] = '\0';
+        return Text.SrcPtr;
     }
 }
 
 static char* text_item() {
-    char* dst = *TextBufferParseTmp;
-    char** src = TextBufferPosition;
+    char* dst = Text.DstPtr;
+    char** src = &Text.Position;
     while (**src != '\0' && **src != ',') {
         *dst = **src;
         dst++;
@@ -82,8 +157,8 @@ static char* text_item() {
     if (**src) {
         (*src)++;
     }
-    purge_spaces(*TextBufferParseTmp);
-    return *TextBufferParseTmp;
+    purge_spaces(Text.DstPtr);
+    return Text.DstPtr;
 }
 
 static char* text_item_string() {
@@ -98,7 +173,7 @@ static int text_item_binary() {
     return btoi(text_item());
 }
 
-static int __cdecl text_get_number(int min_val, int max_val) {
+static int text_get_number(int min_val, int max_val) {
     text_get();
     return clamp(text_item_number(), min_val, max_val);
 }
@@ -120,9 +195,9 @@ int __cdecl tech_name(char* name) {
             return tech_id;
         }
     }
-    parse_says(0, TextBufferFilePath, -1, -1);
+    parse_says(0, Text.FilePath, -1, -1);
     parse_says(1, name, -1, -1);
-    parse_says(2, *TextBufferGetPtr, -1, -1);
+    parse_says(2, Text.SrcPtr, -1, -1);
     X_pop2("BADTECHKEY", 0);
     exit_fail(); // Game would crash after parser errors
     return TECH_Disable;
@@ -145,9 +220,9 @@ int __cdecl chas_name(char* name) {
             return chas_id;
         }
     }
-    parse_says(0, TextBufferFilePath, -1, -1);
+    parse_says(0, Text.FilePath, -1, -1);
     parse_says(1, name, -1, -1);
-    parse_says(2, *TextBufferGetPtr, -1, -1);
+    parse_says(2, Text.SrcPtr, -1, -1);
     X_pop2("BADCHASKEY", 0);
     exit_fail();
     return 0;
@@ -170,9 +245,9 @@ int __cdecl weap_name(char* name) {
             return wpn_id;
         }
     }
-    parse_says(0, TextBufferFilePath, -1, -1);
+    parse_says(0, Text.FilePath, -1, -1);
     parse_says(1, name, -1, -1);
-    parse_says(2, *TextBufferGetPtr, -1, -1);
+    parse_says(2, Text.SrcPtr, -1, -1);
     X_pop2("BADWEAPKEY", 0);
     exit_fail();
     return 0;
@@ -195,9 +270,9 @@ int __cdecl arm_name(char* name) {
             return arm_id;
         }
     }
-    parse_says(0, TextBufferFilePath, -1, -1);
+    parse_says(0, Text.FilePath, -1, -1);
     parse_says(1, name, -1, -1);
-    parse_says(2, *TextBufferGetPtr, -1, -1);
+    parse_says(2, Text.SrcPtr, -1, -1);
     X_pop2("BADARMKEY", 0);
     exit_fail();
     return 0;
@@ -393,15 +468,14 @@ int __cdecl read_tech() {
     for (int i = 0; i < MaxTechnologyNum; i++) {
         text_get();
         text_item();
-        text_item();
-        strcpy_n(Tech[i].short_name, 8, *TextBufferItemPtr);
+        strcpy_n(Tech[i].short_name, 8, text_item());
         for (int j = 0; j < i; j++) {
             if (!strcmp(Tech[i].short_name, Tech[j].short_name)) {
                 parse_num(0, i);
                 parse_num(1, j);
                 parse_says(0, Tech[i].short_name, -1, -1);
-                parse_says(1, TextBufferFilePath, -1, -1); // Changed pointer to directly reference Text class
-                parse_says(2, *TextBufferGetPtr, -1, -1);
+                parse_says(1, Text.FilePath, -1, -1); // Changed pointer to directly reference Text class
+                parse_says(2, Text.SrcPtr, -1, -1);
                 X_pop2("DUPLICATETECH", 0);
                 exit_fail();
             }
@@ -726,6 +800,7 @@ void __cdecl read_faction(MFaction* plr, int toggle) {
     strcpy_n(plr->adj_insult_faction, 128, text_item());
     text_get();
     strcpy_n(plr->insult_leader, 24, text_item());
+    text_close(); // Make sure file handle is closed
 }
 
 /*
@@ -811,6 +886,7 @@ int __cdecl read_factions() {
             load_faction_art(i);
         }
     }
+    text_close(); // Make sure file handle is closed
     return false;
 }
 
@@ -893,9 +969,7 @@ int __cdecl read_rules(int tgl_all_rules) {
     if (labels_init()) {
         return true;
     }
-    text_clear_index();
-    text_make_index(ScriptFile);
-    text_make_index(AlphaFile);
+    // Removed text_clear_index / text_make_index as redundant
     if (read_tech() || read_basic_rules() || text_open(alpha_file(), "TERRAIN")) {
         return true;
     }
@@ -1265,6 +1339,7 @@ int __cdecl read_rules(int tgl_all_rules) {
     BaseButton_set_bubble_text(&FlatButtons[33], Natural[6].name_short); // LM_DUNES
     BaseButton_set_bubble_text(&FlatButtons[34], Natural[3].name_short); // LM_URANIUM
     BaseButton_set_bubble_text(&FlatButtons[35], Natural[10].name_short); // LM_GEOTHERMAL
+    text_close(); // Make sure file handle is closed
     return false;
 }
 
@@ -1273,11 +1348,11 @@ Deprecated function. Attempt to read the setting string value from the ini file.
 */
 char* __cdecl prefs_get2(const char* key_name, const char* default_value, int use_default) {
     if (use_default || GetPrivateProfileIntA(GameAppName, "Prefs Format", 0, GameIniFile) != 12) {
-        snprintf(*TextBufferGetPtr, 256, "%s", default_value);
+        snprintf(Text.SrcPtr, 256, "%s", default_value);
     } else {
-        GetPrivateProfileStringA(GameAppName, key_name, default_value, *TextBufferGetPtr, 256, GameIniFile);
+        GetPrivateProfileStringA(GameAppName, key_name, default_value, Text.SrcPtr, 256, GameIniFile);
     }
-    return Text_update();
+    return text_update();
 }
 
 /*
@@ -1360,7 +1435,7 @@ void __cdecl prefs_fac_load() {
             GetPrivateProfileStringA(GameAppName, name_buf, MFactions[i].filename, buf, LineBufLen, GameIniFile);
             strcpy_n(MFactions[i].filename, 24, buf);
             strcpy_n(MFactions[i].search_key, 24, buf);
-            Text_update();
+            text_update();
         }
     } else {
         // use separate loop rather than check "Prefs Format" value each time in single loop

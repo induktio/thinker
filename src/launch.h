@@ -52,7 +52,10 @@
 
 #define GameExeFile "terranx.exe"
 #define ModDllFile "thinker.dll"
+
+#ifndef ERROR_ELEVATION_REQUIRED
 #define ERROR_ELEVATION_REQUIRED 740
+#endif
 
 const int StrBufSize = 4096;
 

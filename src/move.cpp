@@ -760,7 +760,7 @@ void move_upkeep(int faction, UpdateMode mode) {
                     - (base->defend_range > 0 ? base->defend_range : MaxEnemyRange/2);
                 sorter[bases] = values[i];
                 bases++;
-                debug("defend_score %4d %s\n", values[i], base->name);
+                debug("defend_vals %4d %s\n", values[i], base->name);
             }
         }
         std::sort(sorter, sorter+bases);
@@ -2524,7 +2524,6 @@ int aircraft_move(const int id) {
     if (refuel) {
         if (at_base && base_only) {
             max_dist = 1;
-            assert(veh->moves_spent > 0 || u->range() == 1);
         } else if (base_only) {
             return move_to_base(id, true);
         } else if (u->range() == 1 && veh->mid_damage()) {

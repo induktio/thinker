@@ -16,6 +16,10 @@
 #include <algorithm>
 #include <unordered_map>
 
+#ifdef __GNUC__
+#pragma GCC poison strcat_s strcpy_s
+#endif
+
 typedef uint8_t byte;
 typedef uint32_t Dib;
 typedef struct { char str[256]; } char256;
@@ -1845,6 +1849,7 @@ extern fp_3int zoc_move;
 typedef int(__cdecl *Ftext_open)(const char* filename, const char* label);
 typedef int(__cdecl *Fparse_string)(char* src, char* dst);
 typedef char*(__cdecl *Ftext_item)();
+typedef char*(__cdecl *Ffilefind_get)(const char* text);
 typedef int(__thiscall *Fset_bubble_text)(void* This, const char* name);
 typedef int(__thiscall *FStrings)(void* This);
 typedef int(__thiscall *FStrings_init)(void* This, size_t len);
@@ -1865,10 +1870,10 @@ extern fp_none sub_5FCFE0;
 extern fp_none flush_input;
 extern fp_none do_sound;
 extern fp_none flush_timer;
-extern fp_none text_shutdown;
-extern fp_none text_dtor;
-extern fp_none text_close;
-extern Ftext_open text_open;
+//extern fp_none text_shutdown;
+//extern fp_none text_dtor;
+//extern fp_none text_close;
+//extern Ftext_open text_open;
 //extern fp_none text_get;
 //extern fp_none text_string;
 //extern Ftext_item text_item;
@@ -1876,7 +1881,11 @@ extern Ftext_open text_open;
 //extern fp_none text_item_number;
 //extern fp_none text_item_binary;
 extern FGenString text_make_index;
+extern Ftext_open text_search_index;
 extern fp_none text_clear_index;
+extern fp_1int filefind_set_alternative;
+extern fp_2int filefind_init;
+extern Ffilefind_get filefind_get;
 extern FStrings Strings_Strings;
 extern FStrings_init Strings_init;
 extern FStrings Strings_shutdown;

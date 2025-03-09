@@ -1261,7 +1261,7 @@ void parse_abl_name(char* buf, const char* name, bool reduce) {
             return;
         }
     }
-    strncat(buf, name, len);
+    strncat(buf, name, MaxProtoNameLen);
     if (!isspace(name[len-1]) && name[len-1] != '-') {
         strncat(buf, " ", 2);
     }

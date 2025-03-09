@@ -133,7 +133,7 @@ Compiling Thinker
 Install dependencies to compile Thinker on Windows using CodeBlocks:
 
 * [CodeBlocks](https://www.codeblocks.org/downloads/)
-* [MinGW toolkit](https://github.com/niXman/mingw-builds-binaries/releases/download/12.2.0-rt_v10-rev2/i686-12.2.0-release-posix-dwarf-msvcrt-rt_v10-rev2.7z)
+* [MinGW toolkit](https://github.com/niXman/mingw-builds-binaries/releases/download/14.2.0-rt_v12-rev1/i686-14.2.0-release-posix-dwarf-msvcrt-rt_v12-rev1.7z)
 
 To avoid compiling issues, do not use the older MinGW toolkit version bundled with CodeBlocks.
 GCC versions older than 8.1.0 are not supported. After installing MinGW, new paths need to be

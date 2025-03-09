@@ -458,7 +458,9 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             break;
 
         case DLL_PROCESS_DETACH:
-            fclose(debug_log);
+            if (debug_log) {
+                fclose(debug_log);
+            }
             break;
 
         case DLL_THREAD_ATTACH:

@@ -63,26 +63,6 @@ int count_format_args(const char* src) {
     return num;
 }
 
-void __cdecl purge_spaces(char* buf) {
-    char* pos = buf;
-    while (*pos == ' ') {
-        pos++;
-    }
-    memmove(buf, pos, strlen(pos) + 1); // handle overlapping arrays
-    pos = buf + strlen(buf);
-    while (*(pos - 1) == ' ' && pos != buf) {
-        pos--;
-    }
-    buf[(pos - buf)] = '\0';
-}
-
-void __cdecl kill_lf(char* buf) {
-    char* pos = strrchr(buf, '\n');
-    if (pos) {
-        *pos = '\0';
-    }
-}
-
 int __cdecl btoi(const char* src) {
     int value = 0;
     while (*src == '0' || *src == '1') {
@@ -127,6 +107,35 @@ int __cdecl stoi(const char* src) {
         }
     }
     return atoi(src);
+}
+
+void __cdecl purge_spaces(char* buf) {
+    char* pos = buf;
+    while (*pos == ' ') {
+        pos++;
+    }
+    memmove(buf, pos, strlen(pos) + 1); // Handle overlapping arrays
+    pos = buf + strlen(buf);
+    while (*(pos - 1) == ' ' && pos != buf) {
+        pos--;
+    }
+    *pos = '\0';
+}
+
+void __cdecl kill_lf(char* buf) {
+    char* pos = strrchr(buf, '\n');
+    if (pos) {
+        *pos = '\0';
+    }
+}
+
+char* __cdecl limit_strcpy(char* dst, const char* src) {
+    if (dst >= AC_IMAGE_BASE || strlen(src) < StrBufLen) {
+        strcpy(dst, src); // Heap allocated or within common array bounds
+    } else {
+        dst[0] = '\0';
+    }
+    return dst;
 }
 
 char* strcpy_n(char* dst, size_t count, const char* src) {

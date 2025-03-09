@@ -11,6 +11,7 @@ int __cdecl htoi(const char* src);
 int __cdecl stoi(const char* src);
 void __cdecl purge_spaces(char* buf);
 void __cdecl kill_lf(char* buf);
+char* __cdecl limit_strcpy(char* dst, const char* src);
 char* strcpy_n(char* dst, size_t count, const char* src);
 char* strtrail(char* s);
 char* strtrim(char* s);

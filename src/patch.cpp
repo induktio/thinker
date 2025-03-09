@@ -108,18 +108,6 @@ int __cdecl map_draw_strcmp(const char* s1, const char* UNUSED(s2))
     return strcmp(s1, "SPARTANS") && (!conf.render_base_info || strcmp(s1, "HIVE"));
 }
 
-char* __cdecl limit_strcpy(char* dst, const char* src)
-{
-    strcpy_s(dst, StrBufLen, src);
-    return dst;
-}
-
-char* __cdecl limit_strcat(char* dst, const char* src)
-{
-    strcat_s(dst, StrBufLen, src);
-    return dst;
-}
-
 /*
 Patch the game engine to use significantly less CPU time by modifying the idle loop.
 */
@@ -527,7 +515,6 @@ bool patch_setup(Config* cf) {
     write_jump(0x626350, (int)log_say_hex2);
     write_jump(0x6263F0, (int)log_say_hex);
     write_jump(0x645460, (int)limit_strcpy);
-    write_jump(0x645470, (int)limit_strcat);
 
     remove_call(0x415F69); // base_doctors
     remove_call(0x41608E); // base_doctors
