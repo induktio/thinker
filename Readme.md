@@ -52,6 +52,11 @@ clipped out of the screen. The game does not have proper support for screen scal
 Sometimes opening/secret project video playback errors might be fixed by installing [DDrawCompat](https://github.com/narzoul/DDrawCompat)
 but otherwise it is not necessary.
 
+The current GOG Alpha Centauri Planetary Pack (13 November 2024) may not work on Windows XP by default. When starting the game
+there can be an error message "The application failed to start because dwmapi.dll was not found." To fix this simply remove ddraw.dll
+from the game folder. This file was added on the latest GOG version and it is not necessary to run the game on Windows XP.
+At minimum Thinker should support all versions between Windows XP and Windows 10.
+
 Alt-tabbing may sometimes not work by default in Alpha Centauri's GOG version. To re-enable alt-tab feature, follow these steps.
 First open a command prompt with administrator privileges in Alpha Centauri's installation folder. After entering the commands
 below alt-tabbing should now work when the game is restarted.

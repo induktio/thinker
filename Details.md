@@ -45,7 +45,9 @@ The game will show population counts for talents, workers, drones and specialist
 
 Ecological damage display on the base window has been updated to be more useful. Whenever the mineral production level is sustainable on planet's ecology, the Eco-Damage percentage is displayed in green indicating how much of the clean minerals capacity is in use. Whenever this number is exceeded and the base begins to cause ecological disruption, the percentage is displayed in red and the number over 100% shows the current Eco-Damage being experienced at the base. This will not change how [ecological damage](https://web.archive.org/web/20220310074913/https://alphacentauri2.info/wiki/Ecology_(Revised)) is calculated by the game unless minor details are modified by `eco_damage_fix` option.
 
-Whenever the player instructs a former to build an improvement that replaces any other item in the tile, the game will display a warning dialog. This dialog can be skipped by toggling the warning option (warn_on_former_replace).
+![Base support window](/tools/support_view.png "Base support window is zoomable with the mousewheel and shows nearby supported units by the current base.")
+
+Whenever the player instructs a former to build an improvement that replaces any other item in the tile, the game will display a warning dialog. This dialog can be skipped by toggling `warn_on_former_replace` option.
 
 To speed up the gameplay several user interface popups have been moved into delayed notifications that are also listed on the message log. These notificationa include satellite completion by any faction, forest/kelp growing near player bases and unit promotions after combat.
 
@@ -109,7 +111,7 @@ Governor is also able to choose between multiple specialist types based on socia
 
 Map generator options
 =====================
-![Map generator comparison using average ocean coverage and average erosion.](/tools/map_generators.png)
+![Map generator comparison](/tools/map_generators.png "Map generator comparison using average ocean coverage and average erosion.")
 
 Using the default settings, the game's random map generator produces bland-looking maps that also have way too many small islands that make the navigation much harder for the AI. As an optional feature, Thinker includes a rewritten map generator that replaces the old WorldBuilder. It produces bigger continents, less tiny islands, more rivers and ocean shelf using more natural layouts. This can be toggled with `new_world_builder` config option or from Thinker's `ALT+T` menu options.
 
@@ -221,7 +223,7 @@ Cost to Change Society. The cost to change social engineering is affected by the
 
 Hurry and upgrade formulas
 ==========================
-![Hurry dialog displays the minimum cost to complete production on the next turn.](/tools/hurry_dialog.png)
+![Hurry dialog](/tools/hurry_dialog.png "Hurry dialog displays the minimum cost to complete production on the next turn.")
 
 To ease calculations, `simple_hurry_cost` option removes the double cost penalty from production hurrying when the accumulated minerals are less than the Retool penalty set in alphax.txt. Otherwise the hurry cost formula is equal to the vanilla game mechanics.
 
