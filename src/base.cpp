@@ -431,8 +431,9 @@ void __cdecl mod_base_yield() {
     Faction* f = &Factions[base->faction_id];
     std::vector<TileValue> tiles;
     uint32_t gov = base->gov_config();
-    bool manage_workers = gov & GOV_ACTIVE && gov & GOV_MANAGE_CITIZENS;
     int32_t reserved = base_radius(base_id, tiles);
+    bool manage_workers = !base->worked_tiles || (gov & GOV_ACTIVE && gov & GOV_MANAGE_CITIZENS);
+    bool pre_upkeep = *BaseUpkeepState != 2 || (base_id == *BaseUpkeepDrawID && Win_is_visible(BaseWin));
     base->worked_tiles &= (~reserved) | 1;
     base->state_flags &= ~BSTATE_UNK_8000;
     assert(f->SE_alloc_labs + f->SE_alloc_psych <= 10);
@@ -448,7 +449,6 @@ void __cdecl mod_base_yield() {
     int SE_police = base->SE_police(SE_Pending);
     bool can_grow = base_unused_space(base_id) > 0;
     bool can_riot = base_can_riot(base_id, true);
-    bool reallocate = manage_workers || !base->worked_tiles;
     bool need_labs = !has_fac_built(FAC_PUNISHMENT_SPHERE, base_id);
     bool pacifism = can_riot && SE_police <= -3 && *BaseVehPacifismCount > 0;
     int threshold = Rules->nutrient_intake_req_citizen * (base_pop_boom(base_id) ? 1 : 2);
@@ -483,7 +483,7 @@ void __cdecl mod_base_yield() {
         Wmineral = 3 + (gov & GOV_PRIORITY_BUILD ? 1 : 0) + (gov & GOV_PRIORITY_CONQUER ? 1 : 0);
     }
 
-    if (*BaseUpkeepState != 2) {
+    if (pre_upkeep) {
         for (int i = 0; i < MaxBaseSpecNum; i++) {
             int spc_id = base->specialist_type(i);
             // Replace incorrect specialist types if any used
@@ -494,9 +494,9 @@ void __cdecl mod_base_yield() {
             }
         }
     }
-    if (total != 0 || (reallocate && *BaseUpkeepState != 2)) {
+    if (total != 0 || (manage_workers && pre_upkeep)) {
         int workers = total;
-        if (workers < 0 || reallocate) {
+        if (workers < 0 || manage_workers) {
             worked_tiles = 1;
             specialist_total = 0;
             workers = base->pop_size;
@@ -551,7 +551,7 @@ void __cdecl mod_base_yield() {
         // Convert unallocated workers to specialists
         specialist_total += workers;
     }
-    if ((total != 0 || reallocate) && *BaseUpkeepState != 2) {
+    if ((total != 0 || manage_workers) && pre_upkeep) {
         base->worked_tiles = worked_tiles;
         base->specialist_total = specialist_total;
         BASE initial;
@@ -589,7 +589,7 @@ void __cdecl mod_base_yield() {
         };
         base->specialist_adjust = specialist_adjust;
 
-    } else if (total != 0 && *BaseUpkeepState == 2) {
+    } else if (total != 0 && !pre_upkeep) {
         while (base->pop_size + 1 < (int)choices.size()) {
             choices.pop_back();
         }

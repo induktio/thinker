@@ -16,7 +16,6 @@ const char* MovlistFile = "movlist";
 const char* MovlistTxtFile = "movlist.txt";
 const char* ExpMovlistTxtFile = "movlistx.txt";
 
-char*  const FileFindPathLast   = (char* )0x9B8398;
 char*  const TextBufferFileName = (char* )0x9B7BA0;
 char*  const TextBufferFilePath = (char* )0x9B7BF0;
 char** const TextBufferPosition = (char**)0x9B7CF0;
@@ -88,7 +87,7 @@ static int text_open(const char* filename, const char* label) {
         if (!Text.File) {
             return true;
         }
-        snprintf(Text.FilePath, 256, FileFindPathLast);
+        snprintf(Text.FilePath, 256, FileFind->last_path);
     } else if (Text.File) {
         is_seeking = true;
     } else {
@@ -96,7 +95,7 @@ static int text_open(const char* filename, const char* label) {
         if (!Text.File) {
             return true;
         }
-        snprintf(Text.FilePath, 256, FileFindPathLast);
+        snprintf(Text.FilePath, 256, FileFind->last_path);
     }
     if (!label) {
         return false;

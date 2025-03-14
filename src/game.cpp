@@ -244,6 +244,26 @@ void __cdecl mod_auto_save() {
     }
 }
 
+/*
+Store base related events for the endgame replay screen.
+0 = create base, 1 = change base owner, 2 = kill base.
+*/
+int __cdecl mod_replay_base(int event, int x, int y, int faction_id) {
+    assert(mapsq(x, y) && event >= 0 && event <= 2);
+    debug("replay_base %d %d %d %d %d %d\n",
+        *ReplayEventSize, *CurrentTurn, event, faction_id, x, y);
+    ReplayEvent* p = &ReplayEvents[*ReplayEventSize/8];
+    if (*ReplayEventSize >= 0 && *ReplayEventSize < 8192) {
+        p->event = event;
+        p->faction_id = faction_id;
+        p->turn = *CurrentTurn;
+        p->x = x;
+        p->y = y;
+        *ReplayEventSize += 8;
+    }
+    return *ReplayEventSize;
+}
+
 int __cdecl mod_faction_upkeep(int faction_id) {
     Faction* f = &Factions[faction_id];
     MFaction* m = &MFactions[faction_id];

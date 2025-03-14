@@ -27,6 +27,7 @@ Keyboard shortcuts
     Alt+T       Show Thinker's version and options menu (use Alt+H when PRACX is enabled).
     Alt+R       Toggle tile information update under cursor if smooth_scrolling is enabled.
     Alt+O       Enter a new value for random map generator when scenario editor mode is active.
+    Alt+L       Show endgame replay screen when scenario editor mode is active.
     Alt+Enter   Switch between fullscreen and windowed mode unless desktop resolution is used in fullscreen.
     Ctrl+H      Hurry current production with energy reserves when the base window is active.
 
@@ -386,7 +387,7 @@ If the lines are removed, the mod will reset to the default VLC installation pat
 
 It should be possible to run both Thinker and [PRACX](https://github.com/DrazharLn/pracx) graphics enhancement patch at the same time. For easiest installation, download [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). However this combination of patches will not receive as much testing as the normal configuration, so some issues might occur.
 
-If any issues are encountered, first check if they occur with the vanilla game and/or Thinker without additional mods. Also some optional features provided by Thinker will be disabled while running PRACX because they would patch conflicting areas of the game binary. These disabled feature include:
+If any issues are encountered, first check if they occur with the original game and/or Thinker without additional mods. Also some optional features provided by Thinker will be disabled while running PRACX because they would patch conflicting areas of the game binary. These disabled feature include:
 
 * Video mode and window size config options.
 * Smooth scrolling config option.
@@ -472,6 +473,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 57. Faction config reader also parses social effect priority/opposition values (e.g. ECONOMY) defined for each faction. These may have minor effect on AI social engineering choices while original game always ignored these values.
 58. Modify energy inefficiency formula when the faction does not have headquarters active in which case distance is always treated at least 16. When the faction base count is between 32 and 96, this default distance increases linearly from 16 to 32.
 59. Enable COMMFREQ faction ability to grant one extra comm frequency at the game start. Previously this ability was skipped by the game.
+60. Fix endgame replay feature overflowing unrelated content causing eventual crash after too many base create/capture/kill events happen during the game.
 
 
 Scient's patch

@@ -195,7 +195,11 @@ int __cdecl alt_detail_at(int x, int y) {
 }
 
 void __cdecl alt_put_detail(int x, int y, uint8_t detail) {
-    mapsq(x, y)->contour = detail;
+    MAP* sq = mapsq(x, y);
+    if (sq) {
+        mapsq(x, y)->contour = detail;
+    }
+    assert(sq);
 }
 
 void __cdecl world_alt_put_detail(int x, int y) {
@@ -315,10 +319,12 @@ void __cdecl code_set(int x, int y, int code) {
 }
 
 void __cdecl synch_bit(int x, int y, int faction_id) {
-    if (faction_id > 0) {
+    if (faction_id > 0 && faction_id < MaxPlayerNum) {
         MAP* sq = mapsq(x, y);
-        if (sq) { sq->visible_items[faction_id - 1] = sq->items; }
-        else { assert(sq); }
+        if (sq) {
+            sq->visible_items[faction_id - 1] = sq->items;
+        }
+        assert(sq);
     }
 }
 
@@ -1212,7 +1218,7 @@ int item_yield(int x, int y, int faction_id, int bonus, MapItem item) {
     return N+M+E;
 }
 
-void process_map(int faction_id, int k) {
+static void process_map(int faction_id, int k) {
     spawns.clear();
     natives.clear();
     goodtiles.clear();
@@ -1257,7 +1263,7 @@ void process_map(int faction_id, int k) {
         *MapAreaX, *MapAreaY, *MapAreaSqRoot, *MapAreaTiles, goodtiles.size());
 }
 
-bool valid_start(int faction_id, int iter, int x, int y) {
+static bool valid_start(int faction_id, int iter, int x, int y) {
     MAP* sq = mapsq(x, y);
     bool aquatic = MFactions[faction_id].is_aquatic();
     int native_limit = (goodtiles.size() > 0 ? 3 : 2) + ((int)natives.size() < *MapAreaTiles/80);
@@ -1282,7 +1288,7 @@ bool valid_start(int faction_id, int iter, int x, int y) {
     int sc = 0;
     int xd = 0;
     int yd = 0;
-    if (spawn_range < clamp(*MapAreaSqRoot/4 + 10 - iter/8, spawn_limit, 32)) {
+    if (spawn_range < clamp(*MapAreaSqRoot/4 + 8 - iter/8, spawn_limit, 32)) {
         return false;
     }
     if (aquatic) {
@@ -1351,7 +1357,7 @@ bool valid_start(int faction_id, int iter, int x, int y) {
     return sc >= min_sc;
 }
 
-void apply_nutrient_bonus(int faction_id, int* x, int* y) {
+static void apply_nutrient_bonus(int faction_id, int* x, int* y) {
     MAP* sq;
     Points addon;
     Points places;
@@ -1431,6 +1437,36 @@ void apply_nutrient_bonus(int faction_id, int* x, int* y) {
     }
 }
 
+static void apply_supply_pods(int faction_id, int x, int y) {
+    MAP* sq;
+    Points places;
+    int bonus = 0;
+    int pods = 0;
+    for (auto& m : iterate_tiles(x, y, 0, 25)) {
+        if (conf.rare_supply_pods > 1) {
+            m.sq->items |= BIT_SUPPLY_REMOVE;
+            synch_bit(m.x, m.y, faction_id);
+        } else if (goody_at(m.x, m.y)) {
+            pods++;
+        } else if (bonus_at(m.x, m.y)) {
+            bonus++;
+        } else if (m.i > 0 && !(m.sq->items & (BIT_SUPPLY_REMOVE|BIT_BASE_IN_TILE|BIT_VEH_IN_TILE))) {
+            places.insert({m.x, m.y});
+        }
+    }
+    if (conf.rare_supply_pods <= 1) {
+        int adjust = clamp(random(10) - bonus, 2, 4) - pods;
+        while (adjust > 0 && places.size() > 0) {
+            auto t = pick_random(places);
+            sq = mapsq(t.x, t.y);
+            sq->items |= BIT_UNK_8000000;
+            synch_bit(t.x, t.y, faction_id);
+            adjust--;
+            places.erase(t);
+        }
+    }
+}
+
 void __cdecl find_start(int faction_id, int* tx, int* ty) {
     bool aquatic = MFactions[faction_id].is_aquatic();
     int x = 0;
@@ -1453,10 +1489,8 @@ void __cdecl find_start(int faction_id, int* tx, int* ty) {
                 apply_nutrient_bonus(faction_id, &x, &y);
             }
             // No unity scattering can normally spawn pods at two tile range from the start
-            if (*GameRules & RULES_NO_UNITY_SCATTERING && conf.rare_supply_pods > 1) {
-                for (auto& m : iterate_tiles(x, y, 0, 25)) {
-                    m.sq->items |= BIT_SUPPLY_REMOVE;
-                }
+            if (*GameRules & RULES_NO_UNITY_SCATTERING) {
+                apply_supply_pods(faction_id, x, y);
             }
             *tx = x;
             *ty = y;

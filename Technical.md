@@ -16,6 +16,7 @@ These shortcuts are always available whether debug build is available or not.
     Alt+T       Show Thinker's version and options menu (use Alt+H when PRACX is enabled).
     Alt+R       Toggle tile information update under cursor if smooth_scrolling is enabled.
     Alt+O       Enter a new value for random map generator when scenario editor mode is active.
+    Alt+L       Show endgame replay screen when scenario editor mode is active.
     Alt+Enter   Switch between fullscreen and windowed mode unless desktop resolution is used in fullscreen.
     Ctrl+H      Hurry current production with energy reserves when the base window is active.
 

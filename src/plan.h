@@ -12,7 +12,7 @@ struct SItem {
     }
     bool operator>(SItem const& obj) const
     {
-        return score > obj.score || (score == obj.score && item_id > obj.item_id);;
+        return score > obj.score || (score == obj.score && item_id > obj.item_id);
     }
 };
 

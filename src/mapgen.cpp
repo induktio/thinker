@@ -148,16 +148,17 @@ void __cdecl mod_world_shorelines() {
 }
 
 void __cdecl mod_world_polar_caps() {
+    int yd = *MapAreaY / 2 * 2;
     for (int x = 0; x < *MapAreaX; x += 2) {
         world_alt_put_detail(x, 0);
-        world_alt_put_detail(x + 1, *MapAreaY - 1);
+        world_alt_put_detail(x + 1, yd - 1);
     }
     int limit = *MapAreaX / 16;
     for (int i = 0; i < limit; i++) {
         world_alt_put_detail(map_rand.get(*MapAreaX / 2) * 2, 0);
         world_alt_put_detail(map_rand.get(*MapAreaX / 2) * 2 + 1, 1);
-        world_alt_put_detail(map_rand.get(*MapAreaX / 2) * 2 + 1, *MapAreaY - 1);
-        world_alt_put_detail(map_rand.get(*MapAreaX / 2) * 2, *MapAreaY - 2);
+        world_alt_put_detail(map_rand.get(*MapAreaX / 2) * 2 + 1, yd - 1);
+        world_alt_put_detail(map_rand.get(*MapAreaX / 2) * 2, yd - 2);
     }
 }
 

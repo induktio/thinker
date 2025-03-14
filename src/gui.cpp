@@ -572,6 +572,8 @@ int __cdecl mod_blink_timer() {
 LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     const bool debug_cmd = DEBUG && !*GameHalted && msg == WM_CHAR;
+    const bool is_editor = !*GameHalted
+        && *GameState & STATE_SCENARIO_EDITOR && *GameState & STATE_OMNISCIENT_VIEW;
     static int delta_accum = 0;
     POINT p;
     MAP* sq;
@@ -715,13 +717,16 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     } else if (conf.reduced_mode && msg == WM_CHAR && wParam == 'h' && alt_key_down()) {
         show_mod_menu();
 
-    } else if (msg == WM_CHAR && wParam == 'o' && alt_key_down() && !*GameHalted
-    && *GameState & STATE_SCENARIO_EDITOR && *GameState & STATE_OMNISCIENT_VIEW) {
+    } else if (msg == WM_CHAR && wParam == 'o' && alt_key_down() && is_editor) {
         uint32_t seed = ThinkerVars->map_random_value;
         int value = pop_ask_number("modmenu", "MAPGEN", seed, 0);
         if (!value) { // OK button pressed
             console_world_generate(ParseNumTable[0]);
         }
+
+    } else if (msg == WM_CHAR && wParam == 'l' && alt_key_down() && is_editor
+    && *ReplayEventSize > 0) {
+        show_replay();
 
     } else if (DEBUG && msg == WM_CHAR && wParam == 'd' && alt_key_down()) {
         conf.debug_mode = !conf.debug_mode;
@@ -766,8 +771,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             conf.diplo_patience = max(0, ParseNumTable[0]);
         }
 
-    } else if (debug_cmd && wParam == 'c' && alt_key_down()
-    && *GameState & STATE_SCENARIO_EDITOR && *GameState & STATE_OMNISCIENT_VIEW
+    } else if (debug_cmd && wParam == 'c' && alt_key_down() && is_editor
     && (sq = mapsq(MapWin->iTileX, MapWin->iTileY)) && sq->lm_items()) {
         uint32_t prev_state = MapWin->iWhatToDrawFlags;
         MapWin->iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;

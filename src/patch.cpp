@@ -697,6 +697,11 @@ bool patch_setup(Config* cf) {
     write_call(0x561607, (int)mod_base_reset); // enemy_strategy
     write_call(0x564850, (int)mod_base_reset); // enemy_strategy
     write_call(0x5B01C7, (int)mod_base_reset); // time_warp
+    write_call(0x4E4C2F, (int)mod_replay_base); // base_init
+    write_call(0x4E5378, (int)mod_replay_base); // base_kill
+    write_call(0x4F579E, (int)mod_replay_base); // drone_riot
+    write_call(0x50CF02, (int)mod_replay_base); // capture_base
+    write_call(0x54D313, (int)mod_replay_base); // give_a_base
     write_call(0x41B8BF, (int)mod_facility_avail); // BaseWin::base_editor_fac
     write_call(0x41CC07, (int)mod_facility_avail); // BaseWin::base_editor
     write_call(0x49357A, (int)mod_facility_avail); // ProdPicker::calculate

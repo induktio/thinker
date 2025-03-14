@@ -28,6 +28,7 @@ void init_save_game(int faction_id);
 void __cdecl mod_load_map_daemon(int a1);
 void __cdecl mod_load_daemon(int a1, int a2);
 void __cdecl mod_auto_save();
+int __cdecl mod_replay_base(int event, int x, int y, int faction_id);
 int __cdecl mod_turn_upkeep();
 int __cdecl mod_faction_upkeep(int faction_id);
 void __cdecl mod_repair_phase(int faction_id);

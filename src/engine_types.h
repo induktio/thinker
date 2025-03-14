@@ -119,6 +119,14 @@ struct MAP {
     }
 };
 
+struct FileFindPath {
+    char cd_path[256];
+    char alt_path[256];
+    char last_path[256];
+    char exe_dir[256];
+    char relative_path[256];
+};
+
 struct AlphaIniPref {
     int32_t preferences;
     int32_t more_preferences;
@@ -170,6 +178,22 @@ struct Path {
     int32_t field_20;
     int32_t faction_id2;
     int32_t unit_id;
+};
+
+struct Goal {
+    int16_t type;
+    int16_t priority;
+    int32_t x;
+    int32_t y;
+    int32_t base_id;
+};
+
+struct ReplayEvent {
+    int8_t event;
+    int8_t faction_id;
+    int16_t turn;
+    int16_t x;
+    int16_t y;
 };
 
 struct MFaction {
@@ -240,14 +264,6 @@ struct MFaction {
     bool is_alien() {
         return rule_flags & RFLAG_ALIEN;
     }
-};
-
-struct Goal {
-    int16_t type;
-    int16_t priority;
-    int32_t x;
-    int32_t y;
-    int32_t base_id;
 };
 
 struct Faction {
