@@ -1,6 +1,23 @@
 
 # Thinker mod release changelog
 
+## Version 4.9 (2025-03-14)
+* Enable COMMFREQ faction ability to grant one extra comm frequency at the game start. Previously this ability was skipped by the game.
+* Add shortcut ALT+L to display the endgame replay when the scenario editor mode is active.
+* Add option unit_support_bonus. By default at two highest difficulty levels AI has one extra unit supported per base.
+* Research priority for terraformer tech is notably increased. Minor updates on governor build and hurry priorities.
+* When ignore_reactor_power is enabled game options will set "Design units automatically" and "Auto-prune obsolete units" as disabled by default.
+* Restore full mod support for Windows XP. At minimum all versions between Win XP and Win 10 should be supported.
+* Fix native Spore Launchers sometimes attacking friendly units.
+* Fix issue with additional psych energy cost calculation thresholds.
+* Fix minor issue with displaying faction related statistics on ALT+T dialog.
+* Fix config file parser being unable to read some lines that are too long. The modified version now uses the same line length limits as the original game.
+* Fix some issues affecting faction placement not being consistent when starting a new game.
+* Fix worker allocation not working as usual when the base window is opened during turn upkeep from popup dialog.
+* Fix supply pods not appearing near the landing site when No Unity Scattering is enabled and rare_supply_pods is not set to remove them.
+* Fix endgame replay feature overflowing unrelated content causing eventual crash after too many base create/capture/kill events happen during the game.
+
+
 ## Version 4.8 (2024-11-28)
 * Add new shortcut Ctrl+H for hurrying production when the base window is active.
 * It is now possible to set custom video player options in Alpha Centauri.ini. The mod will attempt to detect VLC from default install location at startup and display a dialog if it is not found.
