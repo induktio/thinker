@@ -117,9 +117,19 @@ bool has_ability(int faction_id, VehAbl abl, VehChassis chs, VehWeapon wpn) {
     return has_tech(Ability[abl].preq_tech, faction_id);
 }
 
+/*
+Fractional healing at monoliths is not implemented and for this reason
+Battle Ogres may be excluded from healing/promoting at monoliths.
+*/
 bool can_repair(int unit_id) {
     assert(unit_id >= 0 && unit_id < MaxProtoNum);
     return conf.repair_battle_ogre > 0 || (unit_id != BSC_BATTLE_OGRE_MK1
+        && unit_id != BSC_BATTLE_OGRE_MK2 && unit_id != BSC_BATTLE_OGRE_MK3);
+}
+
+bool can_monolith(int unit_id) {
+    assert(unit_id >= 0 && unit_id < MaxProtoNum);
+    return conf.repair_battle_ogre >= 10 || (unit_id != BSC_BATTLE_OGRE_MK1
         && unit_id != BSC_BATTLE_OGRE_MK2 && unit_id != BSC_BATTLE_OGRE_MK3);
 }
 
@@ -311,11 +321,144 @@ Determine whether the specified unit is eligible for monolith healing or morale 
 int __cdecl want_monolith(int veh_id) {
     VEH* veh = &Vehs[veh_id];
     return veh_id >= 0 && veh->triad() != TRIAD_AIR
-        && ((veh->damage_taken && can_repair(veh->unit_id))
+        && can_monolith(veh->unit_id)
+        && (veh->damage_taken
         || (!(veh->state & VSTATE_MONOLITH_UPGRADED)
         && veh->offense_value() != 0
         && veh->morale < MORALE_ELITE
         && mod_morale_veh(veh_id, true, 0) < MORALE_ELITE));
+}
+
+void __cdecl mod_monolith(int veh_id) {
+    VEH* veh = &Vehs[veh_id];
+    MAP* sq = mapsq(veh->x, veh->y);
+    bool skip_check = veh->faction_id != *CurrentPlayerFaction || *MultiplayerActive;
+    if (!can_monolith(veh->unit_id)) {
+        return;
+    }
+    if (!skip_check && veh->order == ORDER_MOVE_TO
+    && veh->x == veh->waypoint_1_x && veh->y == veh->waypoint_1_y) {
+        veh->order = ORDER_NONE;
+    }
+    if (!skip_check && veh->order != ORDER_NONE) {
+        return;
+    }
+    if (!veh->offense_value()) {
+        if (veh->damage_taken) {
+            veh->damage_taken = 0;
+            mod_veh_skip(veh_id);
+            draw_tile(veh->x, veh->y, 2);
+            if (veh->faction_id != *CurrentPlayerFaction) {
+                return;
+            }
+            NetMsg_pop(NetMsg, "MONOLITHHEAL", 5000, 0, "monolith_sm.pcx");
+            *GameState |= STATE_UNK_4;
+        } else if (!(veh->state & VSTATE_MONOLITH_UPGRADED)) {
+            veh->state |= VSTATE_MONOLITH_UPGRADED;
+            if (veh->faction_id == *CurrentPlayerFaction && !*MultiplayerActive
+            && !(*GameMorePreferences & MPREF_AUTO_ALWAYS_INSPECT_MONOLITH)) {
+                NetMsg_pop(NetMsg, "SEEMONOLITH", -5000, 0, "monolith_sm.pcx");
+                *GameState |= STATE_UNK_4;
+            }
+        }
+    } else {
+        for (int i = 1; i < MaxPlayerNum; i++) {
+            del_site(i, 0, veh->x, veh->y, 0);
+        }
+        if (is_human(veh->faction_id)) {
+            if (!*MultiplayerActive && !(*GameMorePreferences & MPREF_AUTO_ALWAYS_INSPECT_MONOLITH)) {
+                FX_play(Sounds, 6);
+                int value = popp(ScriptFile, "MONOLITH", 0, "monolith_sm.pcx", 0);
+                FX_stop(Sounds, 6);
+                if (value == 2) {
+                    *GameMorePreferences |= MPREF_AUTO_ALWAYS_INSPECT_MONOLITH;
+                    prefs_save(0);
+                } else if (!value) {
+                    for (int i = 1; i < MaxPlayerNum; i++) {
+                        if (sq && sq->visible_items[i - 1] & BIT_MONOLITH) {
+                            add_site(i, 0, 2, veh->x, veh->y);
+                        }
+                    }
+                    return;
+                }
+            }
+        } else {
+            if (veh->state & VSTATE_MONOLITH_UPGRADED
+            || mod_morale_veh(veh_id, 1, 0) >= 6 || veh->morale >= 6 || !veh->offense_value()) {
+                if (veh->damage_taken) {
+                    veh->damage_taken = 0;
+                    mod_veh_skip(veh_id);
+                    draw_tile(veh->x, veh->y, 2);
+                }
+                for (int i = 1; i < MaxPlayerNum; i++) {
+                    if (sq && sq->visible_items[i - 1] & BIT_MONOLITH) {
+                        add_site(i, 0, 2, veh->x, veh->y);
+                    }
+                }
+                return;
+            }
+        }
+        if (veh->damage_taken) {
+            veh->damage_taken = 0;
+            mod_veh_skip(veh_id);
+            draw_tile(veh->x, veh->y, 2);
+            if (veh->state & VSTATE_MONOLITH_UPGRADED || mod_morale_veh(veh_id, 1, 0) >= 6) {
+                if (veh->faction_id != *CurrentPlayerFaction) {
+                    return;
+                }
+                if (*GameMorePreferences & MPREF_AUTO_ALWAYS_INSPECT_MONOLITH) {
+                    NetMsg_pop(NetMsg, "MONOLITHHEAL", 5000, 0, "monolith_sm.pcx");
+                } else {
+                    NetMsg_pop(NetMsg, "MONOLITHHEAL", -5000, 0, "monolith_sm.pcx");
+                }
+                *GameState |= STATE_UNK_4;
+                return;
+            }
+        }
+        if (veh->state & VSTATE_MONOLITH_UPGRADED || mod_morale_veh(veh_id, 1, 0) >= 6) {
+            if (veh->faction_id == *CurrentPlayerFaction) {
+                if (*GameMorePreferences & MPREF_AUTO_ALWAYS_INSPECT_MONOLITH) {
+                    NetMsg_pop(NetMsg, "MONOLITHNO", 5000, 0, "monolith_sm.pcx");
+                } else {
+                    NetMsg_pop(NetMsg, "MONOLITHNO", -5000, 0, "monolith_sm.pcx");
+                }
+            }
+        } else {
+            int rnd_val = game_rand() % 32;
+            if (!(sq && sq->items & BIT_UNK_2000000) || *CurrentTurn < 100) {
+                rnd_val = 1;
+                bit_set(veh->x, veh->y, BIT_UNK_2000000, 1);
+            }
+            veh->state |= VSTATE_MONOLITH_UPGRADED;
+            veh->morale = clamp(veh->morale + 1, 0, 6);
+            mod_veh_skip(veh_id);
+            mod_say_morale2(StrBuffer, veh_id, 0);
+            CharLowerA(StrBuffer);
+            parse_says(0, StrBuffer, -1, -1);
+            if (rnd_val) {
+                for (int i = 1; i < MaxPlayerNum; i++) {
+                    if (sq && sq->visible_items[i - 1] & BIT_MONOLITH) {
+                        add_site(i, 0, 2, veh->x, veh->y);
+                    }
+                }
+            } else { // Monolith disappears
+                bit_set(veh->x, veh->y, BIT_MONOLITH, 0);
+                synch_bit(veh->x, veh->y, veh->faction_id);
+            }
+            draw_tile(veh->x, veh->y, 2);
+            if (veh->faction_id == *CurrentPlayerFaction) {
+                FX_play(Sounds, 34);
+                StrBuffer[0] = '\0';
+                snprintf(StrBuffer, StrBufLen, "MONOLITH%d", rnd_val != 0);
+                if (*GameMorePreferences & MPREF_AUTO_ALWAYS_INSPECT_MONOLITH) {
+                    NetMsg_pop(NetMsg, StrBuffer, 5000, 0, "monolith_sm.pcx");
+                } else {
+                    NetMsg_pop(NetMsg, StrBuffer, -5000, 0, "monolith_sm.pcx");
+                }
+                *GameState |= STATE_UNK_4;
+            }
+        }
+    }
 }
 
 /*
@@ -993,14 +1136,13 @@ int __cdecl mod_veh_skip(int veh_id) {
             }
         }
     } else if (veh->faction_id > 0) {
+        if (want_monolith(veh_id) && bit_at(veh->x, veh->y) & BIT_MONOLITH) {
+            mod_monolith(veh_id);
+        }
         veh->waypoint_1_x = veh->x;
         veh->waypoint_1_y = veh->y;
+        veh->order = ORDER_NONE;
         veh->status_icon = '-';
-        if (want_monolith(veh_id)) {
-            if (bit_at(veh->x, veh->y) & BIT_MONOLITH) {
-                monolith(veh_id);
-            }
-        }
     }
     veh->moves_spent = moves;
     return moves;

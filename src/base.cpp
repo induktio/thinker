@@ -870,7 +870,7 @@ void __cdecl mod_base_energy() {
         base->economy_total *= 2;
     }
     if (project_base(FAC_LONGEVITY_VACCINE) == base_id
-    && Factions[faction_id].SE_economy_pending == SOCIAL_M_FREE_MARKET) {
+    && Factions[faction_id].SE_Economics_pending == SOCIAL_M_FREE_MARKET) {
         base->economy_total += base->economy_total / 2;
     }
     if (project_base(FAC_NETWORK_BACKBONE) == base_id) {
@@ -1683,7 +1683,7 @@ int __cdecl mod_base_upkeep(int base_id) {
     return 0;
 }
 
-bool valid_relocate_base(int base_id) {
+static bool valid_relocate_base(int base_id) {
     int faction = Bases[base_id].faction_id;
     int best_id = -1;
     int best_score = 0;
@@ -1714,7 +1714,7 @@ bool valid_relocate_base(int base_id) {
     return best_id == base_id;
 }
 
-void find_relocate_base(int faction) {
+static void find_relocate_base(int faction) {
     if (conf.auto_relocate_hq && find_hq(faction) < 0) {
         int best_score = INT_MIN;
         int best_id = -1;

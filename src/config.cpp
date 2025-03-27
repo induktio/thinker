@@ -1004,11 +1004,11 @@ int __cdecl read_rules(int tgl_all_rules) {
     for (int i = 0; i < MaxResourceInfoNum; i++) {
         text_get();
         text_item();
-        int32_t* res = (int32_t*)ResInfo;
-        res[i*4 + 0] = text_item_number();
-        res[i*4 + 1] = text_item_number();
-        res[i*4 + 2] = text_item_number();
-        res[i*4 + 3] = text_item_number();
+        ResValue* res = (ResValue*)ResInfo;
+        res[i].nutrient = text_item_number();
+        res[i].mineral = text_item_number();
+        res[i].energy = text_item_number();
+        res[i].unused = text_item_number();
     }
     if (text_open(alpha_file(), "TIMECONTROLS")) {
         return true;

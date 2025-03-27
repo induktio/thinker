@@ -389,9 +389,9 @@ void former_plans(int faction_id) {
         || has_project(FAC_XENOEMPATHY_DOME, faction_id));
     int value = fungus_yield(faction_id, RES_NONE)
         - (has_terra(FORMER_FOREST, TRIAD_LAND, faction_id)
-        ? ResInfo->forest_sq_nutrient
-        + ResInfo->forest_sq_mineral
-        + ResInfo->forest_sq_energy : 2);
+        ? ResInfo->forest_sq.nutrient
+        + ResInfo->forest_sq.mineral
+        + ResInfo->forest_sq.energy : 2);
     plans[faction_id].keep_fungus = (value > 0 ? min((improv_fungus ? 8 : 4), 2*value) : 0);
     plans[faction_id].plant_fungus = value > 0 && former_fungus && (improv_fungus || value > 2);
 }

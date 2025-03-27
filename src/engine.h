@@ -21,7 +21,6 @@
 #endif
 
 typedef uint8_t byte;
-typedef uint32_t Dib;
 typedef struct { char str[256]; } char256;
 
 struct CChassis;
@@ -44,8 +43,9 @@ extern const int MaxProtoNum;
 extern const int MaxPlayerNum;
 extern const int MaxBaseSpecNum;
 extern const int MaxProtoFactionNum;
-bool is_human(int faction);
+bool is_human(int faction_id);
 bool can_repair(int unit_id);
+bool can_monolith(int unit_id);
 
 #include "engine_enums.h"
 #include "engine_types.h"
@@ -226,6 +226,7 @@ static_assert(sizeof(struct BASE) == 308, "");
 static_assert(sizeof(struct UNIT) == 52, "");
 static_assert(sizeof(struct VEH) == 52, "");
 static_assert(sizeof(struct MAP) == 44, "");
+static_assert(sizeof(struct ReplayEvent) == 8, "");
 static_assert(sizeof(struct ThinkerData) == 176, "");
 
 /*
@@ -443,6 +444,7 @@ extern Win* TutWin;
 extern Win* WorldWin;
 extern Font** MapLabelFont;
 extern Sprite** FactionPortraits;
+extern void* Sounds;
 extern void* NetMsg;
 extern void* NetState;
 extern Path* Paths;
@@ -1020,6 +1022,17 @@ extern FBuffer_load_pcx2 Buffer_load_pcx2;
 extern FBuffer_copy_mask Buffer_copy_mask;
 extern FBuffer_box_sprite Buffer_box_sprite;
 extern FBuffer_box Buffer_box;
+
+typedef int(__thiscall *FFX_init)(void* This);
+typedef int(__thiscall *FFX_play2)(void* This, int a2, int a3, int a4);
+typedef int(__thiscall *FFX_play)(void* This, int a2);
+
+extern FFX_init FX_init;
+extern FFX_play2 FX_play2;
+extern FFX_play FX_play;
+extern FFX_play FX_stop;
+extern FFX_play FX_fade;
+extern FFX_play FX_engine_pitch;
 
 typedef int(__thiscall *FTime)(Time* This);
 typedef int(__thiscall *FTime_init)(Time* This, int a2, int a3, int a4, int a5);

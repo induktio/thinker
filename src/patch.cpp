@@ -556,6 +556,8 @@ bool patch_setup(Config* cf) {
     write_call(0x5C2073, (int)alt_set_both); // world_alt_set
     write_call(0x5C2148, (int)alt_set_both); // world_alt_set
     write_call(0x5C22C3, (int)alt_set_both); // world_alt_set
+    write_call(0x57BC7A, (int)mod_monolith); // goody_box
+    write_call(0x5991C8, (int)mod_monolith); // order_veh
     write_call(0x403BD4, (int)mod_amovie_project); // amovie_project2
     write_call(0x4F2B4B, (int)mod_amovie_project); // base_production
     write_call(0x524D06, (int)mod_amovie_project); // end_of_game

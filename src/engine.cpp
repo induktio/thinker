@@ -213,6 +213,7 @@ Win*            TutWin           = (Win*           )0x8C6E68;
 Win*            WorldWin         = (Win*           )0x8E9F60; // Lower right view on world map
 Font**          MapLabelFont     = (Font**         )0x93FC24;
 Sprite**        FactionPortraits = (Sprite**       )0x6846D8;
+void*           Sounds           = (void*          )0x749CF8;
 void*           NetMsg           = (void*          )0x805338;
 void*           NetState         = (void*          )0x93CD90;
 Path*           Paths            = (Path*          )0x945B00;
@@ -557,6 +558,13 @@ FBuffer_load_pcx2 Buffer_load_pcx2 = (FBuffer_load_pcx2)0x5E2690;
 FBuffer_copy_mask Buffer_copy_mask = (FBuffer_copy_mask)0x5E2B00;
 FBuffer_box_sprite Buffer_box_sprite = (FBuffer_box_sprite)0x5E2DD3;
 FBuffer_box Buffer_box = (FBuffer_box)0x5E3203;
+
+FFX_init FX_init = (FFX_init)0x445CD0;
+FFX_play2 FX_play2 = (FFX_play2)0x446960;
+FFX_play FX_play = (FFX_play)0x446A00;
+FFX_play FX_stop = (FFX_play)0x446A90;
+FFX_play FX_fade = (FFX_play)0x446AD0;
+FFX_play FX_engine_pitch = (FFX_play)0x446B10;
 
 FTime Time_Time = (FTime)0x6161D0;
 FTime Time_dtor = (FTime)0x616200;

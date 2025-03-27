@@ -21,25 +21,14 @@
 #define MOD_VERSION "Thinker Mod"
 
 #ifdef BUILD_DEBUG
-    #define MOD_DATE __DATE__ " " __TIME__
-    #define DEBUG 1
-    #define debug(...) fprintf(debug_log, __VA_ARGS__);
+#define MOD_DATE __DATE__ " " __TIME__
+#define DEBUG 1
+#define debug(...) fprintf(debug_log, __VA_ARGS__);
 #else
-    #define MOD_DATE __DATE__
-    #define DEBUG 0
-    #define NDEBUG /* Disable assertions */
-    #define debug(...) /* Nothing */
-    #ifdef __GNUC__
-    #pragma GCC diagnostic ignored "-Wunused-variable"
-    #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
-    #endif
-#endif
-
-#ifdef __GNUC__
-    #pragma GCC diagnostic ignored "-Wconversion-null"
-    #define UNUSED(x) UNUSED_ ## x __attribute__((__unused__))
-#else
-    #define UNUSED(x) UNUSED_ ## x
+#define MOD_DATE __DATE__
+#define DEBUG 0
+#define NDEBUG /* Disable assertions */
+#define debug(...) /* Nothing */
 #endif
 
 #include <assert.h>
@@ -49,6 +38,14 @@
 #include <windows.h>
 #include <winerror.h>
 #include <strsafe.h>
+
+#ifdef __GNUC__
+#pragma GCC poison strcat_s strcpy_s
+#pragma GCC diagnostic ignored "-Wconversion-null"
+#define UNUSED(x) UNUSED_ ## x __attribute__((__unused__))
+#else
+#define UNUSED(x) UNUSED_ ## x
+#endif
 
 #define GameExeFile "terranx.exe"
 #define ModDllFile "thinker.dll"

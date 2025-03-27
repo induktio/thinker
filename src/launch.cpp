@@ -127,6 +127,8 @@ int main(int argc, char* argv[]) {
     if (!ResumeThread(pi.hThread)) {
         ExitFail(pi);
     }
+    VirtualFreeEx(pi.hProcess, arg, 0, MEM_RELEASE);
+    CloseHandle(hThread);
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
 

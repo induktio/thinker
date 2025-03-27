@@ -465,27 +465,28 @@ int __cdecl mod_crop_yield(int faction_id, int base_id, int x, int y, int flag) 
         bonus_landmark = true;
     }
     if (is_base) {
-        value = ResInfo->base_sq_nutrient;
-        if (bonus_nutrient )
-            value = 2 * ResInfo->base_sq_nutrient;
+        value = ResInfo->base_sq.nutrient;
+        if (bonus_nutrient) {
+            value = 2 * ResInfo->base_sq.nutrient;
+        }
         if (bonus_landmark) {
             value++;
         }
         if (has_fac_built(FAC_PRESSURE_DOME, base_id)
         || has_fac_built(FAC_RECYCLING_TANKS, base_id)) {
-            value += ResInfo->recycling_tanks_energy;
+            value += ResInfo->recycling_tanks.energy;
         }
     }
     else if (sq->items & BIT_THERMAL_BORE) {
-        value = ResInfo->borehole_sq_nutrient;
+        value = ResInfo->borehole_sq.nutrient;
         if (bonus_nutrient) {
-            value += ResInfo->bonus_sq_nutrient;
+            value += ResInfo->bonus_sq.nutrient;
         }
     }
     else if (sq->items & BIT_MONOLITH) {
-        value = ResInfo->monolith_nutrient;
+        value = ResInfo->monolith_sq.nutrient;
         if (bonus_nutrient) {
-            value += ResInfo->bonus_sq_nutrient;
+            value += ResInfo->bonus_sq.nutrient;
         }
         if (has_project(FAC_MANIFOLD_HARMONICS, faction_id)) {
             value += ManifoldHarmonicsBonus[clamp(planet + 1, 0, 4)][0];
@@ -499,15 +500,15 @@ int __cdecl mod_crop_yield(int faction_id, int base_id, int x, int y, int flag) 
         }
     } else {
         if (alt < ALT_SHORE_LINE) {
-            value = ResInfo->ocean_sq_nutrient;
+            value = ResInfo->ocean_sq.nutrient;
             if (bonus_nutrient) {
-                value = ResInfo->bonus_sq_nutrient + ResInfo->ocean_sq_nutrient;
+                value = ResInfo->bonus_sq.nutrient + ResInfo->ocean_sq.nutrient;
             }
             if (bonus_landmark)
                 value++;
             if (alt == ALT_OCEAN_SHELF || *ExpansionEnabled) {
                 if (sq->items & BIT_FARM) {
-                    value += ResInfo->improved_sea_nutrient;
+                    value += ResInfo->improved_sea.nutrient;
                     if (has_fac_built(FAC_AQUAFARM, base_id)) {
                         value++;
                     }
@@ -518,8 +519,8 @@ int __cdecl mod_crop_yield(int faction_id, int base_id, int x, int y, int flag) 
             }
         } else {
             if (sq->items & BIT_FOREST) {
-                value = ResInfo->forest_sq_nutrient
-                    + (bonus_nutrient ? ResInfo->bonus_sq_nutrient : 0);
+                value = ResInfo->forest_sq.nutrient
+                    + (bonus_nutrient ? ResInfo->bonus_sq.nutrient : 0);
                 if (has_fac_built(FAC_TREE_FARM, base_id)) {
                     value++;
                 }
@@ -536,7 +537,7 @@ int __cdecl mod_crop_yield(int faction_id, int base_id, int x, int y, int flag) 
                     value = (sq->is_rainy() ? 2 : (sq->is_moist() ? 1 : 0));
                 }
                 if (bonus_nutrient) {
-                    value += ResInfo->bonus_sq_nutrient;
+                    value += ResInfo->bonus_sq.nutrient;
                 }
                 if (bonus_landmark) {
                     value++;
@@ -545,7 +546,7 @@ int __cdecl mod_crop_yield(int faction_id, int base_id, int x, int y, int flag) 
                     value = 0;
                 }
                 if (sq->items & BIT_FARM && !sq->is_rocky()) {
-                    value += ResInfo->improved_land_nutrient;
+                    value += ResInfo->improved_land.nutrient;
                 }
                 if (sq->items & BIT_MINE && value > 1) {
                     value += Rules->nutrient_effect_mine_sq;
@@ -595,20 +596,20 @@ int __cdecl mod_mine_yield(int faction_id, int base_id, int x, int y, int flag) 
     || (sq->landmarks & LM_CANYON)) {
         bonus_landmark = !(sq->landmarks & LM_DISABLE);
     }
-    int value = bonus_landmark + (bonus_mineral ? ResInfo->bonus_sq_mineral : 0);
+    int value = bonus_landmark + (bonus_mineral ? ResInfo->bonus_sq.mineral : 0);
 
     if (is_base) {
-        value += ResInfo->base_sq_mineral;
+        value += ResInfo->base_sq.mineral;
         if (has_fac_built(FAC_PRESSURE_DOME, base_id)
         || has_fac_built(FAC_RECYCLING_TANKS, base_id)) {
-            value += ResInfo->recycling_tanks_mineral;
+            value += ResInfo->recycling_tanks.mineral;
         }
         has_limit = false;
     } else {
         if (sq->items & BIT_MONOLITH) {
-            value = ResInfo->monolith_mineral;
+            value = ResInfo->monolith_sq.mineral;
             if (bonus_mineral) {
-                value += ResInfo->bonus_sq_mineral;
+                value += ResInfo->bonus_sq.mineral;
             }
             if (has_project(FAC_MANIFOLD_HARMONICS, faction_id)) {
                 value += ManifoldHarmonicsBonus[clamp(planet + 1, 0, 4)][1];
@@ -616,9 +617,9 @@ int __cdecl mod_mine_yield(int faction_id, int base_id, int x, int y, int flag) 
             has_limit = false;
         }
         else if (sq->items & BIT_THERMAL_BORE) {
-            value = ResInfo->borehole_sq_mineral;
+            value = ResInfo->borehole_sq.mineral;
             if (bonus_mineral) {
-                value += ResInfo->bonus_sq_mineral;
+                value += ResInfo->bonus_sq.mineral;
             }
         }
         else if (sq->items & BIT_FUNGUS && alt >= ALT_OCEAN_SHELF) {
@@ -632,7 +633,7 @@ int __cdecl mod_mine_yield(int faction_id, int base_id, int x, int y, int flag) 
         else if (alt >= ALT_SHORE_LINE) {
             int modifier = sq->val3 >> 6;
             if (sq->items & BIT_FOREST) {
-                value += ResInfo->forest_sq_mineral;
+                value += ResInfo->forest_sq.mineral;
             } else if (!(sq->items & BIT_MINE) && !flag) {
                 value += (modifier > 0);
             } else {
@@ -652,14 +653,14 @@ int __cdecl mod_mine_yield(int faction_id, int base_id, int x, int y, int flag) 
             }
         }
         else {
-            value += ResInfo->ocean_sq_mineral;
+            value += ResInfo->ocean_sq.mineral;
             if (alt == ALT_OCEAN_SHELF && MFactions[faction_id].is_aquatic()
             && conf.aquatic_bonus_minerals) {
                 value++;
             }
             if (alt == ALT_OCEAN_SHELF || *ExpansionEnabled) {
                 if (sq->items & BIT_MINE || flag) {
-                    value += ResInfo->improved_sea_mineral;
+                    value += ResInfo->improved_sea.mineral;
                     if (has_tech(Rules->tech_preq_mining_platform_bonus, faction_id) ) {
                         value++;
                     }
@@ -708,7 +709,7 @@ int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag
         bool is_hq = has_fac_built(FAC_HEADQUARTERS, base_id);
         if (has_fac_built(FAC_PRESSURE_DOME, base_id)
         || has_fac_built(FAC_RECYCLING_TANKS, base_id)) {
-            value += ResInfo->recycling_tanks_energy;
+            value += ResInfo->recycling_tanks.energy;
         }
         if (economy > 4) {
             value += 4;
@@ -732,14 +733,14 @@ int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag
     // Modify the game to not apply 2 resource yield restrictions on monolith energy.
     // This limit does not apply on nutrients/minerals produced by monoliths.
     else if (sq->items & BIT_MONOLITH) {
-        value = ResInfo->monolith_energy;
+        value = ResInfo->monolith_sq.energy;
         if (has_project(FAC_MANIFOLD_HARMONICS, faction_id)) {
             value += ManifoldHarmonicsBonus[clamp(planet + 1, 0, 4)][2];
         }
         has_limit = false;
     }
     else if (sq->items & BIT_THERMAL_BORE) {
-        value = ResInfo->borehole_sq_energy;
+        value = ResInfo->borehole_sq.energy;
     }
     else if (sq->items & BIT_FUNGUS && alt >= ALT_OCEAN_SHELF) {
         int fungus_val = clamp(planet, -3, 0) + Factions[faction_id].tech_fungus_energy;
@@ -752,9 +753,9 @@ int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag
     }
     else if (alt < ALT_SHORE_LINE) {
         if (alt == ALT_OCEAN_SHELF || *ExpansionEnabled) {
-            value = ResInfo->ocean_sq_energy;
+            value = ResInfo->ocean_sq.energy;
             if (sq->items & BIT_SOLAR || flag) {
-                value += ResInfo->improved_sea_energy;
+                value += ResInfo->improved_sea.energy;
                 if (has_fac_built(FAC_THERMOCLINE_TRANSDUCER, base_id)) {
                     value++;
                 }
@@ -765,7 +766,7 @@ int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag
         }
     }
     else if (sq->items & BIT_FOREST) {
-        value = ResInfo->forest_sq_energy;
+        value = ResInfo->forest_sq.energy;
         if (has_fac_built(FAC_HYBRID_FOREST, base_id)) {
             value++;
         }
@@ -789,7 +790,7 @@ int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag
             value++;
         }
         if (bonus_energy) {
-            value += ResInfo->bonus_sq_energy;
+            value += ResInfo->bonus_sq.energy;
         }
         if ((sq->landmarks & LM_VOLCANO && sq->code_at() < 9)
         || sq->landmarks & (LM_URANIUM|LM_GEOTHERMAL|LM_RIDGE)) {
@@ -1142,13 +1143,13 @@ int item_yield(int x, int y, int faction_id, int bonus, MapItem item) {
     int N = 0, M = 0, E = 0;
     if (item != BIT_FUNGUS) {
         if (bonus == RES_NUTRIENT) {
-            N += ResInfo->bonus_sq_nutrient;
+            N += ResInfo->bonus_sq.nutrient;
         }
         if (bonus == RES_MINERAL) {
-            M += ResInfo->bonus_sq_mineral;
+            M += ResInfo->bonus_sq.mineral;
         }
         if (bonus == RES_ENERGY) {
-            E += ResInfo->bonus_sq_energy;
+            E += ResInfo->bonus_sq.energy;
         }
         if (sq->items & BIT_RIVER && !is_ocean(sq)) {
             E++;
@@ -1167,14 +1168,14 @@ int item_yield(int x, int y, int faction_id, int bonus, MapItem item) {
         }
     }
     if (item == BIT_FOREST) {
-        N += ResInfo->forest_sq_nutrient;
-        M += ResInfo->forest_sq_mineral;
-        E += ResInfo->forest_sq_energy;
+        N += ResInfo->forest_sq.nutrient;
+        M += ResInfo->forest_sq.mineral;
+        E += ResInfo->forest_sq.energy;
     }
     else if (item == BIT_THERMAL_BORE) {
-        N += ResInfo->borehole_sq_nutrient;
-        M += ResInfo->borehole_sq_mineral;
-        E += ResInfo->borehole_sq_energy;
+        N += ResInfo->borehole_sq.nutrient;
+        M += ResInfo->borehole_sq.mineral;
+        E += ResInfo->borehole_sq.energy;
         N -= (N > 0);
     }
     else if (item == BIT_FUNGUS) {
@@ -1183,16 +1184,16 @@ int item_yield(int x, int y, int faction_id, int bonus, MapItem item) {
         E = fungus_yield(faction_id, RES_ENERGY);
     }
     else if (item == BIT_FARM && is_ocean(sq)) {
-        N += ResInfo->ocean_sq_nutrient + ResInfo->improved_sea_nutrient;
-        M += ResInfo->ocean_sq_mineral;
-        E += ResInfo->ocean_sq_energy;
+        N += ResInfo->ocean_sq.nutrient + ResInfo->improved_sea.nutrient;
+        M += ResInfo->ocean_sq.mineral;
+        E += ResInfo->ocean_sq.energy;
         if (sq->items & BIT_MINE) {
-            M += ResInfo->improved_sea_mineral
+            M += ResInfo->improved_sea.mineral
                 + has_tech(Rules->tech_preq_mining_platform_bonus, faction_id);
             N -= (N > 0);
         }
         if (sq->items & BIT_SOLAR) {
-            E += ResInfo->improved_sea_energy;
+            E += ResInfo->improved_sea.energy;
         }
     }
     else {
@@ -1450,7 +1451,8 @@ static void apply_supply_pods(int faction_id, int x, int y) {
             pods++;
         } else if (bonus_at(m.x, m.y)) {
             bonus++;
-        } else if (m.i > 0 && !(m.sq->items & (BIT_SUPPLY_REMOVE|BIT_BASE_IN_TILE|BIT_VEH_IN_TILE))) {
+        } else if (m.i > 0 && !(m.sq->items
+        & (BIT_SUPPLY_REMOVE|BIT_MONOLITH|BIT_BASE_IN_TILE|BIT_VEH_IN_TILE))) {
             places.insert({m.x, m.y});
         }
     }

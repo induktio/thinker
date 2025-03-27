@@ -1319,7 +1319,7 @@ bool can_solar(int x, int y, int faction, int bonus, MAP* sq) {
     && bonus != RES_ENERGY && mod_energy_yield(faction, -1, x, y, 0) >= 2) {
         return false;
     }
-    if (!sea && has_terra(FORMER_FOREST, sea, faction) && ResInfo->forest_sq_energy > 0
+    if (!sea && has_terra(FORMER_FOREST, sea, faction) && ResInfo->forest_sq.energy > 0
     && !(sq->is_rocky() && bonus == RES_ENERGY && sq->alt_level() > ALT_TWO_ABOVE_SEA)
     && (sq->landmarks & LM_JUNGLE
     || (sq->is_rainy() + sq->is_rolling() + sq->is_rainy_or_moist()
@@ -1568,8 +1568,8 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
     int bonus = bonus_at(x, y);
     int current = total_yield(x, y, faction);
 
-    bool forest = has_terra(FORMER_FOREST, sea, faction) && ResInfo->forest_sq_energy > 0;
-    bool borehole = has_terra(FORMER_THERMAL_BORE, sea, faction) && ResInfo->borehole_sq_energy > 2;
+    bool forest = has_terra(FORMER_FOREST, sea, faction) && ResInfo->forest_sq.energy > 0;
+    bool borehole = has_terra(FORMER_THERMAL_BORE, sea, faction) && ResInfo->borehole_sq.energy > 2;
     bool condenser = has_terra(FORMER_CONDENSER, sea, faction);
     bool use_sensor = items & BIT_SENSOR && nearby_items(x, y, 0, 9, BIT_SENSOR) < 2;
     bool allow_farm = items & BIT_FARM || can_farm(x, y, faction, bonus, sq);
@@ -1645,7 +1645,7 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
         + 2*max(0, sq->alt_level()-ALT_ONE_ABOVE_SEA) - nearby_items(x, y, 0, 25, BIT_SOLAR);
     if (sea) {
         solar_need = (has_terra(FORMER_MINE, sea, faction) ?
-            (ResInfo->improved_sea_energy - ResInfo->improved_sea_mineral)
+            (ResInfo->improved_sea.energy - ResInfo->improved_sea.mineral)
             - has_tech(Rules->tech_preq_mining_platform_bonus, faction): 6)
             + nearby_items(x, y, 0, 25, BIT_MINE) - nearby_items(x, y, 0, 25, BIT_SOLAR);
     }

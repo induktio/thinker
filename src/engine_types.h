@@ -563,43 +563,23 @@ struct CRules {
     int32_t subspace_gen_req;
 };
 
+struct ResValue {
+    int nutrient;
+    int mineral;
+    int energy;
+    int unused;
+};
+
 struct CResourceInfo {
-    int32_t ocean_sq_nutrient;
-    int32_t ocean_sq_mineral;
-    int32_t ocean_sq_energy;
-    int32_t pad_0;
-    int32_t base_sq_nutrient;
-    int32_t base_sq_mineral;
-    int32_t base_sq_energy;
-    int32_t pad_1;
-    int32_t bonus_sq_nutrient;
-    int32_t bonus_sq_mineral;
-    int32_t bonus_sq_energy;
-    int32_t pad_2;
-    int32_t forest_sq_nutrient;
-    int32_t forest_sq_mineral;
-    int32_t forest_sq_energy;
-    int32_t pad_3;
-    int32_t recycling_tanks_nutrient;
-    int32_t recycling_tanks_mineral;
-    int32_t recycling_tanks_energy;
-    int32_t pad_4;
-    int32_t improved_land_nutrient;
-    int32_t improved_land_mineral;
-    int32_t improved_land_energy;
-    int32_t pad_5;
-    int32_t improved_sea_nutrient;
-    int32_t improved_sea_mineral;
-    int32_t improved_sea_energy;
-    int32_t pad_6;
-    int32_t monolith_nutrient;
-    int32_t monolith_mineral;
-    int32_t monolith_energy;
-    int32_t pad_7;
-    int32_t borehole_sq_nutrient;
-    int32_t borehole_sq_mineral;
-    int32_t borehole_sq_energy;
-    int32_t pad_8;
+    ResValue ocean_sq;
+    ResValue base_sq;
+    ResValue bonus_sq;
+    ResValue forest_sq;
+    ResValue recycling_tanks;
+    ResValue improved_land;
+    ResValue improved_sea;
+    ResValue monolith_sq;
+    ResValue borehole_sq;
 };
 
 struct CResourceName {

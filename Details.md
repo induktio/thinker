@@ -5,9 +5,9 @@ Thinker has several advanced planning routines that enhance the base game AI to 
 
 Alpha Centauri was known for its immersive lore and story telling. As a general design principle, Thinker will attempt to improve gameplay mechanics and AI while leaving most of the lore as it is. Any instances where adding a feature or patch would be controversial with the original game narrative should be avoided, unless this is necessary for gameplay balance reasons. Hopefully this combination of changes will represent the original game accurately while also improving the gameplay experience and fixing many balance issues.
 
-With minor exceptions, Thinker uses the same production bonuses as the vanilla difficulty levels would grant the AI normally. There should be no extra resources received by the AI unless this is chosen in the configuration file. The main goal is to make the AI play better given any game config options, so generally the mod will not attempt to adjust most vanilla game design choices.
+With minor exceptions, Thinker uses the same production bonuses as the original difficulty levels would grant the AI normally. There should be no extra resources received by the AI unless this is chosen in the configuration file. The main goal is to make the AI play better given any game config options, so generally the mod will not attempt to adjust original game design choices.
 
-For the most complete list of all features provided by this mod, refer to both this file and `thinker.ini`. If something is not mentioned in these files, it is probably not implemented. Thinker Mod will affect many AI behaviors and also introduce some new game mechanics into Alpha Centauri. Generally most of the new features in the mod will have their own specific config options to choose either vanilla or modded behavior. Items listed under "Other patches included" and "Scient's Patch" in this file will always be applied unless there is a config option listed to toggle them.
+For the most complete list of all features provided by this mod, refer to both this file and `thinker.ini`. If something is not mentioned in these files, it is probably not implemented. Thinker Mod will affect many AI behaviors and also introduce some new game mechanics into Alpha Centauri. Generally most of the new features in the mod will have their own specific config options to adjust them. Items listed under "Other patches included" and "Scient's Patch" in this file will always be applied unless there is a config option listed to toggle them.
 
 Thinker does not have any incompatible save game format, so it's possible to open an old save and have the factions switch to the new AI and vice-versa. None of the `thinker.ini` config options are preserved in the save game either, but the units or resources spawned at the game start will remain.
 
@@ -36,7 +36,7 @@ User interface additions
 ========================
 Thinker's in-game menu shows the mod version information and provides statistics about the factions and spent game time if a game is loaded. In addition, some Thinker config options can be adjusted from its sub menu. When the game is in the main menu, it is also possible to adjust Special Scenario Rules for new random maps started from there. Selecting any special rules will override all rules even when starting a new scenario, so leave all the choices in the dialog empty to use preset scenario rules.
 
-Statistics feature calculates mineral and energy production numbers after multiplier facility effects are applied. However the mineral output bonus provided by Space Elevator is ignored in this step. Energy calculation also does not substract inefficiency from the final number.
+Statistics feature calculates mineral and energy production numbers after multiplier facility effects are applied. However the mineral output bonus provided by Space Elevator is ignored in this step. Energy calculation also does not subtract inefficiency from the final number.
 
 Render base info feature draws colored labels around various bases to identify them more easily and shows more details on the world map. HQ bases are highlighted with a white label. Player-owned bases that are about to drone riot or enter the golden age are highlighted with colored labels. Bases that have Flechette Defense System or Geo Survey Pods are highlighted with a blue label.
 
@@ -50,7 +50,7 @@ Ecological damage display on the base window has been updated to be more useful.
 
 Whenever the player instructs a former to build an improvement that replaces any other item in the tile, the game will display a warning dialog. This dialog can be skipped by toggling `warn_on_former_replace` option.
 
-To speed up the gameplay several user interface popups have been moved into delayed notifications that are also listed on the message log. These notificationa include satellite completion by any faction, forest/kelp growing near player bases and unit promotions after combat.
+To speed up the gameplay several user interface popups have been moved into delayed notifications that are also listed on the message log. These notifications include satellite completion by any faction, forest/kelp growing near player bases and unit promotions after combat.
 
 When building or capturing a new base, the mod will automatically copy the saved build queue from **Template 1** to the new base. At maximum 8 items can be saved to the template, and the first item from the template will be automatically moved to current production choice when a new base is built or captured. Only the template saved to the first slot is checked, any other saved templates are ignored.
 

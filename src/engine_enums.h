@@ -646,9 +646,9 @@ enum MapItem {
     BIT_CONDENSER = 0x400000,
     BIT_ECH_MIRROR = 0x800000,
     BIT_THERMAL_BORE = 0x1000000,
-    BIT_UNK_2000000 = 0x2000000, // related to monoliths, maybe redundant
-    BIT_UNK_4000000 = 0x4000000, // this tile has a pod when no unity scattering
-    BIT_UNK_8000000 = 0x8000000, // this tile has a pod when no unity scattering
+    BIT_UNK_2000000 = 0x2000000, // Monolith on this tile has been used at least once
+    BIT_UNK_4000000 = 0x4000000, // This tile has supply pod when no unity scattering
+    BIT_UNK_8000000 = 0x8000000, // This tile has supply pod when no unity scattering
     BIT_SUPPLY_POD = 0x10000000,
     BIT_NUTRIENT_RES = 0x20000000,
     BIT_DOUBLE_SEA = 0x40000000, // Iterate adjacent 8 sea tiles, set bit if there are

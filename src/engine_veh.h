@@ -652,6 +652,7 @@ struct VEH {
     }
     bool need_monolith() {
         return triad() != TRIAD_AIR
+            && can_monolith(unit_id)
             && (need_heals() || (!(state & VSTATE_MONOLITH_UPGRADED)
             && morale < MORALE_ELITE && offense_value() != 0));
     }

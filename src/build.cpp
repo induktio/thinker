@@ -97,14 +97,14 @@ int __cdecl mod_base_hurry() {
         }
         return 0;
     }
-    if (t < 0 && (turns > 1 || b->drone_riots_active()) && cost < f->energy_credits/8) {
+    if (t < 0 && (turns > 1 || b->drone_riots_active()) && cost < credits/8) {
         if ((t == -FAC_RECREATION_COMMONS || t == -FAC_PUNISHMENT_SPHERE
         || (t == -FAC_NETWORK_NODE && has_project(FAC_VIRTUAL_WORLD, b->faction_id)))
         && b->drone_total + b->specialist_adjust > b->talent_total) {
             return hurry_item(base_id, mins, cost);
         }
     }
-    if (t < 0 && turns > 1 && cost < f->energy_credits/8) {
+    if (t < 0 && turns > 1 && cost < credits/8) {
         if (t == -FAC_RECYCLING_TANKS || t == -FAC_PRESSURE_DOME
         || t == -FAC_TREE_FARM || t == -FAC_HEADQUARTERS) {
             return hurry_item(base_id, mins, cost);
@@ -132,9 +132,13 @@ int __cdecl mod_base_hurry() {
             return hurry_item(base_id, mins, cost);
         }
     }
-    if (t >= 0 && turns > 1 && cost < f->energy_credits/8 && mins < 35) {
+    if (t >= 0 && turns > 1 && cost < credits/8 && mins < 35) {
+        if (t >= MaxProtoFactionNum && !Units[t].is_prototyped()
+        && prototype_factor(t) > 0 && cost > 50) {
+            return 0;
+        }
         if (Units[t].is_combat_unit()) {
-            int val = (cost < f->energy_credits/16)
+            int val = (cost < credits/16)
                 + (p->enemy_bases > 0)
                 + (p->enemy_factions > 0)
                 + (b->defend_goal > 2)
@@ -142,16 +146,20 @@ int __cdecl mod_base_hurry() {
                 + (b->defend_range < 12)
                 + ((b->state_flags & BSTATE_COMBAT_LOSS_LAST_TURN) != 0)
                 + 2*(!has_defenders(b->x, b->y, b->faction_id));
+            if (b->mineral_surplus*2 > b->mineral_intake_2 && cost < 40) {
+                val += random(clamp((credits - cost) / 256, 0, 8));
+            }
             if (val > 4) {
                 return hurry_item(base_id, mins, cost);
             }
         }
-        if (Units[t].is_former() && turns > (*CurrentTurn + base_id) % 16
-        && (cost < f->energy_credits/16 || b->mineral_surplus < p->median_limit)) {
+        if ((Units[t].is_former() || Units[t].is_supply())
+        && turns > (*CurrentTurn + base_id) % 16
+        && (cost < credits/16 || b->mineral_surplus < p->median_limit)) {
             return hurry_item(base_id, mins, cost);
         }
         if (Units[t].is_colony() && b->pop_size > 1
-        && (cost < f->energy_credits/16 || turns > (*CurrentTurn + base_id) % 16)
+        && (cost < credits/16 || turns > (*CurrentTurn + base_id) % 16)
         && (b->drone_riots_active()
         || (!base_unused_space(base_id) && b->nutrient_surplus > 1)
         || (base_can_riot(base_id, true)
@@ -975,9 +983,9 @@ int select_build(int base_id) {
             score -= 2*base->energy_inefficiency;
         }
         if (t == FAC_RECYCLING_TANKS) {
-            score += 16*(ResInfo->recycling_tanks_energy
-                + (1 + (base->nutrient_surplus < 4)) * ResInfo->recycling_tanks_nutrient
-                + (1 + (base->mineral_surplus < 4)) * ResInfo->recycling_tanks_mineral);
+            score += 16*(ResInfo->recycling_tanks.energy
+                + (1 + (base->nutrient_surplus < 4)) * ResInfo->recycling_tanks.nutrient
+                + (1 + (base->mineral_surplus < 4)) * ResInfo->recycling_tanks.mineral);
         }
         if (t == FAC_CHILDREN_CRECHE) {
             score += 4*base->energy_inefficiency + 16*min(4, base_unused_space(base_id));
