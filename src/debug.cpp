@@ -174,17 +174,23 @@ void __cdecl log_say_hex2(const char* a1, const char* a2, int a3, int a4, int a5
 }
 
 #pragma GCC diagnostic pop
+/*
+Additional custom non-engine debugging functions.
+*/
 
-void check_zeros(uint8_t* ptr, size_t len) {
-    char buf[256];
-    if (DEBUG && !(*ptr == 0 && memcmp(ptr, ptr + 1, len - 1) == 0)) {
-        snprintf(buf, sizeof(buf), "Non-zero values detected at: 0x%06x", (int)ptr);
-        MessageBoxA(0, buf, "Debug notice", MB_OK | MB_ICONINFORMATION);
-        int* p = (int32_t*)ptr;
-        for (int i=0; i*sizeof(int) < len; i++, p++) {
-            debug("LOC %08x %d: %08x\n", (int)p, i, *p);
-        }
+uint32_t game_rand_state() {
+    fp_none getptd = (fp_none)0x6491C3;
+    return ((uint32_t*)getptd())[5];
+}
+
+uint32_t chksum(void* ptr, size_t len) {
+    uint32_t val = len;
+    for (size_t i = 0; i < len; i++) {
+        val += ((~val << 8) ^ (val >> 16) ^ ((uint8_t*)ptr)[i]);
     }
+    val *= 0xc2b2ae35;
+    val ^= val >> 16;
+    return val;
 }
 
 void print_map(int x, int y) {

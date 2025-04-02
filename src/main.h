@@ -50,6 +50,7 @@
     #define UNUSED(x) UNUSED_ ## x __attribute__((__unused__))
     #pragma GCC diagnostic ignored "-Wchar-subscripts"
     #pragma GCC diagnostic ignored "-Wattributes"
+    #pragma GCC diagnostic error "-Wreturn-type"
 #else
     #define UNUSED(x) UNUSED_ ## x
 #endif

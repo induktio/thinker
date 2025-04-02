@@ -118,6 +118,7 @@ int* const dword_90EA3C = (int*)0x90EA3C;
 int* const dword_93A96C = (int*)0x93A96C;
 int* const dword_93A98C = (int*)0x93A98C;
 int* const CurrentVehID = (int*)0x9A64DC;
+int* const dword_9A6510 = (int*)0x9A6510;
 int* const ScreenWidth = (int*)0x9B7B1C;
 int* const ScreenHeight = (int*)0x9B7B20;
 char256* const ParseStrBuffer = (char256*)0x9BB5E8;
@@ -1269,6 +1270,8 @@ fp_1int tech_advance             = (fp_1int)0x5BE530;
 fp_1int tech_rate                = (fp_1int)0x5BE6B0;
 fp_2int tech_research            = (fp_2int)0x5BE940;
 fp_4int tech_pick                = (fp_4int)0x5BEB70;
+fp_2int X_text_open              = (fp_2int)0x5BECA0;
+fp_3int do_unity_crash           = (fp_3int)0x5BED20;
 
 fp_2int veh_at                   = (fp_2int)0x5BFE90;
 fp_1int veh_lift                 = (fp_1int)0x5BFFA0;

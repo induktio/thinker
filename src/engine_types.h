@@ -457,10 +457,10 @@ struct Faction {
     Goal goals[75];
     Goal sites[25];
     int32_t unk_93;
-    int32_t unk_94;
-    int32_t unk_95;
-    int32_t unk_96;
-    int32_t unk_97;
+    int32_t goody_opened;
+    int32_t goody_artifact;
+    int32_t goody_earthquake;
+    int32_t goody_tech;
     int32_t tech_achieved; // count of technology faction has discovered/achieved
     int32_t time_bonus_count; // Net MP: Each is worth amount in seconds under Time Controls Extra
     int32_t unk_99; // unused?

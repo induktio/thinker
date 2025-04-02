@@ -352,6 +352,7 @@ extern int* const dword_90EA3C;
 extern int* const dword_93A96C;
 extern int* const dword_93A98C;
 extern int* const CurrentVehID;
+extern int* const dword_9A6510;
 extern int* const ScreenWidth;
 extern int* const ScreenHeight;
 extern char256* const ParseStrBuffer;
@@ -1788,6 +1789,8 @@ extern fp_1int tech_advance;
 extern fp_1int tech_rate;
 extern fp_2int tech_research;
 extern fp_4int tech_pick;
+extern fp_2int X_text_open;
+extern fp_3int do_unity_crash;
 
 //extern fp_2int veh_at;
 extern fp_1int veh_lift;

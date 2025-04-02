@@ -8,6 +8,7 @@ int __cdecl arty_range(int unit_id);
 int __cdecl drop_range(int faction_id);
 bool has_orbital_drops(int faction_id);
 bool has_ability(int faction_id, VehAbl abl, VehChassis chs, VehWeapon wpn);
+bool is_battle_ogre(int unit_id);
 bool can_repair(int unit_id);
 bool can_monolith(int unit_id);
 
@@ -23,6 +24,7 @@ int __cdecl veh_cargo(int veh_id);
 int __cdecl contribution(int veh_id, int terraform_id);
 int __cdecl want_monolith(int veh_id);
 void __cdecl mod_monolith(int veh_id);
+int __cdecl mod_goody_box(int veh_id);
 int __cdecl transport_val(VehChassis chassis_id, VehAblFlag abls, VehReactor reactor_id);
 int __cdecl prototype_factor(int unit_id);
 int __cdecl mod_proto_cost(VehChassis chassis_id, VehWeapon weapon_id,

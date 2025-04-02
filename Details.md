@@ -132,6 +132,8 @@ When `nutrient_bonus` option is higher than zero, the placement algorithm adds t
 
 Another optional setting `rare_supply_pods` is not dependent on faction placement, instead it affects the whole map by reducing the frequency of random supply pods significantly. Thematically it never made much sense that the supply pods would be excessively abundant across the whole planet surface, while the Unity spaceship would supposedly only have limited space for extra supplies.
 
+When `rare_supply_pods` option is enabled, supply pods are also less likely to have events that rush production at the nearest base when it needs more than 40 minerals. The rushed production amount will always have to be less than 100 minerals or otherwise the result is changed to something else.
+
 
 Accelerated start feature
 =========================
