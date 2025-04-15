@@ -438,7 +438,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 20. Fix foreign base names being visible in unexplored tiles when issuing move to or patrol orders to the tiles.
 21. Fix diplomacy dialog to show the missing response messages (GAVEENERGY) when gifting energy credits to another faction.
 22. Fix issue that caused sea-based probe teams to be returned to landlocked bases. Probes are now returned to the closest base as determined by the actual pathfinding distance.
-23. Fix issue with randomized faction agendas where they might be given agendas that are their opposition social models. Additionally randomized leader personalities option now always selects 1 or 2 AI priorities.
+23. Fix issue with randomized faction agendas where they might be given agendas that are their opposition social models making the choice unusable. Future social models can be also selected but much less often. Additionally randomized leader personalities always selects at least one AI priority.
 24. Fix bug that prevents the turn from advancing after force-ending the turn while any player-owned needlejet in flight has moves left.
 25. Game will now allow reselecting units that have already skipped their turns if they have full movement points available (activate_skipped_units).
 26. Whenever additional units are added in the editor mode, these are set as independent units requiring no support by default (editor_free_units).
@@ -476,6 +476,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 58. Modify energy inefficiency formula when the faction does not have headquarters active in which case distance is always treated at least 16. When the faction base count is between 32 and 96, this default distance increases linearly from 16 to 32.
 59. Enable COMMFREQ faction ability to grant one extra comm frequency at the game start. Previously this ability was skipped by the game.
 60. Fix endgame replay feature overflowing unrelated content causing eventual crash after too many base create/capture/kill events happen during the game.
+61. Modify the faction setup code to check by filename if multiple similar factions are active. If any duplicates are found, each one will have their faction_id as name suffix.
 
 
 Scient's patch

@@ -2078,7 +2078,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                 synch_bit(tx, ty, i);
             }
             draw_map(1);
-            if (eliminate_player(faction_id_def, faction_id_atk) != 0) {
+            if (mod_eliminate_player(faction_id_def, faction_id_atk) != 0) {
                 treaty_report = 0;
             }
         }

@@ -535,6 +535,14 @@ bool patch_setup(Config* cf) {
     write_call(0x5B341C, (int)mod_setup_player); // eliminate_player
     write_call(0x5B3C03, (int)mod_setup_player); // setup_game
     write_call(0x5B3C4C, (int)mod_setup_player); // setup_game
+    write_call(0x4D2EE4, (int)mod_eliminate_player); // Console::disband2
+    write_call(0x4E07C9, (int)mod_eliminate_player); // Console::editor_eliminate
+    write_call(0x4EF328, (int)mod_eliminate_player); // base_growth
+    write_call(0x4F1475, (int)mod_eliminate_player); // base_production
+    write_call(0x50ADDC, (int)mod_eliminate_player); // battle_fight_2
+    write_call(0x50DD33, (int)mod_eliminate_player); // capture_base
+    write_call(0x5274F5, (int)mod_eliminate_player); // faction_upkeep
+    write_call(0x598685, (int)mod_eliminate_player); // order_veh
     write_call(0x5B41E9, (int)mod_time_warp);  // setup_game
     write_call(0x52768A, (int)mod_turn_upkeep); // control_turn
     write_call(0x52A4AD, (int)mod_turn_upkeep); // net_control_turn
@@ -1326,41 +1334,30 @@ bool patch_setup(Config* cf) {
         write_call(0x4E4CFC, (int)mod_name_base);
         write_call(0x4F7E18, (int)mod_name_base);
     }
-    if (cf->faction_placement) {
-        const byte asm_find_start[] = {
-            0x8D,0x45,0xF8,0x50,0x8D,0x45,0xFC,0x50,0x8B,0x45,
-            0x08,0x50,0xE8,0x00,0x00,0x00,0x00,0x83,0xC4,0x0C
-        };
-        remove_call(0x5B1DFF);
-        remove_call(0x5B2137);
-        memset((void*)0x5B220F, 0x90, 63);
-        memset((void*)0x5B2257, 0x90, 11);
-        memcpy((void*)0x5B220F, asm_find_start, sizeof(asm_find_start));
-        write_call(0x5B221B, (int)find_start);
+    if (!cf->alien_guaranteed_techs) {
+        short_jump(0x5B29F8); // setup_player
     }
-    {
-        // Skip default randomize faction leader personalities code
-        short_jump(0x5B1254); // setup_player
-
+    if (cf->alien_early_start) { // config_game > alien_start
+        const byte old_bytes[] = {0x75,0x1A};
+        const byte new_bytes[] = {0x90,0x90};
+        write_bytes(0x589081, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+    if (cf->cult_early_start) { // config_game > alien_start
+        long_jump(0x589097);
+    }
+    if (cf->alien_early_start || cf->cult_early_start) { // crash_landing
+        // Use default starting year instead of advancing by 5 turns
+        const byte old_bytes[] = {0xC7,0x05,0xD4,0x64,0x9A,0x00,0x05,0x00,0x00,0x00};
+        write_bytes(0x5AE3C3, old_bytes, NULL, sizeof(old_bytes));
+        write_bytes(0x5AE3E9, old_bytes, NULL, sizeof(old_bytes));
+    }
+    if (cf->skip_default_balance) {
+        remove_call(0x5B41F5); // setup_game
         // Remove aquatic faction extra sea colony pod in setup_player
         const byte old_bytes[] = {0x66,0x89,0xB1,0x56,0x28,0x95,0x00};
         write_bytes(0x5B3060, old_bytes, NULL, sizeof(old_bytes));
         remove_call(0x5B3052);
         remove_call(0x5B3067);
-    }
-    if (cf->alien_early_start) {
-        const byte old_bytes[] = {0x75,0x1A};
-        const byte new_bytes[] = {0x90,0x90};
-        write_bytes(0x589081, old_bytes, new_bytes, sizeof(new_bytes));
-    }
-    if (cf->cult_early_start) {
-        long_jump(0x589097);
-    }
-    if (cf->alien_early_start || cf->cult_early_start) {
-        // Use default starting year instead of advancing by 5 turns
-        const byte old_bytes[] = {0xC7,0x05,0xD4,0x64,0x9A,0x00,0x05,0x00,0x00,0x00};
-        write_bytes(0x5AE3C3, old_bytes, NULL, sizeof(old_bytes));
-        write_bytes(0x5AE3E9, old_bytes, NULL, sizeof(old_bytes));
     }
     if (cf->ignore_reactor_power) {
         short_jump(0x506F90); // battle_fight_2
@@ -1390,9 +1387,6 @@ bool patch_setup(Config* cf) {
         };
         write_bytes(0x46CA15, old_menu, new_menu, sizeof(new_menu));
         write_call(0x46CA21, (int)MapWin_right_menu_arty);
-    }
-    if (cf->skip_default_balance) {
-        remove_call(0x5B41F5);
     }
     if (cf->facility_capture_fix) {
         remove_call(0x50D06A);
@@ -1457,9 +1451,6 @@ bool patch_setup(Config* cf) {
         const byte old_bytes[] = {0x75,0x0C,0x81,0xFE,0xD0};
         const byte new_bytes[] = {0xE9,0x02,0x1A,0x00,0x00};
         write_bytes(0x52070F, old_bytes, new_bytes, sizeof(new_bytes));
-    }
-    if (!cf->alien_guaranteed_techs) {
-        short_jump(0x5B29F8);
     }
     if (cf->native_weak_until_turn >= 0) {
         const byte old_bytes[] = {0x83, 0x3D, 0xD4, 0x64, 0x9A, 0x00, 0x0F};
@@ -1530,6 +1521,18 @@ bool patch_setup(Config* cf) {
         const byte old_bytes[] = {0x46};
         const byte new_bytes[] = {0x90};
         write_bytes(0x4E7604, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+    if (cf->faction_placement) {
+        const byte asm_find_start[] = {
+            0x8D,0x45,0xF8,0x50,0x8D,0x45,0xFC,0x50,0x8B,0x45,
+            0x08,0x50,0xE8,0x00,0x00,0x00,0x00,0x83,0xC4,0x0C
+        };
+        remove_call(0x5B1DFF);
+        remove_call(0x5B2137);
+        memset((void*)0x5B220F, 0x90, 63);
+        memset((void*)0x5B2257, 0x90, 11);
+        memcpy((void*)0x5B220F, asm_find_start, sizeof(asm_find_start));
+        write_call(0x5B221B, (int)find_start);
     }
     if (cf->collateral_damage_value != 3) {
         const byte old_bytes[] = {0xB2,0x03};

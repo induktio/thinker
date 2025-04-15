@@ -1343,7 +1343,7 @@ int __cdecl mod_base_growth() {
             if (base->pop_size <= 0) {
                 mod_base_kill(base_id);
                 draw_map(1);
-                eliminate_player(faction_id, 0);
+                mod_eliminate_player(faction_id, 0);
                 return 1;
             }
         }

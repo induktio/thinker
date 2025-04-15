@@ -126,6 +126,14 @@ bool is_human(int faction_id) {
 }
 
 /*
+Determine if the specified faction is a Progenitor faction (Caretakers / Usurpers).
+*/
+bool is_alien(int faction_id) {
+    assert(faction_id >= 0);
+    return *ExpansionEnabled && MFactions[faction_id].rule_flags & RFLAG_ALIEN;
+}
+
+/*
 Determine if the specified faction is alive or whether they've been eliminated.
 */
 bool is_alive(int faction_id) {
@@ -133,12 +141,13 @@ bool is_alive(int faction_id) {
     return FactionStatus[1] & (1 << faction_id);
 }
 
-/*
-Determine if the specified faction is a Progenitor faction (Caretakers / Usurpers).
-*/
-bool is_alien(int faction_id) {
+void set_alive(int faction_id, bool active) {
     assert(faction_id >= 0);
-    return *ExpansionEnabled && MFactions[faction_id].rule_flags & RFLAG_ALIEN;
+    if (active) {
+        FactionStatus[1] |= (1 << faction_id);
+    } else {
+        FactionStatus[1] &= ~(1 << faction_id);
+    }
 }
 
 /*
@@ -706,57 +715,12 @@ int __cdecl society_avail(int soc_category, int soc_model, int faction_id) {
     return has_tech(SocialField[soc_category].soc_preq_tech[soc_model], faction_id);
 }
 
-int __cdecl mod_setup_player(int faction_id, int a2, int a3) {
+static int __cdecl setup_values(int faction_id, int a2, int a3) {
     Faction* f = &Factions[faction_id];
-    MFaction* m = &MFactions[faction_id];
-    debug("setup_player %d %d %d %d %s\n", *CurrentTurn, faction_id, a2, a3, m->filename);
+    int value = setup_player(faction_id, a2, a3);
     if (!faction_id) {
-        return setup_player(faction_id, a2, a3);
+        return value;
     }
-    /*
-    Fix issue with randomized faction agendas where they might be given agendas
-    that are their opposition social models.
-    */
-    if (*GameState & STATE_RAND_FAC_LEADER_SOCIAL_AGENDA && !*CurrentTurn) {
-        for (int i = 0; i < 1000; i++) {
-            int sfield = random(3);
-            int smodel = random(3) + 1;
-            if (sfield == m->soc_opposition_category && smodel == m->soc_opposition_model) {
-                continue;
-            }
-            for (int j = 1; j < MaxPlayerNum; j++) {
-                if (faction_id != j && is_alive(j)) {
-                    if (MFactions[j].soc_priority_category == sfield
-                    && MFactions[j].soc_priority_model == smodel) {
-                        continue;
-                    }
-                }
-            }
-            m->soc_priority_category = sfield;
-            m->soc_priority_model = smodel;
-            debug("setup_player_agenda %s %d %d\n", m->filename, sfield, smodel);
-            break;
-        }
-    }
-    if (*GameState & STATE_RAND_FAC_LEADER_PERSONALITIES && !*CurrentTurn) {
-        m->AI_fight = random(3) - 1;
-        m->AI_tech = 0;
-        m->AI_power = 0;
-        m->AI_growth = 0;
-        m->AI_wealth = 0;
-
-        for (int i = 0; i < 2; i++) {
-            int val = random(4);
-            switch (val) {
-                case 0: m->AI_tech = 1; break;
-                case 1: m->AI_power = 1; break;
-                case 2: m->AI_growth = 1; break;
-                case 3: m->AI_wealth = 1; break;
-            }
-        }
-    }
-    setup_player(faction_id, a2, a3);
-
     int num_colony = is_human(faction_id) ? conf.player_colony_pods : conf.computer_colony_pods;
     int num_former = is_human(faction_id) ? conf.player_formers : conf.computer_formers;
 
@@ -789,7 +753,7 @@ int __cdecl mod_setup_player(int faction_id, int a2, int a3) {
         f->base_governor_adv &= ~(GOV_MAY_PROD_SP|GOV_MAY_HURRY_PRODUCTION);
         f->base_governor_adv |= GOV_MAY_PROD_NATIVE;
     }
-    return 0;
+    return value;
 }
 
 /*
@@ -1251,4 +1215,749 @@ int __cdecl mod_wants_to_attack(int faction_id, int faction_id_tgt, int faction_
     return value;
 }
 
+static int veh_init_free(int unit_id, int faction_id, int x, int y) {
+    int veh_id = veh_init(unit_id, faction_id, x, y);
+    if (veh_id >= 0) {
+        Vehs[veh_id].home_base_id = -1;
+        if (thinker_enabled(faction_id)) {
+            Vehs[veh_id].state |= VSTATE_UNK_40000;
+            Vehs[veh_id].state &= ~VSTATE_UNK_2000;
+        }
+    }
+    return veh_id;
+}
+
+static int veh_init_last(int unit_id, int faction_id, int x, int y) {
+    int veh_id = veh_init_free(unit_id, faction_id, x, y);
+    if (veh_id >= 0) {
+        veh_demote(veh_id);
+    }
+    return veh_id;
+}
+
+int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
+    Faction* plr = &Factions[faction_id];
+    MFaction* m = &MFactions[faction_id];
+    const bool special_spawn = setup_id == -282;
+    const bool initial_spawn = !*CurrentTurn || special_spawn;
+    const bool is_player = faction_id == *CurrentPlayerFaction;
+    const bool plr_alien = m->is_alien();
+    const bool plr_aquatic = m->is_aquatic();
+    debug("setup_player %d %d %d %d %s\n", *CurrentTurn, faction_id, setup_id, is_probe, m->filename);
+
+    if (!conf.faction_placement) {
+        return setup_values(faction_id, setup_id, is_probe);
+    }
+    // Modify the original version to check by filename if multiple similar factions are active.
+    // If any duplicates are found, each one will have their faction_id as name suffix.
+    for (int i = 1; i < MaxPlayerNum; i++) {
+        if (faction_id && initial_spawn && i != faction_id
+        && !_stricmp(MFactions[i].filename, m->filename)) {
+            char buf[StrBufLen];
+            buf[0] = '\0';
+            strcpy_n(buf, 22, m->name_leader);
+            snprintf(m->name_leader, 24, "%s-%d", buf, faction_id);
+            buf[0] = '\0';
+            strcpy_n(buf, 22, m->noun_faction);
+            snprintf(m->noun_faction, 24, "%s-%d", buf, faction_id);
+            buf[0] = '\0';
+            strcpy_n(buf, 38, m->formal_name_faction);
+            snprintf(m->formal_name_faction, 40, "%s-%d", buf, faction_id);
+            break;
+        }
+    }
+    for (int i = *BaseCount - 1; i >= 0; i--) {
+        if (Bases[i].faction_id == faction_id) {
+            base_kill(i);
+        }
+    }
+    for (int i = *VehCount - 1; i >= 0; i--) {
+        VEH* veh = &Vehs[i];
+        if (veh->faction_id == faction_id && (faction_id || veh->unit_id != BSC_FUNGAL_TOWER)) {
+            kill(i);
+        }
+    }
+    plr->target_y = -1;
+    plr->target_x = -1;
+    plr->base_id_attack_target = -1;
+    if (initial_spawn) {
+        clear_goals(faction_id);
+        clear_bunglist(faction_id);
+        plr->player_flags = 0;
+        plr->base_governor_adv = (GOV_MAY_PROD_TRANSPORT|GOV_MAY_PROD_EXPLORE_VEH|GOV_MAY_PROD_PROBES|\
+            GOV_MAY_PROD_PROTOTYPE|GOV_MAY_PROD_SP|GOV_MAY_PROD_COLONY_POD|GOV_MAY_PROD_FACILITIES|\
+            GOV_MAY_PROD_TERRAFORMERS|GOV_MAY_PROD_AIR_DEFENSE|GOV_MAY_PROD_LAND_DEFENSE|GOV_MAY_PROD_AIR_COMBAT|\
+            GOV_MAY_PROD_NAVAL_COMBAT|GOV_MAY_PROD_LAND_COMBAT|GOV_MANAGE_CITIZENS|GOV_MANAGE_PRODUCTION);
+        if (!*DiffLevel) {
+            plr->base_governor_adv |= (GOV_ACTIVE|GOV_UNK_40000000);
+        }
+        plr->base_name_offset = 0;
+        plr->base_sea_name_offset = 0;
+        plr->AI_fight = m->AI_fight;
+        plr->AI_power = m->AI_power;
+        plr->AI_tech = m->AI_tech;
+        plr->AI_wealth = m->AI_wealth;
+        plr->AI_growth = m->AI_growth;
+        plr->unk_37 = 0;
+        for (int i = 0; i < 8; i++) {
+            plr->saved_queue_size[i] = 0;
+            snprintf(&plr->saved_queue_name[i][0], 24, "%s %d", label_get(609), i+1);
+        }
+        memset(&plr->SE_Politics_pending, 0, 32u); // pending / current
+        memset(&plr->SE_economy_pending, 0, 44u); // only pending
+        memset(&plr->secret_project_intel, 0, 32u);
+        plr->SE_upheaval_cost_paid = 0;
+        plr->diff_level = is_human(faction_id) ? *DiffLevel : 3;
+        plr->integrity_blemishes = 0;
+        plr->diplo_reputation = 0;
+        plr->traded_maps = 0;
+        plr->energy_credits = 0;
+        plr->atrocities = 0;
+        plr->major_atrocities = 0;
+        plr->clean_minerals_modifier = 0;
+        plr->sanction_turns = 0;
+        plr->council_call_turn = -999;
+        TectonicDetonationCount[faction_id] = 0;
+        // Fix issue with randomized faction agendas where they might be given agendas that are
+        // their opposition social models making the choice unusable. Future social models can be
+        // also selected but much less often. Additionally randomized leader personalities
+        // always selects at least one AI priority.
+        if (*GameState & STATE_RAND_FAC_LEADER_SOCIAL_AGENDA) {
+            for (int i = 0; i < 1000; i++) {
+                int val = game_randv(4) ? 3 : 4;
+                int sfield = game_randv(val);
+                int smodel = game_randv(3) + 1;
+                if (SocialField[sfield].soc_preq_tech[smodel] == TECH_Disable
+                || (sfield == m->soc_opposition_category && smodel == m->soc_opposition_model)) {
+                    continue;
+                }
+                bool valid = true;
+                for (int j = 1; j < MaxPlayerNum; j++) {
+                    if (faction_id != j && is_alive(j)
+                    && MFactions[j].soc_priority_category == sfield
+                    && MFactions[j].soc_priority_model == smodel) {
+                        valid = false;
+                    }
+                }
+                if (valid) {
+                    m->soc_priority_category = sfield;
+                    m->soc_priority_model = smodel;
+                    debug("setup_player_agenda %s %d %d\n",  m->filename, sfield, smodel);
+                    break;
+                }
+            }
+        }
+        if (*GameState & STATE_RAND_FAC_LEADER_PERSONALITIES) {
+            plr->AI_fight = game_randv(3) - 1;
+            int val = 0;
+            while (!val) {
+                val = game_randv(4096);
+                val &= (val >> 8) & (val >> 4);
+                if (val & 1) plr->AI_growth = 1;
+                if (val & 2) plr->AI_tech = 1;
+                if (val & 4) plr->AI_wealth = 1;
+                if (val & 8) plr->AI_power = 1;
+            }
+        }
+        if (*GameRules & RULES_INTENSE_RIVALRY) {
+            plr->AI_fight = 1;
+        }
+        plr->total_combat_units = 0;
+        plr->base_count = 0;
+        plr->mil_strength_1 = 0;
+        plr->mil_strength_2 = 0;
+        plr->pop_total = 0;
+        plr->unk_70 = 0;
+        plr->mind_control_total = 0;
+        memset(&plr->diplo_mind_control, 0, 32u);
+        memset(&plr->diplo_stolen_techs, 0, 32u);
+        plr->net_random_event = 0;
+        for (int i = 0; i < MaxRegionNum; i++) {
+            plr->region_total_combat_units[i] = 0;
+            plr->region_total_bases[i] = 0;
+            plr->region_total_offensive_units[i] = 0;
+            plr->region_force_rating[i] = 0;
+            plr->region_flags[i] = 0;
+        }
+        memset(&plr->unk_29, 0, 44u);
+        memset(&plr->unk_30, 0, 44u);
+        memset(&plr->corner_market_turn, 0, 40u);
+        plr->unk_93 = 0;
+        plr->goody_opened = 0;
+        plr->goody_artifact = 0;
+        plr->goody_earthquake = 0;
+        plr->goody_tech = 0;
+        plr->tech_achieved = 0;
+        plr->time_bonus_count = 1;
+    }
+    plr->energy_credits += (*MultiplayerActive ? 100 : Rules->starting_energy_reserve) + m->rule_energy;
+    plr->hurry_cost_total = 0;
+    plr->tech_cost = -1;
+    plr->last_base_turn = *CurrentTurn;
+    for (int i = 0; i < MaxPlayerNum; i++) {
+        if (!initial_spawn) {
+            treaty_off(faction_id, i,
+                DIPLO_UNK_80000000|DIPLO_UNK_10000000|DIPLO_RENEW_INFILTRATOR|DIPLO_UNK_4000|DIPLO_WANT_TO_TALK|\
+                DIPLO_HAVE_INFILTRATOR|DIPLO_UNK_800|DIPLO_SHALL_BETRAY|DIPLO_UNK_200|DIPLO_UNK_100|DIPLO_UNK_40|DIPLO_COMMLINK);
+        } else {
+            plr->diplo_status[i] = 0; // seems not to reset diplo_agenda?
+            plr->diplo_spoke[i] = -1;
+            plr->diplo_merc[i] = 0;
+            plr->diplo_patience[i] = 0;
+            int val = 3 * (*GameRules & RULES_INTENSE_RIVALRY ? 5 : *DiffLevel) + 8;
+            plr->diplo_friction[i] = clamp(game_randv(val), 1, 16);
+            // Fix: the game may not properly reset all these fields.
+            plr->diplo_gifts[i] = 0;
+            plr->diplo_wrongs[i] = 0;
+            plr->diplo_betrayed[i] = 0;
+            plr->diplo_unk_3[i] = 0;
+            plr->diplo_unk_4[i] = 0;
+        }
+        plr->loan_balance[i] = 0;
+        plr->loan_payment[i] = 0;
+        plr->unk_1[i] = 0;
+    }
+    for (int i = 0; i < MaxProtoNum; i++) {
+        plr->units_active[i] = 0;
+        plr->units_queue[i] = 0;
+        if (!*CurrentTurn) {
+            plr->units_lost[i] = 0;
+        }
+    }
+    if (initial_spawn) {
+        memset(&plr->tech_pact_shared_goals, 0, 48u);
+        memset(&plr->tech_trade_source, 0, 88u);
+        plr->unk_27 = 0;
+        plr->unk_28 = 0;
+        plr->unk_33 = 0;
+        plr->facility_announced[0] = 0;
+        plr->facility_announced[1] = 0;
+        plr->satellites_nutrient = 0;
+        plr->satellites_mineral = 0;
+        plr->satellites_energy = 0;
+        plr->satellites_ODP = 0;
+        plr->ODP_deployed = 0;
+        plr->tech_count_transcendent = 0;
+        plr->tech_ranking = 0;
+        plr->tech_research_id = -1;
+        plr->tech_accumulated = 0;
+        plr->earned_techs_saved = 0;
+        plr->unk_102 = 0;
+        if (faction_id) {
+            if (is_human(faction_id)) {
+                plr->satellites_nutrient = conf.player_satellites[0];
+                plr->satellites_mineral = conf.player_satellites[1];
+                plr->satellites_energy = conf.player_satellites[2];
+            } else {
+                plr->satellites_nutrient = conf.computer_satellites[0];
+                plr->satellites_mineral = conf.computer_satellites[1];
+                plr->satellites_energy = conf.computer_satellites[2];
+            }
+            // Update default governor settings
+            plr->base_governor_adv &= ~(GOV_MAY_PROD_SP|GOV_MAY_HURRY_PRODUCTION);
+            plr->base_governor_adv |= GOV_MAY_PROD_NATIVE;
+        }
+    }
+    plr->unk_17 = 0;
+    plr->unk_18 = 0;
+    plr->best_mineral_output = 0;
+    plr->energy_surplus_total = 0;
+    plr->facility_maint_total = 0;
+    plr->tech_commerce_bonus = 0;
+    plr->tech_fungus_nutrient = 0;
+    plr->tech_fungus_mineral = 0;
+    plr->tech_fungus_energy = 0;
+    plr->tech_fungus_unused = 0;
+    plr->turn_commerce_income = 0;
+    plr->best_weapon_value = 0;
+    plr->best_armor_value = 0;
+    plr->best_land_speed = 0;
+    plr->best_psi_land_offense = 0;
+    plr->best_psi_land_defense = 0;
+    plr->enemy_best_weapon_value = 0;
+    plr->enemy_best_armor_value = 0;
+    plr->enemy_best_land_speed = 0;
+    plr->enemy_best_psi_land_offense = 0;
+    plr->enemy_best_psi_land_defense = 0;
+    if (!faction_id) {
+        return 0;
+    }
+    if (!is_alive(faction_id)) {
+        return 0;
+    }
+    if (setup_id < -1 && !special_spawn) {
+        set_alive(faction_id, false);
+        return 0;
+    }
+    bool spawn_skip = *CurrentTurn > 100 || (!initial_spawn && *GameRules & RULES_DO_OR_DIE);
+    bool spawn_flag = !is_probe && (plr->player_flags & PFLAG_UNK_1000);
+    MAP* sq = NULL;
+    int region = 0;
+    int x = -1;
+    int y = -1;
+    // This replaces the entire old faction placement method
+    if (is_probe || !spawn_flag) {
+        find_start(faction_id, &x, &y);
+        if (!(sq = mapsq(x, y))) {
+            // skipped
+        } else {
+            region = sq->region;
+        }
+    }
+    if (!sq || (!is_probe && (spawn_flag || spawn_skip))) {
+        if (!is_human(faction_id) || *MultiplayerActive) {
+            plr->unk_102 = 0;
+            set_alive(faction_id, false);
+            int other_id = FactionRankings[7];
+            if (faction_id == other_id) {
+                other_id = FactionRankings[6];
+            }
+            int num_active = 0;
+            int num_allied = 0;
+            for (int i = 1; i < MaxPlayerNum; i++) {
+                if (is_alive(i)) {
+                    num_active++;
+                    if (!*MultiplayerActive && Factions[i].diplo_status[*CurrentPlayerFaction] & DIPLO_PACT
+                    && Factions[i].diplo_status[*CurrentPlayerFaction] & DIPLO_HAVE_SURRENDERED) {
+                        num_active--;
+                    } else if (i != other_id && Factions[i].diplo_status[other_id] & DIPLO_PACT
+                    && *GameRules & RULES_VICTORY_COOPERATIVE && num_allied < 2) {
+                        num_allied++;
+                    }
+                }
+            }
+            if (is_player) {
+                int k = (setup_id < 0 ? 0 : setup_id);
+                *gender_default = MFactions[k].noun_gender;
+                *plurality_default = MFactions[k].is_noun_plural;
+                parse_says(0, &MFactions[k].noun_faction[0], -1, -1);
+                if (*MultiplayerActive) {
+                    NetDaemon_hang_up(NetState);
+                    memset((void*)0x93E8C0, 0, 52u);
+                    memset((void*)0x93E8F8, 0, 8u);
+                    memset((void*)0x93E908, 0, 64u);
+                    memset((void*)0x93E950, 0, 16u);
+                    memset((void*)0x93E964, 0, 8u);
+                    *dword_93E960 = 255;
+                    Lock_clear(LockState);
+                    AlphaNet_close(NetState);
+                    *MultiplayerActive = 0;
+                    *ControlTurnA = 1;
+                }
+                if (setup_id || *GameLanguage) {
+                    X_pop2("YOULOSE", 0);
+                } else {
+                    X_pop2("YOULOSE2", 0);
+                }
+                *GameState |= STATE_GAME_DONE;
+                *dword_9B206C = setup_id ? 7 : 15; // TODO investigate values
+            }
+            if (!is_player) {
+                if (num_active - num_allied < 2) {
+                    if (num_allied) {
+                        popp(ScriptFile, "CONQCOOP", 0, "conq_sm.pcx", 0);
+                        if (!*dword_9B206C) {
+                            *dword_9B206C = 5;
+                        }
+                    } else if (other_id == *CurrentPlayerFaction) {
+                        popp(ScriptFile, "CONQSING", 0, "conq_sm.pcx", 0);
+                        if (!*dword_9B206C) {
+                            *dword_9B206C = 4;
+                        }
+                    }
+                    *GameState |= (STATE_GAME_DONE | STATE_VICTORY_CONQUER);
+                }
+            }
+        } else {
+            *dword_9B206C = 7;
+            *GameState |= STATE_GAME_DONE;
+            set_alive(faction_id, false);
+        }
+        return 0; // Spawn failed, always return zero
+    } else {
+        assert(sq && sq->anything_at() < 0);
+        assert(region > 0);
+        plr->SE_alloc_labs = 5;
+        plr->SE_alloc_psych = 0;
+        if (initial_spawn && *DiffLevel >= 2) {
+            if (plr->AI_wealth || plr->AI_tech) {
+                if (!game_randv(4)) {
+                    plr->player_flags_ext |= PFLAG_EXT_STRAT_LOTS_PROBE_TEAMS;
+                }
+            }
+            if (!_stricmp(m->filename, "ANGELS")) {
+                plr->player_flags_ext |= PFLAG_EXT_STRAT_LOTS_PROBE_TEAMS;
+            }
+            if (plr_aquatic) {
+                plr->player_flags_ext |= PFLAG_EXT_STRAT_LOTS_SEA_BASES;
+                plr->player_flags |= PFLAG_EMPHASIZE_SEA_POWER;
+            }
+            if (plr_alien) {
+                plr->player_flags_ext |= PFLAG_EXT_STRAT_LOTS_MISSILES;
+                plr->player_flags |= PFLAG_EMPHASIZE_AIR_POWER;
+            }
+            if (!_stricmp(m->filename, "DRONE")) {
+                plr->player_flags_ext &= ~PFLAG_EXT_STRAT_LOTS_PROBE_TEAMS;
+                plr->player_flags_ext |= PFLAG_EXT_STRAT_LOTS_TERRAFORMERS;
+            }
+            if (Continents[region].tile_count < 250 && !game_randv(3)) {
+                plr->player_flags_ext |= PFLAG_EXT_STRAT_LOTS_SEA_BASES;
+            }
+            if (plr->AI_fight >= 0 && !game_randv(4)) {
+                plr->player_flags_ext |= PFLAG_EXT_STRAT_LOTS_MISSILES;
+            }
+            if (!game_randv(6)) {
+                plr->player_flags_ext |= PFLAG_EXT_STRAT_LOTS_TERRAFORMERS;
+            }
+            if (!game_randv(6)) {
+                plr->player_flags_ext |= PFLAG_EXT_STRAT_LOTS_COLONY_PODS;
+            }
+            if (!game_randv(5)) {
+                plr->player_flags_ext |= PFLAG_EXT_STRAT_LOTS_ARTILLERY;
+            }
+            if ((*GameRules & RULES_INTENSE_RIVALRY || *DiffLevel >= 4)
+            && plr->AI_fight > -((*GameRules & RULES_INTENSE_RIVALRY) != 0)) {
+                if (!game_randv(4)) {
+                    plr->player_flags_ext |= PFLAG_EXT_SHAMELESS_BETRAY_HUMANS;
+                }
+                if (!game_randv(4)) {
+                    plr->player_flags |= PFLAG_COMMIT_ATROCITIES_WANTONLY;
+                    if (!game_randv(2)) {
+                        plr->player_flags |= PFLAG_OBLITERATE_CAPTURED_BASES;
+                    }
+                }
+            }
+            if (plr->AI_power || plr->AI_fight > 0) {
+                if (Continents[region].tile_count >= 400 && !game_randv(4)) {
+                    plr->player_flags |= PFLAG_EMPHASIZE_LAND_POWER;
+                }
+                int val = Continents[region].tile_count > 250 ? 6 : 4;
+                if (!game_randv(val)) {
+                    plr->player_flags |= PFLAG_EMPHASIZE_SEA_POWER;
+                }
+                if (!game_randv(4)) {
+                    plr->player_flags |= PFLAG_EMPHASIZE_AIR_POWER;
+                }
+            }
+        }
+        for (auto& p : iterate_tiles(x, y, 0, 21)) {
+            p.sq->visibility |= (1 << faction_id);
+            synch_bit(p.x, p.y, faction_id);
+        }
+        int recon_veh_id = BSC_SCOUT_PATROL;
+        if (initial_spawn) {
+            int bonus_count = m->faction_bonus_count;
+            for (int i = 0; i < bonus_count; i++) {
+                if (m->faction_bonus_id[i] == RULE_TECH) {
+                    tech_achieved(faction_id, m->faction_bonus_val1[i], 0, 0);
+                }
+            }
+            if (*ExpansionEnabled && plr_alien && conf.alien_guaranteed_techs) {
+                tech_achieved(faction_id, TECH_PrPsych, 0, 0);
+                tech_achieved(faction_id, TECH_FldMod, 0, 0);
+            }
+            if (*MultiplayerActive) {
+                for (int i = 0; ; ++i) {
+                    int v1 = plr->SE_research_base <= 0 ? (plr->SE_research_base >= 0) - 1 : 1;
+                    int v2 = plr->SE_morale_base <= 0 ? (plr->SE_morale_base >= 0) - 1 : 1;
+                    if (i >= v1 - v2 + 1) {
+                        break;
+                    }
+                    tech_achieved(faction_id, mod_tech_ai(faction_id), 0, 0);
+                }
+                plr->energy_credits += m->rule_energy / 2;
+            }
+            consider_designs(faction_id);
+            for (int i = 0; i < MaxProtoFactionNum; i++) {
+                int unit_id = i + faction_id * MaxProtoFactionNum;
+                UNIT* u = &Units[unit_id];
+                if (u->unit_flags & UNIT_ACTIVE) {
+                    u->unit_flags |= UNIT_PROTOTYPED;
+                    if (u->plan == PLAN_RECON) {
+                        recon_veh_id = unit_id;
+                    }
+                }
+            }
+        }
+        // First spawn additional units specified by config
+        int num_colony = is_human(faction_id) ? conf.player_colony_pods : conf.computer_colony_pods;
+        int num_former = is_human(faction_id) ? conf.player_formers : conf.computer_formers;
+        int colony_unit = (plr_aquatic ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
+        int former_unit = (plr_aquatic ? BSC_SEA_FORMERS : BSC_FORMERS);
+        for (int i = 0; i < num_colony; i++) {
+            veh_init_free(colony_unit, faction_id, x, y);
+        }
+        for (int i = 0; i < num_former; i++) {
+            veh_init_last(former_unit, faction_id, x, y);
+        }
+        // For consistency these colony/former are always set as independent units
+        if (!initial_spawn) {
+            if (plr_aquatic) {
+                veh_init_free(BSC_SEA_ESCAPE_POD, faction_id, x, y);
+                veh_init_last(BSC_SEA_FORMERS, faction_id, x, y);
+            } else {
+                veh_init_free(BSC_COLONY_POD, faction_id, x, y);
+                veh_init_last(BSC_FORMERS, faction_id, x, y);
+            }
+        } else {
+            if ((*MultiplayerActive || *GameRules & RULES_LOOK_FIRST) && !(*GameRules & RULES_TIME_WARP)) {
+                if (plr_aquatic) {
+                    veh_init_free(BSC_SEA_ESCAPE_POD, faction_id, x, y);
+                } else {
+                    veh_init_free(BSC_COLONY_POD, faction_id, x, y);
+                }
+            } else {
+                int base_id = base_init(faction_id, x, y);
+                if (base_id >= 0 && !_stricmp(m->filename, "FUNGBOY") && special_spawn) {
+                    Bases[base_id].pop_size = 3;
+                }
+                if (base_id >= 0 && plr_alien && special_spawn) {
+                    Bases[base_id].pop_size = 3;
+                }
+            }
+            if (!plr_aquatic) {
+                veh_init_last(recon_veh_id, faction_id, x, y);
+            }
+            if (*MultiplayerActive && !plr_aquatic) {
+                veh_init_last(BSC_UNITY_ROVER, faction_id, x, y);
+                veh_init_last(BSC_FORMERS, faction_id, x, y);
+            }
+            int coast = is_coast(x, y, 0);
+            if (coast && (*DiffLevel > 1 || *MultiplayerActive || Continents[region].tile_count <= 32)) {
+                // Calculation for nearby opponents is slightly modified from the original to exclude native units
+                int nearby = 0;
+                for (int i = 1; i < MaxPlayerNum; i++) {
+                    if (Factions[i].region_total_bases[region]) {
+                        nearby |= (1 << Bases[i].faction_id);
+                    }
+                }
+                for (int i = 0; i < *VehCount; i++) {
+                    if (Vehs[i].faction_id && region_at(Vehs[i].x, Vehs[i].y) == region) {
+                        nearby |= (1 << Vehs[i].faction_id);
+                    }
+                }
+                if ((*MultiplayerActive && is_human(faction_id)
+                && Continents[region].tile_count / (__builtin_popcount(nearby) + 1) <= 75)
+                || (Continents[region].tile_count / (__builtin_popcount(nearby) + 1) <= 50)) {
+                    int x2 = wrap(x + TableOffsetX[coast]);
+                    int y2 = y + TableOffsetY[coast];
+                    int veh_id = veh_init(BSC_UNITY_FOIL, faction_id, x2, y2);
+                    if (veh_id >= 0) {
+                        Vehs[veh_id].home_base_id = -1;
+                        Vehs[veh_id].morale = 2;
+                        veh_demote(veh_id);
+                    }
+                }
+            }
+            memset(&plr->SE_economy_base, 0, 44u);
+            int bonus_count = m->faction_bonus_count;
+            for (int i = 0; i < bonus_count; i++) {
+                if (m->faction_bonus_id[i] == RULE_SOCIAL) {
+                    assert(m->faction_bonus_val1[i] >= 0 && m->faction_bonus_val1[i] < 11);
+                    (&plr->SE_economy_base)[m->faction_bonus_val1[i]] += m->faction_bonus_val2[i];
+                } else if (m->faction_bonus_id[i] == RULE_UNIT) {
+                    veh_init_last(m->faction_bonus_val1[i], faction_id, x, y);
+                    if (m->faction_bonus_val1[i] == BSC_COLONY_POD) {
+                        plr->player_flags |= PFLAG_UNK_100;
+                    }
+                }
+            }
+            if (*ExpansionEnabled && plr_alien) {
+                veh_init_last(BSC_BATTLE_OGRE_MK1, faction_id, x, y);
+                veh_init_last(BSC_COLONY_POD, faction_id, x, y);
+            }
+            if (plr_aquatic) {
+                if (!is_human(faction_id)) {
+                    int unit_id = -1; // Fix: possibly uninitialized default value
+                    for (int i = 0; i < MaxProtoFactionNum; i++) {
+                        int k = i + faction_id * MaxProtoFactionNum;
+                        if (!(Units[k].unit_flags & UNIT_ACTIVE)) {
+                            unit_id = k;
+                            break;
+                        }
+                    }
+                    if (unit_id >= 0) {
+                        char buf[StrBufLen] = {};
+                        mod_make_proto(unit_id, CHS_FOIL, WPN_COLONY_MODULE, ARM_NO_ARMOR, ABL_NONE, REC_FISSION);
+                        mod_name_proto(&buf[0], unit_id, faction_id,
+                            CHS_FOIL, WPN_COLONY_MODULE, ARM_NO_ARMOR, ABL_NONE, REC_FISSION);
+                        Units[unit_id].unit_flags |= UNIT_PROTOTYPED;
+                        Units[unit_id].unit_flags &= ~UNIT_CUSTOM_NAME_SET;
+                        strcpy_n(&Units[unit_id].name[0], MaxProtoNameLen, buf);
+                    }
+                }
+                if (!conf.skip_default_balance) {
+                    veh_init_last(BSC_SEA_ESCAPE_POD, faction_id, x, y);
+                }
+                veh_init_last(BSC_UNITY_GUNSHIP, faction_id, x, y);
+            }
+        }
+        if (!spawn_flag && !initial_spawn) {
+            int spawn_id_a = BSC_SCOUT_PATROL; // Garrison unit
+            int spawn_id_b = -1; // Mostly attacker unit
+            int spawn_id_c = -1; // Fast recon unit
+            int spawn_val_a = -1;
+            int spawn_val_b = -1;
+            int spawn_val_c = -1;
+            for (int unit_id = 0; unit_id < MaxProtoNum; unit_id++) {
+                UNIT* u = &Units[unit_id];
+                if (mod_veh_avail(unit_id, faction_id, -1) && u->offense_value() != 0) {
+                    if ((plr_aquatic && u->triad() == TRIAD_SEA) || (!plr_aquatic && u->triad() == TRIAD_LAND)) {
+                        int v1 = 8 * armor_val(unit_id, faction_id) - weap_val(unit_id, faction_id);
+                        if (v1 > spawn_val_a) {
+                            spawn_val_a = v1;
+                            spawn_id_a = unit_id;
+                        }
+                        int v2 = u->speed() + 2 * armor_val(unit_id, faction_id) + 4 * weap_val(unit_id, faction_id);
+                        if (v2 > spawn_val_b) {
+                            spawn_val_b = v2;
+                            spawn_id_b = unit_id;
+                        }
+                        int v3 = 4 * u->speed() - weap_val(unit_id, faction_id) - armor_val(unit_id, faction_id);
+                        if (v3 > spawn_val_c && u->speed() > 1) {
+                            spawn_val_c = v3;
+                            spawn_id_c = unit_id;
+                        }
+                    }
+                }
+            }
+            int veh_id;
+            if (plr_aquatic) {
+                veh_id = veh_init(BSC_SEA_ESCAPE_POD, faction_id, x, y);
+            } else {
+                veh_id = veh_init(BSC_COLONY_POD, faction_id, x, y);
+            }
+            veh_init(spawn_id_a, faction_id, x, y);
+            if (*CurrentTurn > 20 && spawn_id_c >= 0) {
+                veh_init(spawn_id_c, faction_id, x, y);
+            }
+            if (*CurrentTurn > 40 && spawn_id_b >= 0) {
+                veh_init(spawn_id_b, faction_id, x, y);
+            }
+            if (*CurrentTurn > 60 && spawn_id_a >= 0) {
+                veh_init(spawn_id_a, faction_id, x, y);
+            }
+            if (*CurrentTurn > 80 && spawn_id_b >= 0) {
+                veh_init(spawn_id_b, faction_id, x, y);
+            }
+            if (*CurrentTurn > 100) {
+                if (plr_aquatic) {
+                    veh_init(BSC_SEA_ESCAPE_POD, faction_id, x, y);
+                } else {
+                    veh_init(BSC_COLONY_POD, faction_id, x, y);
+                }
+            }
+            veh_promote(veh_id);
+            plr->unk_27 = 3 * plr->tech_ranking / 4;
+        }
+        if (faction_id == *CurrentPlayerFaction) {
+            MapWin->iTileX = x;
+            MapWin->iTileY = y;
+            for (int i = 0; i < 32; i++) {
+                MapWin->aiCursorPositionsX[i] = x;
+                MapWin->aiCursorPositionsY[i] = y;
+            }
+        }
+        return 1; // Valid spawn, return value non-zero
+    }
+}
+
+int __cdecl mod_eliminate_player(int faction_id, int setup_id) {
+    Faction* plr = &Factions[faction_id];
+    MFaction* m = &MFactions[faction_id];
+    const bool is_player = faction_id == *CurrentPlayerFaction;
+    const bool plr_alien = m->is_alien();
+    if (!faction_id) {
+        return 0;
+    }
+    for (int i = *BaseCount - 1; i >= 0; i--) {
+        if (Bases[i].faction_id == faction_id) {
+            return 0;
+        }
+    }
+    for (int i = *VehCount - 1; i >= 0; i--) {
+        if (Vehs[i].faction_id == faction_id) {
+            veh_kill(i); // does not call kill() instead?
+        }
+    }
+    plr->base_count = 0;
+    int setup_val = mod_setup_player(faction_id, setup_id, 0);
+    if (!setup_val && setup_id > 0 && !(*GameState & (STATE_FINAL_SCORE_DONE|STATE_GAME_DONE))) {
+        Factions[setup_id].eliminated_count++;
+    }
+    if (setup_val || !is_player) {
+        if (setup_id >= 0) {
+            if (setup_id > 0) {
+                set_treaty(faction_id, setup_id, DIPLO_WANT_TO_TALK|DIPLO_WANT_REVENGE|DIPLO_VENDETTA, 1);
+            }
+        } else {
+            setup_id = 0;
+        }
+        draw_map(1);
+        *gender_default = m->noun_gender;
+        *plurality_default = m->is_noun_plural;
+        parse_says(0, m->noun_faction, -1, -1);
+        *gender_default = MFactions[setup_id].noun_gender;
+        *plurality_default = MFactions[setup_id].is_noun_plural;
+        parse_says(1, MFactions[setup_id].noun_faction, -1, -1);
+        *gender_default = m->is_leader_female;
+        *plurality_default = 0;
+        parse_says(2, m->title_leader, -1, -1);
+        parse_says(3, m->name_leader, -1, -1);
+        parse_says(4, (char*)get_his_her(faction_id, 0), -1, -1);
+        char name[StrBufLen] = {};
+        char file[StrBufLen] = {};
+        snprintf(name, StrBufLen, "WIPEOUT%s%d",
+            (setup_id && setup_id == *CurrentPlayerFaction) ? "YOU" : "",
+            setup_id ? (setup_val != 0) : 2);
+        if (setup_val) { // The faction has escaped in a colony pod
+            snprintf(file, StrBufLen, "%s", plr_alien ? "al_pod_sm.pcx" : "escpod_sm.pcx");
+        } else { // The faction has been eradicated
+            snprintf(file, StrBufLen, "%s2.pcx", m->filename);
+        }
+        popp(ScriptFile, name, 0, file, 0);
+        if (!setup_val) {
+            mon_killed_faction(setup_id, faction_id);
+        }
+        if (!*MultiplayerActive && !setup_val && setup_id == *CurrentPlayerFaction
+        && (*GamePreferences & PREF_AV_SECRET_PROJECT_MOVIES)) {
+            mod_amovie_project(&m->filename[0]);
+        }
+        if (!*MultiplayerActive && setup_val && setup_id == *CurrentPlayerFaction) {
+            // TRACKED event, escape location may be revealed by random chance
+            bool infiltrate = Factions[setup_id].diplo_status[faction_id] & DIPLO_HAVE_INFILTRATOR;
+            int veh_id;
+            if (!game_randv(infiltrate != 0 ? 2 : 4)
+            && (veh_id = veh_find(0, 0, faction_id, -1)) >= 0) {
+                int x = Vehs[veh_id].x;
+                int y = Vehs[veh_id].y;
+                for (auto& p : iterate_tiles(x, y, 0, 9)) {
+                    spot_loc(p.x, p.y, setup_id);
+                }
+                bool found = false;
+                veh_id = veh_top(veh_id);
+                while (veh_id >= 0) {
+                    Vehs[veh_id].visibility = 0;
+                    if (!found && Vehs[veh_id].is_colony()) {
+                        Vehs[veh_id].visibility = (1 << setup_id);
+                        found = true;
+                    }
+                    veh_id = Vehs[veh_id].next_veh_id_stack;
+                }
+                draw_tiles(x, y, 2);
+                MapWin_set_center(MapWin, x, y, 1);
+                parse_says(6, m->adj_name_faction, -1, -1);
+                if (!plr_alien) {
+                    popp(ScriptFile, "TRACKED", 0, "escpod_sm.pcx", 0);
+                } else {
+                    popp(ScriptFile, "TRACKED", 0, "al_pod_sm.pcx", 0);
+                }
+            }
+        }
+        if (faction_id != *CurrentPlayerFaction && plr_alien && MFactions[*CurrentPlayerFaction].is_alien()) {
+            interlude(42, 0, 1, 0);
+        }
+    }
+    return 1;
+}
 

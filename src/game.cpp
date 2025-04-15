@@ -329,7 +329,7 @@ int __cdecl mod_faction_upkeep(int faction_id) {
         f->energy_credits = 0;
     }
     if (!f->base_count && !has_active_veh(faction_id, PLAN_COLONY)) {
-        eliminate_player(faction_id, 0);
+        mod_eliminate_player(faction_id, 0);
     }
     if (f->base_count && f->tech_research_id < 0 && *NetUpkeepState != 1
     && !(*GameRules & RULES_SCN_NO_TECH_ADVANCES)) {
