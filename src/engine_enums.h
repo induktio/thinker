@@ -591,8 +591,10 @@ enum PlayerFlags {
     PFLAG_UNK_10 = 0x10, // study_artifact
     PFLAG_SELF_AWARE_COLONY_LOST_MAINT = 0x20, // used to even out lossy integer division
     PFLAG_FIRST_SECRETS = 0x40, // set in tech_achieved for first faction gaining TFLAG_SECRETS
+    PFLAG_UNK_100 = 0x100, // setup_player
     PFLAG_MAP_REVEALED = 0x200,
     PFLAG_GENETIC_PLAGUE_INTRO = 0x400, // +1 to defense against after 1st time faction experiences
+    PFLAG_UNK_1000 = 0x1000, // setup_player
     PFLAG_BEEN_ELECTED_GOVERNOR = 0x8000, // used to determine whether #GOVERNOR has been displayed
     PFLAG_UNK_10000 = 0x10000,
     PFLAG_UNK_20000 = 0x20000,

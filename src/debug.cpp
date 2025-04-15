@@ -178,21 +178,6 @@ void __cdecl log_say_hex2(const char* a1, const char* a2, int a3, int a4, int a5
 Additional custom non-engine debugging functions.
 */
 
-uint32_t game_rand_state() {
-    fp_none getptd = (fp_none)0x6491C3;
-    return ((uint32_t*)getptd())[5];
-}
-
-uint32_t chksum(void* ptr, size_t len) {
-    uint32_t val = len;
-    for (size_t i = 0; i < len; i++) {
-        val += ((~val << 8) ^ (val >> 16) ^ ((uint8_t*)ptr)[i]);
-    }
-    val *= 0xc2b2ae35;
-    val ^= val >> 16;
-    return val;
-}
-
 void print_map(int x, int y) {
     MAP* m = mapsq(x, y);
     debug("MAP %3d %3d owner: %2d bonus: %d reg: %3d cont: %3d clim: %02x val2: %02x val3: %02x "\

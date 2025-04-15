@@ -16,7 +16,6 @@ const int PM_SAFE = -20;
 const int PM_NEAR_SAFE = -40;
 const uint32_t BIT_SIMPLE = (BIT_FARM | BIT_MINE | BIT_SOLAR | BIT_FOREST);
 const uint32_t BIT_ADVANCED = (BIT_CONDENSER | BIT_THERMAL_BORE);
-const uint32_t BIT_BASE_DISALLOWED = (BIT_BASE_IN_TILE | BIT_MONOLITH | BIT_FUNGUS | BIT_THERMAL_BORE);
 
 extern PMTable mapdata;
 extern NodeSet mapnodes;

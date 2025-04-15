@@ -87,11 +87,20 @@ struct MAP {
     bool is_rainy_or_moist() {
         return climate & (TILE_MOIST | TILE_RAINY);
     }
-    bool volcano_center() {
+    bool volcano_center() { // Volcano also counts as rocky
         return landmarks & LM_VOLCANO && code_at() == 0;
     }
     bool veh_in_tile() {
         return items & BIT_VEH_IN_TILE;
+    }
+    bool allow_base() {
+        return !(items & (BIT_BASE_IN_TILE|BIT_MONOLITH)) && !is_fungus() && !is_rocky();
+    }
+    bool allow_spawn() {
+        return allow_base() && veh_who() < 0;
+    }
+    bool allow_supply() {
+        return !(items & (BIT_BASE_IN_TILE|BIT_VEH_IN_TILE|BIT_MONOLITH|BIT_SUPPLY_REMOVE));
     }
     int veh_owner() {
         if ((val2 & 0xF) >= MaxPlayerNum) {
@@ -186,6 +195,11 @@ struct Goal {
     int32_t x;
     int32_t y;
     int32_t base_id;
+};
+
+struct Monument {
+    int32_t data1[205];
+    int32_t data2[8][14];
 };
 
 struct ReplayEvent {
@@ -369,7 +383,8 @@ struct Faction {
     int32_t unk_27;
     int32_t ODP_deployed;
     int32_t tech_count_transcendent; // Transcendent Thoughts achieved
-    int8_t tech_trade_source[92];
+    int8_t tech_trade_source[88];
+    int32_t unk_28;
     int32_t tech_accumulated;
     int32_t tech_research_id;
     int32_t tech_cost;
@@ -386,8 +401,7 @@ struct Faction {
     int32_t council_call_turn;
     int32_t unk_29[11]; // Council related
     int32_t unk_30[11]; // Council related
-    uint8_t facility_announced[4]; // bitfield - used to determine one time play of fac audio blurb
-    int32_t unk_32;
+    int32_t facility_announced[2]; // bitfield - used to determine one time play of fac audio blurb
     int32_t unk_33;
     int32_t clean_minerals_modifier; // Starts from zero and increases by one after each fungal pop
     int32_t base_id_attack_target; // Battle planning of base to attack, -1 if not set
@@ -474,7 +488,7 @@ struct Faction {
     int32_t unk_105;
     int32_t unk_106;
     int32_t unk_107;
-    int32_t unk_108;
+    int32_t eliminated_count; // may decrease if some faction respawns
     int32_t unk_109;
     int32_t unk_110;
     int32_t unk_111;

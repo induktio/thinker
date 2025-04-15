@@ -128,10 +128,10 @@ int __cdecl is_coast(int x, int y, bool is_base_radius) {
         int y2 = y + TableOffsetY[i];
         MAP* sq = mapsq(x2, y2);
         if (sq && is_ocean(sq)) {
-            return true;
+            return i; // Must return index to the first ocean tile
         }
     }
-    return false;
+    return 0;
 }
 
 int __cdecl is_port(int base_id, bool is_base_radius) {
@@ -143,6 +143,29 @@ Validate region bounds. Bad regions include: 0, 63, 64, 127, 128.
 */
 int __cdecl bad_reg(int region) {
     return (region & RegionBounds) == RegionBounds || !(region & RegionBounds);
+}
+
+void __cdecl owner_set(int x, int y, int faction_id) {
+    MAP* sq = mapsq(x, y);
+    if (sq) {
+        sq->val2 &= 0xF0;
+        sq->val2 |= faction_id & 0xF;
+    }
+}
+
+void __cdecl site_set(int x, int y, uint8_t site) {
+    MAP* sq = mapsq(x, y);
+    if (sq) {
+        sq->val2 &= 0x0F;
+        sq->val2 |= site << 4;
+    }
+}
+
+void __cdecl region_set(int x, int y, uint8_t region) {
+    MAP* sq = mapsq(x, y);
+    if (sq) {
+        sq->region = region;
+    }
 }
 
 int __cdecl region_at(int x, int y) {
@@ -1257,6 +1280,9 @@ static void process_map(int faction_id, int k) {
             spawns.insert({v->x, v->y});
         }
     }
+    for (int i = 0; i < *BaseCount; i++) {
+        spawns.insert({Bases[i].x, Bases[i].y});
+    }
     if (goodtiles.size() * 3 < land_area) {
         goodtiles.clear();
     }
@@ -1268,9 +1294,9 @@ static bool valid_start(int faction_id, int iter, int x, int y) {
     MAP* sq = mapsq(x, y);
     bool aquatic = MFactions[faction_id].is_aquatic();
     int native_limit = (goodtiles.size() > 0 ? 3 : 2) + ((int)natives.size() < *MapAreaTiles/80);
-    int spawn_limit = max((*MapAreaTiles < 1600 ? 5 : 7), 8 - iter/80);
+    int spawn_limit = max((*MapAreaTiles < 1600 ? 5 : 7), 8 - iter/100);
 
-    if (!sq || sq->items & BIT_BASE_DISALLOWED || (sq->is_rocky() && !is_ocean(sq))) {
+    if (!sq || !sq->allow_spawn()) { // Select only tiles where bases can be built
         return false;
     }
     // LM_FRESH landmark is incorrectly used on some maps
@@ -1284,7 +1310,7 @@ static bool valid_start(int faction_id, int iter, int x, int y) {
         return false;
     }
     int spawn_range = min_range(spawns, x, y);
-    int min_sc = 80 - iter/4 + 20 * max(0, 11 - spawn_range);
+    int min_sc = 80 - iter/4 + 20 * max(0, 12 - spawn_range);
     int sea = 0;
     int sc = 0;
     int xd = 0;
@@ -1402,7 +1428,7 @@ static void apply_nutrient_bonus(int faction_id, int* x, int* y) {
         }
         else if (m.i < 45 && (int)places.size()/4 < conf.nutrient_bonus
         && aquatic == is_ocean(m.sq) && m.sq->alt_level() >= ALT_OCEAN_SHELF
-        && !(m.sq->items & (BIT_SUPPLY_REMOVE | BIT_MONOLITH))) {
+        && !(m.sq->items & (BIT_BASE_IN_TILE|BIT_VEH_IN_TILE|BIT_MONOLITH))) {
             places.insert({m.x, m.y});
         }
     }
@@ -1451,8 +1477,7 @@ static void apply_supply_pods(int faction_id, int x, int y) {
             pods++;
         } else if (bonus_at(m.x, m.y)) {
             bonus++;
-        } else if (m.i > 0 && !(m.sq->items
-        & (BIT_SUPPLY_REMOVE|BIT_MONOLITH|BIT_BASE_IN_TILE|BIT_VEH_IN_TILE))) {
+        } else if (m.i > 0 && m.sq->allow_supply()) {
             places.insert({m.x, m.y});
         }
     }
@@ -1496,10 +1521,10 @@ void __cdecl find_start(int faction_id, int* tx, int* ty) {
             }
             *tx = x;
             *ty = y;
+            site_set(x, y, world_site(x, y, 0));
             break;
         }
     }
-    site_set(*tx, *ty, world_site(*tx, *ty, 0));
     debug("find_start %d %3d x: %3d y: %3d range: %d\n",
         faction_id, i, *tx, *ty, min_range(spawns, *tx, *ty));
     flushlog();

@@ -1253,6 +1253,69 @@ int __cdecl contribution(int veh_id, int terraform_id) {
 }
 
 /*
+Calculate the armor strategy for the specified armor id.
+Return Value: Armor strategy
+*/
+int __cdecl arm_strat(int armor_id, int faction_id) {
+    assert(armor_id >= 0 && armor_id < MaxArmorNum);
+    assert(faction_id >= 0 && faction_id < MaxPlayerNum);
+    if (!*ExpansionEnabled && armor_id > ARM_PSI_DEFENSE) {
+        return 1;
+    }
+    int value = Armor[armor_id].defense_value;
+    if (value < 0) {
+        return psi_factor((Rules->psi_combat_ratio_def[TRIAD_LAND]
+            * Factions[faction_id].enemy_best_weapon_value)
+            / Rules->psi_combat_ratio_atk[TRIAD_LAND], faction_id, false, false);
+    }
+    return value;
+}
+
+/*
+Calculate the weapon strategy for the specified weapon id.
+Return Value: Weapon strategy
+*/
+int __cdecl weap_strat(int weapon_id, int faction_id) {
+    assert(weapon_id >= 0 && weapon_id < MaxWeaponNum);
+    assert(faction_id >= 0 && faction_id < MaxPlayerNum);
+    if (!*ExpansionEnabled && (weapon_id == WPN_RESONANCE_LASER || weapon_id == WPN_RESONANCE_BOLT
+    || weapon_id == WPN_STRING_DISRUPTOR)) {
+        return 1;
+    }
+    int value = Weapon[weapon_id].offense_value;
+    if (value < 0) {
+        return psi_factor((Rules->psi_combat_ratio_atk[TRIAD_LAND]
+            * Factions[faction_id].enemy_best_armor_value)
+            / Rules->psi_combat_ratio_def[TRIAD_LAND], faction_id, true, false);
+    }
+    return value;
+}
+
+/*
+Calculate the weapon value for the specified prototype.
+Return Value: Weapon value
+*/
+int __cdecl weap_val(int unit_id, int faction_id) {
+    return weap_strat(Units[unit_id].weapon_id, faction_id);
+}
+
+/*
+Calculate the armor value for the specified armor id.
+Return Value: Armor value
+*/
+int __cdecl arm_val(int armor_id, int faction_id) {
+    return 2 * ((faction_id >= 0) ? arm_strat(armor_id, faction_id) : Armor[armor_id].defense_value);
+}
+
+/*
+Calculate the armor value for the specified prototype.
+Return Value: Armor value
+*/
+int __cdecl armor_val(int unit_id, int faction_id) {
+    return arm_val(Units[unit_id].armor_id, faction_id);
+}
+
+/*
 Calculate the transport capacity for the specified chassis, abilities and reactor.
 */
 int __cdecl transport_val(VehChassis chassis_id, VehAblFlag abls, VehReactor reactor_id) {

@@ -52,7 +52,7 @@ int count_format_args(const char* src) {
     int len = strlen(src);
     int i;
 
-    for (i = 0; i < len - 1; i++) {
+    for (i = 0; i < len; i++) {
         if (src[i] == '%' && src[i + 1] != '%') {
             if (src[i + 1] != 'd' && src[i + 1] != 'i' && src[i + 1] != 'u') {
                 return -1;

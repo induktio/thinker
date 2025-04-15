@@ -996,8 +996,7 @@ bool can_build_base(int x, int y, int faction, int triad) {
     if (map_is_flat() && (x < 2 || x >= *MapAreaX - 2) && *MapAreaTiles >= 1600) {
         return false;
     }
-    if (sq->is_rocky() || sq->volcano_center()
-    || (sq->items & (BIT_BASE_DISALLOWED | BIT_ADVANCED))) {
+    if (!sq->allow_base() || sq->items & BIT_THERMAL_BORE) {
         return false;
     }
     // Allow base building on smaller maps in owned territory if a new faction is spawning.

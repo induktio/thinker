@@ -2,6 +2,8 @@
 
 #include "main.h"
 
+uint32_t game_rand_state();
+int32_t game_randv(int32_t value);
 void random_reseed(uint32_t value);
 uint32_t pair_hash(uint32_t a, uint32_t b);
 uint32_t random_state();
@@ -31,4 +33,9 @@ const T& pick_random(const std::set<T>& s) {
     std::advance(it, random(s.size()));
     return *it;
 }
+
+#ifdef BUILD_DEBUG
+uint64_t hash64(const void* input, size_t len, uint64_t seed);
+uint32_t hash32(const void* input, size_t len, uint32_t seed);
+#endif
 
