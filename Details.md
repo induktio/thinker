@@ -126,7 +126,7 @@ It is also possible to place multiple similar landmarks if the corresponding lan
 
 The new map generator is entirely different from the original version, so it does not use most variables specified in `alphax.txt` WorldBuilder section. Only in limited cases, such as river or fungus placement, WorldBuilder variables might be used by the game engine when the new map generator is enabled.
 
-Thinker's `faction_placement` algorithm tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on Huge map sizes.
+Thinker also includes modified `faction_placement` algorithm that tries to balance faction starting locations more evenly across the whole map area while avoiding unusable spawns on tiny islands. The selection also takes into account land quality near the spawn. The effect is most noticeable on Huge map sizes. It is possible to disable this option but it is not recommended since other spawn-related features might depend on it.
 
 When `nutrient_bonus` option is higher than zero, the placement algorithm adds this many additional nutrient bonus resources at each start. The placement also strongly favors spawns on river tiles for easier movement in the early game.
 

@@ -437,6 +437,7 @@ bool unit_is_better(int unit_id1, int unit_id2) {
 
 int unit_score(BASE* base, int unit_id, int psi_score, bool defend) {
     assert(unit_id >= 0 && unit_id < MaxProtoNum);
+    Faction* f = &Factions[base->faction_id];
     const int specials[][2] = {
         {ABL_AAA, 4},
         {ABL_AIR_SUPERIORITY, 2},
@@ -468,6 +469,8 @@ int unit_score(BASE* base, int unit_id, int psi_score, bool defend) {
         && proto_defense(unit_id) > proto_offense(unit_id)) {
             v -= 24;
         }
+    } else {
+        v += (u->is_missile() && f->player_flags_ext & PFLAG_EXT_STRAT_LOTS_MISSILES ? 16 : 0);
     }
     if (u->ability_flags & ABL_ARTILLERY) {
         if (conf.long_range_artillery > 0 && Rules->artillery_max_rng <= 4
@@ -476,6 +479,7 @@ int unit_score(BASE* base, int unit_id, int psi_score, bool defend) {
         } else {
             v -= 8;
         }
+        v += (f->player_flags_ext & PFLAG_EXT_STRAT_LOTS_ARTILLERY ? 16 : 0);
     }
     if (u->ability_flags & ABL_POLICE_2X && need_police(base->faction_id)) {
         v += (u->speed() > 1 ? 16 : 32);
@@ -614,6 +618,8 @@ int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships) 
     int w_air = 4*p->air_combat_units < f->base_count ? 2 : 5;
     int w_sea = (p->transport_units < 2 || 5*p->transport_units < f->base_count
         ? 2 : (3*p->transport_units < f->base_count ? 5 : 8));
+    int w_probes = 4 + num_probes*(conf.modify_unit_support < 2
+        && f->player_flags_ext & PFLAG_EXT_STRAT_LOTS_PROBE_TEAMS ? 1 : 2);
     bool need_ships = 6*p->sea_combat_units < p->land_combat_units;
     bool reserve = base->mineral_surplus >= base->mineral_intake_2/2;
     bool probes = has_wmode(base->faction_id, WMODE_PROBE) && gov & GOV_MAY_PROD_PROBES;
@@ -622,7 +628,7 @@ int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships) 
     bool sea = gov & (GOV_MAY_PROD_NAVAL_COMBAT | GOV_MAY_PROD_TRANSPORT);
     bool air = gov & (GOV_MAY_PROD_AIR_COMBAT | GOV_MAY_PROD_AIR_DEFENSE);
 
-    if (probes && (!(land || sea || air) || !random(num_probes*2 + 4) || !reserve)
+    if (probes && (!(land || sea || air) || !random(w_probes) || !reserve)
     && (choice = find_proto(base_id, (build_ships ? TRIAD_SEA : TRIAD_LAND), WMODE_PROBE, DEF)) >= 0) {
         return choice;
     }

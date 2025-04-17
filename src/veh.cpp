@@ -193,8 +193,8 @@ int __cdecl stack_fix(int veh_id) {
 }
 
 void __cdecl stack_sort(int veh_id) {
-    int16_t x = Vehs[veh_id].x;
-    int16_t y = Vehs[veh_id].y;
+    int x = Vehs[veh_id].x;
+    int y = Vehs[veh_id].y;
     int next_veh_id = veh_top(veh_id);
     int veh_id_put = -1;
     int veh_id_loop;
@@ -211,6 +211,40 @@ void __cdecl stack_sort(int veh_id) {
     }
 }
 
+/*
+Relocate an existing unit to the specified tile.
+*/
+void __cdecl veh_put(int veh_id, int x, int y) {
+    veh_drop(veh_lift(veh_id), x, y);
+}
+
+/*
+Move the specified unit to the bottom of the stack.
+*/
+void __cdecl veh_demote(int veh_id) {
+    if (veh_id >= 0) {
+        int16_t next_veh_id = Vehs[veh_id].next_veh_id_stack;
+        if (next_veh_id >= 0) {
+            int16_t last_veh_id;
+            do {
+                last_veh_id = next_veh_id;
+                next_veh_id = Vehs[last_veh_id].next_veh_id_stack;
+            } while (next_veh_id >= 0);
+            if (last_veh_id != veh_id) {
+                veh_lift(veh_id);
+                Vehs[last_veh_id].next_veh_id_stack = (int16_t)veh_id;
+                Vehs[veh_id].prev_veh_id_stack = last_veh_id;
+                Vehs[veh_id].next_veh_id_stack = -1;
+                Vehs[veh_id].x = Vehs[last_veh_id].x;
+                Vehs[veh_id].y = Vehs[last_veh_id].y;
+            }
+        }
+    }
+}
+
+/*
+Move the specified unit to the top of the stack.
+*/
 void __cdecl veh_promote(int veh_id) {
     int veh_id_top = veh_top(veh_id);
     if (veh_id_top >= 0 && veh_id_top != veh_id) {

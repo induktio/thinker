@@ -36,6 +36,6 @@ const T& pick_random(const std::set<T>& s) {
 
 #ifdef BUILD_DEBUG
 uint64_t hash64(const void* input, size_t len, uint64_t seed);
-uint32_t hash32(const void* input, size_t len, uint32_t seed);
+uint32_t hash32(const void* input, size_t len, uint64_t seed);
 #endif
 

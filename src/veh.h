@@ -17,6 +17,8 @@ int __cdecl veh_who(int x, int y);
 int __cdecl veh_top(int veh_id);
 int __cdecl stack_fix(int veh_id);
 void __cdecl stack_sort(int veh_id);
+void __cdecl veh_put(int veh_id, int x, int y);
+void __cdecl veh_demote(int veh_id);
 void __cdecl veh_promote(int veh_id);
 int __cdecl proto_speed(int unit_id);
 int __cdecl veh_speed(int veh_id, bool skip_morale);

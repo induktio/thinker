@@ -36,3 +36,11 @@ void __cdecl mod_production_phase(int faction_id);
 void __cdecl mod_name_base(int faction_id, char* name, bool save_offset, bool water);
 int __cdecl load_music_strcmpi(const char* active, const char* label);
 
+template<typename T, typename... Args>
+int net_show(T format, Args... vals) {
+    char buf[StrBufLen];
+    snprintf(buf, StrBufLen, format, vals...);
+    parse_says(0, buf, -1, -1);
+    return NetMsg_pop(NetMsg, "GENERIC", 5000, 0, 0);
+}
+

@@ -187,7 +187,7 @@ uint64_t hash64(const void* input, size_t len, uint64_t seed) {
     return h;
 }
 
-uint32_t hash32(const void* input, size_t len, uint32_t seed) {
+uint32_t hash32(const void* input, size_t len, uint64_t seed) {
     uint32_t h = 0;
     halfsiphash((uint8_t*)input, len, &seed, (uint8_t*)&h, 4);
     return h;

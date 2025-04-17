@@ -715,47 +715,6 @@ int __cdecl society_avail(int soc_category, int soc_model, int faction_id) {
     return has_tech(SocialField[soc_category].soc_preq_tech[soc_model], faction_id);
 }
 
-static int __cdecl setup_values(int faction_id, int a2, int a3) {
-    Faction* f = &Factions[faction_id];
-    int value = setup_player(faction_id, a2, a3);
-    if (!faction_id) {
-        return value;
-    }
-    int num_colony = is_human(faction_id) ? conf.player_colony_pods : conf.computer_colony_pods;
-    int num_former = is_human(faction_id) ? conf.player_formers : conf.computer_formers;
-
-    for (int i = 0; i < *VehCount; i++) {
-        VEH* veh = &Vehicles[i];
-        if (veh->faction_id == faction_id) {
-            MAP* sq = mapsq(veh->x, veh->y);
-            int colony = (is_ocean(sq) ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
-            int former = (is_ocean(sq) ? BSC_SEA_FORMERS : BSC_FORMERS);
-            for (int j = 0; j < num_colony; j++) {
-                mod_veh_init(colony, faction_id, veh->x, veh->y);
-            }
-            for (int j = 0; j < num_former; j++) {
-                mod_veh_init(former, faction_id, veh->x, veh->y);
-            }
-            break;
-        }
-    }
-    if (is_human(faction_id)) {
-        f->satellites_nutrient = conf.player_satellites[0];
-        f->satellites_mineral = conf.player_satellites[1];
-        f->satellites_energy = conf.player_satellites[2];
-    } else {
-        f->satellites_nutrient = conf.computer_satellites[0];
-        f->satellites_mineral = conf.computer_satellites[1];
-        f->satellites_energy = conf.computer_satellites[2];
-    }
-    if (!*CurrentTurn) {
-        // Update default governor settings
-        f->base_governor_adv &= ~(GOV_MAY_PROD_SP|GOV_MAY_HURRY_PRODUCTION);
-        f->base_governor_adv |= GOV_MAY_PROD_NATIVE;
-    }
-    return value;
-}
-
 /*
 Improved social engineering AI choices feature.
 */
@@ -1235,6 +1194,52 @@ static int veh_init_last(int unit_id, int faction_id, int x, int y) {
     return veh_id;
 }
 
+static int __cdecl setup_values(int faction_id, int a2, int a3) {
+    Faction* f = &Factions[faction_id];
+    int value = setup_player(faction_id, a2, a3);
+    if (!faction_id) {
+        return value;
+    }
+    int num_colony = is_human(faction_id) ? conf.player_colony_pods : conf.computer_colony_pods;
+    int num_former = is_human(faction_id) ? conf.player_formers : conf.computer_formers;
+
+    for (int i = 0; i < *VehCount; i++) {
+        VEH* veh = &Vehicles[i];
+        if (veh->faction_id == faction_id) {
+            MAP* sq = mapsq(veh->x, veh->y);
+            int colony = (is_ocean(sq) ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
+            int former = (is_ocean(sq) ? BSC_SEA_FORMERS : BSC_FORMERS);
+            for (int j = 0; j < num_colony; j++) {
+                veh_init_free(colony, faction_id, veh->x, veh->y);
+            }
+            for (int j = 0; j < num_former; j++) {
+                veh_init_free(former, faction_id, veh->x, veh->y);
+            }
+            break;
+        }
+    }
+    if (is_human(faction_id)) {
+        f->satellites_nutrient = conf.player_satellites[0];
+        f->satellites_mineral = conf.player_satellites[1];
+        f->satellites_energy = conf.player_satellites[2];
+    } else {
+        f->satellites_nutrient = conf.computer_satellites[0];
+        f->satellites_mineral = conf.computer_satellites[1];
+        f->satellites_energy = conf.computer_satellites[2];
+    }
+    if (!*CurrentTurn) {
+        // Update default governor settings
+        f->base_governor_adv &= ~(GOV_MAY_PROD_SP|GOV_MAY_HURRY_PRODUCTION);
+        f->base_governor_adv |= GOV_MAY_PROD_NATIVE;
+    }
+    return value;
+}
+
+static bool has_suffix(const char* str) {
+    int len = strlen(str);
+    return len >= 2 && str[len-2] == '-' && isdigit(str[len-1]);
+}
+
 int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
     Faction* plr = &Factions[faction_id];
     MFaction* m = &MFactions[faction_id];
@@ -1254,15 +1259,18 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
         if (faction_id && initial_spawn && i != faction_id
         && !_stricmp(MFactions[i].filename, m->filename)) {
             char buf[StrBufLen];
-            buf[0] = '\0';
-            strcpy_n(buf, 22, m->name_leader);
-            snprintf(m->name_leader, 24, "%s-%d", buf, faction_id);
-            buf[0] = '\0';
-            strcpy_n(buf, 22, m->noun_faction);
-            snprintf(m->noun_faction, 24, "%s-%d", buf, faction_id);
-            buf[0] = '\0';
-            strcpy_n(buf, 38, m->formal_name_faction);
-            snprintf(m->formal_name_faction, 40, "%s-%d", buf, faction_id);
+            if (!has_suffix(m->name_leader)) {
+                strcpy_n(buf, 22, m->name_leader);
+                snprintf(m->name_leader, 24, "%s-%d", buf, faction_id);
+            }
+            if (!has_suffix(m->noun_faction)) {
+                strcpy_n(buf, 22, m->noun_faction);
+                snprintf(m->noun_faction, 24, "%s-%d", buf, faction_id);
+            }
+            if (!has_suffix(m->formal_name_faction)) {
+                strcpy_n(buf, 38, m->formal_name_faction);
+                snprintf(m->formal_name_faction, 40, "%s-%d", buf, faction_id);
+            }
             break;
         }
     }
