@@ -546,24 +546,24 @@ enum DiploStatus {
     DIPLO_UNK_800 = 0x800,
     DIPLO_HAVE_INFILTRATOR = 0x1000,
     DIPLO_WANT_TO_TALK = 0x2000,
-    DIPLO_UNK_4000 = 0x4000,
-    DIPLO_RENEW_INFILTRATOR = 0x8000, // infiltration done on this turn
+    DIPLO_UNK_4000 = 0x4000, // introduce
+    DIPLO_UNK_8000 = 0x8000, // act_of_aggression, removed when vendetta ends
     DIPLO_UNK_10000 = 0x10000, // "informal" truce status?
     DIPLO_UNK_20000 = 0x20000,
     DIPLO_ATROCITY_VICTIM = 0x40000, // atrocity / major_atrocity
     DIPLO_MAJOR_ATROCITY_VICTIM = 0x80000, // major_atrocity
-    DIPLO_UNK_100000 = 0x100000,
+    DIPLO_UNK_100000 = 0x100000, // treaty_off
     DIPLO_UNK_200000 = 0x200000,
     DIPLO_UNK_400000 = 0x400000,
-    DIPLO_UNK_800000 = 0x800000,
-    DIPLO_UNK_1000000 = 0x1000000,
+    DIPLO_UNK_800000 = 0x800000, // treaty_on
+    DIPLO_UNK_1000000 = 0x1000000, // treaty_off
     DIPLO_HAVE_SURRENDERED = 0x2000000,
-    DIPLO_UNK_4000000 = 0x4000000,
-    DIPLO_UNK_8000000 = 0x8000000,
-    DIPLO_UNK_10000000 = 0x10000000,
-    DIPLO_UNK_20000000 = 0x20000000,
-    DIPLO_UNK_40000000 = 0x40000000,
-    DIPLO_UNK_80000000 = 0x80000000,
+    DIPLO_UNK_4000000 = 0x4000000, // wants_to_attack
+    DIPLO_UNK_8000000 = 0x8000000, // whose_territory
+    DIPLO_UNK_10000000 = 0x10000000, // setup_player
+    DIPLO_UNK_20000000 = 0x20000000, // enemy_diplomacy
+    DIPLO_UNK_40000000 = 0x40000000, // encounter
+    DIPLO_UNK_80000000 = 0x80000000, // treaty_on
 };
 
 enum DiploAgenda {

@@ -575,15 +575,19 @@ int find_proto(int base_id, Triad triad, VehWeaponMode mode, bool defend) {
     return best_id;
 }
 
-int select_colony(int base_id, int pods, bool build_ships) {
+int select_colony(int base_id, int num_colony, bool build_ships) {
     TileSearch ts;
     BASE* base = &Bases[base_id];
-    bool start = Factions[base->faction_id].base_count < min(16, 2 + *MapAreaSqRoot/4);
+    Faction* f = &Factions[base->faction_id];
+    bool start = f->base_count < min(16, 2 + *MapAreaSqRoot/4);
     bool land = has_base_sites(ts, base->x, base->y, base->faction_id, TRIAD_LAND);
     bool sea = has_base_sites(ts, base->x, base->y, base->faction_id, TRIAD_SEA);
-    int limit = (start || (!random(3) && (land || (build_ships && sea))) ? 2 : 1);
+    bool extra_land = land && f->player_flags_ext & PFLAG_EXT_STRAT_LOTS_COLONY_PODS;
+    bool extra_sea = build_ships && sea && f->player_flags_ext & PFLAG_EXT_STRAT_LOTS_SEA_BASES;
+    int limit = (start || (!random(4) && (land || (build_ships && sea))) ? 2 : 1)
+        + ((extra_land || extra_sea) && !random(4));
 
-    if (pods >= limit) {
+    if (num_colony >= limit) {
         return -1;
     }
     if (is_ocean(base)) {
@@ -609,19 +613,22 @@ int select_colony(int base_id, int pods, bool build_ships) {
     return -1;
 }
 
-int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships) {
+int select_combat(int base_id, bool sea_base, bool build_ships) {
     BASE* base = &Bases[base_id];
     Faction* f = &Factions[base->faction_id];
     AIPlans* p = &plans[base->faction_id];
     int gov = base->gov_config();
     int choice;
-    int w_air = 4*p->air_combat_units < f->base_count ? 2 : 5;
-    int w_sea = (p->transport_units < 2 || 5*p->transport_units < f->base_count
-        ? 2 : (3*p->transport_units < f->base_count ? 5 : 8));
-    int w_probes = 4 + num_probes*(conf.modify_unit_support < 2
-        && f->player_flags_ext & PFLAG_EXT_STRAT_LOTS_PROBE_TEAMS ? 1 : 2);
-    bool need_ships = 6*p->sea_combat_units < p->land_combat_units;
-    bool reserve = base->mineral_surplus >= base->mineral_intake_2/2;
+    int w_air = 4*p->air_combat_units < f->base_count
+        ? 2 : (f->player_flags & PFLAG_EMPHASIZE_AIR_POWER ? 4 : 5);
+    int w_sea = 5*p->transport_units < f->base_count + 5
+        ? 2 : (3*p->transport_units < f->base_count ? 5 : 8);
+    int w_probes = ((p->probe_units * (conf.modify_unit_support < 2 ? 2 : 4) < f->base_count)
+        ? 3 : 5) + (f->player_flags_ext & PFLAG_EXT_STRAT_LOTS_PROBE_TEAMS ? 0 : 1);
+    bool need_ships = (f->player_flags & PFLAG_EMPHASIZE_SEA_POWER ? 4 : 6)
+        * p->sea_combat_units < p->land_combat_units;
+    bool need_land = f->player_flags & PFLAG_EMPHASIZE_LAND_POWER;
+    bool reserve = conf.modify_unit_support >= 2 || base->mineral_surplus >= base->mineral_intake_2/2;
     bool probes = has_wmode(base->faction_id, WMODE_PROBE) && gov & GOV_MAY_PROD_PROBES;
     bool transports = has_wmode(base->faction_id, WMODE_TRANSPORT) && gov & GOV_MAY_PROD_TRANSPORT;
     bool land = gov & (GOV_MAY_PROD_LAND_COMBAT | GOV_MAY_PROD_LAND_DEFENSE);
@@ -644,6 +651,7 @@ int select_combat(int base_id, int num_probes, bool sea_base, bool build_ships) 
             BASE* b = &Bases[i];
             if (base->faction_id != b->faction_id && !has_pact(base->faction_id, b->faction_id)) {
                 int dist = map_range(base->x, base->y, b->x, b->y)
+                    * (need_land && is_ocean(b) ? 2 : 1)
                     * (at_war(base->faction_id, b->faction_id) ? 1 : 4);
                 if (dist < min_dist) {
                     sea_enemy = is_ocean(b);
@@ -902,7 +910,7 @@ int select_build(int base_id) {
             && (Units[choice].is_prototyped() || prod_count(choice, faction, base_id) == 0)) {
                 return choice;
             }
-            if ((choice = select_combat(base_id, landprobes+seaprobes, sea_base, allow_ships)) >= 0) {
+            if ((choice = select_combat(base_id, sea_base, allow_ships)) >= 0) {
                 if (random(256) < (int)(256 * Wthreat)) {
                     return choice;
                 }
@@ -912,8 +920,10 @@ int select_build(int base_id) {
             }
         }
         if (t == FormerUnit && gov & GOV_MAY_PROD_TERRAFORMERS) {
+            bool priority = base->pop_size >= 6 && minerals >= 8
+                && f->player_flags_ext & PFLAG_EXT_STRAT_LOTS_TERRAFORMERS;
             if (has_wmode(faction, WMODE_TERRAFORM)
-            && formers + near_formers/2 < (base->pop_size < 4 ? 1 : 2)) {
+            && formers + near_formers/2 < (base->pop_size < 4 ? 1 : 2 + priority)) {
                 int num = 0;
                 int sea = 0;
                 for (const auto& m : iterate_tiles(base->x, base->y, 1, 21)) {
@@ -1102,7 +1112,7 @@ int select_build(int base_id) {
         return -FAC_STOCKPILE_ENERGY;
     }
     debug("BUILD OFFENSE\n");
-    return select_combat(base_id, landprobes+seaprobes, sea_base, allow_ships);
+    return select_combat(base_id, sea_base, allow_ships);
 }
 
 

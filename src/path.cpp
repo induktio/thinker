@@ -709,7 +709,7 @@ int search_route(TileSearch& ts, int veh_id, int* tx, int* ty) {
             && allow_civ_move(ts.rx, ts.ry, veh->faction_id, TRIAD_LAND)
             && allow_civ_move(p.x, p.y, veh->faction_id, TRIAD_SEA)) {
                 int dist = map_range(veh->x, veh->y, ts.rx, ts.ry);
-                int score = 8*mapnodes.count({p.x, p.x, NODE_NAVAL_PICK})
+                int score = 16*mapnodes.count({p.x, p.y, NODE_NAVAL_PICK})
                     + 8*(sq->is_fungus() == veh->is_native_unit())
                     + min(0, mapdata[{ts.rx, ts.ry}].safety/32)
                     - ts.dist - 2*dist;

@@ -306,7 +306,6 @@ int target_priority(int x, int y, int faction, MAP* sq) {
     Faction& f = Factions[faction];
     AIPlans& p1 = plans[faction];
     AIPlans& p2 = plans[sq->owner];
-    BASE& base = Bases[f.base_id_attack_target];
     int score = 0;
 
     if (sq->is_owned()) {
@@ -320,15 +319,20 @@ int target_priority(int x, int y, int faction, MAP* sq) {
             score += (*GameRules & RULES_INTENSE_RIVALRY ? 400 : 200);
         }
         if (f.base_id_attack_target >= 0) {
+            BASE& base = Bases[f.base_id_attack_target];
             assert(at_war(faction, base.faction_id));
             score += 80*clamp(6 - map_range(base.x, base.y, x, y), 0, 4);
         }
         if (sq->is_base()) {
             int base_id = base_at(x, y);
             if (base_id >= 0) {
-                score += (has_fac_built(FAC_HEADQUARTERS, base_id) ? 100 : 0);
-                score += (is_objective(base_id) ? 100 : 0);
                 score += clamp(4*Bases[base_id].pop_size, 4, 64);
+                if (has_fac_built(FAC_HEADQUARTERS, base_id)) {
+                    score += (f.player_flags & PFLAG_STRAT_ATK_ENEMY_HQ ? 400 : 100);
+                }
+                if (is_objective(base_id)) {
+                    score += (f.player_flags & PFLAG_STRAT_ATK_OBJECTIVES ? 200 : 100);
+                }
             }
             score += (mapdata[{x, y}].roads ? 150 : 0);
             return score;
@@ -644,8 +648,8 @@ void move_upkeep(int faction, UpdateMode mode) {
                     mapnodes.insert({veh->x, veh->y, NODE_NEED_FERRY});
                 }
             }
-            if (veh->waypoint_1_x >= 0) {
-                mapnodes.erase({veh->waypoint_1_x, veh->waypoint_1_y, NODE_PATROL});
+            if (veh->waypoint_x[0] >= 0) {
+                mapnodes.erase({veh->waypoint_x[0], veh->waypoint_y[0], NODE_PATROL});
             }
             adjust_unit_near(veh->x, veh->y, 3, (triad == TRIAD_LAND ? 2 : 1));
 
@@ -745,15 +749,15 @@ void move_upkeep(int faction, UpdateMode mode) {
         }
     }
     if (f.base_count > 0 && mode != UM_Visual) {
+        bool defend = Factions[faction].player_flags & PFLAG_STRAT_DEF_OBJECTIVES;
         int values[MaxBaseNum] = {};
         int sorter[MaxBaseNum] = {};
         int bases = 0;
-
         for (int i = 0; i < *BaseCount; i++) {
             BASE* base = &Bases[i];
             if (base->faction_id == faction) {
-                if (!base->defend_goal) { base->pad_5 = 0; }
-                values[i] = base->pop_size + (is_objective(i) ? 16 : 0)
+                values[i] = base->pop_size
+                    + (is_objective(i) ? 16 + 16*defend : 0)
                     + 16*has_fac_built(FAC_HEADQUARTERS, i)
                     + 8*mapdata[{base->x, base->y}].enemy_near
                     + (base->state_flags & BSTATE_COMBAT_LOSS_LAST_TURN ? 8 : 0)
@@ -1129,11 +1133,11 @@ int colony_move(const int id) {
         return mod_veh_skip(id);
     }
     if (!veh->at_target() && (veh->state & VSTATE_UNK_40000 || !(veh->state & VSTATE_UNK_2000))
-    && can_build_base(veh->waypoint_1_x, veh->waypoint_1_y, veh->faction_id, triad)) {
-        for (auto& m : iterate_tiles(veh->waypoint_1_x, veh->waypoint_1_y, 0, 9)) {
+    && can_build_base(veh->waypoint_x[0], veh->waypoint_y[0], veh->faction_id, triad)) {
+        for (auto& m : iterate_tiles(veh->waypoint_x[0], veh->waypoint_y[0], 0, 9)) {
             mapnodes.insert({m.x, m.y, NODE_BASE_SITE});
         }
-        ts.connect_roads(mapdata, veh->waypoint_1_x, veh->waypoint_1_y, faction);
+        ts.connect_roads(mapdata, veh->waypoint_x[0], veh->waypoint_y[0], faction);
         return VEH_SYNC;
     }
     bool at_base = sq->is_base() && sq->owner == faction;
@@ -2197,7 +2201,7 @@ int trans_move(const int id) {
         VEH* v = &Vehs[i];
         if (veh->faction_id == v->faction_id && v->triad() == TRIAD_LAND && i != id) {
             if (veh->x == v->x && veh->y == v->y) {
-                if (v->order == ORDER_SENTRY_BOARD && v->waypoint_1_x == id) {
+                if (v->order == ORDER_SENTRY_BOARD && v->waypoint_x[0] == id) {
                     cargo++;
                     if (v->is_artifact()) {
                         artifact++;
@@ -2219,13 +2223,13 @@ int trans_move(const int id) {
     }
     if (!veh->at_target()) {
         if (artifact || (cargo
-        && (mapnodes.count({veh->waypoint_1_x, veh->waypoint_1_y, NODE_NAVAL_END})
-        || mapnodes.count({veh->waypoint_1_x, veh->waypoint_1_y, NODE_NAVAL_PICK})
-        || mapnodes.count({veh->waypoint_1_x, veh->waypoint_1_y, NODE_NEED_FERRY})
-        || mapnodes.count({veh->waypoint_1_x, veh->waypoint_1_y, NODE_SCOUT_SITE})))) {
+        && (mapnodes.count({veh->waypoint_x[0], veh->waypoint_y[0], NODE_NAVAL_END})
+        || mapnodes.count({veh->waypoint_x[0], veh->waypoint_y[0], NODE_NAVAL_PICK})
+        || mapnodes.count({veh->waypoint_x[0], veh->waypoint_y[0], NODE_NEED_FERRY})
+        || mapnodes.count({veh->waypoint_x[0], veh->waypoint_y[0], NODE_SCOUT_SITE})))) {
             return VEH_SYNC; // Continue previous orders
         }
-        if (!cargo && mapnodes.count({veh->waypoint_1_x, veh->waypoint_1_y, NODE_NAVAL_START})) {
+        if (!cargo && mapnodes.count({veh->waypoint_x[0], veh->waypoint_y[0], NODE_NAVAL_START})) {
             return VEH_SYNC;
         }
     }
@@ -2781,15 +2785,15 @@ int combat_move(const int id) {
             }
         }
         bool keep_order = true;
-        if ((sq = mapsq(veh->waypoint_1_x, veh->waypoint_1_y)) != NULL) {
+        if ((sq = mapsq(veh->waypoint_x[0], veh->waypoint_y[0])) != NULL) {
             if (veh->is_probe() && sq->is_base() && sq->owner != faction
             && !has_pact(faction, sq->owner)
             && !allow_probe(faction, sq->owner, is_enhanced)) {
                 keep_order = false;
             }
             else if (combat && !sq->is_base()
-            && map_range(veh->x, veh->y, veh->waypoint_1_x, veh->waypoint_1_y) < 4
-            && !allow_combat(veh->waypoint_1_x, veh->waypoint_1_y, faction, sq)) {
+            && map_range(veh->x, veh->y, veh->waypoint_x[0], veh->waypoint_y[0]) < 4
+            && !allow_combat(veh->waypoint_x[0], veh->waypoint_y[0], faction, sq)) {
                 keep_order = false;
             }
         }

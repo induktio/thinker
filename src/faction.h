@@ -2,6 +2,10 @@
 
 #include "main.h"
 
+const uint32_t DiploExcludeTruce = (DIPLO_UNK_100000|DIPLO_UNK_10000|DIPLO_UNK_8000|DIPLO_UNK_40|DIPLO_VENDETTA);
+const uint32_t DiploExcludeFight = (DIPLO_UNK_4000000|DIPLO_UNK_1000000|DIPLO_UNK_100000|DIPLO_UNK_10000|\
+    DIPLO_UNK_800|DIPLO_SHALL_BETRAY|DIPLO_UNK_80|DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT);
+
 bool has_chassis(int faction_id, VehChassis chs);
 bool has_weapon(int faction_id, VehWeapon wpn);
 bool has_wmode(int faction_id, VehWeaponMode mode);
@@ -32,10 +36,15 @@ int veh_count(int faction_id, int unit_id);
 int find_hq(int faction_id);
 int faction_might(int faction_id);
 
-void __cdecl set_treaty(int faction1, int faction2, uint32_t treaty, bool add);
-void __cdecl set_agenda(int faction1, int faction2, uint32_t agenda, bool add);
-int __cdecl has_treaty(int faction1, int faction2, uint32_t treaty);
-int __cdecl has_agenda(int faction1, int faction2, uint32_t agenda);
+void __cdecl treaty_off(int faction_id_1, int faction_id_2, uint32_t status);
+void __cdecl agenda_off(int faction_id_1, int faction_id_2, uint32_t status);
+void __cdecl treaty_on(int faction_id_1, int faction_id_2, uint32_t status);
+void __cdecl agenda_on(int faction_id_1, int faction_id_2, uint32_t status);
+void __cdecl set_treaty(int faction_id_1, int faction_id_2, uint32_t status, bool add);
+void __cdecl set_agenda(int faction_id_1, int faction_id_2, uint32_t status, bool add);
+int __cdecl has_treaty(int faction_id_1, int faction_id_2, uint32_t status);
+int __cdecl has_agenda(int faction_id_1, int faction_id_2, uint32_t status);
+int __cdecl act_of_aggression(int faction_id_atk, int faction_id_def);
 int __cdecl council_votes(int faction_id);
 int __cdecl eligible(int faction_id);
 int __cdecl great_beelzebub(int faction_id, int is_aggressive);

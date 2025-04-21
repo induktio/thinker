@@ -626,8 +626,7 @@ void __cdecl add_bat(int type, int modifier, const char* display_str)
 {
     int offset = VehBattleModCount[type];
     if (modifier && offset >= 0 && offset < 4 && (type == 0 || type == 1)) {
-        strncpy(VehBattleDisplay[type][offset], display_str, 80);
-        VehBattleDisplay[type][offset][79] = '\0';
+        strcpy_n(VehBattleDisplay[type][offset], 80, display_str);
         VehBattleModifier[type][offset] = modifier;
         VehBattleModCount[type]++;
     }
@@ -1994,8 +1993,8 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                 VEH* veh = &Vehs[iter_veh_id];
                 if (veh->triad() == TRIAD_LAND && is_ocean(sq_def) && !sq_def->is_base()
                 && (veh->order != ORDER_SENTRY_BOARD
-                || veh->waypoint_1_x == veh_id_def
-                || veh->waypoint_1_x < 0)) {
+                || veh->waypoint_x[0] == veh_id_def
+                || veh->waypoint_x[0] < 0)) {
                     veh->damage_taken = veh->max_hitpoints();
                     num_damaged++;
                 }

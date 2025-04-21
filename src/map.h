@@ -33,6 +33,7 @@ int map_range(const A* a, const B* b) {
 
 int __cdecl is_coast(int x, int y, bool is_base_radius);
 int __cdecl is_port(int base_id, bool is_base_radius);
+int __cdecl on_map(int x, int y);
 int __cdecl bad_reg(int region);
 void __cdecl owner_set(int x, int y, int faction_id);
 void __cdecl site_set(int x, int y, uint8_t site);

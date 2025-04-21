@@ -393,9 +393,8 @@ void __cdecl mod_repair_phase(int faction_id) {
             }
         }
         if (veh->order == ORDER_SENTRY_BOARD || veh->order == ORDER_HOLD) {
-            if (veh->waypoint_1_y) {
-                veh->waypoint_1_y--;
-                if (!veh->waypoint_1_y) {
+            if (veh->waypoint_y[0]) {
+                if (!--veh->waypoint_y[0]) {
                     veh->order = ORDER_NONE;
                 }
             }

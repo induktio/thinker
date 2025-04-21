@@ -484,14 +484,8 @@ struct VEH {
     int8_t order;
     uint8_t waypoint_count;
     uint8_t patrol_current_point;
-    int16_t waypoint_1_x; // doubles as transport veh_id if unit is sentry/board
-    int16_t waypoint_2_x;
-    int16_t waypoint_3_x;
-    int16_t waypoint_4_x;
-    int16_t waypoint_1_y;
-    int16_t waypoint_2_y;
-    int16_t waypoint_3_y;
-    int16_t waypoint_4_y;
+    int16_t waypoint_x[4]; // first doubles as transport veh_id if unit is sentry/board
+    int16_t waypoint_y[4];
     uint8_t morale;
     uint8_t movement_turns;
     uint8_t order_auto_type;
@@ -635,11 +629,11 @@ struct VEH {
         return is_human(faction_id);
     }
     bool at_target() {
-        return order == ORDER_NONE || (waypoint_1_x < 0 && waypoint_1_y < 0)
-            || (x == waypoint_1_x && y == waypoint_1_y);
+        return order == ORDER_NONE || (waypoint_x[0] < 0 && waypoint_y[0] < 0)
+            || (x == waypoint_x[0] && y == waypoint_y[0]);
     }
     bool in_transit() {
-        return order == ORDER_SENTRY_BOARD && waypoint_1_x >= 0;
+        return order == ORDER_SENTRY_BOARD && waypoint_x[0] >= 0;
     }
     bool mid_damage() {
         return damage_taken > 2*Units[unit_id].reactor_id;

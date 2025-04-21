@@ -812,13 +812,11 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         InvalidateRect(hwnd, NULL, false);
 
     } else if (debug_cmd && wParam == 'f' && alt_key_down()
-    && (sq = mapsq(MapWin->iTileX, MapWin->iTileY))) {
+    && (sq = mapsq(MapWin->iTileX, MapWin->iTileY)) && sq->is_owned()) {
         MapWin->iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
-        if (sq && sq->is_owned()) {
-            move_upkeep(sq->owner, UM_Visual);
-            MapWin_draw_map(MapWin, 0);
-            InvalidateRect(hwnd, NULL, false);
-        }
+        move_upkeep(sq->owner, UM_Visual);
+        MapWin_draw_map(MapWin, 0);
+        InvalidateRect(hwnd, NULL, false);
 
     } else if (debug_cmd && wParam == 'x' && alt_key_down()) {
         MapWin->iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;

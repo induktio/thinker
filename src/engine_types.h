@@ -224,7 +224,8 @@ struct MFaction {
     Thinker-specific save game variables.
     */
     int32_t thinker_unused[3];
-    int16_t thinker_probe_lost;
+    uint8_t thinker_probe_lost;
+    uint8_t thinker_probe_renew;
     int16_t thinker_last_mc_turn;
     int16_t thinker_probe_end_turn[8];
     char pad_1[96];
@@ -299,7 +300,7 @@ struct Faction {
     int32_t unk_1[8]; // unused
     int32_t integrity_blemishes;
     int32_t diplo_reputation;
-    int32_t diplo_gifts[8]; // ? Gifts and bribes we have received
+    int32_t diplo_gifts[8]; // Gifts and bribes we have given to this faction
     int32_t diplo_wrongs[8]; // Number of times we double crossed this faction
     int32_t diplo_betrayed[8]; // Number of times double crossed by this faction
     int32_t diplo_unk_3[8]; // ? combat related

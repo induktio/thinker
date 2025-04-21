@@ -83,8 +83,8 @@ static int diplo_relation(int faction1, int faction2)
     assert(!is_human(faction2));
     return clamp(Factions[faction1].integrity_blemishes
         + Factions[faction2].diplo_betrayed[faction1]
-        - Factions[faction2].diplo_gifts[faction1]
-        + clamp(Factions[faction1].eliminated_count - 1, 0, 4), -8, 8);
+        - Factions[faction1].diplo_gifts[faction2]
+        + clamp(Factions[faction1].eliminated_count - 1, 0, 4), -10, 10);
 }
 
 int __cdecl mod_threaten(int faction1, int faction2)

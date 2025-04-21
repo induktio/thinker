@@ -1342,6 +1342,14 @@ int __cdecl read_rules(int tgl_all_rules) {
     return false;
 }
 
+char* __cdecl prefs_get_strcpy(char* dst, const char* src) {
+    if ((dst == &ParseStrBuffer[0].str[0] || dst == &ParseStrBuffer[1].str[0])
+    && src == *TextBufferGetPtr) {
+        return strcpy_n(dst, StrBufLen, Text.SrcPtr);
+    }
+    return strcpy_n(dst, StrBufLen, src);
+}
+
 /*
 Deprecated function. Attempt to read the setting string value from the ini file.
 */

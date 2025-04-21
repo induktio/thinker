@@ -203,7 +203,7 @@ void print_veh(int id) {
         "state: %08x flags: %04x vis: %02x mor: %d turns: %d iter: %d\n",
         Units[v->unit_id].name, v->unit_id, id, v->faction_id, v->home_base_id,
         v->order, v->order_auto_type, (v->status_icon ? v->status_icon : ' '),
-        v->x, v->y, v->waypoint_1_x, v->waypoint_1_y,
+        v->x, v->y, v->waypoint_x[0], v->waypoint_y[0],
         v->next_veh_id_stack, v->prev_veh_id_stack, v->moves_spent, veh_speed(id, 0),
         v->damage_taken, v->state, v->flags, v->visibility, v->morale,
         v->movement_turns, v->iter_count);

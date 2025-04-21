@@ -59,6 +59,7 @@ int __cdecl read_factions();
 void __cdecl noun_item(int32_t* gender, int32_t* plural);
 int __cdecl read_units();
 int __cdecl read_rules(int tgl_all_rules);
+char* __cdecl prefs_get_strcpy(char* dst, const char* src);
 char* __cdecl prefs_get2(const char* key_name, const char* default_value, int use_default);
 int __cdecl prefs_get(const char* key_name, int default_value, int use_default);
 void prefs_read(char* buf, size_t buf_len, const char* key_name, const char* default_value, int use_default);

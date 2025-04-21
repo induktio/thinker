@@ -472,6 +472,10 @@ bool patch_setup(Config* cf) {
     write_jump(0x53A100, (int)reputation);
     write_jump(0x53A150, (int)get_patience);
     write_jump(0x53A1C0, (int)energy_value);
+    write_jump(0x55B760, (int)treaty_off);
+    write_jump(0x55B820, (int)agenda_off);
+    write_jump(0x55B870, (int)treaty_on);
+    write_jump(0x55BA80, (int)agenda_on);
     write_jump(0x55BB30, (int)set_treaty);
     write_jump(0x55BBA0, (int)set_agenda);
     write_jump(0x579A30, (int)add_goal);
@@ -574,6 +578,9 @@ bool patch_setup(Config* cf) {
     write_call(0x5C0984, (int)veh_kill_lift); // veh_kill
     write_call(0x43FE47, (int)DiploPop_spying); // DiploPop::draw_info
     write_call(0x43FEA8, (int)DiploPop_spying); // DiploPop::draw_info
+    write_call(0x4E2A81, (int)prefs_get_strcpy); // AlphaNet::do_create
+    write_call(0x4E2AA3, (int)prefs_get_strcpy); // AlphaNet::do_create
+    write_call(0x4E2EA2, (int)prefs_get_strcpy); // AlphaNet::do_join
     write_call(0x4B72C0, (int)elev_at); // StatusWin::draw_status
     write_call(0x57C419, (int)alt_set_both); // goody_box
     write_call(0x5C2073, (int)alt_set_both); // world_alt_set
@@ -1355,11 +1362,13 @@ bool patch_setup(Config* cf) {
         memset((void*)0x58B9F3, 0x90, 2);
     }
     if (cf->counter_espionage) {
-        // Check for flag DIPLO_RENEW_INFILTRATOR when choosing the menu entries
-        const byte old_bytes[] = {0xF6, 0xC5, 0x10};
-        const byte new_bytes[] = {0xF6, 0xC5, 0x80};
-        write_bytes(0x59F90C, old_bytes, new_bytes, sizeof(new_bytes)); // probe
-        write_bytes(0x59FB99, old_bytes, new_bytes, sizeof(new_bytes)); // probe
+        // Check for probe renew flag when choosing the menu entries
+        const byte old_bytes[] = {0x8D,0x04,0x4A,0x8B,0x0C,0x85,0xF8,0xC9,0x96,0x00,0xF6,0xC5,0x10};
+        const byte new_bytes[] = {0x57,0x53,0xE8,0x00,0x00,0x00,0x00,0x83,0xC4,0x08,0x85,0xC0,0x90};
+        write_bytes(0x59FB8F, old_bytes, new_bytes, sizeof(new_bytes)); // probe
+        write_bytes(0x59F902, old_bytes, new_bytes, sizeof(new_bytes)); // probe
+        write_call(0x59FB91, (int)probe_has_renew);
+        write_call(0x59F904, (int)probe_has_renew);
         // Modify popup_start function argument order
         const byte old_bytes_2[] = {0x68,0x38,0x03,0x69,0x00,0x68,0xA8,0x8A,0x9B,0x00};
         const byte new_bytes_2[] = {0x8B,0x45,0x0C,0x50,0x8B,0x45,0x08,0x50,0x90,0x90};

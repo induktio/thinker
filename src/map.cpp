@@ -138,6 +138,11 @@ int __cdecl is_port(int base_id, bool is_base_radius) {
     return is_coast(Bases[base_id].x, Bases[base_id].y, is_base_radius);
 }
 
+int __cdecl on_map(int x, int y) {
+    assert(!((x + y)&1)); // Original version does not check this condition
+    return x >= 0 && x < *MapAreaX && y >= 0 && y < *MapAreaY;
+}
+
 /*
 Validate region bounds. Bad regions include: 0, 63, 64, 127, 128.
 */
@@ -301,16 +306,22 @@ uint32_t __cdecl bit_at(int x, int y) {
 
 void __cdecl bit_put(int x, int y, uint32_t items) {
     MAP* sq = mapsq(x, y);
-    sq->items = items;
+    if (sq) {
+        sq->items = items;
+    }
+    assert(sq);
 }
 
 void __cdecl bit_set(int x, int y, uint32_t items, bool add) {
     MAP* sq = mapsq(x, y);
-    if (add) {
-        sq->items |= items;
-    } else {
-        sq->items &= ~items;
+    if (sq) {
+        if (add) {
+            sq->items |= items;
+        } else {
+            sq->items &= ~items;
+        }
     }
+    assert(sq);
 }
 
 uint32_t __cdecl bit2_at(int x, int y) {
@@ -320,11 +331,14 @@ uint32_t __cdecl bit2_at(int x, int y) {
 
 void __cdecl bit2_set(int x, int y, uint32_t items, bool add) {
     MAP* sq = mapsq(x, y);
-    if (add) {
-        sq->landmarks |= items;
-    } else {
-        sq->landmarks &= ~items;
+    if (sq) {
+        if (add) {
+            sq->landmarks |= items;
+        } else {
+            sq->landmarks &= ~items;
+        }
     }
+    assert(sq);
 }
 
 uint32_t __cdecl code_at(int x, int y) {
@@ -1559,15 +1573,18 @@ void __cdecl mod_time_warp() {
     Alien factions spawn with an extra Colony Pod and Battle Ogre Mk1.
     These units are added in setup_player regardless of other conditions.
     */
-
-    if (conf.time_warp_mod && !*MultiplayerActive) {
-        *SkipTechScreenB = 1;
+    if (conf.time_warp_mod) {
         for (int i = 1; i < MaxPlayerNum; i++) {
             bool ocean = MFactions[i].is_aquatic();
             bool alien = MFactions[i].is_alien();
+            *SkipTechScreenB = 1;
             for (int j = 0; j < conf.time_warp_techs; j++) {
+                Factions[i].tech_research_id = mod_tech_ai(i);
                 tech_advance(i);
             }
+            *SkipTechScreenB = 0;
+            Factions[i].tech_ranking = 2 * Factions[i].tech_achieved;
+            Factions[i].tech_research_id = -1;
             Factions[i].energy_credits += num * 50;
             consider_designs(i);
 
@@ -1637,13 +1654,12 @@ void __cdecl mod_time_warp() {
                 base_change(base_id, select_build(base_id));
             }
         }
-        *SkipTechScreenB = 0;
         *CurrentTurn = conf.time_warp_start_turn;
     } else {
         time_warp();
     }
     init_world_config();
-    if (!conf.time_warp_projects || *MultiplayerActive) {
+    if (!conf.time_warp_projects) {
         return;
     }
     for (const FacilityId item_id : projects) {

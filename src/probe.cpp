@@ -166,8 +166,7 @@ int __cdecl mod_success_rates(size_t index, int morale, int diff_modifier, int b
 Calculate current vehicle health only to determine
 the damage from genetic warfare probe team action.
 */
-int __cdecl probe_veh_health(int veh_id)
-{
+int __cdecl probe_veh_health(int veh_id) {
     VEH* veh = &Vehs[veh_id];
     int level = veh->reactor_type();
     if (veh->is_artifact()) {
@@ -182,8 +181,7 @@ int __cdecl probe_veh_health(int veh_id)
 /*
 Replace distance to determine if the adjacent units to the base should also be subverted.
 */
-int __cdecl probe_mind_control_range(int x1, int y1, int x2, int y2)
-{
+int __cdecl probe_mind_control_range(int x1, int y1, int x2, int y2) {
     return (x1 == x2 && y1 == y2) ? 0 : 2;
 }
 
@@ -191,8 +189,7 @@ int __cdecl probe_mind_control_range(int x1, int y1, int x2, int y2)
 Replaces set_treaty call when Total Thought Control probe action is completed.
 This does not result in automatic vendetta unlike normal Mind Control action.
 */
-void __cdecl probe_thought_control(int faction_id_def, int faction_id_atk)
-{
+void __cdecl probe_thought_control(int faction_id_def, int faction_id_atk) {
     if (!at_war(faction_id_def, faction_id_atk)) {
         cause_friction(faction_id_def, faction_id_atk, 5);
         Factions[faction_id_def].diplo_betrayed[faction_id_atk]++;
@@ -203,37 +200,56 @@ void __cdecl probe_thought_control(int faction_id_def, int faction_id_atk)
     }
 }
 
-int probe_roll_value(int faction)
-{
+void __cdecl probe_renew_set(int faction_id, int faction_id_tgt, int turns) {
+    if (faction_id >= 0 && faction_id < MaxPlayerNum
+    && faction_id_tgt >= 0 && faction_id_tgt < MaxPlayerNum) {
+        if (turns > 0) {
+            MFactions[faction_id].thinker_probe_end_turn[faction_id_tgt] = *CurrentTurn + turns;
+            MFactions[faction_id].thinker_probe_renew |= (1 << faction_id_tgt);
+        } else {
+            MFactions[faction_id].thinker_probe_renew &= ~(1 << faction_id_tgt);
+        }
+    } else  {
+        assert(0);
+    }
+}
+
+int __cdecl probe_has_renew(int faction_id, int faction_id_tgt) {
+    if (faction_id >= 0 && faction_id < MaxPlayerNum) {
+        return MFactions[faction_id].thinker_probe_renew & (1 << faction_id_tgt);
+    } else {
+        assert(0);
+        return 0;
+    }
+}
+
+int probe_roll_value(int faction_id) {
     int techs = 0;
     for (int i = Tech_ID_First; i <= Tech_ID_Last; i++) {
-        if (Tech[i].preq_tech1 != TECH_Disable && has_tech(i, faction)
+        if (Tech[i].preq_tech1 != TECH_Disable && has_tech(i, faction_id)
         && Tech[i].flags & TFLAG_IMPROVE_PROBE) {
             techs++;
         }
     }
-    return 2*techs + 2*clamp(Factions[faction].SE_probe, -3, 3)
-        + clamp(Factions[faction].SE_probe_base, -3, 3)
-        + clamp(Factions[faction].SE_police, -3, 3);
+    return 2*techs + 2*clamp(Factions[faction_id].SE_probe, -3, 3)
+        + clamp(Factions[faction_id].SE_probe_base, -3, 3)
+        + clamp(Factions[faction_id].SE_police, -3, 3);
 }
 
-int probe_active_turns(int faction1, int faction2)
-{
+int probe_active_turns(int faction1, int faction2) {
     int value = clamp(15 + probe_roll_value(faction1) - probe_roll_value(faction2), 5, 50);
     value = value * (4 + (*MapAreaTiles >= 4000) + (*MapAreaTiles >= 8000)) / 4;
     value = value * (4 + (*DiffLevel < DIFF_TRANSCEND) + (*DiffLevel < DIFF_THINKER)) / 4;
     return clamp(value, 5, 50);
 }
 
-int probe_upkeep(int faction1)
-{
+int probe_upkeep(int faction1) {
     if (!faction1 || !is_alive(faction1) || !conf.counter_espionage) {
         return 0;
     }
     /*
     Do not expire infiltration while the faction is the governor or has the Empath Guild.
-    Status can be renewed once per turn and sets the flag DIPLO_RENEW_INFILTRATOR.
-    This is checked in patched version of probe() game code.
+    Status can be renewed once per turn and sets the flag on thinker_probe_renew.
     */
     for (int faction2 = 1; faction2 < MaxPlayerNum; faction2++) {
         if (faction1 != faction2 && is_alive(faction2)
@@ -262,7 +278,7 @@ int probe_upkeep(int faction1)
                 MFactions[faction1].thinker_probe_end_turn[faction2]
             );
             if (faction1 != *GovernorFaction && !has_project(FAC_EMPATH_GUILD, faction1)) {
-                net_set_treaty(faction1, faction2, DIPLO_RENEW_INFILTRATOR, 0, 0);
+                probe_renew_set(faction1, faction2, 0);
             }
             if (faction1 == MapWin->cOwner && MFactions[faction1].thinker_probe_lost & (1 << faction2)) {
                 parse_says(0, MFactions[faction2].noun_faction, -1, -1);
@@ -274,8 +290,7 @@ int probe_upkeep(int faction1)
     return 0;
 }
 
-int __thiscall probe_popup_start(Win* This, int veh_id1, int base_id, int a4, int a5, int a6, int a7)
-{
+int __thiscall probe_popup_start(Win* This, int veh_id1, int base_id, int a4, int a5, int a6, int a7) {
     if (base_id >= 0 && base_id < *BaseCount) {
         int faction1 = Vehs[veh_id1].faction_id;
         int faction2 = Bases[base_id].faction_id;
@@ -287,8 +302,7 @@ int __thiscall probe_popup_start(Win* This, int veh_id1, int base_id, int a4, in
                 ParseNumTable[0] =  turns;
                 return Popup_start(This, "modmenu", "PROBE", a4, a5, a6, a7);
             }
-            // Sometimes this flag is set even when infiltration is not active
-            net_set_treaty(faction1, faction2, DIPLO_RENEW_INFILTRATOR, 0, 0);
+            probe_renew_set(faction1, faction2, 0);
         }
     }
     return Popup_start(This, ScriptFile, "PROBE", a4, a5, a6, a7);

@@ -2196,6 +2196,10 @@ Determine whether the base is considered an objective for scenario victory condi
 Return Value: Is base an objective? true/false
 */
 int __cdecl is_objective(int base_id) {
+    if (base_id < 0 || base_id >= *BaseCount) {
+        assert(0);
+        return false;
+    }
     if (*GameRules & RULES_SCN_VICT_ALL_BASE_COUNT_OBJ
     || Bases[base_id].event_flags & BEVENT_OBJECTIVE) {
         return true;

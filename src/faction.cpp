@@ -197,7 +197,7 @@ bool allow_expand(int faction_id) {
     if (conf.expansion_limit > 0) {
         int pods = 0;
         for (int i = 0; i < *VehCount; i++) {
-            VEH* veh = &Vehicles[i];
+            VEH* veh = &Vehs[i];
             if (veh->faction_id == faction_id && veh->is_colony()) {
                 pods++;
             }
@@ -210,7 +210,7 @@ bool allow_expand(int faction_id) {
 bool has_transport(int x, int y, int faction_id) {
     assert(valid_player(faction_id));
     for (int i = 0; i < *VehCount; i++) {
-        VEH* veh = &Vehicles[i];
+        VEH* veh = &Vehs[i];
         if (veh->faction_id == faction_id && veh->x == x && veh->y == y
         && veh->is_transport()) {
             return true;
@@ -222,7 +222,7 @@ bool has_transport(int x, int y, int faction_id) {
 bool has_defenders(int x, int y, int faction_id) {
     assert(valid_player(faction_id));
     for (int i = 0; i < *VehCount; i++) {
-        VEH* veh = &Vehicles[i];
+        VEH* veh = &Vehs[i];
         if (veh->faction_id == faction_id && veh->x == x && veh->y == y
         && (veh->is_combat_unit() || veh->is_armored())
         && veh->triad() == TRIAD_LAND) {
@@ -235,7 +235,7 @@ bool has_defenders(int x, int y, int faction_id) {
 bool has_active_veh(int faction_id, VehPlan plan) {
     assert(faction_id >= 0 && faction_id < MaxPlayerNum);
     for (int i = 0; i < *VehCount; i++) {
-        VEH* veh = &Vehicles[i];
+        VEH* veh = &Vehs[i];
         if (veh->faction_id == faction_id && Units[veh->unit_id].plan == plan) {
             return true;
         }
@@ -269,45 +269,153 @@ int faction_might(int faction_id) {
     return plans[faction_id].mil_strength + 4*Factions[faction_id].pop_total;
 }
 
-void __cdecl set_treaty(int faction1, int faction2, uint32_t treaty, bool add) {
-    if (add) {
-        Factions[faction1].diplo_status[faction2] |= treaty;
-        if (treaty & DIPLO_UNK_40) {
-            Factions[faction1].diplo_merc[faction2] = 50;
+void __cdecl treaty_off(int faction_id_1, int faction_id_2, uint32_t status) {
+    debug("treaty_off %d %d %08X\n", faction_id_1, faction_id_2, status);
+    Faction* plr1 = &Factions[faction_id_1];
+    Faction* plr2 = &Factions[faction_id_2];
+
+    if (status & (DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT)) {
+        status |= (DIPLO_UNK_1000000|DIPLO_UNK_100000);
+    }
+    if (status & DIPLO_VENDETTA) {
+        status |= (DIPLO_UNK_8000|DIPLO_UNK_40);
+    }
+    if (status & DIPLO_WANT_REVENGE) {
+        plr1->diplo_agenda[faction_id_2] &= ~(AGENDA_UNK_800|AGENDA_UNK_400);
+        plr2->diplo_agenda[faction_id_1] &= ~(AGENDA_UNK_800|AGENDA_UNK_400);
+    }
+    plr1->diplo_status[faction_id_2] &= ~status;
+    plr2->diplo_status[faction_id_1] &= ~status;
+}
+
+void __cdecl agenda_off(int faction_id_1, int faction_id_2, uint32_t status) {
+    debug("agenda_off %d %d %08X\n", faction_id_1, faction_id_2, status);
+    Faction* plr1 = &Factions[faction_id_1];
+    Faction* plr2 = &Factions[faction_id_2];
+    plr1->diplo_agenda[faction_id_2] &= ~status;
+    plr2->diplo_agenda[faction_id_1] &= ~status;
+}
+
+void __cdecl treaty_on(int faction_id_1, int faction_id_2, uint32_t status) {
+    debug("treaty_on %d %d %08X\n", faction_id_1, faction_id_2, status);
+    const bool is_player = (faction_id_1 == *CurrentPlayerFaction || faction_id_2 == *CurrentPlayerFaction);
+    Faction* plr1 = &Factions[faction_id_1];
+    Faction* plr2 = &Factions[faction_id_2];
+
+    if (status & (DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT)) {
+        if (is_player && plr1->diplo_status[faction_id_2] & DIPLO_VENDETTA) {
+            *dword_74DA9C &= ~1u;
         }
-        if (treaty & DIPLO_HAVE_INFILTRATOR && conf.counter_espionage) {
-            int turns = probe_active_turns(faction1, faction2);
-            MFactions[faction1].thinker_probe_end_turn[faction2] = *CurrentTurn + turns;
-            Factions[faction1].diplo_status[faction2] |= DIPLO_RENEW_INFILTRATOR;
-            if (faction1 == MapWin->cOwner) {
-                ParseNumTable[0] = turns;
-                parse_says(0, parse_set(faction2), -1, -1);
-                NetMsg_pop(NetMsg, "SPYRENEW", 5000, 0, 0);
+        plr1->diplo_status[faction_id_2] &= ~DiploExcludeTruce;
+        plr2->diplo_status[faction_id_1] &= ~DiploExcludeTruce;
+    }
+    if (status & DIPLO_PACT) {
+        status |= DIPLO_TREATY;
+    }
+    if (status & DIPLO_VENDETTA) {
+        if (plr1->diplo_status[faction_id_2] & (DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT)) {
+            plr1->diplo_unk_4[faction_id_2] = 0;
+            plr2->diplo_unk_4[faction_id_1] = 0;
+        }
+        status |= (DIPLO_UNK_80000000|DIPLO_UNK_100|DIPLO_COMMLINK);
+        plr1->diplo_status[faction_id_2] &= ~DiploExcludeFight;
+        plr2->diplo_status[faction_id_1] &= ~DiploExcludeFight;
+        if (is_player) {
+            *dword_74DA9C |= 1u;
+            ambience(204);
+        }
+    }
+    if (status & (DIPLO_VENDETTA|DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT)) {
+        plr1->diplo_status[faction_id_2] &= ~DIPLO_UNK_800000;
+        plr2->diplo_status[faction_id_1] &= ~DIPLO_UNK_800000;
+    }
+    plr1->diplo_status[faction_id_2] |= status;
+    plr2->diplo_status[faction_id_1] |= status;
+    if (is_player && status & (DIPLO_VENDETTA|DIPLO_COMMLINK|DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT)) {
+        if (*dword_7FE06C) {
+            GraphicWin_redraw(MultiWin);
+        }
+    }
+}
+
+void __cdecl agenda_on(int faction_id_1, int faction_id_2, uint32_t status) {
+    debug("agenda_on %d %d %08X\n", faction_id_1, faction_id_2, status);
+    Faction* plr1 = &Factions[faction_id_1];
+    Faction* plr2 = &Factions[faction_id_2];
+    if (status & AGENDA_UNK_20) {
+        plr1->diplo_agenda[faction_id_2] &= ~AGENDA_UNK_40;
+        plr2->diplo_agenda[faction_id_1] &= ~AGENDA_UNK_40;
+    }
+    plr1->diplo_agenda[faction_id_2] |= status;
+    plr2->diplo_agenda[faction_id_1] |= status;
+}
+
+void __cdecl set_treaty(int faction_id_1, int faction_id_2, uint32_t status, bool add) {
+    if (faction_id_1 >= 0 && faction_id_1 < MaxPlayerNum
+    && faction_id_2 >= 0 && faction_id_2 < MaxPlayerNum) {
+        if (add) {
+            Factions[faction_id_1].diplo_status[faction_id_2] |= status;
+            if (status & DIPLO_UNK_40) {
+                Factions[faction_id_1].diplo_merc[faction_id_2] = 50;
             }
+            if (status & DIPLO_HAVE_INFILTRATOR && conf.counter_espionage) {
+                int turns = probe_active_turns(faction_id_1, faction_id_2);
+                probe_renew_set(faction_id_1, faction_id_2, turns);
+                if (faction_id_1 == MapWin->cOwner) {
+                    ParseNumTable[0] = turns;
+                    parse_says(0, parse_set(faction_id_2), -1, -1);
+                    NetMsg_pop(NetMsg, "SPYRENEW", 5000, 0, 0);
+                }
+            }
+        } else {
+            Factions[faction_id_1].diplo_status[faction_id_2] &= ~status;
         }
     } else {
-        Factions[faction1].diplo_status[faction2] &= ~treaty;
+        assert(0);
     }
 }
 
-void __cdecl set_agenda(int faction1, int faction2, uint32_t agenda, bool add) {
-    if (add) {
-        Factions[faction1].diplo_agenda[faction2] |= agenda;
+void __cdecl set_agenda(int faction_id_1, int faction_id_2, uint32_t status, bool add) {
+    if (faction_id_1 >= 0 && faction_id_1 < MaxPlayerNum
+    && faction_id_2 >= 0 && faction_id_2 < MaxPlayerNum) {
+        if (add) {
+            Factions[faction_id_1].diplo_agenda[faction_id_2] |= status;
+        } else {
+            Factions[faction_id_1].diplo_agenda[faction_id_2] &= ~status;
+        }
     } else {
-        Factions[faction1].diplo_agenda[faction2] &= ~agenda;
+        assert(0);
     }
 }
 
-int __cdecl has_treaty(int faction1, int faction2, uint32_t treaty) {
-    assert(faction1 >= 0 && faction1 < MaxPlayerNum);
-    assert(faction2 >= 0 && faction2 < MaxPlayerNum);
-    return Factions[faction1].diplo_status[faction2] & treaty;
+int __cdecl has_treaty(int faction_id_1, int faction_id_2, uint32_t status) {
+    if (faction_id_1 >= 0 && faction_id_1 < MaxPlayerNum
+    && faction_id_2 >= 0 && faction_id_2 < MaxPlayerNum) {
+        return Factions[faction_id_1].diplo_status[faction_id_2] & status;
+    } else {
+        assert(0);
+        return 0;
+    }
 }
 
-int __cdecl has_agenda(int faction1, int faction2, uint32_t agenda) {
-    assert(faction1 >= 0 && faction1 < MaxPlayerNum);
-    assert(faction2 >= 0 && faction2 < MaxPlayerNum);
-    return Factions[faction1].diplo_agenda[faction2] & agenda;
+int __cdecl has_agenda(int faction_id_1, int faction_id_2, uint32_t status) {
+    if (faction_id_1 >= 0 && faction_id_1 < MaxPlayerNum
+    && faction_id_2 >= 0 && faction_id_2 < MaxPlayerNum) {
+        return Factions[faction_id_1].diplo_agenda[faction_id_2] & status;
+    } else {
+        assert(0);
+        return 0;
+    }
+}
+
+int __cdecl act_of_aggression(int faction_id_atk, int faction_id_def) {
+    int value = 0;
+    if (has_treaty(faction_id_def, faction_id_atk, DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT)) {
+        double_cross(faction_id_atk, faction_id_def, -1);
+        value = 1;
+    }
+    treaty_on(faction_id_atk, faction_id_def, DIPLO_UNK_8000|DIPLO_VENDETTA);
+    return value;
 }
 
 /*
@@ -548,7 +656,7 @@ int __cdecl get_mood(int friction) {
 
 /*
 Calculate the negative reputation the specified faction has with another.
-Return Value: Bad reputation
+Return Value: Reputation (higher values are worse)
 */
 int __cdecl reputation(int faction_id, int faction_id_with) {
     return clamp(Factions[faction_id].integrity_blemishes
@@ -1204,7 +1312,7 @@ static int __cdecl setup_values(int faction_id, int a2, int a3) {
     int num_former = is_human(faction_id) ? conf.player_formers : conf.computer_formers;
 
     for (int i = 0; i < *VehCount; i++) {
-        VEH* veh = &Vehicles[i];
+        VEH* veh = &Vehs[i];
         if (veh->faction_id == faction_id) {
             MAP* sq = mapsq(veh->x, veh->y);
             int colony = (is_ocean(sq) ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
@@ -1405,7 +1513,7 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
     for (int i = 0; i < MaxPlayerNum; i++) {
         if (!initial_spawn) {
             treaty_off(faction_id, i,
-                DIPLO_UNK_80000000|DIPLO_UNK_10000000|DIPLO_RENEW_INFILTRATOR|DIPLO_UNK_4000|DIPLO_WANT_TO_TALK|\
+                DIPLO_UNK_80000000|DIPLO_UNK_10000000|DIPLO_UNK_8000|DIPLO_UNK_4000|DIPLO_WANT_TO_TALK|\
                 DIPLO_HAVE_INFILTRATOR|DIPLO_UNK_800|DIPLO_SHALL_BETRAY|DIPLO_UNK_200|DIPLO_UNK_100|DIPLO_UNK_40|DIPLO_COMMLINK);
         } else {
             plr->diplo_status[i] = 0; // seems not to reset diplo_agenda?

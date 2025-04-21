@@ -212,10 +212,78 @@ void __cdecl stack_sort(int veh_id) {
 }
 
 /*
+Temporarily remove the specified unit from its current tile and stack in preparation for
+another action such as interacting with the stack, moving or killing it.
+Return Value: veh_id
+*/
+int __cdecl veh_lift(int veh_id) {
+    bool prev_stack_exists = false;
+    int16_t prev_veh_id = Vehs[veh_id].prev_veh_id_stack;
+    int16_t next_veh_id = Vehs[veh_id].next_veh_id_stack;
+    if (prev_veh_id >= 0) {
+        prev_stack_exists = true;
+        Vehs[prev_veh_id].next_veh_id_stack = next_veh_id;
+    }
+    int x = Vehs[veh_id].x;
+    int y = Vehs[veh_id].y;
+    if (next_veh_id >= 0) {
+        Vehs[next_veh_id].prev_veh_id_stack = prev_veh_id;
+    } else if (!prev_stack_exists && on_map(x, y)) {
+        bit_set(x, y, BIT_VEH_IN_TILE, false);
+    }
+    *VehDropLiftVehID = veh_id;
+    *VehLiftX = x;
+    *VehLiftY = y;
+    Vehs[veh_id].x = -1;
+    Vehs[veh_id].y = -1;
+    Vehs[veh_id].next_veh_id_stack = -1;
+    Vehs[veh_id].prev_veh_id_stack = -1;
+    return veh_id;
+}
+
+/*
+Move the specified unit to the provided coordinates.
+Return Value: veh_id (first param), seems not to be used
+*/
+int __cdecl veh_drop(int veh_id, int x, int y) {
+    int veh_id_dest = veh_at(x, y);
+    Vehs[veh_id].next_veh_id_stack = (int16_t)veh_id_dest;
+    Vehs[veh_id].prev_veh_id_stack = -1;
+    Vehs[veh_id].x = (int16_t)x;
+    Vehs[veh_id].y = (int16_t)y;
+    *VehDropLiftVehID = -1;
+    if (veh_id_dest < 0) {
+        if (y < 0) {
+            return veh_id;
+        }
+        if (on_map(x, y) && !(bit_at(x, y) & BIT_BASE_IN_TILE)) {
+            owner_set(x, y, Vehs[veh_id].faction_id);
+        }
+    } else {
+        Vehs[veh_id_dest].prev_veh_id_stack = (int16_t)veh_id;
+    }
+    if (on_map(x, y)) {
+        uint32_t flags = (Vehs[veh_id].faction_id && Vehs[veh_id].triad() != TRIAD_AIR)
+            ? (BIT_VEH_IN_TILE|BIT_SUPPLY_REMOVE) : BIT_VEH_IN_TILE;
+        bit_set(x, y, flags, true);
+    }
+    return veh_id;
+}
+
+/*
 Relocate an existing unit to the specified tile.
 */
 void __cdecl veh_put(int veh_id, int x, int y) {
     veh_drop(veh_lift(veh_id), x, y);
+}
+
+/*
+Set the unit's status to sentry/board.
+*/
+void __cdecl sleep(int veh_id) {
+    Vehs[veh_id].order = ORDER_SENTRY_BOARD;
+    Vehs[veh_id].waypoint_x[0] = -1;
+    Vehs[veh_id].waypoint_y[0] = 0;
 }
 
 /*
@@ -250,6 +318,42 @@ void __cdecl veh_promote(int veh_id) {
     if (veh_id_top >= 0 && veh_id_top != veh_id) {
         veh_put(veh_id, Vehs[veh_id_top].x, Vehs[veh_id_top].y);
     }
+}
+
+/*
+Clear the specified unit (called by veh_init/veh_fake).
+*/
+void __cdecl veh_clear(int veh_id, int unit_id, int faction_id) {
+    VEH* veh = &Vehs[veh_id];
+    veh->x = -4;
+    veh->y = -4;
+    veh->state = 0;
+    veh->flags = 0;
+    veh->pad_0 = 0;
+    veh->unit_id = (int16_t)unit_id;
+    veh->faction_id = (uint8_t)faction_id;
+    veh->year_end_lurking = 0;
+    veh->damage_taken = 0;
+    veh->order = ORDER_NONE;
+    veh->waypoint_count = 0;
+    veh->patrol_current_point = 0;
+    for (int i = 0; i < 4; i++) {
+        veh->waypoint_x[i] = -1;
+        veh->waypoint_y[i] = -1;
+    }
+    veh->morale = (uint8_t)(MFactions[faction_id].rule_morale + 1);
+    veh->movement_turns = 0;
+    veh->order_auto_type = 0;
+    veh->visibility = 0;
+    veh->moves_spent = 0;
+    veh->rotate_angle = 2;
+    veh->iter_count = 0;
+    veh->status_icon = 0;
+    veh->probe_action = 0;
+    veh->probe_sabotage_id = 0;
+    veh->home_base_id = -1;
+    veh->next_veh_id_stack = -1;
+    veh->prev_veh_id_stack = -1;
 }
 
 /*
@@ -374,7 +478,7 @@ void __cdecl mod_monolith(int veh_id) {
     }
     if (is_player && !*MultiplayerActive) {
         if (veh->order == ORDER_MOVE_TO
-        && veh->x == veh->waypoint_1_x && veh->y == veh->waypoint_1_y) {
+        && veh->x == veh->waypoint_x[0] && veh->y == veh->waypoint_y[0]) {
             veh->order = ORDER_NONE;
         }
         if (veh->order != ORDER_NONE) {
@@ -1980,7 +2084,7 @@ int __cdecl mod_veh_jail(int veh_id) {
     VEH* veh = &Vehs[veh_id];
     MAP* sq = mapsq(veh->x, veh->y);
     if (veh->triad() == TRIAD_LAND && veh->order == ORDER_SENTRY_BOARD
-    && veh->waypoint_1_x >= 0 && Vehs[veh->waypoint_1_x].triad() == TRIAD_AIR
+    && veh->waypoint_x[0] >= 0 && Vehs[veh->waypoint_x[0]].triad() == TRIAD_AIR
     && sq && !sq->is_airbase()) { // Fix: also allow airbases with owner = 0
         return true;
     }
@@ -2012,8 +2116,8 @@ int __cdecl mod_veh_skip(int veh_id) {
         if (want_monolith(veh_id) && bit_at(veh->x, veh->y) & BIT_MONOLITH) {
             mod_monolith(veh_id);
         }
-        veh->waypoint_1_x = veh->x;
-        veh->waypoint_1_y = veh->y;
+        veh->waypoint_x[0] = veh->x;
+        veh->waypoint_y[0] = veh->y;
         veh->order = ORDER_NONE;
         veh->status_icon = '-';
     }
@@ -2530,8 +2634,8 @@ int proto_defense(int unit_id) {
 int set_move_to(int veh_id, int x, int y) {
     VEH* veh = &Vehs[veh_id];
     debug("set_move_to %2d %2d -> %2d %2d %s\n", veh->x, veh->y, x, y, veh->name());
-    veh->waypoint_1_x = x;
-    veh->waypoint_1_y = y;
+    veh->waypoint_x[0] = x;
+    veh->waypoint_y[0] = y;
     veh->order = ORDER_MOVE_TO;
     veh->status_icon = 'G';
     if (veh->is_former()) {
@@ -2555,8 +2659,8 @@ int set_move_next(int veh_id, int offset) {
 
 int set_road_to(int veh_id, int x, int y) {
     VEH* veh = &Vehs[veh_id];
-    veh->waypoint_1_x = x;
-    veh->waypoint_1_y = y;
+    veh->waypoint_x[0] = x;
+    veh->waypoint_y[0] = y;
     veh->order = ORDER_ROAD_TO;
     veh->status_icon = 'R';
     return VEH_SYNC;
@@ -2581,8 +2685,8 @@ int set_order_none(int veh_id) {
     VEH* veh = &Vehs[veh_id];
     veh->order = ORDER_NONE;
     veh->order_auto_type = ORDERA_TERRA_AUTO_FULL;
-    veh->waypoint_1_x = -1;
-    veh->waypoint_1_y = -1;
+    veh->waypoint_x[0] = -1;
+    veh->waypoint_y[0] = -1;
     veh->status_icon = '-';
     return mod_veh_skip(veh_id);
 }
@@ -2602,8 +2706,8 @@ int set_board_to(int veh_id, int trans_veh_id) {
     assert(veh->x == v2->x && veh->y == v2->y);
     assert(veh_cargo(trans_veh_id) > 0);
     veh->order = ORDER_SENTRY_BOARD;
-    veh->waypoint_1_x = trans_veh_id;
-    veh->waypoint_1_y = 0;
+    veh->waypoint_x[0] = trans_veh_id;
+    veh->waypoint_y[0] = 0;
     veh->status_icon = 'L';
     debug("set_board_to %2d %2d %s -> %s\n", veh->x, veh->y, veh->name(), v2->name());
     return VEH_SYNC;
@@ -2613,7 +2717,7 @@ int veh_cargo_loaded(int veh_id) {
     int num = 0;
     for (int i = 0; i < *VehCount; i++) {
         VEH* veh = &Vehs[i];
-        if (veh->order == ORDER_SENTRY_BOARD && veh->waypoint_1_x == veh_id
+        if (veh->order == ORDER_SENTRY_BOARD && veh->waypoint_x[0] == veh_id
         && veh->x == Vehs[veh_id].x && veh->y == Vehs[veh_id].y) {
             assert(veh_id != i);
             num++;
