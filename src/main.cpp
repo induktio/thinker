@@ -212,6 +212,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->event_market_crash = atoi(value);
     } else if (MATCH("soil_improve_value")) {
         cf->soil_improve_value = clamp(atoi(value), 0, 10);
+    } else if (MATCH("resource_limit")) {
+        opt_list_parse(cf->resource_limit, buf, 3, 0);
     } else if (MATCH("aquatic_bonus_minerals")) {
         cf->aquatic_bonus_minerals = atoi(value);
     } else if (MATCH("alien_guaranteed_techs")) {
