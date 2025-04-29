@@ -27,7 +27,7 @@ int path_distance(int x1, int y1, int x2, int y2, int unit_id, int faction_id) {
             py = py + BaseOffsetY[val];
         }
         dist++;
-        debug("path_dist %2d %2d -> %2d %2d / %2d %2d / %2d\n", x1,y1,x2,y2,px,py,dist);
+        debug("path_dist %2d %2d -> %2d %2d / %2d %2d / %2d\n", x1, y1, x2, y2, px, py, dist);
     }
     flushlog();
     return -1;
@@ -55,6 +55,34 @@ int path_cost(int x1, int y1, int x2, int y2, int unit_id, int faction_id, int m
         debug_ver("path_cost %2d %2d -> %2d %2d / %2d %2d / %2d\n", x1, y1, x2, y2, px, py, cost);
     }
     return -1;
+}
+
+void update_path(PMTable& tbl, int veh_id, int tx, int ty) {
+    VEH* veh = &Vehs[veh_id];
+    MAP* sq = mapsq(tx, ty);
+    if (!is_human(veh->faction_id)
+    && sq && (sq->owner == veh->faction_id || (at_war(veh->faction_id, sq->owner)
+    && 2*faction_might(veh->faction_id) > faction_might(sq->owner)))
+    && veh->triad() == TRIAD_LAND && map_range(veh->x, veh->y, tx, ty) > 2
+    && (tbl[{tx, ty}].enemy_dist > 0 || (sq->is_base() && at_war(veh->faction_id, sq->owner)))
+    && tbl[{tx, ty}].enemy_dist < 15) {
+        debug("update_path %2d %2d -> %2d %2d %s\n", veh->x, veh->y, tx, ty, veh->name());
+        int val = 0;
+        int dist = 0;
+        int px = veh->x;
+        int py = veh->y;
+        while (val >= 0 && ++dist <= PathLimit) {
+            mapdata[{px, py}].unit_path++;
+            if (px == tx && py == ty) {
+                return;
+            }
+            val = Path_find(Paths, px, py, tx, ty, veh->unit_id, veh->faction_id, 0, -1);
+            if (val >= 0) {
+                px = wrap(px + BaseOffsetX[val]);
+                py = py + BaseOffsetY[val];
+            }
+        }
+    }
 }
 
 void TileSearch::reset() {
@@ -438,7 +466,7 @@ int escape_move(const int id) {
     VEH* veh = &Vehicles[id];
     MAP* sq = mapsq(veh->x, veh->y);
     if (defend_tile(veh, sq)) {
-        return mod_veh_skip(id);
+        return set_order_none(id);
     }
     int tx = -1;
     int ty = -1;

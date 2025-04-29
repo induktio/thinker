@@ -67,7 +67,7 @@ int __cdecl parse_says(size_t index, const char* src, int gender, int plural) {
        plural = *plurality_default;
    }
    ParseStrPlurality[index] = plural;
-   strncpy((char*)&ParseStrBuffer[index], src, StrBufLen);
+   strcpy_n(ParseStrBuffer[index].str, StrBufLen, src);
    return 0;
 }
 
@@ -317,7 +317,7 @@ int __cdecl mod_faction_upkeep(int faction_id) {
             }
         }
     }
-    for (int i = 0; i<*BaseCount; i++) {
+    for (int i = 0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];
         if (base->faction_id == faction_id) {
             base->state_flags &= ~(BSTATE_UNK_1 | BSTATE_HURRY_PRODUCTION);

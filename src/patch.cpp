@@ -108,7 +108,7 @@ int mod_say_orders(char* buf, int veh_id) {
 This is called from enemy_strategy to upgrade or remove units marked with obsolete_factions flag.
 Returning non-zero makes the function skip all additional actions on veh_id.
 */
-int __thiscall enemy_strategy_upgrade(Console* This, int veh_id) {
+int __thiscall enemy_upgrade(Console* This, int veh_id) {
     if (conf.factions_enabled >= Vehs[veh_id].faction_id) {
         return 1;
     }
@@ -446,6 +446,10 @@ bool patch_setup(Config* cf) {
     write_jump(0x500320, (int)drop_range);
     write_jump(0x501350, (int)mod_morale_alien);
     write_jump(0x501500, (int)psi_factor);
+    write_jump(0x50BA50, (int)intervention);
+    write_jump(0x50BCC0, (int)double_cross);
+    write_jump(0x50C2E0, (int)act_of_aggression);
+    write_jump(0x50C340, (int)steal_tech);
     write_jump(0x50C4B0, (int)steal_energy);
     write_jump(0x527290, (int)mod_faction_upkeep);
     write_jump(0x52AD30, (int)council_votes);
@@ -478,9 +482,10 @@ bool patch_setup(Config* cf) {
     write_jump(0x55BA80, (int)agenda_on);
     write_jump(0x55BB30, (int)set_treaty);
     write_jump(0x55BBA0, (int)set_agenda);
+    write_jump(0x55EEE0, (int)atrocity);
+    write_jump(0x55F450, (int)major_atrocity);
     write_jump(0x579A30, (int)add_goal);
     write_jump(0x579B70, (int)add_site);
-    write_jump(0x579D80, (int)wipe_goals);
     write_jump(0x579F80, (int)want_monolith);
     write_jump(0x584D60, (int)tech_name);
     write_jump(0x584E40, (int)chas_name);
@@ -565,11 +570,13 @@ bool patch_setup(Config* cf) {
     write_call(0x5B41E9, (int)mod_time_warp);  // setup_game
     write_call(0x52768A, (int)mod_turn_upkeep); // control_turn
     write_call(0x52A4AD, (int)mod_turn_upkeep); // net_control_turn
-    write_call(0x527039, (int)mod_base_upkeep);
-    write_call(0x4F7A38, (int)mod_base_hurry);
-    write_call(0x579362, (int)mod_enemy_move);
-    write_call(0x40F45A, (int)mod_base_draw);
-    write_call(0x4672A7, (int)mod_base_draw);
+    write_call(0x527039, (int)mod_base_upkeep); // production_phase
+    write_call(0x4F7A38, (int)mod_base_hurry); // base_upkeep
+    write_call(0x528289, (int)mod_enemy_turn); // control_turn
+    write_call(0x5295C0, (int)mod_enemy_turn); // net_upkeep
+    write_call(0x579362, (int)mod_enemy_move); // enemy_veh
+    write_call(0x40F45A, (int)mod_base_draw); // BaseWin::draw_farm
+    write_call(0x4672A7, (int)mod_base_draw); // MapWin::draw_bases
     write_call(0x4F2A4C, (int)base_production_popp); // #PRODUCE
     write_call(0x522544, (int)alien_fauna_pop2); // #KELPGROWS
     write_call(0x522555, (int)alien_fauna_pop2); // #FORESTGROWS
@@ -598,6 +605,8 @@ bool patch_setup(Config* cf) {
     write_call(0x525407, (int)mod_amovie_project); // end_of_game
     write_call(0x52AB6D, (int)mod_amovie_project); // control_game
     write_call(0x5B3681, (int)mod_amovie_project); // eliminate_player
+    write_call(0x561948, (int)enemy_upgrade); // enemy_strategy
+    write_call(0x564879, (int)wipe_goals); // enemy_strategy
     write_call(0x445846, (int)load_music_strcmpi);
     write_call(0x445898, (int)load_music_strcmpi);
     write_call(0x4458EE, (int)load_music_strcmpi);
@@ -638,7 +647,6 @@ bool patch_setup(Config* cf) {
     write_call(0x5A3F98, (int)probe_veh_health);
     write_call(0x5A4972, (int)probe_mind_control_range);
     write_call(0x5A4B8C, (int)probe_thought_control);
-    write_call(0x561948, (int)enemy_strategy_upgrade);
     write_call(0x5BBEB0, (int)tech_achieved_pop3);
     write_call(0x4868B2, (int)mod_tech_avail); // PickTech::pick
     write_call(0x4DFC41, (int)mod_tech_avail); // Console::editor_tech

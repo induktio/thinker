@@ -114,6 +114,7 @@ int nearby_items(int x, int y, size_t start_index, size_t end_index, uint32_t it
 int path_get_next(int x1, int y1, int x2, int y2, int unit_id, int faction_id);
 int path_distance(int x1, int y1, int x2, int y2, int unit_id, int faction_id);
 int path_cost(int x1, int y1, int x2, int y2, int unit_id, int faction_id, int max_cost);
+void update_path(PMTable& tbl, int veh_id, int tx, int ty);
 bool defend_tile(VEH* veh, MAP* sq);
 bool safe_path(TileSearch& ts, int faction_id, bool skip_owner);
 bool has_base_sites(TileSearch& ts, int x, int y, int faction_id, int triad);

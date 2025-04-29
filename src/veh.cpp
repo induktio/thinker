@@ -1376,7 +1376,8 @@ GOODY_NEXT:
 }
 
 /*
-Calculate the former rate to perform terrain enhancements. This is only called from veh_wake.
+Calculate the former rate to perform terrain enhancements.
+This is only called from veh_wake but it can be inlined on other functions.
 */
 int __cdecl contribution(int veh_id, int terraform_id) {
     int value = has_abil(Vehs[veh_id].unit_id, ABL_SUPER_TERRAFORMER) ? 4 : 2;
@@ -2116,10 +2117,6 @@ int __cdecl mod_veh_skip(int veh_id) {
         if (want_monolith(veh_id) && bit_at(veh->x, veh->y) & BIT_MONOLITH) {
             mod_monolith(veh_id);
         }
-        veh->waypoint_x[0] = veh->x;
-        veh->waypoint_y[0] = veh->y;
-        veh->order = ORDER_NONE;
-        veh->status_icon = '-';
     }
     veh->moves_spent = moves;
     return moves;

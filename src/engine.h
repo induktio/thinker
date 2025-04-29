@@ -148,10 +148,15 @@ struct PInfo {
     int roads;
     int shore;
     int unit_near;
+    int unit_path;
     int enemy;
     int enemy_near;
     int enemy_dist;
     int overlay;
+
+    int get_enemy_dist() const {
+        return (enemy_dist > 0 ? enemy_dist : 15);
+    }
 };
 
 typedef std::unordered_map<Point, PInfo> PMTable;
@@ -1424,10 +1429,10 @@ extern fp_2int sub_50B9C0;
 extern FNetMsg_pop2 NetMsg_pop2;
 //extern fp_3int bitmask;
 //extern fp_1int bit_count;
-extern fp_2int intervention;
-extern fp_3int double_cross;
+//extern fp_2int intervention;
+//extern fp_3int double_cross;
 //extern fp_2int act_of_aggression;
-extern fp_3int steal_tech;
+//extern fp_3int steal_tech;
 //extern fp_1int steal_energy;
 extern fp_3int capture_base;
 extern fp_1int clock_wait;
@@ -1570,8 +1575,8 @@ extern fp_2int enemies_trade_tech;
 extern fp_3int enemies_treaty;
 extern fp_6int encounter;
 extern fp_5int territory;
-extern fp_4int atrocity;
-extern fp_2int major_atrocity;
+//extern fp_4int atrocity;
+//extern fp_2int major_atrocity;
 extern fp_3int break_treaty;
 extern fp_1int enemy_diplomacy;
 extern fp_4int go_to;

@@ -36,6 +36,11 @@ int __cdecl X_pop7(const char* label, int a2, int a3)
     return X_pop(ScriptFile, label, -1, 0, a2, a3);
 }
 
+int __cdecl X_pops3(const char* label, Sprite* a2, int a3)
+{
+    return X_pops(ScriptFile, label, -1, 0, 0, (int)a2, 1, 1, a3);
+}
+
 int __cdecl X_pops4(const char* label, int a2, Sprite* a3, int a4)
 {
     return X_pops(ScriptFile, label, -1, 0, a2, (int)a3, 1, 1, a4);

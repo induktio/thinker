@@ -427,9 +427,10 @@ void plans_upkeep(int faction_id) {
             VEH* veh = &Vehs[i];
             int triad = veh->triad();
             if (veh->faction_id > 0) {
-                int offense = (veh->offense_value() < 0 ? 2 : 1) * abs(veh->offense_value());
+                int offense = veh->offense_value();
                 plans[veh->faction_id].mil_strength +=
-                    (offense + abs(veh->defense_value())) * (veh->speed() > 1 ? 3 : 2);
+                    ((offense < 0 ? clamp((int)veh->morale, 1, 6) : offense)
+                     + abs(veh->defense_value())) * (veh->speed() > 1 ? 3 : 2);
             }
             if (veh->faction_id == faction_id) {
                 if (veh->is_combat_unit() || veh->is_probe() || veh->is_transport()) {

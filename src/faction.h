@@ -44,7 +44,12 @@ void __cdecl set_treaty(int faction_id_1, int faction_id_2, uint32_t status, boo
 void __cdecl set_agenda(int faction_id_1, int faction_id_2, uint32_t status, bool add);
 int __cdecl has_treaty(int faction_id_1, int faction_id_2, uint32_t status);
 int __cdecl has_agenda(int faction_id_1, int faction_id_2, uint32_t status);
+void __cdecl atrocity(int faction_id, int faction_id_tgt, int skip_init_check, int skip_human_check);
+void __cdecl major_atrocity(int faction_id, int faction_id_tgt);
+void __cdecl intervention(int faction_id_def, int faction_id_atk);
+void __cdecl double_cross(int faction_id_atk, int faction_id_def, int faction_id_other);
 int __cdecl act_of_aggression(int faction_id_atk, int faction_id_def);
+int __cdecl steal_tech(int faction_id, int faction_id_tgt, int is_steal);
 int __cdecl council_votes(int faction_id);
 int __cdecl eligible(int faction_id);
 int __cdecl great_beelzebub(int faction_id, int is_aggressive);

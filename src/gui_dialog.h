@@ -46,6 +46,7 @@ void parse_noun_name(int faction_id, size_t title_value, size_t name_value);
 int __cdecl X_pop2(const char* label, int a2);
 int __cdecl X_pop3(const char* filename, const char* label, int a3);
 int __cdecl X_pop7(const char* label, int a2, int a3);
+int __cdecl X_pops3(const char* label, Sprite* a2, int a3);
 int __cdecl X_pops4(const char* label, int a2, Sprite* a3, int a4);
 int __cdecl X_dialog(const char* label, int faction2);
 int __cdecl X_dialog(const char* filename, const char* label, int faction2);

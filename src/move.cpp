@@ -151,18 +151,18 @@ bool stack_search(int x, int y, int faction, StackType type, VehWeaponMode mode)
 }
 
 // Any sea region or inland lakes
-int coast_tiles(int x, int y) {
+static int coast_tiles(int x, int y) {
     assert(mapsq(x, y));
     return mapdata[{x, y}].shore & ShoreTilesMask;
 }
 
 // Ocean refers only to main_sea_region
-int ocean_coast_tiles(int x, int y) {
+static int ocean_coast_tiles(int x, int y) {
     assert(mapsq(x, y));
     return mapdata[{x, y}].shore / ShoreLine;
 }
 
-bool near_ocean_coast(int x, int y) {
+static bool near_ocean_coast(int x, int y) {
     assert(mapsq(x, y));
     if (mapdata[{x, y}].shore >= ShoreLine) {
         return false;
@@ -173,6 +173,47 @@ bool near_ocean_coast(int x, int y) {
         }
     }
     return false;
+}
+
+static bool near_sea_coast(int x, int y) {
+    for (auto& m : iterate_tiles(x, y, 0, 21)) {
+        if (mapdata[{m.x, m.y}].shore & ShoreTilesMask) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int __cdecl mod_enemy_turn(int faction_id) {
+    debug("enemy_turn %d %d\n", *CurrentTurn, faction_id);
+    int value = enemy_turn(faction_id);
+    if (!faction_id) {
+        return value;
+    }
+    score_max_queue_t scores;
+    for (const auto& m : mapdata) {
+        MAP* sq;
+        if (m.second.unit_path > 0 && (sq = mapsq(m.first.x, m.first.y))
+        && !sq->is_base() && (sq->owner == faction_id || at_war(faction_id, sq->owner))
+        && near_sea_coast(m.first.x, m.first.y)) {
+            int score = 4*m.second.unit_path - m.second.get_enemy_dist()
+                + 8*mapnodes.count({m.first.x, m.first.y, NODE_GOAL_RAISE_LAND});
+            scores.push({(m.first.x ^ (m.first.y << 16)), score});
+        }
+    }
+    int score_limit = clamp(7 + plans[faction_id].land_combat_units/16, 15, 25);
+    int num = 0;
+    while (scores.size() > 0) {
+        auto p = scores.top();
+        int x = p.item_id & 0xffff;
+        int y = p.item_id >> 16;
+        if (p.score >= score_limit && ++num < 10) {
+            debug("raise_goal %2d %2d score: %d\n", x, y, p.score);
+            add_goal(faction_id, AI_GOAL_RAISE_LAND, 5, x, y, -1);
+        }
+        scores.pop();
+    }
+    return value;
 }
 
 int __cdecl mod_enemy_move(int veh_id) {
@@ -278,7 +319,7 @@ void land_raise_plan(int faction) {
         }
         // Check if we should bridge to hostile territory
         if (sq->owner != faction && sq->is_owned() && !has_pact(faction, sq->owner)
-        && faction_might(faction) < faction_might(sq->owner)) {
+        && 5*faction_might(faction) < 4*faction_might(sq->owner)) {
             continue;
         }
         int score = min(160, Continents[sq->region].tile_count) - ts.dist*ts.dist/2
@@ -331,7 +372,7 @@ int target_priority(int x, int y, int faction, MAP* sq) {
                     score += (f.player_flags & PFLAG_STRAT_ATK_ENEMY_HQ ? 400 : 100);
                 }
                 if (is_objective(base_id)) {
-                    score += (f.player_flags & PFLAG_STRAT_ATK_OBJECTIVES ? 200 : 100);
+                    score += (f.player_flags & PFLAG_STRAT_ATK_OBJECTIVES ? 400 : 100);
                 }
             }
             score += (mapdata[{x, y}].roads ? 150 : 0);
@@ -1103,7 +1144,7 @@ int colony_move(const int id) {
     int triad = veh->triad();
     TileSearch ts;
     if (defend_tile(veh, sq) || veh->iter_count > 3) {
-        return mod_veh_skip(id);
+        return set_order_none(id);
     }
     if (mapdata[{veh->x, veh->y}].safety < PM_SAFE && !veh->plr_owner()) {
         return escape_move(id);
@@ -1218,10 +1259,14 @@ int colony_move(const int id) {
 
 bool can_bridge(int x, int y, int faction, MAP* sq) {
     if (is_ocean(sq) || is_human(faction)
-    || !has_terra(FORMER_RAISE_LAND, TRIAD_LAND, faction)) {
+    || !has_terra(FORMER_RAISE_LAND, TRIAD_LAND, faction)
+    || (sq->owner != faction && !at_war(faction, sq->owner))) {
         return false;
     }
-    if (is_shore_level(sq) && mapnodes.count({x, y, NODE_GOAL_RAISE_LAND})) {
+    int alt = sq->alt_level();
+    if (mapnodes.count({x, y, NODE_GOAL_RAISE_LAND}) && alt >= ALT_SHORE_LINE
+    && alt <= ALT_SHORE_LINE + (mapdata[{x, y}].get_enemy_dist() < 10)
+    && near_sea_coast(x, y)) {
         return true;
     }
     if (coast_tiles(x, y) && sq->is_base_radius() && (x&1) && (y&2)) {
@@ -1248,7 +1293,7 @@ bool can_bridge(int x, int y, int faction, MAP* sq) {
         && !ts.oldtiles.count({m.x, m.y})) {
             n++;
             if (m.sq->is_owned() && m.sq->owner != faction
-            && faction_might(faction) < faction_might(m.sq->owner)) {
+            && 5*faction_might(faction) < 4*faction_might(m.sq->owner)) {
                 return false;
             }
         }
@@ -1526,7 +1571,7 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
     if ((mode == FM_Auto_Full || mode == FM_Auto_Tubes) && can_magtube(x, y, faction, sq)) {
         return FORMER_MAGTUBE;
     }
-    if (mode == FM_Auto_Full && sq->owner == faction && can_bridge(x, y, faction, sq)) {
+    if (mode == FM_Auto_Full && can_bridge(x, y, faction, sq)) {
         if (mapnodes.count({x, y, NODE_RAISE_LAND})
         || terraform_cost(x, y, faction) < Factions[faction].energy_credits/8) {
             return (road ? FORMER_ROAD : FORMER_RAISE_LAND);
@@ -1744,7 +1789,7 @@ int former_move(const int id) {
         return move_to_base(id, false);
     }
     if (defend_tile(veh, sq)) {
-        return mod_veh_skip(id);
+        return set_order_none(id);
     }
     if (is_ocean(sq) && veh->triad() == TRIAD_LAND) {
         if (!has_transport(veh->x, veh->y, faction)) {
@@ -3001,7 +3046,7 @@ int combat_move(const int id) {
     }
     if (at_base && (!defenders || defenders < garrison_goal(veh->x, veh->y, faction, triad))) {
         debug("combat_defend %2d %2d %s\n", veh->x, veh->y, veh->name());
-        return mod_veh_skip(id);
+        return set_order_none(id);
     }
     if (veh->need_heals()) {
         return escape_move(id);
@@ -3159,6 +3204,7 @@ int combat_move(const int id) {
             }
             if (tx >= 0) {
                 debug("combat_flank %2d %2d -> %2d %2d %s\n", veh->x, veh->y, tx, ty, veh->name());
+                update_path(mapdata, id, tx, ty);
                 return set_move_to(id, tx, ty);
             }
         } else if (!defend && !veh->is_probe() && path.prev > 0) {
@@ -3180,11 +3226,13 @@ int combat_move(const int id) {
             }
         }
         debug("combat_search %2d %2d -> %2d %2d %s\n", veh->x, veh->y, tx, ty, veh->name());
+        update_path(mapdata, id, tx, ty);
         return set_move_to(id, tx, ty);
     }
     if (!base_found || !veh_sq->is_owned()) {
         if (triad == TRIAD_LAND && search_route(ts, id, &tx, &ty)) {
             debug("combat_route %2d %2d -> %2d %2d %s\n", veh->x, veh->y, tx, ty, veh->name());
+            update_path(mapdata, id, tx, ty);
             return set_move_to(id, tx, ty);
         }
     }

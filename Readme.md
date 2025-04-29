@@ -2,8 +2,8 @@
 SMACX Thinker Mod
 =================
 
-Thinker is an AI improvement mod for Alpha Centauri: Alien Crossfire.
-This mod increases the level of challenge in single player while providing many gameplay enhancements.
+Thinker is a remake of many game engine features for Alpha Centauri: Alien Crossfire.
+This mod improves the AI in single player while providing many gameplay enhancements.
 By patching the game to use an additional DLL, many new features can be developed in C++.
 
 * Vastly improved production/movement AI
@@ -18,14 +18,14 @@ Note that official Alien Crossfire patch version 2.0 must be installed for the l
 Older game version 1.0 is NOT supported by Thinker. Installing Scient's patch v2 also works since this terranx.exe can be used by the launcher.
 
 [See more information](Details.md) about the features and recommended settings.
-It's strongly recommended to read Details.md as many features provided by the mod are not present in the vanilla game.
+It's strongly recommended to read Details.md since many features are added not provided by the original game.
 [Discuss here](https://github.com/induktio/thinker/discussions) about anything related to Thinker development.
 Remember also to star and watch the repository to receive notifications about new updates.
 
 
 Download
 --------
-This is the only place to download binary releases. See also the [Changelog](Changelog.md) for useful release notes.
+Note that these links are the only original source to download binary releases. See also the [Changelog](Changelog.md) for useful release notes.
 
 * [Release versions](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAp6ioWxdo7vnG6Ity5W3o1a?dl=0&lst=)
 * [Develop builds](https://www.dropbox.com/sh/qsps5bhz8v020o9/AADv-0D0-bPq22pgoAIcDRC3a/develop?dl=0&lst=)

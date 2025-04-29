@@ -1003,6 +1003,11 @@ void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
                         case AI_GOAL_RAISE_LAND:
                             buf[1] = 'r';
                             break;
+                        case AI_GOAL_NAVAL_BEACH:
+                        case AI_GOAL_NAVAL_START:
+                        case AI_GOAL_NAVAL_END:
+                            buf[1] = 'n';
+                            break;
                         default:
                             buf[1] = (goal.type < Thinker_Goal_ID_First ? '*' : 'g');
                             break;
@@ -1796,17 +1801,14 @@ int __thiscall mod_NetMsg_pop(void* This, const char* label, int delay, int a4, 
         return NetMsg_pop(This, label, -1, a4, a5);
     }
     if (!strcmp(label, netmsg_label)
-    && !strcmp((char*)&ParseStrBuffer[0], netmsg_item0)
-    && !strcmp((char*)&ParseStrBuffer[1], netmsg_item1)) {
+    && !strcmp(ParseStrBuffer[0].str, netmsg_item0)
+    && !strcmp(ParseStrBuffer[1].str, netmsg_item1)) {
         // Skip additional popup windows
         return NetMsg_pop(This, label, delay, a4, a5);
     }
-    strncpy(netmsg_label, label, StrBufLen);
-    netmsg_label[StrBufLen-1] = '\0';
-    strncpy(netmsg_item0, (char*)&ParseStrBuffer[0], StrBufLen);
-    netmsg_item0[StrBufLen-1] = '\0';
-    strncpy(netmsg_item1, (char*)&ParseStrBuffer[1], StrBufLen);
-    netmsg_item1[StrBufLen-1] = '\0';
+    strcpy_n(netmsg_label, StrBufLen, label);
+    strcpy_n(netmsg_item0, StrBufLen, ParseStrBuffer[0].str);
+    strcpy_n(netmsg_item1, StrBufLen, ParseStrBuffer[1].str);
     return NetMsg_pop(This, label, -1, a4, a5);
 }
 
