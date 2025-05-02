@@ -1,6 +1,24 @@
 
 # Thinker mod release changelog
 
+## Version 5.0 (2025-05-02)
+* Add config option resource_limit to adjust nutrient/mineral/energy production limits before the specific techs are achieved.
+* Modify the faction setup code to check by filename if multiple similar factions are active. If any duplicates are found, each one will have their faction_id as name suffix.
+* Minor adjustments on selection methods for randomized faction personalities. Future social models can be also selected but much less often.
+* Disabling faction_placement option will be deprecated from now on. It is assumed this option is enabled when describing various mod features.
+* When rare_supply_pods option is enabled, supply pods are also less likely to have events that rush production at the nearest base when it needs more than 40 minerals. The rushed production amount will always have to be less than 100 minerals.
+* Multiplayer mode now supports time_warp_mod option.
+* AI raises land bridges more actively towards nearby hostile territories.
+* AI governors hurry combat units more often when they have lots of credits available.
+* AI considers more options chosen in Edit Faction Strategy (emphasize land/sea/air etc).
+* Modify AI to treat opponents who have eliminated other factions slightly more negatively on diplomacy.
+* Minor updates on how AI prioritizes objectives when deciding where to deploy combat units.
+* Fix original game crash issues on Windows 11 update 24H2 that happened when the savegame was being written.
+* Fix Longevity Vaccine economy bonus not being applied when Free Market is selected.
+* Fix minor issues with monolith usage. Battle Ogres may only use monoliths when repair_battle_ogre is set to 10.
+* Fix multiplayer setup screen not properly loading previous names.
+
+
 ## Version 4.9 (2025-03-14)
 * Enable COMMFREQ faction ability to grant one extra comm frequency at the game start. Previously this ability was skipped by the game.
 * Add shortcut ALT+L to display the endgame replay when the scenario editor mode is active.
