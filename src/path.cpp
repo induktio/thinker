@@ -64,6 +64,7 @@ void update_path(PMTable& tbl, int veh_id, int tx, int ty) {
     && sq && (sq->owner == veh->faction_id || (at_war(veh->faction_id, sq->owner)
     && 2*faction_might(veh->faction_id) > faction_might(sq->owner)))
     && veh->triad() == TRIAD_LAND && map_range(veh->x, veh->y, tx, ty) > 2
+    && has_terra(FORMER_RAISE_LAND, TRIAD_LAND, veh->faction_id)
     && (tbl[{tx, ty}].enemy_dist > 0 || (sq->is_base() && at_war(veh->faction_id, sq->owner)))
     && tbl[{tx, ty}].enemy_dist < 15) {
         debug("update_path %2d %2d -> %2d %2d %s\n", veh->x, veh->y, tx, ty, veh->name());

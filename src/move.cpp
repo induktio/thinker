@@ -78,7 +78,7 @@ bool non_ally_in_tile(int x, int y, int faction) {
     if (prev_veh_num != *VehCount || prev_faction != faction) {
         nonally.clear();
         for (int i = 0; i < *VehCount; i++) {
-            VEH* veh = &Vehicles[i];
+            VEH* veh = &Vehs[i];
             if (veh->faction_id != faction && !has_pact(faction, veh->faction_id)) {
                 nonally.insert({veh->x, veh->y});
             }
@@ -151,23 +151,19 @@ bool stack_search(int x, int y, int faction, StackType type, VehWeaponMode mode)
 }
 
 // Any sea region or inland lakes
-static int coast_tiles(int x, int y) {
+int coast_tiles(int x, int y) {
     assert(mapsq(x, y));
     return mapdata[{x, y}].shore & ShoreTilesMask;
 }
 
 // Ocean refers only to main_sea_region
-static int ocean_coast_tiles(int x, int y) {
+int ocean_coast_tiles(int x, int y) {
     assert(mapsq(x, y));
     return mapdata[{x, y}].shore / ShoreLine;
 }
 
-static bool near_ocean_coast(int x, int y) {
-    assert(mapsq(x, y));
-    if (mapdata[{x, y}].shore >= ShoreLine) {
-        return false;
-    }
-    for (const auto& m : iterate_tiles(x, y, 1, 9)) {
+bool near_ocean_coast(int x, int y) {
+    for (const auto& m : iterate_tiles(x, y, 0, 9)) {
         if (mapdata[{m.x, m.y}].shore >= ShoreLine) {
             return true;
         }
@@ -175,8 +171,8 @@ static bool near_ocean_coast(int x, int y) {
     return false;
 }
 
-static bool near_sea_coast(int x, int y) {
-    for (auto& m : iterate_tiles(x, y, 0, 21)) {
+bool near_sea_coast(int x, int y) {
+    for (const auto& m : iterate_tiles(x, y, 0, 21)) {
         if (mapdata[{m.x, m.y}].shore & ShoreTilesMask) {
             return true;
         }
@@ -184,41 +180,9 @@ static bool near_sea_coast(int x, int y) {
     return false;
 }
 
-int __cdecl mod_enemy_turn(int faction_id) {
-    debug("enemy_turn %d %d\n", *CurrentTurn, faction_id);
-    int value = enemy_turn(faction_id);
-    if (!faction_id) {
-        return value;
-    }
-    score_max_queue_t scores;
-    for (const auto& m : mapdata) {
-        MAP* sq;
-        if (m.second.unit_path > 0 && (sq = mapsq(m.first.x, m.first.y))
-        && !sq->is_base() && (sq->owner == faction_id || at_war(faction_id, sq->owner))
-        && near_sea_coast(m.first.x, m.first.y)) {
-            int score = 4*m.second.unit_path - m.second.get_enemy_dist()
-                + 8*mapnodes.count({m.first.x, m.first.y, NODE_GOAL_RAISE_LAND});
-            scores.push({(m.first.x ^ (m.first.y << 16)), score});
-        }
-    }
-    int score_limit = clamp(7 + plans[faction_id].land_combat_units/16, 15, 25);
-    int num = 0;
-    while (scores.size() > 0) {
-        auto p = scores.top();
-        int x = p.item_id & 0xffff;
-        int y = p.item_id >> 16;
-        if (p.score >= score_limit && ++num < 10) {
-            debug("raise_goal %2d %2d score: %d\n", x, y, p.score);
-            add_goal(faction_id, AI_GOAL_RAISE_LAND, 5, x, y, -1);
-        }
-        scores.pop();
-    }
-    return value;
-}
-
 int __cdecl mod_enemy_move(int veh_id) {
     assert(veh_id >= 0 && veh_id < *VehCount);
-    VEH* veh = &Vehicles[veh_id];
+    VEH* veh = &Vehs[veh_id];
     debug("enemy_move %2d %2d %s\n", veh->x, veh->y, veh->name());
 
     if (!mapsq(veh->x, veh->y)) {
@@ -266,7 +230,7 @@ int __cdecl mod_enemy_move(int veh_id) {
 
 int __cdecl veh_kill_lift(int veh_id) {
     // This function is called in veh_kill when a vehicle is removed/killed for any reason
-    VEH* veh = &Vehicles[veh_id];
+    VEH* veh = &Vehs[veh_id];
     if (thinker_enabled(move_upkeep_faction) && at_war(move_upkeep_faction, veh->faction_id)) {
         if (veh->x >= 0 && veh->y >= 0) {
             adjust_enemy_near(veh->x, veh->y, 2, -1);
@@ -289,7 +253,7 @@ void land_raise_plan(int faction) {
     if (p.main_region < 0) {
         return;
     }
-    if (!has_terra(FORMER_RAISE_LAND, TRIAD_LAND, faction) || Factions[faction].energy_credits < 100) {
+    if (!has_terra(FORMER_RAISE_LAND, TRIAD_LAND, faction) || Factions[faction].energy_credits < 50) {
         return;
     }
     bool expand = allow_expand(faction);
@@ -300,7 +264,7 @@ void land_raise_plan(int faction) {
     TileSearch ts;
     MAP* sq;
     ts.init(p.main_region_x, p.main_region_y, TS_TERRITORY_LAND, 4);
-    while (++i <= 1600 && (sq = ts.get_next()) != NULL) {
+    while (++i <= 2000 && (sq = ts.get_next()) != NULL) {
         assert(!is_ocean(sq));
         assert(sq->owner == faction);
         assert(sq->region == p.main_region);
@@ -661,7 +625,7 @@ void move_upkeep(int faction, UpdateMode mode) {
         }
     }
     for (int i = 0; i < *VehCount; i++) {
-        VEH* veh = &Vehicles[i];
+        VEH* veh = &Vehs[i];
         int triad = veh->triad();
 
         if (!(sq = mapsq(veh->x, veh->y))) {
@@ -1137,7 +1101,7 @@ int base_tile_score(int x, int y, int faction, MAP* sq) {
 }
 
 int colony_move(const int id) {
-    VEH* veh = &Vehicles[id];
+    VEH* veh = &Vehs[id];
     MAP* sq = mapsq(veh->x, veh->y);
     int veh_region = sq->region;
     int faction = veh->faction_id;
@@ -1150,7 +1114,8 @@ int colony_move(const int id) {
         return escape_move(id);
     }
     if (can_build_base(veh->x, veh->y, faction, triad)) {
-        if (triad == TRIAD_LAND && (veh->at_target() || !near_ocean_coast(veh->x, veh->y))) {
+        if (triad == TRIAD_LAND && (veh->at_target()
+        || ocean_coast_tiles(veh->x, veh->y) || !near_ocean_coast(veh->x, veh->y))) {
             return action_build(id, 0);
         } else if (triad == TRIAD_SEA && veh->at_target()) {
             return action_build(id, 0);
@@ -1777,7 +1742,7 @@ int former_tile_score(int x, int y, int faction, MAP* sq) {
 }
 
 int former_move(const int id) {
-    VEH* veh = &Vehicles[id];
+    VEH* veh = &Vehs[id];
     MAP* sq = mapsq(veh->x, veh->y);
     int item = -1;
     int choice = -1;
@@ -1933,7 +1898,7 @@ int former_move(const int id) {
 }
 
 int artifact_move(const int id) {
-    VEH* veh = &Vehicles[id];
+    VEH* veh = &Vehs[id];
     int base_id = base_at(veh->x, veh->y);
     if (base_id >= 0 && Bases[base_id].faction_id == veh->faction_id
     && can_link_artifact(base_id)) {
@@ -2009,7 +1974,7 @@ bool allow_attack(int faction1, int faction2, bool is_probe, bool is_enhanced) {
 
 bool allow_combat(int x, int y, int faction, MAP* sq) {
     for (int i = 0; i < *VehCount; i++) {
-        VEH* veh = &Vehicles[i];
+        VEH* veh = &Vehs[i];
         if (veh->x == x && veh->y == y && both_neutral(faction, veh->faction_id)
         && has_treaty(faction, veh->faction_id, DIPLO_COMMLINK)) {
             if (!veh->is_artifact() && (!veh->is_probe() || sq->owner != faction)) {
@@ -2021,8 +1986,8 @@ bool allow_combat(int x, int y, int faction, MAP* sq) {
 }
 
 bool allow_conv_missile(int veh_id, int enemy_veh_id, MAP* sq) {
-    VEH* veh = &Vehicles[veh_id];
-    VEH* enemy = &Vehicles[enemy_veh_id];
+    VEH* veh = &Vehs[veh_id];
+    VEH* enemy = &Vehs[enemy_veh_id];
     if ((!enemy->is_combat_unit() && !enemy->is_probe()) || enemy->high_damage()) {
         return false;
     }
@@ -2045,7 +2010,7 @@ bool allow_conv_missile(int veh_id, int enemy_veh_id, MAP* sq) {
 }
 
 bool can_airdrop(int veh_id, MAP* sq) {
-    VEH* veh = &Vehicles[veh_id];
+    VEH* veh = &Vehs[veh_id];
     return has_abil(veh->unit_id, ABL_DROP_POD)
         && !(veh->state & VSTATE_MADE_AIRDROP)
         && !veh->moves_spent
@@ -2080,7 +2045,7 @@ bool allow_airdrop(int x, int y, int faction, bool combat, MAP* sq) {
         return false;
     }
     for (int i = 0; i < *VehCount; i++) {
-        VEH* veh = &Vehicles[i];
+        VEH* veh = &Vehs[i];
         if (veh->x == x && veh->y == y
         && veh->faction_id != faction && !has_pact(faction, veh->faction_id)) {
             return false;
@@ -2114,7 +2079,7 @@ int garrison_goal(int x, int y, int faction, int triad) {
 int garrison_count(int x, int y) {
     int num = 0;
     for (int i = 0; i < *VehCount; i++) {
-        VEH* veh = &Vehicles[i];
+        VEH* veh = &Vehs[i];
         if (veh->x == x && veh->y == y
         && veh->is_garrison_unit()
         && veh->order != ORDER_SENTRY_BOARD
@@ -2128,7 +2093,7 @@ int garrison_count(int x, int y) {
 int defender_count(int x, int y, int veh_skip_id) {
     int num = 0;
     for (int i = 0; i < *VehCount; i++) {
-        VEH* veh = &Vehicles[i];
+        VEH* veh = &Vehs[i];
         if (veh->x == x && veh->y == y
         && veh->triad() != TRIAD_AIR
         && veh->order != ORDER_SENTRY_BOARD
@@ -2439,13 +2404,13 @@ int trans_move(const int id) {
 }
 
 static int choose_defender(int x, int y, int atk_id, MAP* sq) {
-    int faction = Vehicles[atk_id].faction_id;
+    int faction = Vehs[atk_id].faction_id;
     int def_id = -1;
     if (!non_ally_in_tile(x, y, faction)) {
         return -1;
     }
     for (int i = 0; i < *VehCount; i++) {
-        VEH* veh = &Vehicles[i];
+        VEH* veh = &Vehs[i];
         if (veh->x == x && veh->y == y) {
             if (!at_war(faction, veh->faction_id)) {
                 return -1;
@@ -2455,11 +2420,11 @@ static int choose_defender(int x, int y, int atk_id, MAP* sq) {
         }
     }
     if (def_id < 0 || (sq->owner != faction && !sq->is_base()
-    && !Vehicles[def_id].is_visible(faction))) {
+    && !Vehs[def_id].is_visible(faction))) {
         return -1;
     }
     def_id = mod_best_defender(def_id, atk_id, 0);
-    if (def_id >= 0 && !at_war(faction, Vehicles[def_id].faction_id)) {
+    if (def_id >= 0 && !at_war(faction, Vehs[def_id].faction_id)) {
         return -1;
     }
     return def_id;
@@ -2473,7 +2438,7 @@ static int flank_score(int x, int y, bool native, MAP* sq) {
 }
 
 static int combat_value(int veh_id, int value, int moves, int mov_rate, bool reactor) {
-    VEH* veh = &Vehicles[veh_id];
+    VEH* veh = &Vehs[veh_id];
     int power = veh->reactor_type();
     int damage = veh->damage_taken / power;
     assert(moves > 0 && moves <= mov_rate);
@@ -2493,8 +2458,8 @@ static double battle_priority(int id1, int id2, int dist, int moves, MAP* sq) {
     if (!sq) {
         return 0;
     }
-    VEH* veh1 = &Vehicles[id1];
-    VEH* veh2 = &Vehicles[id2];
+    VEH* veh1 = &Vehs[id1];
+    VEH* veh2 = &Vehs[id2];
     assert(id1 >= 0 && id1 < *VehCount);
     assert(id2 >= 0 && id2 < *VehCount);
     assert(veh1->faction_id != veh2->faction_id);
@@ -2549,7 +2514,7 @@ static double battle_priority(int id1, int id2, int dist, int moves, MAP* sq) {
 }
 
 int aircraft_move(const int id) {
-    VEH* veh = &Vehicles[id];
+    VEH* veh = &Vehs[id];
     MAP* sq = mapsq(veh->x, veh->y);
     UNIT* u = &Units[veh->unit_id];
     AIPlans& p = plans[veh->faction_id];
@@ -2590,7 +2555,7 @@ int aircraft_move(const int id) {
 
     while (++i < 625 && (sq = ts.get_next()) != NULL && ts.dist <= max_dist) {
         if ((id2 = choose_defender(ts.rx, ts.ry, id, sq)) >= 0) {
-            VEH* veh2 = &Vehicles[id2];
+            VEH* veh2 = &Vehs[id2];
             if (!sq->is_base() && veh2->chassis_type() == CHS_NEEDLEJET
             && !has_abil(veh->unit_id, ABL_AIR_SUPERIORITY)) {
                 continue;
@@ -2704,7 +2669,7 @@ int aircraft_move(const int id) {
 }
 
 bool airdrop_move(const int id, MAP* sq) {
-    VEH* veh = &Vehicles[id];
+    VEH* veh = &Vehs[id];
     if (!can_airdrop(id, sq)) {
         return false;
     }
@@ -2769,7 +2734,7 @@ bool airdrop_move(const int id, MAP* sq) {
 }
 
 int combat_move(const int id) {
-    VEH* veh = &Vehicles[id];
+    VEH* veh = &Vehs[id];
     MAP* sq = mapsq(veh->x, veh->y);
     MAP* veh_sq = sq;
     if (!veh_sq) {
@@ -3010,7 +2975,7 @@ int combat_move(const int id) {
                 }
                 int score = 0;
                 for (int k=0; k < *VehCount; k++) {
-                    VEH* v = &Vehicles[k];
+                    VEH* v = &Vehs[k];
                     if (v->x == x2 && v->y == y2 && at_war(faction, v->faction_id)
                     && (v->triad() != TRIAD_AIR || sq->is_base())) {
                         int damage = v->damage_taken / v->reactor_type();
@@ -3185,7 +3150,7 @@ int combat_move(const int id) {
             && battle_priority(id, id2, path.dist - 1, moves, sq) < 0.7;
         if (skip) {
             debug("combat_skip %2d %2d -> %2d %2d %s %s\n",
-            veh->x, veh->y, ts.rx, ts.ry, veh->name(), Vehicles[id2].name());
+            veh->x, veh->y, ts.rx, ts.ry, veh->name(), Vehs[id2].name());
         }
         if (flank || skip) {
             tx = -1;

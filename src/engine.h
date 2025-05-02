@@ -155,7 +155,7 @@ struct PInfo {
     int overlay;
 
     int get_enemy_dist() const {
-        return (enemy_dist > 0 ? enemy_dist : 15);
+        return (enemy_dist > 0 ? enemy_dist : 20);
     }
 };
 

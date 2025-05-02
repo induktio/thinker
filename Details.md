@@ -420,7 +420,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 2. Governor is able to choose from multiple specialist types based on social engineering choices and various factors. The default specialist type chosen by the game has less emphasis on psych compared to the original version.
 3. Fix issue where attacking other satellites doesn't work in Orbital Attack View when smac_only is activated.
 4. Fix engine rendering issue where ocean fungus tiles displayed inconsistent graphics compared to the adjacent land fungus tiles.
-5. Fix game showing redundant "rainfall patterns have been altered" messages when these events are caused by other factions.
+5. Fix game showing redundant "rainfall patterns have been altered" messages when these events are caused by other factions. This also removes excessive friction and treaty penalties when another faction alters rainfall patterns during terraforming.
 6. Fix a bug that occurs after the player does an artillery attack on unoccupied tile and then selects another unit to view combat odds and cancels the attack. After this veh_attack_flags will not get properly cleared and the next bombardment on an unoccupied tile always results in the destruction of the bombarding unit.
 7. Disable legacy upkeep code in the game engine that might cause AI formers to be reassigned to nearby bases that are owned by other factions.
 8. Patch the game engine to use significantly less CPU time when idle by using a method similar to [smac-cpu-fix](https://github.com/vinceho/smac-cpu-fix/). Normally the game uses 100% of CPU time which can be be a problem on laptop devices.

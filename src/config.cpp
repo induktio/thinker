@@ -452,6 +452,8 @@ int __cdecl read_basic_rules() {
     if (!conf.revised_tech_cost) {
         conf.tech_stagnate_rate = 150;
     }
+    // Maximum speed is rounded down to nearest full movement point
+    conf.max_movement_rate = 255 - (255 % Rules->move_rate_roads);
     conf.tech_rate_modifier = 10000 / max(1, Rules->tech_discovery_rate);
     return false;
 }

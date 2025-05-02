@@ -10,7 +10,7 @@ By patching the game to use an additional DLL, many new features can be develope
 * Visual changes on map rendering and random map generation
 * More config options for many previously fixed settings in the game engine
 * Additional options for resolution settings and other user interface features
-* Some automation features are also available for player factions
+* Improved automation features are also available for player factions
 * Mod also includes [Scient's patches](Details.md)
 
 This mod is tested to work with the [GOG version](https://www.gog.com/game/sid_meiers_alpha_centauri) of Alpha Centauri.
@@ -25,7 +25,7 @@ Remember also to star and watch the repository to receive notifications about ne
 
 Download
 --------
-Note that these links are the only original source to download binary releases. See also the [Changelog](Changelog.md) for useful release notes.
+These links are the only original source to download binary releases. See also the [Changelog](Changelog.md) for useful release notes.
 
 * [Release versions](https://www.dropbox.com/sh/qsps5bhz8v020o9/AAAp6ioWxdo7vnG6Ity5W3o1a?dl=0&lst=)
 * [Develop builds](https://www.dropbox.com/sh/qsps5bhz8v020o9/AADv-0D0-bPq22pgoAIcDRC3a/develop?dl=0&lst=)

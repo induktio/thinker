@@ -574,6 +574,8 @@ bool patch_setup(Config* cf) {
     write_call(0x4F7A38, (int)mod_base_hurry); // base_upkeep
     write_call(0x528289, (int)mod_enemy_turn); // control_turn
     write_call(0x5295C0, (int)mod_enemy_turn); // net_upkeep
+    write_call(0x513F08, (int)mod_enemy_veh); // Console::veh_turn
+    write_call(0x579703, (int)mod_enemy_veh); // enemy_turn
     write_call(0x579362, (int)mod_enemy_move); // enemy_veh
     write_call(0x40F45A, (int)mod_base_draw); // BaseWin::draw_farm
     write_call(0x4672A7, (int)mod_base_draw); // MapWin::draw_bases
@@ -1055,11 +1057,15 @@ bool patch_setup(Config* cf) {
 
     /*
     Hide "<other faction> have altered the rainfall patterns" messages from status display.
+    This also removes excessive friction and treaty penalties when another faction alters
+    rainfall patterns during terraforming.
     */
     {
         const byte old_bytes[] = {0x75,0x07};
         const byte new_bytes[] = {0x75,0x16};
-        write_bytes(0x4CA44E, old_bytes, new_bytes, sizeof(new_bytes));
+        write_bytes(0x4CA44E, old_bytes, new_bytes, sizeof(new_bytes)); // action_terraform
+        remove_call(0x4CA3DD); // set_treaty
+        remove_call(0x4CA3EB); // cause_friction
     }
 
     /*

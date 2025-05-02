@@ -191,9 +191,9 @@ int option_handler(void* user, const char* section, const char* name, const char
     } else if (MATCH("eco_damage_fix")) {
         cf->eco_damage_fix = atoi(value);
     } else if (MATCH("clean_minerals")) {
-        cf->clean_minerals = clamp(atoi(value), 0, 127);
+        cf->clean_minerals = clamp(atoi(value), 0, 1000);
     } else if (MATCH("biology_lab_bonus")) {
-        cf->biology_lab_bonus = clamp(atoi(value), 0, 127);
+        cf->biology_lab_bonus = clamp(atoi(value), 0, 1000);
     } else if (MATCH("spawn_fungal_towers")) {
         cf->spawn_fungal_towers = atoi(value);
     } else if (MATCH("spawn_spore_launchers")) {

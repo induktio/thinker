@@ -413,8 +413,6 @@ int __cdecl veh_speed(int veh_id, bool skip_morale) {
     if (unit_id == BSC_FUNGAL_TOWER) {
         return 0; // cannot move
     }
-    // Maximum speed is rounded down to nearest full movement point
-    int max_speed = 255 - (255 % Rules->move_rate_roads);
     int speed_val = proto_speed(unit_id);
     int triad = u->triad();
     if (triad == TRIAD_SEA && has_project(FAC_MARITIME_CONTROL_CENTER, Vehs[veh_id].faction_id)) {
@@ -439,7 +437,7 @@ int __cdecl veh_speed(int veh_id, bool skip_morale) {
             + speed_val - 1) / speed_val;
         speed_val = clamp(speed_val, (triad == TRIAD_SEA) ? 2 : 1, 999) * Rules->move_rate_roads;
     }
-    return min(max_speed, speed_val);
+    return min(conf.max_movement_rate, speed_val);
 }
 
 /*

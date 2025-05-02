@@ -30,6 +30,10 @@ bool allow_move(int x, int y, int faction, int triad);
 bool allow_civ_move(int x, int y, int faction, int triad);
 bool can_build_base(int x, int y, int faction, int triad);
 bool stack_search(int x, int y, int faction, StackType type, VehWeaponMode mode);
+int coast_tiles(int x, int y);
+int ocean_coast_tiles(int x, int y);
+bool near_ocean_coast(int x, int y);
+bool near_sea_coast(int x, int y);
 bool allow_scout(int faction, MAP* sq);
 bool allow_probe(int faction1, int faction2, bool is_enhanced);
 bool allow_attack(int faction1, int faction2, bool is_probe, bool is_enhanced);
@@ -44,7 +48,6 @@ int garrison_goal(int x, int y, int faction, int triad);
 int garrison_count(int x, int y);
 int defender_count(int x, int y, int veh_skip_id);
 
-int __cdecl mod_enemy_turn(int faction_id);
 int __cdecl mod_enemy_move(int veh_id);
 int __cdecl veh_kill_lift(int veh_id);
 void update_main_region(int faction);

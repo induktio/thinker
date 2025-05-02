@@ -251,6 +251,7 @@ struct Config {
     int fast_fungus_movement = 0;
     int magtube_movement_rate = 0;
     int road_movement_rate = 1; // internal variable
+    int max_movement_rate = 255; // internal variable
     int chopper_attack_rate = 1;
     int base_psych = 1;
     int nerve_staple = 2;
@@ -389,6 +390,7 @@ struct AIPlans {
 #include "gui.h"
 #include "gui_dialog.h"
 #include "veh.h"
+#include "veh_turn.h"
 #include "veh_combat.h"
 #include "net.h"
 #include "map.h"

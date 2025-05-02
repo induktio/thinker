@@ -836,11 +836,11 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             print_base(base_id);
         }
         print_map(x, y);
-        for (int k=0; k < *VehCount; k++) {
-            VEH* veh = &Vehicles[k];
+        for (int k = 0; k < *VehCount; k++) {
+            VEH* veh = &Vehs[k];
             if (veh->x == x && veh->y == y) {
-                Vehicles[k].state |= VSTATE_UNK_40000;
-                Vehicles[k].state &= ~VSTATE_UNK_2000;
+                Vehs[k].state |= VSTATE_UNK_40000;
+                Vehs[k].state &= ~VSTATE_UNK_2000;
                 print_veh(k);
             }
         }
@@ -1086,7 +1086,7 @@ void show_mod_stats()
         total_energy += b->energy_intake_2;
     }
     for (int i = 0; i < *VehCount; i++) {
-        VEH* v = &Vehicles[i];
+        VEH* v = &Vehs[i];
         if (v->faction_id == MapWin->cOwner) {
             faction_units++;
         }
