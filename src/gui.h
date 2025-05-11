@@ -78,9 +78,10 @@ int __thiscall SetupWin_soft_update3(Win* This, int a2, int a3, int a4, int a5);
 int __thiscall window_scale_load_pcx(Buffer* This, char* filename, int a3, int a4, int a5);
 int __thiscall Credits_GraphicWin_init(
     Win* This, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, int a10);
-int __thiscall BaseWin_popup_start(
+int __thiscall BaseWin_hurry_popup_start(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
-int __cdecl BaseWin_ask_number(const char* label, int value, int a3);
+int __cdecl BaseWin_hurry_ask_number(const char* label, int value, int a3);
+int __thiscall BaseWin_hurry_unlock_base(AlphaNet* This, int base_id);
 int __thiscall BaseWin_gov_options(BaseWindow* This, int flag);
 void __thiscall BaseWin_draw_support(BaseWindow* This);
 void __thiscall BaseWin_draw_misc_eco_damage(Buffer* This, char* buf, int x, int y, int len);
@@ -104,6 +105,7 @@ void __cdecl reset_netmsg_status();
 int __thiscall mod_NetMsg_pop(void* This, const char* label, int delay, int a4, const char* a5);
 int __thiscall mod_BasePop_start(
     void* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
+int __cdecl mod_design_new_veh(int faction_id, int unit_id);
 int __cdecl mod_action_move(int veh_id, int x, int y);
 int __cdecl MapWin_right_menu_arty(int veh_id, int x, int y);
 void __thiscall Console_arty_cursor_on(Console* This, int cursor_type, int veh_id);

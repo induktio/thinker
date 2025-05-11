@@ -151,11 +151,11 @@ int __cdecl veh_at(int x, int y) {
         }
     }
     if (!sq) {
-        debug("VehLocError x: %d y: %d\n", x, y);
+        debug("VehLocError %d %d\n", x, y);
         return -1;
     }
     if (!*VehBitError) {
-        debug("VehBitError x: %d y: %d\n", x, y);
+        debug("VehBitError %d %d\n", x, y);
     }
     if (*GameState & STATE_SCENARIO_EDITOR || *GameState & STATE_DEBUG_MODE || *MultiplayerActive) {
         if (*VehBitError) {
@@ -2445,14 +2445,14 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
     int triad = Chassis[chs].triad;
     int spd_v = Chassis[chs].speed;
     bool arty = abls & ABL_ARTILLERY && triad == TRIAD_LAND;
-    bool sea_arty = abls & ABL_ARTILLERY && triad == TRIAD_SEA;
     bool marine = abls & ABL_AMPHIBIOUS && triad == TRIAD_LAND;
     bool intercept = abls & ABL_AIR_SUPERIORITY && triad == TRIAD_AIR;
     bool garrison = combat && !arty && !marine && wpn_v < arm_v && spd_v < 2;
     uint32_t prefix_abls = abls & ~(ABL_ARTILLERY|ABL_AMPHIBIOUS|ABL_CARRIER|ABL_NERVE_GAS
         | (intercept ? ABL_AIR_SUPERIORITY : 0)); // SAM for ground units
     // Battleship names are used only for long range artillery
-    bool lrg_names = (sea_arty || triad != TRIAD_SEA || conf.long_range_artillery < 1);
+    bool sea_arty = abls & ABL_ARTILLERY && triad == TRIAD_SEA && conf.long_range_artillery > 0;
+    bool lrg_names = (triad != TRIAD_SEA || conf.long_range_artillery < 1);
 
     if (!conf.new_unit_names || (!combat && !noncombat) || Chassis[chs].missile) {
         if (unit_id < 0) {
@@ -2492,8 +2492,7 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
             if ((!arty && !marine && !intercept) || (arty && spd_v > 1)) {
                 int value = wpn_v - arm_v;
                 if (value <= -1) { // Defensive
-                    if ((arm_v >= 8 && wpn_v*2 >= min(24, arm_v) && lrg_names)
-                    || (sea_arty && wpn_v + arm_v >= 4)) {
+                    if (sea_arty || (lrg_names && arm_v >= 8 && wpn_v*2 >= min(24, arm_v))) {
                         parse_chs_name(buf, Chassis[chs].defsv_name_lrg);
                     } else if (wpn_v >= 2) {
                         parse_chs_name(buf, Chassis[chs].defsv1_name);
@@ -2501,8 +2500,7 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
                         parse_chs_name(buf, Chassis[chs].defsv2_name);
                     }
                 } else if (value >= 1 || sea_arty) { // Offensive
-                    if ((wpn_v >= 8 && arm_v*2 >= min(24, wpn_v) && lrg_names)
-                    || (sea_arty && wpn_v + arm_v >= 4)) {
+                    if (sea_arty || (lrg_names && wpn_v >= 8 && arm_v*2 >= min(24, wpn_v))) {
                         parse_chs_name(buf, Chassis[chs].offsv_name_lrg);
                     } else if (triad != TRIAD_AIR && arm_v >= 2) {
                         parse_chs_name(buf, Chassis[chs].offsv1_name);
@@ -2562,8 +2560,7 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
             break;
         }
     }
-    strncpy(name, buf, MaxProtoNameLen);
-    name[MaxProtoNameLen - 1] = '\0';
+    strcpy_n(name, MaxProtoNameLen, buf);
     return 0;
 }
 

@@ -74,6 +74,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->new_base_names = atoi(value);
     } else if (MATCH("new_unit_names")) {
         cf->new_unit_names = atoi(value);
+    } else if (MATCH("spawn_free_units")) {
+        opt_list_parse(cf->spawn_free_units, buf, 9, 0);
     } else if (MATCH("player_colony_pods")) {
         cf->player_colony_pods = atoi(value);
     } else if (MATCH("computer_colony_pods")) {
@@ -210,10 +212,10 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->event_sunspots = clamp(atoi(value), 0, 100);
     } else if (MATCH("event_market_crash")) {
         cf->event_market_crash = atoi(value);
+    } else if (MATCH("tile_output_limit")) {
+        opt_list_parse(cf->tile_output_limit, buf, 3, 0);
     } else if (MATCH("soil_improve_value")) {
         cf->soil_improve_value = clamp(atoi(value), 0, 10);
-    } else if (MATCH("resource_limit")) {
-        opt_list_parse(cf->resource_limit, buf, 3, 0);
     } else if (MATCH("aquatic_bonus_minerals")) {
         cf->aquatic_bonus_minerals = atoi(value);
     } else if (MATCH("alien_guaranteed_techs")) {

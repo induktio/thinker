@@ -477,6 +477,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 59. Enable COMMFREQ faction ability to grant one extra comm frequency at the game start. Previously this ability was skipped by the game.
 60. Fix endgame replay feature overflowing unrelated content causing eventual crash after too many base create/capture/kill events happen during the game.
 61. Modify the faction setup code to check by filename if multiple similar factions are active. If any duplicates are found, each one will have their faction_id as name suffix.
+62. Fix issue where completely hurrying current production at the base sometimes allowed multiple hurry actions during the same turn.
 
 
 Scient's patch

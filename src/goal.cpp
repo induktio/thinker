@@ -10,9 +10,6 @@ bool ignore_goal(int type) {
 }
 
 void __cdecl add_goal(int faction, int type, int priority, int x, int y, int base_id) {
-    if (!mapsq(x, y)) {
-        return;
-    }
     if (thinker_enabled(faction) && type < Thinker_Goal_ID_First) {
         return;
     }
@@ -20,26 +17,27 @@ void __cdecl add_goal(int faction, int type, int priority, int x, int y, int bas
         debug("add_goal %d type: %3d pr: %2d x: %3d y: %3d base: %d\n",
             faction, type, priority, x, y, base_id);
     }
+    if (!mapsq(x, y)) {
+        debug("AddGoalError %d %d %d\n", x, y, type);
+        return;
+    }
     for (int i = 0; i < MaxGoalsNum; i++) {
         Goal& goal = Factions[faction].goals[i];
         if (goal.x == x && goal.y == y && goal.type == type) {
-            if (goal.priority <= priority) {
-                goal.priority = (int16_t)priority;
-            }
+            goal.priority = max(goal.priority, (int16_t)priority);
             return;
         }
     }
-    int goal_score = 0, goal_id = -1;
+    int best_value = 0, goal_id = -1;
     for (int i = 0; i < MaxGoalsNum; i++) {
         Goal& goal = Factions[faction].goals[i];
-
         if (goal.type < 0 || goal.priority < priority) {
-            int cmp = goal.type >= 0 ? 0 : 1000;
-            if (!cmp) {
-                cmp = goal.priority > 0 ? 20 - goal.priority : goal.priority + 100;
+            int value = goal.type >= 0 ? 0 : 1000;
+            if (!value) {
+                value = goal.priority > 0 ? (20 - goal.priority) : goal.priority + 100;
             }
-            if (cmp > goal_score) {
-                goal_score = cmp;
+            if (value > best_value) {
+                best_value = value;
                 goal_id = i;
             }
         }
@@ -55,9 +53,6 @@ void __cdecl add_goal(int faction, int type, int priority, int x, int y, int bas
 }
 
 void __cdecl add_site(int faction, int type, int priority, int x, int y) {
-    if ((x ^ y) & 1 && *GameState & STATE_DEBUG_MODE) {
-        debug("Bad SITE %d %d %d\n", x, y, type);
-    }
     if (thinker_enabled(faction)) {
         return;
     }
@@ -65,28 +60,25 @@ void __cdecl add_site(int faction, int type, int priority, int x, int y) {
         debug("add_site %d type: %3d pr: %2d x: %3d y: %3d\n",
             faction, type, priority, x, y);
     }
+    if (!mapsq(x, y)) {
+        debug("AddSiteError %d %d %d\n", x, y, type);
+        return;
+    }
     for (int i = 0; i < MaxSitesNum; i++) {
         Goal& sites = Factions[faction].sites[i];
         if (sites.x == x && sites.y == y && sites.type == type) {
-            if (sites.priority <= priority) {
-                sites.priority = (int16_t)priority;
-            }
+            sites.priority = max(sites.priority, (int16_t)priority);
             return;
         }
     }
-    int priority_search = 0;
+    int best_value = 0;
     int site_id = -1;
     for (int i = 0; i < MaxSitesNum; i++) {
         Goal& sites = Factions[faction].sites[i];
-        int type_cmp = sites.type;
-        int priority_cmp = sites.priority;
-        if (type_cmp < 0 || priority_cmp < priority) {
-            int cmp = type_cmp >= 0 ? 0 : 1000;
-            if (!cmp) {
-                cmp = 20 - priority_cmp;
-            }
-            if (cmp > priority_search) {
-                priority_search = cmp;
+        if (sites.type < 0 || sites.priority < priority) {
+            int value = sites.type >= 0 ? (20 - sites.priority) : 1000;
+            if (value > best_value) {
+                best_value = value;
                 site_id = i;
             }
         }
@@ -114,9 +106,8 @@ void __cdecl wipe_goals(int faction) {
     }
     for (int i = 0; i < MaxSitesNum; i++) {
         Goal& site = Factions[faction].sites[i];
-        int16_t type = site.type;
-        if (type >= 0) {
-            add_goal(faction, type, site.priority, site.x, site.y, -1);
+        if (site.type >= 0) {
+            add_goal(faction, site.type, site.priority, site.x, site.y, -1);
         }
     }
 }

@@ -739,14 +739,14 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
             if (MFactions[faction_id_atk].rule_flags & RFLAG_FANATIC
             && Rules->combat_bonus_fanatic && !combat_type && !psi_combat) {
                 offense = offense * (Rules->combat_bonus_fanatic + 100) / 100;
-                add_bat(0, Rules->combat_bonus_fanatic, label_get(528));
+                add_bat(0, Rules->combat_bonus_fanatic, label_get(528)); // Belief
             }
             int bonus_count = MFactions[faction_id_atk].faction_bonus_count;
             for (int i = 0; i < bonus_count; i++) {
                 if (MFactions[faction_id_atk].faction_bonus_id[i] == RULE_OFFENSE) {
                     int rule_off_bonus = MFactions[faction_id_atk].faction_bonus_val1[i];
                     offense = offense * rule_off_bonus / 100;
-                    add_bat(0, rule_off_bonus, label_get(1108)); // Alien Offense
+                    add_bat(0, rule_off_bonus - 100, label_get(1108)); // Alien Offense
                 }
             }
             if (psi_combat && faction_id_atk) {
@@ -792,7 +792,7 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
             if (MFactions[faction_id_def].faction_bonus_id[i] == RULE_DEFENSE) {
                 int rule_def_bonus = MFactions[faction_id_def].faction_bonus_val1[i];
                 defense = defense * rule_def_bonus / 100;
-                add_bat(1, rule_def_bonus, label_get(1109)); // Alien Defense
+                add_bat(1, rule_def_bonus - 100, label_get(1109)); // Alien Defense
             }
         }
         if (veh_id_atk >= 0 && veh_atk->is_probe()) {

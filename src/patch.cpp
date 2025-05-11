@@ -585,6 +585,8 @@ bool patch_setup(Config* cf) {
     write_call(0x559E21, (int)map_draw_strcmp); // veh_draw
     write_call(0x55B5E1, (int)map_draw_strcmp); // base_draw
     write_call(0x5C0984, (int)veh_kill_lift); // veh_kill
+    write_call(0x51825B, (int)mod_design_new_veh); // Console::on_key_click
+    write_call(0x51C12B, (int)mod_design_new_veh); // Console::iface_click
     write_call(0x43FE47, (int)DiploPop_spying); // DiploPop::draw_info
     write_call(0x43FEA8, (int)DiploPop_spying); // DiploPop::draw_info
     write_call(0x4E2A81, (int)prefs_get_strcpy); // AlphaNet::do_create
@@ -621,8 +623,9 @@ bool patch_setup(Config* cf) {
     write_call(0x40F8F8, (int)BaseWin_draw_farm_set_font);
     write_call(0x4129E5, (int)BaseWin_draw_energy_set_text_color);
     write_call(0x415AD8, (int)BaseWin_draw_misc_eco_damage);
-    write_call(0x41916B, (int)BaseWin_popup_start);
-    write_call(0x4195A6, (int)BaseWin_ask_number);
+    write_call(0x41916B, (int)BaseWin_hurry_popup_start);
+    write_call(0x4195A6, (int)BaseWin_hurry_ask_number);
+    write_call(0x419762, (int)BaseWin_hurry_unlock_base);
     write_call(0x41B6E5, (int)BaseWin_staple_popp);
     write_call(0x41B719, (int)BaseWin_staple_popp);
     write_call(0x41B771, (int)BaseWin_action_staple);

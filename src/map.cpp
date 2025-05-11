@@ -599,10 +599,10 @@ int __cdecl mod_crop_yield(int faction_id, int base_id, int x, int y, int flag) 
             value += (conf.soil_improve_value ? conf.soil_improve_value : value / 2);
         }
     }
-    if (has_limit && value > conf.resource_limit[0] && !bonus_nutrient && !(sq->items & BIT_CONDENSER)
+    if (has_limit && value > conf.tile_output_limit[0] && !bonus_nutrient && !(sq->items & BIT_CONDENSER)
     && (faction_id < 0 || !has_tech(Rules->tech_preq_allow_3_nutrients_sq, faction_id))) {
-        *BaseTerraformReduce += (value - conf.resource_limit[0]);
-        value = conf.resource_limit[0];
+        *BaseTerraformReduce += (value - conf.tile_output_limit[0]);
+        value = conf.tile_output_limit[0];
     }
     if (base_id >= 0) {
         if (Bases[base_id].event_flags & BEVENT_BUMPER) {
@@ -613,7 +613,7 @@ int __cdecl mod_crop_yield(int faction_id, int base_id, int x, int y, int flag) 
         }
     }
     assert((conf.soil_improve_value && sq->items & (BIT_CONDENSER|BIT_SOIL_ENRICHER))
-        || (has_limit && !bonus_nutrient && conf.resource_limit[0] != 2)
+        || (has_limit && !bonus_nutrient && conf.tile_output_limit[0] != 2)
         || value == crop_yield(faction_id, base_id, x, y, flag));
     return value;
 }
@@ -711,10 +711,10 @@ int __cdecl mod_mine_yield(int faction_id, int base_id, int x, int y, int flag) 
             }
         }
     }
-    if (has_limit && value > conf.resource_limit[1] && !bonus_mineral
+    if (has_limit && value > conf.tile_output_limit[1] && !bonus_mineral
     && (faction_id < 0 || !has_tech(Rules->tech_preq_allow_3_minerals_sq, faction_id))) {
-        *BaseTerraformReduce += (value - conf.resource_limit[1]);
-        value = conf.resource_limit[1];
+        *BaseTerraformReduce += (value - conf.tile_output_limit[1]);
+        value = conf.tile_output_limit[1];
     }
     if (base_id >= 0) {
         if (Bases[base_id].event_flags & BEVENT_INDUSTRY) {
@@ -726,7 +726,7 @@ int __cdecl mod_mine_yield(int faction_id, int base_id, int x, int y, int flag) 
     }
     // Original function can return inconsistent sea mineral output when base_id is not set
     assert((base_id < 0 && alt == ALT_OCEAN_SHELF && MFactions[faction_id].is_aquatic())
-        || (has_limit && !bonus_mineral && conf.resource_limit[1] != 2)
+        || (has_limit && !bonus_mineral && conf.tile_output_limit[1] != 2)
         || (value == mine_yield(faction_id, base_id, x, y, flag)));
     return value;
 }
@@ -848,10 +848,10 @@ int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag
             *BaseTerraformEnergy = value;
         }
     }
-    if (has_limit && value > conf.resource_limit[2] && !bonus_energy
+    if (has_limit && value > conf.tile_output_limit[2] && !bonus_energy
     && (faction_id < 0 || !has_tech(Rules->tech_preq_allow_3_energy_sq, faction_id))) {
-        *BaseTerraformReduce += (value - conf.resource_limit[2]);
-        value = conf.resource_limit[2];
+        *BaseTerraformReduce += (value - conf.tile_output_limit[2]);
+        value = conf.tile_output_limit[2];
     }
     if (base_id >= 0) {
         if (Bases[base_id].event_flags & BEVENT_HEAT_WAVE) {
@@ -875,7 +875,7 @@ int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag
     // Original function can return inconsistent base output when economy is between 3 and 4
     assert((is_base && economy >= 3 && economy <= 4)
         || (!is_base && sq->items & BIT_MONOLITH && !has_tech(Rules->tech_preq_allow_3_energy_sq, faction_id))
-        || (has_limit && !bonus_energy && conf.resource_limit[2] != 2)
+        || (has_limit && !bonus_energy && conf.tile_output_limit[2] != 2)
         || (value == energy_yield(faction_id, base_id, x, y, flag)));
     return value;
 }
@@ -1144,6 +1144,15 @@ int __cdecl mod_whose_territory(int faction_id, int x, int y, int* base_id, int 
         }
     }
     return sq->owner;
+}
+
+int bonus_yield(int res_type) {
+    switch (res_type) {
+    case RES_NUTRIENT: return ResInfo->bonus_sq.nutrient;
+    case RES_MINERAL: return ResInfo->bonus_sq.mineral;
+    case RES_ENERGY: return ResInfo->bonus_sq.energy;
+    default: return 0;
+    }
 }
 
 int total_yield(int x, int y, int faction_id) {

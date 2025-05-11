@@ -577,7 +577,6 @@ static int route_score(VEH* veh, int x, int y, int modifier, MAP* sq) {
 int search_route(TileSearch& ts, int veh_id, int* tx, int* ty) {
     VEH* veh = &Vehs[veh_id];
     MAP* sq = mapsq(veh->x, veh->y);
-    AIPlans& plan = plans[veh->faction_id];
     debug("search_route %2d %2d %s\n", veh->x, veh->y, veh->name());
     *tx = -1;
     *ty = -1;
@@ -585,6 +584,8 @@ int search_route(TileSearch& ts, int veh_id, int* tx, int* ty) {
         assert(0);
         return false;
     }
+    Faction& plr = Factions[veh->faction_id];
+    AIPlans& plan = plans[veh->faction_id];
     int veh_reg = sq->region;
     bool combat = veh->is_combat_unit();
     bool scout = combat && !bad_reg(veh_reg)
@@ -627,10 +628,14 @@ int search_route(TileSearch& ts, int veh_id, int* tx, int* ty) {
         }
         return *tx >= 0;
     }
-    if (!combat && !veh->in_transit()
-    && mapdata[{veh->x, veh->y}].safety < PM_SAFE
-    && search_escape(ts, veh_id, tx, ty)) {
-        return true;
+    if (!combat) {
+        if (veh->in_transit() || (at_base && plr.base_count < 2)) {
+            return false;
+        }
+        if (mapdata[{veh->x, veh->y}].safety < PM_SAFE
+        && search_escape(ts, veh_id, tx, ty)) {
+            return true;
+        }
     }
     for (int i = 0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];

@@ -18,7 +18,7 @@ char label_unit_reactor[4][StrBufLen] = {};
 std::string video_player_path = "";
 std::string video_player_args = "";
 
-static int minimal_cost = 0;
+static int hurry_minimal_cost = 0;
 static int base_zoom_factor = -14;
 
 struct ConsoleState {
@@ -1312,7 +1312,7 @@ Win* This, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, int a
     }
 }
 
-int __thiscall BaseWin_popup_start(
+int __thiscall BaseWin_hurry_popup_start(
 Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7)
 {
     BASE* base = *CurrentBase;
@@ -1321,7 +1321,7 @@ Win* This, const char* filename, const char* label, int a4, int a5, int a6, int 
     int minerals = item_cost - base->minerals_accumulated - max(0, base->mineral_surplus);
     int credits = max(0, f->energy_credits - f->hurry_cost_total);
     int cost = hurry_cost(*CurrentBaseID, base->queue_items[0], minerals);
-    minimal_cost = min(credits, cost);
+    hurry_minimal_cost = min(credits, cost);
     if (item_cost <= base->minerals_accumulated) {
         ParseNumTable[0] = 0;
     }
@@ -1332,10 +1332,22 @@ Win* This, const char* filename, const char* label, int a4, int a5, int a6, int 
 
 #pragma GCC diagnostic pop
 
-int __cdecl BaseWin_ask_number(const char* label, int value, int a3)
+int __cdecl BaseWin_hurry_ask_number(const char* label, int value, int a3)
 {
     ParseNumTable[0] = value;
-    return pop_ask_number(ScriptFile, label, minimal_cost, a3);
+    return pop_ask_number(ScriptFile, label, hurry_minimal_cost, a3);
+}
+
+/*
+Fix issue where hurry production flag will not be set after
+completely hurrying the current production "Spend $NUM0 energy credits."
+*/
+int __thiscall BaseWin_hurry_unlock_base(AlphaNet* This, int base_id)
+{
+    if (base_id >= 0) {
+        Bases[base_id].state_flags |= BSTATE_HURRY_PRODUCTION;
+    }
+    return NetDaemon_unlock_base(This, base_id);
 }
 
 int __thiscall BaseWin_gov_options(BaseWindow* This, int flag)
@@ -1819,6 +1831,22 @@ void* This, const char* filename, const char* label, int a4, int a5, int a6, int
         return BasePop_start(This, "modmenu", label, a4, a5, a6, a7);
     }
     return BasePop_start(This, filename, label, a4, a5, a6, a7);
+}
+
+/*
+Modify Unit Workshop command to open prototype for the currently selected unit.
+Normally unit_id can be set when ASKSEEDESIGN popup is opened from tech_achieved.
+*/
+int __cdecl mod_design_new_veh(int faction_id, int unit_id) {
+    if (unit_id < 0 && MapWin->iUnit >= 0) {
+        VEH* veh = &Vehs[MapWin->iUnit];
+        if ((veh->unit_id < MaxProtoFactionNum
+        || veh->unit_id / MaxProtoFactionNum == faction_id)
+        && veh->x == MapWin->iTileX && veh->y == MapWin->iTileY) {
+            return DesignWin_exec(DesignWin, faction_id, veh->unit_id);
+        }
+    }
+    return DesignWin_exec(DesignWin, faction_id, unit_id);
 }
 
 int __cdecl mod_action_move(int veh_id, int x, int y)

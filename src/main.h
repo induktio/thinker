@@ -208,6 +208,7 @@ struct Config {
     int editor_free_units = 1;
     int new_base_names = 1;
     int new_unit_names = 1;
+    int spawn_free_units[9] = {0,0,1,0,0,1,1,0,1};
     int player_colony_pods = 0;
     int computer_colony_pods = 0;
     int player_formers = 0;
@@ -280,7 +281,7 @@ struct Config {
     int event_perihelion = 1;
     int event_sunspots = 10;
     int event_market_crash = 1;
-    int resource_limit[3] = {2,2,2};
+    int tile_output_limit[3] = {2,2,2};
     int soil_improve_value = 0;
     int aquatic_bonus_minerals = 1;
     int alien_guaranteed_techs = 1;

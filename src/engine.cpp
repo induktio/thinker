@@ -273,6 +273,7 @@ FGenWin BaseWin_focus                      = (FGenWin              )0x415DD0;
 FBaseWin_zoom BaseWin_zoom                 = (FBaseWin_zoom        )0x41A920;
 FGenWin BaseWin_nerve_staple               = (FGenWin              )0x41B4F0;
 FGenWin BaseWin_on_redraw                  = (FGenWin              )0x41E790;
+FDesignWin_exec DesignWin_exec             = (FDesignWin_exec      )0x43E9A0;
 FGenVoid SubInterface_delete_iface_mode    = (FGenVoid             )0x45D2E0;
 FGenVoid SubInterface_set_iface_mode       = (FGenVoid             )0x45D310;
 FGenVoid SubInterface_release_iface_mode   = (FGenVoid             )0x45D380;

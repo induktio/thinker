@@ -333,6 +333,7 @@ enum GameMoreRules {
     MRULES_SCN_UNITY_PODS_NO_TECH = 0x2,
     MRULES_NO_PLANETARY_COUNCIL = 0x4,
     MRULES_NO_SOCIAL_ENGINEERING = 0x8,
+    MRULES_UNK_10 = 0x10, // multiplayer simultaneous moves related
 };
 
 enum GameWarnings {
@@ -849,6 +850,8 @@ enum MapwinState {
     MAPWIN_DRAW_CURSOR_COMPASS = 0x20000,
     MAPWIN_DRAW_DIPLO_STATE = 0x100000, // show faction treaty status matrix in window corner
     MAPWIN_SUPPORT_VIEW = 0x200000,
+    MAPWIN_UNK_400000 = 0x400000, // MapWin_draw_base_dest
+    MAPWIN_UNK_800000 = 0x800000, // MapWin_draw_base_dest
     MAPWIN_DRAW_SOLID_RADIUS = 0x1000000, // faction base radius solid color terrain view
     MAPWIN_HIDE_OCEAN_BASE = 0x2000000, // stop rendering ocean base layer
     MAPWIN_UNK_4000000 = 0x4000000,

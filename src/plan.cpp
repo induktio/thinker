@@ -382,18 +382,23 @@ int satellite_goal(int faction_id, int item_id) {
 }
 
 void former_plans(int faction_id) {
+    CFacility& facility = Facility[FAC_TREE_FARM];
+    bool tree_farm  = has_tech(facility.preq_tech, faction_id)
+        && facility.cost + facility.maint < 20;
     bool former_fungus = (has_terra(FORMER_PLANT_FUNGUS, TRIAD_LAND, faction_id)
         || has_terra(FORMER_PLANT_FUNGUS, TRIAD_SEA, faction_id));
-    bool improv_fungus = (has_tech(Rules->tech_preq_ease_fungus_mov, faction_id)
-        || has_tech(Rules->tech_preq_improv_fungus, faction_id)
-        || has_project(FAC_XENOEMPATHY_DOME, faction_id));
+    bool improv_fungus = has_tech(Rules->tech_preq_improv_fungus, faction_id)
+        || has_tech(Rules->tech_preq_build_road_fungus, faction_id)
+        || has_project(FAC_XENOEMPATHY_DOME, faction_id);
     int value = fungus_yield(faction_id, RES_NONE)
         - (has_terra(FORMER_FOREST, TRIAD_LAND, faction_id)
-        ? ResInfo->forest_sq.nutrient
+        ? tree_farm
+        + ResInfo->forest_sq.nutrient
         + ResInfo->forest_sq.mineral
         + ResInfo->forest_sq.energy : 2);
-    plans[faction_id].keep_fungus = (value > 0 ? min((improv_fungus ? 8 : 4), 2*value) : 0);
-    plans[faction_id].plant_fungus = value > 0 && former_fungus && (improv_fungus || value > 2);
+    plans[faction_id].keep_fungus = clamp(2*value, 0, (improv_fungus ? 8 : 4));
+    plans[faction_id].plant_fungus = former_fungus && value >= 0
+        && value + improv_fungus + has_project(FAC_MANIFOLD_HARMONICS, faction_id) > 1;
 }
 
 void plans_upkeep(int faction_id) {

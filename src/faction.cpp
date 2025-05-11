@@ -1638,6 +1638,12 @@ static int veh_init_last(int unit_id, int faction_id, int x, int y) {
     return veh_id;
 }
 
+static void veh_init_stack(int unit_id, int faction_id, int x, int y, int num) {
+    for (int i = 0; i < num; i++) {
+        veh_init_last(unit_id, faction_id, x, y);
+    }
+}
+
 static int __cdecl setup_values(int faction_id, int a2, int a3) {
     Faction* f = &Factions[faction_id];
     int value = setup_player(faction_id, a2, a3);
@@ -2096,7 +2102,7 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
             p.sq->visibility |= (1 << faction_id);
             synch_bit(p.x, p.y, faction_id);
         }
-        int recon_veh_id = BSC_SCOUT_PATROL;
+        int recon_unit_id = BSC_SCOUT_PATROL;
         if (initial_spawn) {
             int bonus_count = m->faction_bonus_count;
             for (int i = 0; i < bonus_count; i++) {
@@ -2126,38 +2132,27 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
                 if (u->unit_flags & UNIT_ACTIVE) {
                     u->unit_flags |= UNIT_PROTOTYPED;
                     if (u->plan == PLAN_RECON) {
-                        recon_veh_id = unit_id;
+                        recon_unit_id = unit_id;
                     }
                 }
             }
         }
         // First spawn additional units specified by config
-        int num_colony = is_human(faction_id) ? conf.player_colony_pods : conf.computer_colony_pods;
-        int num_former = is_human(faction_id) ? conf.player_formers : conf.computer_formers;
-        int colony_unit = (plr_aquatic ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
-        int former_unit = (plr_aquatic ? BSC_SEA_FORMERS : BSC_FORMERS);
-        for (int i = 0; i < num_colony; i++) {
-            veh_init_free(colony_unit, faction_id, x, y);
-        }
-        for (int i = 0; i < num_former; i++) {
-            veh_init_last(former_unit, faction_id, x, y);
-        }
+        // These prototypes also use the same fixed choices as in the original game
+        const int num_colony = is_human(faction_id) ? conf.player_colony_pods : conf.computer_colony_pods;
+        const int num_former = is_human(faction_id) ? conf.player_formers : conf.computer_formers;
+        const int colony_unit = plr_aquatic ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD;
+        const int former_unit = plr_aquatic ? BSC_SEA_FORMERS : BSC_FORMERS;
+        veh_init_stack(colony_unit, faction_id, x, y, num_colony);
+        veh_init_stack(former_unit, faction_id, x, y, num_former);
         // For consistency these colony/former are always set as independent units
+        // Colony pods spawned may change based on balance function (deprecated, skipped by default)
         if (!initial_spawn) {
-            if (plr_aquatic) {
-                veh_init_free(BSC_SEA_ESCAPE_POD, faction_id, x, y);
-                veh_init_last(BSC_SEA_FORMERS, faction_id, x, y);
-            } else {
-                veh_init_free(BSC_COLONY_POD, faction_id, x, y);
-                veh_init_last(BSC_FORMERS, faction_id, x, y);
-            }
+            veh_init_free(colony_unit, faction_id, x, y);
+            veh_init_last(former_unit, faction_id, x, y);
         } else {
             if ((*MultiplayerActive || *GameRules & RULES_LOOK_FIRST) && !(*GameRules & RULES_TIME_WARP)) {
-                if (plr_aquatic) {
-                    veh_init_free(BSC_SEA_ESCAPE_POD, faction_id, x, y);
-                } else {
-                    veh_init_free(BSC_COLONY_POD, faction_id, x, y);
-                }
+                veh_init_free(colony_unit, faction_id, x, y);
             } else {
                 int base_id = base_init(faction_id, x, y);
                 if (base_id >= 0 && !_stricmp(m->filename, "FUNGBOY") && special_spawn) {
@@ -2168,7 +2163,10 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
                 }
             }
             if (!plr_aquatic) {
-                veh_init_last(recon_veh_id, faction_id, x, y);
+                // Original game only spawns an extra recon unit
+                veh_init_stack(BSC_COLONY_POD, faction_id, x, y, conf.spawn_free_units[0]);
+                veh_init_stack(BSC_FORMERS, faction_id, x, y, conf.spawn_free_units[1]);
+                veh_init_stack(recon_unit_id, faction_id, x, y, conf.spawn_free_units[2]);
             }
             if (*MultiplayerActive && !plr_aquatic) {
                 veh_init_last(BSC_UNITY_ROVER, faction_id, x, y);
@@ -2215,8 +2213,10 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
                 }
             }
             if (*ExpansionEnabled && plr_alien) {
-                veh_init_last(BSC_BATTLE_OGRE_MK1, faction_id, x, y);
-                veh_init_last(BSC_COLONY_POD, faction_id, x, y);
+                // Original game only spawns an extra colony pod and battle ogre
+                veh_init_stack(BSC_COLONY_POD, faction_id, x, y, conf.spawn_free_units[6]);
+                veh_init_stack(BSC_FORMERS, faction_id, x, y, conf.spawn_free_units[7]);
+                veh_init_stack(BSC_BATTLE_OGRE_MK1, faction_id, x, y, conf.spawn_free_units[8]);
             }
             if (plr_aquatic) {
                 if (!is_human(faction_id)) {
@@ -2238,10 +2238,10 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
                         strcpy_n(&Units[unit_id].name[0], MaxProtoNameLen, buf);
                     }
                 }
-                if (!conf.skip_default_balance) {
-                    veh_init_last(BSC_SEA_ESCAPE_POD, faction_id, x, y);
-                }
-                veh_init_last(BSC_UNITY_GUNSHIP, faction_id, x, y);
+                // Original game only spawns an extra colony pod and unity gunship
+                veh_init_stack(BSC_SEA_ESCAPE_POD, faction_id, x, y, conf.spawn_free_units[3]);
+                veh_init_stack(BSC_SEA_FORMERS, faction_id, x, y, conf.spawn_free_units[4]);
+                veh_init_stack(BSC_UNITY_GUNSHIP, faction_id, x, y, conf.spawn_free_units[5]);
             }
         }
         if (!spawn_flag && !initial_spawn) {
@@ -2273,12 +2273,7 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
                     }
                 }
             }
-            int veh_id;
-            if (plr_aquatic) {
-                veh_id = veh_init(BSC_SEA_ESCAPE_POD, faction_id, x, y);
-            } else {
-                veh_id = veh_init(BSC_COLONY_POD, faction_id, x, y);
-            }
+            int veh_id = veh_init(colony_unit, faction_id, x, y);
             veh_init(spawn_id_a, faction_id, x, y);
             if (*CurrentTurn > 20 && spawn_id_c >= 0) {
                 veh_init(spawn_id_c, faction_id, x, y);
@@ -2293,11 +2288,7 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
                 veh_init(spawn_id_b, faction_id, x, y);
             }
             if (*CurrentTurn > 100) {
-                if (plr_aquatic) {
-                    veh_init(BSC_SEA_ESCAPE_POD, faction_id, x, y);
-                } else {
-                    veh_init(BSC_COLONY_POD, faction_id, x, y);
-                }
+                veh_init(colony_unit, faction_id, x, y);
             }
             veh_promote(veh_id);
             plr->unk_27 = 3 * plr->tech_ranking / 4;

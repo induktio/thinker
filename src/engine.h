@@ -548,6 +548,7 @@ typedef int(__stdcall *FWinProc)(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 typedef int(__cdecl *FWin_update_screen)(RECT* rc, int v1);
 typedef int(__cdecl *FWin_flip)(RECT* rc);
 typedef int(__thiscall *FBaseWin_zoom)(Win* This, int a2, int a3);
+typedef int(__thiscall *FDesignWin_exec)(Win* This, int faction_id, int unit_id);
 typedef int(__thiscall *FPopup_start)(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
 typedef int(__thiscall *FBasePop_start)(
@@ -566,7 +567,7 @@ extern FGenWin BaseWin_focus;
 extern FBaseWin_zoom BaseWin_zoom;
 extern FGenWin BaseWin_nerve_staple;
 extern FGenWin BaseWin_on_redraw;
-extern FGenWin GraphicWin_redraw;
+extern FDesignWin_exec DesignWin_exec;
 extern FGenVoid SubInterface_delete_iface_mode;
 extern FGenVoid SubInterface_set_iface_mode;
 extern FGenVoid SubInterface_release_iface_mode;

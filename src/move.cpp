@@ -1,8 +1,9 @@
 
 #include "move.h"
 
-const int ShoreLine = 256;
-const int ShoreTilesMask = 255;
+static const int ShoreLine = 256;
+static const int ShoreTilesMask = 255;
+static const int VehRemoveTurns = 60;
 
 /*
 Priority Map Tables contain values calculated for each map square
@@ -183,7 +184,7 @@ bool near_sea_coast(int x, int y) {
 int __cdecl mod_enemy_move(int veh_id) {
     assert(veh_id >= 0 && veh_id < *VehCount);
     VEH* veh = &Vehs[veh_id];
-    debug("enemy_move %2d %2d %s\n", veh->x, veh->y, veh->name());
+    debug("enemy_move %d %2d %2d %s\n", veh_id, veh->x, veh->y, veh->name());
 
     if (!mapsq(veh->x, veh->y)) {
         return VEH_SYNC;
@@ -1161,7 +1162,7 @@ int colony_move(const int id) {
     } else {
         ts.init(veh->x, veh->y, triad, 1);
     }
-    while (++i <= 1600 && (sq = ts.get_next()) != NULL) {
+    while (++i <= 2000 && (sq = ts.get_next()) != NULL) {
         if (mapnodes.count({ts.rx, ts.ry, NODE_BASE_SITE})
         || !can_build_base(ts.rx, ts.ry, faction, triad)
         || !safe_path(ts, faction, skip_owner)
@@ -1214,7 +1215,8 @@ int colony_move(const int id) {
         if (search_route(ts, id, &tx, &ty)) {
             return set_move_to(id, tx, ty);
         }
-        if ((veh->home_base_id >= 0 || *BaseCount > 16 + random(256))
+        if (*CurrentTurn > VehRemoveTurns
+        && (veh->home_base_id >= 0 || *BaseCount > 16 + random(256))
         && (!at_base || garrison_count(veh->x, veh->y) > random(8))) {
             return mod_veh_kill(id);
         }
@@ -1500,7 +1502,7 @@ bool can_magtube(int x, int y, int faction, MAP* sq) {
         return false;
     }
     return mapdata[{x, y}].roads > 0 && sq->items & BIT_ROAD
-        && (!sq->is_fungus() || has_tech(Rules->tech_preq_build_road_fungus, faction));
+        && (!sq->is_fungus() || has_tech(Rules->tech_preq_improv_fungus, faction));
 }
 
 int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
@@ -1580,6 +1582,7 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
     }
     int bonus = bonus_at(x, y);
     int current = total_yield(x, y, faction);
+    assert(current >= 0 && bonus >= RES_NONE && bonus <= RES_ENERGY);
 
     bool forest = has_terra(FORMER_FOREST, sea, faction) && ResInfo->forest_sq.energy > 0;
     bool borehole = has_terra(FORMER_THERMAL_BORE, sea, faction) && ResInfo->borehole_sq.energy > 2;
@@ -1590,24 +1593,28 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
     bool allow_fungus = is_fungus || plant_fungus(x, y, faction, sq);
     bool allow_borehole = items & BIT_THERMAL_BORE || can_borehole(x, y, faction, bonus, sq);
 
-    int farm_val = (sea && allow_farm ? item_yield(x, y, faction, bonus, BIT_FARM) : 0);
-    int forest_val = (allow_forest ? item_yield(x, y, faction, bonus, BIT_FOREST) : 0);
-    int fungus_val = (allow_fungus ? item_yield(x, y, faction, bonus, BIT_FUNGUS) : 0);
-    int borehole_val = (allow_borehole ? item_yield(x, y, faction, bonus, BIT_THERMAL_BORE) : 0);
+    int farm_val = (sea && allow_farm ?
+        2*item_yield(x, y, faction, bonus, BIT_FARM) + (items & BIT_FARM ? 1 : 0) : 0);
+    int forest_val = (allow_forest ?
+        2*item_yield(x, y, faction, bonus, BIT_FOREST) + (items & BIT_FOREST ? 1 : 0) : 0);
+    int fungus_val = (allow_fungus ?
+        2*item_yield(x, y, faction, bonus, BIT_FUNGUS)
+        - min(4, 2*bonus_yield(bonus)) + (is_fungus ? 1 : 0) : 0);
+    int borehole_val = (allow_borehole ?
+        2*item_yield(x, y, faction, bonus, BIT_THERMAL_BORE) + (items & BIT_THERMAL_BORE ? 1 : 0) : 0);
     int max_val = 0;
     int skip_val = (current > 7);
-    int bonus_val = (bonus == RES_NUTRIENT) + skip_val
+    int crop_val = (bonus == RES_NUTRIENT) + skip_val
         + (!(items & BIT_CONDENSER) && allow_farm && sq->is_rainy_or_moist() && sq->is_rolling());
 
     for (int v : {farm_val, forest_val, fungus_val, borehole_val}) {
         max_val = max(v, max_val);
-        assert(current >= 0 && v >= 0);
     }
     if (farm_val == max_val && sea && max_val > 0) {
         if (is_fungus) {
             return (rem_fungus ? FORMER_REMOVE_FUNGUS : FORMER_NONE);
         }
-        if (farm_val > current && allow_farm && !(items & BIT_FARM)) {
+        if (farm_val/2 > current && !(items & BIT_FARM) && allow_farm) {
             return FORMER_FARM;
         }
     }
@@ -1618,7 +1625,7 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
         if (items & BIT_FOREST) {
             return (can_sensor(x, y, faction, sq) ? FORMER_SENSOR : FORMER_NONE);
         }
-        if (forest_val > current + bonus_val && allow_forest) {
+        if (forest_val/2 > current + crop_val && allow_forest) {
             return FORMER_FOREST;
         }
     }
@@ -1626,7 +1633,7 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
         if (is_fungus) {
             return (can_sensor(x, y, faction, sq) ? FORMER_SENSOR : FORMER_NONE);
         }
-        if (fungus_val > current + (bonus != RES_NONE) && allow_fungus) {
+        if (fungus_val/2 > current + (bonus != RES_NONE) && allow_fungus) {
             return FORMER_PLANT_FUNGUS;
         }
     }
@@ -1637,7 +1644,7 @@ int select_item(int x, int y, int faction, FormerMode mode, MAP* sq) {
         if (items & BIT_THERMAL_BORE) {
             return FORMER_NONE;
         }
-        if (borehole_val > current && allow_borehole) {
+        if (borehole_val/2 > current && allow_borehole) {
             return FORMER_THERMAL_BORE;
         }
     }
@@ -1890,7 +1897,7 @@ int former_move(const int id) {
         if (search_route(ts, id, &tx, &ty)) {
             return set_move_to(id, tx, ty);
         }
-        if (veh->home_base_id >= 0 && !random(4)) {
+        if (veh->home_base_id >= 0 && *CurrentTurn > VehRemoveTurns && !random(4)) {
             return mod_veh_kill(id);
         }
     }
@@ -3201,7 +3208,8 @@ int combat_move(const int id) {
             return set_move_to(id, tx, ty);
         }
     }
-    if (!base_found && !veh->plr_owner() && triad == TRIAD_SEA && !random(4)) {
+    if (!base_found && !veh->plr_owner() && triad == TRIAD_SEA
+    && *CurrentTurn > VehRemoveTurns && !random(4)) {
         return mod_veh_kill(id);
     }
     if (base_found && !at_base && !random(4)) {

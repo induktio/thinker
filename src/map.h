@@ -76,6 +76,7 @@ int __cdecl mod_bonus_at(int x, int y);
 int __cdecl mod_goody_at(int x, int y);
 int __cdecl mod_base_find3(int x, int y, int faction_id, int region, int faction_id_2, int faction_id_3);
 int __cdecl mod_whose_territory(int faction_id, int x, int y, int* base_id, int ignore_comm);
+int bonus_yield(int res_type);
 int total_yield(int x, int y, int faction_id);
 int fungus_yield(int faction_id, ResType res_type);
 int item_yield(int x, int y, int faction_id, int bonus, MapItem item);
