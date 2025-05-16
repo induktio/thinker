@@ -96,7 +96,7 @@ void __cdecl mod_enemy_turn(int faction_id) {
 
 int __cdecl mod_enemy_veh(size_t veh_id) {
     VEH* veh = &Vehs[veh_id];
-    debug("enemy_veh %d %2d %2d %s\n", veh_id, veh->x, veh->y, veh->name());
+    debug_ver("enemy_veh %d %2d %2d %s\n", veh_id, veh->x, veh->y, veh->name());
     bool net_sync = *MultiplayerActive && veh->faction_id == *CurrentPlayerFaction;
     if (*MultiplayerActive) {
         *VehAttackFlags = 3;
@@ -118,7 +118,7 @@ int __cdecl mod_enemy_veh(size_t veh_id) {
             }
         } else {
             if (!action(veh_id)) {
-                veh_skip(veh_id);
+                mod_veh_skip(veh_id);
             }
         }
         return 0;

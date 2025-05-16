@@ -233,4 +233,21 @@ base square; instead such units receive a +1 MORALE modifier.
 ^
 Reduces base's vulnerability to enemy mind control.
 
+#HELPFAC4
+Increases defense multiplier of base against any land attackers.
+This effectively doubles the defense strength (or triples it
+when combined with a $LINK<Tachyon Field=100005>) if the effect of
+intrinsic base defense bonus is excluded.
+
+#HELPFAC28
+Increases defense multiplier of base against any attacking ships.
+^Repairs damaged naval units quickly. Naval units built here
+receive two $LINK<morale=11> upgrades.
+
+#HELPFAC29
+Increases defense multiplier of base against any attacking aircraft.
+^Repairs damaged air units quickly. Air units built here receive
+two $LINK<morale=11> upgrades. Base must have an Aerospace complex before
+it can produce space-based improvements.
+
 # ; This line must remain at end of file

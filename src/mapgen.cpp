@@ -132,7 +132,7 @@ void __cdecl mod_world_shorelines() {
             }
         }
     }
-    for (int alt = 6; alt >= 2; alt--) {
+    for (int alt = conf.altitude_limit; alt >= 2; alt--) {
         for (int y = 0; y < *MapAreaY; y++) {
             for (int x = y & 1; x < *MapAreaX; x += 2) {
                 if (alt_at(x, y) == alt) {
@@ -166,10 +166,12 @@ void __cdecl mod_world_linearize_contours() {
     for (int y = 0; y < *MapAreaY; y++) {
         for (int x = y & 1; x < *MapAreaX; x += 2) {
             int alt = alt_natural(x, y);
+            int alt_val = (alt >= conf.altitude_limit ? 10 : alt + 1);
+            int div_val = AltDefault[alt + 1] - AltDefault[alt];
+            assert(div_val > 0);
             uint8_t detail = ElevDetail[alt]
                 + ((alt_detail_at(x, y) - AltDefault[alt])
-                * (ElevDetail[alt + (alt >= ALT_THREE_ABOVE_SEA ? 4 : 1)] - ElevDetail[alt])
-                / (AltDefault[alt + 1] - AltDefault[alt]));
+                * (ElevDetail[alt_val] - ElevDetail[alt]) / div_val);
             alt_put_detail(x, y, detail);
         }
     }
@@ -846,7 +848,6 @@ void world_generate(uint32_t seed) {
         MapWin_clear_terrain(MapWin);
         draw_map(1);
     }
-    game_srand(seed ^ 0xffff); // For game_rand function, used by alt_set / alt_set_both
     *MapRandomSeed = (seed % 0x7fff) + 1; // Must be non-zero, supply pod placement
     *MapLandCoverage = 2 - *MapOceanCoverage;
 

@@ -598,7 +598,10 @@ enum PlayerFlags {
     PFLAG_UNK_1000 = 0x1000, // setup_player
     PFLAG_BEEN_ELECTED_GOVERNOR = 0x8000, // used to determine whether #GOVERNOR has been displayed
     PFLAG_UNK_10000 = 0x10000,
-    PFLAG_UNK_20000 = 0x20000,
+    PFLAG_UNK_20000 = 0x20000, // compute_score
+    PFLAG_UNK_40000 = 0x40000, // compute_score
+    PFLAG_UNK_80000 = 0x80000, // alt_set
+    PFLAG_UNK_100000 = 0x100000, // compute_score
     PFLAG_STRAT_ATK_ENEMY_HQ = 0x200000,
     PFLAG_COOP_WITH_HUMAN = 0x400000,
     PFLAG_TEAM_UP_VS_HUMAN = 0x800000,

@@ -1159,6 +1159,7 @@ fp_3int site_set                 = (fp_3int)0x591B50;
 fp_3int region_set               = (fp_3int)0x591B90;
 fp_3int rocky_set                = (fp_3int)0x591BC0;
 fp_3int using_set                = (fp_3int)0x591C10;
+fp_3int lock_set                 = (fp_3int)0x591C50;
 fp_3int lock_map                 = (fp_3int)0x591C90;
 fp_3int unlock_map               = (fp_3int)0x591CF0;
 fp_3int bit_put                  = (fp_3int)0x591D30;

@@ -1000,16 +1000,17 @@ bool can_build_base(int x, int y, int faction, int triad) {
     if (!(sq = mapsq(x, y)) || *BaseCount >= MaxBaseNum) {
         return false;
     }
-    if ((y < 3 || y >= *MapAreaY - 3) && *MapAreaTiles >= 1600) {
-        return false;
-    }
-    if (map_is_flat() && (x < 2 || x >= *MapAreaX - 2) && *MapAreaTiles >= 1600) {
-        return false;
-    }
     if (!sq->allow_base() || sq->items & BIT_THERMAL_BORE) {
         return false;
     }
-    // Allow base building on smaller maps in owned territory if a new faction is spawning.
+    int limit = clamp(*MapAreaTiles / 512, 1, 3);
+    if (y < limit || y >= *MapAreaY - limit) {
+        return false;
+    }
+    if (map_is_flat() && (x < 2 || x >= *MapAreaX - 2)) {
+        return false;
+    }
+    // Allow base building on smaller maps on owned territory when a new faction is spawning
     if (sq->owner >= 0 && sq->owner != faction
     && Factions[faction].base_count > 0
     && !has_treaty(faction, sq->owner, DIPLO_VENDETTA)
@@ -1075,7 +1076,7 @@ int base_tile_score(int x, int y, int faction, MAP* sq) {
                     score += (sea_colony ? 3 : 2);
                 }
                 if (alt <= ALT_OCEAN) {
-                    score -= (alt == ALT_OCEAN_TRENCH ? 4 : 2);
+                    score -= (alt < ALT_OCEAN ? 8 : 4);
                 }
             }
             if (sea_colony != (alt < ALT_SHORE_LINE)
@@ -1176,8 +1177,8 @@ int colony_move(const int id) {
             ty = ts.ry;
             best_score = score;
         }
-        if (++k >= 25 && ts.dist >= 8 && score >= 20
-        && (sq->owner != faction || !sq->is_visible(faction))) {
+        if (++k >= 25 && best_score >= 0 && ts.dist >= (triad == TRIAD_LAND ? 8 : 16)
+        && (sq->owner != faction || !sq->is_visible(faction) || ts.dist >= 32)) {
             break;
         }
     }

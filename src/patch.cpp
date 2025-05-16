@@ -499,6 +499,8 @@ bool patch_setup(Config* cf) {
     write_jump(0x587240, (int)read_units);
     write_jump(0x5873C0, (int)read_rules);
     write_jump(0x591040, (int)map_wipe);
+    write_jump(0x591290, (int)alt_set);
+    write_jump(0x5918F0, (int)alt_set_both);
     write_jump(0x591E50, (int)synch_bit);
     write_jump(0x592250, (int)say_loc);
     write_jump(0x592550, (int)find_landmark);
@@ -534,6 +536,9 @@ bool patch_setup(Config* cf) {
     write_jump(0x5C1C40, (int)mod_veh_jail);
     write_jump(0x5C1D20, (int)mod_veh_skip);
     write_jump(0x5C1D70, (int)mod_veh_wake);
+    write_jump(0x5C2020, (int)world_alt_set);
+    write_jump(0x5C2380, (int)world_raise_alt);
+    write_jump(0x5C23E0, (int)world_lower_alt);
     write_jump(0x626250, (int)log_say2);
     write_jump(0x6262F0, (int)log_say);
     write_jump(0x626350, (int)log_say_hex2);
@@ -593,10 +598,19 @@ bool patch_setup(Config* cf) {
     write_call(0x4E2AA3, (int)prefs_get_strcpy); // AlphaNet::do_create
     write_call(0x4E2EA2, (int)prefs_get_strcpy); // AlphaNet::do_join
     write_call(0x4B72C0, (int)elev_at); // StatusWin::draw_status
-    write_call(0x57C419, (int)alt_set_both); // goody_box
-    write_call(0x5C2073, (int)alt_set_both); // world_alt_set
-    write_call(0x5C2148, (int)alt_set_both); // world_alt_set
-    write_call(0x5C22C3, (int)alt_set_both); // world_alt_set
+    write_call(0x46B719, (int)world_raise_alt); // MapWin::editor
+    write_call(0x4CA122, (int)world_raise_alt); // action_terraform
+    write_call(0x4CE560, (int)world_raise_alt); // action_tectonic
+    write_call(0x57B393, (int)world_raise_alt); // goody_box
+    write_call(0x57B39A, (int)world_raise_alt); // goody_box
+    write_call(0x46B705, (int)world_lower_alt); // MapWin::editor
+    write_call(0x4CA13A, (int)world_lower_alt); // action_terraform
+    write_call(0x500EFD, (int)world_lower_alt); // planet_busting
+    write_call(0x5C2D05, (int)mod_world_shorelines); // world_erosion
+    write_call(0x5C5A4A, (int)mod_world_shorelines); // world_climate
+    write_call(0x5C8866, (int)mod_world_shorelines); // world_build
+    write_call(0x5A98C9, (int)mod_world_linearize_contours); // load_daemon
+    write_call(0x5C8949, (int)mod_world_linearize_contours); // world_build
     write_call(0x57BC7A, (int)mod_monolith); // goody_box
     write_call(0x5991C8, (int)mod_monolith); // order_veh
     write_call(0x4CCFE0, (int)mod_goody_box); // action_airdrop
@@ -1024,6 +1038,9 @@ bool patch_setup(Config* cf) {
     }
     if (cf->editor_free_units) {
         write_call(0x4DF19B, (int)mod_veh_init); // Console_editor_veh
+    }
+    if (cf->altitude_limit > ALT_THREE_ABOVE_SEA) {
+        write_word(0x4D4479, 192, 224); // Console_terraform
     }
     if (DEBUG) {
         if (cf->minimal_popups) {

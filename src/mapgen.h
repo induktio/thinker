@@ -2,10 +2,11 @@
 
 #include "main.h"
 
+// Last three values on AltDefault are increased to enable higher altitude limit
+const int AltDefault[] = {0, 15, 32, 45, 60, 75, 80, 100, 120, 140, 160};
 const int ElevDetail[] = {0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200};
-const int AltDefault[] = {0, 15, 32, 45, 60, 75, 80, 100, 100, 100, 100};
-static_assert(sizeof(ElevDetail) == 44, "");
 static_assert(sizeof(AltDefault) == 44, "");
+static_assert(sizeof(ElevDetail) == 44, "");
 
 int __cdecl near_landmark(int x, int y);
 bool locate_landmark(int* x, int* y, bool ocean);

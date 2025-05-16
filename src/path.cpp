@@ -395,20 +395,23 @@ bool has_base_sites(TileSearch& ts, int x, int y, int faction_id, int triad) {
     assert(valid_player(faction_id));
     assert(valid_triad(triad));
     MAP* sq;
-    int area = 0;
+    int value = 0;
     int bases = 0;
     int i = 0;
-    int limit = ((*CurrentTurn * x ^ y) & 7 ? 200 : 800);
+    int limit = ((*CurrentTurn ^ x) & 7 ? 50 : 200) * clamp(conf.base_spacing, 4, 8);
     ts.init(x, y, triad, 1);
     while (++i <= limit && (sq = ts.get_next()) != NULL) {
         if (sq->is_base()) {
             bases++;
         } else if (can_build_base(ts.rx, ts.ry, faction_id, triad)) {
-            area++;
+            value += (sq->alt_level() >= ALT_OCEAN_SHELF ? 4 : 1);
+            if (value > 40) {
+                break;
+            }
         }
     }
-    debug("has_base_sites %2d %2d triad: %d area: %d bases: %d\n", x, y, triad, area, bases);
-    return area > min(10, bases+4);
+    debug("has_base_sites %2d %2d triad: %d value: %d bases: %d\n", x, y, triad, value, bases);
+    return value > min(40, 4*(bases+4));
 }
 
 int route_distance(PMTable& tbl, int x1, int y1, int x2, int y2) {

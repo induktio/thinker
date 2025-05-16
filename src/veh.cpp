@@ -875,7 +875,7 @@ GOODY_START:
                     if (veh->plan() != PLAN_ARTIFACT) {
                         int spawn_id = veh_init(BSC_ALIEN_ARTIFACT, faction_id, x, y);
                         if (spawn_id >= 0) {
-                            veh_skip(spawn_id);
+                            mod_veh_skip(spawn_id);
                             draw_tile(x, y, 2);
                             if (is_player) {
                                 NetMsg_pop(NetMsg, "GOODYARTIFACT", -5000, 0, "art_dis_sm.pcx");
@@ -2093,6 +2093,7 @@ int __cdecl mod_veh_jail(int veh_id) {
 /*
 Skip vehicle turn by adjusting spent moves to maximum available moves.
 Formers are a special case since they can build items without moving on the same turn.
+To work around several issues, this version adjusts more fields in addition to moves_spent.
 */
 int __cdecl mod_veh_skip(int veh_id) {
     VEH* veh = &Vehs[veh_id];

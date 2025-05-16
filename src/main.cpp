@@ -212,6 +212,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->event_sunspots = clamp(atoi(value), 0, 100);
     } else if (MATCH("event_market_crash")) {
         cf->event_market_crash = atoi(value);
+    } else if (MATCH("modify_altitude_limit")) {
+        cf->altitude_limit = (atoi(value) ? ALT_FOUR_ABOVE_SEA : ALT_THREE_ABOVE_SEA);
     } else if (MATCH("tile_output_limit")) {
         opt_list_parse(cf->tile_output_limit, buf, 3, 0);
     } else if (MATCH("soil_improve_value")) {
@@ -456,7 +458,7 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             *EngineDate = MOD_DATE;
             seed = GetTickCount();
             random_reseed(seed);
-            map_rand.reseed(seed ^ 0xff);
+            map_rand.reseed(seed ^ 0xffff);
             debug("random_reseed %u\n", seed);
             flushlog();
             break;
