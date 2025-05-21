@@ -553,6 +553,7 @@ typedef int(__thiscall *FPopup_start)(
     Win* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
 typedef int(__thiscall *FBasePop_start)(
     void* This, const char* filename, const char* label, int a4, int a5, int a6, int a7);
+typedef int(__thiscall *FNetMsg)(void* This);
 typedef int(__thiscall *FNetMsg_pop)(
     void* This, const char* label, int delay, int a4, const char* filename);
 typedef int(__cdecl *FNetMsg_pop2)(const char* label, const char* filename);
@@ -578,6 +579,7 @@ extern fp_4int draw_tile_fixup;
 extern fp_6int draw_tile_fixup2;
 extern fp_3int draw_tiles;
 extern fp_1int draw_map;
+extern FNetMsg NetMsg_close;
 extern FNetMsg_pop NetMsg_pop;
 extern FPlanWin_blink PlanWin_blink;
 extern Fpopp popp;
@@ -1158,6 +1160,7 @@ extern FAlphaNet_setup AlphaNet_setup;
 extern FAlphaNet_do_join_dialog_and_connect AlphaNet_do_join_dialog_and_connect;
 extern FAlphaNet_do_create_dialog_and_connect AlphaNet_do_create_dialog_and_connect;
 
+typedef int(__thiscall *FNetDaemon)(AlphaNet* This);
 typedef int(__thiscall *FNetDaemon_init)(AlphaNet* This, int a2);
 typedef int(__thiscall *FNetDaemon_game_checksum)(AlphaNet* This, int a2);
 typedef int(__thiscall *FNetDaemon_wait)(AlphaNet* This, int a2, void* a3, int a4, int a5);
@@ -1179,28 +1182,29 @@ typedef int(__thiscall *FNetDaemon_synch)(AlphaNet* This, int a2, int a3, int a4
 typedef int(__thiscall *FNetDaemon_fixup_message)(AlphaNet* This, void* a2);
 typedef int(__fastcall *FNetDaemon_process_message)(AlphaNet* This, int a2, int a3, int a4, int a5);
 
+extern FNetDaemon NetDaemon_cleanup;
 extern FNetDaemon_init NetDaemon_init;
-extern FGenVoid NetDaemon_hang_up;
-extern FGenVoid NetDaemon_send_game;
-extern FGenVoid NetDaemon_send_files;
-extern FGenVoid NetDaemon_send_rules;
+extern FNetDaemon NetDaemon_hang_up;
+extern FNetDaemon NetDaemon_send_game;
+extern FNetDaemon NetDaemon_send_files;
+extern FNetDaemon NetDaemon_send_rules;
 extern FNetDaemon_game_checksum NetDaemon_game_checksum;
-extern FGenVoid NetDaemon_receive;
-extern FGenVoid NetDaemon_net_tasks;
+extern FNetDaemon NetDaemon_receive;
+extern FNetDaemon NetDaemon_net_tasks;
 extern FNetDaemon_wait NetDaemon_wait;
 extern FNetDaemon_open_channel NetDaemon_open_channel;
-extern FGenVoid NetDaemon_close_channel;
+extern FNetDaemon NetDaemon_close_channel;
 extern FNetDaemon_lock NetDaemon_lock;
 extern FNetDaemon_add_lock NetDaemon_add_lock;
-extern FGenVoid NetDaemon_add_global;
-extern FGenVoid NetDaemon_unlock;
+extern FNetDaemon NetDaemon_add_global;
+extern FNetDaemon NetDaemon_unlock;
 extern FNetDaemon_lock_base NetDaemon_lock_base;
 extern FNetDaemon_unlock_base NetDaemon_unlock_base;
 extern FNetDaemon_lock_veh NetDaemon_lock_veh;
-extern FGenVoid NetDaemon_unlock_veh;
+extern FNetDaemon NetDaemon_unlock_veh;
 extern FNetDaemon_automated_lock NetDaemon_automated_lock;
 extern FNetDaemon_await_exec NetDaemon_await_exec;
-extern FGenVoid NetDaemon_await_synch;
+extern FNetDaemon NetDaemon_await_synch;
 extern FNetDaemon_await_diplo NetDaemon_await_diplo;
 extern FNetDaemon_maybe_lock NetDaemon_maybe_lock;
 extern FNetDaemon_order_veh NetDaemon_order_veh;

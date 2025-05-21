@@ -1759,7 +1759,7 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
         plr->unk_37 = 0;
         for (int i = 0; i < 8; i++) {
             plr->saved_queue_size[i] = 0;
-            snprintf(&plr->saved_queue_name[i][0], 24, "%s %d", label_get(609), i+1);
+            snprintf(&plr->saved_queue_name[i][0], 24, "%s %d", label_get(609), i+1); // Template
         }
         memset(&plr->SE_Politics_pending, 0, 32u); // pending / current
         memset(&plr->SE_economy_pending, 0, 44u); // only pending
@@ -1990,16 +1990,7 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
                 *plurality_default = MFactions[k].is_noun_plural;
                 parse_says(0, &MFactions[k].noun_faction[0], -1, -1);
                 if (*MultiplayerActive) {
-                    NetDaemon_hang_up(NetState);
-                    memset((void*)0x93E8C0, 0, 52u);
-                    memset((void*)0x93E8F8, 0, 8u);
-                    memset((void*)0x93E908, 0, 64u);
-                    memset((void*)0x93E950, 0, 16u);
-                    memset((void*)0x93E964, 0, 8u);
-                    *dword_93E960 = 255;
-                    Lock_clear(LockState);
-                    AlphaNet_close(NetState);
-                    *MultiplayerActive = 0;
+                    net_game_close();
                     *ControlTurnA = 1;
                 }
                 if (setup_id || *GameLanguage) {
@@ -2151,7 +2142,8 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
             veh_init_free(colony_unit, faction_id, x, y);
             veh_init_last(former_unit, faction_id, x, y);
         } else {
-            if ((*MultiplayerActive || *GameRules & RULES_LOOK_FIRST) && !(*GameRules & RULES_TIME_WARP)) {
+            // Fix: original game always enabled Look First during MultiplayerActive if Time Warp is disabled
+            if (*GameRules & RULES_LOOK_FIRST && !(*GameRules & RULES_TIME_WARP)) {
                 veh_init_free(colony_unit, faction_id, x, y);
             } else {
                 int base_id = base_init(faction_id, x, y);

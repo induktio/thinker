@@ -1445,17 +1445,17 @@ int item_yield(int x, int y, int faction_id, int bonus, MapItem item) {
     else {
         assert(0);
     }
-    if (N > 2 && bonus != RES_NUTRIENT
+    if (N > conf.tile_output_limit[0] && bonus != RES_NUTRIENT
     && !has_tech(Rules->tech_preq_allow_3_nutrients_sq, faction_id)) {
-        N = 2;
+        N = conf.tile_output_limit[0];
     }
-    if (M > 2 && bonus != RES_MINERAL
+    if (M > conf.tile_output_limit[1] && bonus != RES_MINERAL
     && !has_tech(Rules->tech_preq_allow_3_minerals_sq, faction_id)) {
-        M = 2;
+        M = conf.tile_output_limit[1];
     }
-    if (E > 2 && bonus != RES_ENERGY
+    if (E > conf.tile_output_limit[2] && bonus != RES_ENERGY
     && !has_tech(Rules->tech_preq_allow_3_energy_sq, faction_id)) {
-        E = 2;
+        E = conf.tile_output_limit[2];
     }
     if (conf.debug_verbose) {
         debug("item_yield %2d %2d %08X faction: %d bonus: %d planet: %d N: %d M: %d E: %d prev: %d\n",
@@ -1495,7 +1495,7 @@ static void process_map(int faction_id, int k) {
         }
     }
     for (int i = 0; i < *VehCount; i++) {
-        VEH* v = &Vehicles[i];
+        VEH* v = &Vehs[i];
         if (v->faction_id == 0) {
             natives.insert({v->x, v->y});
         }

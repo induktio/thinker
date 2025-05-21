@@ -2,6 +2,17 @@
 #include "net.h"
 
 
+void __cdecl net_game_close() {
+    // Close network multiplayer but does not return to main menu
+    // NetDaemon_cleanup also calls Lock_clear(LockState) / AlphaNet_close(NetState)
+    if (*MultiplayerActive) {
+        NetDaemon_hang_up(NetState);
+        NetDaemon_cleanup(NetState);
+        *MultiplayerActive = 0;
+        assert(*dword_93E960 == 255);
+    }
+}
+
 void __cdecl net_treaty_on(int a1, int a2, int a3, int wait_diplo) {
     debug_ver("net_treaty_on %d %d %d\n", a1, a2, a3);
     if (*MultiplayerActive) {
@@ -148,5 +159,50 @@ void __cdecl net_double_cross(int a1, int a2, int a3, int wait_diplo) {
     } else {
         double_cross(a1, a2, a3);
     }
+}
+
+int __cdecl net_action_build(size_t veh_id, const char* name) {
+    VEH* veh = &Vehs[veh_id];
+    if (*MultiplayerActive && veh->faction_id == *CurrentPlayerFaction) {
+        debug_ver("net_action_build %d %d %d\n", veh_id, veh->x, veh->y);
+        if (!name) {
+            char buf[LineBufLen] = {};
+            mod_name_base(veh->faction_id, &buf[0], 1, is_ocean(mapsq(veh->x, veh->y)));
+            message_base(0x2408, veh_id, (int)&buf, 0);
+        } else {
+            message_base(0x2408, veh_id, (int)name, 0);
+        }
+        NetDaemon_await_exec(NetState, 1);
+        return VEH_SKIP;
+    }
+    action_build(veh_id, (int)name);
+    return VEH_SKIP;
+}
+
+int __cdecl net_action_gate(size_t veh_id, size_t base_id) {
+    VEH* veh = &Vehs[veh_id];
+    BASE* base = &Bases[base_id];
+    if (*MultiplayerActive && veh->faction_id == *CurrentPlayerFaction) {
+        debug_ver("net_action_gate %d %d\n", veh_id, base_id);
+        if (!NetDaemon_add_lock(NetState, 0, base->x, base->y)) {
+            message_veh(0x2410, veh_id, base_id, 0);
+            NetDaemon_await_exec(NetState, 1);
+        }
+        return VEH_SKIP;
+    }
+    action_gate(veh_id, base_id);
+    return VEH_SKIP;
+}
+
+int __cdecl net_action_destroy(size_t veh_id, int flag, int x, int y) {
+    VEH* veh = &Vehs[veh_id];
+    if (*MultiplayerActive && veh->faction_id == *CurrentPlayerFaction) {
+        debug_ver("net_action_destroy %d %d %d %d\n", veh_id, flag, x, y);
+        message_data(0x2413, veh_id, x, y, 0, 0);
+        NetDaemon_await_exec(NetState, 1);
+        return VEH_SKIP;
+    }
+    action_destroy(veh_id, flag, x, y);
+    return VEH_SKIP;
 }
 

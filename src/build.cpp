@@ -244,7 +244,7 @@ bool redundant_project(int faction_id, int item_id) {
     if (item_id == FAC_MARITIME_CONTROL_CENTER) {
         int n = 0;
         for (int i = 0; i < *VehCount; i++) {
-            VEH* veh = &Vehicles[i];
+            VEH* veh = &Vehs[i];
             if (veh->faction_id == faction_id && veh->triad() == TRIAD_SEA) {
                 n++;
             }
@@ -735,7 +735,7 @@ int select_build(int base_id) {
     int pods = 0;
 
     for (int i = 0; i < *VehCount; i++) {
-        VEH* veh = &Vehicles[i];
+        VEH* veh = &Vehs[i];
         if (veh->faction_id != faction) {
             continue;
         }

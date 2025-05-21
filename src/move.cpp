@@ -184,12 +184,13 @@ bool near_sea_coast(int x, int y) {
 int __cdecl mod_enemy_move(int veh_id) {
     assert(veh_id >= 0 && veh_id < *VehCount);
     VEH* veh = &Vehs[veh_id];
+    bool player_units = conf.manage_player_units && veh->plr_owner();
     debug("enemy_move %d %2d %2d %s\n", veh_id, veh->x, veh->y, veh->name());
 
     if (!mapsq(veh->x, veh->y)) {
         return VEH_SYNC;
     }
-    if (conf.manage_player_units && veh->plr_owner()) {
+    if (player_units) {
         if (!*CurrentBase) {
             int base_id = mod_base_find3(veh->x, veh->y, veh->faction_id, -1, -1, -1);
             if (base_id >= 0) {
@@ -201,9 +202,17 @@ int __cdecl mod_enemy_move(int veh_id) {
             move_upkeep_faction = veh->faction_id;
         }
     }
-    if (thinker_enabled(veh->faction_id) || (conf.manage_player_units && veh->plr_owner())) {
+    if (thinker_enabled(veh->faction_id) || player_units) {
         int triad = veh->triad();
-        if (veh->is_colony()) {
+        bool refuel = triad == TRIAD_AIR && !veh->is_missile()
+            && veh->range() && veh->range() <= veh->movement_turns + 1;
+        if (player_units && veh->waypoint_count > 0 && veh->patrol_current_point < 4
+        && veh->waypoint_x[veh->patrol_current_point] >= 0
+        && veh->waypoint_y[veh->patrol_current_point] >= 0
+        && !refuel && veh->state & VSTATE_ON_ALERT
+        && (veh->order == ORDER_NONE || veh->order == ORDER_MOVE_TO)) {
+            // fallback to enemy_move
+        } else if (veh->is_colony()) {
             return colony_move(veh_id);
         } else if (veh->is_former()) {
             return former_move(veh_id);
@@ -1118,11 +1127,11 @@ int colony_move(const int id) {
     if (can_build_base(veh->x, veh->y, faction, triad)) {
         if (triad == TRIAD_LAND && (veh->at_target()
         || ocean_coast_tiles(veh->x, veh->y) || !near_ocean_coast(veh->x, veh->y))) {
-            return action_build(id, 0);
+            return net_action_build(id, 0);
         } else if (triad == TRIAD_SEA && veh->at_target()) {
-            return action_build(id, 0);
+            return net_action_build(id, 0);
         } else if (triad == TRIAD_AIR) {
-            return action_build(id, 0);
+            return net_action_build(id, 0);
         }
     }
     if (is_ocean(sq) && triad == TRIAD_LAND) {
@@ -1312,7 +1321,8 @@ bool can_farm(int x, int y, int faction, int bonus, MAP* sq) {
     if (bonus == RES_ENERGY || bonus == RES_MINERAL || sq->landmarks & LM_VOLCANO) {
         return false;
     }
-    if (!has_nut && bonus != RES_NUTRIENT && mod_crop_yield(faction, -1, x, y, 0) >= 2) {
+    if (!has_nut && bonus != RES_NUTRIENT
+    && mod_crop_yield(faction, -1, x, y, 0) >= conf.tile_output_limit[0]) {
         return false;
     }
     return (sq->is_rolling()
@@ -1375,7 +1385,7 @@ bool can_forest(int x, int y, int faction, MAP* sq) {
     }
     if (!has_tech(Rules->tech_preq_allow_3_nutrients_sq, faction)
     && (sq->is_rolling() || sq->items & BIT_SOLAR)
-    && mod_crop_yield(faction, -1, x, y, 0) >= 2) {
+    && mod_crop_yield(faction, -1, x, y, 0) >= conf.tile_output_limit[0]) {
         return false;
     }
     if (is_human(faction) && !(*GamePreferences & PREF_AUTO_FORMER_PLANT_FORESTS)) {
@@ -3015,7 +3025,7 @@ int combat_move(const int id) {
         }
     }
     if (!arty && at_enemy && veh_sq->items & (BIT_SENSOR | BIT_AIRBASE | BIT_THERMAL_BORE)) {
-        return action_destroy(id, 0, -1, -1);
+        return net_action_destroy(id, 0, -1, -1);
     }
     if (at_base && (!defenders || defenders < garrison_goal(veh->x, veh->y, faction, triad))) {
         debug("combat_defend %2d %2d %s\n", veh->x, veh->y, veh->name());
@@ -3054,7 +3064,7 @@ int combat_move(const int id) {
         if (target >= 0) {
             debug("action_gate %2d %2d %s -> %s\n", veh->x, veh->y, veh->name(), Bases[target].name);
             mapdata[{Bases[target].x, Bases[target].y}].target++;
-            action_gate(id, target);
+            net_action_gate(id, target);
             return VEH_SYNC;
         }
     }

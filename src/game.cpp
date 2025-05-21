@@ -151,7 +151,7 @@ void init_save_game(int faction_id) {
         || u->chassis_id < CHS_INFANTRY
         || u->chassis_id > CHS_MISSILE) {
             for (int j = *VehCount-1; j >= 0; j--) {
-                if (Vehicles[j].unit_id == unit_id) {
+                if (Vehs[j].unit_id == unit_id) {
                     veh_kill(j);
                 }
             }
@@ -333,7 +333,7 @@ int __cdecl mod_faction_upkeep(int faction_id) {
     }
     if (f->base_count && f->tech_research_id < 0 && *NetUpkeepState != 1
     && !(*GameRules & RULES_SCN_NO_TECH_ADVANCES)) {
-        tech_selection(faction_id);
+        f->tech_research_id = mod_tech_selection(faction_id);
     }
     *ControlUpkeepA = 0;
     Paths->xDst = -1;

@@ -728,6 +728,12 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     && *ReplayEventSize > 0) {
         show_replay();
 
+    } else if (DEBUG && !*GameHalted && msg == WM_KEYDOWN && wParam == 'Q'
+    && ctrl_key_down() && shift_key_down()) {
+        net_game_close(); // Close network multiplayer if active
+        *ControlTurnA = 1; // Return to main menu without dialog
+        *ControlTurnB = 1;
+
     } else if (DEBUG && msg == WM_CHAR && wParam == 'd' && alt_key_down()) {
         conf.debug_mode = !conf.debug_mode;
         if (conf.debug_mode) {

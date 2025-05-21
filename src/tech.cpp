@@ -2,6 +2,18 @@
 #include "tech.h"
 
 
+static bool revised_tech_cost() {
+    // Not supported during multiplayer
+    return conf.revised_tech_cost && !*MultiplayerActive;
+}
+
+const char* tech_str(int tech_id) {
+    if (tech_id >= 0 && Tech[tech_id].name != NULL) {
+        return Tech[tech_id].name;
+    }
+    return "-";
+}
+
 int __cdecl has_tech(int tech_id, int faction_id) {
     assert(faction_id >= 0 && faction_id < MaxPlayerNum);
     assert(tech_id >= TECH_Disable && tech_id <= TECH_TranT);
@@ -125,42 +137,96 @@ void __cdecl mod_tech_effects(int faction_id) {
     }
 }
 
-/*
-Original tech_research would apply undocumented AI research bonus to double the speed
-if the player faction is nearing the end game according to various conditions.
-This bonus is skipped when revised_tech_cost is enabled.
-*/
 void __cdecl mod_tech_research(int faction_id, int value) {
     assert(faction_id >= 0 && faction_id < MaxPlayerNum && value >= 0);
-    Faction* f = &Factions[faction_id];
-    if (!conf.revised_tech_cost) {
-        tech_research(faction_id, value);
-        return;
-    }
+    CFacility& fac_psigate = Facility[FAC_PSI_GATE];
+    CFacility& fac_ascent = Facility[FAC_ASCENT_TO_TRANSCENDENCE];
+    Faction& plr = Factions[faction_id];
     if (value > 0) {
-        f->tech_accumulated += value;
-    }
-    if (value > 0 && (!*MultiplayerActive || f->tech_research_id >= 0)) {
-        if (f->tech_accumulated >= mod_tech_rate(faction_id)) {
-            debug("tech_research %d %d %s\n", *CurrentTurn, faction_id, Tech[f->tech_research_id].name);
-            int tech_id = tech_advance(faction_id);
-            if (tech_id >= 0) {
-                mon_tech_discovered(faction_id, tech_id);
+        if (!is_human(faction_id) && climactic_battle()) {
+            // Original also checked for faction_id <= 0 before applying this hidden AI bonus.
+            // The reason for this is unclear and it may not be useful so it is removed.
+            // PSI Gate checks are related to conditions on climactic_battle.
+            if ((fac_psigate.preq_tech != TECH_None
+            && (fac_psigate.preq_tech < 0 || fac_psigate.preq_tech >= TECH_TranT
+            || (Tech[fac_psigate.preq_tech].preq_tech1 < TECH_None)
+            || (Tech[fac_psigate.preq_tech].preq_tech2 < TECH_None
+            && Tech[fac_psigate.preq_tech].preq_tech1 != TECH_None)
+            || !(TechOwners[fac_psigate.preq_tech] & (1 << faction_id))))
+            || (fac_ascent.preq_tech != TECH_None
+            && (fac_ascent.preq_tech < 0 || fac_ascent.preq_tech >= TECH_TranT
+            || (Tech[fac_ascent.preq_tech].preq_tech1 < TECH_None)
+            || (Tech[fac_ascent.preq_tech].preq_tech2 < TECH_None
+            && Tech[fac_ascent.preq_tech].preq_tech1 != TECH_None)
+            || !(TechOwners[fac_ascent.preq_tech] & (1 << faction_id))))) {
+                value *= 2;
             }
-            f->tech_accumulated = 0;
         }
-        if (f->player_flags & PFLAG_FIRST_SECRETS) {
-            f->player_flags &= ~PFLAG_FIRST_SECRETS;
-            int tech_id = tech_advance(faction_id);
-            if (tech_id >= 0) {
-                debug("tech_secrets %d %d %s\n", *CurrentTurn, faction_id, Tech[tech_id].name);
-                mon_tech_discovered(faction_id, tech_id);
+        plr.tech_accumulated += value;
+        if (*MultiplayerActive || plr.tech_research_id >= 0) {
+            if (plr.tech_research_id >= 89) { // Possibly unused game mechanic
+                plr.tech_accumulated += value;
+            }
+            if (plr.tech_accumulated >= mod_tech_rate(faction_id)) {
+                int tech_id = tech_advance(faction_id);
+                debug("tech_advance %d %d %d %s\n", *CurrentTurn, faction_id, tech_id, tech_str(tech_id));
+                if (tech_id >= 0) {
+                    mon_tech_discovered(faction_id, tech_id);
+                }
+                plr.tech_accumulated = 0;
+                if (!revised_tech_cost()) {
+                    plr.tech_cost = -1; // Must be negative to reset the cost
+                    plr.tech_cost = tech_rate(faction_id);
+                }
+            }
+            if (plr.player_flags & PFLAG_FIRST_SECRETS) {
+                plr.player_flags &= ~PFLAG_FIRST_SECRETS;
+                int tech_id = tech_advance(faction_id);
+                debug("tech_secrets %d %d %d %s\n", *CurrentTurn, faction_id, tech_id, tech_str(tech_id));
+                if (tech_id >= 0) {
+                    mon_tech_discovered(faction_id, tech_id);
+                }
+            }
+        }
+        if (plr.tech_accumulated >= 0 && plr.tech_research_id < 0 && *NetUpkeepState != 1
+        && (!is_human(faction_id) || faction_id == *CurrentPlayerFaction || !*PbemActive)) {
+            plr.tech_research_id = mod_tech_selection(faction_id);
+        }
+    }
+}
+
+int __cdecl mod_tech_selection(int faction_id) {
+    assert(faction_id >= 0 && faction_id < MaxPlayerNum);
+    Faction& plr = Factions[faction_id];
+    int tech_id;
+    if (*MultiplayerActive && is_human(faction_id) && faction_id != *CurrentPlayerFaction) {
+        bool done = false;
+        while (plr.tech_research_id < 0 && !*ControlTurnA) {
+            NetDaemon_net_tasks(NetState);
+            if (!done) {
+                done = true;
+                *plurality_default = 0;
+                *gender_default = MFactions[faction_id].is_leader_female;
+                parse_says(0, &MFactions[faction_id].title_leader[0], -1, -1);
+                parse_says(1, &MFactions[faction_id].name_leader[0], -1, -1);
+                // Note that this script label does not display title/name by default
+                NetMsg_pop(NetMsg, "PICKINGTECH", 0, 0, 0);
+            }
+        }
+        NetMsg_close(NetMsg);
+        tech_id = plr.tech_research_id;
+    } else {
+        tech_id = mod_tech_pick(faction_id, 0, -1, 0);
+        plr.tech_research_id = tech_id;
+        if (*MultiplayerActive && is_human(faction_id)) {
+            synch_researching(faction_id);
+            plr.tech_research_id = -1;
+            while (plr.tech_research_id < 0 && !*ControlTurnA) {
+                NetDaemon_net_tasks(NetState);
             }
         }
     }
-    if (f->tech_accumulated >= 0 && f->tech_research_id < 0 && *NetUpkeepState != 1) {
-        tech_selection(faction_id);
-    }
+    return tech_id;
 }
 
 /*
@@ -170,26 +236,25 @@ This version recalculates tech cost immediately after a new tech is selected.
 Note that tech_pick is also used for TECHSTEAL faction ability.
 */
 int __cdecl mod_tech_pick(int faction_id, int flag, int other_faction_id, const char* label) {
-    Faction* f = &Factions[faction_id];
+    Faction& plr = Factions[faction_id];
     int tech_id = tech_pick(faction_id, flag, other_faction_id, (int)label);
-    if (other_faction_id < 0 && tech_id >= 0 && tech_id != f->tech_research_id) {
-        if (conf.revised_tech_cost) {
-            f->tech_cost = tech_cost(tech_id, faction_id);
-        } else {
-            f->tech_cost = -1; // Must be negative to reset the cost
-            f->tech_cost = tech_rate(faction_id);
+    debug("tech_pick %d %d %d prev: %d %d tech: %d %s\n", *CurrentTurn, faction_id, other_faction_id,
+        plr.tech_research_id, plr.tech_cost, tech_id, tech_str(tech_id));
+    if (other_faction_id < 0 && revised_tech_cost()) {
+        if (tech_id >= 0 && (tech_id != plr.tech_research_id || plr.tech_cost <= 0)) {
+            plr.tech_cost = tech_cost(tech_id, faction_id);
         }
-        debugw("tech_pick %d %d %s\n", *CurrentTurn, faction_id, Tech[tech_id].name);
     }
+    flushlog();
     return tech_id;
 }
 
 int __cdecl mod_tech_rate(int faction_id) {
-    Faction* f = &Factions[faction_id];
-    if (!conf.revised_tech_cost) {
+    Faction& plr = Factions[faction_id];
+    if (!revised_tech_cost()) {
         return tech_rate(faction_id);
     }
-    return (f->tech_cost > 0 ? f->tech_cost : 9999);
+    return (plr.tech_cost > 0 ? plr.tech_cost : 9999);
 }
 
 /*
@@ -463,7 +528,7 @@ int __cdecl mod_tech_val(int tech_id, int faction_id, int simple_calc) {
         }
         assert(value == tech_val(tech_id, faction_id, simple_calc));
         if (conf.tech_balance) {
-            bool high_cost = conf.revised_tech_cost && tech_id_lvl > 2;
+            bool high_cost = revised_tech_cost() && tech_id_lvl > 2;
             if (tech_id == Weapon[WPN_TERRAFORMING_UNIT].preq_tech) {
                 value += (high_cost ? 60 : 120);
             } else if (tech_id == Weapon[WPN_SUPPLY_TRANSPORT].preq_tech
@@ -562,7 +627,7 @@ int tech_cost(int tech_id, int faction_id) {
     debug("tech_cost %d %d base: %7.2f diff: %.2f cost: %7.2f "
     "level: %d our_techs: %d owners: %d tech: %2d %s\n",
     *CurrentTurn, faction_id, cost_base, cost_diff, cost,
-    level, our_techs, owners, tech_id, (tech_id >= 0 ? Tech[tech_id].name : NULL));
+    level, our_techs, owners, tech_id, tech_str(tech_id));
 
     return clamp((int)cost, 1, 99999999);
 }
@@ -645,7 +710,7 @@ int __cdecl tech_alt_val(int tech_id, int faction_id, int flag) {
         value = value * max(25, 100 - 15*owners) / 100;
     }
     debugw("tech_alt_val %d level: %d owners: %d weights: %d value: %d tech: %d %s\n",
-    faction_id, level, owners, weights, value, tech_id, Tech[tech_id].name);
+    faction_id, level, owners, weights, value, tech_id, tech_str(tech_id));
     return value;
 }
 

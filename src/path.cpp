@@ -467,7 +467,7 @@ int move_to_base(int veh_id, bool ally) {
 }
 
 int escape_move(const int id) {
-    VEH* veh = &Vehicles[id];
+    VEH* veh = &Vehs[id];
     MAP* sq = mapsq(veh->x, veh->y);
     if (defend_tile(veh, sq)) {
         return set_order_none(id);
@@ -708,7 +708,7 @@ int search_route(TileSearch& ts, int veh_id, int* tx, int* ty) {
         if (tgt_id >= 0) {
             debug("action_gate %2d %2d %s -> %s\n",
             veh->x, veh->y, veh->name(), Bases[tgt_id].name);
-            action_gate(veh_id, tgt_id);
+            net_action_gate(veh_id, tgt_id);
             *tx = px;
             *ty = py;
             return true;

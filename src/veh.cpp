@@ -2060,16 +2060,16 @@ int __cdecl mod_stack_check(int veh_id, int type, int cond1, int cond2, int cond
 int __cdecl mod_veh_init(int unit_id, int faction_id, int x, int y) {
     int veh_id = veh_init(unit_id, faction_id, x, y);
     if (veh_id >= 0) {
-        Vehicles[veh_id].home_base_id = -1;
+        Vehs[veh_id].home_base_id = -1;
         // Set these flags to disable any non-Thinker unit automation.
-        Vehicles[veh_id].state |= VSTATE_UNK_40000;
-        Vehicles[veh_id].state &= ~VSTATE_UNK_2000;
+        Vehs[veh_id].state |= VSTATE_UNK_40000;
+        Vehs[veh_id].state &= ~VSTATE_UNK_2000;
     }
     return veh_id;
 }
 
 int __cdecl mod_veh_kill(int veh_id) {
-    VEH* veh = &Vehicles[veh_id];
+    VEH* veh = &Vehs[veh_id];
     debug("disband %2d %2d %s\n", veh->x, veh->y, veh->name());
     veh_kill(veh_id);
     return VEH_SKIP;

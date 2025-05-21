@@ -711,9 +711,6 @@ bool patch_setup(Config* cf) {
     write_call(0x486655, (int)mod_tech_ai); // PickTech::pick
     write_call(0x5AEFA1, (int)mod_tech_ai); // time_warp
     write_call(0x5B2A6F, (int)mod_tech_ai); // setup_player
-    write_call(0x50C398, (int)mod_tech_pick); // steal_tech
-    write_call(0x515080, (int)mod_tech_pick); // Console::set_research
-    write_call(0x5BE4AC, (int)mod_tech_pick); // tech_selection
     write_call(0x4452D5, (int)mod_tech_rate); // energy_compute
     write_call(0x498D26, (int)mod_tech_rate); // ReportWin::draw_labs
     write_call(0x4A77DA, (int)mod_tech_rate); // ReportIF::draw_labs
@@ -722,6 +719,13 @@ bool patch_setup(Config* cf) {
     write_call(0x5581E9, (int)mod_tech_rate); // communicate
     write_call(0x5BEA4D, (int)mod_tech_rate); // tech_research
     write_call(0x5BEAC7, (int)mod_tech_rate); // tech_research
+    write_call(0x50C398, (int)mod_tech_pick); // steal_tech
+    write_call(0x515080, (int)mod_tech_pick); // Console::set_research
+    write_call(0x5BE4AC, (int)mod_tech_pick); // tech_selection
+    write_call(0x52935F, (int)mod_tech_selection); // net_upkeep
+    write_call(0x5BE5E1, (int)mod_tech_selection); // tech_advance
+    write_call(0x5BE690, (int)mod_tech_selection); // tech_advance
+    write_call(0x5BEB5D, (int)mod_tech_selection); // tech_research
     write_call(0x4B497C, (int)mod_say_orders); // say_orders2
     write_call(0x4B5C27, (int)mod_say_orders); // StatusWin::draw_active
     write_call(0x4F7B82, (int)mod_base_research); // base_upkeep

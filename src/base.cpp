@@ -665,8 +665,12 @@ void __cdecl mod_base_minerals() {
         clean_minerals_total -= damage_modifier;
         base->eco_damage -= damage_modifier;
     }
-    int eco_dmg_reduction = (has_fac_built(FAC_NANOREPLICATOR, base_id)
-        || has_project(FAC_SINGULARITY_INDUCTOR, faction_id)) ? 2 : 1;
+    // Fix: original game also checks here for Nanoreplicator when
+    // Singularity Inductor would grant Quantum Converter facility instead
+    bool converter = conf.eco_damage_fix ? has_facility(FAC_QUANTUM_CONVERTER, base_id)
+        : (has_fac_built(FAC_NANOREPLICATOR, base_id)
+        || has_project(FAC_SINGULARITY_INDUCTOR, faction_id));
+    int eco_dmg_reduction = converter ? 2 : 1;
     if (has_fac_built(FAC_CENTAURI_PRESERVE, base_id)) {
         eco_dmg_reduction++;
     }
@@ -2502,7 +2506,7 @@ bool can_build_unit(int base_id, int unit_id) {
     && !adjacent_region(b->x, b->y, -1, 10, TRIAD_SEA)) {
         return false;
     }
-    return (*VehCount + 64 < MaxVehNum) || (*VehCount + random(64) < MaxVehNum);
+    return (*VehCount + 32 < MaxVehNum) || (*VehCount + random(32) < MaxVehNum);
 }
 
 bool can_staple(int base_id) {
