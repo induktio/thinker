@@ -58,7 +58,7 @@ struct MAP {
         return items & BIT_BUNKER;
     }
     bool is_airbase() {
-        return is_base() || (items & BIT_AIRBASE);
+        return is_base() || (items & BIT_AIRBASE); // Skip ABL_CARRIER checks
     }
     bool is_base_radius() {
         return items & BIT_BASE_RADIUS;

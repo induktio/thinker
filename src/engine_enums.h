@@ -267,8 +267,8 @@ enum GameState {
     STATE_SCENARIO_CHEATED_FLAG = 0x20,
     STATE_SCENARIO_EDITOR = 0x40,
     STATE_OMNISCIENT_VIEW = 0x80,
-    STATE_UNK_100 = 0x100, // set or unset in Path::continents
-    STATE_UNK_200 = 0x200,
+    STATE_UNK_100 = 0x100, // Path_continents
+    STATE_UNK_200 = 0x200, // rankings
     STATE_UNK_400 = 0x400,
     STATE_UNK_800 = 0x800, // time expired? MP related? NOBONUSATEND
     STATE_DEBUG_MODE = 0x1000,
@@ -596,6 +596,7 @@ enum PlayerFlags {
     PFLAG_MAP_REVEALED = 0x200,
     PFLAG_GENETIC_PLAGUE_INTRO = 0x400, // +1 to defense against after 1st time faction experiences
     PFLAG_UNK_1000 = 0x1000, // setup_player
+    PFLAG_UNK_2000 = 0x2000, // turn_upkeep
     PFLAG_BEEN_ELECTED_GOVERNOR = 0x8000, // used to determine whether #GOVERNOR has been displayed
     PFLAG_UNK_10000 = 0x10000,
     PFLAG_UNK_20000 = 0x20000, // compute_score

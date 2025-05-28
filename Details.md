@@ -170,7 +170,7 @@ For independent units drone riots have no effect.
 
 When the unit involved in combat is inside the base tile, Children's Creche grants +1 morale for all units and cancels penalties from negative SE morale rating for non-native units.
 For native units inside the base tile and in the absence of Creche, Brood Pit grants +1 lifecycle. This effect does not stack with Creche and has no effect on non-native units.
-Neither Creche nor Brood Pit affects combat outside the base tile even if the unit's home base contains such facilities. Like before, Brood Pit still affects native unit lifecycle when they are built.
+Neither Creche nor Brood Pit affects combat outside the base tile even if the unit's home base contains such facilities.
 
 
 AI production bonuses
@@ -478,6 +478,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 60. Fix endgame replay feature overflowing unrelated content causing eventual crash after too many base create/capture/kill events happen during the game.
 61. Modify the faction setup code to check by filename if multiple similar factions are active. If any duplicates are found, each one will have their faction_id as name suffix.
 62. Fix issue where completely hurrying current production at the base sometimes allowed multiple hurry actions during the same turn.
+63. Fix issue after the faction capturing the base with Cloudbase Academy has their aircraft speed altered during the turn resulting in some aircraft crashing when they should not.
 
 
 Scient's patch

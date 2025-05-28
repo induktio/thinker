@@ -16,9 +16,11 @@ bool global_trade_pact() {
 }
 
 bool victory_done() {
-    // TODO: Check for scenario victory conditions
-    return *GameState & (STATE_VICTORY_CONQUER | STATE_VICTORY_DIPLOMATIC | STATE_VICTORY_ECONOMIC)
-        || has_project(FAC_ASCENT_TO_TRANSCENDENCE);
+    return (*GameState & STATE_GAME_DONE);
+}
+
+bool full_game_turn() {
+    return !(*GameState & STATE_GAME_DONE) || (*GameState & STATE_FINAL_SCORE_DONE);
 }
 
 bool voice_of_planet() {
@@ -71,13 +73,8 @@ int __cdecl parse_says(size_t index, const char* src, int gender, int plural) {
    return 0;
 }
 
-int __cdecl game_start_turn() {
-    // TODO: If config is changed, may return incorrect start turn
-    return min(*CurrentTurn, (*GameRules & RULES_TIME_WARP ? conf.time_warp_start_turn : 0));
-}
-
-int __cdecl game_year(int n) {
-    return Rules->normal_start_year + n;
+int __cdecl game_year(int turn) {
+    return Rules->normal_start_year + turn;
 }
 
 int __cdecl in_box(int x, int y, RECT* rc) {
@@ -200,15 +197,12 @@ void init_save_game(int faction_id) {
     }
 }
 
-int __cdecl mod_turn_upkeep() {
-    // Turn number is incremented in turn_upkeep
+void __cdecl mod_turn_upkeep() {
+    debug("turn_upkeep %d bases: %d vehs: %d\n", (*CurrentTurn)+1, *BaseCount, *VehCount);
+    snprintf(ThinkerVars->build_date, 12, MOD_DATE);
     if (*CurrentTurn == 0) {
         init_world_config();
     }
-    turn_upkeep();
-    debug("turn_upkeep %d bases: %d vehicles: %d\n",
-        *CurrentTurn, *BaseCount, *VehCount);
-
     if (DEBUG) {
         if (conf.debug_mode) {
             *GameState |= STATE_DEBUG_MODE;
@@ -217,8 +211,136 @@ int __cdecl mod_turn_upkeep() {
             *GameState &= ~STATE_DEBUG_MODE;
         }
     }
-    snprintf(ThinkerVars->build_date, 12, MOD_DATE);
-    return 0;
+    // Original game turn upkeep starts here
+    for (int veh_id = *VehCount - 1; veh_id >= 0; --veh_id) {
+        VEH* veh = &Vehs[veh_id];
+        if (veh->triad() == TRIAD_AIR && veh->range() && veh_speed(veh_id, 0) - veh->moves_spent > 0) {
+            MAP* sq = mapsq(veh->x, veh->y);
+            if (sq && sq->base_who() < 0 && !(sq->items & BIT_AIRBASE)
+            && !mod_stack_check(veh_id, 6, ABL_CARRIER, -1, -1)) {
+                // Fix bug here that prevented the turn from advancing
+                // while any needlejet in flight has moves left.
+                if (veh->movement_turns < veh->range() - 1) {
+                    ++veh->movement_turns;
+                }
+                veh->state |= VSTATE_HAS_MOVED;
+                int dmg_val;
+                if (veh->range() != 1 || veh->chassis_type() != CHS_COPTER) {
+                    dmg_val = veh->cur_hitpoints();
+                } else {
+                    dmg_val = 3 * veh->reactor_type();
+                }
+                veh->damage_taken = clamp(veh->damage_taken + dmg_val, 0, 255);
+                if (veh->max_hitpoints() - veh->damage_taken <= 0) {
+                    kill(veh_id);
+                }
+            }
+        }
+    }
+    *dword_90DB84 = 0; // action_terraform
+    rankings(1);
+    *CurrentMissionYear = game_year(++(*CurrentTurn));
+    MapWin_main_caption();
+
+    if (*ClimateFutureChange) {
+        int val = *ClimateValueA + *ClimateValueC;
+        *ClimateValueC += *ClimateValueA;
+        if (*ClimateValueC >= *ClimateValueB) {
+            *ClimateValueC = val - *ClimateValueB;
+            int alt_val = (*ClimateFutureChange > 0 ? 1 : ((*ClimateFutureChange >= 0) - 1));
+            *ClimateFutureChange -= alt_val;
+            *MapSeaLevel += alt_val;
+            world_climate();
+            draw_map(1);
+            if (alt_val > 0) {
+                popp(ScriptFile, "SEARISING", 0, "searis_sm.pcx", 0);
+            } else {
+                popp(ScriptFile, "SEAFALLING", 0, "seafal_sm.pcx", 0);
+            }
+        }
+    }
+    alien_fauna();
+    do_fungal_towers();
+
+    if ((*CurrentTurn == 4 && !game_randv(4))
+    || (*CurrentTurn == 5 && !game_randv(3))
+    || (*CurrentTurn == 6 && !game_randv(2))
+    || *CurrentTurn >= 7) {
+        bool aliens_arrive = false;
+        for (int i = 1; i < MaxPlayerNum; i++) {
+            Faction& plr = Factions[i];
+            if (is_alien(i) || (!plr.base_count && !_strcmpi(MFactions[i].filename, "FUNGBOY"))) {
+                int flags = plr.player_flags | PFLAG_MULTI_TECH_ACHIEVED;
+                if (flags == -1 && plr.diff_level == -1 && !is_human(i) && !is_alive(i)) {
+                    if (is_alien(i)) {
+                        aliens_arrive = true;
+                    }
+                    set_alive(i, true);
+                    mod_setup_player(i, -282, 0);
+                }
+            }
+        }
+        if (aliens_arrive) {
+            popp(ScriptFile, "ALIENSARRIVE", 0, "al_land_sm.pcx", 0);
+            interlude(21, 0, 1, 0);
+        }
+    }
+    int caretake_id = 0;
+    for (int i = 1; i < MaxPlayerNum; i++) {
+        if (is_alive(i) && !_strcmpi(MFactions[i].filename, "CARETAKE")) { // Added is_alive check
+            caretake_id = i;
+        }
+    }
+    if (caretake_id) {
+        for (int i = 0; i < *BaseCount; i++) {
+            int faction_id = Bases[i].faction_id;
+            if (faction_id != caretake_id
+            && Bases[i].queue_items[0] == -FAC_ASCENT_TO_TRANSCENDENCE
+            && !has_treaty(caretake_id, faction_id, DIPLO_VENDETTA)) {
+                if (has_treaty(faction_id, caretake_id, DIPLO_PACT)) {
+                    pact_ends(faction_id, caretake_id);
+                }
+                treaty_on(caretake_id, faction_id, DIPLO_VENDETTA|DIPLO_COMMLINK);
+                set_treaty(caretake_id, faction_id, DIPLO_UNK_40, 1);
+                Factions[faction_id].diplo_spoke[caretake_id] = *CurrentTurn;
+                if (faction_id == *CurrentPlayerFaction) {
+                    X_pops4("NOTRANSCEND", 0x100000, FactionPortraits[caretake_id], (int)sub_5398E0);
+                }
+            }
+        }
+    }
+    for (int i = 1; i < MaxPlayerNum; i++) {
+        for (int j = 1; j < MaxPlayerNum; j++) {
+            if (i != j && is_alien(i) && is_alien(j)) {
+                set_treaty(i, j, DIPLO_UNK_80000000|DIPLO_UNK_40000000|DIPLO_UNK_8000000|\
+                    DIPLO_MAJOR_ATROCITY_VICTIM|DIPLO_ATROCITY_VICTIM|DIPLO_UNK_800|\
+                    DIPLO_SHALL_BETRAY|DIPLO_WANT_REVENGE|DIPLO_VENDETTA|DIPLO_COMMLINK, 1);
+                set_agenda(i, j, AGENDA_PERMANENT|AGENDA_UNK_800|AGENDA_UNK_400|AGENDA_UNK_20|\
+                    AGENDA_FIGHT_TO_DEATH|AGENDA_UNK_4|AGENDA_UNK_1, 1);
+                Factions[i].diplo_spoke[j] = *CurrentTurn;
+            }
+        }
+    }
+    random_events(0);
+    if (*CurrentTurn == 75 && has_tech(Facility[FAC_BIOLOGY_LAB].preq_tech, *CurrentPlayerFaction)) {
+        interlude(1, 0, 1, 0);
+    }
+    if (voice_of_planet()) {
+        Faction& plr = Factions[*CurrentPlayerFaction];
+        MFaction& m_plr = MFactions[*CurrentPlayerFaction];
+        if (!(plr.player_flags & PFLAG_UNK_2000)) {
+            plr.player_flags |= PFLAG_UNK_2000;
+            *plurality_default = 0;
+            *gender_default = m_plr.is_leader_female;
+            parse_says(0, m_plr.title_leader, -1, -1);
+            parse_says(1, m_plr.name_leader, -1, -1);
+            popp(ScriptFile, "ASCENT", 0, "asctran_sm.pcx", 0);
+        }
+    }
+    if ((*CurrentTurn & 3) == 1) {
+        reset_territory();
+    }
+    do_all_non_input();
 }
 
 void __cdecl mod_load_map_daemon(int a1) {
@@ -264,7 +386,7 @@ int __cdecl mod_replay_base(int event, int x, int y, int faction_id) {
     return *ReplayEventSize;
 }
 
-int __cdecl mod_faction_upkeep(int faction_id) {
+void __cdecl mod_faction_upkeep(int faction_id) {
     Faction* f = &Factions[faction_id];
     MFaction* m = &MFactions[faction_id];
     debug("faction_upkeep %d %d\n", *CurrentTurn, faction_id);
@@ -279,7 +401,7 @@ int __cdecl mod_faction_upkeep(int faction_id) {
     do_all_non_input();
     mod_production_phase(faction_id);
     do_all_non_input();
-    if (!(*GameState & STATE_GAME_DONE) || *GameState & STATE_FINAL_SCORE_DONE) {
+    if (full_game_turn()) {
         allocate_energy(faction_id);
         do_all_non_input();
         enemy_diplomacy(faction_id);
@@ -339,7 +461,7 @@ int __cdecl mod_faction_upkeep(int faction_id) {
     Paths->xDst = -1;
     Paths->yDst = -1;
 
-    if (!(*GameState & STATE_GAME_DONE) || *GameState & STATE_FINAL_SCORE_DONE) {
+    if (full_game_turn()) {
         if (faction_id == MapWin->cOwner
         && !(*GameState & (STATE_COUNCIL_HAS_CONVENED | STATE_DISPLAYED_COUNCIL_AVAIL_MSG))
         && can_call_council(faction_id, 0) && !(*GameState & STATE_GAME_DONE)) {
@@ -355,7 +477,6 @@ int __cdecl mod_faction_upkeep(int faction_id) {
         auto_save();
     }
     flushlog();
-    return 0;
 }
 
 void __cdecl mod_repair_phase(int faction_id) {
@@ -603,7 +724,7 @@ void __cdecl mod_production_phase(int faction_id) {
         }
         *SkipTechScreenA = 0;
     }
-    if (!(*GameState & STATE_GAME_DONE) || *GameState & STATE_FINAL_SCORE_DONE) {
+    if (full_game_turn()) {
         if (f->sanction_turns) {
             f->sanction_turns--;
             if (!f->sanction_turns && faction_id == MapWin->cOwner) {
@@ -639,10 +760,13 @@ First land/sea base always uses the first available name from land/sea names lis
 Vanilla name_base chooses sea base names in a sequential non-random order (this version is random).
 */
 void __cdecl mod_name_base(int faction_id, char* name, bool save_offset, bool sea_base) {
+    if (!conf.new_base_names) {
+        return name_base(faction_id, name, save_offset, sea_base);
+    }
     Faction& f = Factions[faction_id];
     uint32_t offset = f.base_name_offset;
     uint32_t offset_sea = f.base_sea_name_offset;
-    const int buf_size = 1024;
+    const int buf_size = 256;
     char file_name_1[buf_size];
     char file_name_2[buf_size];
     set_str_t all_names;
@@ -669,8 +793,7 @@ void __cdecl mod_name_base(int faction_id, char* name, bool save_offset, bool se
                     vec_str_t::const_iterator it(sea_names.begin());
                     std::advance(it, seed);
                     if (!has_item(all_names, it->c_str())) {
-                        strncpy(name, it->c_str(), MaxBaseNameLen);
-                        name[MaxBaseNameLen - 1] = '\0';
+                        strcpy_n(name, MaxBaseNameLen, it->c_str());
                         if (save_offset) {
                             f.base_sea_name_offset++;
                         }
@@ -694,8 +817,7 @@ void __cdecl mod_name_base(int faction_id, char* name, bool save_offset, bool se
                 vec_str_t::const_iterator it(land_names.begin());
                 std::advance(it, seed);
                 if (!has_item(all_names, it->c_str())) {
-                    strncpy(name, it->c_str(), MaxBaseNameLen);
-                    name[MaxBaseNameLen - 1] = '\0';
+                    strcpy_n(name, MaxBaseNameLen, it->c_str());
                     return;
                 }
             }
@@ -732,9 +854,7 @@ void __cdecl mod_name_base(int faction_id, char* name, bool save_offset, bool se
             return;
         }
     }
-    int i = *BaseCount;
-    while (i < 2*MaxBaseNum) {
-        i++;
+    for (int i = *BaseCount; i <= 2*MaxBaseNum; i++) {
         name[0] = '\0';
         snprintf(name, MaxBaseNameLen, "Sector %d", i);
         if (!all_names.count(name)) {

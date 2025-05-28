@@ -328,8 +328,8 @@ int find_project(int base_id, WItem& Wgov) {
     int projs = 0;
     int nukes = 0;
     int works = 0;
+    int diplo = 0;
     int bases = f->base_count;
-    int diplo = plans[faction].diplo_flags;
     int unit_id = (gov & (GOV_MAY_PROD_AIR_COMBAT | GOV_MAY_PROD_AIR_DEFENSE)
         ? find_planet_buster(faction) : -1);
     int built_nukes = 0;
@@ -343,6 +343,11 @@ int find_project(int base_id, WItem& Wgov) {
                 } else if (at_war(faction, veh->faction_id)) {
                     enemy_nukes++;
                 }
+            }
+        }
+        for (int i = 1; i < MaxPlayerNum; i++) {
+            if (faction != i && is_alive(i)) {
+                diplo |= f->diplo_status[i];
             }
         }
     }

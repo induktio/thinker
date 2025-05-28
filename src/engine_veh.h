@@ -349,7 +349,7 @@ enum VehState {
     VSTATE_UNK_400 = 0x400,
     VSTATE_UNK_800 = 0x800, // used in repair_phase (remove when VFLAG_UNK_1 or VFLAG_UNK_2 is cleared)
     VSTATE_UNK_1000 = 0x1000,
-    VSTATE_UNK_2000 = 0x2000, // cleared in repair_phase
+    VSTATE_UNK_2000 = 0x2000, // set in base_production, cleared in repair_phase
     VSTATE_EXPLORE = 0x4000, // cleared in veh_wake
     VSTATE_UNK_8000 = 0x8000,
     VSTATE_UNK_10000 = 0x10000,
@@ -625,6 +625,11 @@ struct VEH {
     bool is_invisible_lurker() {
         return (flags & (VFLAG_INVISIBLE|VFLAG_LURKER)) == (VFLAG_INVISIBLE|VFLAG_LURKER);
     }
+    bool is_patrol_order() {
+        return (order == ORDER_NONE || order == ORDER_MOVE_TO)
+            && waypoint_count > 0 && !(state & VSTATE_EXPLORE)
+            && (state & (VSTATE_UNK_1000000|VSTATE_ON_ALERT)) == (VSTATE_UNK_1000000|VSTATE_ON_ALERT);
+    }
     bool plr_owner() {
         return is_human(faction_id);
     }
@@ -649,6 +654,14 @@ struct VEH {
             && can_monolith(unit_id)
             && (need_heals() || (!(state & VSTATE_MONOLITH_UPGRADED)
             && morale < MORALE_ELITE && offense_value() != 0));
+    }
+    bool need_refuel() {
+        return triad() == TRIAD_AIR && !is_missile()
+            && range() != 0 && range() <= movement_turns + 1;
+    }
+    void apply_refuel() {
+        movement_turns = 0;
+        flags &= ~VFLAG_FULL_MOVE_SKIPPED;
     }
     void reset_order() {
         order = ORDER_NONE;

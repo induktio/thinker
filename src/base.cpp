@@ -56,6 +56,27 @@ int __cdecl mod_base_build(int base_id, bool has_gov) {
         debug("BUILD OLD\n");
         choice = base.item();
     }
+    if (!has_gov && base.governor_flags & GOV_ACTIVE && base.plr_owner()
+    && choice <= -SP_ID_First && base.item() > -SP_ID_First
+    && *GamePreferences & PREF_BSC_TUTORIAL_MSGS && !*MultiplayerActive && !victory_done()) {
+        int value = 0;
+        while (choice < 0) {
+            parse_says(0, base.name, -1, -1);
+            parse_says(1, Facility[-choice].name, -1, -1);
+            value = popp(ScriptFile, "GOVPROJECT", 0, "secproj_sm.pcx", 0);
+            if (value != 3) {
+                break;
+            }
+            help_topic(11, -choice);
+        }
+        if (value) {
+            base.governor_flags &= ~GOV_MAY_PROD_SP;
+            choice = select_build(base_id);
+            if (value > 1) {
+                Factions[base.faction_id].base_governor_adv &= ~GOV_MAY_PROD_SP;
+            }
+        }
+    }
     debug("choice: %d %s\n", choice, prod_name(choice));
     flushlog();
     return choice;
@@ -1324,7 +1345,7 @@ int __cdecl mod_base_growth() {
         return 0; // Always return here
     }
     // Reduce base population when nutrients_accumulated becomes negative
-    if (!(*GameState & STATE_GAME_DONE) || *GameState & STATE_FINAL_SCORE_DONE) {
+    if (full_game_turn()) {
         if (BaseResourceConvoyFrom[RSC_NUTRIENT]) {
             for (int i = 0; i < *VehCount; i++) {
                 VEH* veh = &Vehs[i];
@@ -1518,7 +1539,7 @@ void __cdecl mod_base_maint() {
                 } else {
                     set_fac((FacilityId)fac, *CurrentBaseID, false);
                     f->energy_credits = Facility[fac].cost
-                        * cost_factor(faction_id, RSC_MINERAL, -1);
+                        * mod_cost_factor(faction_id, RSC_MINERAL, -1);
                     parse_says(1, Facility[fac].name, -1, -1);
                     popb("POWERSHORT", WARN_STOP_ENERGY_SHORTAGE, 14, "genwarning_sm.pcx", 0);
                 }
@@ -1633,12 +1654,7 @@ int __cdecl mod_base_upkeep(int base_id) {
             }
             parse_says(0, parse_set(base->faction_id), -1, -1);
             parse_says(1, base->name, -1, -1);
-
-            if (conf.new_base_names) {
-                mod_name_base(base->faction_id, base->name, 1, is_ocean(base));
-            } else {
-                name_base(base->faction_id, base->name, 1, is_ocean(base));
-            }
+            mod_name_base(base->faction_id, base->name, 1, is_ocean(base));
             parse_says(2, base->name, -1, -1);
 
             if (base->faction_id_former == MapWin->cOwner
@@ -1658,7 +1674,7 @@ int __cdecl mod_base_upkeep(int base_id) {
     if (*CurrentBaseID == *BaseUpkeepDrawID) {
         BaseWin_on_redraw(BaseWin);
     }
-    if (*BaseUpkeepFlag && (!(*GameState & STATE_GAME_DONE) || *GameState & STATE_FINAL_SCORE_DONE)) {
+    if (*BaseUpkeepFlag && full_game_turn()) {
         BaseWin_zoom(BaseWin, *CurrentBaseID, 1);
     }
     *BaseUpkeepState = 0;
@@ -1688,19 +1704,19 @@ int __cdecl mod_base_upkeep(int base_id) {
 }
 
 static bool valid_relocate_base(int base_id) {
-    int faction = Bases[base_id].faction_id;
+    int faction_id = Bases[base_id].faction_id;
     int best_id = -1;
     int best_score = 0;
 
     if (conf.auto_relocate_hq || Bases[base_id].mineral_surplus < 2) {
         return false;
     }
-    if (!has_tech(Facility[FAC_HEADQUARTERS].preq_tech, faction)) {
+    if (!has_tech(Facility[FAC_HEADQUARTERS].preq_tech, faction_id)) {
         return false;
     }
     for (int i = 0; i < *BaseCount; i++) {
         BASE* b = &Bases[i];
-        if (b->faction_id == faction) {
+        if (b->faction_id == faction_id) {
             if (has_fac_built(FAC_HEADQUARTERS, i)) {
                 return false;
             }
@@ -1718,24 +1734,24 @@ static bool valid_relocate_base(int base_id) {
     return best_id == base_id;
 }
 
-static void find_relocate_base(int faction) {
-    if (conf.auto_relocate_hq && find_hq(faction) < 0) {
+static void find_relocate_base(int faction_id) {
+    if (conf.auto_relocate_hq && find_hq(faction_id) < 0) {
         int best_score = INT_MIN;
         int best_id = -1;
         Points bases;
         for (int i = 0; i < *BaseCount; i++) {
             BASE* b = &Bases[i];
-            if (b->faction_id == faction) {
+            if (b->faction_id == faction_id) {
                 bases.insert({b->x, b->y});
             }
         }
         for (int i = 0; i < *BaseCount; i++) {
             BASE* b = &Bases[i];
-            if (b->faction_id == faction) {
+            if (b->faction_id == faction_id) {
                 int score = 4 * b->pop_size - (int)(10 * avg_range(bases, b->x, b->y))
                     - 2 * b->assimilation_turns_left;
                 debug("relocate_base %s %4d %s\n",
-                    MFactions[faction].filename, score, b->name);
+                    MFactions[faction_id].filename, score, b->name);
                 if (score > best_score) {
                     best_id = i;
                     best_score = score;
@@ -1745,12 +1761,12 @@ static void find_relocate_base(int faction) {
         if (best_id >= 0) {
             BASE* b = &Bases[best_id];
             set_fac(FAC_HEADQUARTERS, best_id, 1);
-            if (!is_human(faction)) {
+            if (!is_human(faction_id)) {
                 mod_base_reset(best_id, 0);
             }
             draw_tile(b->x, b->y, 2);
             parse_says(1, Bases[best_id].name, -1, -1);
-            parse_says(2, parse_set(faction), -1, -1);
+            parse_says(2, parse_set(faction_id), -1, -1);
             NetMsg_pop(NetMsg, "ESCAPED", 5000, 0, 0);
         }
     }
@@ -1771,14 +1787,17 @@ on the base when it is captured, for example Hive bases always get Perimeter Def
 */
 int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
     BASE* base = &Bases[base_id];
+    assert(base_id >= 0 && base_id < *BaseCount);
+    assert(faction >= 0 && faction < MaxPlayerNum && base->faction_id != faction);
+    if (base_id < 0 || base_id >= *BaseCount || faction < 0 || faction >= MaxPlayerNum) {
+        return 0;
+    }
     int old_faction = base->faction_id;
     int prev_owner = base->faction_id;
     int last_spoke = *CurrentTurn - Factions[faction].diplo_spoke[old_faction];
     bool vendetta = at_war(faction, old_faction);
     bool alien_fight = is_alien(faction) != is_alien(old_faction);
     bool destroy_base = base->pop_size < 2 && !is_objective(base_id);
-    assert(base_id >= 0 && base_id < *BaseCount);
-    assert(valid_player(faction) && faction != old_faction);
     set_base(base_id);
 
     if (!destroy_base && alien_fight) {
@@ -1798,6 +1817,22 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
             if (Vehs[i].x == base->x && Vehs[i].y == base->y
             && Vehs[i].faction_id != faction && !has_pact(faction, Vehs[i].faction_id)) {
                 veh_kill(i);
+            }
+        }
+    }
+    /*
+    Fix issue after the faction capturing the base with Cloudbase Academy has their aircraft speed
+    altered during the turn resulting in some aircraft crashing when they should not.
+    */
+    if (!destroy_base && project_base(FAC_CLOUDBASE_ACADEMY) == base_id) {
+        for (int i = *VehCount-1; i >= 0; i--) {
+            VEH* veh = &Vehs[i];
+            if (veh->faction_id == faction && veh->triad() == TRIAD_AIR
+            && veh->unit_id / MaxProtoFactionNum == faction) {
+                int moves = veh_speed(i, 0);
+                if (moves == veh->moves_spent + 2 * Rules->move_rate_roads) {
+                    veh->moves_spent = moves;
+                }
             }
         }
     }
@@ -1848,9 +1883,7 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
 Calculate the amount of content population before psych modifiers for the current faction.
 */
 int __cdecl base_psych_content_pop() {
-    int faction_id = (*CurrentBase)->faction_id;
-    assert(valid_player(faction_id));
-    if (is_human(faction_id)) {
+    if (*CurrentBase && is_human((*CurrentBase)->faction_id)) {
         return conf.content_pop_player[*DiffLevel];
     }
     return conf.content_pop_computer[*DiffLevel];
@@ -2452,6 +2485,9 @@ bool can_build(int base_id, int item_id) {
         return false;
     }
     if (item_id == FAC_BIOENHANCEMENT_CENTER && f->SE_morale < -1)  {
+        return false;
+    }
+    if (item_id == FAC_COVERT_OPS_CENTER && has_project(FAC_HUNTER_SEEKER_ALGORITHM, faction_id)) {
         return false;
     }
     if (item_id == FAC_PSI_GATE && 4*facility_count(FAC_PSI_GATE, faction_id) >= f->base_count) {

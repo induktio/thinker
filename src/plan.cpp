@@ -399,6 +399,7 @@ void former_plans(int faction_id) {
     plans[faction_id].keep_fungus = clamp(2*value, 0, (improv_fungus ? 8 : 4));
     plans[faction_id].plant_fungus = former_fungus && value >= 0
         && value + improv_fungus + has_project(FAC_MANIFOLD_HARMONICS, faction_id) > 1;
+    plans[faction_id].build_tubes = has_terra(FORMER_MAGTUBE, TRIAD_LAND, faction_id);
 }
 
 void plans_upkeep(int faction_id) {
@@ -484,7 +485,6 @@ void plans_upkeep(int faction_id) {
                     * faction_might(i) / max(1, faction_might(fc)), 0.01f, 8.0f);
 
                 p->enemy_mil_factor = max(p->enemy_mil_factor, factor);
-                p->diplo_flags |= f->diplo_status[i];
             }
         }
         int enemy_sum = 0;

@@ -1789,10 +1789,9 @@ StrBuffer in make_gift but diplomacy_caption overwrites it with other data.
 void __cdecl mod_diplomacy_caption(int faction1, int faction2)
 {
     char buf[StrBufLen];
-    strncpy(buf, StrBuffer, StrBufLen);
-    buf[StrBufLen-1] = '\0';
+    strcpy_n(buf, StrBufLen, StrBuffer);
     diplomacy_caption(faction1, faction2);
-    strncpy(StrBuffer, buf, StrBufLen);
+    strcpy_n(StrBuffer, StrBufLen, buf);
 }
 
 /*

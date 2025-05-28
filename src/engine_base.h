@@ -27,7 +27,7 @@ enum BaseState {
     BSTATE_UNK_200000 = 0x200000,
     BSTATE_ENERGY_RESERVES_DRAINED = 0x400000,
     BSTATE_PRODUCTION_DONE = 0x800000, // cleared in base_upkeep > base_production
-    BSTATE_UNK_1000000 = 0x1000000,
+    BSTATE_UNK_1000000 = 0x1000000, // base_production
     BSTATE_UNK_2000000 = 0x2000000,
     BSTATE_UNK_4000000 = 0x4000000, // enemy_strategy
     BSTATE_UNK_8000000 = 0x8000000, // enemy_strategy

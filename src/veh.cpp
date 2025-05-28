@@ -1698,7 +1698,7 @@ int __cdecl mod_upgrade_prototype(int faction_id, int new_unit_id, int old_unit_
     assert(new_unit_id != old_unit_id);
     assert(new_unit_id / MaxProtoFactionNum == faction_id);
 
-    if (*GameState & STATE_GAME_DONE && !(*GameState & STATE_FINAL_SCORE_DONE)) {
+    if (!full_game_turn()) {
         return 0;
     }
     // Fix issue with upgrade cost being incorrect for unit counts of more than 255.

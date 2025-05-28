@@ -353,7 +353,7 @@ struct AIPlans {
     int unknown_factions = 0;
     int contacted_factions = 0;
     int enemy_factions = 0;
-    int diplo_flags = 0;
+    int build_tubes = 0;
     /*
     Amount of minerals a base needs to produce before it is allowed to build secret projects.
     All faction-owned bases are ranked each turn based on the surplus mineral production,
