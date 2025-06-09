@@ -115,6 +115,7 @@
 		<Unit filename="src/patch.cpp" />
 		<Unit filename="src/patch.h" />
 		<Unit filename="src/patchdata.h" />
+		<Unit filename="src/patchveh.h" />
 		<Unit filename="src/path.cpp" />
 		<Unit filename="src/path.h" />
 		<Unit filename="src/plan.cpp" />

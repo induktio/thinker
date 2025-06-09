@@ -51,7 +51,7 @@ If there is a tie, the order of precedence is as follows: growth > tech > wealth
 Return Value: Tech category id: growth (0), tech (1), wealth (2) or power (3).
 */
 int __cdecl tech_category(int tech_id) {
-    assert(tech_id >= 0 && tech_id <= TECH_TranT);
+    assert(tech_id >= TECH_None && tech_id <= TECH_TranT);
     if (tech_id < 0 || tech_id > TECH_TranT) {
         return TCAT_GROWTH;
     }

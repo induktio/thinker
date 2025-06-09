@@ -2542,7 +2542,7 @@ bool can_build_unit(int base_id, int unit_id) {
     && !adjacent_region(b->x, b->y, -1, 10, TRIAD_SEA)) {
         return false;
     }
-    return (*VehCount + 32 < MaxVehNum) || (*VehCount + random(32) < MaxVehNum);
+    return (*VehCount + 32 < conf.max_veh_num) || (*VehCount + random(32) < conf.max_veh_num);
 }
 
 bool can_staple(int base_id) {

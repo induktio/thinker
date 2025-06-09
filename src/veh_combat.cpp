@@ -494,10 +494,8 @@ static int __cdecl find_defender(int veh_id_def, int veh_id_atk, int check_arty)
         if (!offense_out) {
             break;
         }
-        int v1 = (veh->is_artifact() ? 1 : 10 * veh->reactor_type());
-        int v2 = clamp(v1 - veh->damage_taken, 0, 9999);
-        int score = offense_val * defense_out * v2 / v1 / offense_out / 8 - veh->offense_value();
-
+        int score = offense_val * defense_out * min(veh->cur_hitpoints(), 9999)
+            / veh->max_hitpoints() / offense_out / 8 - veh->offense_value();
         if (veh->plan() <= PLAN_NAVAL_TRANSPORT || veh->plan() == PLAN_TERRAFORM) {
             score *= 16;
         }
@@ -518,8 +516,8 @@ static int __cdecl find_defender(int veh_id_def, int veh_id_atk, int check_arty)
         || !mod_stack_check(veh_id, 3, TRIAD_AIR, -1, -1))) {
             score += 0x80000;
         }
-        score = veh_id + (score * MaxVehNum);
-        if (score > best_score) {
+        // Replace old score method to avoid overflow issues with larger veh_ids
+        if (score > best_score || (score == best_score && veh_id > best_veh_id)) {
             best_score = score;
             best_veh_id = veh_id;
         }
@@ -1629,7 +1627,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
         *dword_8C6B3C = 1;
         flush_input();
         if (!shift_key_down() && !(combat_type & CT_CAN_ARTY)) {
-            sub_55A150(veh_id_atk, x, y, offset, 1);
+            veh_scoot(veh_id_atk, x, y, offset, 1);
         }
         stack_put(veh_id_atk, x, y);
         draw_tile(x, y, 2);

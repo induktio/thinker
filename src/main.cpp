@@ -178,6 +178,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->modify_upgrade_cost = atoi(value);
     } else if (MATCH("modify_unit_support")) {
         cf->modify_unit_support = atoi(value);
+    } else if (MATCH("modify_unit_limit")) {
+        cf->modify_unit_limit = atoi(value);
     } else if (MATCH("skip_default_balance")) {
         cf->skip_default_balance = atoi(value);
     } else if (MATCH("early_research_start")) {

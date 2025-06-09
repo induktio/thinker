@@ -1854,11 +1854,11 @@ int __cdecl mod_design_new_veh(int faction_id, int unit_id) {
     return DesignWin_exec(DesignWin, faction_id, unit_id);
 }
 
-int __cdecl mod_action_move(int veh_id, int x, int y)
+int __cdecl mod_action_arty(int veh_id, int x, int y)
 {
     VEH* veh = &Vehs[veh_id];
     if (*MultiplayerActive) {
-        return action_move(veh_id, x, y);
+        return action_arty(veh_id, x, y);
     }
     if (veh->faction_id == *CurrentPlayerFaction) {
         if (!veh_ready(veh_id)) {

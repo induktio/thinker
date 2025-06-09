@@ -2121,6 +2121,15 @@ int __cdecl mod_veh_skip(int veh_id) {
     return moves;
 }
 
+/*
+Purpose: Initialize/reset the fake veh_id used as a placeholder for various UI elements.
+Return Value: veh_id (not used by active vehs, original value 2048)
+*/
+int __cdecl mod_veh_fake(int unit_id, int faction_id) {
+    veh_clear(conf.max_veh_num, unit_id, faction_id);
+    return conf.max_veh_num;
+}
+
 int __cdecl mod_veh_wake(int veh_id) {
     VEH* veh = &Vehs[veh_id];
     if (veh->order >= ORDER_FARM && veh->order < ORDER_MOVE_TO && !(veh->state & VSTATE_WORKING)) {
