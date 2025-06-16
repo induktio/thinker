@@ -374,8 +374,8 @@ int __cdecl mod_replay_base(int event, int x, int y, int faction_id) {
     assert(mapsq(x, y) && event >= 0 && event <= 2);
     debug("replay_base %d %d %d %d %d %d\n",
         *ReplayEventSize, *CurrentTurn, event, faction_id, x, y);
-    ReplayEvent* p = &ReplayEvents[*ReplayEventSize/8];
     if (*ReplayEventSize >= 0 && *ReplayEventSize < 8192) {
+        ReplayEvent* p = &ReplayEvents[*ReplayEventSize/8];
         p->event = event;
         p->faction_id = faction_id;
         p->turn = *CurrentTurn;

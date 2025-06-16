@@ -4,17 +4,230 @@
 static bool delay_base_riot = false;
 
 
-bool governor_enabled(int base_id) {
-    return conf.manage_player_bases && Bases[base_id].governor_flags & GOV_MANAGE_PRODUCTION;
+static bool valid_relocate_base(int base_id) {
+    int faction_id = Bases[base_id].faction_id;
+    int best_id = -1;
+    int best_score = 0;
+
+    if (conf.auto_relocate_hq || Bases[base_id].mineral_surplus < 2) {
+        return false;
+    }
+    if (!has_tech(Facility[FAC_HEADQUARTERS].preq_tech, faction_id)) {
+        return false;
+    }
+    for (int i = 0; i < *BaseCount; i++) {
+        BASE* b = &Bases[i];
+        if (b->faction_id == faction_id) {
+            if (has_fac_built(FAC_HEADQUARTERS, i)) {
+                return false;
+            }
+            if (b->item() == -FAC_HEADQUARTERS) {
+                return base_id == i;
+            }
+            int score = 8*(i == base_id) + 2*b->pop_size
+                + b->mineral_surplus - b->assimilation_turns_left;
+            if (best_id < 0 || score > 2 * best_score) {
+                best_id = i;
+                best_score = score;
+            }
+        }
+    }
+    return best_id == base_id;
+}
+
+static void find_relocate_base(int faction_id) {
+    if (conf.auto_relocate_hq && find_hq(faction_id) < 0) {
+        int best_score = INT_MIN;
+        int best_id = -1;
+        Points bases;
+        for (int i = 0; i < *BaseCount; i++) {
+            BASE* b = &Bases[i];
+            if (b->faction_id == faction_id) {
+                bases.insert({b->x, b->y});
+            }
+        }
+        for (int i = 0; i < *BaseCount; i++) {
+            BASE* b = &Bases[i];
+            if (b->faction_id == faction_id) {
+                int score = 4*b->pop_size - (int)(10 * avg_range(bases, b->x, b->y))
+                    - 2*b->assimilation_turns_left;
+                debug("relocate_base %s %4d %s\n",
+                    MFactions[faction_id].filename, score, b->name);
+                if (score > best_score) {
+                    best_id = i;
+                    best_score = score;
+                }
+            }
+        }
+        if (best_id >= 0) {
+            BASE* b = &Bases[best_id];
+            set_fac(FAC_HEADQUARTERS, best_id, 1);
+            if (!is_human(faction_id)) {
+                mod_base_reset(best_id, 0);
+            }
+            draw_tile(b->x, b->y, 2);
+            parse_says(1, Bases[best_id].name, -1, -1);
+            parse_says(2, parse_set(faction_id), -1, -1);
+            NetMsg_pop(NetMsg, "ESCAPED", 5000, 0, 0);
+        }
+    }
+}
+
+int __cdecl mod_base_init(int faction_id, int x, int y) {
+    MAP* sq;
+    if (*BaseCount >= MaxBaseNum) {
+        return -1;
+    }
+    if (faction_id < 0 || faction_id >= MaxPlayerNum
+    || !(sq = mapsq(x, y)) || sq->is_base()) { // Added validity checks
+        assert(0);
+        return -1;
+    }
+    Faction* plr = &Factions[faction_id];
+    MFaction* m = &MFactions[faction_id];
+    bit_set(x, y, BIT_BASE_IN_TILE, 1);
+    owner_set(x, y, faction_id);
+    synch_bit(x, y, faction_id);
+    int base_id = (*BaseCount)++;
+    BASE* base = &Bases[base_id];
+    plr->base_count++;
+    plr->region_total_bases[sq->region]++;
+    mod_replay_base(0, x, y, faction_id);
+    base->x = x;
+    base->y = y;
+    base->faction_id_former = faction_id;
+    base->faction_id = faction_id;
+    base->nerve_staple_turns_left = 0;
+    base->assimilation_turns_left = 0;
+    base->ai_plan_status = 0;
+    base->pop_size = has_project(FAC_PLANETARY_TRANSIT_SYSTEM, faction_id) ? 3 : 1;
+    base->visibility = (1 << faction_id) | sq->visibility;
+    base->name[0] = '\0';
+    mod_name_base(faction_id, &base->name[0], 1, is_ocean(sq));
+    base->state_flags = 0;
+    base->event_flags = 0;
+    base->governor_flags = plr->base_governor_adv;
+    base->minerals_accumulated = 0;
+    base->nutrients_accumulated = 0;
+    base->nerve_staple_count = 0;
+    base->autoforward_land_base_id = -1;
+    base->autoforward_sea_base_id = -1;
+    base->autoforward_air_base_id = -1;
+    base->queue_size = 0;
+    base_first(base_id);
+
+    if (*CurrentTurn) {
+        base->minerals_accumulated = plr->SE_support < -1 ? 0 : Rules->retool_exemption;
+    } else {
+        int unit_id;
+        if (has_tech(Units[BSC_FORMERS].preq_tech, faction_id)) {
+            unit_id = BSC_FORMERS;
+        } else {
+            unit_id = plr->diff_level > 1 ? BSC_SCOUT_PATROL : BSC_COLONY_POD;
+        }
+        base->queue_items[0] = unit_id;
+        base->minerals_accumulated = Units[unit_id].cost * mod_cost_factor(faction_id, RSC_MINERAL, -1) / 2;
+    }
+    base->worked_tiles = 0;
+    base->specialist_total = 0;
+    base->specialist_adjust = 0;
+    base->eco_damage = 0;
+    base->unk_y = -1;
+    base->unk_x = -1;
+    memset(&base->facilities_built, 0, 12);
+    base->random_event_turns = 0;
+    base->nerve_staple_count = 0;
+    base->defend_goal = 0;
+    base->defend_range = 0;
+    base->pad_6 = 0;
+    base->pad_7 = 0;
+    base->pad_8 = 0;
+
+    if (plr->base_count == 1) {
+        set_fac(FAC_HEADQUARTERS, base_id, 1);
+        if (*MultiplayerActive) {
+            base->pop_size = 3;
+            if (m->rule_talent || plr->SE_planet_base > 0) {
+                base->pop_size = 4;
+            }
+            if (m->rule_drone || m->rule_population) {
+                base->pop_size--;
+            }
+            set_fac(FAC_RECYCLING_TANKS, base_id, 1);
+            if (*DiffLevel >= 3) {
+                set_fac(FAC_RECREATION_COMMONS, base_id, 1);
+            }
+            if (plr->SE_economy_base > 0) {
+                set_fac(FAC_ENERGY_BANK, base_id, 1);
+            }
+        } else {
+            base->pop_size = clamp((*CurrentTurn + 49) / 50, 1, 5);
+            if (*CurrentTurn >= 75) {
+                set_fac(FAC_RECYCLING_TANKS, base_id, 1);
+            }
+            if (*CurrentTurn >= 100) {
+                set_fac(FAC_RECREATION_COMMONS, base_id, 1);
+            }
+            if (*CurrentTurn >= 150) {
+                set_fac(FAC_ENERGY_BANK, base_id, 1);
+            }
+        }
+    }
+    if (is_ocean(sq)) {
+        set_fac(FAC_PRESSURE_DOME, base_id, 1);
+    }
+    for (int i = 0; i < MaxPlayerNum; i++) {
+        base->factions_pop_size_intel[i] =
+            (i == faction_id || (1 << i) & base->visibility ? base->pop_size : 0);
+    }
+    // Original function accepts IDs including satellites and stockpile energy but these
+    // cannot be built on the base normally and will be ignored by additional set_fac checks.
+    for (int i = 0; i < m->faction_bonus_count; i++) {
+        if (m->faction_bonus_id[i] == RULE_FACILITY) {
+            int item_id = clamp(m->faction_bonus_val1[i], 1, Fac_All_ID_Last);
+            set_fac((FacilityId)item_id, base_id, 1);
+        }
+    }
+    for (int i = 0; i < m->faction_bonus_count; i++) {
+        if (m->faction_bonus_id[i] == RULE_FREEFAC) {
+            int item_id = clamp(m->faction_bonus_val1[i], 1, Fac_All_ID_Last);
+            if (has_tech(Facility[item_id].preq_tech, faction_id)) {
+                set_fac((FacilityId)item_id, base_id, 1);
+            }
+        }
+    }
+    for (int i = 1; i <= Fac_All_ID_Last; i++) {
+        if (has_tech(Facility[i].free_tech, faction_id)) {
+            set_fac((FacilityId)i, base_id, 1);
+        }
+    }
+    base->production_id_last = base->queue_items[0];
+    base->minerals_accumulated_2 = base->minerals_accumulated;
+    base->mineral_surplus_final = 0;
+    mod_base_mark(base_id);
+    reset_territory();
+    set_base(base_id);
+    base_compute(1); // Always update
+    *GameDrawState |= 2u;
+    return base_id;
+}
+
+void __cdecl mod_base_kill(int base_id) {
+    assert(base_id >= 0 && base_id < *BaseCount);
+    int prev_faction = Bases[base_id].faction_id;
+    base_kill(base_id);
+    find_relocate_base(prev_faction);
 }
 
 void __cdecl mod_base_reset(int base_id, bool has_gov) {
     BASE& base = Bases[base_id];
+    bool manage_prod = conf.manage_player_bases
+        && Bases[base_id].governor_flags & GOV_MANAGE_PRODUCTION;
     assert(base_id >= 0 && base_id < *BaseCount);
     assert(base.defend_goal >= 0 && base.defend_goal <= 5);
     print_base(base_id);
 
-    if (base.plr_owner() && !governor_enabled(base_id)) {
+    if (base.plr_owner() && !manage_prod) {
         debug("skipping human base\n");
         base_reset(base_id, has_gov);
     } else if (!base.plr_owner() && !thinker_enabled(base.faction_id)) {
@@ -27,8 +240,8 @@ void __cdecl mod_base_reset(int base_id, bool has_gov) {
 }
 
 /*
-Performs nearly the same thing as vanilla base_build but the last 3 parameters
-have been replaced with the governor force recalculate flag.
+Performs nearly the same thing as original base_build except the last three parameters
+have been replaced with the governor force recalculate flag to replace current production.
 */
 int __cdecl mod_base_build(int base_id, bool has_gov) {
     BASE& base = Bases[base_id];
@@ -117,6 +330,28 @@ void __cdecl base_compute(bool update_prev) {
     }
 }
 
+void __cdecl mod_base_mark(int base_id) {
+    int x = Bases[base_id].x;
+    int y = Bases[base_id].y;
+    int faction_id = Bases[base_id].faction_id;
+    for (int i = 0; i < TableRange[3]; i++) {
+        int x2 = wrap(x + TableOffsetX[i]);
+        int y2 = y + TableOffsetY[i];
+        if (on_map(x2, y2)) {
+            if (i < 21) {
+                bit_set(x2, y2, BIT_BASE_RADIUS, 1);
+                using_set(x2, y2, faction_id);
+            } else {
+                site_set(x2, y2, 0);
+            }
+        }
+    }
+    for (int i = 0; i < MaxPlayerNum; i++) {
+        // Fix most likely error that used offset location here instead of base location
+        del_site(i, AI_GOAL_COLONIZE, x, y, 3);
+    }
+}
+
 /*
 Calculate nutrient/mineral cost factors for base production.
 If the player faction is ranked first in the original game, the AI factions will get
@@ -189,13 +424,16 @@ Determine if the specified base has any restrictions around production item reto
 Return Value: Fixed value (-1, 0, 1, 2, 3, -70) or item_id
 */
 int __cdecl mod_base_making(int item_id, int base_id) {
+    assert(base_id >= 0 && base_id < *BaseCount);
     int retool = Rules->retool_strictness;
     int faction_id = Bases[base_id].faction_id;
     if ((has_fac_built(FAC_SKUNKWORKS, base_id)
     || (MFactions[faction_id].rule_flags & RFLAG_FREEPROTO
     && has_tech(Facility[FAC_SKUNKWORKS].preq_tech, faction_id)))
-    && retool >= 1) { // Do not override if retool strictness is already set to Always Free
-        retool = 1; // Skunkworks or FREEPROTO + prerequisite tech > 'Free in Category'
+    && retool >= RETOOL_FREE_CATEGORY) {
+        // Do not override if retool strictness is already set to Always Free
+        // Skunkworks or FREEPROTO + prerequisite tech > 'Free in Category'
+        retool = RETOOL_FREE_CATEGORY;
     }
     int value = 1; // Default return value if no other condition applies
     if (item_id < 0) {
@@ -207,17 +445,17 @@ int __cdecl mod_base_making(int item_id, int base_id) {
     }
     if (value < 0) {
         // No retool penalty
-    } else if (retool == 0) { // Always Free
+    } else if (retool == RETOOL_ALWAYS_FREE) { // Always Free
         value = 0;
-    } else if (retool == 1) { // Free in Category
+    } else if (retool == RETOOL_FREE_CATEGORY) { // Free in Category
         if (item_id >= 0) {
             value = 0;
         } else {
             value = (item_id > -SP_ID_First ? (item_id >= -Fac_ID_Last) + 2 : 1);
         }
-    } else if (retool == 2) { // Free switching between SPs (default behavior)
+    } else if (retool == RETOOL_FREE_PROJECT) { // Free switching between SPs (default behavior)
         value = (item_id <= -SP_ID_First ? -SP_ID_First : item_id);
-    } else if (retool == 3) { // Never Free
+    } else if (retool == RETOOL_NEVER_FREE) { // Never Free
         value = item_id;
     }
     assert(value == base_making(item_id, base_id));
@@ -1703,83 +1941,6 @@ int __cdecl mod_base_upkeep(int base_id) {
     return 0;
 }
 
-static bool valid_relocate_base(int base_id) {
-    int faction_id = Bases[base_id].faction_id;
-    int best_id = -1;
-    int best_score = 0;
-
-    if (conf.auto_relocate_hq || Bases[base_id].mineral_surplus < 2) {
-        return false;
-    }
-    if (!has_tech(Facility[FAC_HEADQUARTERS].preq_tech, faction_id)) {
-        return false;
-    }
-    for (int i = 0; i < *BaseCount; i++) {
-        BASE* b = &Bases[i];
-        if (b->faction_id == faction_id) {
-            if (has_fac_built(FAC_HEADQUARTERS, i)) {
-                return false;
-            }
-            if (b->item() == -FAC_HEADQUARTERS) {
-                return base_id == i;
-            }
-            int score = 8*(i == base_id) + 2*b->pop_size
-                + b->mineral_surplus - b->assimilation_turns_left;
-            if (best_id < 0 || score > 2 * best_score) {
-                best_id = i;
-                best_score = score;
-            }
-        }
-    }
-    return best_id == base_id;
-}
-
-static void find_relocate_base(int faction_id) {
-    if (conf.auto_relocate_hq && find_hq(faction_id) < 0) {
-        int best_score = INT_MIN;
-        int best_id = -1;
-        Points bases;
-        for (int i = 0; i < *BaseCount; i++) {
-            BASE* b = &Bases[i];
-            if (b->faction_id == faction_id) {
-                bases.insert({b->x, b->y});
-            }
-        }
-        for (int i = 0; i < *BaseCount; i++) {
-            BASE* b = &Bases[i];
-            if (b->faction_id == faction_id) {
-                int score = 4 * b->pop_size - (int)(10 * avg_range(bases, b->x, b->y))
-                    - 2 * b->assimilation_turns_left;
-                debug("relocate_base %s %4d %s\n",
-                    MFactions[faction_id].filename, score, b->name);
-                if (score > best_score) {
-                    best_id = i;
-                    best_score = score;
-                }
-            }
-        }
-        if (best_id >= 0) {
-            BASE* b = &Bases[best_id];
-            set_fac(FAC_HEADQUARTERS, best_id, 1);
-            if (!is_human(faction_id)) {
-                mod_base_reset(best_id, 0);
-            }
-            draw_tile(b->x, b->y, 2);
-            parse_says(1, Bases[best_id].name, -1, -1);
-            parse_says(2, parse_set(faction_id), -1, -1);
-            NetMsg_pop(NetMsg, "ESCAPED", 5000, 0, 0);
-        }
-    }
-}
-
-int __cdecl mod_base_kill(int base_id) {
-    int old_faction = Bases[base_id].faction_id;
-    assert(base_id >= 0 && base_id < *BaseCount);
-    base_kill(base_id);
-    find_relocate_base(old_faction);
-    return 0;
-}
-
 /*
 Note that when a base is captured and either the former or current owner has
 free facilities defined for the faction, all of these facilities will be added
@@ -2538,6 +2699,10 @@ bool can_build_unit(int base_id, int unit_id) {
     assert(base_id >= 0 && base_id < *BaseCount && unit_id >= -1);
     UNIT* u = &Units[unit_id];
     BASE* b = &Bases[base_id];
+    if (unit_id >= 0 && !(unit_id < MaxProtoFactionNum
+    || (unit_id / MaxProtoFactionNum) == b->faction_id)) {
+        return false;
+    }
     if (unit_id >= 0 && u->triad() == TRIAD_SEA
     && !adjacent_region(b->x, b->y, -1, 10, TRIAD_SEA)) {
         return false;
@@ -2671,7 +2836,7 @@ int __cdecl has_fac_built(FacilityId item_id, int base_id) {
 Original set_fac does not check variable bounds.
 */
 void __cdecl set_fac(FacilityId item_id, int base_id, bool add) {
-    if(base_id >= 0 && item_id >= 0 && item_id <= Fac_ID_Last) {
+    if (base_id >= 0 && base_id < MaxBaseNum && item_id >= 0 && item_id <= Fac_ID_Last) {
         if (add) {
             Bases[base_id].facilities_built[item_id/8] |= (1 << (item_id % 8));
         } else {

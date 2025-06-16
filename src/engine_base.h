@@ -48,6 +48,13 @@ enum BaseEvent {
     BEVENT_OBJECTIVE = 0x8000,
 };
 
+enum RetoolRuleType {
+    RETOOL_ALWAYS_FREE = 0,
+    RETOOL_FREE_CATEGORY = 1,
+    RETOOL_FREE_PROJECT = 2,
+    RETOOL_NEVER_FREE = 3,
+};
+
 enum BaseGovernor {
     GOV_MANAGE_PRODUCTION = 0x1,
     GOV_MAY_FORCE_PSYCH = 0x2, // Thinker variable

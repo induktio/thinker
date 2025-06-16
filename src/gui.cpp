@@ -1845,8 +1845,10 @@ Normally unit_id can be set when ASKSEEDESIGN popup is opened from tech_achieved
 int __cdecl mod_design_new_veh(int faction_id, int unit_id) {
     if (unit_id < 0 && MapWin->iUnit >= 0) {
         VEH* veh = &Vehs[MapWin->iUnit];
-        if ((veh->unit_id < MaxProtoFactionNum
+        if (((veh->unit_id < MaxProtoFactionNum
+        && has_tech(Units[veh->unit_id].preq_tech, faction_id))
         || veh->unit_id / MaxProtoFactionNum == faction_id)
+        && Units[veh->unit_id].icon_offset < 0
         && veh->x == MapWin->iTileX && veh->y == MapWin->iTileY) {
             return DesignWin_exec(DesignWin, faction_id, veh->unit_id);
         }

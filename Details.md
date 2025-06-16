@@ -146,6 +146,8 @@ In the nascent days of Alpha Centauri colonization, pioneers faced an arid, unfo
 
 Improved combat mechanics
 =========================
+![Long range artillery](/tools/ship_artillery.png "Long range artillery option allows the special ability to grant longer range for ship-based weapons.")
+
 In Alpha Centauri, Fusion reactor technology was extremely important for military purposes as it cheapens the reactor cost almost by half and doubles the unit's combat strength. This made the tech extremely unbalanced for most purposes, and there's no good way around this if the tech tree is to have any advanced reactors at all. By default Thinker's `ignore_reactor_power` option keeps all reactors available, but ignores their power for combat calculation purposes. More advanced reactors still provide their usual cost discounts and also planet busters are unaffacted by this feature.
 
 When `ignore_reactor_power` option is enabled, it is recommended to adjust some game preferences to reduce automated prototype additions when new techs are discovered.
@@ -403,12 +405,13 @@ Known limitations
 Currently the features listed here may not be fully supported or may have issues while Thinker is enabled. The list may be subject to change in future releases.
 
 1. Network multiplayer (TCP/IP) should be supported, however this is less stable than the singleplayer configuration, so some issues might occur. At minimum every client needs to use the same configuration files. In case of network problems, refer to other manuals on how to configure firewalls and open the necessary ports for multiplayer. Simultaneous turns option for network multiplayer is known to cause issues. If the game desyncs, it is possible to save it to a file and host it again.
-2. Most notable limits in the game engine are 8 factions (one for native life), 512 bases, 2048 units, and 64 prototypes for each faction. These limits were fixed in the game binary at compilation time and are not feasible to change without a full open source port.
+2. Most notable limits in the game engine are 8 factions with one for native life, 512 bases, 64 prototypes for each faction, and 2048 units unless increased by options. These limits were fixed in the game binary at compilation time and the faction limit may not be feasible to increase without substantial rewrites.
 3. Faction selection dialog in the game setup is limited to showing only the first 24 factions even if installed factions in alphax.txt exceed this number.
 4. Most custom settings in "Special Scenario Rules" should be supported even when starting new random maps. However these rules may cause inconsistent behaviour when used from the main menu: `No native life--fungus, mind worms, Planet, etc`, `Force current difficulty level`, and `Force player to play current faction`.
 5. DirectDraw mode is not supported while using thinker.exe launcher. In this case the game may fail to start properly unless `DirectDraw=0` config option is used.
-6. In rare cases needlejets that are set to automated air defense may disappear after ending their turn outside the base. This should not happen if the units are moved manually.
-7. Upgrading any units to predefined prototypes in alphax.txt is not supported due to game engine limitations. It is only possible to upgrade units to prototypes defined for the specific faction.
+6. Upgrading any units to predefined prototypes in alphax.txt is not supported due to game engine limitations. It is only possible to upgrade units to prototypes defined for the specific faction.
+7. In rare cases needlejets that are set to automated air defense may disappear after ending their turn outside the base. This should not happen if the units are moved manually.
+8. Player controlled units set to automated orders may sometimes discard their automation status and request new orders from the player. There is no consistent workaround for this other than giving additional orders.
 
 
 Other patches included

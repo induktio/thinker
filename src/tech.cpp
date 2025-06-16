@@ -584,9 +584,8 @@ int __cdecl mod_tech_ai(int faction_id) {
                 int preq = tech_level(i, 0); // Replaces tech_recurse
                 tech_value = preq ? (tech_value << 8) / preq : 0;
             }
-            // TODO: investigate if multiple random functions are necessary
-            int value = is_human(faction_id) ? game_random(0, tech_value + 1)
-                : (tech_value > 0 ? game_rand() % (tech_value + 1) : 0);
+            // Replace previous functions game_random (for players) and game_rand (for AIs)
+            int value = map_rand.get(0, tech_value + 1);
             if (value > best_value) {
                 best_value = value;
                 tech_id = i;

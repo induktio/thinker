@@ -5,7 +5,8 @@ const int SP_Destroyed = -2;
 const int SP_ID_First = 70;
 const int SP_ID_Last = 133;
 const int Fac_ID_First = 1;
-const int Fac_ID_Last = 64;
+const int Fac_ID_Last = 64; // facilities that can be built on the base
+const int Fac_All_ID_Last = 69; // includes satellites and stockpile energy
 const int Tech_ID_First = 0;
 const int Tech_ID_Last = 88;
 

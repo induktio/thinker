@@ -334,13 +334,13 @@ static void init_video_config(Config* cf) {
     char* path = strtrim(&buf_path[0]);
     char* args = strtrim(&buf_args[0]);
     if (!strlen(path)) {
-        conf.video_player = 1;
+        cf->video_player = 1;
     } else {
         bool found = false;
         if (!strcmp(path, "<DEFAULT>")) {
             for (auto& cur_path : DefaultPaths) {
                 if (FileExists(cur_path)) {
-                    conf.video_player = 2;
+                    cf->video_player = 2;
                     video_player_path = std::string(cur_path);
                     video_player_args = std::string(args);
                     prefs_put2("MoviePlayerPath", cur_path);
@@ -350,7 +350,7 @@ static void init_video_config(Config* cf) {
                 }
             }
         } else if (FileExists(path)) {
-            conf.video_player = 2;
+            cf->video_player = 2;
             video_player_path = std::string(path);
             video_player_args = std::string(args);
             prefs_put2("MoviePlayerPath", path);
@@ -364,11 +364,11 @@ static void init_video_config(Config* cf) {
                 "Select NO to skip video playback temporarily.",
                 MOD_VERSION, MB_YESNO | MB_ICONWARNING);
             if (value == IDYES) {
-                conf.video_player = 1;
+                cf->video_player = 1;
                 prefs_put2("MoviePlayerPath", "");
                 prefs_put2("MoviePlayerArgs", "");
             } else {
-                conf.video_player = 0;
+                cf->video_player = 0;
                 prefs_put2("MoviePlayerPath", "<DEFAULT>");
                 prefs_put2("MoviePlayerArgs", args);
             }
@@ -415,7 +415,7 @@ bool patch_setup(Config* cf) {
         }
         *addr = item.new_byte;
     }
-    if (conf.modify_unit_limit) {
+    if (cf->modify_unit_limit) {
         for (auto& item : VehPatchData) {
             int32_t* addr = (int32_t*)item[0];
             if (*addr == (int)VehsDef + (int)item[1] && item[1] <= sizeof(VEH)) {
@@ -451,6 +451,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x4688E0, (int)MapWin_gen_overlays);
     write_jump(0x4E3EF0, (int)mod_whose_territory);
     write_jump(0x4E4020, (int)mod_best_specialist);
+    write_jump(0x4E4350, (int)mod_base_mark);
     write_jump(0x4E4430, (int)mod_cost_factor);
     write_jump(0x4E4AA0, (int)base_first);
     write_jump(0x4E6400, (int)morale_mod);
@@ -506,6 +507,8 @@ bool patch_setup(Config* cf) {
     write_jump(0x55F450, (int)major_atrocity);
     write_jump(0x579A30, (int)add_goal);
     write_jump(0x579B70, (int)add_site);
+    write_jump(0x579E00, (int)clear_goals);
+    write_jump(0x579E70, (int)del_site);
     write_jump(0x579F80, (int)want_monolith);
     write_jump(0x584D60, (int)tech_name);
     write_jump(0x584E40, (int)chas_name);
@@ -753,16 +756,25 @@ bool patch_setup(Config* cf) {
     write_call(0x4CCF13, (int)mod_capture_base); // action_airdrop
     write_call(0x598778, (int)mod_capture_base); // order_veh
     write_call(0x5A4AB0, (int)mod_capture_base); // probe
+    write_call(0x4C9870, (int)mod_base_init); // action_build
+    write_call(0x5AF926, (int)mod_base_init); // time_warp
+    write_call(0x5B2BB8, (int)mod_base_init); // setup_player
+    // write_call(0x41CC8F, (int)mod_base_kill); // BaseWin::base_editor
     write_call(0x4CD629, (int)mod_base_kill); // action_oblit
-    write_call(0x4F1466, (int)mod_base_kill); // base_production
+    // write_call(0x4D2EC8, (int)mod_base_kill); // Console::disband2
+    // write_call(0x4E07AC, (int)mod_base_kill); // Console::editor_eliminate
     write_call(0x4EF319, (int)mod_base_kill); // base_growth
+    write_call(0x4F1466, (int)mod_base_kill); // base_production
     write_call(0x500FD7, (int)mod_base_kill); // planet_busting
     write_call(0x50ADA8, (int)mod_base_kill); // battle_fight_2
     write_call(0x50AE77, (int)mod_base_kill); // battle_fight_2
+    write_call(0x50CE5B, (int)mod_base_kill); // capture_base
     write_call(0x520E1A, (int)mod_base_kill); // random_events
     write_call(0x521121, (int)mod_base_kill); // random_events
+    // write_call(0x5890E7, (int)mod_base_kill); // alien_start
     write_call(0x5915A6, (int)mod_base_kill); // alt_set
     write_call(0x598673, (int)mod_base_kill); // order_veh
+    // write_call(0x5B0FF1, (int)mod_base_kill); // setup_player
     write_call(0x415F35, (int)mod_base_reset); // BaseWin::unk4
     write_call(0x41605A, (int)mod_base_reset); // BaseWin::gov_on
     write_call(0x417F83, (int)mod_base_reset); // BaseWin::production
