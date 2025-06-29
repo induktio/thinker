@@ -469,7 +469,6 @@ int unit_score(BASE* base, int unit_id, int psi_score, bool defend) {
         {ABL_SLOW, -4},
         {ABL_TRAINED, 2},
         {ABL_COMM_JAMMER, 3},
-        {ABL_CLEAN_REACTOR, 2},
         {ABL_ANTIGRAV_STRUTS, 3},
         {ABL_BLINK_DISPLACER, 3},
         {ABL_DEEP_PRESSURE_HULL, 2},
@@ -504,6 +503,10 @@ int unit_score(BASE* base, int unit_id, int psi_score, bool defend) {
     if (u->ability_flags & ABL_POLICE_2X && need_police(base->faction_id)) {
         v += (u->speed() > 1 ? 16 : 32);
         v += 8*min(4, base->specialist_adjust);
+    }
+    if (u->ability_flags & ABL_CLEAN_REACTOR && u->plan <= support_plan()
+    && (f->SE_support_pending < 3 || base->mineral_consumption > 0)) {
+        v += 16;
     }
     if (u->is_missile()) {
         v -= 8 * plans[base->faction_id].missile_units;
@@ -702,7 +705,7 @@ int select_combat(int base_id, bool sea_base, bool build_ships) {
 
 static void push_item(score_max_queue_t& builds, int base_id, int item_id, int retool, int score, int modifier) {
     BASE* base = &Bases[base_id];
-    assert(item_id < 0 ? can_build(base_id, -item_id) : can_build_unit(base_id, item_id));
+    assert(item_id < 0 ? can_build(base_id, -item_id) : mod_veh_avail(item_id, base->faction_id, base_id));
     if (item_id >= 0) {
         score -= 2*Units[item_id].cost;
     } else if (item_id >= -FAC_ORBITAL_DEFENSE_POD) {

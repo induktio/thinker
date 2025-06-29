@@ -567,7 +567,9 @@ typedef int(__thiscall *FNetMsg_pop)(
     void* This, const char* label, int delay, int a4, const char* filename);
 typedef int(__cdecl *FNetMsg_pop2)(const char* label, const char* filename);
 typedef int(__thiscall *FBaseButton_text)(BaseButton* This, char* text);
-typedef int(__cdecl *Fgame_fgets)(char* buf, int len, FILE* file);
+typedef int(__cdecl *Fload_daemon)(const char* name, int flag);
+typedef int(__cdecl *Fheader_check)(char* buf, FILE* file);
+typedef int(__cdecl *Fheader_write)(const char* buf, FILE* file);
 
 extern FGenString amovie_project;
 extern FPOP2 POP2;
@@ -610,7 +612,6 @@ extern fp_2int game_random; // renamed, seeded by game_reseed
 extern fp_1int game_reseed; // renamed
 extern fp_none game_rand;   // renamed, seeded by game_srand
 extern fp_1int game_srand;  // renamed
-extern Fgame_fgets game_fgets; // renamed, standard library call
 
 typedef int(__thiscall *FConsole)(Console* This);
 typedef int(__thiscall *FConsole_new_base)(Console* This, int a2);
@@ -1636,8 +1637,8 @@ extern fp_1int monolith;
 extern fp_1int goody_box;
 extern fp_2int valid_tech_leap;
 extern fp_1int study_artifact;
-extern fp_2int header_check;
-extern fp_2int header_write;
+extern Fheader_check header_check;
+extern Fheader_write header_write;
 //extern fp_2int arm_strat;
 //extern fp_2int weap_strat;
 //extern fp_2int weap_val;
@@ -1815,9 +1816,9 @@ extern fp_2int game_data;
 extern fp_3int map_data;
 extern FGenString save_daemon;
 extern fp_none see_map_check;
-extern fp_2int load_daemon;
-extern fp_1int save_map_daemon;
-extern fp_1int load_map_daemon;
+extern Fload_daemon load_daemon;
+extern FGenString save_map_daemon;
+extern FGenString load_map_daemon;
 extern fp_1int yearmotize;
 extern fp_1int save_game;
 extern fp_2int load_game;

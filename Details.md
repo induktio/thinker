@@ -9,9 +9,9 @@ With minor exceptions, Thinker uses the same production bonuses as the original 
 
 For the most complete list of all features provided by this mod, refer to both this file and `thinker.ini`. If something is not mentioned in these files, it is probably not implemented. Thinker Mod will affect many AI behaviors and also introduce some new game mechanics into Alpha Centauri. Generally most of the new features in the mod will have their own specific config options to adjust them. Items listed under "Other patches included" and "Scient's Patch" in this file will always be applied unless there is a config option listed to toggle them.
 
-Thinker does not have any incompatible save game format, so it's possible to open an old save and have the factions switch to the new AI and vice-versa. None of the `thinker.ini` config options are preserved in the save game either, but the units or resources spawned at the game start will remain.
+Thinker uses a compatible savegame format with the original game unless `modify_unit_limit` is enabled and the unit count exceeds the previous limit. In this case the savegame cannot be opened with the original game due to engine limitations. None of the other Thinker config options are preserved in the savegame either, but the units or resources spawned at the game start will remain.
 
-Note that in `thinker.ini` config file, for binary settings **only zero values are treated as disabled**, any non-zero value usually enables the option. Whenever Thinker options are changed in the GUI, they are also saved to `thinker.ini` in the game folder.
+Note that in `thinker.ini` config file, for binary settings **only zero values are treated as disabled**, any non-zero value usually enables the option. Whenever Thinker options are changed in the user interface, they are also saved to `thinker.ini` in the game folder.
 
 
 Command line options
@@ -407,11 +407,13 @@ Currently the features listed here may not be fully supported or may have issues
 1. Network multiplayer (TCP/IP) should be supported, however this is less stable than the singleplayer configuration, so some issues might occur. At minimum every client needs to use the same configuration files. In case of network problems, refer to other manuals on how to configure firewalls and open the necessary ports for multiplayer. Simultaneous turns option for network multiplayer is known to cause issues. If the game desyncs, it is possible to save it to a file and host it again.
 2. Most notable limits in the game engine are 8 factions with one for native life, 512 bases, 64 prototypes for each faction, and 2048 units unless increased by options. These limits were fixed in the game binary at compilation time and the faction limit may not be feasible to increase without substantial rewrites.
 3. Faction selection dialog in the game setup is limited to showing only the first 24 factions even if installed factions in alphax.txt exceed this number.
-4. Most custom settings in "Special Scenario Rules" should be supported even when starting new random maps. However these rules may cause inconsistent behaviour when used from the main menu: `No native life--fungus, mind worms, Planet, etc`, `Force current difficulty level`, and `Force player to play current faction`.
+4. Most custom settings in "Special Scenario Rules" should be supported even when starting random maps. However these rules may cause inconsistent behavior when used from the main menu: `Force current difficulty level` and `Force player to play current faction`.
 5. DirectDraw mode is not supported while using thinker.exe launcher. In this case the game may fail to start properly unless `DirectDraw=0` config option is used.
 6. Upgrading any units to predefined prototypes in alphax.txt is not supported due to game engine limitations. It is only possible to upgrade units to prototypes defined for the specific faction.
 7. In rare cases needlejets that are set to automated air defense may disappear after ending their turn outside the base. This should not happen if the units are moved manually.
 8. Player controlled units set to automated orders may sometimes discard their automation status and request new orders from the player. There is no consistent workaround for this other than giving additional orders.
+9. Security Nexus (F7 hotkey) units active/queue counters will wrap around when they reach 256 units starting from zero again. This is mostly an issue with the user interface since any upgrade calculations will use the correct unit counts.
+10. When SMAC-in-SMACX mod is active, Borehole Cluster and Manifold Nexus do not trigger interludes that were present on SMAC when entering specific landmark tiles on the map since these interludes were removed from the expansion code.
 
 
 Other patches included

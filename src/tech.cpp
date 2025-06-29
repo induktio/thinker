@@ -585,7 +585,7 @@ int __cdecl mod_tech_ai(int faction_id) {
                 tech_value = preq ? (tech_value << 8) / preq : 0;
             }
             // Replace previous functions game_random (for players) and game_rand (for AIs)
-            int value = map_rand.get(0, tech_value + 1);
+            int value = random_get(0, tech_value + 1);
             if (value > best_value) {
                 best_value = value;
                 tech_id = i;

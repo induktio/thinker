@@ -40,6 +40,14 @@ int32_t random(int32_t limit) {
     return ((random_seed & 0xffff) * limit) >> 16;
 }
 
+int32_t random_get(int32_t low, int32_t high) {
+    random_seed = 1664525 * random_seed + 1013904223;
+    if (low > high) {
+        std::swap(low, high);
+    }
+    return low + (((random_seed & 0xffff) * (high - low)) >> 16);
+}
+
 void GameRandom::reseed(uint32_t value) {
     state = value;
 }
@@ -51,9 +59,9 @@ uint32_t GameRandom::get_state() {
 int32_t GameRandom::get(int32_t low, int32_t high) {
     state = 1664525 * state + 1013904223;
     if (low > high) {
-        return ((state & 0xffff) * (low - high)) >> 16;
+        std::swap(low, high);
     }
-    return ((state & 0xffff) * (high - low)) >> 16;
+    return low + (((state & 0xffff) * (high - low)) >> 16);
 }
 
 int32_t GameRandom::get(int32_t limit) {

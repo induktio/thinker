@@ -246,7 +246,7 @@ struct Config {
     int rare_supply_pods = 0;
     int simple_cost_factor = 0;
     int revised_tech_cost = 1;
-    int tech_cost_factor[MaxDiffNum] = {116,108,100,92,84,76};
+    int tech_cost_factor[MaxDiffNum] = {124,116,108,100,84,76};
     int tech_rate_modifier = 100; // internal variable
     int tech_stagnate_rate = 200;
     int fast_fungus_movement = 0;

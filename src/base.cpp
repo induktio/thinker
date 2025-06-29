@@ -315,11 +315,26 @@ void __cdecl base_first(int base_id) {
 void __cdecl set_base(int base_id) {
     *CurrentBaseID = base_id;
     *CurrentBase = &Bases[base_id];
-    assert(!((*CurrentBase)->governor_flags &
-        (GOV_UNK_4|GOV_UNK_8|GOV_UNK_10|GOV_UNK_4000|GOV_UNK_10000000|GOV_UNK_20000000)));
 }
 
 void __cdecl base_compute(bool update_prev) {
+    if (*CurrentBase) {
+        // Fix rare issue that caused the base build queue to be saved with
+        // incorrect entries resulting in crashes during turn upkeep.
+        BASE* base = *CurrentBase;
+        assert(base->queue_size < 10);
+        assert(!(base->governor_flags &
+            (GOV_UNK_4|GOV_UNK_8|GOV_UNK_10|GOV_UNK_4000|GOV_UNK_10000000|GOV_UNK_20000000)));
+        for (int i = base->queue_size; i > 0; --i) {
+            if (i > 9 || base->queue_items[i] < -SP_ID_Last
+            || base->queue_items[i] > MaxProtoNum) {
+                base->queue_size = 0;
+                memset(&base->queue_items[1], 0, 36);
+                assert(base->worked_tiles);
+                break;
+            }
+        }
+    }
     if (update_prev || *ComputeBaseID != *CurrentBaseID) {
         *ComputeBaseID = *CurrentBaseID;
         mod_base_support();
@@ -513,8 +528,7 @@ void __cdecl mod_base_support() {
     };
     const int support_val = clamp(f->SE_support_pending + 4, 0, 7);
     const int support_mod = (is_human(base->faction_id) ? 0 : conf.unit_support_bonus[*DiffLevel]);
-    const int support_type = (conf.modify_unit_support == 1 ? PLAN_SUPPLY :
-        (conf.modify_unit_support == 2 ? PLAN_PROBE : PLAN_TERRAFORM));
+    const int support_type = support_plan();
     const int SE_police = base->SE_police(SE_Pending);
 
     BaseResourceConvoyTo[0] = 0;
@@ -773,15 +787,17 @@ void __cdecl mod_base_yield() {
             int best_score = 0;
             for (auto& m : tiles) {
                 int score;
+                int energy_val = (can_riot && effic_val >= 12 && f->SE_alloc_psych > 0
+                    && (Ev * f->SE_alloc_psych + 4) / 10 < 2) ? 6 : 4;
                 if (can_grow) {
                     score = m.nutrient * max(4 + 4*(Nv < 0) + 4*(Nv < threshold)
                         + max(0, 5 - base->pop_size) - max(0, Nv - 1)/4, 2)
                         + m.mineral * (5 + 5*(Mv < 0) + 4*(Mv < 2))
-                        + (m.energy * effic_val + 15) / 16 * 4;
+                        + (m.energy * effic_val + 15) / 16 * energy_val;
                 } else {
                     score = m.nutrient * (Nv < 0 ? 8 : 2)
                         + m.mineral * (5 + 5*(Mv < 0) + 4*(Mv < 2))
-                        + (m.energy * effic_val + 15) / 16 * 4;
+                        + (m.energy * effic_val + 15) / 16 * energy_val;
                 }
                 score = 32*score - m.i; // Select adjacent tiles first
                 if (!((1 << m.i) & worked_tiles) && score > best_score) {
@@ -820,7 +836,8 @@ void __cdecl mod_base_yield() {
             base_update(base, choices);
             mod_base_minerals();
             mod_base_energy();
-            valid = !base->drone_riots();
+            // Take into account possible delayed drone riots after pop growth
+            valid = base->talent_total + delay_base_riot >= base->drone_total;
             if (!valid && manage_workers && best_spc_id != psych_spc_id
             && base->drone_total - base->talent_total > (base->pop_size + 3)/4) {
                 best_spc_id = psych_spc_id;
@@ -830,7 +847,7 @@ void __cdecl mod_base_yield() {
                 }
                 mod_base_minerals();
                 mod_base_energy();
-                valid = !base->drone_riots();
+                valid = base->talent_total + delay_base_riot >= base->drone_total;
             }
             if (base->mineral_surplus - choices.back().mineral < 0) {
                 // Priority for mineral support costs
@@ -1838,6 +1855,7 @@ int __cdecl mod_base_upkeep(int base_id) {
         mod_base_drones();
         // base_doctors() removed as obsolete with the updated worker allocation
         if ((*CurrentBase)->faction_id != faction_id) {
+            delay_base_riot = false;
             return 1; // drone_riot may change base ownership if revolt is active
         }
         mod_base_energy_costs();
@@ -1938,6 +1956,7 @@ int __cdecl mod_base_upkeep(int base_id) {
     if (!((*CurrentTurn + *CurrentBaseID) & 7)) {
         base->state_flags &= ~BSTATE_UNK_100000;
     }
+    delay_base_riot = false;
     return 0;
 }
 

@@ -343,16 +343,36 @@ void __cdecl mod_turn_upkeep() {
     do_all_non_input();
 }
 
-void __cdecl mod_load_map_daemon(int a1) {
-    // Another map selected from various dialogs
-    reset_state();
-    load_map_daemon(a1);
+/*
+Original file headers use TERRAN (savegames) and TERRANMAP (maps without game state).
+When unit count exceeds previous limit 2048, this extended version will use a modified
+file header for savegames to prevent these files from being opened on the original game.
+*/
+int __cdecl save_daemon_header(const char* header, FILE* file) {
+    if (*VehCount > MaxVehNum && !strcmp(header, "TERRAN")) {
+        return header_write("TERRAE", file);
+    }
+    return header_write(header, file);
 }
 
-void __cdecl mod_load_daemon(int a1, int a2) {
+int __cdecl load_daemon_strcmp(const char* value, const char* header) {
+    if (conf.modify_unit_limit && !strcmp(header, "TERRAN")) {
+        // Both original and extended version allowed
+        return strcmp(value, "TERRAN") && strcmp(value, "TERRAE");
+    }
+    return strcmp(value, header);
+}
+
+int __cdecl mod_load_map_daemon(const char* name) {
+    // Another map selected from various dialogs
+    reset_state();
+    return load_map_daemon(name);
+}
+
+int __cdecl mod_load_daemon(const char* name, int flag) {
     // Another savegame opened from selection dialog
     reset_state();
-    load_daemon(a1, a2);
+    return load_daemon(name, flag);
 }
 
 void __cdecl mod_auto_save() {

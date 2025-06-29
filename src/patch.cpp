@@ -13,11 +13,11 @@ Replace existing file locking on fwrite and similar statically linked library fu
 since MSVC documentation mentions these functions must lock the calling thread (also thread-safe).
 Previously this used file specific locks that apparently caused crashes on newer Windows versions.
 */
-void __cdecl mod_lock_file(void* UNUSED(ptr)) {
+void __cdecl mod_lock_file(void*) {
     FileLock.lock();
 }
 
-void __cdecl mod_unlock_file(void* UNUSED(ptr)) {
+void __cdecl mod_unlock_file(void*) {
     FileLock.unlock();
 }
 
@@ -34,12 +34,16 @@ int __cdecl ProdPicker_calculate_itoa(int UNUSED(value), char* buf, int UNUSED(b
     return 0;
 }
 
+int __thiscall NetWin_random_get(void*, int low, int high) {
+    return random_get(low, high); // Multiplayer random factions
+}
+
 int __cdecl zero_value() {
     return 0;
 }
 
 int __cdecl config_game_rand() {
-    int val = 0;
+    int val = 0; // Singleplayer random factions
     for (int i = 0; i < 1000; i++) {
         val = random(conf.faction_file_count);
         if ((1 << val) & ~conf.skip_random_factions) {
@@ -579,6 +583,10 @@ bool patch_setup(Config* cf) {
     write_call(0x5AAD7D, (int)mod_load_daemon); // load_game
     write_call(0x5ABEB3, (int)mod_load_daemon); // load_undo
     write_call(0x5ADCD7, (int)mod_load_daemon); // show_replay
+    write_call(0x5A9653, (int)save_daemon_header); // save_daemon
+    write_call(0x5A9BA8, (int)save_daemon_header); // save_map_daemon
+    write_call(0x5A97B3, (int)load_daemon_strcmp); // load_daemon
+    write_call(0x5A9CA0, (int)load_daemon_strcmp); // load_map_daemon
     write_call(0x4E1061, (int)mod_world_build); // Console::editor_generate
     write_call(0x4E113B, (int)mod_world_build); // Console::editor_fast
     write_call(0x58B9BF, (int)mod_world_build); // config_game
@@ -618,6 +626,8 @@ bool patch_setup(Config* cf) {
     write_call(0x51C12B, (int)mod_design_new_veh); // Console::iface_click
     write_call(0x43FE47, (int)DiploPop_spying); // DiploPop::draw_info
     write_call(0x43FEA8, (int)DiploPop_spying); // DiploPop::draw_info
+    write_call(0x482E79, (int)NetWin_random_get); // NetWin::prepare_game
+    write_call(0x482E96, (int)NetWin_random_get); // NetWin::prepare_game
     write_call(0x4E2A81, (int)prefs_get_strcpy); // AlphaNet::do_create
     write_call(0x4E2AA3, (int)prefs_get_strcpy); // AlphaNet::do_create
     write_call(0x4E2EA2, (int)prefs_get_strcpy); // AlphaNet::do_join
@@ -922,7 +932,36 @@ bool patch_setup(Config* cf) {
     write_call(0x560DDF, (int)mod_veh_avail); // enemy_capabilities
     write_call(0x560E86, (int)mod_veh_avail); // enemy_capabilities
     write_call(0x5B30E1, (int)mod_veh_avail); // setup_player
-    write_call(0x5808B3, (int)mod_is_bunged); // propose_proto
+    write_call(0x4CEF64, (int)mod_propose_proto); // action_give
+    write_call(0x4F59B2, (int)mod_propose_proto); // drone_riot
+    write_call(0x58188D, (int)mod_propose_proto); // consider_designs
+    write_call(0x581C1A, (int)mod_propose_proto); // consider_designs
+    write_call(0x581CA3, (int)mod_propose_proto); // consider_designs
+    write_call(0x581D16, (int)mod_propose_proto); // consider_designs
+    write_call(0x58215E, (int)mod_propose_proto); // consider_designs
+    write_call(0x5821C5, (int)mod_propose_proto); // consider_designs
+    write_call(0x582210, (int)mod_propose_proto); // consider_designs
+    write_call(0x5825F3, (int)mod_propose_proto); // consider_designs
+    write_call(0x582961, (int)mod_propose_proto); // consider_designs
+    write_call(0x582C22, (int)mod_propose_proto); // consider_designs
+    write_call(0x58306D, (int)mod_propose_proto); // consider_designs
+    write_call(0x583183, (int)mod_propose_proto); // consider_designs
+    write_call(0x5832D1, (int)mod_propose_proto); // consider_designs
+    write_call(0x583401, (int)mod_propose_proto); // consider_designs
+    write_call(0x583437, (int)mod_propose_proto); // consider_designs
+    write_call(0x583631, (int)mod_propose_proto); // consider_designs
+    write_call(0x5836F9, (int)mod_propose_proto); // consider_designs
+    write_call(0x5838F3, (int)mod_propose_proto); // consider_designs
+    write_call(0x5839B9, (int)mod_propose_proto); // consider_designs
+    write_call(0x5839EC, (int)mod_propose_proto); // consider_designs
+    write_call(0x583A1A, (int)mod_propose_proto); // consider_designs
+    write_call(0x583A64, (int)mod_propose_proto); // consider_designs
+    write_call(0x583B6A, (int)mod_propose_proto); // consider_designs
+    write_call(0x583C80, (int)mod_propose_proto); // consider_designs
+    write_call(0x5A4173, (int)mod_propose_proto); // probe
+    write_call(0x5A49F5, (int)mod_propose_proto); // probe
+    write_call(0x5BB364, (int)mod_propose_proto); // tech_achieved
+    write_call(0x5BB5CD, (int)mod_propose_proto); // tech_achieved
     write_call(0x438354, (int)mod_make_proto); // DesignWin::design_it
     write_call(0x580F6C, (int)mod_make_proto); // propose_proto
     write_call(0x587364, (int)mod_make_proto); // read_units

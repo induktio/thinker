@@ -59,13 +59,14 @@ int __cdecl find_return_base(int veh_id);
 int __cdecl probe_return_base(int UNUSED(x), int UNUSED(y), int veh_id);
 int __cdecl create_proto(int faction_id, VehChassis chs, VehWeapon wpn, VehArmor arm,
     VehAblFlag abls, VehReactor rec, VehPlan ai_plan);
-int __cdecl mod_is_bunged(int faction_id, VehChassis chs, VehWeapon wpn, VehArmor arm,
-    VehAblFlag abls, VehReactor rec);
+int __cdecl mod_propose_proto(int faction_id, VehChassis chs, VehWeapon wpn, VehArmor arm,
+    VehAblFlag abls, VehReactor rec, VehPlan ai_plan, char* name);
 void __cdecl mod_make_proto(int unit_id, VehChassis chassis_id,
     VehWeapon weapon_id, VehArmor armor_id, VehAblFlag abls, VehReactor reactor_id);
 int __cdecl mod_name_proto(char* name, int unit_id, int faction_id,
     VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec);
 
+VehPlan support_plan();
 VehArmor best_armor(int faction_id, int max_cost);
 VehWeapon best_weapon(int faction_id);
 VehReactor best_reactor(int faction_id);

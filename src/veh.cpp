@@ -2194,32 +2194,29 @@ VehAblFlag abls, VehReactor rec, VehPlan ai_plan) {
     char name[256];
     mod_name_proto(name, -1, faction_id, chs, wpn, arm, abls, rec);
     int unit_id = propose_proto(faction_id, chs, wpn, arm, abls, rec, ai_plan, (strlen(name) ? name : NULL));
-    debug("create_proto %4d %d chs: %d rec: %d wpn: %2d arm: %2d %08X %d %s\n",
-        *CurrentTurn, faction_id, chs, rec, wpn, arm, abls, unit_id, name);
+    debug("create_proto  %d %d chs: %d rec: %d wpn: %2d arm: %2d pln: %2d %08X %d %s\n",
+        *CurrentTurn, faction_id, chs, rec, wpn, arm, ai_plan, abls, unit_id, name);
     return unit_id;
 }
 
 /*
-This function is only called from propose_proto to skip prototypes that are invalid.
+Propose a new prototype to be added for the faction. However this may be skipped
+if a similar prototype already exists or other exclude conditions apply on the parameters.
 */
-int __cdecl mod_is_bunged(int faction_id, VehChassis chs, VehWeapon wpn, VehArmor arm,
-VehAblFlag abls, VehReactor rec) {
+int __cdecl mod_propose_proto(int faction_id, VehChassis chs, VehWeapon wpn, VehArmor arm,
+VehAblFlag abls, VehReactor rec, VehPlan ai_plan, char* name) {
+    debug("propose_proto %d %d chs: %d rec: %d wpn: %2d arm: %2d pln: %2d %08X %s\n",
+        *CurrentTurn, faction_id, chs, rec, wpn, arm, ai_plan, abls, (name ? name : ""));
     int triad = Chassis[chs].triad;
     int arm_v = Armor[arm].defense_value;
     int wpn_v = Weapon[wpn].offense_value;
-    debug("propose_proto %3d %d chs: %d rec: %d wpn: %2d arm: %2d %08X\n",
-        *CurrentTurn, faction_id, chs, rec, wpn, arm, abls);
-
-    if (!is_human(faction_id)) {
-        if (conf.design_units) {
-            if (triad == TRIAD_SEA && wpn_v > 0 && arm_v > 3
-            && arm_v > wpn_v + 1) {
-                return 1;
-            }
+    if (conf.design_units) {
+        if (triad == TRIAD_SEA && wpn_v > 0 && arm_v > 3 && arm_v > wpn_v + 1
+        && !(abls & ~(ABL_SLOW|ABL_DEEP_RADAR|ABL_TRAINED))) {
+            return -1; // skipped
         }
-        return 0;
     }
-    return is_bunged(faction_id, chs, wpn, arm, abls, rec);
+    return propose_proto(faction_id, chs, wpn, arm, abls, rec, ai_plan, name);
 }
 
 /*
@@ -2572,6 +2569,11 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
     }
     strcpy_n(name, MaxProtoNameLen, buf);
     return 0;
+}
+
+VehPlan support_plan() {
+    return (conf.modify_unit_support == 1 ? PLAN_SUPPLY :
+        (conf.modify_unit_support == 2 ? PLAN_PROBE : PLAN_TERRAFORM));
 }
 
 VehArmor best_armor(int faction_id, int max_cost) {
