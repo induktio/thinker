@@ -1,6 +1,31 @@
 
 # Thinker mod release changelog
 
+## Version 5.1 (2025-07-04)
+* Add option modify_altitude_limit to enable higher terrain elevation than 3500m limit. This will affect solar collector output and some combat modifiers.
+* Add option modify_unit_limit to increase the active unit limit from 2048 to 8192. When unit count exceeds previous limit 2048, the game will automatically use a modified savegame format.
+* Add option spawn_free_units to enable more detailed settings for any starting units.
+* Rename option tile_output_limit for clarity.
+* When Unit Workshop is opened, the interface loads the currently selected unit if any is available.
+* When long_range_artillery is enabled, ships with artillery ability are always named as Megafoil/Battleship.
+* When design_units is enabled, the game will create fewer designs for combat ships with heavy armor and minimal weapons.
+* Cost factor uses the original game values by default. At Librarian level AI has the same cost factors as the player factions.
+* Add tutorial dialog when the governor requests to build a secret project when tutorials are enabled from game preferences.
+* AI colony pods more actively avoid any locations near deep ocean tiles.
+* Player-owned units will try to follow patrol routes even when modified AI is enabled.
+* Governor tries to avoid retooling penalties when adjusting the current production.
+* Governor will take into account delay_drone_riots option during pop growth and not allocate specialists immediately.
+* Update Perimeter Defense, Naval Yard and Aerospace Complex datalinks descriptions.
+* Game displays warning dialog if modmenu.txt is not found from the game folder.
+* Fix minor display issue with Alien Offense/Defense combat modifiers.
+* Fix population sometimes being shown as negative when a base is submerged.
+* Fix several issues with research and other events not working during multiplayer.
+* Fix original game always defaulting to Look First on multiplayer even when this option is not selected.
+* Fix issue where completely hurrying current production at the base sometimes allowed multiple hurry actions during the same turn.
+* Fix issue after the faction capturing the base with Cloudbase Academy has their aircraft speed altered during the turn resulting in some aircraft crashing when they should not.
+* Fix rare issue that caused the base build queue to be saved with incorrect entries resulting in crashes during turn upkeep.
+
+
 ## Version 5.0 (2025-05-02)
 * Add config option resource_limit to adjust nutrient/mineral/energy production limits before the specific techs are achieved.
 * Modify the faction setup code to check by filename if multiple similar factions are active. If any duplicates are found, each one will have their faction_id as name suffix.
