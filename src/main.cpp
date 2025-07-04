@@ -420,6 +420,10 @@ int cmd_parse(Config* cf) {
     return 1;
 }
 
+bool FileExists(const char* path) {
+    return GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES;
+}
+
 void exit_fail(int32_t addr) {
     char buf[512];
     snprintf(buf, sizeof(buf),

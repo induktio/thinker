@@ -327,7 +327,7 @@ void __cdecl base_compute(bool update_prev) {
             (GOV_UNK_4|GOV_UNK_8|GOV_UNK_10|GOV_UNK_4000|GOV_UNK_10000000|GOV_UNK_20000000)));
         for (int i = base->queue_size; i > 0; --i) {
             if (i > 9 || base->queue_items[i] < -SP_ID_Last
-            || base->queue_items[i] > MaxProtoNum) {
+            || base->queue_items[i] >= MaxProtoNum) {
                 base->queue_size = 0;
                 memset(&base->queue_items[1], 0, 36);
                 assert(base->worked_tiles);

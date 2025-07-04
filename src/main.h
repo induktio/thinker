@@ -415,6 +415,7 @@ extern set_str_t movedlabels;
 extern map_str_t musiclabels;
 
 DLL_EXPORT DWORD ThinkerModule();
+bool FileExists(const char* path);
 void exit_fail(int32_t addr);
 void exit_fail();
 int opt_handle_error(const char* section, const char* name);

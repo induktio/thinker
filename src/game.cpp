@@ -99,6 +99,13 @@ void init_world_config() {
     if ((custom_game_rules || custom_more_rules) && !*MultiplayerActive) {
         *GameRules = (*GameRules & GAME_RULES_MASK) | custom_game_rules;
         *GameMoreRules = (*GameMoreRules & GAME_MRULES_MASK) | custom_more_rules;
+        if (*GameRules & RULES_SCN_NO_NATIVE_LIFE) {
+            for (int i = *VehCount - 1; i >= 0; --i) {
+                if (!Vehs[i].faction_id && Vehs[i].unit_id == BSC_FUNGAL_TOWER) {
+                    kill(i);
+                }
+            }
+        }
     }
 }
 

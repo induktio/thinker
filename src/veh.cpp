@@ -407,23 +407,23 @@ seems to be only set to true for certain combat calculations in battle_fight.
 Fix: due to limited size of moves_spent field, speeds over 255 are not allowed.
 */
 int __cdecl veh_speed(int veh_id, bool skip_morale) {
-    int unit_id = Vehs[veh_id].unit_id;
-    UNIT* u = &Units[unit_id];
-    bool normal_unit = unit_id >= MaxProtoFactionNum || u->offense_value() >= 0;
-    if (unit_id == BSC_FUNGAL_TOWER) {
+    VEH* veh = &Vehs[veh_id];
+    UNIT* u = &Units[veh->unit_id];
+    if (veh->unit_id == BSC_FUNGAL_TOWER) {
         return 0; // cannot move
     }
-    int speed_val = proto_speed(unit_id);
+    bool is_native = veh->is_native_unit();
+    int speed_val = proto_speed(veh->unit_id);
     int triad = u->triad();
-    if (triad == TRIAD_SEA && has_project(FAC_MARITIME_CONTROL_CENTER, Vehs[veh_id].faction_id)) {
+    if (triad == TRIAD_SEA && has_project(FAC_MARITIME_CONTROL_CENTER, veh->faction_id)) {
         speed_val += Rules->move_rate_roads * 2;
     }
     if (!skip_morale && mod_morale_veh(veh_id, true, 0) == MORALE_ELITE
-    && ((normal_unit && conf.normal_elite_moves > 0)
-    || (!normal_unit && conf.native_elite_moves > 0))) {
+    && ((is_native && conf.native_elite_moves > 0)
+    || (!is_native && conf.normal_elite_moves > 0))) {
         speed_val += Rules->move_rate_roads;
     }
-    if (Vehs[veh_id].damage_taken && triad != TRIAD_AIR) {
+    if (veh->damage_taken && triad != TRIAD_AIR) {
         int moves = speed_val / Rules->move_rate_roads;
         int reactor_val;
         if (u->plan == PLAN_ARTIFACT) {
@@ -433,7 +433,7 @@ int __cdecl veh_speed(int veh_id, bool skip_morale) {
             reactor_val = clamp((int)u->reactor_id, 1, 100) * 10;
             speed_val = clamp(reactor_val, 1, 99);
         }
-        speed_val = (moves * clamp(reactor_val - Vehs[veh_id].damage_taken, 0, 9999)
+        speed_val = (moves * clamp(reactor_val - veh->damage_taken, 0, 9999)
             + speed_val - 1) / speed_val;
         speed_val = clamp(speed_val, (triad == TRIAD_SEA) ? 2 : 1, 999) * Rules->move_rate_roads;
     }

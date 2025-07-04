@@ -21,10 +21,6 @@ void __cdecl mod_unlock_file(void*) {
     FileLock.unlock();
 }
 
-bool FileExists(const char* path) {
-    return GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES;
-}
-
 int __cdecl BaseWin_random_seed() {
     return *CurrentBaseID ^ *MapRandomSeed;
 }
