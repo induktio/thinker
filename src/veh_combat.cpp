@@ -1088,6 +1088,73 @@ void __cdecl promote(int veh_id) {
     }
 }
 
+/*
+Search nearby tiles for interceptors at airbases to defend from any attacks.
+Returns non-zero when suitable aircraft is found, zero if none is available.
+*/
+int __cdecl mod_interceptor(int faction_id_def, int faction_id_atk, int tx, int ty) {
+    int veh_id_def = -1;
+    int best_score = INT_MIN;
+    for (int i = 0; i < *VehCount; ++i) {
+        MAP* sq;
+        VEH* veh = &Vehs[i];
+        if (veh->faction_id == faction_id_def && veh->triad() == TRIAD_AIR
+        && has_abil(veh->unit_id, ABL_AIR_SUPERIORITY)
+        && map_range(veh->x, veh->y, tx, ty) <= conf.intercept_max_range
+        && (sq = mapsq(veh->x, veh->y))) {
+            if (sq->is_airbase() || mod_stack_check(i, 6, ABL_CARRIER, -1, -1)) {
+                // Modified priority for highest HP * Attack, then distance, then newer units
+                int score = 2 * veh->cur_hitpoints() * max(1, veh->offense_value())
+                    - map_range(veh->x, veh->y, tx, ty);
+                if (score >= best_score) {
+                    best_score = score;
+                    veh_id_def = i;
+                }
+            }
+        }
+    }
+    if (veh_id_def < 0) {
+        return 0;
+    }
+    VEH* veh = &Vehs[veh_id_def];
+    if (faction_id_def == MapWin->cOwner || faction_id_atk == MapWin->cOwner) {
+        parse_says(0, &MFactions[faction_id_def].adj_name_faction[0], -1, -1);
+        *VehLiftX = veh->x;
+        *VehLiftY = veh->y;
+        int base_id = base_find(veh->x, veh->y);
+        if (base_id >= 0) {
+            parse_says(1, &Bases[base_id].name[0], -1, -1);
+        }
+        Console_focus(MapWin, tx, ty, faction_id_def);
+        NetMsg_pop(NetMsg, "AIRSCRAMBLE", 5000, 0, 0);
+        int vx = veh->x;
+        int vy = veh->y;
+        while (map_range(vx, vy, tx, ty) > 0) {
+            int offset = -1;
+            int best_value = INT_MAX;
+            for (auto& m : iterate_tiles(vx, vy, 1, 9)) {
+                int value = map_range(m.x, m.y, tx, ty);
+                if (value < best_value) {
+                    best_value = value;
+                    offset = m.i - 1; // TableOffset -> BaseOffset
+                }
+            }
+            if (offset >= 0) {
+                veh_scoot(veh_id_def, vx, vy, offset, 0);
+                vx = wrap(vx + BaseOffsetX[offset]);
+                vy = vy + BaseOffsetY[offset];
+            } else {
+                assert(0);
+                return 0;
+            }
+        }
+    }
+    veh_drop(veh_lift(veh_id_def), tx, ty);
+    veh->order = ORDER_NONE;
+    veh->state &= ~(VSTATE_UNK_2000000|VSTATE_UNK_1000000|VSTATE_EXPLORE|VSTATE_ON_ALERT);
+    return 1;
+}
+
 int __cdecl mod_battle_fight(int veh_id, int offset, int table_offset, int option, int* def_id)
 {
     VEH* veh = &Vehs[veh_id];
@@ -1159,7 +1226,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
     && !veh_atk->is_missile()
     && !mod_stack_check(veh_id_def, 6, ABL_AIR_SUPERIORITY, -1, -1)
     && option && *VehAttackFlags & 2) {
-        intercept_state = interceptor(Vehs[veh_id_def].faction_id, faction_id_atk, tx, ty);
+        intercept_state = mod_interceptor(Vehs[veh_id_def].faction_id, faction_id_atk, tx, ty);
     }
     veh_id_def = find_defender(veh_id_def, veh_id_atk, combat_type);
     if (veh_id_def >= 0) {

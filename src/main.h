@@ -300,6 +300,7 @@ struct Config {
     int fungal_tower_bonus = 50;
     int planet_defense_bonus = 0;
     int sensor_defense_ocean = 0;
+    int intercept_max_range = 2;
     int collateral_damage_value = 3;
     int content_pop_player[MaxDiffNum] = {6,5,4,3,2,1};
     int content_pop_computer[MaxDiffNum] = {3,3,3,3,3,3};

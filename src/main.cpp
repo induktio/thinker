@@ -248,6 +248,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->planet_defense_bonus = atoi(value);
     } else if (MATCH("sensor_defense_ocean")) {
         cf->sensor_defense_ocean = atoi(value);
+    } else if (MATCH("intercept_max_range")) {
+        cf->intercept_max_range = clamp(atoi(value), 0, 8);
     } else if (MATCH("collateral_damage_value")) {
         cf->collateral_damage_value = clamp(atoi(value), 0, 127);
     } else if (MATCH("cost_factor")) {

@@ -277,7 +277,8 @@ void __cdecl mod_turn_upkeep() {
         for (int i = 1; i < MaxPlayerNum; i++) {
             Faction& plr = Factions[i];
             if (is_alien(i) || (!plr.base_count && !_strcmpi(MFactions[i].filename, "FUNGBOY"))) {
-                int flags = plr.player_flags | PFLAG_MULTI_TECH_ACHIEVED;
+                // TODO: investigate more consistent ways to mark factions for late spawns
+                int flags = plr.player_flags | PFLAG_MAP_REVEALED;
                 if (flags == -1 && plr.diff_level == -1 && !is_human(i) && !is_alive(i)) {
                     if (is_alien(i)) {
                         aliens_arrive = true;
