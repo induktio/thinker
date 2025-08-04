@@ -1063,6 +1063,9 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
     }
 }
 
+/*
+Check for possible promotions after victorious combat event unless capturing artifacts.
+*/
 void __cdecl promote(int veh_id) {
     VEH* veh = &Vehs[veh_id];
     if (veh_id >= 0 && !veh->is_missile()
@@ -1092,7 +1095,7 @@ void __cdecl promote(int veh_id) {
 Search nearby tiles for interceptors at airbases to defend from any attacks.
 Returns non-zero when suitable aircraft is found, zero if none is available.
 */
-int __cdecl mod_interceptor(int faction_id_def, int faction_id_atk, int tx, int ty) {
+int __cdecl interceptor(int faction_id_def, int faction_id_atk, int tx, int ty) {
     int veh_id_def = -1;
     int best_score = INT_MIN;
     for (int i = 0; i < *VehCount; ++i) {
@@ -1226,7 +1229,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
     && !veh_atk->is_missile()
     && !mod_stack_check(veh_id_def, 6, ABL_AIR_SUPERIORITY, -1, -1)
     && option && *VehAttackFlags & 2) {
-        intercept_state = mod_interceptor(Vehs[veh_id_def].faction_id, faction_id_atk, tx, ty);
+        intercept_state = interceptor(Vehs[veh_id_def].faction_id, faction_id_atk, tx, ty);
     }
     veh_id_def = find_defender(veh_id_def, veh_id_atk, combat_type);
     if (veh_id_def >= 0) {

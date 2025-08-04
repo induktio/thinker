@@ -481,7 +481,7 @@ struct VEH {
     uint8_t faction_id;
     uint8_t year_end_lurking;
     uint8_t damage_taken;
-    int8_t order;
+    uint8_t order;
     uint8_t waypoint_count;
     uint8_t patrol_current_point;
     int16_t waypoint_x[4]; // first doubles as transport veh_id if unit is sentry/board

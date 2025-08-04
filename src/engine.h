@@ -1430,7 +1430,7 @@ extern Fbattle_kill battle_kill;
 extern Fbattle_kill battle_kill_stack;
 //extern fp_1int promote;
 extern fp_1int invasions;
-extern fp_4int interceptor;
+//extern fp_4int interceptor;
 extern Fbattle_fight_1 battle_fight_1; // renamed
 extern Fbattle_fight_2 battle_fight_2; // renamed
 extern fp_1int say_num;

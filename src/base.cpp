@@ -594,9 +594,12 @@ void __cdecl mod_base_support() {
                         }
                     }
                 }
-                if (veh->offense_value() != 0 && veh->plan() != PLAN_AIR_SUPERIORITY
-                && !sq->is_base() && (veh->triad() == TRIAD_AIR
-                || mod_whose_territory(base->faction_id, veh->x, veh->y, 0, 0) != base->faction_id)) {
+                // Pacifism drones are only created for combat units that match either of these rules.
+                // 1) located on any foreign owned territory outside bases
+                // 2) any aircraft without plan set to Air Superiority (applied with the ability)
+                if (veh->offense_value() != 0 && ((!sq->is_base()
+                && mod_whose_territory(base->faction_id, veh->x, veh->y, 0, 0) != base->faction_id)
+                || (veh->triad() == TRIAD_AIR && veh->plan() != PLAN_AIR_SUPERIORITY))) {
                     (*BaseVehPacifismCount)++;
                     if (SE_police == -3 && *BaseVehPacifismCount == 1) {
                         veh->state |= VSTATE_PACIFISM_FREE_SKIP;
@@ -1405,12 +1408,13 @@ void __cdecl mod_base_psych(int base_id) {
     }
 
     if (SE_police == -3 && *BaseVehPacifismCount > 1) {
-        adjust_drone(base, *BaseVehPacifismCount - 1);
+        base->drone_total = min((int)base->pop_size, base->drone_total + *BaseVehPacifismCount - 1);
     } else if (SE_police == -4 && *BaseVehPacifismCount > 0) {
-        adjust_drone(base, *BaseVehPacifismCount);
+        base->drone_total = min((int)base->pop_size, base->drone_total + *BaseVehPacifismCount);
     } else if (SE_police <= -5 && *BaseVehPacifismCount > 0) {
-        adjust_drone(base, *BaseVehPacifismCount * 2);
+        base->drone_total = min((int)base->pop_size, base->drone_total + *BaseVehPacifismCount * 2);
     }
+    adjust_psych(base, 0, 0); // Pacifism should not create additional superdrones
     add_psych_row(base, 3); // Police / Pacifism
 
     // Always increase the talent count when any non-specialists are available
