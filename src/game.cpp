@@ -5,6 +5,32 @@ static uint32_t custom_game_rules = 0;
 static uint32_t custom_more_rules = 0;
 
 
+static const char* resource_icon(int value, bool ocean, bool add) {
+    if (value == RES_NUTRIENT) {
+        if (ocean) {
+            return add ? "rdneuw_sm.pcx" : "rdneuwdp_sm.pcx";
+        }
+        return add ? "rdneul_sm.pcx" : "rdneuldp_sm.pcx";
+    } else if (value == RES_MINERAL) {
+        if (ocean) {
+            return add ? "rdminw_sm.pcx" : "rdminwdp_sm.pcx";
+        }
+        return "rdminl_sm.pcx"; // No additional image available
+    } else if (value == RES_ENERGY) {
+        if (ocean) {
+            return add ? "rdengw_sm.pcx" : "rdengwdp_sm.pcx";
+        }
+        return add ? "rdengl_sm.pcx" : "rdengldp_sm.pcx";
+    }
+    assert(0);
+    return "";
+}
+
+static bool territory_avail(int faction_id, int x, int y) {
+    int owner = mod_whose_territory(faction_id, x, y, 0, 0);
+    return owner < 0 || owner == faction_id;
+}
+
 bool un_charter() {
     return ProposalPassCount[PROP_REPEAL_UN_CHARTER]
         <= ProposalPassCount[PROP_REINSTATE_UN_CHARTER];
@@ -204,6 +230,759 @@ void init_save_game(int faction_id) {
     }
 }
 
+void __cdecl mod_random_events(int flag) {
+    const uint32_t BEVENT_VISIBLE =
+        (BEVENT_CLOUD_COVER|BEVENT_HEAT_WAVE|BEVENT_BUST|BEVENT_INDUSTRY|BEVENT_FAMINE|BEVENT_BUMPER);
+    if (!flag) {
+        if (*SolarFlaresEvent & 2) {
+            *SolarFlaresEvent = 0;
+        } else if (*SolarFlaresEvent & 1) {
+            *SolarFlaresEvent = 2;
+        }
+        if (*DustCloudDuration < 0) {
+            *DustCloudDuration = 0;
+        }
+        *SunspotDuration = max(*SunspotDuration, -1000) - 1;
+        if (!*SunspotDuration) {
+            POP2("NOMORESPOTS", "space_sm.pcx", -1);
+        }
+        for (int i = 1; i < MaxPlayerNum; i++) {
+            for (int j = 1; j < MaxPlayerNum; j++) {
+                if (i != j && is_human(i) && !is_human(j)
+                && !has_treaty(j, i, DIPLO_WANT_REVENGE|DIPLO_VENDETTA)) {
+                    set_treaty(j, i, DIPLO_UNK_800|DIPLO_SHALL_BETRAY, 0);
+                }
+            }
+        }
+        if (*DustCloudDuration > 0 && !--(*DustCloudDuration)) {
+            POP2("NOMOREDUST", "stars_sm.pcx", -1);
+        }
+        for (int i = *BaseCount - 1; i >= 0; i--) {
+            BASE* base = &Bases[i];
+            if (base->event_flags & BEVENT_VISIBLE) {
+                // Skip decrement if turns value is already zero
+                if (base->random_event_turns > 0) {
+                    base->random_event_turns--;
+                }
+                if (!base->random_event_turns) {
+                    base->event_flags &= ~BEVENT_VISIBLE;
+                }
+            }
+        }
+        if (*GameState & STATE_PERIHELION_ACTIVE && !((game_year(*CurrentTurn) - 2180) % 80)) {
+            *GameState &= ~STATE_PERIHELION_ACTIVE;
+            POP2("PERIHELIONENDS", "stars_sm.pcx", -1);
+            return;
+        }
+        if (!(conf.skip_random_events & 1) && *CurrentTurn > 50) {
+            if (!((game_year(*CurrentTurn) - 2160) % 80)) {
+                *GameState |= STATE_PERIHELION_ACTIVE;
+                POP2("PERIHELION", "heat_sm.pcx", -1);
+                return;
+            }
+        }
+    }
+    if (*GameRules & RULES_BELL_CURVE || *CurrentTurn < 75 - *DiffLevel * 10) {
+        return;
+    }
+    if (!flag) {
+        // This replaces game_reseed / game_random to keep the states separate
+        map_rand.reseed(*MapRandomSeed + *CurrentTurn * 13);
+    }
+    const int base_id = map_rand.get(0, max(100, *BaseCount));
+    if (base_id >= *BaseCount) {
+        return;
+    }
+    BASE* base = &Bases[base_id];
+    Faction* plr = &Factions[base->faction_id];
+    const int faction_id = base->faction_id;
+    const bool is_player = faction_id == *CurrentPlayerFaction;
+    const bool is_visible = base->visibility & (uint8_t)(1 << *CurrentPlayerFaction);
+    const int bx = base->x;
+    const int by = base->y;
+    if (base->pop_size <= 3 || plr->base_count <= 1 || base->event_flags & BEVENT_VISIBLE) {
+        return;
+    }
+    const int event_value = map_rand.get(0, 22);
+    if (conf.skip_random_events & (1 << (event_value + 1))) {
+        return;
+    }
+    parse_num(0, 10);
+    parse_says(0, base->name, -1, -1); // Include initial base name by default
+
+    switch (event_value) {
+    case 0:
+        if (FactionRankings[7] != faction_id
+        || (is_human(faction_id) && plr->diff_level <= 1)
+        || !map_rand.get(0, 4)) {
+            base->event_flags |= BEVENT_BUMPER;
+            if (base->event_flags & BEVENT_VISIBLE) {
+                base->random_event_turns = 10;
+            }
+            if (is_player || *PbemActive) {
+                POP2("BUMPER", "bump_sm.pcx", base_id);
+            }
+        }
+        return;
+    case 1:
+        if (plr->ranking >= (*CurrentTurn >= 150) + 4) {
+            base->event_flags |= BEVENT_FAMINE;
+            if (base->event_flags & BEVENT_VISIBLE) {
+                base->random_event_turns = 10;
+            }
+            if (is_player || *PbemActive) {
+                if (!is_alien(faction_id)) {
+                    POP2("FAMINE", "starv_sm.pcx", base_id);
+                } else {
+                    POP2("FAMINE", "al_starv_sm.pcx", base_id);
+                }
+            }
+        }
+        return;
+    case 2:
+        if (FactionRankings[7] != faction_id
+        || (is_human(faction_id) && plr->diff_level <= 1)
+        || !map_rand.get(0, 4)) {
+            base->event_flags |= BEVENT_INDUSTRY;
+            if (base->event_flags & BEVENT_VISIBLE) {
+                base->random_event_turns = 10;
+            }
+            if (is_player || *PbemActive) {
+                POP2("INDUSTRY", "indbm_sm.pcx", base_id);
+            }
+        }
+        return;
+    case 3:
+        if (plr->ranking >= (*CurrentTurn >= 150) + 4) {
+            base->event_flags |= BEVENT_BUST;
+            if (base->event_flags & BEVENT_VISIBLE) {
+                base->random_event_turns = 10;
+            }
+            if (is_player || *PbemActive) {
+                POP2("BUST", "genwarning_sm.pcx", base_id);
+            }
+        }
+        return;
+    case 4:
+        if (FactionRankings[7] != faction_id
+        || (is_human(faction_id) && plr->diff_level <= 1)
+        || !map_rand.get(0, 4)) {
+            base->event_flags |= BEVENT_HEAT_WAVE;
+            if (base->event_flags & BEVENT_VISIBLE) {
+                base->random_event_turns = 10;
+            }
+            if (is_player || *PbemActive) {
+                POP2("HEATWAVE", "heat_sm.pcx", base_id);
+            }
+        }
+        return;
+    case 5:
+        if (plr->ranking >= (*CurrentTurn >= 150) + 4) {
+            base->event_flags |= BEVENT_CLOUD_COVER;
+            if (base->event_flags & BEVENT_VISIBLE) {
+                base->random_event_turns = 10;
+            }
+            if (is_player || *PbemActive) {
+                POP2("CLOUDCOVER", "cloud_sm.pcx", base_id);
+            }
+        }
+        return;
+    case 6:
+        bool has_hosp, has_nano;
+        has_hosp = has_fac_built(FAC_RESEARCH_HOSPITAL, base_id);
+        has_nano = has_fac_built(FAC_NANOHOSPITAL, base_id);
+        if (has_hosp || has_nano) {
+            if (has_nano) {
+                parse_says(1, Facility[FAC_NANOHOSPITAL].name, -1, -1);
+            } else {
+                parse_says(1, Facility[FAC_RESEARCH_HOSPITAL].name, -1, -1);
+            }
+            if (is_player) {
+                Console_focus(MapWin, base->x, base->y, *CurrentPlayerFaction);
+                POP2("PROMETHEUS1", "biohazd_sm.pcx", base_id);
+            } else if (*PbemActive) {
+                POP2("PROMETHEUS1", "biohazd_sm.pcx", base_id);
+            }
+            return;
+        }
+        if (!has_project(FAC_HUMAN_GENOME_PROJECT, faction_id)
+        && !has_project(FAC_LONGEVITY_VACCINE, faction_id)
+        && !has_project(FAC_CLINICAL_IMMORTALITY, faction_id)) {
+            if (plr->ranking >= (*CurrentTurn >= 150) + 4) {
+                int base_id_tgt = -1;
+                int num = (base->pop_size + 1) / 2;
+                parse_num(1, num);
+                if (is_player || is_visible) {
+                    base_id_tgt = base_id;
+                    Console_focus(MapWin, base->x, base->y, *CurrentPlayerFaction);
+                }
+                for (int i = 0; i < *BaseCount; i++) {
+                    BASE* b = &Bases[i];
+                    if (map_range(base->x, base->y, b->x, b->y) <= num) {
+                        if (!has_fac_built(FAC_RESEARCH_HOSPITAL, i)
+                        && !has_fac_built(FAC_NANOHOSPITAL, i)
+                        && !has_project(FAC_HUMAN_GENOME_PROJECT, b->faction_id)
+                        && !has_project(FAC_LONGEVITY_VACCINE, b->faction_id)
+                        && !has_project(FAC_CLINICAL_IMMORTALITY, b->faction_id)) {
+                            b->pop_size = (b->pop_size + 1) / 2;
+                            draw_tile(b->x, b->y, 2);
+                            if (b->faction_id == *CurrentPlayerFaction) {
+                                base_id_tgt = i;
+                                Console_focus(MapWin, b->x, b->y, *CurrentPlayerFaction);
+                            } else if (*PbemActive) {
+                                base_id_tgt = i;
+                            }
+                        }
+                    }
+                }
+                if (base_id_tgt >= 0) {
+                    POP2("PROMETHEUS0", "biohazd_sm.pcx", base_id_tgt);
+                }
+            }
+            return;
+        }
+        if (has_project(FAC_HUMAN_GENOME_PROJECT, faction_id)) {
+            parse_says(1, Facility[FAC_HUMAN_GENOME_PROJECT].name, -1, -1);
+        } else if (has_project(FAC_LONGEVITY_VACCINE, faction_id)) {
+            parse_says(1, Facility[FAC_LONGEVITY_VACCINE].name, -1, -1);
+        } else {
+            parse_says(1, Facility[FAC_CLINICAL_IMMORTALITY].name, -1, -1);
+        }
+        if (is_player) {
+            Console_focus(MapWin, base->x, base->y, *CurrentPlayerFaction);
+            POP2("PROMETHEUS2", "biohazd_sm.pcx", base_id);
+        } else if (*PbemActive) {
+            POP2("PROMETHEUS2", "biohazd_sm.pcx", base_id);
+        }
+        return;
+    case 7:
+    case 8:
+        if (*PbemActive) {
+            return;
+        }
+        int offset, nearby, tx, ty;
+        offset = map_rand.get(0, 20) + 1;
+        nearby = 0;
+        for (int i = 0; i < 9; i++) {
+            MAP* sq = next_tile(base->x, base->y, i, &tx, &ty);
+            if (sq && bonus_at(tx, ty) && is_known(tx, ty, faction_id)
+            && (is_ocean(sq) || territory_avail(faction_id, tx, ty))) {
+                offset = i;
+                nearby = 1;
+                break;
+            }
+        }
+        MAP* bsq;
+        bsq = next_tile(base->x, base->y, offset, &tx, &ty);
+        if (bsq && is_known(tx, ty, faction_id)) {
+            bool ocean = is_ocean(bsq);
+            if (ocean || territory_avail(faction_id, tx, ty)) {
+                int value = bonus_at(tx, ty);
+                if (nearby && value) {
+                    if (*CurrentTurn >= 75) {
+                        parse_says(1, ResName[value - 1].name_plural, -1, -1);
+                        bit_set(tx, ty, BIT_BONUS_RES, 0);
+                        synch_bit(tx, ty, faction_id);
+                        draw_tile(tx, ty, 2);
+                        if (!bonus_at(tx, ty) && is_player) {
+                            MapWin_set_center(MapWin, tx, ty, 1);
+                            if (!shift_key_down()) {
+                                for (int i = 0; i < 10; i++) {
+                                    bit_set(tx, ty, BIT_BONUS_RES, 1);
+                                    synch_bit(tx, ty, faction_id);
+                                    draw_tile(tx, ty, 2);
+                                    if (!shift_key_down() && !*MultiplayerActive) {
+                                        clock_wait(20);
+                                    }
+                                    bit_set(tx, ty, BIT_BONUS_RES, 0);
+                                    synch_bit(tx, ty, faction_id);
+                                    draw_tile(tx, ty, 2);
+                                    if (!shift_key_down() && !*MultiplayerActive) {
+                                        clock_wait(20);
+                                    }
+                                }
+                            }
+                            if (!shift_key_down() && !*MultiplayerActive) {
+                                clock_wait(100);
+                            }
+                            POP2("PETERSOUT", resource_icon(value, ocean, 0), -1);
+                        }
+                    }
+                } else if (!value) { // Fix: always check that no resource exists before
+                    bit_set(tx, ty, BIT_BONUS_RES, 1);
+                    synch_bit(tx, ty, faction_id);
+                    draw_tile(tx, ty, 2);
+                    value = bonus_at(tx, ty);
+                    if (value && is_player) {
+                        MapWin_set_center(MapWin, tx, ty, 1);
+                        if (!shift_key_down()) {
+                            for (int i = 0; i < 10; i++) {
+                                bit_set(tx, ty, BIT_BONUS_RES, 0);
+                                synch_bit(tx, ty, faction_id);
+                                draw_tile(tx, ty, 2);
+                                if (!shift_key_down() && !*MultiplayerActive) {
+                                    clock_wait(20);
+                                }
+                                bit_set(tx, ty, BIT_BONUS_RES, 1);
+                                synch_bit(tx, ty, faction_id);
+                                draw_tile(tx, ty, 2);
+                                if (!shift_key_down() && !*MultiplayerActive) {
+                                    clock_wait(20);
+                                }
+                            }
+                        }
+                        parse_says(1, ResName[value - 1].name_plural, -1, -1);
+                        POP2("NEWRESOURCE", resource_icon(value, ocean, 1), -1);
+                    }
+                }
+            }
+        }
+        return;
+    case 9:
+        if (!*SolarFlaresEvent && !map_rand.get(0, 5)) {
+            bool found = 0;
+            for (int i = 1; i < MaxPlayerNum; i++) {
+                if (Factions[i].satellites_energy || Factions[i].satellites_ODP) {
+                    Factions[i].satellites_energy = 0;
+                    Factions[i].satellites_ODP = 0;
+                    found = 1;
+                }
+            }
+            *SolarFlaresEvent = 1;
+            if (found) {
+                POP2("SOLARSTORM", "sun_sm.pcx", -1);
+            } else {
+                POP2("SOLARFLARE", "heat_sm.pcx", -1);
+            }
+        }
+        return;
+    case 10:
+        if (!map_rand.get(0, 5)) {
+            bool found = 0;
+            for (int i = 1; i < MaxPlayerNum; i++) {
+                if (Factions[i].satellites_mineral) {
+                    Factions[i].satellites_mineral = 0;
+                    found = 1;
+                }
+            }
+            if (found) {
+                POP2("ASTEROID", "astm_sm.pcx", -1);
+            }
+        }
+        return;
+    case 11:
+        if (*CurrentTurn >= 50 && *SunspotDuration <= -40
+        && (*SunspotDuration <= -80 || *CurrentTurn < 80 || !map_rand.get(0, 3))) {
+            *SunspotDuration = map_rand.get(0, 11) + 10;
+            parse_num(0, 20);
+            POP2("SUNSPOTS", "solar_sm.pcx", -1);
+        }
+        return;
+    case 12:
+        if (plr->energy_credits > 1000) {
+            if (is_human(faction_id) || plr->energy_credits > 2000) {
+                // Fix: use the suitable icon for energy market crash event
+                // This also reduces reserves only by 1/2 instead of 3/4 like previously
+                plr->energy_credits /= 2;
+                if (is_player) {
+                    parse_num(0, plr->energy_credits);
+                    Console_update_data(MapWin, 0);
+                    POP2("INFLATION", "genwarning_sm.pcx", -1);
+                } else if (*PbemActive) {
+                    parse_num(0, plr->energy_credits);
+                    POP2("INFLATION", "genwarning_sm.pcx", -1 - faction_id);
+                }
+            }
+        } else if (plr->ranking <= 4 && plr->energy_credits <= 500) {
+            plr->energy_credits *= 2;
+            if (is_player) {
+                parse_num(0, plr->energy_credits);
+                Console_update_data(MapWin, 0);
+                POP2("ENERGYBOOM", "markbm_sm.pcx", -1);
+            }
+        }
+        return;
+    case 13:
+        if (*CurrentTurn >= 75 && plr->ranking >= (*CurrentTurn >= 150) + 4) {
+            bool show_event = 0;
+            for (int i = 0; i < 21; i++) {
+                MAP* sq = next_tile(base->x, base->y, i, &tx, &ty);
+                if (sq && !is_ocean(sq) && sq->items & BIT_SOLAR && is_known(tx, ty, faction_id)) {
+                    if (territory_avail(faction_id, tx, ty)) {
+                        if (*PbemActive) {
+                            show_event = 1;
+                        } else if (is_player || is_visible) {
+                            if (!show_event) {
+                                Console_focus(MapWin, base->x, base->y, *CurrentPlayerFaction);
+                                if (!shift_key_down() && !*MultiplayerActive) {
+                                    clock_wait(200);
+                                }
+                            }
+                            show_event = 1;
+                        }
+                        bit_set(tx, ty, BIT_SOLAR, 0);
+                        synch_bit(tx, ty, faction_id);
+                        for (int j = 1; j < MaxPlayerNum; j++) {
+                            sq->visible_items[j - 1] &= ~BIT_SOLAR;
+                        }
+                        if (show_event) {
+                            draw_tile(tx, ty, 2);
+                            if (!shift_key_down() && !*MultiplayerActive && !*PbemActive) {
+                                clock_wait(50);
+                            }
+                        }
+                    }
+                }
+            }
+            if (show_event) {
+                POP2("HAIL", "hail_sm.pcx", base_id);
+            }
+        }
+        return;
+    case 14:
+        if (*PbemActive || *CurrentTurn < 75 || *GameState & STATE_IS_SCENARIO
+        || plr->base_count < 8 || plr->ranking < 6) {
+            return;
+        }
+        if (!mapsq(*MountPlanetX, *MountPlanetY)
+        || (bit2_at(*MountPlanetX, *MountPlanetY) & (LM_DISABLE|LM_VOLCANO)) != LM_VOLCANO) {
+            return;
+        }
+        if (map_range(bx, by, *MountPlanetX, *MountPlanetY) > 5
+        || !is_known(*MountPlanetX, *MountPlanetY, faction_id)) {
+            return;
+        }
+        bool visible;
+        visible = is_known(*MountPlanetX, *MountPlanetY, *CurrentPlayerFaction);
+        for (int i = 0; i < 81; i++) {
+            MAP* sq = next_tile(bx, by, i, &tx, &ty);
+            if (sq) {
+                bit_set(tx, ty, BIT_SENSOR|BIT_THERMAL_BORE|BIT_ECH_MIRROR|BIT_CONDENSER|BIT_FOREST|\
+                    BIT_SOIL_ENRICHER|BIT_FARM|BIT_BUNKER|BIT_SOLAR|BIT_FUNGUS|BIT_MINE|BIT_MAGTUBE|BIT_ROAD, 0);
+                synch_bit(tx, ty, *CurrentPlayerFaction);
+                rocky_set(tx, ty, LEVEL_ROCKY);
+                bool volcano = (sq->landmarks & (LM_DISABLE|LM_VOLCANO)) == LM_VOLCANO;
+                for (int j = *VehCount - 1; j >= 0; j--) {
+                    VEH* veh = &Vehs[j];
+                    if (veh->x == tx && veh->y == ty) {
+                        if (volcano) {
+                            veh_kill(j);
+                        } else {
+                            veh->damage_taken += veh->cur_hitpoints() / 2;
+                        }
+                    }
+                }
+                int base_id_tgt = base_at(tx, ty);
+                if (base_id_tgt >= 0) {
+                    BASE* b = &Bases[base_id_tgt];
+                    if (b->faction_id == *CurrentPlayerFaction && !is_player) {
+                        parse_says(0, b->name, -1, -1);
+                        visible = 1;
+                    }
+                    if (i < 9 && !is_objective(base_id_tgt)) {
+                        mod_base_kill(base_id_tgt);
+                    } else if (i < 25) {
+                        b->pop_size = (b->pop_size + 3) / 4;
+                    } else if (i < 49) {
+                        b->pop_size = (b->pop_size + 1) / 2;
+                    } else {
+                        b->pop_size = (3 * (b->pop_size + 1)) / 4;
+                    }
+                }
+            }
+        }
+        if (!visible || !Console_focus(MapWin, *MountPlanetX, *MountPlanetY, *CurrentPlayerFaction)) {
+            draw_map(1);
+        }
+        *DustCloudDuration = 10;
+        popp(ScriptFile, "BIGFATVOLCANO", 0, "volc_sm.pcx", 0);
+        return;
+    case 15:
+        if (*PbemActive || *CurrentTurn < 75 || *GameState & STATE_IS_SCENARIO
+        || plr->base_count < 8 || plr->ranking < 7 || near_landmark(bx, by)) {
+            return;
+        }
+        visible = is_known(bx, by, *CurrentPlayerFaction);
+        int sea_count;
+        sea_count = 0;
+        for (int i = 0; i < 49; i++) {
+            MAP* sq = next_tile(bx, by, i, &tx, &ty);
+            if (sq && is_ocean(sq)) {
+                if (i < 25 || ++sea_count > 4) {
+                    return;
+                }
+            }
+        }
+        for (int i = 0; i < 49; i++) {
+            MAP* sq = next_tile(bx, by, i, &tx, &ty);
+            if (sq) {
+                bit_set(tx, ty, BIT_SENSOR|BIT_THERMAL_BORE|BIT_ECH_MIRROR|BIT_CONDENSER|BIT_FOREST|\
+                    BIT_SOIL_ENRICHER|BIT_FARM|BIT_BUNKER|BIT_SOLAR|BIT_FUNGUS|BIT_MINE|BIT_MAGTUBE|BIT_ROAD, 0);
+                synch_bit(tx, ty, *CurrentPlayerFaction);
+                int base_id_tgt = base_at(tx, ty);
+                if (base_id_tgt >= 0) {
+                    BASE* b = &Bases[base_id_tgt];
+                    if (b->faction_id == *CurrentPlayerFaction && !is_player) {
+                        parse_says(0, b->name, -1, -1);
+                        visible = 1;
+                    }
+                    mod_base_kill(base_id_tgt);
+                }
+                for (int j = *VehCount - 1; j >= 0; j--) {
+                    VEH* veh = &Vehs[j];
+                    if (veh->x == tx && veh->y == ty) {
+                        if (veh->faction_id == *CurrentPlayerFaction) {
+                            visible = 1;
+                        }
+                        veh_kill(j);
+                    }
+                }
+            }
+        }
+        world_crater(bx, by);
+        world_climate();
+        if (!visible || !Console_focus(MapWin, bx, by, *CurrentPlayerFaction)) {
+            draw_map(1);
+        }
+        *DustCloudDuration = 10;
+        popp(ScriptFile, "EATTHIS", 0, "astp_sm.pcx", 0);
+        return;
+    case 16:
+        if (has_tech(Facility[FAC_BIOLOGY_LAB].preq_tech, faction_id)) {
+            bool has_lab = has_fac_built(FAC_BIOLOGY_LAB, base_id);
+            bool show_event = 0;
+            if (has_lab || plr->ranking >= (*CurrentTurn >= 150) + 4) {
+                for (int i = 0; i < 21; i++) {
+                    MAP* sq = next_tile(base->x, base->y, i, &tx, &ty);
+                    if (sq && !is_ocean(sq) && sq->items & (BIT_FOREST|BIT_FARM) && is_known(tx, ty, faction_id)) {
+                        if (territory_avail(faction_id, tx, ty)) {
+                            if (!has_lab) {
+                                if (!show_event) {
+                                    Console_focus(MapWin, base->x, base->y, *CurrentPlayerFaction);
+                                    if (!shift_key_down() && !*MultiplayerActive) {
+                                        clock_wait(200);
+                                    }
+                                }
+                                bit_set(tx, ty, BIT_FOREST|BIT_SOIL_ENRICHER|BIT_FARM, 0);
+                                synch_bit(tx, ty, faction_id);
+                                for (int j = 1; j < MaxPlayerNum; j++) {
+                                    sq->visible_items[j - 1] &= ~(BIT_FOREST|BIT_SOIL_ENRICHER|BIT_FARM);
+                                }
+                                draw_tile(tx, ty, 2);
+                                if (!shift_key_down() && !*MultiplayerActive) {
+                                    clock_wait(50);
+                                }
+                            }
+                            show_event = 1;
+                        }
+                    }
+                }
+                if (show_event) {
+                    if (has_lab) {
+                        base->event_flags |= BEVENT_BUMPER;
+                        base->random_event_turns = 10;
+                    }
+                    if (is_player) {
+                        if (!Console_focus(MapWin, base->x, base->y, faction_id)) {
+                            draw_radius(base->x, base->y, 2, 2);
+                        }
+                    }
+                    if (is_player || *PbemActive) {
+                        POP2(has_lab ? "BLIGHT1" : "BLIGHT", "biohazd_sm.pcx", base_id);
+                    }
+                }
+            }
+        }
+        return;
+    case 17:
+        if (has_tech(Facility[FAC_ENERGY_BANK].preq_tech, faction_id)) {
+            bool has_bank = 0;
+            bool show_event = 0;
+            if (has_facility(FAC_ENERGY_BANK, base_id)) {
+                has_bank = 1;
+            } else if (plr->ranking < (*CurrentTurn >= 150) + 4) {
+                return;
+            }
+            for (int i = 0; i < 21; i++) {
+                MAP* sq = next_tile(base->x, base->y, i, &tx, &ty);
+                if (sq && !is_ocean(sq) && sq->items & BIT_MINE && is_known(tx, ty, faction_id)) {
+                    if (territory_avail(faction_id, tx, ty)) {
+                        if (!has_bank) {
+                            if (!show_event) {
+                                Console_focus(MapWin, base->x, base->y, *CurrentPlayerFaction);
+                                if (!shift_key_down() && !*MultiplayerActive) {
+                                    clock_wait(200);
+                                }
+                            }
+                            bit_set(tx, ty, BIT_MINE, 0);
+                            synch_bit(tx, ty, faction_id);
+                            for (int j = 1; j < MaxPlayerNum; j++) {
+                                sq->visible_items[j - 1] &= ~BIT_MINE;
+                            }
+                            draw_tile(tx, ty, 2);
+                            if (!shift_key_down() && !*MultiplayerActive) {
+                                clock_wait(50);
+                            }
+                        }
+                        show_event = 1;
+                    }
+                }
+            }
+            if (show_event) {
+                if (has_bank) {
+                    plr->energy_credits += 50;
+                }
+                if (is_player) {
+                    if (!Console_focus(MapWin, base->x, base->y, faction_id)) {
+                        draw_radius(base->x, base->y, 2, 2);
+                    }
+                }
+                if (is_player || *PbemActive) {
+                    POP2(has_bank ? "SURGE1" : "SURGE", "markbm_sm.pcx", base_id);
+                }
+            }
+        }
+        return;
+    case 18:
+        if (has_tech(Facility[FAC_NETWORK_NODE].preq_tech, faction_id)) {
+            if (plr->tech_accumulated >= mod_tech_rate(faction_id) / 4) {
+                if (has_fac_built(FAC_NETWORK_NODE, base_id)) {
+                    plr->tech_accumulated = mod_tech_rate(faction_id);
+                    if (is_player) {
+                        Console_focus(MapWin, base->x, base->y, faction_id);
+                    }
+                    if (is_player || *PbemActive) {
+                        POP2("NETBONUS", "markbm_sm.pcx", base_id);
+                    }
+                } else if (plr->ranking >= (*CurrentTurn >= 150) + 4) {
+                    plr->tech_accumulated = 0;
+                    plr->net_random_event = 0;
+                    if (is_player) {
+                        Console_focus(MapWin, base->x, base->y, faction_id);
+                    }
+                    if (is_player || *PbemActive) {
+                        POP2("NETCRASH", "netcr_sm.pcx", base_id);
+                    }
+                }
+            }
+        }
+        return;
+    case 19:
+        if (has_tech(Facility[FAC_CHILDREN_CRECHE].preq_tech, faction_id)) {
+            if (has_fac_built(FAC_CHILDREN_CRECHE, base_id)) {
+                int added = 0;
+                // Fix: check that base facilities allow increased population
+                while (base->nutrient_surplus > 0 && base_unused_space(base_id) > 0 && ++added < 3) {
+                    base->pop_size++;
+                    set_base(base_id);
+                    base_compute(1);
+                }
+                if (added) {
+                    if (is_player) {
+                        if (!Console_focus(MapWin, base->x, base->y, faction_id)) {
+                            draw_tile(base->x, base->y, 2);
+                        }
+                    }
+                    if (is_player || *PbemActive) {
+                        if (!is_alien(faction_id)) {
+                            POP2("CRECHE1", "pop_sm.pcx", base_id);
+                        } else {
+                            POP2("CRECHE1", "al_pop_sm.pcx", base_id);
+                        }
+                    }
+                }
+            } else if (plr->ranking >= (*CurrentTurn >= 150) + 4 && !base->assimilation_turns_left) {
+                base->assimilation_turns_left = 5;
+                if (is_player) {
+                    Console_focus(MapWin, base->x, base->y, faction_id);
+                }
+                if (is_player || *PbemActive) {
+                    if (!is_alien(faction_id)) {
+                        POP2("CRECHE", "pop_sm.pcx", base_id);
+                    } else {
+                        POP2("CRECHE", "al_pop_sm.pcx", base_id);
+                    }
+                }
+            }
+        }
+        return;
+    case 20:
+        if (!*PbemActive && *CurrentTurn >= 75 && plr->ranking >= (*CurrentTurn >= 150) + 4) {
+            bool show_event = 0;
+            for (int i = 0; i < 21; i++) {
+                MAP* sq = next_tile(base->x, base->y, i, &tx, &ty);
+                if (sq && is_ocean(sq) && sq->items & BIT_FARM && is_known(tx, ty, faction_id)) {
+                    // Fix: remove another is_ocean check that prevented the event from happening
+                    if (territory_avail(faction_id, tx, ty)) {
+                        if (is_player || is_visible) {
+                            if (!show_event) {
+                                Console_focus(MapWin, base->x, base->y, *CurrentPlayerFaction);
+                                if (!shift_key_down() && !*MultiplayerActive) {
+                                    clock_wait(200);
+                                }
+                            }
+                            show_event = 1;
+                        }
+                        bit_set(tx, ty, BIT_FARM, 0);
+                        synch_bit(tx, ty, faction_id);
+                        for (int j = 1; j < MaxPlayerNum; j++) {
+                            sq->visible_items[j - 1] &= ~BIT_FARM;
+                        }
+                        if (show_event) {
+                            draw_tile(tx, ty, 2);
+                            if (!shift_key_down() && !*MultiplayerActive) {
+                                clock_wait(50);
+                            }
+                        }
+                    }
+                }
+            }
+            if (show_event) {
+                POP2("KELPWIPE", 0, is_player ? base_id : -1);
+            }
+        }
+        return;
+    case 21:
+        if (!*PbemActive && *CurrentTurn >= 75 && plr->ranking >= (*CurrentTurn >= 150) + 4) {
+            bool show_event = 0;
+            for (int i = 0; i < 21; i++) {
+                MAP* sq = next_tile(base->x, base->y, i, &tx, &ty);
+                if (sq && is_ocean(sq) && sq->items & BIT_MINE && is_known(tx, ty, faction_id)) {
+                    // Fix: remove another is_ocean check that prevented the event from happening
+                    if (territory_avail(faction_id, tx, ty)) {
+                        if (is_player || is_visible) {
+                            if (!show_event) {
+                                Console_focus(MapWin, base->x, base->y, *CurrentPlayerFaction);
+                                if (!shift_key_down() && !*MultiplayerActive) {
+                                    clock_wait(200);
+                                }
+                            }
+                            show_event = 1;
+                        }
+                        bit_set(tx, ty, BIT_MINE, 0);
+                        synch_bit(tx, ty, faction_id);
+                        for (int j = 1; j < MaxPlayerNum; j++) {
+                            sq->visible_items[j - 1] &= ~BIT_MINE;
+                        }
+                        if (show_event) {
+                            draw_tile(tx, ty, 2);
+                            if (!shift_key_down() && !*MultiplayerActive) {
+                                clock_wait(50);
+                            }
+                        }
+                    }
+                }
+            }
+            if (show_event) {
+                POP2("PLATFORMWIPE", 0, is_player ? base_id : -1);
+            }
+        }
+        return;
+    default:
+        return;
+    }
+}
+
 void __cdecl mod_turn_upkeep() {
     debug("turn_upkeep %d bases: %d vehs: %d\n", (*CurrentTurn)+1, *BaseCount, *VehCount);
     snprintf(ThinkerVars->build_date, 12, MOD_DATE);
@@ -329,7 +1108,7 @@ void __cdecl mod_turn_upkeep() {
             }
         }
     }
-    random_events(0);
+    mod_random_events(0);
     if (*CurrentTurn == 75 && has_tech(Facility[FAC_BIOLOGY_LAB].preq_tech, *CurrentPlayerFaction)) {
         interlude(1, 0, 1, 0);
     }

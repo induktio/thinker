@@ -164,7 +164,7 @@ int __thiscall Win_is_visible(Win* This) {
 }
 
 /*
-Returns true only when the world map is visible and has focus
+Returns GW_World only when the world map is visible and has focus
 and other large modal windows are not blocking it.
 Other modal windows with the exception of BaseWin are already
 covered by checking Win_get_key_window condition.

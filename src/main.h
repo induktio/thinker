@@ -280,9 +280,6 @@ struct Config {
     int spawn_sealurks = 1;
     int spawn_battle_ogres = 1;
     int planetpearls = 1;
-    int event_perihelion = 1;
-    int event_sunspots = 10;
-    int event_market_crash = 1;
     int altitude_limit = 6; // internal variable
     int tile_output_limit[3] = {2,2,2};
     int soil_improve_value = 0;
@@ -318,6 +315,7 @@ struct Config {
     LMConfig landmarks;
     int minimal_popups = 0; // unlisted option
     int diplo_patience = 0; // internal variable
+    int skip_random_events = 0; // internal variable
     int skip_random_factions = 0; // internal variable
     int faction_file_count = 14; // internal variable
     int reduced_mode = 0; // internal variable

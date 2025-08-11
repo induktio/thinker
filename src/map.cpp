@@ -12,7 +12,7 @@ static int mapgen_rand(int value) {
     return (value > 1 ? map_rand.get(value) : 0);
 }
 
-static MAP* next_tile(int x, int y, size_t offset, int* tx, int* ty) {
+MAP* next_tile(int x, int y, size_t offset, int* tx, int* ty) {
     *tx = wrap(x + TableOffsetX[offset]);
     *ty = y + TableOffsetY[offset];
     return mapsq(*tx, *ty);
@@ -130,6 +130,12 @@ void refresh_overlay(std::function<int(int, int)> tile_value) {
         }
         draw_map(1);
     }
+}
+
+int __cdecl is_known(int x, int y, int faction_id) {
+    assert(faction_id >= 0 && faction_id < MaxPlayerNum && mapsq(x, y));
+    return Factions[faction_id].player_flags & PFLAG_MAP_REVEALED
+        || (mapsq(x, y)->visibility & (1 << faction_id));
 }
 
 int __cdecl is_coast(int x, int y, bool is_base_radius) {

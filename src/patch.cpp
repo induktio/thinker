@@ -4,8 +4,6 @@
 #include "patchveh.h"
 #include <mutex>
 
-static const char* ac_genwarning_sm_pcx = "genwarning_sm.pcx";
-
 static std::mutex FileLock;
 
 /*
@@ -1581,35 +1579,6 @@ bool patch_setup(Config* cf) {
     if (!cf->spawn_battle_ogres) {
         short_jump(0x57BC90);
     }
-    if (!cf->event_perihelion) {
-        short_jump(0x51F481);
-    }
-    if (cf->event_sunspots > 0) {
-        const byte old_bytes[] = {0x83,0xC0,0x0A,0x6A,0x14};
-        const byte new_bytes[] = {0x83,0xC0,
-            (byte)cf->event_sunspots,0x6A,(byte)(cf->event_sunspots)};
-        write_call(0x52064C, (int)zero_value);
-        write_bytes(0x520651, old_bytes, new_bytes, sizeof(new_bytes));
-    } else if (!cf->event_sunspots) { // Remove event
-        long_jump(0x520615);
-    }
-    if (cf->event_market_crash > 0) { // Reduce reserves only by 1/2 instead of 3/4
-        const byte old_bytes[] = {0x99,0x83,0xE2,0x03,0x03,0xC2,0xC1,0xF8,0x02};
-        const byte new_bytes[] = {0xD1,0xF8,0x90,0x90,0x90,0x90,0x90,0x90,0x90};
-        write_bytes(0x520725, old_bytes, new_bytes, sizeof(new_bytes));
-        write_offset(0x520751, ac_genwarning_sm_pcx);
-        write_offset(0x520786, ac_genwarning_sm_pcx);
-    } else if (!cf->event_market_crash) { // Remove event
-        const byte old_bytes[] = {0x75,0x0C,0x81,0xFE,0xD0};
-        const byte new_bytes[] = {0xE9,0x02,0x1A,0x00,0x00};
-        write_bytes(0x52070F, old_bytes, new_bytes, sizeof(new_bytes));
-    }
-    if (cf->native_weak_until_turn >= 0) {
-        const byte old_bytes[] = {0x83, 0x3D, 0xD4, 0x64, 0x9A, 0x00, 0x0F};
-        const byte new_bytes[] = {0x83, 0x3D, 0xD4, 0x64, 0x9A, 0x00,
-            (byte)cf->native_weak_until_turn};
-        write_bytes(0x507C22, old_bytes, new_bytes, sizeof(new_bytes));
-    }
     if (cf->rare_supply_pods) {
         short_jump(0x592085); // bonus_at
         short_jump(0x5920E9); // bonus_at
@@ -1685,6 +1654,35 @@ bool patch_setup(Config* cf) {
         memset((void*)0x5B2257, 0x90, 11);
         memcpy((void*)0x5B220F, asm_find_start, sizeof(asm_find_start));
         write_call(0x5B221B, (int)find_start);
+    }
+    if (!cf->event_perihelion) {
+        short_jump(0x51F481);
+    }
+    if (cf->event_sunspots > 0) {
+        const byte old_bytes[] = {0x83,0xC0,0x0A,0x6A,0x14};
+        const byte new_bytes[] = {0x83,0xC0,
+            (byte)cf->event_sunspots,0x6A,(byte)(cf->event_sunspots)};
+        write_call(0x52064C, (int)zero_value);
+        write_bytes(0x520651, old_bytes, new_bytes, sizeof(new_bytes));
+    } else if (!cf->event_sunspots) { // Remove event
+        long_jump(0x520615);
+    }
+    if (cf->event_market_crash > 0) { // Reduce reserves only by 1/2 instead of 3/4
+        const byte old_bytes[] = {0x99,0x83,0xE2,0x03,0x03,0xC2,0xC1,0xF8,0x02};
+        const byte new_bytes[] = {0xD1,0xF8,0x90,0x90,0x90,0x90,0x90,0x90,0x90};
+        write_bytes(0x520725, old_bytes, new_bytes, sizeof(new_bytes));
+        write_offset(0x520751, ac_genwarning_sm_pcx);
+        write_offset(0x520786, ac_genwarning_sm_pcx);
+    } else if (!cf->event_market_crash) { // Remove event
+        const byte old_bytes[] = {0x75,0x0C,0x81,0xFE,0xD0};
+        const byte new_bytes[] = {0xE9,0x02,0x1A,0x00,0x00};
+        write_bytes(0x52070F, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+    if (cf->native_weak_until_turn >= 0) {
+        const byte old_bytes[] = {0x83, 0x3D, 0xD4, 0x64, 0x9A, 0x00, 0x0F};
+        const byte new_bytes[] = {0x83, 0x3D, 0xD4, 0x64, 0x9A, 0x00,
+            (byte)cf->native_weak_until_turn};
+        write_bytes(0x507C22, old_bytes, new_bytes, sizeof(new_bytes));
     }
     if (cf->collateral_damage_value != 3) {
         const byte old_bytes[] = {0xB2,0x03};

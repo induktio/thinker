@@ -624,7 +624,7 @@ int __cdecl mod_goody_box(int veh_id) {
     }
     f->goody_opened++;
     if (*MultiplayerActive) {
-        game_srand(f->goody_opened + *MapRandomSeed + 36 * f->goody_opened);
+        game_srand(*MapRandomSeed + f->goody_opened * 37);
     }
     if (!(*GameRules & RULES_SCN_NO_TECH_ADVANCES)
     && (conf.early_research_start || *CurrentTurn >= -5 * f->SE_research_pending)) {

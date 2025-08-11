@@ -1618,7 +1618,7 @@ extern fp_1int enemy_turn;
 //extern fp_1int rnd;
 extern fp_2int cursor_dist;
 extern fp_3int site_at;
-extern fp_3int is_known;
+//extern fp_3int is_known;
 extern fp_2int base_who;
 extern fp_2int anything_at;
 //extern fp_1int veh_top;

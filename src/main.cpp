@@ -208,12 +208,6 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->spawn_battle_ogres = atoi(value);
     } else if (MATCH("planetpearls")) {
         cf->planetpearls = atoi(value);
-    } else if (MATCH("event_perihelion")) {
-        cf->event_perihelion = atoi(value);
-    } else if (MATCH("event_sunspots")) {
-        cf->event_sunspots = clamp(atoi(value), 0, 100);
-    } else if (MATCH("event_market_crash")) {
-        cf->event_market_crash = atoi(value);
     } else if (MATCH("modify_altitude_limit")) {
         cf->altitude_limit = (atoi(value) ? ALT_FOUR_ABOVE_SEA : ALT_THREE_ABOVE_SEA);
     } else if (MATCH("tile_output_limit")) {
@@ -287,10 +281,10 @@ int option_handler(void* user, const char* section, const char* name, const char
             cf->minimal_popups = atoi(value);
             cf->debug_verbose = !atoi(value);
         }
+    } else if (MATCH("skip_event")) {
+        cf->skip_random_events |= 1 << clamp(atoi(value) - 1, 0, 31);
     } else if (MATCH("skip_faction")) {
-        if (atoi(value) > 0) {
-            cf->skip_random_factions |= 1 << (atoi(value) - 1);
-        }
+        cf->skip_random_factions |= 1 << clamp(atoi(value) - 1, 0, 31);
     } else if (MATCH("crater")) {
         cf->landmarks.crater = max(0, atoi(value));
     } else if (MATCH("volcano")) {
@@ -454,6 +448,12 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             }
             if (ini_parse("thinker.ini", option_handler, &conf) < 0) {
                 MessageBoxA(0, "Error while opening thinker.ini file.",
+                    MOD_VERSION, MB_OK | MB_ICONSTOP);
+                exit_fail();
+            }
+            if (FileExists("thinker_user.ini")
+            && ini_parse("thinker_user.ini", option_handler, &conf) < 0) {
+                MessageBoxA(0, "Error while opening thinker_user.ini file.",
                     MOD_VERSION, MB_OK | MB_ICONSTOP);
                 exit_fail();
             }

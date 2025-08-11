@@ -10,6 +10,7 @@ const int ManifoldHarmonicsBonus[][3] = {
     {1,1,2}, // Planet > 2
 };
 
+MAP* next_tile(int x, int y, size_t offset, int* tx, int* ty);
 MAP* mapsq(int x, int y);
 int wrap(int x);
 int map_range(int x1, int y1, int x2, int y2);
@@ -31,6 +32,7 @@ int map_range(const A* a, const B* b) {
     return map_range(a->x, a->y, b->x, b->y);
 }
 
+int __cdecl is_known(int x, int y, int faction_id);
 int __cdecl is_coast(int x, int y, bool is_base_radius);
 int __cdecl is_port(int base_id, bool is_base_radius);
 int __cdecl on_map(int x, int y);
