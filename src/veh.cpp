@@ -64,7 +64,7 @@ int __cdecl arty_range(int unit_id) {
         if (*MultiplayerActive) {
             return Rules->artillery_max_rng;
         }
-        return min(8, Rules->artillery_max_rng
+        return min(MaxTableRange, Rules->artillery_max_rng
             + (conf.long_range_artillery > 0 && u->triad() == TRIAD_SEA
             && u->offense_value() > 0 && u->ability_flags & ABL_ARTILLERY
             ? conf.long_range_artillery : 0));

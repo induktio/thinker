@@ -350,9 +350,9 @@ void __cdecl mod_base_mark(int base_id) {
     int y = Bases[base_id].y;
     int faction_id = Bases[base_id].faction_id;
     for (int i = 0; i < TableRange[3]; i++) {
-        int x2 = wrap(x + TableOffsetX[i]);
-        int y2 = y + TableOffsetY[i];
-        if (on_map(x2, y2)) {
+        int x2, y2;
+        MAP* sq = next_tile(x, y, i, &x2, &y2);
+        if (sq) {
             if (i < 21) {
                 bit_set(x2, y2, BIT_BASE_RADIUS, 1);
                 using_set(x2, y2, faction_id);
@@ -636,9 +636,8 @@ static int32_t base_radius(int base_id, std::vector<TileValue>& tiles) {
         }
     }
     for (int i = 0; i < 25; i++) {
-        int x = wrap(base->x + TableOffsetX[i]);
-        int y = base->y + TableOffsetY[i];
-        MAP* sq = mapsq(x, y);
+        int x, y;
+        MAP* sq = next_tile(base->x, base->y, i, &x, &y);
         if (i == 0) {
             BaseTileFlags[i] = BR_BASE_IN_TILE;
         } else if (i >= 21) {
@@ -1306,7 +1305,7 @@ void __cdecl mod_base_psych(int base_id) {
         effic_drones = max(0, min(drone_limit, (int)base->pop_size));
     }
     if (base->assimilation_turns_left > 0) {
-        // Former faction_id can be the same but this can be also used for scenarios
+        // Former faction_id can be the same but this can be also used for random events
         int v1 = (base->pop_size + (is_human(faction_id) ? f->diff_level : 3) - 2) / 4;
         int v2 = (base->assimilation_turns_left + 9) / 10;
         capture_drones = max(0, min(v1, v2));

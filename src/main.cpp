@@ -227,7 +227,7 @@ int option_handler(void* user, const char* section, const char* name, const char
     } else if (MATCH("native_elite_moves")) {
         cf->native_elite_moves = atoi(value);
     } else if (MATCH("native_weak_until_turn")) {
-        cf->native_weak_until_turn = clamp(atoi(value), 0, 127);
+        cf->native_weak_until_turn = clamp(atoi(value), 0, 1000);
     } else if (MATCH("native_lifecycle_levels")) {
         opt_list_parse(cf->native_lifecycle_levels, buf, 6, 0);
     } else if (MATCH("facility_defense_bonus")) {
@@ -245,7 +245,7 @@ int option_handler(void* user, const char* section, const char* name, const char
     } else if (MATCH("intercept_max_range")) {
         cf->intercept_max_range = clamp(atoi(value), 0, 8);
     } else if (MATCH("collateral_damage_value")) {
-        cf->collateral_damage_value = clamp(atoi(value), 0, 127);
+        cf->collateral_damage_value = clamp(atoi(value), 0, 100);
     } else if (MATCH("cost_factor")) {
         opt_list_parse(CostRatios, buf, MaxDiffNum, 1);
     } else if (MATCH("tech_cost_factor")) {

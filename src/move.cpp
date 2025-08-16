@@ -182,13 +182,20 @@ bool near_sea_coast(int x, int y) {
 
 int __cdecl mod_enemy_move(int veh_id) {
     assert(veh_id >= 0 && veh_id < *VehCount);
+    if (veh_id < 0) {
+        return enemy_move(veh_id); // fallback to enemy_move, special case for tutorials
+    }
     VEH* veh = &Vehs[veh_id];
     MAP* sq;
-    bool player_units = conf.manage_player_units && veh->plr_owner();
+    bool plr_unit = veh->plr_owner();
+    bool player_units = conf.manage_player_units && plr_unit;
     debug("enemy_move %d %2d %2d %s\n", veh_id, veh->x, veh->y, veh->name());
 
     if (!(sq = mapsq(veh->x, veh->y))) {
         return VEH_SYNC;
+    }
+    if (!veh->faction_id && !(*MultiplayerActive && veh->faction_id == *CurrentPlayerFaction)) {
+        return alien_move(veh_id);
     }
     if (player_units) {
         if (!*CurrentBase) {
@@ -204,13 +211,15 @@ int __cdecl mod_enemy_move(int veh_id) {
     }
     if (thinker_enabled(veh->faction_id) || player_units) {
         int triad = veh->triad();
-        if (player_units && veh->is_patrol_order()) {
+        if (plr_unit && veh->is_patrol_order()) {
             if (veh->need_refuel() && (sq->is_airbase()
             || mod_stack_check(veh_id, 6, ABL_CARRIER, -1, -1))) {
                 veh->apply_refuel();
                 return mod_veh_skip(veh_id);
             }
             // fallback to enemy_move
+        } else if (!plr_unit && veh->flags & (VFLAG_LURKER|VFLAG_INVISIBLE)) {
+            return mod_veh_skip(veh_id);
         } else if (veh->is_colony()) {
             return colony_move(veh_id);
         } else if (veh->is_former()) {
@@ -2976,9 +2985,9 @@ int combat_move(const int id) {
         tx = -1;
         ty = -1;
         for (i = 1; i < TableRange[arty_range(veh->unit_id)]; i++) {
-            int x2 = wrap(veh->x + TableOffsetX[i]);
-            int y2 = veh->y + TableOffsetY[i];
-            if ((sq = mapsq(x2, y2)) && mapdata[{x2, y2}].enemy > 0) {
+            int x2, y2;
+            sq = next_tile(veh->x, veh->y, i, &x2, &y2);
+            if (sq && mapdata[{x2, y2}].enemy > 0) {
                 int arty_limit;
                 if (sq->is_base_or_bunker()) {
                     arty_limit = Rules->max_dmg_percent_arty_base_bunker/10;

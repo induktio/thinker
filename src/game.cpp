@@ -938,7 +938,7 @@ void __cdecl mod_random_events(int flag) {
                 }
             }
             if (show_event) {
-                POP2("KELPWIPE", 0, is_player ? base_id : -1);
+                POP2("KELPWIPE", "kelp_sm.pcx", is_player ? base_id : -1);
             }
         }
         return;
@@ -974,7 +974,7 @@ void __cdecl mod_random_events(int flag) {
                 }
             }
             if (show_event) {
-                POP2("PLATFORMWIPE", 0, is_player ? base_id : -1);
+                POP2("PLATFORMWIPE", "subbase_sm.pcx", is_player ? base_id : -1);
             }
         }
         return;

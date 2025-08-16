@@ -172,7 +172,7 @@ int base_trade_value(int base_id, int faction1, int faction2)
             if (m.sq->landmarks & ~(LM_DUNES|LM_SARGASSO|LM_UNITY)) {
                 value += (m.sq->landmarks & LM_JUNGLE ? 20 : 15);
             }
-            if (mod_bonus_at(m.x, m.y) > 0) {
+            if (bonus_at(m.x, m.y) > 0) {
                 value += 20;
             }
             if (m.sq->items & (BIT_MONOLITH|BIT_CONDENSER|BIT_THERMAL_BORE)) {
