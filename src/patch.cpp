@@ -1539,14 +1539,14 @@ bool patch_setup(Config* cf) {
         write_call(0x46CA21, (int)MapWin_right_menu_arty);
     }
     if (cf->facility_capture_fix) {
-        remove_call(0x50D06A);
-        remove_call(0x50D074);
+        remove_call(0x50D06A); // capture_base
+        remove_call(0x50D074); // capture_base
     }
     if (cf->auto_relocate_hq) {
         long_jump(0x50C99D); // Disable #ESCAPED event
     }
     if (cf->simple_hurry_cost) {
-        short_jump(0x41900D);
+        short_jump(0x41900D); // BaseWin_hurry
     }
     if (cf->eco_damage_fix) {
         const byte old_bytes[] = {0x84,0x05,0xE8,0x64,0x9A,0x00,0x74,0x24};
@@ -1554,6 +1554,9 @@ bool patch_setup(Config* cf) {
         // Patch Tree Farms to always increase the clean minerals limit.
         const byte old_bytes_2[] = {0x85,0xC0,0x74,0x07};
         write_bytes(0x4F2AC6, old_bytes_2, NULL, sizeof(old_bytes_2));
+    }
+    if (cf->rebuild_secret_projects) {
+        write_word(0x4E571F, SP_Destroyed, SP_Unbuilt); // base_kill
     }
     if (!cf->spawn_fungal_towers) {
         // Spawn nothing in this case.

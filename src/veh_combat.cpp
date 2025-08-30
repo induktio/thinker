@@ -688,17 +688,15 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
             if (has_project(FAC_DREAM_TWISTER, faction_id_atk)) {
                 add_bat(0, conf.dream_twister_bonus, label_get(343)); // Dream Twist
             }
-            if (psi_combat & 2) { // Added check for PSI defend flag
-                int rule_psi_def = MFactions[faction_id_def].rule_psi;
-                if (rule_psi_def) {
-                    add_bat(1, rule_psi_def, label_get(342)); // Gaian Psi
-                }
-                if (has_project(FAC_NEURAL_AMPLIFIER, faction_id_def)) {
-                    add_bat(1, conf.neural_amplifier_bonus, label_get(344)); // Neural Amp
-                }
-                if (veh_id_def >= 0 && veh_def->unit_id == BSC_FUNGAL_TOWER) {
-                    add_bat(1, conf.fungal_tower_bonus, Units[BSC_FUNGAL_TOWER].name); // Fungal Tower
-                }
+            int rule_psi_def = MFactions[faction_id_def].rule_psi;
+            if (rule_psi_def) {
+                add_bat(1, rule_psi_def, label_get(342)); // Gaian Psi
+            }
+            if (has_project(FAC_NEURAL_AMPLIFIER, faction_id_def)) {
+                add_bat(1, conf.neural_amplifier_bonus, label_get(344)); // Neural Amp
+            }
+            if (veh_id_def >= 0 && veh_def->unit_id == BSC_FUNGAL_TOWER) {
+                add_bat(1, conf.fungal_tower_bonus, Units[BSC_FUNGAL_TOWER].name); // Fungal Tower
             }
         }
     }
@@ -728,7 +726,7 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
             && veh_atk->state & VSTATE_MADE_AIRDROP
             && has_abil(veh_atk->unit_id, ABL_DROP_POD)) {
                 offense = offense * (100 - Rules->combat_penalty_atk_airdrop) / 100;
-                add_bat(0, Rules->combat_penalty_atk_airdrop,
+                add_bat(0, -Rules->combat_penalty_atk_airdrop,
                     (drop_range(faction_id_atk) <= Rules->max_airdrop_rng_wo_orbital_insert
                     ? label_get(437) // Air Drop
                     : label_get(438))); // Orbital Insertion
@@ -1446,7 +1444,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                 // Removed additional AI bonus here for former units which further halved
                 // native attacker offense based on various visibility conditions
             } else {
-                offense_out = offense_out * (f_def->ranking + 8) / 16;
+                offense_out = offense_out * clamp(f_def->ranking + 8, 8, 15) / 16;
             }
         }
         if (base_id >= 0) {
@@ -1474,9 +1472,11 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
     if (*CurrentTurn < conf.native_weak_until_turn) {
         if (!faction_id_atk) {
             offense_out /= 3;
+            add_bat(0, -67, label_get(312)); // Combat
         }
         if (!faction_id_def) {
             defense_out /= 2;
+            add_bat(1, -50, label_get(312)); // Combat
         }
     }
     if (base_id >= 0 && veh_atk->triad() == TRIAD_AIR) {

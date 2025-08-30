@@ -198,6 +198,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->clean_minerals = clamp(atoi(value), 0, 1000);
     } else if (MATCH("biology_lab_bonus")) {
         cf->biology_lab_bonus = clamp(atoi(value), 0, 1000);
+    } else if (MATCH("rebuild_secret_projects")) {
+        cf->rebuild_secret_projects = atoi(value);
     } else if (MATCH("spawn_fungal_towers")) {
         cf->spawn_fungal_towers = atoi(value);
     } else if (MATCH("spawn_spore_launchers")) {
