@@ -365,7 +365,7 @@ int __cdecl mod_get_basic_offense(int veh_id_atk, int veh_id_def, int psi_combat
     }
     VehBasicBattleMorale[unk_tgl != 0] = morale; // shifted up from original
     morale += 6;
-    int offense = offense_proto(unit_id_atk, veh_id_def, is_bombard);
+    int offense = mod_offense_proto(unit_id_atk, veh_id_def, is_bombard);
     if (psi_combat_type) {
         offense = psi_factor(offense, faction_id_atk, true, false);
     }
@@ -430,7 +430,7 @@ int __cdecl mod_get_basic_defense(int veh_id_def, int veh_id_atk, int psi_combat
     && (veh_id_atk < 0 || Units[Vehs[veh_id_atk].unit_id].plan != PLAN_PROBE)) {
         return 1;
     }
-    int defense = armor_proto(unit_id_def, veh_id_atk, is_bombard);
+    int defense = mod_armor_proto(unit_id_def, veh_id_atk, is_bombard);
     if (psi_combat_type) {
         defense = psi_factor(defense, faction_id_def, false, unit_id_def == BSC_FUNGAL_TOWER);
     }

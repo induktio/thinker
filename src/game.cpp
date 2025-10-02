@@ -938,6 +938,7 @@ void __cdecl mod_random_events(int flag) {
                 }
             }
             if (show_event) {
+                // Added event icon since previously there was none defined
                 POP2("KELPWIPE", "kelp_sm.pcx", is_player ? base_id : -1);
             }
         }
@@ -974,6 +975,7 @@ void __cdecl mod_random_events(int flag) {
                 }
             }
             if (show_event) {
+                // Added event icon since previously there was none defined
                 POP2("PLATFORMWIPE", "subbase_sm.pcx", is_player ? base_id : -1);
             }
         }
@@ -1033,7 +1035,7 @@ void __cdecl mod_turn_upkeep() {
         *ClimateValueC += *ClimateValueA;
         if (*ClimateValueC >= *ClimateValueB) {
             *ClimateValueC = val - *ClimateValueB;
-            int alt_val = (*ClimateFutureChange > 0 ? 1 : ((*ClimateFutureChange >= 0) - 1));
+            int alt_val = clamp(*ClimateFutureChange, -1, 1);
             *ClimateFutureChange -= alt_val;
             *MapSeaLevel += alt_val;
             world_climate();

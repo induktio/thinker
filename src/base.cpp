@@ -707,8 +707,11 @@ void __cdecl mod_base_yield() {
     std::vector<TileValue> tiles;
     uint32_t gov = base->gov_config();
     int32_t reserved = base_radius(base_id, tiles);
-    bool manage_workers = !base->worked_tiles || (gov & GOV_ACTIVE && gov & GOV_MANAGE_CITIZENS);
-    bool pre_upkeep = *BaseUpkeepState != 2 || (base_id == *BaseUpkeepDrawID && Win_is_visible(BaseWin));
+    // Workers can be also changed on AI bases when the scenario editor and omniscient view is active
+    bool is_visible = base_id == *BaseUpkeepDrawID && Win_is_visible(BaseWin);
+    bool manage_workers = !base->worked_tiles || (gov & GOV_ACTIVE && gov & GOV_MANAGE_CITIZENS
+        && !(is_visible && *GameState & STATE_SCENARIO_EDITOR && *GameState & STATE_OMNISCIENT_VIEW));
+    bool pre_upkeep = *BaseUpkeepState != 2 || is_visible;
     base->worked_tiles &= (~reserved) | 1;
     base->state_flags &= ~BSTATE_UNK_8000;
     assert(f->SE_alloc_labs + f->SE_alloc_psych <= 10);
@@ -765,7 +768,7 @@ void __cdecl mod_base_yield() {
             if (manage_workers || has_tech(Citizen[spc_id].obsol_tech, faction_id)
             || !has_tech(Citizen[spc_id].preq_tech, faction_id)
             || (Citizen[spc_id].psych_bonus < 2 && base->pop_size < Rules->min_base_size_specialists)) {
-                base->specialist_modify(i, best_spc_id);
+                base->set_specialist_type(i, best_spc_id);
             }
         }
     }
@@ -844,8 +847,8 @@ void __cdecl mod_base_yield() {
             && base->drone_total - base->talent_total > (base->pop_size + 3)/4) {
                 best_spc_id = psych_spc_id;
                 for (int i = 0; i < MaxBaseSpecNum; i++) {
-                    base->specialist_modify(i, best_spc_id);
-                    initial.specialist_modify(i, best_spc_id);
+                    base->set_specialist_type(i, best_spc_id);
+                    initial.set_specialist_type(i, best_spc_id);
                 }
                 mod_base_minerals();
                 mod_base_energy();
@@ -1089,7 +1092,7 @@ void __cdecl mod_base_energy() {
                 }
             }
         }
-        base->specialist_modify(i, citizen_id);
+        base->set_specialist_type(i, citizen_id);
         base->economy_total += Citizen[citizen_id].econ_bonus;
         base->psych_total += Citizen[citizen_id].psych_bonus;
         base->labs_total += Citizen[citizen_id].labs_bonus;
@@ -2439,6 +2442,9 @@ int __cdecl is_objective(int base_id) {
     return false;
 }
 
+/*
+Determine the base rank relative to other bases owned by the same faction.
+*/
 int __cdecl own_base_rank(int base_id) {
     assert(base_id >= 0 && base_id < *BaseCount);
     int value = Bases[base_id].energy_intake*MaxBaseNum + base_id;
@@ -2796,6 +2802,9 @@ bool has_free_facility(FacilityId item_id, int faction_id) {
     return false;
 }
 
+/*
+Determine if the facility is redundant due to a secret project counting as that facility.
+*/
 int __cdecl redundant(FacilityId item_id, int faction_id) {
     FacilityId project_id;
     switch (item_id) {
@@ -2849,13 +2858,17 @@ int __cdecl has_fac(FacilityId item_id, int base_id, int queue_count) {
     return false;
 }
 
+/*
+Check if the facility is built on the given base while excluding any satellites.
+Includes additional conditions to return false if base_id or item_id is invalid.
+*/
 int __cdecl has_fac_built(FacilityId item_id, int base_id) {
-    return base_id >= 0 && item_id >= 0 && item_id <= Fac_ID_Last
+    return base_id >= 0 && base_id < MaxBaseNum && item_id >= 0 && item_id <= Fac_ID_Last
         && !!(Bases[base_id].facilities_built[item_id/8] & (1 << (item_id % 8)));
 }
 
 /*
-Original set_fac does not check variable bounds.
+Modify built facilities on the base. Original set_fac does not check variable bounds.
 */
 void __cdecl set_fac(FacilityId item_id, int base_id, bool add) {
     if (base_id >= 0 && base_id < MaxBaseNum && item_id >= 0 && item_id <= Fac_ID_Last) {

@@ -250,7 +250,7 @@ struct BASE {
         }
         return (specialist_types[index/8] >> 4 * (index & 7)) & 0xF;
     }
-    void specialist_modify(int index, int citizen_id) {
+    void set_specialist_type(int index, int citizen_id) {
         if (index < 0 || index >= MaxBaseSpecNum) {
             return;
         }
