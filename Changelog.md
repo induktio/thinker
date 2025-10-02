@@ -1,6 +1,24 @@
 
 # Thinker mod release changelog
 
+## Version 5.2 (2025-10-02)
+* Add option skip_event to disable specific random events. See thinker.ini for event details.
+* Add option intercept_max_range to adjust automated interceptor scrambling.
+* Add option rebuild_secret_projects to allow destroyed secret projects to be rebuilt.
+* All random events are enabled by default. Restore sunspots event variable duration for 10-20 turns.
+* Remove redundant options event_perihelion, event_sunspots, event_market_crash.
+* It is possible to use thinker_user.ini to define additional options. These take priority over any values in thinker.ini.
+* Modify combat display to also show the modifier values for native_weak_until_turn, lowest difficulty levels and early base defense against natives.
+* AI does not move units set with lurker and invisible flags on scenarios until the turns set for lurking are elapsed.
+* Fix issues that prevented KELPWIPE or PLATFORMWIPE events from happening. These may now happen at similar probability as other events for suitable bases.
+* Fix NEWRESOURCE event sometimes appearing on a tile that already has bonus resources.
+* Fix CRECHE event sometimes increasing population beyond base facility limits.
+* Fix issue that prevented Progenitor or Planet Cult late spawns when the game is reloaded from the savegame.
+* Fix some edge cases with pacifism drone psych calculations.
+* Fix consistency issues on combat modifier calculations. AI factions will also receive early base defense bonus against natives.
+* Fix some issues where Air Drop or PSI related combat modifers were shown incorrectly or omitted from the combat display.
+
+
 ## Version 5.1 (2025-07-04)
 * Add option modify_altitude_limit to enable higher terrain elevation than 3500m limit. This will affect solar collector output and some combat modifiers.
 * Add option modify_unit_limit to increase the active unit limit from 2048 to 8192. When unit count exceeds previous limit 2048, the game will automatically use a modified savegame format.

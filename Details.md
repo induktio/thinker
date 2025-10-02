@@ -486,6 +486,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 63. Fix issue after the faction capturing the base with Cloudbase Academy has their aircraft speed altered during the turn resulting in some aircraft crashing when they should not.
 64. Fix rare issue that caused the base build queue to be saved with incorrect entries resulting in crashes during turn upkeep.
 65. Fix issues that prevented KELPWIPE or PLATFORMWIPE events from happening due to incorrect tile checks. These may now happen at similar probability as other events for suitable bases.
+66. Fix NEWRESOURCE event sometimes appearing on a tile that already has bonus resources and CRECHE event sometimes increasing population beyond base facility limits.
 
 
 Scient's patch
