@@ -2,7 +2,14 @@
 #include "base.h"
 
 static bool delay_base_riot = false;
+static bool base_yield_active = false;
 
+
+static bool base_stats_upkeep() {
+    // Original version only references BaseUpkeepState for AI planning purposes
+    // This skips redundant updates if base_yield governor calculations are active
+    return !base_yield_active && *BaseUpkeepState == 1;
+}
 
 static bool valid_relocate_base(int base_id) {
     int faction_id = Bases[base_id].faction_id;
@@ -586,7 +593,7 @@ void __cdecl mod_base_support() {
                             (*BaseForcesMaintCost) += SupportCosts[support_val][0];
                         }
                     }
-                    if (*BaseUpkeepState == 1) {
+                    if (base_stats_upkeep()) {
                         for (int j = 0; j < 8; j++) {
                             if (*BaseForcesSupported > SupportCosts[j][1]) {
                                 f->unk_40[j] += SupportCosts[j][0];
@@ -612,6 +619,9 @@ void __cdecl mod_base_support() {
     }
 }
 
+/*
+Replaces previous function farm_compute which is only called from base_yield.
+*/
 static int32_t base_radius(int base_id, std::vector<TileValue>& tiles) {
     Points reserved;
     BASE* base = &Bases[base_id];
@@ -677,6 +687,13 @@ static int32_t base_radius(int base_id, std::vector<TileValue>& tiles) {
                 int E = mod_energy_yield(faction_id, base_id, x, y, 0);
                 tiles.push_back({x, y, i, sq, N, M, E});
             }
+            // These may only be used by original AI planning
+            if (sq && !is_ocean(sq) && base_stats_upkeep()
+            && !conf.factions_enabled && goody_at(x, y)) {
+                add_goal(faction_id, AI_GOAL_SCOUT, 1, x, y, -1);
+                add_goal(faction_id, AI_GOAL_DEFEND, 1, x, y, -1);
+                add_goal(faction_id, AI_GOAL_ATTACK, 1, x, y, -1);
+            }
         }
     }
     return usedtiles;
@@ -699,7 +716,14 @@ static void base_update(BASE* base, std::vector<TileValue>& tiles) {
     assert(base->pop_size >= base->specialist_total && base->specialist_total >= 0);
 }
 
+static int base_alloc_score(BASE* base) {
+    return min(4, base->nutrient_surplus) + (base->nutrient_surplus >= 0 ? 10 : 0)
+        + (base->mineral_surplus >= 0 ? 50 : 0) + 4*base->mineral_surplus
+        + base->economy_total + base->labs_total;
+}
+
 void __cdecl mod_base_yield() {
+    base_yield_active = true;
     BASE* base = *CurrentBase;
     int base_id = *CurrentBaseID;
     int faction_id = base->faction_id;
@@ -711,8 +735,7 @@ void __cdecl mod_base_yield() {
     bool is_visible = base_id == *BaseUpkeepDrawID && Win_is_visible(BaseWin);
     bool manage_workers = !base->worked_tiles || (gov & GOV_ACTIVE && gov & GOV_MANAGE_CITIZENS
         && !(is_visible && *GameState & STATE_SCENARIO_EDITOR && *GameState & STATE_OMNISCIENT_VIEW));
-    bool pre_upkeep = *BaseUpkeepState != 2 || is_visible;
-    base->worked_tiles &= (~reserved) | 1;
+    base->worked_tiles &= ((~reserved) | 1);
     base->state_flags &= ~BSTATE_UNK_8000;
     assert(f->SE_alloc_labs + f->SE_alloc_psych <= 10);
     assert((int)&base->nutrient_intake + 96 == (int)&base->autoforward_land_base_id);
@@ -747,9 +770,6 @@ void __cdecl mod_base_yield() {
     int Ev = Es + BaseResourceConvoyTo[RSC_ENERGY] - BaseResourceConvoyFrom[RSC_ENERGY];
     int total = base->pop_size + 1 - __builtin_popcount(base->worked_tiles)
         - base->specialist_total;
-    int specialist_adjust = 0;
-    int specialist_total = base->specialist_total;
-    int worked_tiles = base->worked_tiles;
     std::vector<TileValue> choices;
 
     int Wenergy = 1 + (effic_val >= 6);
@@ -761,26 +781,24 @@ void __cdecl mod_base_yield() {
         Wmineral = 3 + (gov & GOV_PRIORITY_BUILD ? 1 : 0) + (gov & GOV_PRIORITY_CONQUER ? 1 : 0);
     }
 
-    if (pre_upkeep) {
-        for (int i = 0; i < MaxBaseSpecNum; i++) {
-            int spc_id = base->specialist_type(i);
-            // Replace incorrect specialist types if any used
-            if (manage_workers || has_tech(Citizen[spc_id].obsol_tech, faction_id)
-            || !has_tech(Citizen[spc_id].preq_tech, faction_id)
-            || (Citizen[spc_id].psych_bonus < 2 && base->pop_size < Rules->min_base_size_specialists)) {
-                base->set_specialist_type(i, best_spc_id);
-            }
+    for (int i = 0; i < MaxBaseSpecNum; i++) {
+        int spc_id = base->specialist_type(i);
+        // Replace incorrect specialist types if any used
+        if (manage_workers || has_tech(Citizen[spc_id].obsol_tech, faction_id)
+        || !has_tech(Citizen[spc_id].preq_tech, faction_id)
+        || (Citizen[spc_id].psych_bonus < 2 && base->pop_size < Rules->min_base_size_specialists)) {
+            base->set_specialist_type(i, best_spc_id);
         }
     }
-    if (total != 0 || (manage_workers && pre_upkeep)) {
+    if (total != 0 || manage_workers) {
         int workers = total;
         if (workers < 0 || manage_workers) {
-            worked_tiles = 1;
-            specialist_total = 0;
+            base->worked_tiles = 1;
+            base->specialist_total = 0;
             workers = base->pop_size;
         }
         for (auto& m : tiles) {
-            if ((1 << m.i) & worked_tiles) {
+            if ((1 << m.i) & base->worked_tiles) {
                 Nv += m.nutrient;
                 Mv += m.mineral;
                 Ev += m.energy;
@@ -805,7 +823,7 @@ void __cdecl mod_base_yield() {
                         + (m.energy * effic_val + 15) / 16 * energy_val;
                 }
                 score = 32*score - m.i; // Select adjacent tiles first
-                if (!((1 << m.i) & worked_tiles) && score > best_score) {
+                if (!((1 << m.i) & base->worked_tiles) && score > best_score) {
                     choice = &m;
                     best_score = score;
                 }
@@ -818,10 +836,12 @@ void __cdecl mod_base_yield() {
             if (2*(spc.labs_bonus + spc.econ_bonus) + (can_riot ? 2 : 1) * spc.psych_bonus
             > Wnutrient*choice->nutrient + Wmineral*choice->mineral + Wenergy*choice->energy
             && Nv >= (can_grow ? threshold : 0) && Mv >= 2
-            && Mv + *BaseForcesMaintCost >= (base->pop_size * Wmineral + 5) / 2) {
+            && (Mv + *BaseForcesMaintCost >= (base->pop_size * Wmineral + 5) / 2
+            || (Wmineral < 5 && base->specialist_total + workers < base->pop_size/2
+            && choice->nutrient + choice->mineral + choice->energy <= 2))) {
                 break;
             }
-            worked_tiles |= (1 << choice->i);
+            base->worked_tiles |= (1 << choice->i);
             Nv += choice->nutrient;
             Mv += choice->mineral;
             Ev += choice->energy;
@@ -829,55 +849,50 @@ void __cdecl mod_base_yield() {
             choices.push_back(*choice);
         }
         // Convert unallocated workers to specialists
-        specialist_total += workers;
-    }
-    if ((total != 0 || manage_workers) && pre_upkeep) {
-        base->worked_tiles = worked_tiles;
-        base->specialist_total = specialist_total;
-        BASE initial;
-        memcpy(&initial, base, sizeof(BASE));
-        bool valid = !can_riot;
-        while (!valid && choices.size() > 1) {
-            base_update(base, choices);
-            mod_base_minerals();
-            mod_base_energy();
-            // Take into account possible delayed drone riots after pop growth
-            valid = base->talent_total + delay_base_riot >= base->drone_total;
-            if (!valid && manage_workers && best_spc_id != psych_spc_id
-            && base->drone_total - base->talent_total > (base->pop_size + 3)/4) {
-                best_spc_id = psych_spc_id;
-                for (int i = 0; i < MaxBaseSpecNum; i++) {
-                    base->set_specialist_type(i, best_spc_id);
-                    initial.set_specialist_type(i, best_spc_id);
-                }
-                mod_base_minerals();
-                mod_base_energy();
-                valid = base->talent_total + delay_base_riot >= base->drone_total;
-            }
-            if (base->mineral_surplus - choices.back().mineral < 0) {
-                // Priority for mineral support costs
-                valid = true;
-            }
-            memcpy(base, &initial, sizeof(BASE));
-            if (!valid) {
-                worked_tiles &= ~(1 << choices.back().i);
-                choices.pop_back();
-                specialist_total++;
-                specialist_adjust++;
-            }
-            base->worked_tiles = worked_tiles;
-            base->specialist_total = specialist_total;
-        };
-        base->specialist_adjust = specialist_adjust;
+        base->specialist_total += workers;
+        base->specialist_adjust = 0;
 
-    } else if (total != 0 && !pre_upkeep) {
-        while (base->pop_size + 1 < (int)choices.size()) {
-            choices.pop_back();
-        }
-        base->specialist_total = base->pop_size + 1 - choices.size();
-        base->worked_tiles = 0;
-        for (auto& m : choices) {
-            base->worked_tiles |= (1 << m.i);
+        if (can_riot) {
+            struct GovPlan {
+                std::vector<TileValue> choices;
+                BASE initial;
+                int score;
+            };
+            std::vector<GovPlan> govplans = {{choices, *base, 0}};
+            int best_choice = 0;
+            if (manage_workers && best_spc_id != psych_spc_id) {
+                govplans.push_back({choices, *base, 0});
+                for (int i = 0; i < MaxBaseSpecNum; i++) {
+                    govplans.back().initial.set_specialist_type(i, psych_spc_id);
+                }
+            }
+            for (size_t i = 0; i < govplans.size(); i++) {
+                GovPlan& plan = govplans[i];
+                bool valid = false;
+                while (!valid && plan.choices.size() > 1) {
+                    memcpy(base, &plan.initial, sizeof(BASE));
+                    base_update(base, plan.choices);
+                    mod_base_nutrient();
+                    mod_base_minerals();
+                    mod_base_energy();
+                    plan.score = base_alloc_score(base);
+                    // Take into account possible delayed drone riots after pop growth
+                    valid = base->talent_total + delay_base_riot >= base->drone_total;
+                    if (base->mineral_surplus - plan.choices.back().mineral < 0) {
+                        valid = true; // Priority for mineral support costs
+                    }
+                    if (!valid) {
+                        plan.initial.worked_tiles &= ~(1 << plan.choices.back().i);
+                        plan.initial.specialist_total++;
+                        plan.initial.specialist_adjust++;
+                        plan.choices.pop_back();
+                    }
+                }
+                if (plan.score > govplans[best_choice].score) {
+                    best_choice = i;
+                }
+            }
+            memcpy(base, &govplans[best_choice].initial, sizeof(BASE));
         }
     }
     debug_ver("base_yield %d %d state: %d total: %d pop: %d spc: %d adjust: %d\n",
@@ -887,6 +902,7 @@ void __cdecl mod_base_yield() {
     base_update(base, tiles);
     base->state_flags &= ~BSTATE_UNK_100;
     base->eco_damage = terraform_eco_damage(base_id);
+    base_yield_active = false;
 
     if (faction_id == MapWin->cOwner && *ControlUpkeepA
     && f->SE_alloc_psych < 2 && effic_val >= 4 && 2*base->energy_surplus >= 3*base->pop_size
@@ -916,7 +932,7 @@ void __cdecl mod_base_nutrient() {
     } else if (!base->nutrients_accumulated) {
         base->nutrients_accumulated = -1;
     }
-    if (*BaseUpkeepState == 1) {
+    if (base_stats_upkeep()) {
         Factions[faction_id].nutrient_surplus_total
             += clamp(base->nutrient_surplus, 0, 99);
     }
@@ -1055,10 +1071,10 @@ void __cdecl mod_base_energy() {
     base->energy_intake_2 += energygrid;
 
     base->energy_inefficiency = energy_intake_lost(base_id, base->energy_intake_2 - base->energy_consumption,
-        (*BaseUpkeepState == 1 ? f->unk_43 : NULL));
+        (base_stats_upkeep() ? f->unk_43 : NULL));
     base->energy_surplus = base->energy_intake_2 - base->energy_consumption - base->energy_inefficiency;
 
-    if (*BaseUpkeepState == 1) {
+    if (base_stats_upkeep()) {
         f->energy_surplus_total += clamp(base->energy_surplus, 0, 99999);
     }
     // Non-multiplied energy intake is always limited to this range
