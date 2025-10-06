@@ -1,59 +1,62 @@
---- Makefile_dll.orig	2021-12-13 23:25:39.012697527 +0100
-+++ Makefile_dll	2021-12-13 02:01:27.737305779 +0100
-@@ -5,10 +5,12 @@
+--- Makefile_dll	2025-10-04 12:44:32.841584893 -0400
++++ Makefile_dll_fixed	2025-10-06 11:10:48.541138197 -0400
+@@ -5,19 +5,21 @@
  
- WORKDIR = `pwd`
+ WORKDIR = $PWD
  
 -CC = gcc
 -CXX = g++
 -AR = ar
 -LD = g++
+-WINDRES = windres
 +COMPILER_PREFIX = i686-w64-mingw32-
 +
 +CC = $(COMPILER_PREFIX)gcc
 +CXX = $(COMPILER_PREFIX)g++
 +AR = $(COMPILER_PREFIX)ar
 +LD = $(COMPILER_PREFIX)g++
- WINDRES = 
++WINDRES = $(COMPILER_PREFIX)windres
  
  INC = 
-@@ -16,7 +18,7 @@
+ CFLAGS = -std=c++11 -march=pentium4 -mtune=generic -pedantic -Wall -Wextra -Wshadow -Wundef -Wuseless-cast -Wpointer-arith -Wfloat-conversion
+ RCFLAGS = 
  RESINC = 
  LIBDIR = 
- LIB = -luser32 -lwinmm -lgdi32 -lpsapi
+-LIB = user32 winmm gdi32 psapi
 -LDFLAGS = 
++LIB = -luser32 -lwinmm -lgdi32 -lpsapi
 +LDFLAGS = -static-libgcc -static-libstdc++ -static
  
  INC_DEBUG = $(INC)
  CFLAGS_DEBUG = $(CFLAGS) -g -Og -DBUILD_DLL -DBUILD_DEBUG
-@@ -29,7 +31,7 @@
+@@ -28,7 +30,7 @@
+ LDFLAGS_DEBUG = $(LDFLAGS)
+ OBJDIR_DEBUG = build/obj/debug
  DEP_DEBUG = 
- DEF_DEBUG = build/bin/debug/thinker.def
- SHAREDINT_DEBUG = build/bin/debug/libthinker.a
 -OUT_DEBUG = build/bin/debug/thinker.so
 +OUT_DEBUG = build/bin/debug/thinker.dll
  
  INC_DEVELOP = $(INC)
- CFLAGS_DEVELOP = $(CFLAGS) -O2 -fsplit-paths -fno-strict-aliasing -fno-delete-null-pointer-checks -DBUILD_DLL
-@@ -42,7 +44,7 @@
+ CFLAGS_DEVELOP = $(CFLAGS) -O2 -fno-common -fno-strict-overflow -fno-strict-aliasing -fno-delete-null-pointer-checks -fno-optimize-sibling-calls -DBUILD_DLL
+@@ -39,7 +41,7 @@
+ LDFLAGS_DEVELOP = $(LDFLAGS) -s -static
+ OBJDIR_DEVELOP = build/obj/develop
  DEP_DEVELOP = 
- DEF_DEVELOP = build/bin/develop/thinker.def
- SHAREDINT_DEVELOP = build/bin/develop/libthinker.a
 -OUT_DEVELOP = build/bin/develop/thinker.so
 +OUT_DEVELOP = build/bin/develop/thinker.dll
  
  INC_RELEASE = $(INC)
- CFLAGS_RELEASE = $(CFLAGS) -O2 -fsplit-paths -fno-strict-aliasing -fno-delete-null-pointer-checks -DBUILD_DLL -DBUILD_REL
-@@ -55,7 +57,7 @@
+ CFLAGS_RELEASE = $(CFLAGS) -O2 -fno-common -fno-strict-overflow -fno-strict-aliasing -fno-delete-null-pointer-checks -fno-optimize-sibling-calls -DBUILD_DLL -DBUILD_REL
+@@ -50,7 +52,7 @@
+ LDFLAGS_RELEASE = $(LDFLAGS) -s -static
+ OBJDIR_RELEASE = build/obj/release
  DEP_RELEASE = 
- DEF_RELEASE = build/bin/release/thinker.def
- SHAREDINT_RELEASE = build/bin/release/libthinker.a
 -OUT_RELEASE = build/bin/release/thinker.so
 +OUT_RELEASE = build/bin/release/thinker.dll
  
- OBJ_DEBUG = $(OBJDIR_DEBUG)/src/move.o $(OBJDIR_DEBUG)/src/test.o $(OBJDIR_DEBUG)/src/terranx.o $(OBJDIR_DEBUG)/src/tech.o $(OBJDIR_DEBUG)/src/plan.o $(OBJDIR_DEBUG)/src/path.o $(OBJDIR_DEBUG)/src/patch.o $(OBJDIR_DEBUG)/src/base.o $(OBJDIR_DEBUG)/src/map.o $(OBJDIR_DEBUG)/src/main.o $(OBJDIR_DEBUG)/src/lib/ini.o $(OBJDIR_DEBUG)/src/gui.o $(OBJDIR_DEBUG)/src/game.o $(OBJDIR_DEBUG)/src/engine.o
+ OBJ_DEBUG = $(OBJDIR_DEBUG)/src/mapgen.o $(OBJDIR_DEBUG)/src/move.o $(OBJDIR_DEBUG)/src/net.o $(OBJDIR_DEBUG)/src/patch.o $(OBJDIR_DEBUG)/src/path.o $(OBJDIR_DEBUG)/src/plan.o $(OBJDIR_DEBUG)/src/probe.o $(OBJDIR_DEBUG)/src/random.o $(OBJDIR_DEBUG)/src/strings.o $(OBJDIR_DEBUG)/src/tech.o $(OBJDIR_DEBUG)/src/test.o $(OBJDIR_DEBUG)/src/veh.o $(OBJDIR_DEBUG)/src/veh_combat.o $(OBJDIR_DEBUG)/src/veh_turn.o $(OBJDIR_DEBUG)/src/build.o $(OBJDIR_DEBUG)/src/config.o $(OBJDIR_DEBUG)/src/debug.o $(OBJDIR_DEBUG)/src/engine.o $(OBJDIR_DEBUG)/src/faction.o $(OBJDIR_DEBUG)/src/base.o $(OBJDIR_DEBUG)/src/game.o $(OBJDIR_DEBUG)/src/goal.o $(OBJDIR_DEBUG)/src/gui.o $(OBJDIR_DEBUG)/src/gui_dialog.o $(OBJDIR_DEBUG)/src/lib/ini.o $(OBJDIR_DEBUG)/src/main.o $(OBJDIR_DEBUG)/src/map.o
  
-@@ -70,7 +72,6 @@
+@@ -65,7 +67,6 @@
  before_build: 
  
  after_build: 
@@ -61,30 +64,30 @@
  
  before_debug: 
  	test -d build/bin/debug || mkdir -p build/bin/debug
-@@ -117,7 +118,7 @@
- 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/main.cpp -o $(OBJDIR_DEBUG)/src/main.o
+@@ -154,7 +155,7 @@
+ 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/gui_dialog.cpp -o $(OBJDIR_DEBUG)/src/gui_dialog.o
  
  $(OBJDIR_DEBUG)/src/lib/ini.o: src/lib/ini.c
 -	$(CPP) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/lib/ini.c -o $(OBJDIR_DEBUG)/src/lib/ini.o
 +	$(CC) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/lib/ini.c -o $(OBJDIR_DEBUG)/src/lib/ini.o
  
- $(OBJDIR_DEBUG)/src/gui.o: src/gui.cpp
- 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/gui.cpp -o $(OBJDIR_DEBUG)/src/gui.o
-@@ -179,7 +180,7 @@
- 	$(CXX) $(CFLAGS_DEVELOP) $(INC_DEVELOP) -c src/main.cpp -o $(OBJDIR_DEVELOP)/src/main.o
+ $(OBJDIR_DEBUG)/src/main.o: src/main.cpp
+ 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/main.cpp -o $(OBJDIR_DEBUG)/src/main.o
+@@ -255,7 +256,7 @@
+ 	$(CXX) $(CFLAGS_DEVELOP) $(INC_DEVELOP) -c src/gui_dialog.cpp -o $(OBJDIR_DEVELOP)/src/gui_dialog.o
  
  $(OBJDIR_DEVELOP)/src/lib/ini.o: src/lib/ini.c
 -	$(CPP) $(CFLAGS_DEVELOP) $(INC_DEVELOP) -c src/lib/ini.c -o $(OBJDIR_DEVELOP)/src/lib/ini.o
 +	$(CC) $(CFLAGS_DEVELOP) $(INC_DEVELOP) -c src/lib/ini.c -o $(OBJDIR_DEVELOP)/src/lib/ini.o
  
- $(OBJDIR_DEVELOP)/src/gui.o: src/gui.cpp
- 	$(CXX) $(CFLAGS_DEVELOP) $(INC_DEVELOP) -c src/gui.cpp -o $(OBJDIR_DEVELOP)/src/gui.o
-@@ -241,7 +242,7 @@
- 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/main.cpp -o $(OBJDIR_RELEASE)/src/main.o
+ $(OBJDIR_DEVELOP)/src/main.o: src/main.cpp
+ 	$(CXX) $(CFLAGS_DEVELOP) $(INC_DEVELOP) -c src/main.cpp -o $(OBJDIR_DEVELOP)/src/main.o
+@@ -356,7 +357,7 @@
+ 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/gui_dialog.cpp -o $(OBJDIR_RELEASE)/src/gui_dialog.o
  
  $(OBJDIR_RELEASE)/src/lib/ini.o: src/lib/ini.c
 -	$(CPP) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/lib/ini.c -o $(OBJDIR_RELEASE)/src/lib/ini.o
 +	$(CC) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/lib/ini.c -o $(OBJDIR_RELEASE)/src/lib/ini.o
  
- $(OBJDIR_RELEASE)/src/gui.o: src/gui.cpp
- 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/gui.cpp -o $(OBJDIR_RELEASE)/src/gui.o
+ $(OBJDIR_RELEASE)/src/main.o: src/main.cpp
+ 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/main.cpp -o $(OBJDIR_RELEASE)/src/main.o
