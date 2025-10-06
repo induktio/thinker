@@ -140,13 +140,13 @@ To avoid compiling issues, do not use the older MinGW toolkit version bundled wi
 GCC versions older than 8.1.0 are not supported. After installing MinGW, new paths need to be
 entered in Settings > Compiler > Toolchain Executables for the default GNU GCC Compiler profile.
 
-Another way to build Thinker on Linux platforms is to convert the CodeBlocks project file into
-actual Makefiles and then compile them using g++-mingw-w64. A build script that does all these
-steps is provided in `tools/compile` folder.
+Another way to build Thinker on Linux platforms is to convert the CodeBlocks project files into
+actual Makefiles and then compile them using g++-mingw-w64 (posix threading version required).
+A build script that does all these steps is provided in `tools/compile` folder.
 
-1. First install dependencies: `apt install build-essential g++-mingw-w64-i686`
-2. Clone [cbp2make](https://github.com/dmpas/cbp2make) and compile it from sources.
-3. Install `cbp2make` binary on a folder included in the environment PATH.
+1. First install dependencies: `apt install build-essential g++-mingw-w64-i686-posix`
+2. Install [cbp2make](https://github.com/mirai-computing/cbp2make) rev156 (other versions not supported) or compile it from sources.
+3. Make sure that `cbp2make` binary is included in the environment PATH.
 4. Build Thinker: `./tools/compile/mingw-compile.sh`
 5. Get compiled binaries from: `build/bin/`
 

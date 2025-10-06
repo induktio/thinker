@@ -1,8 +1,5 @@
 #!/bin/bash -eu
 
-# Get cbp2make from here:
-# https://github.com/dmpas/cbp2make
-
 SCRIPT_DIR=`dirname $0`
 ROOT_DIR="${SCRIPT_DIR}/../.."
 
