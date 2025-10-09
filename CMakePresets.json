@@ -1,0 +1,118 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Kitware/CMake/master/Help/manual/presets/schema.json",
+  "version": 10,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 15
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug (Unix Makefiles)",
+      "inherits": ["base"],
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "develop",
+      "displayName": "Develop (Unix Makefiles)",
+      "inherits": ["base"],
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/develop",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Develop"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release (Unix Makefiles)",
+      "inherits": ["base"],
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "ninja-debug",
+      "displayName": "Debug (Ninja)",
+      "inherits": ["base"],
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "ninja-develop",
+      "displayName": "Develop (Ninja)",
+      "inherits": ["base"],
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/develop",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Develop"
+      }
+    },
+    {
+      "name": "ninja-release",
+      "displayName": "Release (Ninja)",
+      "inherits": ["base"],
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "cb-debug",
+      "displayName": "Debug (CodeBlocks - Unix Makefiles)",
+      "inherits": ["base"],
+      "generator": "CodeBlocks - Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "cb-develop",
+      "displayName": "Develop (CodeBlocks - Unix Makefiles)",
+      "inherits": ["base"],
+      "generator": "CodeBlocks - Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/develop",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Develop"
+      }
+    },
+    {
+      "name": "cb-release",
+      "displayName": "Release (CodeBlocks - Unix Makefiles)",
+      "inherits": ["base"],
+      "generator": "CodeBlocks - Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "debug", "configurePreset": "debug" },
+    { "name": "develop", "configurePreset": "develop" },
+    { "name": "release", "configurePreset": "release" },
+    { "name": "ninja-debug", "configurePreset": "ninja-debug" },
+    { "name": "ninja-develop", "configurePreset": "ninja-develop" },
+    { "name": "ninja-release", "configurePreset": "ninja-release" },
+    { "name": "cb-debug", "configurePreset": "cb-debug" },
+    { "name": "cb-develop", "configurePreset": "cb-develop" },
+    { "name": "cb-release", "configurePreset": "cb-release" }
+  ]
+}

@@ -1,48 +1,36 @@
 # Compiling Thinker
 
-## Overview
+This guide focuses on two supported workflows:
+- Using CMakePresets.json
+- Using the Code::Blocks .cbp project files
 
-CMake can generate project files for different IDEs and build systems. Choose the generator that matches your development environment.
+## Using CMakePresets.json
 
-## CLion
+Presets are defined in `CMakePresets.json` and configure builds under `build/<config>`.
 
-CLion has native CMake support and will automatically use the existing `CMakeLists.txt` and `.idea` folder configurations. Simply open the project directory in CLion.
+Available presets:
+- Unix Makefiles: `debug`, `develop`, `release`
+- Ninja: `ninja-debug`, `ninja-develop`, `ninja-release`
+- Code::Blocks - Unix Makefiles (generates a .cbp): `cb-debug`, `cb-develop`, `cb-release`
 
-## Code::Blocks
+### Examples
+1. Configure (choose one generator):
+   - `cmake --preset debug`
+   - `cmake --preset ninja-develop`
+   - `cmake --preset cb-release`
+2. Build
+   - `cmake --build --preset debug` (library and launcher):
+   - `cmake --build --preset develop --target thinkerlib` (only library)
+   - `cmake --build --preset release --target thinker` (only launcher)
 
-**On Windows with MinGW:**
-```bash
-cmake -G "CodeBlocks - MinGW Makefiles" -B build
-```
+## Using Code::Blocks (.cbp)
 
-Then open `build/thinker.cbp` in Code::Blocks.
-
-## Visual Studio (Windows)
-
-**Visual Studio 2022:**
-```bash
-cmake -G "Visual Studio 17 2022" -B build
-```
-
-Then open `build/thinker.sln` in Visual Studio.
-
-## Other Build Systems
-
-**Unix Makefiles:**
-```bash
-cmake -G "Unix Makefiles" -B build
-```
-
-**Ninja:**
-```bash
-cmake -G "Ninja" -B build
-```
-
-## Building from Command Line
-
-After generating the build files:
-
-```bash
-cd build
-make
-```
+Two options:
+1) Open the provided projects directly:
+   - `thinker.cbp` (builds the DLL)
+   - `thinkerlaunch.cbp` (builds the launcher EXE)
+2) Generate a Code::Blocks project via presets and open it:
+   - `cmake --preset cb-debug`
+   - `cmake --preset cb-develop`
+   - `cmake --preset cb-release`
+   * When using the Code::Blocks presets, open the generated `.cbp` from `build/<config>/`. 
