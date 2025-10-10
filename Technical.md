@@ -131,24 +131,53 @@ Then plot any possible tech tree defined in alphax.txt to a png file.
 
 Compiling Thinker
 =================
-Install dependencies to compile Thinker on Windows using CodeBlocks:
+For the primary development environment, install dependencies to compile Thinker on Windows using Code::Blocks:
 
-* [CodeBlocks](https://www.codeblocks.org/downloads/)
+* [Code::Blocks](https://www.codeblocks.org/downloads/)
 * [MinGW toolkit](https://github.com/niXman/mingw-builds-binaries/releases/download/14.2.0-rt_v12-rev1/i686-14.2.0-release-posix-dwarf-msvcrt-rt_v12-rev1.7z)
 
-To avoid compiling issues, do not use the older MinGW toolkit version bundled with CodeBlocks.
+To avoid compiling issues, do not use the older MinGW toolkit version bundled with Code::Blocks.
 GCC versions older than 8.1.0 are not supported. After installing MinGW, new paths need to be
 entered in Settings > Compiler > Toolchain Executables for the default GNU GCC Compiler profile.
 
-Another way to build Thinker on Linux platforms is to convert the CodeBlocks project files into
-actual Makefiles and then compile them using g++-mingw-w64 (posix threading version required).
-A build script that does all these steps is provided in `tools/compile` folder.
+## Alternative ways to compile using CMake
 
-1. First install dependencies: `apt install build-essential g++-mingw-w64-i686-posix`
-2. Install [cbp2make](https://github.com/mirai-computing/cbp2make) rev156 (other versions not supported) or compile it from sources.
-3. Make sure that `cbp2make` binary is included in the environment PATH.
-4. Build Thinker: `./tools/compile/mingw-compile.sh`
-5. Get compiled binaries from: `build/bin/`
+Another way to build Thinker on Linux platforms is to use the included CMake config
+and then compile the project using g++-mingw-w64.
+
+First ensure dependencies are installed:
+- `apt install build-essential cmake g++-mingw-w64-i686-posix`
+
+## Using CMakePresets.json
+
+Presets are defined in `CMakePresets.json` and configure builds under `build/<config>`.
+
+Available presets:
+- Unix Makefiles: `debug`, `develop`, `release`
+- Ninja: `ninja-debug`, `ninja-develop`, `ninja-release`
+- Code::Blocks - Unix Makefiles (generates a .cbp): `cb-debug`, `cb-develop`, `cb-release`
+
+### Examples
+1. Configure (choose one generator):
+   - `cmake --preset debug`
+   - `cmake --preset ninja-develop`
+   - `cmake --preset cb-release`
+2. Build
+   - `cmake --build --preset debug` (library and launcher):
+   - `cmake --build --preset develop --target thinkerlib` (only library)
+   - `cmake --build --preset release --target thinker` (only launcher)
+
+## Using Code::Blocks (.cbp)
+
+Two options:
+1. Open the provided projects directly:
+   - `thinker.cbp` (builds the DLL)
+   - `thinkerlaunch.cbp` (builds the launcher EXE)
+2. Generate a Code::Blocks project via presets and open it:
+   - `cmake --preset cb-debug`
+   - `cmake --preset cb-develop`
+   - `cmake --preset cb-release`
+   * When using the Code::Blocks presets, open the generated `.cbp` from `build/<config>/`. 
 
 
 Details for patch startup method

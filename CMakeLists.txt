@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.31)
 
 # fail on missing -B to not add build files in source root
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
@@ -36,11 +36,11 @@ set(THINKER_OUTPUT_BASE "${CMAKE_SOURCE_DIR}/build")
 # ---------- Debug ----------
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${COMMON_CXX_FLAGS} -g -Og -DBUILD_DEBUG")
 
-# ---------- Release ----------
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${COMMON_CXX_FLAGS} -O2 -flto -fno-rtti -fno-strict-aliasing -fno-delete-null-pointer-checks -DBUILD_REL")
-
 # ---------- Develop ----------
 set(CMAKE_CXX_FLAGS_DEVELOP "${CMAKE_CXX_FLAGS_DEVELOP} ${COMMON_CXX_FLAGS} -O2 -fno-common -fno-strict-overflow -fno-strict-aliasing -fno-delete-null-pointer-checks -fno-optimize-sibling-calls")
+
+# ---------- Release ----------
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_DEVELOP} -DBUILD_REL")
 
 # ---------- Thinker lib ----------
 file(GLOB THINKER_LIB_SOURCES
@@ -60,7 +60,7 @@ target_compile_options(thinkerlib PRIVATE
     -mtune=generic
 )
 target_link_options(thinkerlib PRIVATE
-    $<$<OR:$<CONFIG:Release>,$<CONFIG:Develop>>:-static -s>
+    $<$<OR:$<CONFIG:Release>,$<CONFIG:Develop>>:-s -static-libgcc -static-libstdc++>
 )
 target_compile_definitions(thinkerlib PRIVATE BUILD_DLL)
 set_target_properties(thinkerlib PROPERTIES PREFIX "" OUTPUT_NAME "thinker" SUFFIX ".dll")
@@ -78,7 +78,7 @@ target_compile_options(thinker PRIVATE
     $<$<CONFIG:Release>:-DBUILD_REL>
 )
 target_link_options(thinker PRIVATE
-    $<$<OR:$<CONFIG:Release>,$<CONFIG:Develop>>:-static -s>
+    $<$<OR:$<CONFIG:Release>,$<CONFIG:Develop>>:-s -static>
 )
 set_target_properties(thinker PROPERTIES PREFIX "" SUFFIX ".exe")
 target_link_libraries(thinker PRIVATE thinkerlib user32)
