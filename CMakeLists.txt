@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.31)
 
-# fail on missing -B to not add build files in source root
+# Fail on missing -B to not add build files in source root
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
     message(FATAL_ERROR "You need to specify -B where build files are saved")
 endif()
+
+# Enable static linking by default on develop/release versions
+option(MOD_STATIC_LINK "Enable static linking on develop/release thinkerlib" ON)
 
 project(thinker C CXX)
 
@@ -14,6 +17,7 @@ set(CMAKE_CXX_COMPILER i686-w64-mingw32-g++)
 set(CMAKE_C_COMPILER i686-w64-mingw32-gcc)
 set(CMAKE_RC_COMPILER i686-w64-mingw32-windres)
 enable_language(RC)
+
 # Use GNU windres style for RC compile rule
 set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> -O coff <DEFINES> <INCLUDES> <FLAGS> -i <SOURCE> -o <OBJECT>")
 
@@ -60,7 +64,8 @@ target_compile_options(thinkerlib PRIVATE
     -mtune=generic
 )
 target_link_options(thinkerlib PRIVATE
-    $<$<OR:$<CONFIG:Release>,$<CONFIG:Develop>>:-s -static-libgcc -static-libstdc++>
+    $<$<OR:$<CONFIG:Release>,$<CONFIG:Develop>>:-s>
+    $<$<AND:$<BOOL:${MOD_STATIC_LINK}>,$<OR:$<CONFIG:Release>,$<CONFIG:Develop>>>:-static>
 )
 target_compile_definitions(thinkerlib PRIVATE BUILD_DLL)
 set_target_properties(thinkerlib PROPERTIES PREFIX "" OUTPUT_NAME "thinker" SUFFIX ".dll")
