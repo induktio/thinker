@@ -206,12 +206,12 @@ int __cdecl tech_name(char* name) {
 Convert the chassis name string to a numeric chassis_id.
 Return Value: chassis_id; 'None' (-1); 'Disabled' (-2); or error (0)
 */
-int __cdecl chas_name(char* name) {
+static int __cdecl get_chas_name(char* name, bool check) {
     strtrail(name);
-    if (!_stricmp(name, "None")) {
+    if (!check && !_stricmp(name, "None")) {
         return TECH_None;
     }
-    if (!_stricmp(name, "Disable")) {
+    if (!check && !_stricmp(name, "Disable")) {
         return TECH_Disable;
     }
     for (int chas_id = 0; chas_id < MaxChassisNum; chas_id++) {
@@ -227,16 +227,20 @@ int __cdecl chas_name(char* name) {
     return 0;
 }
 
+int __cdecl chas_name(char* name) {
+    return get_chas_name(name, false); // Allows None/Disable
+}
+
 /*
 Convert the weapon name string to a numeric weapon_id.
 Return Value: weapon_id; 'None' (-1); 'Disabled' (-2); or error (0)
 */
-int __cdecl weap_name(char* name) {
+static int __cdecl get_weap_name(char* name, bool check) {
     strtrail(name);
-    if (!_stricmp(name, "None")) {
+    if (!check && !_stricmp(name, "None")) {
         return TECH_None;
     }
-    if (!_stricmp(name, "Disable")) {
+    if (!check && !_stricmp(name, "Disable")) {
         return TECH_Disable;
     }
     for (int wpn_id = 0; wpn_id < MaxWeaponNum; wpn_id++) {
@@ -252,16 +256,20 @@ int __cdecl weap_name(char* name) {
     return 0;
 }
 
+int __cdecl weap_name(char* name) {
+    return get_weap_name(name, false); // Allows None/Disable
+}
+
 /*
 Convert the armor name string to a numeric armor_id.
 Return Value: armor_id; 'None' (-1); 'Disabled' (-2); or error (0)
 */
-int __cdecl arm_name(char* name) {
+static int __cdecl get_arm_name(char* name, bool check) {
     strtrail(name);
-    if (!_stricmp(name, "None")) {
+    if (!check && !_stricmp(name, "None")) {
         return TECH_None;
     }
-    if (!_stricmp(name, "Disable")) {
+    if (!check && !_stricmp(name, "Disable")) {
         return TECH_Disable;
     }
     for (int arm_id = 0; arm_id < MaxArmorNum; arm_id++) {
@@ -275,6 +283,10 @@ int __cdecl arm_name(char* name) {
     X_pop2("BADARMKEY", 0);
     exit_fail();
     return 0;
+}
+
+int __cdecl arm_name(char* name) {
+    return get_arm_name(name, false); // Allows None/Disable
 }
 
 /*
@@ -920,16 +932,17 @@ int __cdecl read_units() {
     for (int unit_id = 0; unit_id < total_units; unit_id++) {
         text_get();
         strcpy_n(Units[unit_id].name, 32, text_item());
-        int chas_id = chas_name(text_item());
-        int weap_id = weap_name(text_item());
-        int armor_id = arm_name(text_item());
+        int chas_id = get_chas_name(text_item(), true);
+        int weap_id = get_weap_name(text_item(), true);
+        int armor_id = get_arm_name(text_item(), true);
         int plan = text_item_number();
         int cost = text_item_number();
         int carry = text_item_number();
         Units[unit_id].preq_tech = (int16_t)tech_name(text_item());
         int icon = text_item_number();
         int ability = text_item_binary();
-        int reactor_id = text_item_number(); // Add ability to read reactor for #UNITS
+        // Add ability to set custom reactor for #UNITS
+        int reactor_id = clamp(text_item_number(), 0, MaxReactorNum);
         if (!reactor_id) { // If not set or 0, default behavior
             switch (unit_id) {
               case BSC_BATTLE_OGRE_MK2:

@@ -500,6 +500,53 @@ void __cdecl rocky_set(int x, int y, uint8_t rocky) {
     *GameDrawState |= 1;
 }
 
+int __cdecl using_at(int x, int y) {
+    MAP* sq = mapsq(x, y);
+    return sq->val3 & 7;
+}
+
+void __cdecl using_set(int x, int y, int faction_id) {
+    MAP* sq = mapsq(x, y);
+    sq->val3 &= 0xF8;
+    sq->val3 |= faction_id & 7;
+}
+
+int __cdecl lock_at(int x, int y) {
+    MAP* sq = mapsq(x, y);
+    return (sq->val3 >> 3) & 7;
+}
+
+void __cdecl lock_set(int x, int y, int faction_id) {
+    MAP* sq = mapsq(x, y);
+    sq->val3 &= 0xC7;
+    sq->val3 |= (faction_id & 7) << 3;
+}
+
+/*
+Lock the specified tile for faction_id during multiplayer.
+Return Value: true if already locked by another faction, otherwise false
+*/
+int __cdecl lock_map(int x, int y, int faction_id) {
+    int lock_id = lock_at(x, y);
+    if (lock_id != faction_id) {
+        if (lock_id) {
+            return true;
+        }
+        lock_set(x, y, faction_id);
+    }
+    return false;
+}
+
+/*
+Unlock the specified tile for faction_id during multiplayer.
+*/
+void __cdecl unlock_map(int x, int y, int faction_id) {
+    if (lock_at(x, y) == faction_id) {
+        MAP* sq = mapsq(x, y);
+        sq->val3 &= 0xC7;
+    }
+}
+
 uint32_t __cdecl bit_at(int x, int y) {
     MAP* sq = mapsq(x, y);
     return sq ? sq->items : 0;
@@ -713,7 +760,7 @@ int __cdecl mod_crop_yield(int faction_id, int base_id, int x, int y, int flag) 
         }
         if (has_fac_built(FAC_PRESSURE_DOME, base_id)
         || has_fac_built(FAC_RECYCLING_TANKS, base_id)) {
-            value += ResInfo->recycling_tanks.energy;
+            value += ResInfo->recycling_tanks.nutrient;
         }
     }
     else if (sq->items & BIT_THERMAL_BORE) {
@@ -731,7 +778,7 @@ int __cdecl mod_crop_yield(int faction_id, int base_id, int x, int y, int flag) 
             value += ManifoldHarmonicsBonus[clamp(planet + 1, 0, 4)][0];
         }
     }
-    else if (sq->items & BIT_FUNGUS && !flag && alt >= ALT_OCEAN_SHELF) {
+    else if (!flag && sq->is_fungus()) {
         int fungus_val = clamp(planet, -3, 0) + Factions[faction_id].tech_fungus_nutrient;
         value = clamp(fungus_val, 0, 99);
         if (has_project(FAC_MANIFOLD_HARMONICS, faction_id)) {
@@ -863,7 +910,7 @@ int __cdecl mod_mine_yield(int faction_id, int base_id, int x, int y, int flag) 
                 value += ResInfo->bonus_sq.mineral;
             }
         }
-        else if (sq->items & BIT_FUNGUS && alt >= ALT_OCEAN_SHELF) {
+        else if (sq->is_fungus()) {
             int fungus_val = clamp(planet, -3, 0) + Factions[faction_id].tech_fungus_mineral;
             value = clamp(fungus_val, 0, 99);
             if (has_project(FAC_MANIFOLD_HARMONICS, faction_id)) {
@@ -965,7 +1012,7 @@ int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag
                 value++;
             }
         }
-        value += 1 + is_hq;
+        value += ResInfo->base_sq.energy + is_hq;
         if (*GovernorFaction == faction_id) {
             value++;
         }
@@ -984,7 +1031,7 @@ int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag
     else if (sq->items & BIT_THERMAL_BORE) {
         value = ResInfo->borehole_sq.energy;
     }
-    else if (sq->items & BIT_FUNGUS && alt >= ALT_OCEAN_SHELF) {
+    else if (sq->is_fungus()) {
         int fungus_val = clamp(planet, -3, 0) + Factions[faction_id].tech_fungus_energy;
         value = clamp(fungus_val, 0, 99);
         if (has_project(FAC_MANIFOLD_HARMONICS, faction_id)) {

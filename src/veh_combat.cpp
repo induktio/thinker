@@ -658,11 +658,17 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
         veh_atk = &Vehs[veh_id_atk];
         faction_id_atk = veh_atk->faction_id;
         sq_atk = mapsq(veh_atk->x, veh_atk->y);
+        assert(veh_atk->chassis_type() >= 0);
+        assert(veh_atk->weapon_type() >= 0);
+        assert(veh_atk->armor_type() >= 0);
     }
     if (veh_id_def >= 0) {
         veh_def = &Vehs[veh_id_def];
         faction_id_def = veh_def->faction_id;
         sq_def = mapsq(veh_def->x, veh_def->y);
+        assert(veh_def->chassis_type() >= 0);
+        assert(veh_def->weapon_type() >= 0);
+        assert(veh_def->armor_type() >= 0);
     }
     const bool is_arty = combat_type & CT_CAN_ARTY;
     const bool is_bombard = (is_arty || (veh_id_atk >= 0 && veh_atk->is_missile()));
@@ -801,7 +807,8 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
                 }
                 if (conf.planet_defense_bonus && faction_id_def) {
                     int planet_def = Factions[faction_id_def].SE_planet;
-                    int modifier = planet_def * Rules->combat_psi_bonus_per_planet / 2;
+                    int modifier = planet_def * Rules->combat_psi_bonus_per_planet
+                        / (conf.planet_defense_bonus <= 1 ? 2 : 1);
                     if (modifier != 0) {
                         defense = defense * (modifier + 100) / 100;
                         add_bat(1, modifier, label_get(625)); // Planet
@@ -876,19 +883,19 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
                     switch (veh_atk->triad()) {
                       case TRIAD_LAND:
                         if (has_facility(FAC_PERIMETER_DEFENSE, base_id_def)) {
-                            fac_modifier = conf.facility_defense_bonus[0];
+                            fac_modifier = conf.facility_defense_value[0];
                             display_def = label_get(354); // Perimeter
                         }
                         break;
                       case TRIAD_SEA:
                         if (has_facility(FAC_NAVAL_YARD, base_id_def)) {
-                            fac_modifier = conf.facility_defense_bonus[1];
+                            fac_modifier = conf.facility_defense_value[1];
                             display_def = Facility[FAC_NAVAL_YARD].name;
                         }
                         break;
                       case TRIAD_AIR:
                         if (has_facility(FAC_AEROSPACE_COMPLEX, base_id_def)) {
-                            fac_modifier = conf.facility_defense_bonus[2];
+                            fac_modifier = conf.facility_defense_value[2];
                             display_def = Facility[FAC_AEROSPACE_COMPLEX].name;
                         }
                         break;
@@ -896,7 +903,7 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
                         break;
                     }
                     if (has_fac_built(FAC_TACHYON_FIELD, base_id_def)) {
-                        fac_modifier += conf.facility_defense_bonus[3];
+                        fac_modifier += conf.facility_defense_value[3];
                         display_def = label_get(357); // Tachyon
                     }
                     if (Rules->combat_bonus_intrinsic_base_def

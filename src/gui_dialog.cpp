@@ -98,7 +98,8 @@ int __cdecl mod_threaten(int faction1, int faction2)
     Faction& f_plr = Factions[faction1];
     Faction& f_cmp = Factions[faction2];
 
-    if (!*MultiplayerActive && has_pact(faction2, faction1)
+    if (!*MultiplayerActive && !diplo_value_93FA70
+    && has_pact(faction2, faction1)
     && !has_treaty(faction2, faction1, DIPLO_HAVE_SURRENDERED)
     && (*diplo_current_proposal_id == DiploProposalTechTrade
     || *diplo_current_proposal_id == DiploProposalNeedEnergy)) {

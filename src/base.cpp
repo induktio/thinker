@@ -1242,6 +1242,8 @@ static void adjust_psych(BASE* base, int talent_val, bool force) {
     if (talent_val > 0) {
         base->talent_total += talent_val;
     }
+    base->drone_total = max(0, min(base->drone_total, (int)base->pop_size));
+    base->talent_total = max(0, min(base->talent_total, (int)base->pop_size));
     while (base->talent_total + base->drone_total + base->superdrone_total > pop_size) {
         if (base->talent_total > 0) {
             base->talent_total--;
@@ -1252,32 +1254,12 @@ static void adjust_psych(BASE* base, int talent_val, bool force) {
             }
         } else {
             if (base->drone_total <= pop_size) {
-                base->superdrone_total = min(base->drone_total, base->superdrone_total);
+                base->superdrone_total = max(0, min(base->drone_total, base->superdrone_total));
                 break;
             }
             base->drone_total--;
         }
     }
-    assert(base->pop_size >= base->talent_total + base->drone_total + base->specialist_total);
-}
-
-static void adjust_drone(BASE* base, int drone_val) {
-    const int pop_size = base->pop_size - base->specialist_total;
-    while (drone_val > 0) {
-        drone_val--;
-        if (base->drone_total < pop_size) {
-            base->drone_total++;
-        } else if (base->superdrone_total < pop_size) {
-            base->superdrone_total++;
-        }
-        if (base->talent_total + base->drone_total > pop_size && base->talent_total > 0) {
-            base->talent_total--;
-        }
-    }
-    if (drone_val < 0) {
-        base->drone_total = max(0, base->drone_total + drone_val);
-    }
-    base->superdrone_total = min(base->drone_total, base->superdrone_total);
     assert(base->pop_size >= base->talent_total + base->drone_total + base->specialist_total);
 }
 
@@ -1367,12 +1349,30 @@ void __cdecl mod_base_psych(int base_id) {
     int psych_val = max(0, min(base->psych_total/2, base->pop_size - base->talent_total));
     int addon_val = base->psych_total/2 - psych_val;
     int addon_cost = 2;
-    while (addon_val >= addon_cost) {
-        psych_val++;
+    adjust_psych(base, psych_val, 0);
+    int pop_size = base->pop_size - base->specialist_total;
+    while (conf.base_psych && addon_val >= addon_cost && base->talent_total < pop_size) {
         addon_val -= addon_cost;
         addon_cost += 2;
+        base->talent_total++;
+        while (base->talent_total + base->drone_total + base->superdrone_total > pop_size) {
+            if (base->talent_total > 0) {
+                base->talent_total--;
+                if (base->superdrone_total > 0) {
+                    base->superdrone_total--;
+                } else if (base->drone_total > 0) {
+                    base->drone_total--;
+                }
+            } else {
+                if (base->drone_total <= pop_size) {
+                    base->superdrone_total = max(0, min(base->drone_total, base->superdrone_total));
+                    break;
+                }
+                base->drone_total--;
+            }
+        }
+        assert(base->pop_size >= base->talent_total + base->drone_total + base->specialist_total);
     }
-    adjust_psych(base, psych_val, 0);
     add_psych_row(base, 1); // Psych
 
     if (has_fac_built(FAC_GENEJACK_FACTORY, base_id)) {
@@ -1395,26 +1395,29 @@ void __cdecl mod_base_psych(int base_id) {
     if (has_fac_built(FAC_NANOHOSPITAL, base_id)) {
         facility_value -= 1;
     }
-    adjust_drone(base, facility_value);
+    base->drone_total += facility_value;
     if (has_fac_built(FAC_PARADISE_GARDEN, base_id)) {
-        adjust_psych(base, 2, 1);
+        adjust_psych(base, conf.facility_talent_value[1], conf.facility_talent_value[0]);
     }
+    adjust_psych(base, 0, 0);
     add_psych_row(base, 2); // Facilities
 
     // Allied units on the same tile can also apply police effects
-    // These modifiers may stack and will result in three drones suppressed by one unit
-    // when more than one ability is used: SE_police >= 3, ABL_POLICE_2X, RFLAG_WORMPOLICE
+    // These modifiers may stack and each item will result in an additional drone
+    // being suppressed by the unit: SE_police >= 3, ABL_POLICE_2X, RFLAG_WORMPOLICE
     std::priority_queue<int> units;
     if (SE_police >= -1) {
+        bool worm_police = m->rule_flags & RFLAG_WORMPOLICE;
         if (has_project(FAC_SELF_AWARE_COLONY, faction_id)) {
             units.push({val_police});
         }
         for (int i = 0; i < *VehCount; i++) {
             VEH* veh = &Vehs[i];
-            if (veh->x == base->x && veh->y == base->y
-            && veh->triad() != TRIAD_SEA && veh->plan() <= PLAN_RECON) {
-                int value = val_police + (has_abil(veh->unit_id, ABL_POLICE_2X)
-                    || (veh->is_native_unit() && m->rule_flags & RFLAG_WORMPOLICE));
+            int triad;
+            if (veh->x == base->x && veh->y == base->y && veh->plan() <= PLAN_RECON
+            && (triad = veh->triad(), triad != TRIAD_SEA)) {
+                int value = val_police + (has_abil(veh->unit_id, ABL_POLICE_2X) != 0)
+                    + (worm_police && triad == TRIAD_LAND && veh->is_native_unit());
                 units.push({value});
             }
         }
@@ -1422,9 +1425,10 @@ void __cdecl mod_base_psych(int base_id) {
             police_total += units.top();
             units.pop();
         }
-        adjust_drone(base, -police_total);
+        base->drone_total = max(0, base->drone_total - police_total);
     }
 
+    // Pacifism should not create additional superdrones
     if (SE_police == -3 && *BaseVehPacifismCount > 1) {
         base->drone_total = min((int)base->pop_size, base->drone_total + *BaseVehPacifismCount - 1);
     } else if (SE_police == -4 && *BaseVehPacifismCount > 0) {
@@ -1432,26 +1436,38 @@ void __cdecl mod_base_psych(int base_id) {
     } else if (SE_police <= -5 && *BaseVehPacifismCount > 0) {
         base->drone_total = min((int)base->pop_size, base->drone_total + *BaseVehPacifismCount * 2);
     }
-    adjust_psych(base, 0, 0); // Pacifism should not create additional superdrones
+    adjust_psych(base, 0, 0);
     add_psych_row(base, 3); // Police / Pacifism
 
-    // Always increase the talent count when any non-specialists are available
-    if (has_project(FAC_HUMAN_GENOME_PROJECT, faction_id)) {
-        adjust_psych(base, 1, 1);
-    }
-    if (has_project(FAC_CLINICAL_IMMORTALITY, faction_id)) {
-        adjust_psych(base, 1, 1);
-    }
-    // Planned reduces drones by two, while Simple and Green reduces by one
-    if (has_project(FAC_LONGEVITY_VACCINE, faction_id)) {
-        int value = (f->SE_Economics_pending == SOCIAL_M_PLANNED)
-            + (f->SE_Economics_pending != SOCIAL_M_FREE_MARKET);
-        adjust_drone(base, -value);
-    }
+    /*
+    Game manuals describe both Human Genome Project and Clinical Immortality
+    as providing "One extra Talent at every base." However this is not the case since
+    Clinical Immortality effect was actually twice as large. These talents could
+    also sometimes be canceled out by existing drones at the base. For this reason the mod
+    changes both projects to increase talents by one regardless of any regular drones.
+    */
     if (base->nerve_staple_turns_left > 0 || has_fac_built(FAC_PUNISHMENT_SPHERE, base_id)) {
         base->talent_total = 0;
         base->drone_total = 0;
-        base->superdrone_total = 0;
+        adjust_psych(base, 0, 0);
+    } else {
+        // Planned reduces drones by two, while Simple and Green reduces by one
+        if (has_project(FAC_LONGEVITY_VACCINE, faction_id)) {
+            if (base->drone_total > 0 && f->SE_Economics_pending == SOCIAL_M_PLANNED) {
+                base->drone_total--;
+            }
+            if (base->drone_total > 0 && f->SE_Economics_pending != SOCIAL_M_FREE_MARKET) {
+                base->drone_total--;
+            }
+        }
+        int talents = 0;
+        if (has_project(FAC_HUMAN_GENOME_PROJECT, faction_id)) {
+            talents += conf.facility_talent_value[2];
+        }
+        if (has_project(FAC_CLINICAL_IMMORTALITY, faction_id)) {
+            talents += conf.facility_talent_value[3];
+        }
+        adjust_psych(base, talents, conf.facility_talent_value[0]);
     }
     add_psych_row(base, 4); // Secret Projects / Stapled Base
 

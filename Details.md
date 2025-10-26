@@ -318,12 +318,11 @@ The original game also included entries for free Network Node after Self-Aware M
 
 Base psych changes
 ==================
-In the original game benefits provided by Paradise Garden, Human Genome Project and Clinical Immortality sometimes did not match their description in the manual.
-Usually superdrones added by bureaucracy prevented new talents from being added on the base. In the modified routines enabled by default with `base_psych` option, these facilities provide more consistent effects.
-If the base has many superdrones, these facilities and projects will suppress more drones than in the original game if the additional talents are not added directly.
-Clinical Immortality provides one extra talent per base as mentioned in the manual. However any bureaucracy or other drone effects on the first psych row remain the same as before.
+In the original game benefits provided by Paradise Garden, Human Genome Project and Clinical Immortality sometimes did not match their description in the manual. Often numerous drones or superdrones added by bureaucracy prevented new talents from being added on the base. In the modified routines enabled by default with `base_psych` option, these facilities provide more consistent effects. Clinical Immortality provides one extra talent per base as mentioned in the manual.
+It is also possible to modify or restore the original effects for each of them by adjusting `facility_talent_value` option. If the base has many superdrones, these facilities and projects will suppress more drones than in the original game if the additional talents are not added directly.
 
-As an additional feature, psych energy allocation is not limited to twice the base size unlike in the original game. Any spending before this limit will provide similar effects as in the original game, but after that limit the marginal cost to pacify one drone or create more talents is increased to 4 psych and it keeps increasing by 4 psych after each step. This makes it slightly easier for some factions to achieve golden ages while it still requires substantial psych spending.
+As an additional feature, psych energy allocation is not limited to twice the base size unlike in the original game. Any spending before this limit will provide similar effects as in the original game, but after that limit the marginal cost to pacify one drone or create more talents is increased to 4 psych and it keeps increasing by 4 psych after each step.
+This makes it slightly easier for some factions to achieve golden ages while it still requires substantial psych spending. Any other psych effects except this allocation increase or talents modified by `facility_talent_value` remain the same as before.
 
 
 Recommended alphax.txt settings
@@ -486,7 +485,8 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 63. Fix issue after the faction capturing the base with Cloudbase Academy has their aircraft speed altered during the turn resulting in some aircraft crashing when they should not.
 64. Fix rare issue that caused the base build queue to be saved with incorrect entries resulting in crashes during turn upkeep.
 65. Fix issues that prevented KELPWIPE or PLATFORMWIPE events from happening due to incorrect tile checks. These may now happen at similar probability as other events for suitable bases.
-66. Fix NEWRESOURCE event sometimes appearing on a tile that already has bonus resources and CRECHE event sometimes increasing population beyond base facility limits.
+66. Fix NEWRESOURCE event sometimes appearing on a tile that already has bonus resources.
+67. Modify config reader to display an error if None/Disable are used as chassis/weapon/armor identifiers for predefined units on alphax.txt.
 
 
 Scient's patch

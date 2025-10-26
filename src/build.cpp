@@ -558,7 +558,7 @@ int find_proto(int base_id, Triad triad, VehWeaponMode mode, bool defend) {
 
     if (combat && triad == TRIAD_LAND) {
         best_id = BSC_SCOUT_PATROL;
-        best_val = (mod_veh_avail(best_id, faction, base_id) ? 0 : -50)
+        best_val = (mod_veh_avail(best_id, faction, base_id) ? 0 : -10000)
             + unit_score(base, best_id, psi_score, defend);
     } else {
         best_id = -FAC_STOCKPILE_ENERGY;

@@ -307,7 +307,7 @@ void __cdecl mod_random_events(int flag) {
     if (conf.skip_random_events & (1 << (event_value + 1))) {
         return;
     }
-    parse_num(0, 10);
+    parse_num(0, conf.base_event_turns);
     parse_says(0, base->name, -1, -1); // Include initial base name by default
 
     switch (event_value) {
@@ -317,7 +317,7 @@ void __cdecl mod_random_events(int flag) {
         || !map_rand.get(0, 4)) {
             base->event_flags |= BEVENT_BUMPER;
             if (base->event_flags & BEVENT_VISIBLE) {
-                base->random_event_turns = 10;
+                base->random_event_turns = conf.base_event_turns;
             }
             if (is_player || *PbemActive) {
                 POP2("BUMPER", "bump_sm.pcx", base_id);
@@ -328,7 +328,7 @@ void __cdecl mod_random_events(int flag) {
         if (plr->ranking >= (*CurrentTurn >= 150) + 4) {
             base->event_flags |= BEVENT_FAMINE;
             if (base->event_flags & BEVENT_VISIBLE) {
-                base->random_event_turns = 10;
+                base->random_event_turns = conf.base_event_turns;
             }
             if (is_player || *PbemActive) {
                 if (!is_alien(faction_id)) {
@@ -345,7 +345,7 @@ void __cdecl mod_random_events(int flag) {
         || !map_rand.get(0, 4)) {
             base->event_flags |= BEVENT_INDUSTRY;
             if (base->event_flags & BEVENT_VISIBLE) {
-                base->random_event_turns = 10;
+                base->random_event_turns = conf.base_event_turns;
             }
             if (is_player || *PbemActive) {
                 POP2("INDUSTRY", "indbm_sm.pcx", base_id);
@@ -356,7 +356,7 @@ void __cdecl mod_random_events(int flag) {
         if (plr->ranking >= (*CurrentTurn >= 150) + 4) {
             base->event_flags |= BEVENT_BUST;
             if (base->event_flags & BEVENT_VISIBLE) {
-                base->random_event_turns = 10;
+                base->random_event_turns = conf.base_event_turns;
             }
             if (is_player || *PbemActive) {
                 POP2("BUST", "genwarning_sm.pcx", base_id);
@@ -369,7 +369,7 @@ void __cdecl mod_random_events(int flag) {
         || !map_rand.get(0, 4)) {
             base->event_flags |= BEVENT_HEAT_WAVE;
             if (base->event_flags & BEVENT_VISIBLE) {
-                base->random_event_turns = 10;
+                base->random_event_turns = conf.base_event_turns;
             }
             if (is_player || *PbemActive) {
                 POP2("HEATWAVE", "heat_sm.pcx", base_id);
@@ -380,7 +380,7 @@ void __cdecl mod_random_events(int flag) {
         if (plr->ranking >= (*CurrentTurn >= 150) + 4) {
             base->event_flags |= BEVENT_CLOUD_COVER;
             if (base->event_flags & BEVENT_VISIBLE) {
-                base->random_event_turns = 10;
+                base->random_event_turns = conf.base_event_turns;
             }
             if (is_player || *PbemActive) {
                 POP2("CLOUDCOVER", "cloud_sm.pcx", base_id);
@@ -780,7 +780,7 @@ void __cdecl mod_random_events(int flag) {
                 if (show_event) {
                     if (has_lab) {
                         base->event_flags |= BEVENT_BUMPER;
-                        base->random_event_turns = 10;
+                        base->random_event_turns = conf.base_event_turns;
                     }
                     if (is_player) {
                         if (!Console_focus(MapWin, base->x, base->y, faction_id)) {
@@ -871,8 +871,8 @@ void __cdecl mod_random_events(int flag) {
         if (has_tech(Facility[FAC_CHILDREN_CRECHE].preq_tech, faction_id)) {
             if (has_fac_built(FAC_CHILDREN_CRECHE, base_id)) {
                 int added = 0;
-                // Fix: check that base facilities allow increased population
-                while (base->nutrient_surplus > 0 && base_unused_space(base_id) > 0 && ++added < 3) {
+                // Fix: check that maximum population is not exceeded
+                while (base->nutrient_surplus > 0 && base->pop_size < MaxBasePopSize && ++added < 3) {
                     base->pop_size++;
                     set_base(base_id);
                     base_compute(1);

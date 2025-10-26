@@ -74,20 +74,6 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->new_base_names = atoi(value);
     } else if (MATCH("new_unit_names")) {
         cf->new_unit_names = atoi(value);
-    } else if (MATCH("spawn_free_units")) {
-        opt_list_parse(cf->spawn_free_units, buf, 9, 0);
-    } else if (MATCH("player_colony_pods")) {
-        cf->player_colony_pods = atoi(value);
-    } else if (MATCH("computer_colony_pods")) {
-        cf->computer_colony_pods = atoi(value);
-    } else if (MATCH("player_formers")) {
-        cf->player_formers = atoi(value);
-    } else if (MATCH("computer_formers")) {
-        cf->computer_formers = atoi(value);
-    } else if (MATCH("player_satellites")) {
-        opt_list_parse(cf->player_satellites, buf, 3, 0);
-    } else if (MATCH("computer_satellites")) {
-        opt_list_parse(cf->computer_satellites, buf, 3, 0);
     } else if (MATCH("design_units")) {
         cf->design_units = atoi(value);
     } else if (MATCH("factions_enabled")) {
@@ -140,6 +126,20 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->time_warp_projects = atoi(value);
     } else if (MATCH("time_warp_start_turn")) {
         cf->time_warp_start_turn = clamp(atoi(value), 0, 500);
+    } else if (MATCH("spawn_free_units")) {
+        opt_list_parse(cf->spawn_free_units, buf, 9, 0);
+    } else if (MATCH("player_colony_pods")) {
+        cf->player_colony_pods = atoi(value);
+    } else if (MATCH("computer_colony_pods")) {
+        cf->computer_colony_pods = atoi(value);
+    } else if (MATCH("player_formers")) {
+        cf->player_formers = atoi(value);
+    } else if (MATCH("computer_formers")) {
+        cf->computer_formers = atoi(value);
+    } else if (MATCH("player_satellites")) {
+        opt_list_parse(cf->player_satellites, buf, 3, 0);
+    } else if (MATCH("computer_satellites")) {
+        opt_list_parse(cf->computer_satellites, buf, 3, 0);
     } else if (MATCH("faction_placement")) {
         cf->faction_placement = atoi(value);
     } else if (MATCH("nutrient_bonus")) {
@@ -158,6 +158,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->magtube_movement_rate = atoi(value);
     } else if (MATCH("chopper_attack_rate")) {
         cf->chopper_attack_rate = atoi(value);
+    } else if (MATCH("base_event_turns")) {
+        cf->base_event_turns = clamp(atoi(value), 1, 1000);
     } else if (MATCH("base_psych")) {
         cf->base_psych = atoi(value);
     } else if (MATCH("nerve_staple")) {
@@ -232,22 +234,6 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->native_weak_until_turn = clamp(atoi(value), 0, 1000);
     } else if (MATCH("native_lifecycle_levels")) {
         opt_list_parse(cf->native_lifecycle_levels, buf, 6, 0);
-    } else if (MATCH("facility_defense_bonus")) {
-        opt_list_parse(cf->facility_defense_bonus, buf, 4, 0);
-    } else if (MATCH("neural_amplifier_bonus")) {
-        cf->neural_amplifier_bonus = clamp(atoi(value), 0, 1000);
-    } else if (MATCH("dream_twister_bonus")) {
-        cf->dream_twister_bonus = clamp(atoi(value), 0, 1000);
-    } else if (MATCH("fungal_tower_bonus")) {
-        cf->fungal_tower_bonus = clamp(atoi(value), 0, 1000);
-    } else if (MATCH("planet_defense_bonus")) {
-        cf->planet_defense_bonus = atoi(value);
-    } else if (MATCH("sensor_defense_ocean")) {
-        cf->sensor_defense_ocean = atoi(value);
-    } else if (MATCH("intercept_max_range")) {
-        cf->intercept_max_range = clamp(atoi(value), 0, 8);
-    } else if (MATCH("collateral_damage_value")) {
-        cf->collateral_damage_value = clamp(atoi(value), 0, 100);
     } else if (MATCH("cost_factor")) {
         opt_list_parse(CostRatios, buf, MaxDiffNum, 1);
     } else if (MATCH("tech_cost_factor")) {
@@ -258,6 +244,24 @@ int option_handler(void* user, const char* section, const char* name, const char
         opt_list_parse(cf->content_pop_computer, buf, MaxDiffNum, 0);
     } else if (MATCH("unit_support_bonus")) {
         opt_list_parse(cf->unit_support_bonus, buf, MaxDiffNum, 0);
+    } else if (MATCH("facility_talent_value")) {
+        opt_list_parse(cf->facility_talent_value, buf, 6, 0);
+    } else if (MATCH("facility_defense_value")) {
+        opt_list_parse(cf->facility_defense_value, buf, 4, 0);
+    } else if (MATCH("dream_twister_bonus")) {
+        cf->dream_twister_bonus = clamp(atoi(value), 0, 1000);
+    } else if (MATCH("neural_amplifier_bonus")) {
+        cf->neural_amplifier_bonus = clamp(atoi(value), 0, 1000);
+    } else if (MATCH("fungal_tower_bonus")) {
+        cf->fungal_tower_bonus = clamp(atoi(value), 0, 1000);
+    } else if (MATCH("planet_defense_bonus")) {
+        cf->planet_defense_bonus = atoi(value);
+    } else if (MATCH("sensor_defense_ocean")) {
+        cf->sensor_defense_ocean = atoi(value);
+    } else if (MATCH("intercept_max_range")) {
+        cf->intercept_max_range = clamp(atoi(value), 0, 8);
+    } else if (MATCH("collateral_damage_value")) {
+        cf->collateral_damage_value = clamp(atoi(value), 0, 100);
     } else if (MATCH("repair_minimal")) {
         cf->repair_minimal = clamp(atoi(value), 0, 10);
     } else if (MATCH("repair_fungus")) {
