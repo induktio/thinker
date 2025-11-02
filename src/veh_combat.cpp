@@ -1741,7 +1741,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
             }
         }
     }
-    if (veh_atk->is_planet_buster() && Units[veh_atk->unit_id].reactor_id) {
+    if (veh_atk->is_planet_buster()) {
         planet_busting(veh_id_atk, tx, ty);
         *GameDrawState |= 4;
         return 0;

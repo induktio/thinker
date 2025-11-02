@@ -959,7 +959,7 @@ int __cdecl read_units() {
         mod_make_proto(unit_id, (VehChassis)chas_id, (VehWeapon)weap_id, (VehArmor)armor_id,
             (VehAblFlag)ability, (VehReactor)reactor_id);
         // If set, override auto calculated values from make_proto()
-        if (plan != -1) { // plan auto calculate: -1
+        if (plan >= 0) { // plan auto calculate: -1
             Units[unit_id].plan = (uint8_t)plan;
         }
         if (cost) { // cost auto calculate: 0

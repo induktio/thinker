@@ -1401,7 +1401,7 @@ int __cdecl arm_strat(int armor_id, int faction_id) {
     }
     int value = Armor[armor_id].defense_value;
     if (value < 0) {
-        return psi_factor((Rules->psi_combat_ratio_def[TRIAD_LAND]
+        value = psi_factor((Rules->psi_combat_ratio_def[TRIAD_LAND]
             * Factions[faction_id].enemy_best_weapon_value)
             / Rules->psi_combat_ratio_atk[TRIAD_LAND], faction_id, false, false);
     }
@@ -1421,7 +1421,7 @@ int __cdecl weap_strat(int weapon_id, int faction_id) {
     }
     int value = Weapon[weapon_id].offense_value;
     if (value < 0) {
-        return psi_factor((Rules->psi_combat_ratio_atk[TRIAD_LAND]
+        value = psi_factor((Rules->psi_combat_ratio_atk[TRIAD_LAND]
             * Factions[faction_id].enemy_best_armor_value)
             / Rules->psi_combat_ratio_def[TRIAD_LAND], faction_id, true, false);
     }
@@ -2302,7 +2302,7 @@ VehWeapon weapon_id, VehArmor armor_id, VehAblFlag abls, VehReactor reactor_id) 
             unit->plan = PLAN_PLANET_BUSTER;
             unit->group_id = 14;
         }
-    } else if (Weapon[weapon_id].mode >= WMODE_TRANSPORT) { // Non-combat
+    } else if (Weapon[weapon_id].mode >= WMODE_TRANSPORT) { // non-combat
         unit->plan = Weapon[weapon_id].mode;
         unit->group_id = Weapon[weapon_id].mode + 32;
     } else if (Chassis[chassis_id].triad == TRIAD_SEA) { // combat sea
@@ -2618,21 +2618,20 @@ VehReactor best_reactor(int faction_id) {
 int proto_offense(int unit_id) {
     assert(unit_id >= 0 && unit_id < MaxProtoNum);
     UNIT* u = &Units[unit_id];
-    int w = (conf.ignore_reactor_power ? (int)REC_FISSION : u->reactor_id);
-    if (u->is_missile() && !u->is_planet_buster()) {
-        // Conv missiles might have nominally low attack rating
-        int faction_id = unit_id / MaxProtoFactionNum;
-        int max_value = max(1, (int)Weapon[best_weapon(faction_id)].offense_value);
-        return max_value * w;
+    int atk_val = Weapon[u->weapon_id].offense_value;
+    if (u->is_planet_buster()) {
+        return atk_val * u->reactor_id;
     }
-    return Weapon[u->weapon_id].offense_value * w;
+    return (conf.ignore_reactor_power || atk_val < 0 ?
+        atk_val * REC_FISSION : atk_val * u->reactor_id);
 }
 
 int proto_defense(int unit_id) {
     assert(unit_id >= 0 && unit_id < MaxProtoNum);
     UNIT* u = &Units[unit_id];
-    int w = (conf.ignore_reactor_power ? (int)REC_FISSION : u->reactor_id);
-    return Armor[u->armor_id].defense_value * w;
+    int def_val = Armor[u->armor_id].defense_value;
+    return (conf.ignore_reactor_power || def_val < 0 ?
+        def_val * REC_FISSION : def_val * u->reactor_id);
 }
 
 int set_move_to(int veh_id, int x, int y) {
@@ -2717,16 +2716,5 @@ int set_board_to(int veh_id, int trans_veh_id) {
     return VEH_SYNC;
 }
 
-int veh_cargo_loaded(int veh_id) {
-    int num = 0;
-    for (int i = 0; i < *VehCount; i++) {
-        VEH* veh = &Vehs[i];
-        if (veh->order == ORDER_SENTRY_BOARD && veh->waypoint_x[0] == veh_id
-        && veh->x == Vehs[veh_id].x && veh->y == Vehs[veh_id].y) {
-            assert(veh_id != i);
-            num++;
-        }
-    }
-    return num;
-}
+
 

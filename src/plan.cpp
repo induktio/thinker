@@ -404,7 +404,6 @@ void former_plans(int faction_id) {
 
 void plans_upkeep(int faction_id) {
     const bool governor = is_human(faction_id) && conf.manage_player_bases;
-    const int fc = faction_id;
     if (!faction_id || !is_alive(faction_id)) {
         return;
     }
@@ -418,11 +417,11 @@ void plans_upkeep(int faction_id) {
         int base_pop[MaxBaseNum] = {};
         int base_min[MaxBaseNum] = {};
         int base_eng[MaxBaseNum] = {};
-        Faction* f = &Factions[fc];
-        AIPlans* p = &plans[fc];
+        Faction* f = &Factions[faction_id];
+        AIPlans* p = &plans[faction_id];
         memset((void*)p, 0, sizeof(AIPlans));
-        assert(!plans[fc].main_region);
-        assert(plans[(fc+1)&7].main_region);
+        assert(!plans[faction_id].main_region);
+        assert(plans[(faction_id+1)&7].main_region);
         update_main_region(faction_id);
         former_plans(faction_id);
 
@@ -460,18 +459,18 @@ void plans_upkeep(int faction_id) {
             }
         }
         debug("plans_totals %d %d bases: %3d land: %3d sea: %3d air: %3d "\
-            "probe: %3d missile: %3d transport: %3d\n", *CurrentTurn, fc, f->base_count,
+            "probe: %3d missile: %3d transport: %3d\n", *CurrentTurn, faction_id, f->base_count,
             p->land_combat_units, p->sea_combat_units, p->air_combat_units,
             p->probe_units, p->missile_units, p->transport_units);
 
         for (int i = 1; i < MaxPlayerNum; i++) {
-            if (fc != i && Factions[i].base_count > 0) {
-                if (has_treaty(fc, i, DIPLO_COMMLINK)) {
+            if (faction_id != i && Factions[i].base_count > 0) {
+                if (has_treaty(faction_id, i, DIPLO_COMMLINK)) {
                     p->contacted_factions++;
                 } else {
                     p->unknown_factions++;
                 }
-                if (at_war(fc, i)) {
+                if (at_war(faction_id, i)) {
                     p->enemy_factions++;
                     p->enemy_odp += Factions[i].satellites_ODP;
                     p->enemy_sat += Factions[i].satellites_nutrient;
@@ -479,10 +478,10 @@ void plans_upkeep(int faction_id) {
                     p->enemy_sat += Factions[i].satellites_energy;
                 }
                 float factor = clamp((is_human(i) ? 2.0f : 1.0f)
-                    * (has_treaty(fc, i, DIPLO_COMMLINK) ? 1.0f : 0.5f)
-                    * (at_war(fc, i) ? 1.0f : (has_pact(fc, i) ? 0.1f : 0.25f))
+                    * (has_treaty(faction_id, i, DIPLO_COMMLINK) ? 1.0f : 0.5f)
+                    * (at_war(faction_id, i) ? 1.0f : (has_pact(faction_id, i) ? 0.1f : 0.25f))
                     * (p->main_region == plans[i].main_region ? 1.5f : 1.0f)
-                    * faction_might(i) / max(1, faction_might(fc)), 0.01f, 8.0f);
+                    * faction_might(i) / max(1, faction_might(faction_id)), 0.01f, 8.0f);
 
                 p->enemy_mil_factor = max(p->enemy_mil_factor, factor);
             }
@@ -527,7 +526,7 @@ void plans_upkeep(int faction_id) {
         }
         assert(n == f->base_count);
         p->enemy_base_range = (n > 0 ? (1.0f*enemy_sum)/n : MaxEnemyRange);
-        p->psi_score = psi_score(fc);
+        p->psi_score = psi_score(faction_id);
         if (!p->enemy_factions) {
             p->defense_modifier = clamp(f->AI_fight + f->AI_power + f->base_count/32, 0, 2);
         } else {
@@ -555,7 +554,7 @@ void plans_upkeep(int faction_id) {
 
         debug("plans_upkeep %d %d proj_limit: %2d sat_goal: %2d psi: %2d keep_fungus: %d "\
             "plant_fungus: %d enemy_bases: %2d enemy_mil: %.4f enemy_range: %.4f\n",
-            *CurrentTurn, fc, p->project_limit, p->satellite_goal,
+            *CurrentTurn, faction_id, p->project_limit, p->satellite_goal,
             p->psi_score, p->keep_fungus, p->plant_fungus,
             p->enemy_bases, p->enemy_mil_factor, p->enemy_base_range);
     }

@@ -158,7 +158,7 @@ int __cdecl mod_base_hurry() {
                 + (b->defend_range < 8)
                 + (b->defend_range < 12)
                 + ((b->state_flags & BSTATE_COMBAT_LOSS_LAST_TURN) != 0)
-                + 2*(!has_defenders(b->x, b->y, b->faction_id));
+                + 2*(!has_garrison(b->x, b->y, b->faction_id));
             if (b->mineral_surplus*2 > b->mineral_intake_2 && cost < 40) {
                 val += random(clamp((credits - cost) / 256, 0, 8));
             }
@@ -320,14 +320,20 @@ int find_satellite(int base_id) {
     return 0;
 }
 
-int find_planet_buster(int faction_id) {
+int find_planet_buster(int base_id) {
+    BASE* base = &Bases[base_id];
+    int faction_id = base->faction_id;
     int best_id = -1;
+    int best_val = INT_MIN;
     for (int unit_id = 0; unit_id < MaxProtoNum; unit_id++) {
         UNIT* u = &Units[unit_id];
         if ((unit_id < MaxProtoFactionNum || unit_id / MaxProtoFactionNum == faction_id)
-        && u->is_planet_buster() && mod_veh_avail(unit_id, faction_id, -1)
-        && (best_id < 0 || u->std_offense_value() > Units[best_id].std_offense_value())) {
-            best_id = unit_id;
+        && mod_veh_avail(unit_id, faction_id, -1) && u->is_planet_buster()) {
+            int val = unit_score(base, unit_id, 0, 1, 1, 0);
+            if (val > best_val) {
+                best_id = unit_id;
+                best_val = val;
+            }
         }
     }
     return best_id;
@@ -336,35 +342,35 @@ int find_planet_buster(int faction_id) {
 int find_project(int base_id, WItem& Wgov) {
     BASE* base = &Bases[base_id];
     Faction* f = &Factions[base->faction_id];
+    int faction_id = base->faction_id;
     int gov = base->gov_config();
-    int faction = base->faction_id;
     int projs = 0;
     int nukes = 0;
     int works = 0;
     int diplo = 0;
     int bases = f->base_count;
-    int unit_id = (gov & (GOV_MAY_PROD_AIR_COMBAT | GOV_MAY_PROD_AIR_DEFENSE)
-        ? find_planet_buster(faction) : -1);
+    int unit_id = (gov & GOV_MAY_PROD_AIR_COMBAT ? find_planet_buster(base_id) : -1);
     int built_nukes = 0;
     int enemy_nukes = 0;
     if (unit_id >= 0) {
         for (int i = 0; i < *VehCount; i++) {
             VEH* veh = &Vehs[i];
             if (veh->is_planet_buster()) {
-                if (faction == veh->faction_id) {
+                if (faction_id == veh->faction_id) {
                     built_nukes++;
-                } else if (at_war(faction, veh->faction_id)) {
+                } else if (at_war(faction_id, veh->faction_id)) {
                     enemy_nukes++;
                 }
             }
         }
         for (int i = 1; i < MaxPlayerNum; i++) {
-            if (faction != i && is_alive(i)) {
+            if (faction_id != i && is_alive(i)) {
                 diplo |= f->diplo_status[i];
             }
         }
     }
     int nuke_score = (un_charter() ? 0 : 4) + 2*f->AI_power + 2*f->AI_fight
+        + (f->player_flags & PFLAG_COMMIT_ATROCITIES_WANTONLY ? 2 : 0)
         + clamp(enemy_nukes - f->satellites_ODP, -2, 4)
         + (diplo & DIPLO_ATROCITY_VICTIM ? 4 : 0)
         + (diplo & DIPLO_WANT_REVENGE ? 4 : 0)
@@ -373,10 +379,10 @@ int find_project(int base_id, WItem& Wgov) {
         built_nukes < clamp(1 + (f->AI_fight > 0) + nuke_score/8 + bases/32, 1, 3)
         ? (bases < 32 ? 1 : 2) : 0);
     debug("find_project %d score: %d limit: %d built: %d enemy: %d\n",
-        faction, nuke_score, nuke_limit, built_nukes, enemy_nukes);
+        faction_id, nuke_score, nuke_limit, built_nukes, enemy_nukes);
 
     for (int i = 0; i < *BaseCount; i++) {
-        if (Bases[i].faction_id == faction) {
+        if (Bases[i].faction_id == faction_id) {
             int t = Bases[i].item();
             if (t <= -SP_ID_First || t == -FAC_SUBSPACE_GENERATOR) {
                 projs++;
@@ -389,7 +395,7 @@ int find_project(int base_id, WItem& Wgov) {
     }
     if (unit_id >= 0 && nukes < nuke_limit
     && (!un_charter() || !random(4) || has_fac_built(FAC_SKUNKWORKS, base_id))) {
-        debug("find_project %d %d %s\n", faction, unit_id, Units[unit_id].name);
+        debug("find_project %d %d %s\n", faction_id, unit_id, Units[unit_id].name);
         int extra_cost = !Units[unit_id].is_prototyped()
             && unit_id >= MaxProtoFactionNum ? prototype_factor(unit_id) : 0;
         bool free_protos = !extra_cost || has_fac_built(FAC_SKUNKWORKS, base_id);
@@ -413,15 +419,15 @@ int find_project(int base_id, WItem& Wgov) {
         int choice = 0;
         bool retool = check_retool(base);
         for (int i = SP_ID_First; i <= SP_ID_Last; i++) {
-            if (can_build(base_id, i) && prod_count(-i, faction, base_id) < similar_limit
-            && (similar_limit > 1 || !redundant_project(faction, i))) {
+            if (can_build(base_id, i) && prod_count(-i, faction_id, base_id) < similar_limit
+            && (similar_limit > 1 || !redundant_project(faction_id, i))) {
                 int score = facility_score((FacilityId)i, Wgov)
                     + (retool && base->production_id_last == -i ? 10 : 0);
                 if (score > best_score) {
                     choice = i;
                     best_score = score;
                 }
-                debug("find_project %d %d %d %s\n", faction, score, i, Facility[i].name);
+                debug("find_project %d %d %d %s\n", faction_id, score, i, Facility[i].name);
             }
         }
         return (projs > 0 || best_score > 3 ? -choice : 0);
@@ -455,7 +461,7 @@ bool unit_is_better(int unit_id1, int unit_id2) {
     return value;
 }
 
-int unit_score(BASE* base, int unit_id, int psi_score, bool defend) {
+int unit_score(BASE* base, int unit_id, int psi_score, int psi_atk, int psi_def, bool defend) {
     assert(unit_id >= 0 && unit_id < MaxProtoNum);
     Faction* f = &Factions[base->faction_id];
     const int specials[][2] = {
@@ -475,21 +481,35 @@ int unit_score(BASE* base, int unit_id, int psi_score, bool defend) {
         {ABL_SUPER_TERRAFORMER, 8},
     };
     UNIT* u = &Units[unit_id];
-    int v = 16 * (defend ? proto_defense(unit_id) : proto_offense(unit_id));
-    if (v < 0) {
-        v = 12 * (defend ? Armor[best_armor(base->faction_id, -1)].defense_value
-            : Weapon[best_weapon(base->faction_id)].offense_value)
-            * (conf.ignore_reactor_power ? REC_FISSION : best_reactor(base->faction_id))
-            + psi_score * 16;
+    bool combat = u->plan <= PLAN_NAVAL_SUPERIORITY;
+    int atk_val = proto_offense(unit_id);
+    int def_val = proto_defense(unit_id);
+    int v;
+    if (u->is_missile() && !u->is_planet_buster() && atk_val > 0) {
+        // Conv missiles might have nominally low attack rating
+        atk_val = (atk_val + 7 * psi_atk) / 8;
+    }
+    if (defend) {
+        v = (atk_val >= 0 ? 2 * atk_val : psi_atk + psi_score)
+            + (def_val >= 0 ? 16 * def_val : 12 * psi_def + 16 * psi_score);
+    } else {
+        v = (atk_val >= 0 ? 16 * atk_val : 12 * psi_atk + 16 * psi_score)
+            + (def_val >= 0 ? 2 * def_val : psi_def + psi_score);
+    }
+    if (combat && atk_val >= 0) {
+        if (!atk_val) {
+            v -= (defend ? 100 : 1000);
+        }
+        if ((defend && atk_val > def_val)
+        || (!defend && atk_val < def_val)) {
+            v -= 100;
+        }
     }
     if (u->triad() != TRIAD_AIR) {
-        v += (defend ? 12 : 32) * u->speed();
-        if (u->triad() == TRIAD_SEA && u->is_combat_unit()
-        && proto_defense(unit_id) > proto_offense(unit_id)) {
-            v -= 24;
-        }
-    } else {
-        v += (u->is_missile() && f->player_flags_ext & PFLAG_EXT_STRAT_LOTS_MISSILES ? 16 : 0);
+        v += (defend ? (combat ? 8 : 16) : 32) * u->speed();
+    } else if (u->is_missile()) {
+        v += (f->player_flags_ext & PFLAG_EXT_STRAT_LOTS_MISSILES ? 16 : 0);
+        v -= 8 * plans[base->faction_id].missile_units;
     }
     if (u->ability_flags & ABL_ARTILLERY) {
         if (conf.long_range_artillery > 0 && Rules->artillery_max_rng <= 4
@@ -508,12 +528,9 @@ int unit_score(BASE* base, int unit_id, int psi_score, bool defend) {
     && (f->SE_support_pending < 3 || base->mineral_consumption > 0)) {
         v += 16;
     }
-    if (u->is_missile()) {
-        v -= 8 * plans[base->faction_id].missile_units;
-    }
     if (unit_id == base->production_id_last
     && Rules->retool_exemption >= RETOOL_FREE_PROJECT && check_retool(base)) {
-        v += 50;
+        v += 200;
     }
     for (const int* s : specials) {
         if (u->ability_flags & s[0]) {
@@ -532,17 +549,15 @@ int unit_score(BASE* base, int unit_id, int psi_score, bool defend) {
 /*
 Find the best prototype for base production when weighted against cost given the triad
 and type constraints. For any combat-capable unit, mode is set to WMODE_COMBAT.
-This assumes only Scout Patrol as the fallback choice for land combat units.
-For all other unit types requirements for building the prototype are always checked.
 */
 int find_proto(int base_id, Triad triad, VehWeaponMode mode, bool defend) {
     assert(base_id >= 0 && base_id < *BaseCount);
     BASE* base = &Bases[base_id];
-    int faction = base->faction_id;
-    debug("find_proto faction: %d triad: %d mode: %d defend: %d\n", faction, triad, mode, defend);
-
+    int faction_id = base->faction_id;
     int gov = base->gov_config();
-    int psi_score = (gov & GOV_MAY_PROD_NATIVE ? plans[faction].psi_score
+    debug("find_proto faction: %d triad: %d mode: %d defend: %d\n", faction_id, triad, mode, defend);
+
+    int psi_score = (gov & GOV_MAY_PROD_NATIVE ? plans[faction_id].psi_score
         + has_fac_built(FAC_BROOD_PIT, base_id)
         + has_fac_built(FAC_BIOLOGY_LAB, base_id)
         + has_fac_built(FAC_CENTAURI_PRESERVE, base_id)
@@ -553,51 +568,48 @@ int find_proto(int base_id, Triad triad, VehWeaponMode mode, bool defend) {
         && base_can_riot(base_id, true)
         && base->SE_police(SE_Pending) <= -3
         && base->drone_total + base->specialist_adjust >= base->talent_total;
-    int best_id;
-    int best_val;
+    int best_id = -FAC_STOCKPILE_ENERGY;
+    int best_val = -10000;
+    int psi_atk = 1;
+    int psi_def = 1;
+    std::vector<int> choices;
 
-    if (combat && triad == TRIAD_LAND) {
-        best_id = BSC_SCOUT_PATROL;
-        best_val = (mod_veh_avail(best_id, faction, base_id) ? 0 : -10000)
-            + unit_score(base, best_id, psi_score, defend);
-    } else {
-        best_id = -FAC_STOCKPILE_ENERGY;
-        best_val = -10000;
-    }
     for (int id = 0; id < MaxProtoNum; id++) {
         UNIT* u = &Units[id];
-        if ((id < MaxProtoFactionNum || id / MaxProtoFactionNum == faction)
-        && mod_veh_avail(id, faction, base_id) && u->triad() == triad && id != best_id) {
-            if (!prototypes && id >= MaxProtoFactionNum && !u->is_prototyped()
-            && prototype_factor(id) > 0) {
-                continue;
-            }
-            if ((!combat && Weapon[u->weapon_id].mode != mode)
-            || (combat && Weapon[u->weapon_id].offense_value == 0)
-            || (combat && defend && u->chassis_id != CHS_INFANTRY)
-            || (u->is_psi_unit() && psi_score <= 0)
-            || u->is_planet_buster()) {
-                continue;
-            }
-            if (combat && best_id >= 0 && best_id != BSC_SCOUT_PATROL
-            && ((defend && proto_offense(id) > proto_defense(id))
-            || (!defend && proto_offense(id) < proto_defense(id)))) {
-                continue;
-            }
-            if (combat && triad == TRIAD_AIR) {
-                bool intercept = has_abil(id, ABL_AIR_SUPERIORITY);
-                if ((!intercept && pacifism)
-                || (!intercept && !(gov & GOV_MAY_PROD_AIR_COMBAT))
-                || (intercept && !(gov & GOV_MAY_PROD_AIR_DEFENSE))) {
+        if ((id < MaxProtoFactionNum || id / MaxProtoFactionNum == faction_id)
+        && mod_veh_avail(id, faction_id, base_id) && !u->is_planet_buster()) {
+            int hp_val = (conf.ignore_reactor_power ? (int)REC_FISSION : u->reactor_id);
+            psi_atk = max(psi_atk, hp_val * u->offense_value());
+            psi_def = max(psi_def, hp_val * u->defense_value());
+            if (u->triad() == triad) {
+                if (!prototypes && id >= MaxProtoFactionNum && !u->is_prototyped()
+                && prototype_factor(id) > 0) {
                     continue;
                 }
-            }
-            int val = unit_score(base, id, psi_score, defend);
-            if (best_id < 0 || unit_is_better(best_id, id) || random(128) > 64 + best_val - val) {
-                best_id = id;
-                best_val = val;
+                if ((!combat && Weapon[u->weapon_id].mode != mode)
+                || (combat && (u->offense_value() == 0 && (!defend || u->plan > PLAN_RECON)))
+                || (u->is_psi_unit() && psi_score <= 0)) {
+                    continue;
+                }
+                if (combat && triad == TRIAD_AIR) {
+                    bool intercept = has_abil(id, ABL_AIR_SUPERIORITY);
+                    if ((!intercept && pacifism)
+                    || (!intercept && !(gov & GOV_MAY_PROD_AIR_COMBAT))
+                    || (intercept && !(gov & GOV_MAY_PROD_AIR_DEFENSE))) {
+                        continue;
+                    }
+                }
+                choices.push_back(id);
             }
         }
+    }
+    for (int id : choices) {
+        int val = unit_score(base, id, psi_score, psi_atk, psi_def, defend);
+        if (best_id < 0 || unit_is_better(best_id, id) || random(128) > 64 + best_val - val) {
+            best_id = id;
+            best_val = val;
+        }
+
     }
     return best_id;
 }
@@ -662,9 +674,17 @@ int select_combat(int base_id, bool sea_base, bool build_ships) {
     bool sea = gov & (GOV_MAY_PROD_NAVAL_COMBAT | GOV_MAY_PROD_TRANSPORT);
     bool air = gov & (GOV_MAY_PROD_AIR_COMBAT | GOV_MAY_PROD_AIR_DEFENSE);
 
-    if (probes && (!(land || sea || air) || !random(w_probes) || !reserve)
-    && (choice = find_proto(base_id, (build_ships ? TRIAD_SEA : TRIAD_LAND), WMODE_PROBE, DEF)) >= 0) {
-        return choice;
+    if (probes && (!(land || sea || air) || !random(w_probes) || !reserve)) {
+        int def_id = find_proto(base_id, (build_ships ? TRIAD_SEA : TRIAD_LAND), WMODE_PROBE, DEF);
+        int alt_id = find_proto(base_id, TRIAD_AIR, WMODE_PROBE, DEF); // predefined prototypes only
+        if (alt_id >= 0) {
+            if (def_id < 0 || clamp(Units[def_id].cost - Units[alt_id].cost + 5, 1, 8) > random(10)) {
+                return alt_id;
+            }
+        }
+        if (def_id >= 0) {
+            return def_id;
+        }
     }
     if (air && (!(land || sea) || !random(w_air))
     && (choice = find_proto(base_id, TRIAD_AIR, WMODE_COMBAT, ATT)) >= 0) {
@@ -727,13 +747,13 @@ static void push_item(score_max_queue_t& builds, int base_id, int item_id, int r
 
 int select_build(int base_id) {
     BASE* base = &Bases[base_id];
-    int faction = base->faction_id;
-    Faction* f = &Factions[faction];
-    AIPlans* p = &plans[faction];
+    int faction_id = base->faction_id;
+    Faction* f = &Factions[faction_id];
+    AIPlans* p = &plans[faction_id];
     int retool = 0; // Skip retooling penalties
     int prev_id = base->production_id_last;
     if (base->plr_owner()) {
-        plans_upkeep(faction);
+        plans_upkeep(faction_id);
         if (check_retool(base) && (prev_id >= 0
         || (prev_id >= -Fac_ID_Last && !has_fac_built((FacilityId)-prev_id, base_id))
         || (prev_id < -Fac_ID_Last && prev_id != -FAC_STOCKPILE_ENERGY))) {
@@ -754,9 +774,9 @@ int select_build(int base_id) {
         && base->minerals_accumulated > Rules->retool_exemption;
     bool allow_units = can_build_unit(base_id, -1) && !project_change;
     bool allow_supply = !sea_base && gov & GOV_MAY_PROD_TERRAFORMERS;
-    bool allow_ships = has_ships(faction)
+    bool allow_ships = has_ships(faction_id)
         && adjacent_region(base->x, base->y, -1, *MapAreaSqRoot + 10, TRIAD_SEA);
-    bool allow_pods = allow_expand(faction) && (base->pop_size > 1 || base->nutrient_surplus > 1);
+    bool allow_pods = allow_expand(faction_id) && (base->pop_size > 1 || base->nutrient_surplus > 1);
     bool drone_riots = base->drone_riots() || base->drone_riots_active();
     int drones = base->drone_total + base->specialist_adjust;
     int all_crawlers = 0;
@@ -774,7 +794,7 @@ int select_build(int base_id) {
 
     for (int i = 0; i < *VehCount; i++) {
         VEH* veh = &Vehs[i];
-        if (veh->faction_id != faction) {
+        if (veh->faction_id != faction_id) {
             continue;
         }
         if (veh->home_base_id == base_id) {
@@ -821,13 +841,13 @@ int select_build(int base_id) {
     WItem Wgov;
     governor_priorities(Bases[base_id], Wgov);
     need_ferry = need_ferry && !transports
-        && adjacent_region(base->x, base->y, faction, 16, TRIAD_LAND);
+        && adjacent_region(base->x, base->y, faction_id, 16, TRIAD_LAND);
     allow_supply = allow_supply && all_crawlers < min(f->base_count, *MapAreaTiles/20);
 
     float Wbase = clamp(1.0f * minerals / p->project_limit, 0.4f, 1.0f)
         * (defend_range > 0 && defend_range < 8 ? 4 : 1)
         * max(0.05f, 2.0f * p->enemy_mil_factor / (p->enemy_base_range * 0.1f + 0.1f)
-        + min(1.0f, 1.5f * f->base_count / *MapAreaSqRoot)
+        + min(1.0f, 1.5f * f->base_count / max(16, *MapAreaSqRoot))
         + 0.8f * p->enemy_bases + 0.2f * Wgov.AI_fight);
 
     if (base->plr_owner()) {
@@ -947,7 +967,7 @@ int select_build(int base_id) {
             && (choice = find_proto(base_id, TRIAD_LAND, WMODE_COMBAT, DEF)) >= 0
             && !has_retool(base_id, choice, retool)
             && def_value < Units[choice].defense_value()
-            && (Units[choice].is_prototyped() || prod_count(choice, faction, base_id) == 0)) {
+            && (Units[choice].is_prototyped() || prod_count(choice, faction_id, base_id) == 0)) {
                 return choice;
             }
             if ((choice = select_combat(base_id, sea_base, allow_ships)) >= 0) {
@@ -962,13 +982,13 @@ int select_build(int base_id) {
         if (t == FormerUnit && gov & GOV_MAY_PROD_TERRAFORMERS) {
             bool priority = base->pop_size >= 6 && minerals >= 8
                 && f->player_flags_ext & PFLAG_EXT_STRAT_LOTS_TERRAFORMERS;
-            if (has_wmode(faction, WMODE_TERRAFORM)
+            if (has_wmode(faction_id, WMODE_TERRAFORM)
             && formers + near_formers/2 < (base->pop_size < 4 ? 1 : 2 + priority)) {
                 int num = 0;
                 int sea = 0;
                 for (const auto& m : iterate_tiles(base->x, base->y, 1, 21)) {
-                    if (m.sq->owner == faction
-                    && select_item(m.x, m.y, faction, FM_Auto_Full, m.sq) >= 0) {
+                    if (m.sq->owner == faction_id
+                    && select_item(m.x, m.y, faction_id, FM_Auto_Full, m.sq) >= 0) {
                         num += (base->worked_tiles & (1 << m.i)
                             && !(m.sq->items & (BIT_SIMPLE|BIT_ADVANCED)) ? 2 : 1);
                         sea += is_ocean(m.sq);
@@ -978,7 +998,7 @@ int select_build(int base_id) {
                     continue;
                 }
                 score += 8 * (num-6);
-                if (has_chassis(faction, CHS_GRAVSHIP)
+                if (has_chassis(faction_id, CHS_GRAVSHIP)
                 && (choice = find_proto(base_id, TRIAD_AIR, WMODE_TERRAFORM, DEF)) >= 0
                 && Units[choice].triad() == TRIAD_AIR) {
                     push_item(builds, base_id, choice, retool, score, --Wt);
@@ -997,7 +1017,7 @@ int select_build(int base_id) {
             }
         }
         if (t == SeaProbeUnit && gov & GOV_MAY_PROD_PROBES) {
-            if (allow_ships && has_wmode(faction, WMODE_PROBE)
+            if (allow_ships && has_wmode(faction_id, WMODE_PROBE)
             && p->unknown_factions > 1 && p->contacted_factions < 2
             && adjacent_region(base->x, base->y, -1, *MapAreaTiles/16, TRIAD_SEA)
             && (choice = find_proto(base_id, TRIAD_SEA, WMODE_PROBE, DEF)) >= 0) {
@@ -1006,7 +1026,7 @@ int select_build(int base_id) {
                 continue;
             }
         }
-        if (t == CrawlerUnit && allow_supply && has_wmode(faction, WMODE_SUPPLY)) {
+        if (t == CrawlerUnit && allow_supply && has_wmode(faction_id, WMODE_SUPPLY)) {
             if ((choice = find_proto(base_id, TRIAD_LAND, WMODE_SUPPLY, DEF)) >= 0) {
                 score += max(0, 40 - base->mineral_surplus - base->nutrient_surplus);
                 score += 40*(all_crawlers < 4 + f->base_count/4);
@@ -1047,7 +1067,7 @@ int select_build(int base_id) {
             score += 4*base->energy_inefficiency + 16*min(4, base_unused_space(base_id));
             score += (f->SE_growth_pending < -1 || f->SE_growth_pending == 4 ? 40 : 0);
             score += (f->SE_growth_pending > 5 || base->nutrient_surplus < 2
-                || has_project(FAC_CLONING_VATS, faction) ? -40 : 0);
+                || has_project(FAC_CLONING_VATS, faction_id) ? -40 : 0);
         }
         if (t == FAC_PUNISHMENT_SPHERE) {
             int turns = base->assimilation_turns_left;
@@ -1080,10 +1100,10 @@ int select_build(int base_id) {
             score += 8*clamp(drones - base->talent_total, -4, 4);
         }
         if (t == FAC_NETWORK_NODE) {
-            if (has_project(FAC_VIRTUAL_WORLD, faction) && base_can_riot(base_id, false)) {
+            if (has_project(FAC_VIRTUAL_WORLD, faction_id) && base_can_riot(base_id, false)) {
                 score += 80*drone_riots + 16*drones;
             }
-            if (facility_count(FAC_NETWORK_NODE, faction) < f->base_count/8) {
+            if (facility_count(FAC_NETWORK_NODE, faction_id) < f->base_count/8) {
                 score += 40;
             }
             if (artifacts) {
@@ -1141,6 +1161,18 @@ int select_build(int base_id) {
                 continue;
             }
             score += 16*clamp(base->defend_goal-3, -2, 2);
+        }
+        if (t == FAC_PSI_GATE) {
+            int dist = 40;
+            for (int i = 0; i < *BaseCount; i++) {
+                BASE* b = &Bases[i];
+                if (base_id != i && b->faction_id == base->faction_id
+                && (has_fac_built(FAC_PSI_GATE, i) || b->item() == -FAC_PSI_GATE)) {
+                    dist = min(dist, (base_reg == region_at(b->x, b->y) ? 1 : 2) * map_range(base, b));
+                }
+            }
+            score += (sea_base ? 2 : 8)*max(0, dist - 4);
+            score += (base->x == p->naval_start_x && base->y == p->naval_start_y ? 160 : 0);
         }
         assert(t > 0 && t <= SP_ID_Last);
         push_item(builds, base_id, -t, retool, score, --Wt);

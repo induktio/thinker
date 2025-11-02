@@ -1569,8 +1569,9 @@ static void process_map(int faction_id, int k) {
 static bool valid_start(int faction_id, int iter, int x, int y) {
     MAP* sq = mapsq(x, y);
     bool aquatic = MFactions[faction_id].is_aquatic();
+    // Minimum spawn range is reduced for later spawns to account for less free space
+    int spawn_limit = max((*MapAreaTiles < 1600 || *BaseCount >= 20 ? 5 : 7), 8 - iter/80);
     int native_limit = (goodtiles.size() > 0 ? 3 : 2) + ((int)natives.size() < *MapAreaTiles/80);
-    int spawn_limit = max((*MapAreaTiles < 1600 ? 5 : 7), 8 - iter/100);
 
     if (!sq || !sq->allow_spawn()) { // Select only tiles where bases can be built
         return false;
@@ -1778,7 +1779,7 @@ void __cdecl find_start(int faction_id, int* tx, int* ty) {
     int k = (*MapAreaY < 80 ? 4 : 8);
     process_map(faction_id, k/2);
 
-    while (++i <= 800) {
+    while (++i <= 1000) {
         if (!aquatic && goodtiles.size() > 0 && i <= 200) {
             auto t = pick_random(goodtiles);
             y = t.y;

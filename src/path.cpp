@@ -440,9 +440,22 @@ int route_distance(PMTable& tbl, int x1, int y1, int x2, int y2) {
     return -1;
 }
 
+int veh_cargo_loaded(int veh_id) {
+    int num = 0;
+    for (int i = *VehCount - 1; i >= 0; --i) {
+        VEH* veh = &Vehs[i];
+        if (veh->order == ORDER_SENTRY_BOARD && veh->waypoint_x[0] == veh_id
+        && veh->x == Vehs[veh_id].x && veh->y == Vehs[veh_id].y) {
+            assert(veh_id != i);
+            num++;
+        }
+    }
+    return num;
+}
+
 int cargo_capacity(int x, int y, int faction_id) {
     int num = 0;
-    for (int i = 0; i < *VehCount; i++) {
+    for (int i = *VehCount - 1; i >= 0; --i) {
         VEH* veh = &Vehs[i];
         if (veh->x == x && veh->y == y && veh->is_transport()
         && veh->faction_id == faction_id) {
@@ -450,6 +463,28 @@ int cargo_capacity(int x, int y, int faction_id) {
         }
     }
     return num;
+}
+
+bool has_transport(int x, int y, int faction_id) {
+    for (int i = *VehCount - 1; i >= 0; --i) {
+        VEH* veh = &Vehs[i];
+        if (veh->x == x && veh->y == y && veh->is_transport()
+        && veh->faction_id == faction_id) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool has_garrison(int x, int y, int faction_id) {
+    for (int i = *VehCount - 1; i >= 0; --i) {
+        VEH* veh = &Vehs[i];
+        if (veh->x == x && veh->y == y && veh->is_garrison_unit()
+        && veh->faction_id == faction_id) {
+            return true;
+        }
+    }
+    return false;
 }
 
 int move_to_base(int veh_id, bool ally) {

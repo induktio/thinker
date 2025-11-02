@@ -30,7 +30,7 @@ void __cdecl mod_drone_riot();
 void __cdecl mod_base_drones();
 void __cdecl mod_base_maint();
 int __cdecl mod_base_upkeep(int base_id);
-int __cdecl mod_capture_base(int base_id, int faction, int is_probe);
+int __cdecl mod_capture_base(int base_id, int faction_id, int is_probe);
 int __cdecl base_psych_content_pop();
 void __cdecl mod_psych_check(int faction_id, int32_t* content_pop, int32_t* base_limit);
 

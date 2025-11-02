@@ -269,9 +269,12 @@ int __cdecl mod_base_build(int base_id, bool has_gov) {
         debug("BUILD CHANGE\n");
         choice = select_build(base_id);
     } else if ((base.item() < 0 || !Units[base.item()].is_garrison_unit())
-    && !has_defenders(base.x, base.y, base.faction_id)) {
+    && (base.gov_config() & GOV_ALLOW_COMBAT)
+    && (base.gov_config() & GOV_MAY_PROD_LAND_DEFENSE)
+    && !has_garrison(base.x, base.y, base.faction_id)
+    && (choice = find_proto(base_id, TRIAD_LAND, WMODE_COMBAT, DEF)) >= 0
+    && Units[choice].is_garrison_unit()) {
         debug("BUILD DEFENSE\n");
-        choice = find_proto(base_id, TRIAD_LAND, WMODE_COMBAT, DEF);
     } else {
         debug("BUILD OLD\n");
         choice = base.item();
@@ -2003,18 +2006,18 @@ Note that when a base is captured and either the former or current owner has
 free facilities defined for the faction, all of these facilities will be added
 on the base when it is captured, for example Hive bases always get Perimeter Defense.
 */
-int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
+int __cdecl mod_capture_base(int base_id, int faction_id, int is_probe) {
     BASE* base = &Bases[base_id];
     assert(base_id >= 0 && base_id < *BaseCount);
-    assert(faction >= 0 && faction < MaxPlayerNum && base->faction_id != faction);
-    if (base_id < 0 || base_id >= *BaseCount || faction < 0 || faction >= MaxPlayerNum) {
+    assert(faction_id >= 0 && faction_id < MaxPlayerNum && base->faction_id != faction_id);
+    if (base_id < 0 || base_id >= *BaseCount || faction_id < 0 || faction_id >= MaxPlayerNum) {
         return 0;
     }
     int old_faction = base->faction_id;
     int prev_owner = base->faction_id;
-    int last_spoke = *CurrentTurn - Factions[faction].diplo_spoke[old_faction];
-    bool vendetta = at_war(faction, old_faction);
-    bool alien_fight = is_alien(faction) != is_alien(old_faction);
+    int last_spoke = *CurrentTurn - Factions[faction_id].diplo_spoke[old_faction];
+    bool vendetta = at_war(faction_id, old_faction);
+    bool alien_fight = is_alien(faction_id) != is_alien(old_faction);
     bool destroy_base = base->pop_size < 2 && !is_objective(base_id);
     set_base(base_id);
 
@@ -2027,13 +2030,13 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
         prev_owner = base->faction_id_former;
     }
     base->defend_goal = 0;
-    capture_base(base_id, faction, is_probe);
+    capture_base(base_id, faction_id, is_probe);
     find_relocate_base(old_faction);
     if (is_probe) {
         MFactions[old_faction].thinker_last_mc_turn = *CurrentTurn;
         for (int i = *VehCount-1; i >= 0; i--) {
             if (Vehs[i].x == base->x && Vehs[i].y == base->y
-            && Vehs[i].faction_id != faction && !has_pact(faction, Vehs[i].faction_id)) {
+            && Vehs[i].faction_id != faction_id && !has_pact(faction_id, Vehs[i].faction_id)) {
                 veh_kill(i);
             }
         }
@@ -2045,8 +2048,8 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
     if (!destroy_base && project_base(FAC_CLOUDBASE_ACADEMY) == base_id) {
         for (int i = *VehCount-1; i >= 0; i--) {
             VEH* veh = &Vehs[i];
-            if (veh->faction_id == faction && veh->triad() == TRIAD_AIR
-            && veh->unit_id / MaxProtoFactionNum == faction) {
+            if (veh->faction_id == faction_id && veh->triad() == TRIAD_AIR
+            && veh->unit_id / MaxProtoFactionNum == faction_id) {
                 int moves = veh_speed(i, 0);
                 if (moves == veh->moves_spent + 2 * Rules->move_rate_roads) {
                     veh->moves_spent = moves;
@@ -2076,24 +2079,24 @@ int __cdecl mod_capture_base(int base_id, int faction, int is_probe) {
     Prevent AIs from initiating diplomacy once every turn after losing a base.
     Allow dialog if surrender is possible given the diplomacy check values.
     */
-    if (!*MultiplayerActive && vendetta && is_human(faction) && !is_human(old_faction)
+    if (!*MultiplayerActive && vendetta && is_human(faction_id) && !is_human(old_faction)
     && last_spoke < 10 && !*diplo_value_93FA98 && !*diplo_value_93FA24) {
         int lost_bases = 0;
         for (int i = 0; i < *BaseCount; i++) {
             BASE* b = &Bases[i];
-            if (b->faction_id == faction && b->faction_id_former == old_faction) {
+            if (b->faction_id == faction_id && b->faction_id_former == old_faction) {
                 lost_bases++;
             }
         }
         int value = max(2, 6 - last_spoke) + max(0, 6 - lost_bases)
-            + (want_revenge(old_faction, faction) ? 4 : 0);
+            + (want_revenge(old_faction, faction_id) ? 4 : 0);
         if (random(value) > 0) {
-            set_treaty(faction, old_faction, DIPLO_WANT_TO_TALK, 0);
-            set_treaty(old_faction, faction, DIPLO_WANT_TO_TALK, 0);
+            set_treaty(faction_id, old_faction, DIPLO_WANT_TO_TALK, 0);
+            set_treaty(old_faction, faction_id, DIPLO_WANT_TO_TALK, 0);
         }
     }
     debug("capture_base %d %d old_owner: %d new_owner: %d last_spoke: %d v1: %d v2: %d\n",
-        *CurrentTurn, base_id, old_faction, faction, last_spoke, *diplo_value_93FA98, *diplo_value_93FA24);
+        *CurrentTurn, base_id, old_faction, faction_id, last_spoke, *diplo_value_93FA98, *diplo_value_93FA24);
     return 0;
 }
 
@@ -2650,9 +2653,8 @@ bool can_build(int base_id, int item_id) {
     if (!mod_facility_avail((FacilityId)item_id, faction_id, base_id, 0)) {
         return false;
     }
-    // Stockpile Energy is selected usually if the game engine reaches the global unit limit
     if (item_id == FAC_STOCKPILE_ENERGY) {
-        return random(4);
+        return stockpile_energy(base_id) > 3 && random(4);
     }
     if (item_id == FAC_ASCENT_TO_TRANSCENDENCE || item_id == FAC_VOICE_OF_PLANET) {
         if (victory_done()) {

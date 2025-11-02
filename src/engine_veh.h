@@ -373,11 +373,11 @@ enum VehState {
 struct UNIT {
     char name[32];
     uint32_t ability_flags;
-    int8_t chassis_id;
-    int8_t weapon_id;
-    int8_t armor_id;
-    int8_t reactor_id;
-    int8_t carry_capacity;
+    uint8_t chassis_id;
+    uint8_t weapon_id;
+    uint8_t armor_id;
+    uint8_t reactor_id;
+    uint8_t carry_capacity;
     uint8_t cost;
     int8_t plan;
     int8_t group_id; // some kind of internal prototype category
@@ -412,8 +412,11 @@ struct UNIT {
     int defense_value() {
         return Armor[armor_id].defense_value;
     }
-    int std_offense_value() {
-        return Weapon[weapon_id].offense_value * reactor_id;
+    int is_planet_buster() { // planet_buster function, enabled when non-zero value
+        return plan == PLAN_PLANET_BUSTER ? reactor_id : 0;
+    }
+    int is_missile() {
+        return Chassis[chassis_id].missile;
     }
     bool is_active() {
         return unit_flags & UNIT_ACTIVE;
@@ -439,11 +442,9 @@ struct UNIT {
     bool is_psi_unit() { // only include PSI attack
         return Weapon[weapon_id].offense_value < 0;
     }
-    bool is_garrison_unit() {
-        return triad() == TRIAD_LAND && Weapon[weapon_id].offense_value != 0
-            && (Armor[armor_id].defense_value >= Weapon[weapon_id].offense_value
-            || Armor[armor_id].defense_value < 0
-            || (chassis_id == CHS_INFANTRY && Armor[armor_id].defense_value > 1));
+    bool is_garrison_unit() { // basic defender unit for all bases
+        return (plan <= PLAN_RECON || (plan == PLAN_PROBE && is_armored()))
+            && triad() == TRIAD_LAND;
     }
     bool is_colony() {
         return plan == PLAN_COLONY;
@@ -462,12 +463,6 @@ struct UNIT {
     }
     bool is_artifact() {
         return plan == PLAN_ARTIFACT;
-    }
-    bool is_missile() {
-        return Chassis[chassis_id].missile;
-    }
-    bool is_planet_buster() {
-        return plan == PLAN_PLANET_BUSTER;
     }
 };
 
@@ -535,7 +530,7 @@ struct VEH {
         }
         return 10*reactor_type();
     }
-    int cur_hitpoints() { // Replace veh_health function
+    int cur_hitpoints() { // veh_health function
         if (is_artifact()) {
             return !damage_taken;
         }
@@ -565,6 +560,12 @@ struct VEH {
     }
     int defense_value() {
         return Units[unit_id].defense_value();
+    }
+    int is_planet_buster() {
+        return Units[unit_id].is_planet_buster();
+    }
+    int is_missile() {
+        return Units[unit_id].is_missile();
     }
     bool is_pulse_armor() {
         return Units[unit_id].is_pulse_armor();
@@ -613,12 +614,6 @@ struct VEH {
     bool is_artifact() {
         return Units[unit_id].is_artifact();
     }
-    bool is_missile() {
-        return Units[unit_id].is_missile();
-    }
-    bool is_planet_buster() {
-        return Units[unit_id].is_planet_buster();
-    }
     bool is_visible(int faction) {
         return visibility & (1 << faction);
     }
@@ -634,8 +629,9 @@ struct VEH {
         return is_human(faction_id);
     }
     bool at_target() {
-        return order == ORDER_NONE || (waypoint_x[0] < 0 && waypoint_y[0] < 0)
-            || (x == waypoint_x[0] && y == waypoint_y[0]);
+        return order == ORDER_NONE || order == ORDER_HOLD
+            || (waypoint_x[0] < 0 && waypoint_y[0] < 0)
+            || (x == waypoint_x[0] && y == waypoint_y[0] && !waypoint_count);
     }
     bool in_transit() {
         return order == ORDER_SENTRY_BOARD && waypoint_x[0] >= 0;
