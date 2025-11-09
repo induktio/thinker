@@ -99,9 +99,9 @@ Player automation features
 ==========================
 It is possible to instruct Thinker to automate player-owned units from `ALT+T` menu options. There's also a separate option to set Thinker manage governors in player-owned bases. Normally player base governors and unit automation would be handled by the original AI. However worker tile selection and specialist allocation is always managed by Thinker.
 
-When enabled, use `Shift+A` shortcut to automate any specific unit and it will follow the same colonization or terraforming strategy as the AI factions. Colony pods will attempt to travel to a suitable location autonomously and deploy a base there. If this is not required, the units can be moved manually as well. Automated formers should follow the same settings listed in the Automation Preferences dialog. Crawlers will usually try to convoy nutrient or mineral resources depending on the base status.
+When enabled, use `Shift+A` shortcut to automate any specific unit and it will follow the same colonization or terraforming strategy as the AI factions. Colony pods will attempt to travel to a suitable location autonomously and deploy a base there. If this is not required, the units can be moved manually as well. Automated formers should follow the same settings listed in the automation preferences dialog. Crawlers will usually try to convoy nutrient or mineral resources depending on the base status.
 
-Beware formers automated in this way **can replace any existing improvements** on the territory if Thinker calculates the replacement would increase tile production. A notable difference compared to the AI factions is that player-automated formers will never raise/lower terrain. To prevent the formers from ever replacing some specific improvements, such as bunkers, they need to be placed outside the workable base radius from any friendly base.
+Beware formers automated in this way **can replace any existing improvements** on the territory if Thinker calculates the replacement would increase tile production. However automated formers will never raise/lower terrain unless this is selected from automation preferences. To prevent the formers from ever replacing some specific improvements, such as bunkers, they need to be placed outside the workable base radius from any friendly base.
 
 Bases managed by Thinker governors will mostly follow the same options as provided in the base governor settings. Adjusting explore/discover/build/conquer governor priorities from the base window has the same effect compared to AIs using these choices as faction priorities. Enabling terraformer production in the governor settings will also allow governors to build crawlers since they don't have a separate option in the menu.
 
@@ -203,7 +203,7 @@ Secret Projects. At Talent and below, the other factions can't start work on a S
 
 Colony Pod. At Citizen and Specialist levels, building a colony pod at a size 1 base does not eliminate the base.
 
-No Early Research. At Citizen and Specialist levels, all research points accumulated during the first 5 turns are ignored (removed by early_research_start).
+No Early Research. At Citizen and Specialist levels, all research points accumulated during the first 5 turns are ignored (removed by early_research_start, see other patches included).
 
 Command Center Maintenance. The Maintenance cost of the Command Center facility is equal to the best Reactor level that is available (1 to 4), but never more than half of DIFF rounded up. In the mod Command Center only uses the maintenance cost set in alphax.txt.
 
@@ -328,7 +328,8 @@ This makes it slightly easier for some factions to achieve golden ages while it 
 Recommended alphax.txt settings
 ===============================
 All alphax.txt files provided by Thinker contain some optional, minor edits as summarized below.
-These edits will introduce fairly minimal differences to the vanilla game mechanics and they also will not change the default tech tree ordering.
+These edits will introduce fairly minimal differences on the game mechanics and they also will not change the default tech tree ordering.
+See also "Add ability to set reactor (1-4) for #UNITS in alpha/x.txt" on included patches for instructions on how to adjust reactors on any predefined units.
 
 1. Fix: Enabled the "Antigrav Struts" special ability for air units as stated in the manual.
 2. Fix: Disabled the "Clean Reactor" special ability for Probe Teams because they already don't require any support.
@@ -447,7 +448,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 25. Game will now allow reselecting units that have already skipped their turns if they have full movement points available (activate_skipped_units).
 26. Whenever additional units are added in the editor mode, these are set as independent units requiring no support by default (editor_free_units).
 27. Patch Stockpile Energy when it enabled double production if the base produces one item and then switches to Stockpile Energy on the same turn gaining additional credits.
-28. Patch Energy Market Crash event to reduce energy reserves only by 1/2 instead of 3/4. Optionally the event can also be disabled entirely (event_market_crash).
+28. Patch Energy Market Crash event to reduce energy reserves only by 1/2 instead of 3/4. The event can also be entirely disabled with skip_event option.
 29. Bases that have sufficient drone control facilities before the growth phase can grow without triggering possible drone riots on the same turn (delay_drone_riots).
 30. Remove drone revolt event due to issues with the original code. Sometimes this caused rioting player-owned bases to join other factions while this did not happen on AI factions.
 31. Patch captured base extra drone effect to last a variable time from 20 to 50 turns depending on the captured base size. The AI will also rename captured bases only after they are fully assimilated.

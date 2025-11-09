@@ -1,75 +1,75 @@
 #BASES
-Academy Archives
 Academy Campus
-Aurora Academy
-Aurora Base
+Atmospheric Studies
 Baikal Institute
+Bioinformatics Hub
+Biomechanics Lab
 Climactic Outpost
 Cosmic Campus
 Cosmodrome Commons
 Cybernetics Research
 Discovery Academy
-Future Foundation
+Experimental Systems
+Frontier Point
 Gagarin Institute
-Horizon Center
+Geothermal Research
+Insight Outpost
 Khrunichev Complex
-Korolev Foundation
+Knowledge Dome
 Korolev Park
 Lunakhod Outpost
 Lunik Landing
-Mendelev Laboratory
+Mendelev Lab
 Meteorite Park
-Mir City
+Molecular Studies
 Molniya Base
+Neural Systems Lab
 New Progress
 Nobel Institute
 Novaya Zvezda
-Perestroika Base
-Pioneer College
+Photonics Institute
 Pioneer Park
 Planetarium Base
 Planetary Campus
 Polaris Observatory
-Progression Center
+Progress Station
 Proton Archives
 Quantum Institute
+Rational Progress
 Research Backbone
-Research Institute
 Saturn Center
-Science Center
 Solar Research
 Soyuz Settlement
 Sputnik Research
 Stellar Archives
 Strelka Station
-Terra Library
-Volga Viewpoint
-Vostok Observatory
+Subatomic Research
+Theory Academy
+Visionary Outpost
 Vostok Valley
-Zarya Station
 Zarya Zenith
 Zvezdochka Hub
 #END
 
 #WATERBASES
-Aquatic Research Lab
-Atlantis Research Lab
-Coastal Ecology Center
+Aquatic Institute
+Blue Horizon Lab
 Coastal Research
-Coral Reef Research
-Deep Blue Research Lab
+Coral Research Hub
+Deep Blue Research
 Exploration Hub
 Hydro Dynamics Lab
-Hydro Facility
 Marine Geology Lab
 Marine Resources Lab
 Meteorology Center
 Neptune Foundation
-Ocean Control Center
+Oceanic Archives
 Oceanic Institute
-Particle Physics Lab
-Prichal Research Lab
-Seabed Mapping Facility
+Planktonic Studies
+Seabed Mapping Hub
 Seafloor Observatory
+Subaquatic Systems
+Tidal Dynamics Lab
 Tidal Study Center
+Trench Survey Hub
 #END
