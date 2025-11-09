@@ -180,7 +180,7 @@ void init_save_game(int faction_id) {
         if (strlen(u->name) >= MaxProtoNameLen
         || u->chassis_id < CHS_INFANTRY
         || u->chassis_id > CHS_MISSILE) {
-            for (int j = *VehCount-1; j >= 0; j--) {
+            for (int j = *VehCount - 1; j >= 0; j--) {
                 if (Vehs[j].unit_id == unit_id) {
                     veh_kill(j);
                 }
@@ -257,7 +257,7 @@ void __cdecl mod_random_events(int flag) {
         if (*DustCloudDuration > 0 && !--(*DustCloudDuration)) {
             POP2("NOMOREDUST", "stars_sm.pcx", -1);
         }
-        for (int i = *BaseCount - 1; i >= 0; i--) {
+        for (int i = *BaseCount - 1; i >= 0; --i) {
             BASE* base = &Bases[i];
             if (base->event_flags & BEVENT_VISIBLE) {
                 // Skip decrement if turns value is already zero
@@ -1225,15 +1225,15 @@ void __cdecl mod_faction_upkeep(int faction_id) {
         */
         mod_social_ai(faction_id, -1, -1, -1, -1, 0);
         probe_upkeep(faction_id);
-        move_upkeep(faction_id, (is_human(faction_id) ? UM_Player : UM_Full));
+        move_upkeep(faction_id, UM_Full);
         do_all_non_input();
 
         if (!is_human(faction_id) && *GameRules & RULES_VICTORY_ECONOMIC
         && has_tech(Rules->tech_preq_economic_victory, faction_id)) {
             int cost = corner_market(faction_id);
-            if (!victory_done() && f->corner_market_active <= 0 && f->energy_credits > cost) {
+            if (!victory_done() && f->corner_market_cost <= 0 && f->energy_credits > cost) {
                 f->corner_market_turn = *CurrentTurn + Rules->turns_corner_global_energy_market;
-                f->corner_market_active = cost;
+                f->corner_market_cost = cost;
                 f->energy_credits -= cost;
 
                 *gender_default = m->noun_gender;
@@ -1463,16 +1463,15 @@ void __cdecl mod_production_phase(int faction_id) {
     *dword_93A958 = f->energy_credits;
     /*
     Reset all fields listed below.
-    int32_t unk_40[8];
-    int32_t unk_41[40];
-    int32_t unk_42[32];
-    int32_t unk_43[9];
+    int32_t social_support[8];
+    int32_t social_psych[8][9];
+    int32_t social_effic[9];
     int32_t unk_45;
     int32_t unk_46;
     int32_t unk_47;
     */
-    assert((int)&f->unk_40 + 0x170 == (int)&f->nutrient_surplus_total);
-    memset(&f->unk_40, 0, 0x170);
+    assert((int)&f->social_support + 0x170 == (int)&f->nutrient_surplus_total);
+    memset(&f->social_support, 0, 0x170);
 
     f->nutrient_surplus_total = 0;
     f->labs_total = 0;

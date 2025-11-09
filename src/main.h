@@ -151,6 +151,14 @@ const int MaxBonusNum = 8;
 const int MaxBonusNameNum = 41;
 const int MaxProposalNum = 11;
 
+const int GrowthPopBoom = 6;
+const int PulseArmorValue = 25;
+const int ResonanceArmorValue = 25;
+const int ResonanceWeaponValue = 25;
+const int FlechetteDefenseValue = 50;
+const int FlechetteDefenseRange = 2;
+const int GeosyncSurveyPodRange = 3;
+
 const int StrBufLen = 256;
 const int LineBufLen = 128;
 const int MaxEnemyRange = 50;
@@ -294,6 +302,7 @@ struct Config {
     int native_elite_moves = 0;
     int native_weak_until_turn = -1;
     int native_lifecycle_levels[6] = {40,80,120,160,200,240};
+    int cost_factor[MaxDiffNum] = {13,12,11,10,8,7};
     int tech_cost_factor[MaxDiffNum] = {124,116,108,100,84,76};
     int content_pop_player[MaxDiffNum] = {6,5,4,3,2,1};
     int content_pop_computer[MaxDiffNum] = {3,3,3,3,3,3};
@@ -349,7 +358,6 @@ struct AIPlans {
     int naval_end_y = -1;
     int naval_beach_x = -1;
     int naval_beach_y = -1;
-    int defend_weights = 0;
     int land_combat_units = 0;
     int sea_combat_units = 0;
     int air_combat_units = 0;
@@ -380,6 +388,8 @@ struct AIPlans {
     int enemy_sat = 0;
     int mil_strength = 0;
     int defense_modifier = 0;
+    int max_offense_value = 0;
+    int max_defense_value = 0;
     float enemy_base_range = 0;
     float enemy_mil_factor = 0;
     int enemy_bases = 0;
@@ -423,7 +433,7 @@ bool FileExists(const char* path);
 void exit_fail(int32_t addr);
 void exit_fail();
 int opt_handle_error(const char* section, const char* name);
-int opt_list_parse(int32_t* dst, char* src, int num, int min_val);
+int opt_list_parse(int32_t* dst, char* src, int num, int min_val, int max_val);
 
 
 

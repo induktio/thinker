@@ -78,7 +78,7 @@ int __cdecl mod_mind_control(int base_id, int faction_id, int is_corner_market) 
         + mod_stack_check(veh_id, 2, PLAN_OFFENSE, -1, -1))
         * (mod_stack_check(veh_id, 6, ABL_POLY_ENCRYPTION, -1, -1) + 1)
         + Factions[faction_id].mind_control_total / 4 + base->pop_size)
-        * ((Factions[base->faction_id].corner_market_active
+        * ((Factions[base->faction_id].corner_market_cost
         + Factions[base->faction_id].energy_credits + 1200) / (dist + 4));
     if (!is_human(faction_id) && is_human(base->faction_id)) {
         int diff = Factions[base->faction_id].diff_level;

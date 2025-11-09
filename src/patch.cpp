@@ -625,6 +625,13 @@ bool patch_setup(Config* cf) {
     write_call(0x4E2A81, (int)prefs_get_strcpy); // AlphaNet::do_create
     write_call(0x4E2AA3, (int)prefs_get_strcpy); // AlphaNet::do_create
     write_call(0x4E2EA2, (int)prefs_get_strcpy); // AlphaNet::do_join
+    write_call(0x4E3AFC, (int)rebuild_base_bits); // base_at
+    write_call(0x4E3B5F, (int)rebuild_base_bits); // base_at
+    write_call(0x533C7C, (int)rebuild_base_bits); // NetDaemon::synch
+    write_call(0x5A9A39, (int)rebuild_base_bits); // load_daemon
+    write_call(0x533C60, (int)rebuild_vehicle_bits); // NetDaemon::synch
+    write_call(0x5A9A34, (int)rebuild_vehicle_bits); // load_daemon
+    write_call(0x5BFF5F, (int)rebuild_vehicle_bits); // veh_at
     write_call(0x4B72C0, (int)elev_at); // StatusWin::draw_status
     write_call(0x46B719, (int)world_raise_alt); // MapWin::editor
     write_call(0x4CA122, (int)world_raise_alt); // action_terraform

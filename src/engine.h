@@ -39,6 +39,7 @@ struct MFaction;
 extern MFaction* MFactions;
 extern int* const GameState;
 extern int* const GameRules;
+extern int* const CurrentTurn;
 extern const int MaxVehNum;
 extern const int MaxProtoNum;
 extern const int MaxPlayerNum;
@@ -122,6 +123,8 @@ const T& clamp (const T& value, const T& low, const T& high) {
     return (value < low ? low : (value > high ? high : value));
 }
 
+inline TriadFlag operator| (TriadFlag a, TriadFlag b) { return (TriadFlag)((int)a | (int)b); }
+inline TriadFlag& operator|= (TriadFlag& a, TriadFlag b) { return (TriadFlag&)((int&)a |= (int)b); }
 inline VehAblFlag operator| (VehAblFlag a, VehAblFlag b) { return (VehAblFlag)((int)a | (int)b); }
 inline VehAblFlag& operator|= (VehAblFlag& a, VehAblFlag b) { return (VehAblFlag&)((int&)a |= (int)b); }
 
@@ -1492,8 +1495,8 @@ extern fp_3int council_get_vote;
 extern fp_2int council_action;
 extern fp_2int can_call_council;
 extern fp_1int call_council;
-extern fp_none rebuild_vehicle_bits;
-extern fp_none rebuild_base_bits;
+//extern fp_none rebuild_vehicle_bits;
+//extern fp_none rebuild_base_bits;
 
 extern fp_5int danger;
 extern fp_1int checksum_file;

@@ -7,6 +7,12 @@ enum Triad {
     TRIAD_AIR = 2,
 };
 
+enum TriadFlag {
+    TRFLAG_LAND = 1,
+    TRFLAG_SEA = 2,
+    TRFLAG_AIR = 4,
+};
+
 enum VehMorale {
     MORALE_VERY_GREEN = 0,
     MORALE_GREEN = 1,
@@ -662,6 +668,17 @@ struct VEH {
     void reset_order() {
         order = ORDER_NONE;
         state &= ~(VSTATE_UNK_2000000|VSTATE_UNK_1000000|VSTATE_EXPLORE|VSTATE_ON_ALERT);
+    }
+    int eval_offense() {
+        int value = offense_value();
+        return value >= 0 ? value : std::min(7, std::max(1, morale + 1));
+    }
+    int eval_defense() {
+        int value = defense_value();
+        return value >= 0 ? value : std::min(7, std::max(1, morale + 1));
+    }
+    int eval_garrison() {
+        return (triad() == TRIAD_LAND ? 2 : 1) + is_combat_unit() + is_armored();
     }
 };
 

@@ -410,10 +410,9 @@ struct Faction {
     char saved_queue_name[8][24];
     int32_t saved_queue_size[8];
     int32_t saved_queue_items[8][10];
-    int32_t unk_40[8]; // From possible SE support -4 to 3 minerals spent on unit support
-    int32_t unk_41[40]; // base_psych
-    int32_t unk_42[32]; // base_psych
-    int32_t unk_43[9]; // From possible SE effic 4 to -4 all energy lost to inefficieny
+    int32_t social_support[8]; // SE_support from -4 to 3 minerals spent on unit support
+    int32_t social_psych[8][9]; // SE_talent from -3 to 4 / SE_police from -5 to 3
+    int32_t social_effic[9]; // SE_effic from 4 to -4 all energy lost on inefficiency
     int32_t unk_45;
     int32_t unk_46;
     int32_t unk_47;
@@ -481,7 +480,7 @@ struct Faction {
     int32_t unk_99; // unused?
     uint32_t secret_project_intel[8]; // Bitfield; News of SPs other factions are working on
     int32_t corner_market_turn;
-    int32_t corner_market_active;
+    int32_t corner_market_cost;
     int32_t unk_101;
     int32_t unk_102;
     int32_t unk_103;
@@ -500,6 +499,10 @@ struct Faction {
     int32_t unk_116;
     int32_t unk_117;
     int32_t unk_118;
+
+    bool corner_market_active() {
+        return corner_market_turn > *CurrentTurn;
+    }
 };
 
 struct CRules {

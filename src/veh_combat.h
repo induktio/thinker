@@ -9,13 +9,6 @@ enum VehCombatType {
     CT_INTERCEPT = 0x10,
 };
 
-const int PulseArmorValue = 25;
-const int ResonanceArmorValue = 25;
-const int ResonanceWeaponValue = 25;
-const int FlechetteDefenseValue = 50;
-const int FlechetteDefenseRange = 2;
-const int GeosyncSurveyPodRange = 3;
-
 int __cdecl psi_factor(int value, int faction_id, int is_attack, int is_fungal_twr);
 int __cdecl battle_kill_credits(int veh_id);
 

@@ -1494,7 +1494,7 @@ void __cdecl prefs_load(int use_default) {
     prefs_read(dst, StrBufLen, "Announce", prefs_get_binary(src, default_warn()), use_default);
     AlphaIniPrefs->announce = btoi(strtrim(dst));
     prefs_read(dst, StrBufLen, "Custom World", "2, 1, 1, 1, 1, 1, 1,", use_default);
-    opt_list_parse(&AlphaIniPrefs->custom_world[0], dst, 7, 0);
+    opt_list_parse(&AlphaIniPrefs->custom_world[0], dst, 7, 0, 100);
     AlphaIniPrefs->time_controls = prefs_get("Time Controls", 1, use_default);
 }
 

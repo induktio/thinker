@@ -8,7 +8,9 @@ static Points goodtiles;
 
 
 static int mapgen_rand(int value) {
-    // Replaces game_rand function, used by alt_set / alt_set_both
+    if (*MultiplayerActive) {
+        return game_randv(value);
+    }
     return (value > 1 ? map_rand.get(value) : 0);
 }
 
@@ -165,6 +167,38 @@ Validate region bounds. Bad regions include: 0, 63, 64, 127, 128.
 */
 int __cdecl bad_reg(int region) {
     return (region & RegionBounds) == RegionBounds || !(region & RegionBounds);
+}
+
+void __cdecl rebuild_base_bits() {
+    for (int y = 0; y < *MapAreaY; y++) {
+        for (int x = y&1; x < *MapAreaX; x += 2) {
+            bit_set(x, y, BIT_BASE_IN_TILE, 0);
+            for (int base_id = 0; base_id < *BaseCount; base_id++) {
+                if (Bases[base_id].x == x && Bases[base_id].y == y) {
+                    bit_set(x, y, BIT_BASE_IN_TILE, 1);
+                    owner_set(x, y, Bases[base_id].faction_id);
+                    break;
+                }
+            }
+        }
+    }
+}
+
+void __cdecl rebuild_vehicle_bits() {
+    for (int y = 0; y < *MapAreaY; y++) {
+        for (int x = y&1; x < *MapAreaX; x += 2) {
+            bit_set(x, y, BIT_VEH_IN_TILE, 0);
+            for (int veh_id = 0; veh_id < *VehCount; veh_id++) {
+                if (Vehs[veh_id].x == x && Vehs[veh_id].y == y) {
+                    bit_set(x, y, BIT_VEH_IN_TILE, 1);
+                    if (!(bit_at(x, y) & BIT_BASE_IN_TILE)) {
+                        owner_set(x, y, Vehs[veh_id].faction_id);
+                    }
+                    break;
+                }
+            }
+        }
+    }
 }
 
 void __cdecl owner_set(int x, int y, int faction_id) {

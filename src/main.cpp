@@ -117,7 +117,7 @@ int option_handler(void* user, const char* section, const char* name, const char
     } else if (MATCH("modified_landmarks")) {
         cf->modified_landmarks = atoi(value);
     } else if (MATCH("world_sea_levels")) {
-        opt_list_parse(cf->world_sea_levels, buf, 3, 0);
+        opt_list_parse(cf->world_sea_levels, buf, 3, 0, 100);
     } else if (MATCH("time_warp_mod")) {
         cf->time_warp_mod = atoi(value);
     } else if (MATCH("time_warp_techs")) {
@@ -127,7 +127,7 @@ int option_handler(void* user, const char* section, const char* name, const char
     } else if (MATCH("time_warp_start_turn")) {
         cf->time_warp_start_turn = clamp(atoi(value), 0, 500);
     } else if (MATCH("spawn_free_units")) {
-        opt_list_parse(cf->spawn_free_units, buf, 9, 0);
+        opt_list_parse(cf->spawn_free_units, buf, 9, 0, 1000);
     } else if (MATCH("player_colony_pods")) {
         cf->player_colony_pods = atoi(value);
     } else if (MATCH("computer_colony_pods")) {
@@ -137,9 +137,9 @@ int option_handler(void* user, const char* section, const char* name, const char
     } else if (MATCH("computer_formers")) {
         cf->computer_formers = atoi(value);
     } else if (MATCH("player_satellites")) {
-        opt_list_parse(cf->player_satellites, buf, 3, 0);
+        opt_list_parse(cf->player_satellites, buf, 3, 0, 1000);
     } else if (MATCH("computer_satellites")) {
-        opt_list_parse(cf->computer_satellites, buf, 3, 0);
+        opt_list_parse(cf->computer_satellites, buf, 3, 0, 1000);
     } else if (MATCH("faction_placement")) {
         cf->faction_placement = atoi(value);
     } else if (MATCH("nutrient_bonus")) {
@@ -215,7 +215,7 @@ int option_handler(void* user, const char* section, const char* name, const char
     } else if (MATCH("modify_altitude_limit")) {
         cf->altitude_limit = (atoi(value) ? ALT_FOUR_ABOVE_SEA : ALT_THREE_ABOVE_SEA);
     } else if (MATCH("tile_output_limit")) {
-        opt_list_parse(cf->tile_output_limit, buf, 3, 0);
+        opt_list_parse(cf->tile_output_limit, buf, 3, 0, 100);
     } else if (MATCH("soil_improve_value")) {
         cf->soil_improve_value = clamp(atoi(value), 0, 10);
     } else if (MATCH("aquatic_bonus_minerals")) {
@@ -233,21 +233,21 @@ int option_handler(void* user, const char* section, const char* name, const char
     } else if (MATCH("native_weak_until_turn")) {
         cf->native_weak_until_turn = clamp(atoi(value), 0, 1000);
     } else if (MATCH("native_lifecycle_levels")) {
-        opt_list_parse(cf->native_lifecycle_levels, buf, 6, 0);
+        opt_list_parse(cf->native_lifecycle_levels, buf, 6, 0, 1000);
     } else if (MATCH("cost_factor")) {
-        opt_list_parse(CostRatios, buf, MaxDiffNum, 1);
+        opt_list_parse(cf->cost_factor, buf, MaxDiffNum, 1, 100);
     } else if (MATCH("tech_cost_factor")) {
-        opt_list_parse(cf->tech_cost_factor, buf, MaxDiffNum, 1);
+        opt_list_parse(cf->tech_cost_factor, buf, MaxDiffNum, 1, 1000);
     } else if (MATCH("content_pop_player")) {
-        opt_list_parse(cf->content_pop_player, buf, MaxDiffNum, 0);
+        opt_list_parse(cf->content_pop_player, buf, MaxDiffNum, 0, 1000);
     } else if (MATCH("content_pop_computer")) {
-        opt_list_parse(cf->content_pop_computer, buf, MaxDiffNum, 0);
+        opt_list_parse(cf->content_pop_computer, buf, MaxDiffNum, 0, 1000);
     } else if (MATCH("unit_support_bonus")) {
-        opt_list_parse(cf->unit_support_bonus, buf, MaxDiffNum, 0);
+        opt_list_parse(cf->unit_support_bonus, buf, MaxDiffNum, 0, 1000);
     } else if (MATCH("facility_talent_value")) {
-        opt_list_parse(cf->facility_talent_value, buf, 6, 0);
+        opt_list_parse(cf->facility_talent_value, buf, 6, 0, 1000);
     } else if (MATCH("facility_defense_value")) {
-        opt_list_parse(cf->facility_defense_value, buf, 4, 0);
+        opt_list_parse(cf->facility_defense_value, buf, 4, 0, 1000);
     } else if (MATCH("dream_twister_bonus")) {
         cf->dream_twister_bonus = clamp(atoi(value), 0, 1000);
     } else if (MATCH("neural_amplifier_bonus")) {
@@ -394,14 +394,14 @@ int opt_handle_error(const char* section, const char* name) {
     return 0;
 }
 
-int opt_list_parse(int32_t* dst, char* src, int num, int min_val) {
+int opt_list_parse(int32_t* dst, char* src, int num, int min_val, int max_val) {
     const char *d=",";
     char *s, *p;
     p = strtok_r(src, d, &s);
     for (int i = 0; i < num && p != NULL; i++, p = strtok_r(NULL, d, &s)) {
-        dst[i] = max(min_val, atoi(p));
+        dst[i] = clamp(atoi(p), min_val, max_val);
     }
-    return 1;
+    return 0;
 }
 
 int cmd_parse(Config* cf) {

@@ -271,8 +271,8 @@ int __cdecl mod_base_build(int base_id, bool has_gov) {
     } else if ((base.item() < 0 || !Units[base.item()].is_garrison_unit())
     && (base.gov_config() & GOV_ALLOW_COMBAT)
     && (base.gov_config() & GOV_MAY_PROD_LAND_DEFENSE)
-    && !has_garrison(base.x, base.y, base.faction_id)
-    && (choice = find_proto(base_id, TRIAD_LAND, WMODE_COMBAT, DEF)) >= 0
+    && garrison_count(base.x, base.y) <= 0
+    && (choice = find_proto(base_id, TRFLAG_LAND, WMODE_COMBAT, DEF)) >= 0
     && Units[choice].is_garrison_unit()) {
         debug("BUILD DEFENSE\n");
     } else {
@@ -308,7 +308,7 @@ int __cdecl mod_base_build(int base_id, bool has_gov) {
 void __cdecl base_first(int base_id) {
     BASE& base = Bases[base_id];
     Faction& f = Factions[base.faction_id];
-    base.queue_items[0] = find_proto(base_id, TRIAD_LAND, WMODE_COMBAT, DEF);
+    base.queue_items[0] = find_proto(base_id, TRFLAG_LAND, WMODE_COMBAT, DEF);
 
     if (base.plr_owner()) {
         int num = f.saved_queue_size[0];
@@ -378,9 +378,62 @@ void __cdecl mod_base_mark(int base_id) {
 }
 
 /*
+Calculate the energy loss/inefficiency for the given energy intake in the base.
+Original version always used dist=16 when the faction does not have headquarters active.
+*/
+int __cdecl mod_black_market(int base_id, int energy) {
+    BASE* base = &Bases[base_id];
+    Faction* plr = &Factions[base->faction_id];
+    int value;
+    int dist_hq = 9999;
+    bool found = false;
+    if (energy <= 0) {
+        value = 0;
+    } else {
+        for (int i = 0; i < *BaseCount; i++) {
+            if (Bases[i].faction_id == base->faction_id && has_fac_built(FAC_HEADQUARTERS, i)) {
+                int dist = vector_dist(Bases[i].x, Bases[i].y, base->x, base->y);
+                dist_hq = min(dist, dist_hq);
+                found = true;
+            }
+        }
+    }
+    if (dist_hq == 0) {
+        value = 0;
+    } else if (energy > 0) {
+        if (!found) {
+            dist_hq = clamp(plr->base_count/4 + 8, 16, 32);
+        }
+        bool has_creche = has_fac_built(FAC_CHILDREN_CRECHE, base_id);
+        if (base_stats_upkeep()) { // update stats only once per turn
+            for (int i = 0; i < 9; i++) {
+                int factor;
+                if (has_creche) {
+                    factor = 10 - i; // +2 on efficiency scale
+                } else {
+                    factor = 8 - i;
+                }
+                if (factor <= 0) {
+                    plr->social_effic[i] += energy;
+                } else {
+                    plr->social_effic[i] += energy * dist_hq / (8 * factor);
+                }
+            }
+        }
+        int factor = 4 + plr->SE_effic_pending
+            + (has_creche ? 2 : 0); // +2 on efficiency scale
+        value = (factor <= 0 ? energy : clamp(energy * dist_hq / (8 * factor), 0, energy));
+    }
+    return value;
+}
+
+/*
 Calculate nutrient/mineral cost factors for base production.
 If the player faction is ranked first in the original game, the AI factions will get
-additional growth/industry bonuses. This can be optionally skipped with simple_cost_factor option.
+additional growth/industry bonuses which can be skipped with simple_cost_factor.
+Fix: the game did not include sufficient underflow handling where low industry values
+could behave unexpectedly flipping to positive or custom cost multiplier values
+defined in the rules could crash the game if the return value is rounded to zero.
 */
 int __cdecl mod_cost_factor(int faction_id, BaseResType type, int base_id) {
     int value;
@@ -390,7 +443,7 @@ int __cdecl mod_cost_factor(int faction_id, BaseResType type, int base_id) {
     if (is_human(faction_id)) {
         value = multiplier;
     } else {
-        value = CostRatios[*DiffLevel];
+        value = conf.cost_factor[*DiffLevel];
         if (!conf.simple_cost_factor) {
             value -= (great_satan(FactionRankings[7], 0) != 0);
             value -= (!*MultiplayerActive && is_human(FactionRankings[7]));
@@ -403,11 +456,7 @@ int __cdecl mod_cost_factor(int faction_id, BaseResType type, int base_id) {
         value = 9 * value / 10;
     }
     if (type == RSC_MINERAL) {
-        switch (Factions[faction_id].SE_industry_pending) {
-            case -7:
-            case -6:
-            case -5:
-            case -4:
+        switch (max(Factions[faction_id].SE_industry_pending, -3)) {
             case -3:
                 value = (13 * value + 9) / 10;
                 break;
@@ -441,7 +490,55 @@ int __cdecl mod_cost_factor(int faction_id, BaseResType type, int base_id) {
         }
         value = (value * (10 - clamp(growth, -2, 5)) + 9) / 10;
     }
-    return value;
+    return max(value, 1);
+}
+
+int __cdecl mineral_factor(int faction_id, int SE_industry) {
+    int value;
+    int multiplier = Rules->mineral_cost_multi;
+    if (is_human(faction_id)) {
+        value = multiplier;
+    } else {
+        value = conf.cost_factor[*DiffLevel];
+        if (!conf.simple_cost_factor) {
+            value -= (great_satan(FactionRankings[7], 0) != 0);
+            value -= (!*MultiplayerActive && is_human(FactionRankings[7]));
+        }
+        value = multiplier * value / 10;
+    }
+    if (*MapSizePlanet == 0) {
+        value = 8 * value / 10;
+    } else if (*MapSizePlanet == 1) {
+        value = 9 * value / 10;
+    }
+    switch (max(SE_industry, -3)) {
+        case -3:
+            value = (13 * value + 9) / 10;
+            break;
+        case -2:
+            value = (6 * value + 4) / 5;
+            break;
+        case -1:
+            value = (11 * value + 9) / 10;
+            break;
+        case 0:
+            break;
+        case 1:
+            value = (9 * value + 9) / 10;
+            break;
+        case 2:
+            value = (4 * value + 4) / 5;
+            break;
+        case 3:
+            value = (7 * value + 9) / 10;
+            break;
+        case 4:
+            value = (3 * value + 4) / 5;
+            break;
+        default: // +5 Industry or better
+            value = (value + 1) / 2;
+    }
+    return max(value, 1);
 }
 
 /*
@@ -599,7 +696,7 @@ void __cdecl mod_base_support() {
                     if (base_stats_upkeep()) {
                         for (int j = 0; j < 8; j++) {
                             if (*BaseForcesSupported > SupportCosts[j][1]) {
-                                f->unk_40[j] += SupportCosts[j][0];
+                                f->social_support[j] += SupportCosts[j][0];
                             }
                         }
                     }
@@ -662,13 +759,14 @@ static int32_t base_radius(int base_id, std::vector<TileValue>& tiles) {
             if (sq->is_base()) {
                 BaseTileFlags[i] |= BR_BASE_IN_TILE;
             }
-            for (int j = 0; j < *VehCount; j++) {
-                VEH* veh = &Vehs[j];
-                if (veh->x == x && veh->y == y
-                && (veh->order == ORDER_CONVOY
-                || (veh->faction_id != faction_id && veh->is_visible(faction_id)
-                && !has_treaty(faction_id, veh->faction_id, DIPLO_TREATY|DIPLO_PACT)))) {
-                    BaseTileFlags[i] |= BR_VEH_IN_TILE;
+            if (stack_fix(veh_at(x, y)) >= 0) {
+                for (VEH *veh = Vehs, *cnt = Vehs + *VehCount; veh < cnt; ++veh) {
+                    if (veh->x == x && veh->y == y
+                    && (veh->order == ORDER_CONVOY
+                    || (veh->faction_id != faction_id && veh->is_visible(faction_id)
+                    && !has_treaty(faction_id, veh->faction_id, DIPLO_TREATY|DIPLO_PACT)))) {
+                        BaseTileFlags[i] |= BR_VEH_IN_TILE;
+                    }
                 }
             }
             // Do not display worker status for foreign tiles
@@ -756,7 +854,7 @@ void __cdecl mod_base_yield() {
     bool need_labs = !has_fac_built(FAC_PUNISHMENT_SPHERE, base_id);
     bool pacifism = can_riot && SE_police <= -3 && *BaseVehPacifismCount > 0;
     int threshold = Rules->nutrient_intake_req_citizen * (base_pop_boom(base_id) ? 1 : 2);
-    int effic_val = 16 - energy_intake_lost(base_id, 16, 0);
+    int effic_val = 16 - mod_black_market(base_id, 16);
     int alloc_econ = 10 - f->SE_alloc_labs - f->SE_alloc_psych;
     int econ_val = 4 + (alloc_econ > f->SE_alloc_labs);
     int labs_val = 2 + 2*(need_labs && f->SE_alloc_labs > 0) + (alloc_econ <= f->SE_alloc_labs);
@@ -1073,8 +1171,7 @@ void __cdecl mod_base_energy() {
     base->energy_intake_2 += commerce;
     base->energy_intake_2 += energygrid;
 
-    base->energy_inefficiency = energy_intake_lost(base_id, base->energy_intake_2 - base->energy_consumption,
-        (base_stats_upkeep() ? f->unk_43 : NULL));
+    base->energy_inefficiency = mod_black_market(base_id, base->energy_intake_2 - base->energy_consumption);
     base->energy_surplus = base->energy_intake_2 - base->energy_consumption - base->energy_inefficiency;
 
     if (base_stats_upkeep()) {
@@ -1212,10 +1309,29 @@ void __cdecl mod_base_energy() {
     }
     // Normally Stockpile Energy output would be applied here on base->economy_total
     // To avoid double production issues instead it is calculated in mod_base_production
-    if (conf.base_psych) {
-        mod_base_psych(base_id);
-    } else {
+    if (!conf.base_psych) {
         base_psych();
+    } else {
+        if (base_stats_upkeep()) {
+            for (int tal = 0; tal < 8; tal++) {
+                for (int pol = 0; pol < 9; pol++) {
+                    mod_base_psych(base_id, tal - 3, pol - 5);
+                    int score = base->talent_total - base->drone_total;
+                    if (score > 0) {
+                        if (base->drone_total || 2 * base->talent_total < base->pop_size) {
+                            score /= 2;
+                        }
+                    } else if (score < 0) {
+                        score -= base->pop_size;
+                        if (base->pop_size < 6) {
+                            score *= 2;
+                        }
+                    }
+                    f->social_psych[tal][pol] += score;
+                }
+            }
+        }
+        mod_base_psych(base_id, f->SE_talent_pending, base->SE_police(SE_Pending));
     }
 }
 
@@ -1246,7 +1362,6 @@ static void adjust_psych(BASE* base, int talent_val, bool force) {
         base->talent_total += talent_val;
     }
     base->drone_total = max(0, min(base->drone_total, (int)base->pop_size));
-    base->talent_total = max(0, min(base->talent_total, (int)base->pop_size));
     while (base->talent_total + base->drone_total + base->superdrone_total > pop_size) {
         if (base->talent_total > 0) {
             base->talent_total--;
@@ -1266,7 +1381,7 @@ static void adjust_psych(BASE* base, int talent_val, bool force) {
     assert(base->pop_size >= base->talent_total + base->drone_total + base->specialist_total);
 }
 
-void __cdecl mod_base_psych(int base_id) {
+void __cdecl mod_base_psych(int base_id, int SE_talent, int SE_police) {
     BASE* base = &Bases[base_id];
     Faction* f = &Factions[base->faction_id];
     MFaction* m = &MFactions[base->faction_id];
@@ -1289,7 +1404,6 @@ void __cdecl mod_base_psych(int base_id) {
     //  1, Can use up to 2 military units as police
     //  2, Can use up to 3 military units as police!
     //  3, 3 units as police. Police effect doubled!!
-    const int SE_police = base->SE_police(SE_Pending);
     const int num_police = clamp((SE_police == -1) + SE_police + 1, 0, 3);
     const int val_police = 1 + (SE_police >= 3);
 
@@ -1333,10 +1447,10 @@ void __cdecl mod_base_psych(int base_id) {
     }
     base->drone_total = drone_value;
     base->talent_total = rule_talent;
-    if (f->SE_talent_pending >= 0) {
-        base->talent_total += f->SE_talent_pending;
+    if (SE_talent >= 0) {
+        base->talent_total += SE_talent;
     } else {
-        base->drone_total -= f->SE_talent_pending;
+        base->drone_total -= SE_talent;
     }
     base->drone_total = max(0, min(base->drone_total, (int)base->pop_size));
     base->drone_total += effic_drones;
@@ -1446,8 +1560,8 @@ void __cdecl mod_base_psych(int base_id) {
     Game manuals describe both Human Genome Project and Clinical Immortality
     as providing "One extra Talent at every base." However this is not the case since
     Clinical Immortality effect was actually twice as large. These talents could
-    also sometimes be canceled out by existing drones at the base. For this reason the mod
-    changes both projects to increase talents by one regardless of any regular drones.
+    also sometimes be canceled out by existing drones at the base. For this reason
+    both projects are changed to increase talents by one regardless of any regular drones.
     */
     if (base->nerve_staple_turns_left > 0 || has_fac_built(FAC_PUNISHMENT_SPHERE, base_id)) {
         base->talent_total = 0;
@@ -1474,9 +1588,9 @@ void __cdecl mod_base_psych(int base_id) {
     }
     add_psych_row(base, 4); // Secret Projects / Stapled Base
 
-    debug_ver("base_psych %3d %3d pop: %2d tal: %2d dro: %2d spc: %2d eff: %d cap: %d pol: %d psy: %d\n",
-    *CurrentTurn, base_id, base->pop_size, base->talent_total, base->drone_total, base->specialist_total,
-    effic_drones, capture_drones, police_total, psych_val);
+    debug_ver("base_psych %3d %3d pop: %2d tal: %2d dro: %2d sup: %2d spc: %2d eff: %d cap: %d pol: %d\n",
+    *CurrentTurn, base_id, base->pop_size, base->talent_total, base->drone_total, base->superdrone_total,
+    base->specialist_total, effic_drones, capture_drones, police_total);
 }
 
 void __cdecl mod_base_energy_costs() {
@@ -1550,7 +1664,7 @@ int __cdecl mod_base_growth() {
     bool allow_growth = base->pop_size < pop_limit || has_dome;
 
     if (base->nutrients_accumulated >= 0) {
-        if ((*BaseGrowthRate >= 6 || has_project(FAC_CLONING_VATS, faction_id))
+        if ((*BaseGrowthRate >= GrowthPopBoom || has_project(FAC_CLONING_VATS, faction_id))
         && Rules->nutrient_intake_req_citizen
         && base->nutrient_surplus >= Rules->nutrient_intake_req_citizen) {
             if (allow_growth) {
@@ -1867,8 +1981,8 @@ int __cdecl mod_base_upkeep(int base_id) {
     base->production_id_last = base->queue_items[0];
 
     int cur_pop = base->pop_size;
-    delay_base_riot = conf.delay_drone_riots && base->talent_total >= base->drone_total
-        && !(base->state_flags & BSTATE_DRONE_RIOTS_ACTIVE);
+    delay_base_riot = conf.delay_drone_riots && !base->drone_riots()
+        && !base->drone_riots_active();
     if (mod_base_growth()) {
         delay_base_riot = false;
         return 1; // Current base was removed
@@ -2034,7 +2148,7 @@ int __cdecl mod_capture_base(int base_id, int faction_id, int is_probe) {
     find_relocate_base(old_faction);
     if (is_probe) {
         MFactions[old_faction].thinker_last_mc_turn = *CurrentTurn;
-        for (int i = *VehCount-1; i >= 0; i--) {
+        for (int i = *VehCount - 1; i >= 0; --i) {
             if (Vehs[i].x == base->x && Vehs[i].y == base->y
             && Vehs[i].faction_id != faction_id && !has_pact(faction_id, Vehs[i].faction_id)) {
                 veh_kill(i);
@@ -2046,7 +2160,7 @@ int __cdecl mod_capture_base(int base_id, int faction_id, int is_probe) {
     altered during the turn resulting in some aircraft crashing when they should not.
     */
     if (!destroy_base && project_base(FAC_CLOUDBASE_ACADEMY) == base_id) {
-        for (int i = *VehCount-1; i >= 0; i--) {
+        for (int i = *VehCount - 1; i >= 0; --i) {
             VEH* veh = &Vehs[i];
             if (veh->faction_id == faction_id && veh->triad() == TRIAD_AIR
             && veh->unit_id / MaxProtoFactionNum == faction_id) {
@@ -2121,6 +2235,7 @@ void __cdecl mod_psych_check(int faction_id, int32_t* content_pop, int32_t* base
 }
 
 char* prod_name(int item_id) {
+    assert(item_id >= -SP_ID_Last && item_id < MaxProtoNum);
     if (item_id >= 0) {
         return Units[item_id].name;
     } else {
@@ -2131,11 +2246,7 @@ char* prod_name(int item_id) {
 int prod_turns(int base_id, int item_id) {
     BASE* b = &Bases[base_id];
     assert(base_id >= 0 && base_id < *BaseCount);
-    if (item_id >= 0) {
-        assert(strlen(Units[item_id].name) > 0);
-    } else {
-        assert(item_id >= -SP_ID_Last);
-    }
+    assert(item_id >= -SP_ID_Last && item_id < MaxProtoNum);
     int minerals = max(0, mineral_cost(base_id, item_id) - b->minerals_accumulated);
     int surplus = max(1, 10 * b->mineral_surplus);
     return 10 * minerals / surplus + ((10 * minerals) % surplus != 0);
@@ -2286,59 +2397,6 @@ int energy_grid_output(int base_id) {
         }
     }
     return num/2;
-}
-
-/*
-Calculate the energy loss/inefficiency for the given energy intake in the base.
-This function replaces black_market and modifies the parameters to avoid writing on the game state.
-Original version always used dist=16 when the faction does not have headquarters active.
-*/
-int energy_intake_lost(int base_id, int energy, int32_t* effic_energy_lost) {
-    BASE* base = &Bases[base_id];
-    int value;
-    int dist_hq = 9999;
-    bool found = false;
-    if (energy <= 0) {
-        value = 0;
-    } else {
-        for (int i = 0; i < *BaseCount; i++) {
-            if (Bases[i].faction_id == base->faction_id && has_fac_built(FAC_HEADQUARTERS, i)) {
-                int dist = vector_dist(Bases[i].x, Bases[i].y, base->x, base->y);
-                dist_hq = min(dist, dist_hq);
-                found = true;
-            }
-        }
-    }
-    if (dist_hq == 0) {
-        value = 0;
-    } else if (energy > 0) {
-        if (!found) {
-            dist_hq = clamp(Factions[base->faction_id].base_count/4 + 8, 16, 32);
-        }
-        bool has_creche = has_fac_built(FAC_CHILDREN_CRECHE, base_id);
-        if (effic_energy_lost) {
-            for (int i = 0; i < 9; i++) {
-                int factor;
-                if (has_creche) {
-                    factor = 10 - i; // +2 on efficiency scale
-                } else {
-                    factor = 8 - i;
-                }
-                if (factor <= 0) {
-                    effic_energy_lost[i] += energy;
-                } else {
-                    effic_energy_lost[i] += energy * dist_hq / (8 * factor);
-                }
-            }
-        }
-        int factor = 4 + Factions[base->faction_id].SE_effic_pending
-            + (has_creche ? 2 : 0); // +2 on efficiency scale
-        value = (factor <= 0 ? energy : clamp(energy * dist_hq / (8 * factor), 0, energy));
-    }
-    if (found && !effic_energy_lost) {
-        assert(value == black_market(energy));
-    }
-    return value;
 }
 
 int satellite_output(int satellites, int pop_size, bool full_value) {
@@ -2654,7 +2712,7 @@ bool can_build(int base_id, int item_id) {
         return false;
     }
     if (item_id == FAC_STOCKPILE_ENERGY) {
-        return stockpile_energy(base_id) > 3 && random(4);
+        return base->mineral_consumption > base->mineral_surplus && random(4);
     }
     if (item_id == FAC_ASCENT_TO_TRANSCENDENCE || item_id == FAC_VOICE_OF_PLANET) {
         if (victory_done()) {
@@ -2683,7 +2741,8 @@ bool can_build(int base_id, int item_id) {
     }
     if (*GameRules & RULES_SCN_NO_TECH_ADVANCES) {
         if (item_id == FAC_RESEARCH_HOSPITAL || item_id == FAC_NANOHOSPITAL
-        || item_id == FAC_FUSION_LAB || item_id == FAC_QUANTUM_LAB) {
+        || item_id == FAC_FUSION_LAB || item_id == FAC_QUANTUM_LAB
+        || (item_id == FAC_NETWORK_NODE && !has_project(FAC_VIRTUAL_WORLD, faction_id))) {
             return false;
         }
     }
@@ -2798,7 +2857,7 @@ bool base_pop_boom(int base_id) {
     return has_project(FAC_CLONING_VATS, b->faction_id)
         || f->SE_growth_pending
         + (has_fac_built(FAC_CHILDREN_CRECHE, base_id) ? 2 : 0)
-        + (b->golden_age() ? 2 : 0) > 5;
+        + (b->golden_age() ? 2 : 0) >= GrowthPopBoom;
 }
 
 bool can_use_teleport(int base_id) {
@@ -2921,12 +2980,12 @@ reactor level which is unnecessary to implement here.
 */
 int __cdecl fac_maint(int facility_id, int faction_id) {
     CFacility& facility = Facility[facility_id];
-    MFaction& meta = MFactions[faction_id];
+    MFaction& m = MFactions[faction_id];
 
-    for (int i = 0; i < meta.faction_bonus_count; i++) {
-        if (meta.faction_bonus_val1[i] == facility_id
-        && (meta.faction_bonus_id[i] == RULE_FACILITY
-        || (meta.faction_bonus_id[i] == RULE_FREEFAC
+    for (int i = 0; i < m.faction_bonus_count; i++) {
+        if (m.faction_bonus_val1[i] == facility_id
+        && (m.faction_bonus_id[i] == RULE_FACILITY
+        || (m.faction_bonus_id[i] == RULE_FREEFAC
         && has_tech(facility.preq_tech, faction_id)))) {
             return 0;
         }

@@ -22,6 +22,7 @@ typedef std::priority_queue<SItem, std::vector<SItem>, std::greater<SItem>> scor
 
 
 extern int plan_upkeep_turn;
+extern int move_upkeep_faction;
 
 int facility_score(FacilityId item_id, WItem& Wgov);
 void governor_priorities(BASE& base, WItem& Wgov);

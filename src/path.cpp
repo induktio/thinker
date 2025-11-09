@@ -348,7 +348,7 @@ bool defend_tile(VEH* veh, MAP* sq) {
     if (!sq || (sq->items & BIT_MONOLITH && veh->need_monolith())) {
         return true;
     }
-    if (sq->items & BIT_FUNGUS && veh->is_native_unit() && veh->need_heals()) {
+    if (sq->is_fungus() && veh->is_native_unit() && veh->need_heals()) {
         return true;
     }
     if (sq->items & (BIT_BASE_IN_TILE | BIT_BUNKER)) {
@@ -440,6 +440,56 @@ int route_distance(PMTable& tbl, int x1, int y1, int x2, int y2) {
     return -1;
 }
 
+int defender_goal(int x, int y, int faction_id, int triad) {
+    AIPlans& p = plans[faction_id];
+    if (triad == TRIAD_LAND && p.transport_units > 0
+    && p.naval_start_x == x && p.naval_start_y == y) {
+        return clamp(p.land_combat_units/32 + p.transport_units/2, 4, 12);
+    }
+    for (int i = 0; i < *BaseCount; i++) {
+        BASE* base = &Bases[i];
+        if (base->x == x && base->y == y) {
+            int goal = clamp(base->defend_goal
+                - (base->defend_range >= 4*base->pop_size)
+                - (base->defend_range >= 10)
+                - (base->defend_range >= 20)
+                - clamp(p.unknown_factions - p.contacted_factions, 0, 2)
+                - (triad == TRIAD_LAND ? 0 : 2), 1, 5);
+            return goal;
+        }
+    }
+    assert(0);
+    return 0;
+}
+
+int defender_count(int x, int y, int veh_skip_id) {
+    int num = 0;
+    for (int i = *VehCount - 1; i >= 0; --i) {
+        VEH* veh = &Vehs[i];
+        if (veh->x == x && veh->y == y
+        && veh->order != ORDER_SENTRY_BOARD
+        && veh->at_target()
+        && i != veh_skip_id) {
+            num += veh->eval_garrison();
+        }
+    }
+    return (num+1)/4;
+}
+
+int garrison_count(int x, int y) {
+    int num = 0;
+    for (int i = *VehCount - 1; i >= 0; --i) {
+        VEH* veh = &Vehs[i];
+        if (veh->x == x && veh->y == y
+        && veh->is_garrison_unit()
+        && veh->order != ORDER_SENTRY_BOARD
+        && veh->at_target()) {
+            num++;
+        }
+    }
+    return num;
+}
+
 int veh_cargo_loaded(int veh_id) {
     int num = 0;
     for (int i = *VehCount - 1; i >= 0; --i) {
@@ -476,17 +526,6 @@ bool has_transport(int x, int y, int faction_id) {
     return false;
 }
 
-bool has_garrison(int x, int y, int faction_id) {
-    for (int i = *VehCount - 1; i >= 0; --i) {
-        VEH* veh = &Vehs[i];
-        if (veh->x == x && veh->y == y && veh->is_garrison_unit()
-        && veh->faction_id == faction_id) {
-            return true;
-        }
-    }
-    return false;
-}
-
 int move_to_base(int veh_id, bool ally) {
     VEH* veh = &Vehs[veh_id];
     int tx;
@@ -513,19 +552,15 @@ int escape_move(const int id) {
     if (search_escape(ts, id, &tx, &ty)) {
         return set_move_to(id, tx, ty);
     }
-    if (veh->is_combat_unit()) {
-        return enemy_move(id);
-    }
     return mod_veh_skip(id);
 }
 
 static int escape_score(int x, int y, int range, VEH* veh, MAP* sq) {
-    return mapdata[{x, y}].safety - 160*mapdata[{x, y}].target - 120*range
+    return mapdata[{x, y}].safety - 32*mapdata[{x, y}].target - 128*range
         + (sq->items & BIT_MONOLITH && veh->need_monolith() ? 2000 : 0)
         + (sq->items & BIT_BUNKER ? 500 : 0)
-        + (sq->items & BIT_FOREST ? 200 : 0)
-        + (sq->is_rocky() ? 200 : 0)
-        + (mapnodes.count({x, y, NODE_PATROL}) ? 400 : 0);
+        + (sq->items & BIT_FOREST || sq->is_rocky() ? 200 : 0)
+        + (mapnodes.count({x, y, NODE_PATROL}) ? 500 : 0);
 }
 
 int search_escape(TileSearch& ts, int veh_id, int* tx, int* ty) {
@@ -547,6 +582,7 @@ int search_escape(TileSearch& ts, int veh_id, int* tx, int* ty) {
             break;
         }
         if (!non_ally_in_tile(ts.rx, ts.ry, veh->faction_id)
+        && (!sq->is_base() || sq->owner == veh->faction_id || has_pact(veh->faction_id, sq->owner))
         && (score = escape_score(ts.rx, ts.ry, ts.dist, veh, sq)) > best_score
         && !ts.has_zoc(veh->faction_id)) { // Always check for zocs just in case
             *tx = ts.rx;

@@ -61,7 +61,7 @@ int __cdecl reputation(int faction_id, int faction_id_with);
 int __cdecl get_patience(int faction_id_with, int faction_id);
 int __cdecl energy_value(int loan_principal);
 void __cdecl social_calc(CSocialCategory* category, CSocialEffect* effect,
-int faction_id, int toggle, int is_quick_calc);
+int faction_id, int UNUSED(toggle), int is_quick_calc);
 void __cdecl social_upkeep(int faction_id);
 int __cdecl social_upheaval(int faction_id, CSocialCategory* choices);
 int __cdecl society_avail(int soc_category, int soc_model, int faction_id);

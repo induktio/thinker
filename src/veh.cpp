@@ -1856,7 +1856,7 @@ void __cdecl full_upgrade(int faction_id, int new_unit_id, int old_unit_id) {
             active = true;
         }
     }
-    for (int i = *BaseCount-1; i >= 0; i--) {
+    for (int i = *BaseCount - 1; i >= 0; --i) {
         BASE* base = &Bases[i];
         if (base->faction_id == faction_id) {
             for (int j = 0; j < 10 && j <= base->queue_size; j++) {

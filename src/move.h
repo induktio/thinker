@@ -19,7 +19,6 @@ const uint32_t BIT_ADVANCED = (BIT_CONDENSER | BIT_THERMAL_BORE);
 
 extern PMTable mapdata;
 extern NodeSet mapnodes;
-extern int move_upkeep_faction;
 
 int arty_value(int x, int y);
 int base_tile_score(int x, int y, int faction_id, MAP* sq);
@@ -45,9 +44,6 @@ bool allow_airdrop(int x, int y, int faction_id, bool combat, MAP* sq);
 bool invasion_unit(int veh_id);
 bool near_landing(int veh_id);
 int make_landing(int veh_id);
-int garrison_goal(int x, int y, int faction_id, int triad);
-int garrison_count(int x, int y);
-int defender_count(int x, int y, int veh_skip_id);
 
 int __cdecl mod_enemy_move(int veh_id);
 int __cdecl veh_kill_lift(int veh_id);
@@ -59,5 +55,6 @@ int former_move(const int id);
 int artifact_move(const int id);
 int trans_move(const int id);
 int nuclear_move(const int id);
+int airdrop_move(const int id, MAP* sq);
 int combat_move(const int id);
 

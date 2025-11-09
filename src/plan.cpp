@@ -1,7 +1,8 @@
 
 #include "plan.h"
 
-int plan_upkeep_turn = 0;
+int plan_upkeep_turn = -1;
+int move_upkeep_faction = -1;
 
 
 int facility_score(FacilityId item_id, WItem& Wgov) {
@@ -363,10 +364,17 @@ int satellite_count(int faction_id, int item_id) {
 
 int satellite_goal(int faction_id, int item_id) {
     Faction& f = Factions[faction_id];
-    int goal = plans[faction_id].satellite_goal;
+    AIPlans& p = plans[faction_id];
+    int goal = p.satellite_goal;
     if (item_id == FAC_ORBITAL_DEFENSE_POD) {
-        if (plans[faction_id].enemy_odp > 0 || plans[faction_id].enemy_sat > 0) {
-            goal = clamp(goal/4, 0, 4) + clamp(f.base_count/8 + 2, 2, 8);
+        int nukes = 0;
+        for (int i = 1; i < MaxPlayerNum; i++) {
+            if (faction_id != i && is_alive(i) && at_war(faction_id, i)) {
+                nukes = max(nukes, Factions[i].planet_busters);
+            }
+        }
+        if (p.enemy_odp > 0 || p.enemy_sat > 0 || nukes > 2) {
+            goal = clamp(goal/4, 0, 4) + clamp(f.base_count/8 + nukes/2, 2, 12);
         } else {
             goal = clamp(goal/4, 0, 4) + clamp(f.base_count/8, 2, 4);
         }
@@ -403,7 +411,8 @@ void former_plans(int faction_id) {
 }
 
 void plans_upkeep(int faction_id) {
-    const bool governor = is_human(faction_id) && conf.manage_player_bases;
+    const bool governor = is_human(faction_id)
+        && (conf.manage_player_bases || conf.manage_player_units);
     if (!faction_id || !is_alive(faction_id)) {
         return;
     }
@@ -420,24 +429,20 @@ void plans_upkeep(int faction_id) {
         Faction* f = &Factions[faction_id];
         AIPlans* p = &plans[faction_id];
         memset((void*)p, 0, sizeof(AIPlans));
-        assert(!plans[faction_id].main_region);
-        assert(plans[(faction_id+1)&7].main_region);
         update_main_region(faction_id);
         former_plans(faction_id);
 
-        for (int i = 1; i < MaxPlayerNum; i++) {
+        for (int i = 0; i < MaxPlayerNum; i++) {
             plans[i].mil_strength = 0;
         }
         for (int i = 0; i < *VehCount; i++) {
             VEH* veh = &Vehs[i];
-            int triad = veh->triad();
             if (veh->faction_id > 0) {
-                int offense = veh->offense_value();
-                plans[veh->faction_id].mil_strength +=
-                    ((offense < 0 ? clamp((int)veh->morale, 1, 6) : offense)
-                     + abs(veh->defense_value())) * (veh->speed() > 1 ? 3 : 2);
+                plans[veh->faction_id].mil_strength += (veh->eval_offense()
+                     + veh->eval_defense()) * (veh->speed() > 1 ? 3 : 2);
             }
             if (veh->faction_id == faction_id) {
+                int triad = veh->triad();
                 if (veh->is_combat_unit() || veh->is_probe() || veh->is_transport()) {
                     if (triad == TRIAD_LAND) {
                         p->land_combat_units++;
@@ -456,6 +461,10 @@ void plans_upkeep(int faction_id) {
                 if (veh->is_missile()) {
                     p->missile_units++;
                 }
+                if (veh->plan() <= PLAN_RECON) {
+                    p->max_offense_value = max(p->max_offense_value, proto_offense(veh->unit_id));
+                    p->max_defense_value = max(p->max_defense_value, proto_defense(veh->unit_id));
+                }
             }
         }
         debug("plans_totals %d %d bases: %3d land: %3d sea: %3d air: %3d "\
@@ -464,7 +473,7 @@ void plans_upkeep(int faction_id) {
             p->probe_units, p->missile_units, p->transport_units);
 
         for (int i = 1; i < MaxPlayerNum; i++) {
-            if (faction_id != i && Factions[i].base_count > 0) {
+            if (faction_id != i && is_alive(i)) {
                 if (has_treaty(faction_id, i, DIPLO_COMMLINK)) {
                     p->contacted_factions++;
                 } else {
@@ -482,7 +491,6 @@ void plans_upkeep(int faction_id) {
                     * (at_war(faction_id, i) ? 1.0f : (has_pact(faction_id, i) ? 0.1f : 0.25f))
                     * (p->main_region == plans[i].main_region ? 1.5f : 1.0f)
                     * faction_might(i) / max(1, faction_might(faction_id)), 0.01f, 8.0f);
-
                 p->enemy_mil_factor = max(p->enemy_mil_factor, factor);
             }
         }
@@ -490,7 +498,6 @@ void plans_upkeep(int faction_id) {
         int n = 0;
         for (int i = 0; i < *BaseCount; i++) {
             BASE* base = &Bases[i];
-            MAP* sq;
             if (base->faction_id == faction_id) {
                 base_pop[n] = base->pop_size;
                 base_min[n] = base->mineral_surplus;
@@ -502,16 +509,15 @@ void plans_upkeep(int faction_id) {
                 for (int j = 0; j < *BaseCount; j++) {
                     BASE* b = &Bases[j];
                     if (faction_id != b->faction_id
-                    && !has_pact(faction_id, b->faction_id)
-                    && (sq = mapsq(b->x, b->y))) {
+                    && !has_pact(faction_id, b->faction_id)) {
                         int border_dist = map_range(base->x, base->y, b->x, b->y);
                         int enemy_dist = border_dist
-                            * (sq->region == base_region ? 2 : 3)
-                            * (b->faction_id_former == faction_id ? 2 : 3);
+                            * (region_at(b->x, b->y) == base_region ? 4 : 5)
+                            * (b->faction_id_former == faction_id ? 4 : 5);
                         if (!at_war(faction_id, b->faction_id)) {
                             enemy_dist *= 4;
                         }
-                        enemy_range = min(enemy_range, enemy_dist / 4);
+                        enemy_range = min(enemy_range, enemy_dist / 16);
                     }
                 }
                 base->defend_range = enemy_range;
@@ -520,7 +526,8 @@ void plans_upkeep(int faction_id) {
                 && at_war(faction_id, base->faction_id_former)) {
                     p->captured_bases++;
                 }
-            } else if (base->faction_id_former == faction_id && at_war(faction_id, base->faction_id)) {
+            } else if (base->faction_id_former == faction_id
+            && at_war(faction_id, base->faction_id)) {
                 p->enemy_bases++;
             }
         }
@@ -528,10 +535,10 @@ void plans_upkeep(int faction_id) {
         p->enemy_base_range = (n > 0 ? (1.0f*enemy_sum)/n : MaxEnemyRange);
         p->psi_score = psi_score(faction_id);
         if (!p->enemy_factions) {
-            p->defense_modifier = clamp(f->AI_fight + f->AI_power + f->base_count/32, 0, 2);
+            p->defense_modifier = clamp(f->AI_fight + f->AI_power + f->base_count/20, 0, 2);
         } else {
             p->defense_modifier = clamp((int)(3.0f - p->enemy_base_range/8.0f)
-                + min(2, f->base_count/32)
+                + min(2, f->base_count/20)
                 + min(4, p->enemy_bases/2)
                 + min(2, p->captured_bases/2)
                 + min(2, p->enemy_factions/2), 1, 4);
