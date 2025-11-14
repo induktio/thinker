@@ -546,7 +546,7 @@ void plans_upkeep(int faction_id) {
         std::sort(base_pop, base_pop+n);
         std::sort(base_min, base_min+n);
         std::sort(base_eng, base_eng+n);
-        if (f->base_count >= 32) {
+        if (f->base_count >= 40) {
             p->project_limit = max(5, base_min[n*3/4]);
         } else {
             p->project_limit = max(5, base_min[n*2/3]);

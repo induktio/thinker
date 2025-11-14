@@ -20,7 +20,7 @@ const uint32_t BIT_ADVANCED = (BIT_CONDENSER | BIT_THERMAL_BORE);
 extern PMTable mapdata;
 extern NodeSet mapnodes;
 
-int arty_value(int x, int y);
+int choose_defender(int x, int y, int veh_id_atk, MAP* sq);
 int base_tile_score(int x, int y, int faction_id, MAP* sq);
 int former_tile_score(int x, int y, int faction_id, MAP* sq);
 int select_item(int x, int y, int faction_id, FormerMode mode, MAP* sq);

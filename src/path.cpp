@@ -2,90 +2,6 @@
 #include "path.h"
 
 
-int path_get_next(int x1, int y1, int x2, int y2, int unit_id, int faction_id) {
-    return Path_find(Paths, x1, y1, x2, y2, unit_id, faction_id, 0, -1);
-}
-
-/*
-Return tile distance to destination if it is less than MaxMapDist, otherwise return -1.
-*/
-int path_distance(int x1, int y1, int x2, int y2, int unit_id, int faction_id) {
-    int px = x1;
-    int py = y1;
-    int val = 0;
-    int dist = 0;
-    refresh_overlay(clear_overlay);
-
-    while (val >= 0 && dist <= MaxMapDist) {
-        if (DEBUG) { mapdata[{px, py}].overlay = dist; }
-        if (px == x2 && py == y2) {
-            return dist;
-        }
-        val = Path_find(Paths, px, py, x2, y2, unit_id, faction_id, 0, -1);
-        if (val >= 0) {
-            px = wrap(px + BaseOffsetX[val]);
-            py = py + BaseOffsetY[val];
-        }
-        dist++;
-        debug("path_dist %2d %2d -> %2d %2d / %2d %2d / %2d\n", x1, y1, x2, y2, px, py, dist);
-    }
-    flushlog();
-    return -1;
-}
-
-/*
-Return road move distance to destination if it is less than max_cost, otherwise return -1.
-*/
-int path_cost(int x1, int y1, int x2, int y2, int unit_id, int faction_id, int max_cost) {
-    int px = x1;
-    int py = y1;
-    int val = 0;
-    int cost = 0;
-
-    while (val >= 0 && cost <= max_cost) {
-        if (px == x2 && py == y2) {
-            return cost;
-        }
-        val = Path_find(Paths, px, py, x2, y2, unit_id, faction_id, 0, -1);
-        if (val >= 0) {
-            px = wrap(px + BaseOffsetX[val]);
-            py = py + BaseOffsetY[val];
-            cost += mod_hex_cost(unit_id, faction_id, x1, y1, px, py, 0);
-        }
-        debug_ver("path_cost %2d %2d -> %2d %2d / %2d %2d / %2d\n", x1, y1, x2, y2, px, py, cost);
-    }
-    return -1;
-}
-
-void update_path(PMTable& tbl, int veh_id, int tx, int ty) {
-    VEH* veh = &Vehs[veh_id];
-    MAP* sq = mapsq(tx, ty);
-    if (!is_human(veh->faction_id)
-    && sq && (sq->owner == veh->faction_id || (at_war(veh->faction_id, sq->owner)
-    && 2*faction_might(veh->faction_id) > faction_might(sq->owner)))
-    && veh->triad() == TRIAD_LAND && map_range(veh->x, veh->y, tx, ty) > 2
-    && has_terra(FORMER_RAISE_LAND, TRIAD_LAND, veh->faction_id)
-    && (tbl[{tx, ty}].enemy_dist > 0 || (sq->is_base() && at_war(veh->faction_id, sq->owner)))
-    && tbl[{tx, ty}].enemy_dist < 15) {
-        debug("update_path %2d %2d -> %2d %2d %s\n", veh->x, veh->y, tx, ty, veh->name());
-        int val = 0;
-        int dist = 0;
-        int px = veh->x;
-        int py = veh->y;
-        while (val >= 0 && ++dist <= PathLimit) {
-            mapdata[{px, py}].unit_path++;
-            if (px == tx && py == ty) {
-                return;
-            }
-            val = Path_find(Paths, px, py, tx, ty, veh->unit_id, veh->faction_id, 0, -1);
-            if (val >= 0) {
-                px = wrap(px + BaseOffsetX[val]);
-                py = py + BaseOffsetY[val];
-            }
-        }
-    }
-}
-
 void TileSearch::reset() {
     type = 0;
     head = 0;
@@ -315,6 +231,125 @@ int __cdecl mod_zoc_move(int x, int y, int faction_id) {
     return 0;
 }
 
+int path_get_next(int x1, int y1, int x2, int y2, int unit_id, int faction_id) {
+    return Path_find(Paths, x1, y1, x2, y2, unit_id, faction_id, 0, -1);
+}
+
+#ifdef BUILD_DEBUG
+int show_path_cost(int x1, int y1, int x2, int y2, int unit_id, int faction_id) {
+    int px = x1;
+    int py = y1;
+    int cost = 0;
+    int prev_cost = 0;
+    int i = 0;
+    refresh_overlay(clear_overlay);
+
+    while (++i <= QueueSize) {
+        cost += prev_cost;
+        if (DEBUG) { mapdata[{px, py}].overlay = cost; }
+        if (px == x2 && py == y2) {
+            flushlog();
+            return cost;
+        }
+        int val = Path_find(Paths, px, py, x2, y2, unit_id, faction_id, 0, -1);
+        if (!(val >= 0 && val < 8)) {
+            return -1;
+        }
+        int rx = px;
+        int ry = py;
+        px = wrap(px + BaseOffsetX[val]);
+        py = py + BaseOffsetY[val];
+        prev_cost = mod_hex_cost(unit_id, faction_id, rx, ry, px, py, 0);
+        debug("path_cost %2d %2d -> %2d %2d / %2d %2d / %d\n", x1, y1, x2, y2, px, py, cost+prev_cost);
+    }
+    return -1;
+}
+#endif
+
+int path_cost(int x1, int y1, int x2, int y2, int unit_id, int faction_id, int max_cost) {
+    int px = x1;
+    int py = y1;
+    int cost = 0;
+    int prev_cost = 0;
+    int i = 0;
+
+    while (cost + prev_cost <= max_cost) {
+        cost += prev_cost;
+        if (px == x2 && py == y2) {
+            return cost;
+        }
+        if (++i > PathLimit) {
+            return -1;
+        }
+        int val = Path_find(Paths, px, py, x2, y2, unit_id, faction_id, 0, -1);
+        if (!(val >= 0 && val < 8)) {
+            return -1;
+        }
+        int rx = px;
+        int ry = py;
+        px = wrap(px + BaseOffsetX[val]);
+        py = py + BaseOffsetY[val];
+        prev_cost = mod_hex_cost(unit_id, faction_id, rx, ry, px, py, 0);
+    }
+    return -1;
+}
+
+int route_dist(PMTable& tbl, int x1, int y1, int x2, int y2) {
+    Points visited;
+    std::list<PathNode> items;
+    items.push_back({x1, y1, 0, 0});
+    int limit = max(8, map_range(x1, y1, x2, y2) * 2);
+    int i = 0;
+
+    while (items.size() > 0 && ++i <= PathLimit) {
+        PathNode cur = items.front();
+        items.pop_front();
+        if (cur.x == x2 && cur.y == y2 && cur.dist <= limit) {
+            debug_ver("route_dist %2d %2d -> %2d %2d = %d %d\n", x1, y1, x2, y2, i, cur.dist);
+            return cur.dist;
+        }
+        for (const auto& t : NearbyTiles) {
+            int rx = wrap(cur.x + t[0]);
+            int ry = cur.y + t[1];
+            if (mapsq(rx, ry) && tbl[{rx, ry}].roads > 0 && !visited.count({rx, ry})) {
+                items.push_back({rx, ry, cur.dist + 1, 0});
+                visited.insert({rx, ry});
+            }
+        }
+    }
+    return -1;
+}
+
+void update_move_path(PMTable& tbl, int veh_id, int tx, int ty) {
+    VEH* veh = &Vehs[veh_id];
+    MAP* sq = mapsq(tx, ty);
+    if (thinker_move_upkeep(veh->faction_id)
+    && sq && (sq->owner == veh->faction_id || (at_war(veh->faction_id, sq->owner)
+    && 2*faction_might(veh->faction_id) > faction_might(sq->owner)))
+    && veh->triad() == TRIAD_LAND && map_range(veh->x, veh->y, tx, ty) > 2
+    && has_terra(FORMER_RAISE_LAND, TRIAD_LAND, veh->faction_id)
+    && (tbl[{tx, ty}].enemy_dist > 0 || (sq->is_base() && at_war(veh->faction_id, sq->owner)))
+    && tbl[{tx, ty}].enemy_dist < 15) {
+        debug("update_path %2d %2d -> %2d %2d %s\n", veh->x, veh->y, tx, ty, veh->name());
+        int val = 0;
+        int dist = 0;
+        int px = veh->x;
+        int py = veh->y;
+        while (++dist <= PathLimit) {
+            mapdata[{px, py}].unit_path++;
+            if (px == tx && py == ty) {
+                return;
+            }
+            val = Path_find(Paths, px, py, tx, ty, veh->unit_id, veh->faction_id, 0, -1);
+            if (!(val >= 0 && val < 8)) {
+                break;
+            }
+            px = wrap(px + BaseOffsetX[val]);
+            py = py + BaseOffsetY[val];
+        }
+    }
+}
+
 std::vector<MapTile> iterate_tiles(int x, int y, size_t start_index, size_t end_index) {
     std::vector<MapTile> tiles;
     assert(start_index < end_index && end_index <= (size_t)TableRange[MaxTableRange]);
@@ -412,32 +447,6 @@ bool has_base_sites(TileSearch& ts, int x, int y, int faction_id, int triad) {
     }
     debug("has_base_sites %2d %2d triad: %d value: %d bases: %d\n", x, y, triad, value, bases);
     return value > min(40, 4*(bases+4));
-}
-
-int route_distance(PMTable& tbl, int x1, int y1, int x2, int y2) {
-    Points visited;
-    std::list<PathNode> items;
-    items.push_back({x1, y1, 0, 0});
-    int limit = max(8, map_range(x1, y1, x2, y2) * 2);
-    int i = 0;
-
-    while (items.size() > 0 && ++i < PathLimit) {
-        PathNode cur = items.front();
-        items.pop_front();
-        if (cur.x == x2 && cur.y == y2 && cur.dist <= limit) {
-            debug_ver("route_distance %d %d -> %d %d = %d %d\n", x1, y1, x2, y2, i, cur.dist);
-            return cur.dist;
-        }
-        for (const auto& t : NearbyTiles) {
-            int rx = wrap(cur.x + t[0]);
-            int ry = cur.y + t[1];
-            if (mapsq(rx, ry) && tbl[{rx, ry}].roads > 0 && !visited.count({rx, ry})) {
-                items.push_back({rx, ry, cur.dist + 1, 0});
-                visited.insert({rx, ry});
-            }
-        }
-    }
-    return -1;
 }
 
 int defender_goal(int x, int y, int faction_id, int triad) {

@@ -452,6 +452,9 @@ struct UNIT {
         return (plan <= PLAN_RECON || (plan == PLAN_PROBE && is_armored()))
             && triad() == TRIAD_LAND;
     }
+    bool is_police_unit() { // required for applying police effect
+        return plan <= PLAN_RECON && triad() != TRIAD_SEA;
+    }
     bool is_colony() {
         return plan == PLAN_COLONY;
     }
@@ -590,6 +593,9 @@ struct VEH {
     }
     bool is_garrison_unit() {
         return Units[unit_id].is_garrison_unit();
+    }
+    bool is_police_unit() {
+        return Units[unit_id].is_police_unit();
     }
     // Determine if native unit modifiers apply in this case. Multiple original functions
     // may check separately unit_id == BSC_SPORE_LAUNCHER for native units but this condition

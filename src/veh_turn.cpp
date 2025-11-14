@@ -67,7 +67,7 @@ void __cdecl mod_enemy_turn(int faction_id) {
     }
     Factions[faction_id].player_flags &= ~PFLAG_UNK_10000;
     // Additional goal planning after movement upkeep
-    if (thinker_enabled(faction_id)) {
+    if (thinker_move_upkeep(faction_id)) {
         score_max_queue_t scores;
         for (const auto& m : mapdata) {
             MAP* sq;

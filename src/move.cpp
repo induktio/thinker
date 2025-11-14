@@ -70,6 +70,195 @@ static bool reg_enemy_at(int region, bool is_probe) {
     return is_probe ? region_probe.count(region) : region_enemy.count(region);
 }
 
+static bool is_pact_base(int x, int y, int faction_id) {
+    int base_id = base_at(x, y);
+    return base_id >= 0 && (faction_id == Bases[base_id].faction_id
+        || has_pact(faction_id, Bases[base_id].faction_id));
+}
+
+static bool veh_base_check(int veh_id) {
+    VEH* veh = &Vehs[veh_id];
+    bool def_unit = veh->is_garrison_unit() && plans[veh->faction_id].contacted_factions;
+    bool abl_police = veh->is_police_unit() && has_abil(veh->unit_id, ABL_POLICE_2X);
+    if (!def_unit && !abl_police) {
+        return false;
+    }
+    int base_id = base_at(veh->x, veh->y);
+    if (base_id >= 0) {
+        int defend = 0;
+        int police = 0;
+        for (int i = *VehCount - 1; i >= 0; --i) {
+            VEH* v = &Vehs[i];
+            if (veh->x == v->x && veh->y == v->y
+            && v->order != ORDER_SENTRY_BOARD
+            && v->at_target() && i != veh_id) {
+                defend += v->is_garrison_unit();
+                police += v->is_police_unit() && has_abil(v->unit_id, ABL_POLICE_2X);
+            }
+        }
+        if (!police && abl_police && base_can_riot(base_id, true)
+        && Factions[veh->faction_id].SE_police_pending >= -1) {
+            return true;
+        }
+        if (!defend && def_unit) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static int teleport_score(int base_id) {
+    BASE* base = &Bases[base_id];
+    int dist_val = mapdata[{base->x, base->y}].enemy_dist;
+    return 128*base->defend_goal
+        - mapdata[{base->x, base->y}].safety
+        - 16*(dist_val > 0 ? dist_val : 16)
+        + (plans[base->faction_id].target_land_region == region_at(base->x, base->y) ? 160 : 0);
+}
+
+static int flank_score(int x, int y, bool native, MAP* sq) {
+    return random(16) - 4*mapdata[{x, y}].enemy_dist
+        + (sq->items & (BIT_SENSOR | BIT_BUNKER) ? 4 : 0)
+        + (sq->items & (BIT_RIVER | BIT_ROAD) ? 4 : 0)
+        + (native && sq->is_fungus() ? 6 : (sq->items & BIT_FOREST || sq->is_rocky() ? 4 : 0));
+}
+
+static int arty_value(int x, int y) {
+    // Places that have the most friendly AND enemy units in 2-tile range
+    return mapdata[{x, y}].unit_near * mapdata[{x, y}].enemy_near;
+}
+
+static double battle_calc(int veh_id, double value, double moves, bool reactor) {
+    VEH* veh = &Vehs[veh_id];
+    int power = veh->reactor_type();
+    int damage = veh->damage_taken / power;
+    assert(moves > 0 && moves <= 1);
+    return max(1.0, (10.0 - damage) * value * moves * (reactor ? power : 1));
+}
+
+static double battle_eval(int veh_id_atk, int veh_id_def, int moves, int move_rate, bool reactor) {
+    int s1 = 0;
+    int s2 = 0;
+    mod_battle_compute(veh_id_atk, veh_id_def, &s1, &s2, 0);
+    double v1 = battle_calc(veh_id_atk, s1, (1.0 * moves) / move_rate, reactor);
+    double v2 = battle_calc(veh_id_def, s2, 1.0, reactor);
+    return v1/v2;
+}
+
+static double battle_priority(int veh_id_atk, int veh_id_def, int dist, int moves, MAP* sq) {
+    if (!sq || veh_id_atk < 0 || veh_id_atk >= *VehCount
+    || veh_id_def < 0 || veh_id_def >= *VehCount) {
+        assert(0);
+        return 0;
+    }
+    VEH* const veh1 = &Vehs[veh_id_atk];
+    VEH* const veh2 = &Vehs[veh_id_def];
+    assert(veh1->faction_id != veh2->faction_id);
+    assert(veh1->offense_value() != 0 || veh1->is_probe());
+    assert(map_range(veh1->x, veh1->y, veh2->x, veh2->y) > 0);
+    bool stack_damage = !sq->is_base_or_bunker() && conf.collateral_damage_value > 0;
+    bool neutral_tile = both_neutral(veh1->faction_id, sq->owner);
+    bool reactor_atk = !conf.ignore_reactor_power
+        && veh1->offense_value() >= 0 && veh2->defense_value() >= 0;
+    int triad = veh1->triad();
+    int cost = 0;
+    int atk_moves = 1;
+    int move_rate = 1;
+
+    // Calculate actual movement cost for positioning and hasty penalties
+    if (triad != TRIAD_AIR) {
+        int vx = veh1->x;
+        int vy = veh1->y;
+        int i = 0;
+        while (true) {
+            if (map_range(vx, vy, veh2->x, veh2->y) <= 1) {
+                bool reactor_def = !conf.ignore_reactor_power
+                    && veh1->defense_value() >= 0 && veh2->offense_value() >= 0;
+                if (moves - cost > 0) {
+                    atk_moves = min(moves - cost, Rules->move_rate_roads);
+                    move_rate = Rules->move_rate_roads;
+                } else if (is_pact_base(vx, vy, veh1->faction_id)) {
+                    atk_moves = (moves == cost ? 4 : 3);
+                    move_rate = 4;
+                } else if (moves + Rules->move_rate_roads <= cost
+                || !veh2->is_combat_unit() || can_arty(veh2->unit_id, false)
+                || battle_eval(veh_id_def, veh_id_atk, 1, 1, reactor_def) < 1.5) {
+                    atk_moves = 2;
+                    move_rate = 3;
+                } else {
+                    atk_moves = (moves == cost ? 4 : 5);
+                    move_rate = 8;
+                }
+                break;
+            }
+            if (++i > PathLimit) {
+                break;
+            }
+            int val = Path_find(Paths, vx, vy, veh2->x, veh2->y, veh1->unit_id, veh1->faction_id, 0, -1);
+            if (!(val >= 0 && val < 8)) {
+                atk_moves = 1;
+                move_rate = 2;
+                break;
+            }
+            int px = vx;
+            int py = vy;
+            vx = wrap(vx + BaseOffsetX[val]);
+            vy = vy + BaseOffsetY[val];
+            cost += mod_hex_cost(veh1->unit_id, veh1->faction_id, px, py, vx, vy, 0);
+        }
+    }
+
+    double v1 = battle_eval(
+        veh_id_atk,
+        veh_id_def,
+        atk_moves,
+        move_rate,
+        reactor_atk
+    );
+    double v2 = (sq->owner == veh1->faction_id ? (sq->is_base_radius() ? 0.15 : 0.1) : 0.0)
+        + (stack_damage ? 0.025 * mapdata[{veh2->x, veh2->y}].enemy : 0)
+        + min(24.0, veh2->eval_offense() + 0.5*veh2->eval_defense())
+        * (veh2->speed() > 1 ? 0.015 : 0.01)
+        + (triad == TRIAD_AIR ? 0.001 : 0.0002) * arty_value(veh2->x, veh2->y)
+        - (neutral_tile ? 0.06 : 0.015)*(dist-1);
+    /*
+    Fix: in rare cases the game engine might reject valid attack orders for unknown reason.
+    In this case combat_move would repeat failed attack orders until iteration limit.
+    */
+    double v3 = min(veh2->offense_value() ? 1.6 : 1.4, v1) + clamp(v2, -0.5, 0.5)
+        - 0.02*mapdata[{veh2->x, veh2->y}].target;
+
+    debug("combat_odds %2d %2d -> %2d %2d dist: %d cost: %d moves: %d/%d "\
+        "v1: %.4f v2: %.4f odds: %.4f | %d %d %s | %d %d %s\n",
+        veh1->x, veh1->y, veh2->x, veh2->y, dist, cost, atk_moves, move_rate,
+        v1, v2, v3, veh_id_atk, veh1->faction_id, veh1->name(), veh_id_def, veh2->faction_id, veh2->name());
+    return v3;
+}
+
+int choose_defender(int x, int y, int veh_id_atk, MAP* sq) {
+    int faction_id = Vehs[veh_id_atk].faction_id;
+    int veh_id_def = -1;
+    bool is_base = sq && sq->owner != faction_id && sq->is_base();
+    if (!non_ally_in_tile(x, y, faction_id)) {
+        return -1;
+    }
+    for (int i = 0; i < *VehCount; i++) {
+        VEH* veh = &Vehs[i];
+        if (veh->x == x && veh->y == y) {
+            veh_id_def = i;
+            break;
+        }
+    }
+    if (veh_id_def < 0 || (!is_base && !Vehs[veh_id_def].is_visible(faction_id))) {
+        return -1;
+    }
+    veh_id_def = mod_best_defender(veh_id_def, veh_id_atk, 0);
+    if (veh_id_def >= 0 && !is_base && !at_war(faction_id, Vehs[veh_id_def].faction_id)) {
+        return -1;
+    }
+    return veh_id_def;
+}
+
 bool ally_near_tile(int x, int y, int faction_id, int skip_veh_id, int max_range) {
     for (int i = *VehCount - 1; i >= 0; --i) {
         VEH* veh = &Vehs[i];
@@ -225,7 +414,7 @@ int __cdecl mod_enemy_move(int veh_id) {
             move_upkeep(veh->faction_id, UM_Player);
         }
     }
-    if (thinker_enabled(veh->faction_id) || player_units) {
+    if (thinker_move_upkeep(veh->faction_id)) {
         int triad = veh->triad();
         if (plr_unit && veh->is_patrol_order()) {
             if (veh->need_refuel() && (sq->is_airbase()
@@ -602,8 +791,7 @@ void move_upkeep(int faction_id, UpdateMode mode) {
     if (!faction_id || !is_alive(faction_id)) {
         return;
     }
-    if ((mode == UM_Full && !thinker_enabled(faction_id)
-    && !(conf.manage_player_units && is_human(faction_id)))
+    if ((mode == UM_Full && !thinker_move_upkeep(faction_id))
     || (mode == UM_Player && !is_human(faction_id))) {
         return;
     }
@@ -751,7 +939,7 @@ void move_upkeep(int faction_id, UpdateMode mode) {
                         int dist;
                         int bases = f.region_total_bases[sq->region];
                         if (bases < 4
-                        || (dist = route_distance(mapdata, base->x, base->y, ts.rx, ts.ry)) < 0
+                        || (dist = route_dist(mapdata, base->x, base->y, ts.rx, ts.ry)) < 0
                         || dist > map_range(base->x, base->y, ts.rx, ts.ry) + (bases < 16)) {
                             ts.adjust_roads(mapdata, 1);
                         }
@@ -1241,7 +1429,8 @@ int colony_move(const int id) {
         AIPlans& p = plans[faction_id];
         if (p.naval_start_x >= 0 && veh_region == p.main_region
         && veh->x != p.naval_start_x && veh->y != p.naval_start_y) {
-            debug("colony_naval %2d %2d -> %2d %2d\n", veh->x, veh->y, tx, ty);
+            debug("colony_naval %2d %2d -> %2d %2d\n",
+                veh->x, veh->y, p.naval_start_x, p.naval_start_y);
             return set_move_to(id, p.naval_start_x, p.naval_start_y);
         }
         if (search_route(ts, id, &tx, &ty)) {
@@ -2014,7 +2203,7 @@ bool allow_attack(int faction1, int faction2, bool is_probe, bool is_enhanced) {
 }
 
 bool allow_combat(int x, int y, int faction_id, MAP* sq) {
-    for (int i = 0; i < *VehCount; i++) {
+    for (int i = *VehCount - 1; i >= 0; --i) {
         VEH* veh = &Vehs[i];
         if (veh->x == x && veh->y == y && both_neutral(faction_id, veh->faction_id)
         && has_treaty(faction_id, veh->faction_id, DIPLO_COMMLINK)) {
@@ -2085,7 +2274,7 @@ bool allow_airdrop(int x, int y, int faction_id, bool combat, MAP* sq) {
     if (!combat && mod_zoc_move(x, y, faction_id)) {
         return false;
     }
-    for (int i = 0; i < *VehCount; i++) {
+    for (int i = *VehCount - 1; i >= 0; --i) {
         VEH* veh = &Vehs[i];
         if (veh->x == x && veh->y == y
         && veh->faction_id != faction_id && !has_pact(faction_id, veh->faction_id)) {
@@ -2093,14 +2282,6 @@ bool allow_airdrop(int x, int y, int faction_id, bool combat, MAP* sq) {
         }
     }
     return true;
-}
-
-/*
-For evaluating attack targets, this important heuristic chooses
-tiles that have the most friendly AND enemy units in 2-tile range.
-*/
-int arty_value(int x, int y) {
-    return mapdata[{x, y}].unit_near * mapdata[{x, y}].enemy_near;
 }
 
 /*
@@ -2387,129 +2568,9 @@ int trans_move(const int id) {
     return mod_veh_skip(id);
 }
 
-static int choose_defender(int x, int y, int atk_id, MAP* sq) {
-    int faction_id = Vehs[atk_id].faction_id;
-    int def_id = -1;
-    if (!non_ally_in_tile(x, y, faction_id)) {
-        return -1;
-    }
-    for (int i = 0; i < *VehCount; i++) {
-        VEH* veh = &Vehs[i];
-        if (veh->x == x && veh->y == y) {
-            if (!at_war(faction_id, veh->faction_id)) {
-                return -1;
-            }
-            def_id = i;
-            break;
-        }
-    }
-    if (def_id < 0 || (sq->owner != faction_id && !sq->is_base()
-    && !Vehs[def_id].is_visible(faction_id))) {
-        return -1;
-    }
-    def_id = mod_best_defender(def_id, atk_id, 0);
-    if (def_id >= 0 && !at_war(faction_id, Vehs[def_id].faction_id)) {
-        return -1;
-    }
-    return def_id;
-}
-
-static int teleport_score(int base_id) {
-    BASE* base = &Bases[base_id];
-    int dist_val = mapdata[{base->x, base->y}].enemy_dist;
-    return 128*base->defend_goal
-        - mapdata[{base->x, base->y}].safety
-        - 16*(dist_val > 0 ? dist_val : 16)
-        + (plans[base->faction_id].target_land_region == region_at(base->x, base->y) ? 160 : 0);
-}
-
-static int flank_score(int x, int y, bool native, MAP* sq) {
-    return random(16) - 4*mapdata[{x, y}].enemy_dist
-        + (sq->items & (BIT_RIVER | BIT_ROAD | BIT_FOREST) ? 4 : 0)
-        + (sq->items & (BIT_SENSOR | BIT_BUNKER) ? 4 : 0)
-        + (native && sq->is_fungus() ? 8 : 0);
-}
-
-static double combat_value(int veh_id, int value, int moves, int mov_rate, bool reactor) {
-    VEH* veh = &Vehs[veh_id];
-    int power = veh->reactor_type();
-    int damage = veh->damage_taken / power;
-    assert(moves > 0 && moves <= mov_rate);
-    return max(1.0, (10.0 - damage) * value * (reactor ? power : 1) * moves / mov_rate);
-}
-
-static double battle_eval(int id1, int id2, int moves, int mov_rate, bool reactor) {
-    int s1;
-    int s2;
-    mod_battle_compute(id1, id2, &s1, &s2, 0);
-    double v1 = combat_value(id1, s1, moves, mov_rate, reactor);
-    double v2 = combat_value(id2, s2, mov_rate, mov_rate, reactor);
-    return v1/v2;
-}
-
-static double battle_priority(int id1, int id2, int dist, int moves, MAP* sq) {
-    if (!sq) {
-        return 0;
-    }
-    VEH* veh1 = &Vehs[id1];
-    VEH* veh2 = &Vehs[id2];
-    assert(id1 >= 0 && id1 < *VehCount);
-    assert(id2 >= 0 && id2 < *VehCount);
-    assert(veh1->faction_id != veh2->faction_id);
-    assert(veh1->offense_value() != 0 || veh1->is_probe());
-    assert(map_range(veh1->x, veh1->y, veh2->x, veh2->y) > 0);
-    UNIT* u1 = &Units[veh1->unit_id];
-    UNIT* u2 = &Units[veh2->unit_id];
-    bool non_psi = veh1->offense_value() >= 0 && veh2->defense_value() >= 0;
-    bool stack_damage = !sq->is_base_or_bunker() && conf.collateral_damage_value > 0;
-    bool neutral_tile = both_neutral(veh1->faction_id, sq->owner);
-    int triad = veh1->triad();
-    int cost = 0;
-    int att_moves = 1;
-    int mov_rate = 1;
-
-    // Calculate actual movement cost for hasty penalties
-    if (triad == TRIAD_LAND && non_psi) {
-        cost = path_cost(veh1->x, veh1->y, veh2->x, veh2->y,
-            veh1->unit_id, veh1->faction_id, moves);
-        if (moves - cost > 0) {
-            att_moves = min(moves - cost, Rules->move_rate_roads);
-            mov_rate = Rules->move_rate_roads;
-        } else { // Tile is not reachable during this turn
-            att_moves = 2;
-            mov_rate = 3;
-        }
-    }
-    double v1 = battle_eval(
-        id1,
-        id2,
-        att_moves,
-        mov_rate,
-        non_psi && !conf.ignore_reactor_power
-    );
-    double v2 = (sq->owner == veh1->faction_id ? (sq->is_base_radius() ? 0.15 : 0.1) : 0.0)
-        + (stack_damage ? 0.025 * mapdata[{veh2->x, veh2->y}].enemy : 0)
-        + min(24.0, veh2->eval_offense() + 0.5*veh2->eval_defense())
-        * (veh2->speed() > 1 ? 0.015 : 0.01)
-        + (triad == TRIAD_AIR ? 0.001 : 0.0002) * arty_value(veh2->x, veh2->y)
-        - (neutral_tile ? 0.06 : 0.015)*dist;
-    /*
-    Fix: in rare cases the game engine might reject valid attack orders for unknown reason.
-    In this case combat_move would repeat failed attack orders until iteration limit.
-    */
-    double v3 = min(veh2->offense_value() ? 1.6 : 1.4, v1) + clamp(v2, -0.5, 0.5)
-        - 0.02*mapdata[{veh2->x, veh2->y}].target;
-
-    debug("combat_odds %2d %2d -> %2d %2d dist: %2d moves: %2d cost: %2d "\
-        "v1: %.4f v2: %.4f odds: %.4f | %d %d %s | %d %d %s\n",
-        veh1->x, veh1->y, veh2->x, veh2->y, dist, moves, cost,
-        v1, v2, v3, id1, veh1->faction_id, u1->name, id2, veh2->faction_id, u2->name);
-    return v3;
-}
-
 int nuclear_move(const int id) {
-    VEH* veh = &Vehs[id];
-    MAP* sq = mapsq(veh->x, veh->y);
+    VEH* const veh = &Vehs[id];
+    MAP* const sq = mapsq(veh->x, veh->y);
     Faction* plr = &Factions[veh->faction_id];
     if (!sq || !veh->at_target() || !veh->is_planet_buster()) {
         return VEH_SYNC;
@@ -2659,7 +2720,7 @@ int nuclear_move(const int id) {
 }
 
 int airdrop_move(const int id, MAP* sq) {
-    VEH* veh = &Vehs[id];
+    VEH* const veh = &Vehs[id];
     if (!can_airdrop(id, sq)) {
         return false;
     }
@@ -2724,9 +2785,9 @@ int airdrop_move(const int id, MAP* sq) {
 }
 
 int combat_move(const int id) {
-    VEH* veh = &Vehs[id];
-    MAP* sq = mapsq(veh->x, veh->y);
-    MAP* veh_sq = sq;
+    VEH* const veh = &Vehs[id];
+    MAP* const veh_sq = mapsq(veh->x, veh->y);
+    MAP* sq;
     AIPlans& p = plans[veh->faction_id];
     if (!veh_sq) {
         return VEH_SYNC;
@@ -2826,7 +2887,7 @@ int combat_move(const int id) {
             }
         }
         if (at_base) {
-            if (p.contacted_factions && veh->is_garrison_unit() && garrison_count(veh->x, veh->y) <= 1) {
+            if (veh_base_check(id)) {
                 defenders = 0;
             } else {
                 defenders = defender_count(veh->x, veh->y, id);
@@ -2893,7 +2954,7 @@ int combat_move(const int id) {
             if (missile && !allow_conv_missile(id, id2, sq)) {
                 continue;
             }
-            double odds = battle_priority(id, id2, ts.dist - 1, moves, sq);
+            double odds = battle_priority(id, id2, ts.dist, moves, sq);
             if (odds > best_odds) {
                 if (tx < 0 && !base_only) {
                     max_dist = min(ts.dist + 2, max_dist);
@@ -2939,7 +3000,7 @@ int combat_move(const int id) {
             && !has_abil(veh->unit_id, ABL_AIR_SUPERIORITY)) {
                 continue;
             }
-            double odds = battle_priority(id, id2, ts.dist - 1, moves, sq);
+            double odds = battle_priority(id, id2, ts.dist, moves, sq);
 
             if (odds > best_odds) {
                 tx = ts.rx;
@@ -2983,7 +3044,7 @@ int combat_move(const int id) {
             && (id2 = choose_defender(ts.rx, ts.ry, id, sq)) >= 0
             && Vehs[id2].triad() != TRIAD_AIR) {
                 if (Vehs[id2].is_probe()) {
-                    double odds = battle_priority(id, id2, ts.dist - 1, moves, sq);
+                    double odds = battle_priority(id, id2, ts.dist, moves, sq);
                     if (odds > best_odds) {
                         tx = ts.rx;
                         ty = ts.ry;
@@ -2997,7 +3058,7 @@ int combat_move(const int id) {
                     int num = *VehCount;
                     int reserve = f->energy_credits;
                     int value = probe(id, -1, id2, 1);
-                    debug("combat_probe %2d %2d -> %2d %2d cost: %d value: %d %s %s\n",
+                    debug("combat_probe %2d %2d -> %2d %2d cost: %d value: %d %s / %s\n",
                         veh->x, veh->y, ts.rx, ts.ry, reserve - f->energy_credits,
                         value, veh->name(), Vehs[id2].name());
                     if (value || num != *VehCount) {
@@ -3106,8 +3167,7 @@ int combat_move(const int id) {
                         Rules->max_dmg_percent_arty_sea : Rules->max_dmg_percent_arty_open)/10;
                 }
                 int score = 0;
-                for (int k = 0; k < *VehCount; k++) {
-                    VEH* v = &Vehs[k];
+                for (VEH *v = Vehs, *cnt = Vehs + *VehCount; v < cnt; ++v) {
                     if (v->x == x2 && v->y == y2 && at_war(faction_id, v->faction_id)
                     && (v->triad() != TRIAD_AIR || sq->is_base())) {
                         int damage = v->damage_taken / v->reactor_type();
@@ -3230,7 +3290,7 @@ int combat_move(const int id) {
         }
     }
     // Find a base to attack or defend own base on the same region
-    int tolerance = (ignore_zocs ? 4 : 2) + (triad == TRIAD_SEA ? 2 : 0);
+    int tolerance = (ignore_zocs ? 4 : 2) + (triad == TRIAD_LAND ? 0 : 2);
     int limit;
     if ((*CurrentTurn + id) % 4) {
         limit = QueueSize / (defend ? 20 : 4);
@@ -3278,38 +3338,39 @@ int combat_move(const int id) {
         }
     }
     if (tx >= 0) {
-        bool native = veh->is_native_unit();
-        bool flank = !defend && path.dist > 1 && random(12) < min(8, mapdata[{tx, ty}].target);
-        bool skip  = !defend && path.dist < 6 && !veh->is_probe() && (sq = mapsq(tx, ty))
+        bool native = veh->is_native_unit() || has_project(FAC_PHOLUS_MUTAGEN, faction_id);
+        bool flank = !defend && path.dist < 20 && random(16) < min(12, mapdata[{tx, ty}].target);
+        bool skip  = !defend && path.dist < 8 && !veh->is_probe() && (sq = mapsq(tx, ty))
             && (id2 = choose_defender(tx, ty, id, sq)) >= 0
-            && battle_priority(id, id2, path.dist - 1, moves, sq) < 0.7;
+            && battle_priority(id, id2, path.dist, moves, sq) < 0.7;
         if (skip) {
-            debug("combat_skip %2d %2d -> %2d %2d %s %s\n",
+            debug("combat_skip %2d %2d -> %2d %2d %s / %s\n",
             veh->x, veh->y, ts.rx, ts.ry, veh->name(), Vehs[id2].name());
         }
         if (flank || skip) {
-            tx = -1;
-            ty = -1;
+            px = -1;
+            py = -1;
             best_score = flank_score(veh->x, veh->y, native, veh_sq);
-            ts.init(veh->x, veh->y, triad);
-            while ((sq = ts.get_next()) != NULL && ts.dist <= 2) {
-                if (!sq->is_base() && allow_move(ts.rx, ts.ry, faction_id, triad)) {
-                    int score = flank_score(ts.rx, ts.ry, native, sq);
+            for (auto& m : iterate_tiles(veh->x, veh->y, 1, 25)) {
+                if (!m.sq->is_base() && m.sq->region == veh_sq->region
+                && allow_move(m.x, m.y, faction_id, triad)) {
+                    int score = flank_score(m.x, m.y, native, m.sq);
                     if (score > best_score) {
-                        tx = ts.rx;
-                        ty = ts.ry;
+                        px = m.x;
+                        py = m.y;
                         best_score = score;
                     }
                 }
             }
-            if (tx >= 0) {
-                debug("combat_flank %2d %2d -> %2d %2d %s\n", veh->x, veh->y, tx, ty, veh->name());
-                update_path(mapdata, id, tx, ty);
-                return set_move_to(id, tx, ty);
+            if (px >= 0) {
+                debug("combat_flank %2d %2d -> %2d %2d %s\n", veh->x, veh->y, px, py, veh->name());
+                update_move_path(mapdata, id, px, py);
+                return set_move_to(id, px, py);
             }
-        } else if (!defend && !veh->is_probe() && path.prev > 0) {
+        }
+        if (!defend && !veh->is_probe() && path.prev > 0) {
             PathNode& prev = ts.paths[path.prev];
-            if (path.dist > 3 && random(10) < mapdata[{tx, ty}].enemy_near) {
+            if (path.dist > 3 && random(16) < mapdata[{tx, ty}].enemy_near) {
                 Points tiles;
                 tiles.insert({prev.x, prev.y});
                 for (auto& m : iterate_tiles(prev.x, prev.y, 1, 9)) {
@@ -3326,21 +3387,22 @@ int combat_move(const int id) {
             }
         }
         debug("combat_search %2d %2d -> %2d %2d %s\n", veh->x, veh->y, tx, ty, veh->name());
-        update_path(mapdata, id, tx, ty);
+        update_move_path(mapdata, id, tx, ty);
         return set_move_to(id, tx, ty);
     }
     if (!base_found || !veh_sq->is_owned()) {
         if (triad == TRIAD_LAND && search_route(ts, id, &tx, &ty)) {
             debug("combat_route %2d %2d -> %2d %2d %s\n", veh->x, veh->y, tx, ty, veh->name());
-            update_path(mapdata, id, tx, ty);
+            update_move_path(mapdata, id, tx, ty);
             return set_move_to(id, tx, ty);
         }
     }
-    if (!veh->plr_owner() && *CurrentTurn > VehRemoveTurns && !random(4)) {
+    if (!veh->plr_owner() && *CurrentTurn > VehRemoveTurns
+    && veh->state & VSTATE_REQUIRES_SUPPORT && !random(4)) {
         if (!base_found && triad == TRIAD_SEA) {
             return mod_veh_kill(id);
         }
-        if (at_base && veh->home_base_id >= 0 && veh->state & VSTATE_REQUIRES_SUPPORT) {
+        if (at_base && veh->home_base_id >= 0) {
             BASE* base = &Bases[veh->home_base_id];
             if (base->mineral_surplus < 2 && base->mineral_consumption > max(2, base->mineral_intake_2 / 2)
             && base->faction_id == faction_id && defender_count(base->x, base->y, -1) > 2

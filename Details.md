@@ -305,17 +305,6 @@ The infiltration status can be renewed once per turn for every opponent faction 
 Each social engineering value is treated as being from -3 to 3 even if it falls outside this range. In addition, infiltration lasts longer on maps larger than the standard size to balance for the longer travel distances. On Thinker and Transcend difficulty levels, the duration is reduced from normal values. The final time value is always at least 5 turns. For example, on Transcend difficulty, standard map, with two factions having equal ratings, the default infiltration period is 15 turns.
 
 
-Free base facilities
-====================
-By default alphax.txt files contain entries for each facility labeled as "Free = Technology for free facility at new bases" some of which are enabled.
-These values were not parsed by the original game even though they were referenced in code that adds these facilities for free at newly built bases when the faction has discovered the specific technologies.
-This does not exclude facility maintenance costs unless the faction has these facilities granted for free in their faction definition.
-
-The modded version parses these entries from alphax.txt and adds the facilities on new bases if the technology is discovered.
-This feature can be always disabled by setting the free technologies to `Disable`. Recycling Tanks is free after discovery of Advanced Ecological Engineering (B7) and Recreation Commons is free after Sentient Econometrics (E11).
-The original game also included entries for free Network Node after Self-Aware Machines (D11) and Energy Bank after Quantum Machinery (B12) but these entries are disabled to limit the benefits received by building additional bases.
-
-
 Base psych changes
 ==================
 In the original game benefits provided by Paradise Garden, Human Genome Project and Clinical Immortality sometimes did not match their description in the manual. Often numerous drones or superdrones added by bureaucracy prevented new talents from being added on the base. In the modified routines enabled by default with `base_psych` option, these facilities provide more consistent effects. Clinical Immortality provides one extra talent per base as mentioned in the manual.
@@ -325,11 +314,24 @@ As an additional feature, psych energy allocation is not limited to twice the ba
 This makes it slightly easier for some factions to achieve golden ages while it still requires substantial psych spending. Any other psych effects except this allocation increase or talents modified by `facility_talent_value` remain the same as before.
 
 
+Additional modding features
+===========================
+The game supports additional adjustable features on alphax.txt when this mod is loaded. Even when these features are used, the files are still compatible with the original game.
+See also "Add ability to set reactor (1-4) for #UNITS in alpha/x.txt" on included patches for instructions on how to adjust reactors for any predefined units.
+
+By default alphax.txt files contain entries for each facility labeled as "Free = Technology for free facility at new bases" some of which are enabled.
+These values were not parsed by the original game even though they were referenced in code that adds these facilities for free at newly built bases when the faction has discovered the specific technologies.
+This does not exclude facility maintenance costs unless the faction has these facilities granted for free in their faction definition.
+
+The modded version parses these entries from alphax.txt and adds the facilities on new bases if the technology is discovered.
+This feature can be always disabled by setting the free technologies to `Disable`. Recycling Tanks is free after discovery of Advanced Ecological Engineering (B7) and Recreation Commons is free after Sentient Econometrics (E11).
+The original game also included entries for free Network Node after Self-Aware Machines (D11) and Energy Bank after Quantum Machinery (B12) but these entries are disabled to limit the benefits received by building additional bases.
+
+
 Recommended alphax.txt settings
 ===============================
 All alphax.txt files provided by Thinker contain some optional, minor edits as summarized below.
 These edits will introduce fairly minimal differences on the game mechanics and they also will not change the default tech tree ordering.
-See also "Add ability to set reactor (1-4) for #UNITS in alpha/x.txt" on included patches for instructions on how to adjust reactors on any predefined units.
 
 1. Fix: Enabled the "Antigrav Struts" special ability for air units as stated in the manual.
 2. Fix: Disabled the "Clean Reactor" special ability for Probe Teams because they already don't require any support.

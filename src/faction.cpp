@@ -154,7 +154,14 @@ void set_alive(int faction_id, bool active) {
 Exclude native life since Thinker AI routines don't apply to them.
 */
 bool thinker_enabled(int faction_id) {
-    return faction_id > 0 && !is_human(faction_id) && faction_id <= conf.factions_enabled;
+    return faction_id > 0 && faction_id <= conf.factions_enabled && !is_human(faction_id);
+}
+
+bool thinker_move_upkeep(int faction_id) {
+    if (is_human(faction_id)) {
+        return faction_id > 0 && conf.manage_player_units;
+    }
+    return faction_id > 0 && faction_id <= conf.factions_enabled;
 }
 
 bool at_war(int faction1, int faction2) {
@@ -1615,7 +1622,6 @@ static int __cdecl setup_values(int faction_id, int a2, int a3) {
     }
     if (!*CurrentTurn) {
         // Update default governor settings
-        f->base_governor_adv &= ~(GOV_MAY_PROD_SP|GOV_MAY_HURRY_PRODUCTION);
         f->base_governor_adv |= GOV_MAY_PROD_NATIVE;
     }
     return value;
@@ -1848,7 +1854,6 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
                 plr->satellites_energy = conf.computer_satellites[2];
             }
             // Update default governor settings
-            plr->base_governor_adv &= ~(GOV_MAY_PROD_SP|GOV_MAY_HURRY_PRODUCTION);
             plr->base_governor_adv |= GOV_MAY_PROD_NATIVE;
         }
     }

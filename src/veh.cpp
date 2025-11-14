@@ -13,10 +13,11 @@ int __cdecl can_arty(int unit_id, bool allow_sea_arty) {
     && unit_id != BSC_SPORE_LAUNCHER) { // Spore Launcher exception
         return false;
     }
-    if (u->triad() == TRIAD_SEA) {
+    int triad = u->triad();
+    if (triad == TRIAD_SEA) {
         return allow_sea_arty;
     }
-    if (u->triad() == TRIAD_AIR) {
+    if (triad == TRIAD_AIR) {
         return false;
     }
     return has_abil(unit_id, ABL_ARTILLERY); // TRIAD_LAND

@@ -37,7 +37,6 @@ int __cdecl base_psych_content_pop();
 void __cdecl mod_psych_check(int faction_id, int32_t* content_pop, int32_t* base_limit);
 
 char* prod_name(int item_id);
-int prod_turns(int base_id, int item_id);
 int mineral_cost(int base_id, int item_id);
 int hurry_cost(int base_id, int item_id, int hurry_mins);
 int base_unused_space(int base_id);

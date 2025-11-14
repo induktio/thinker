@@ -828,8 +828,8 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         MapWin->iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
         static int px = 0, py = 0;
         int x = MapWin->iTileX, y = MapWin->iTileY;
-        int unit = is_ocean(mapsq(x, y)) ? BSC_UNITY_FOIL : BSC_UNITY_ROVER;
-        path_distance(px, py, x, y, unit, 1);
+        int unit_id = is_ocean(mapsq(x, y)) ? BSC_UNITY_FOIL : BSC_UNITY_ROVER;
+        show_path_cost(px, py, x, y, unit_id, MapWin->cOwner);
         px=x;
         py=y;
         MapWin_draw_map(MapWin, 0);

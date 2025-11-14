@@ -76,13 +76,13 @@ int min_vector(const Points& S, int x, int y) {
 }
 
 double avg_range(const Points& S, int x, int y) {
-    int n = 0;
-    int sum = 0;
+    size_t n = 0;
+    double sum = 0;
     for (auto& p : S) {
         sum += map_range(x, y, p.x, p.y);
         n++;
     }
-    return (n > 0 ? (1.0*sum)/n : 0);
+    return (n > 0 ? sum / n : 0);
 }
 
 bool is_ocean(MAP* sq) {
@@ -1162,96 +1162,80 @@ int __cdecl mod_energy_yield(int faction_id, int base_id, int x, int y, int flag
     return value;
 }
 
-static int __cdecl base_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, int y2, int toggle) {
+/*
+Calculate the movement cost between two tiles. This function can ignore
+faction specific modifiers when faction_id is set to negative value.
+*/
+int __cdecl mod_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, int y2, int toggle) {
+    if (!(unit_id >= 0 && unit_id < MaxProtoNum && faction_id < MaxPlayerNum)) {
+        assert(0);
+        return 0;
+    }
+    UNIT* unit = &Units[unit_id];
+    MAP* sq_src = mapsq(x1, y1);
     MAP* sq_dst = mapsq(x2, y2);
+    uint32_t bit_src = (sq_src ? sq_src->items : 0);
     uint32_t bit_dst = (sq_dst ? sq_dst->items : 0);
+    int road_move_rate = (conf.magtube_movement_rate > 0 ? conf.road_movement_rate : 1);
+    int cost;
     if (is_ocean(sq_dst)) {
         if (bit_dst & BIT_FUNGUS
         && sq_dst->alt_level() == ALT_OCEAN_SHELF
-        && Units[unit_id].triad() == TRIAD_SEA
-        && unit_id != BSC_SEALURK // Bug fix
+        && unit->triad() == TRIAD_SEA
+        && unit_id != BSC_SEALURK // Fix Sealurk movement
         && unit_id != BSC_ISLE_OF_THE_DEEP
         && !has_project(FAC_XENOEMPATHY_DOME, faction_id)) {
-            return Rules->move_rate_roads * 3;
+            cost = Rules->move_rate_roads * 3;
+        } else {
+            cost = Rules->move_rate_roads;
         }
-        return Rules->move_rate_roads;
-    }
-    MAP* sq_src = mapsq(x1, y1);
-    uint32_t bit_src = (sq_src ? sq_src->items : 0);
-    if (is_ocean(sq_src)) {
-        return Rules->move_rate_roads;
-    }
-    if (unit_id >= 0 && Units[unit_id].triad() != TRIAD_LAND) {
-        return Rules->move_rate_roads;
-    }
+    } else if (is_ocean(sq_src)) {
+        cost = Rules->move_rate_roads;
+    } else if (unit->triad() != TRIAD_LAND) {
+        cost = Rules->move_rate_roads;
     // Land only conditions
-    if (bit_src & (BIT_MAGTUBE | BIT_BASE_IN_TILE) && bit_dst & (BIT_MAGTUBE | BIT_BASE_IN_TILE)
-    && faction_id) {
-        return 0;
-    }
-    if ((bit_src & (BIT_ROAD | BIT_BASE_IN_TILE) || (bit_src & BIT_FUNGUS && faction_id > 0
+    } else if (bit_src & (BIT_MAGTUBE | BIT_BASE_IN_TILE)
+    && bit_dst & (BIT_MAGTUBE | BIT_BASE_IN_TILE) && faction_id) {
+        cost = (conf.magtube_movement_rate > 0 ? 1 : 0);
+    } else if ((bit_src & (BIT_ROAD | BIT_BASE_IN_TILE) || (bit_src & BIT_FUNGUS && faction_id > 0
     && has_project(FAC_XENOEMPATHY_DOME, faction_id))) && bit_dst & (BIT_ROAD | BIT_BASE_IN_TILE)
     && faction_id) {
-        return 1;
-    }
-    if (faction_id >= 0 && (has_project(FAC_XENOEMPATHY_DOME, faction_id) || !faction_id
+        cost = road_move_rate;
+    } else if (faction_id >= 0 && (has_project(FAC_XENOEMPATHY_DOME, faction_id) || !faction_id
     || unit_id == BSC_MIND_WORMS || unit_id == BSC_SPORE_LAUNCHER) && bit_dst & BIT_FUNGUS) {
-        return 1;
-    }
-    if (bit_src & BIT_RIVER && bit_dst & BIT_RIVER && x_dist(x1, x2) == 1
+        cost = road_move_rate;
+    } else if (bit_src & BIT_RIVER && bit_dst & BIT_RIVER && x_dist(x1, x2) == 1
     && abs(y1 - y2) == 1 && faction_id) {
-        return 1;
-    }
-    if (Units[unit_id].chassis_id == CHS_HOVERTANK
-    || has_abil(unit_id, ABL_ANTIGRAV_STRUTS)) {
-        return Rules->move_rate_roads;
-    }
-    int cost = Rules->move_rate_roads;
-    if (sq_dst->is_rocky() && !toggle) {
-        cost += Rules->move_rate_roads;
-    }
-    if (bit_dst & BIT_FOREST && !toggle) {
-        cost += Rules->move_rate_roads;
-    }
-    if (faction_id && bit_dst & BIT_FUNGUS && (unit_id >= MaxProtoFactionNum
-    || Units[unit_id].offense_value() >= 0)) {
-        int plan = Units[unit_id].plan;
-        if (plan != PLAN_TERRAFORM && plan != PLAN_ARTIFACT
-        && Factions[faction_id].SE_planet <= 0) {
-            return cost + Rules->move_rate_roads * 2;
+        cost = road_move_rate;
+    } else if (unit->chassis_id == CHS_HOVERTANK || has_abil(unit_id, ABL_ANTIGRAV_STRUTS)) {
+        cost = Rules->move_rate_roads;
+    } else {
+        cost = Rules->move_rate_roads;
+        if (sq_dst->is_rocky() && !toggle) {
+            cost += Rules->move_rate_roads;
         }
-        int value = proto_speed(unit_id);
-        if (cost <= value) {
-            return value;
+        if (bit_dst & BIT_FOREST && !toggle) {
+            cost += Rules->move_rate_roads;
         }
-    }
-    return cost;
-}
-
-int __cdecl mod_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, int y2, int toggle) {
-    int value = base_hex_cost(unit_id, faction_id, x1, y1, x2, y2, toggle);
-    MAP* sq_a = mapsq(x1, y1);
-    MAP* sq_b = mapsq(x2, y2);
-
-    if (DEBUG && sq_a && sq_b) {
-        assert(value == hex_cost(unit_id, faction_id, x1, y1, x2, y2, toggle));
-    }
-    if (conf.magtube_movement_rate > 0 && Units[unit_id].triad() == TRIAD_LAND) {
-        if (!is_ocean(sq_a) && !is_ocean(sq_b)) {
-            if (sq_a->items & (BIT_BASE_IN_TILE | BIT_MAGTUBE)
-            && sq_b->items & (BIT_BASE_IN_TILE | BIT_MAGTUBE)) {
-                value = 1;
-            } else if (value == 1) { // Moving along a road
-                value = conf.road_movement_rate;
+        if (faction_id && bit_dst & BIT_FUNGUS && (unit_id >= MaxProtoFactionNum
+        || unit->offense_value() >= 0)) {
+            int speed_val = proto_speed(unit_id);
+            // Fix faction_id check when it is negative
+            if (unit->plan != PLAN_TERRAFORM && unit->plan != PLAN_ARTIFACT
+            && (faction_id < 0 || Factions[faction_id].SE_planet <= 0)) {
+                cost += Rules->move_rate_roads * 2;
+            } else {
+                cost = max(cost, speed_val);
+            }
+            if (conf.fast_fungus_movement > 0) {
+                cost = min(max(speed_val, Rules->move_rate_roads), cost);
             }
         }
     }
-    if (conf.fast_fungus_movement > 0 && Units[unit_id].triad() != TRIAD_AIR) {
-        if (!is_ocean(sq_b) && sq_b->is_fungus()) {
-            value = min(max(proto_speed(unit_id), Rules->move_rate_roads), value);
-        }
+    if (DEBUG && conf.magtube_movement_rate <= 0 && conf.fast_fungus_movement <= 0) {
+        assert(cost == hex_cost(unit_id, faction_id, x1, y1, x2, y2, toggle));
     }
-    return value;
+    return cost;
 }
 
 /*
@@ -1371,6 +1355,42 @@ int __cdecl mod_goody_at(int x, int y) {
     return cmp == ((11 * (avg / 4) + 61 * (x_diff / 4) + *MapRandomSeed + 8) & 0x1F); // 0 or 1
 }
 
+int __cdecl mod_base_find(int x, int y) {
+    int base_dist = 9999;
+    int base_id = -1;
+    for (int i = 0; i < *BaseCount; i++) {
+        BASE* base = &Bases[i];
+        int dist = vector_dist(x, y, base->x, base->y);
+        if (dist <= base_dist) {
+            base_dist = dist;
+            base_id = i;
+        }
+    }
+    if (base_id >= 0) {
+        *BaseFindDist = base_dist;
+    }
+    return base_id;
+}
+
+int __cdecl mod_base_find2(int x, int y, int faction_id) {
+    int base_dist = 9999;
+    int base_id = -1;
+    for (int i = 0; i < *BaseCount; i++) {
+        BASE* base = &Bases[i];
+        if (base->faction_id == faction_id) {
+            int dist = vector_dist(x, y, base->x, base->y);
+            if (dist <= base_dist) {
+                base_dist = dist;
+                base_id = i;
+            }
+        }
+    }
+    if (base_id >= 0) {
+        *BaseFindDist = base_dist;
+    }
+    return base_id;
+}
+
 /*
 This version adds support for modified territory borders (earlier bases claim tiles first).
 */
@@ -1402,7 +1422,7 @@ int __cdecl mod_base_find3(int x, int y, int faction_id, int region, int faction
         assert(base_id == value);
         assert(base_dist == *BaseFindDist);
     }
-    *BaseFindDist = 9999;
+    *BaseFindDist = 9999; // Default value is always written here
     if (base_id >= 0) {
         *BaseFindDist = base_dist;
     }

@@ -23,6 +23,7 @@ bool is_alien(int faction_id);
 bool is_alive(int faction_id);
 void set_alive(int faction_id, bool active);
 bool thinker_enabled(int faction_id);
+bool thinker_move_upkeep(int faction_id);
 bool at_war(int faction1, int faction2);
 bool has_pact(int faction1, int faction2);
 bool both_neutral(int faction1, int faction2);

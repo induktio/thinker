@@ -1111,7 +1111,7 @@ int __cdecl interceptor(int faction_id_def, int faction_id_atk, int tx, int ty) 
         && (sq = mapsq(veh->x, veh->y))) {
             if (sq->is_airbase() || mod_stack_check(i, 6, ABL_CARRIER, -1, -1)) {
                 // Modified priority for highest HP * Attack, then distance, then newer units
-                int score = 2 * veh->cur_hitpoints() * max(1, veh->offense_value())
+                int score = 2 * veh->cur_hitpoints() * max(1, veh->eval_offense() + 1)
                     - map_range(veh->x, veh->y, tx, ty);
                 if (score >= best_score) {
                     best_score = score;

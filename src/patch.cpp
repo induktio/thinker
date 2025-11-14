@@ -29,18 +29,21 @@ int __cdecl ProdPicker_calculate_itoa(int UNUSED(value), char* buf, int UNUSED(b
 }
 
 int __thiscall NetWin_random_get(void*, int low, int high) {
-    return random_get(low, high); // Multiplayer random factions
-}
-
-int __cdecl zero_value() {
-    return 0;
+    int val = 0; // Multiplayer random factions
+    for (int i = 0; i < 1000; i++) {
+        val = random_get(low, high);
+        if (!((1 << val) & conf.skip_random_factions)) {
+            break;
+        }
+    }
+    return val;
 }
 
 int __cdecl config_game_rand() {
     int val = 0; // Singleplayer random factions
     for (int i = 0; i < 1000; i++) {
         val = random(conf.faction_file_count);
-        if ((1 << val) & ~conf.skip_random_factions) {
+        if (!((1 << val) & conf.skip_random_factions)) {
             break;
         }
     }
@@ -1105,8 +1108,7 @@ bool patch_setup(Config* cf) {
     }
     if (cf->skip_random_factions) {
         memset((void*)0x58B63C, 0x90, 10); // config_game
-        write_call(0x58B526, (int)zero_value); // config_game
-        write_call(0x58B539, (int)zero_value); // config_game
+        short_jump(0x58B524); // config_game
         write_call(0x58B632, (int)config_game_rand); // config_game
         write_call(0x587066, (int)config_game_rand); // read_factions
     }

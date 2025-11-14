@@ -228,17 +228,15 @@ void __cdecl mod_base_kill(int base_id) {
 
 void __cdecl mod_base_reset(int base_id, bool has_gov) {
     BASE& base = Bases[base_id];
-    bool manage_prod = conf.manage_player_bases
-        && Bases[base_id].governor_flags & GOV_MANAGE_PRODUCTION;
     assert(base_id >= 0 && base_id < *BaseCount);
     assert(base.defend_goal >= 0 && base.defend_goal <= 5);
     print_base(base_id);
 
-    if (base.plr_owner() && !manage_prod) {
-        debug("skipping human base\n");
+    if (base.plr_owner() && !conf.manage_player_bases) {
+        debug("SKIP BASE\n");
         base_reset(base_id, has_gov);
     } else if (!base.plr_owner() && !thinker_enabled(base.faction_id)) {
-        debug("skipping computer base\n");
+        debug("SKIP BASE\n");
         base_reset(base_id, has_gov);
     } else {
         int choice = mod_base_build(base_id, has_gov);
@@ -1310,7 +1308,10 @@ void __cdecl mod_base_energy() {
     // Normally Stockpile Energy output would be applied here on base->economy_total
     // To avoid double production issues instead it is calculated in mod_base_production
     if (!conf.base_psych) {
+        int prev_state = *BaseUpkeepState;
+        *BaseUpkeepState = base_stats_upkeep();
         base_psych();
+        *BaseUpkeepState = prev_state;
     } else {
         if (base_stats_upkeep()) {
             for (int tal = 0; tal < 8; tal++) {
@@ -2218,20 +2219,32 @@ int __cdecl mod_capture_base(int base_id, int faction_id, int is_probe) {
 Calculate the amount of content population before psych modifiers for the current faction.
 */
 int __cdecl base_psych_content_pop() {
-    if (*CurrentBase && is_human((*CurrentBase)->faction_id)) {
-        return conf.content_pop_player[*DiffLevel];
+    size_t diff_level = *DiffLevel;
+    if (diff_level < MaxDiffNum) {
+        if (*CurrentBase && is_human((*CurrentBase)->faction_id)) {
+            return conf.content_pop_player[diff_level];
+        }
+        return conf.content_pop_computer[diff_level];
+    } else {
+        return 0;
     }
-    return conf.content_pop_computer[*DiffLevel];
 }
 
 /*
 Calculate the base count threshold for possible bureaucracy notifications in Console::new_base.
 */
 void __cdecl mod_psych_check(int faction_id, int32_t* content_pop, int32_t* base_limit) {
-    *content_pop = (is_human(faction_id) ?
-        conf.content_pop_player[*DiffLevel] : conf.content_pop_computer[*DiffLevel]);
-    *base_limit = (((*content_pop + 2) * max(4, 4 + Factions[faction_id].SE_effic_pending)
-        * *MapAreaSqRoot) / 56) / 2;
+    size_t diff_level = *DiffLevel;
+    if (faction_id >= 0 && faction_id < MaxPlayerNum && diff_level < MaxDiffNum) {
+        *content_pop = (is_human(faction_id) ?
+            conf.content_pop_player[diff_level] : conf.content_pop_computer[diff_level]);
+        *base_limit = (((*content_pop + 2) * max(4, 4 + Factions[faction_id].SE_effic_pending)
+            * *MapAreaSqRoot) / 56) / 2;
+    } else {
+        *content_pop = 0;
+        *base_limit = 0;
+        assert(0);
+    }
 }
 
 char* prod_name(int item_id) {
@@ -2241,15 +2254,6 @@ char* prod_name(int item_id) {
     } else {
         return Facility[-item_id].name;
     }
-}
-
-int prod_turns(int base_id, int item_id) {
-    BASE* b = &Bases[base_id];
-    assert(base_id >= 0 && base_id < *BaseCount);
-    assert(item_id >= -SP_ID_Last && item_id < MaxProtoNum);
-    int minerals = max(0, mineral_cost(base_id, item_id) - b->minerals_accumulated);
-    int surplus = max(1, 10 * b->mineral_surplus);
-    return 10 * minerals / surplus + ((10 * minerals) % surplus != 0);
 }
 
 int mineral_cost(int base_id, int item_id) {
@@ -2741,8 +2745,7 @@ bool can_build(int base_id, int item_id) {
     }
     if (*GameRules & RULES_SCN_NO_TECH_ADVANCES) {
         if (item_id == FAC_RESEARCH_HOSPITAL || item_id == FAC_NANOHOSPITAL
-        || item_id == FAC_FUSION_LAB || item_id == FAC_QUANTUM_LAB
-        || (item_id == FAC_NETWORK_NODE && !has_project(FAC_VIRTUAL_WORLD, faction_id))) {
+        || item_id == FAC_FUSION_LAB || item_id == FAC_QUANTUM_LAB) {
             return false;
         }
     }

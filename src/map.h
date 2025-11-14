@@ -88,6 +88,8 @@ int __cdecl mod_hex_cost(int unit_id, int faction_id, int x1, int y1, int x2, in
 int __cdecl mod_minerals_at(int x, int y);
 int __cdecl mod_bonus_at(int x, int y);
 int __cdecl mod_goody_at(int x, int y);
+int __cdecl mod_base_find(int x, int y);
+int __cdecl mod_base_find2(int x, int y, int faction_id);
 int __cdecl mod_base_find3(int x, int y, int faction_id, int region, int faction_id_2, int faction_id_3);
 int __cdecl mod_whose_territory(int faction_id, int x, int y, int* base_id, int ignore_comm);
 int bonus_yield(int res_type);
