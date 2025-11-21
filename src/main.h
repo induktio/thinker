@@ -96,7 +96,6 @@
 const bool DEF = true;
 const bool ATT = false;
 
-const int MaxMapDist = 1024;
 const int MaxNaturalNum = 16;
 const int MaxLandmarkNum = 64;
 const int MaxRegionNum = 128;

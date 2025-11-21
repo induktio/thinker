@@ -146,9 +146,9 @@ int __cdecl veh_at(int x, int y) {
     if (sq && !sq->veh_in_tile()) {
         return -1;
     }
-    for (int veh_id = 0; veh_id < *VehCount; veh_id++) {
-        if (Vehs[veh_id].x == x && Vehs[veh_id].y == y) {
-            return veh_top(veh_id);
+    for (int i = 0; i < *VehCount; i++) {
+        if (Vehs[i].x == x && Vehs[i].y == y) {
+            return veh_top(i);
         }
     }
     if (!sq) {
@@ -2368,7 +2368,7 @@ VehWeapon weapon_id, VehArmor armor_id, VehAblFlag abls, VehReactor reactor_id) 
     }
 }
 
-void parse_abl_name(char* buf, const char* name, bool reduce) {
+static void parse_abl_name(char* buf, const char* name, bool reduce) {
     const int len = min(strlen(name), (size_t)MaxProtoNameLen);
     // Skip empty abbreviation names (Deep Radar)
     if (!len) {
@@ -2389,7 +2389,7 @@ void parse_abl_name(char* buf, const char* name, bool reduce) {
     }
 }
 
-void parse_wpn_name(char* buf, VehWeapon wpn, bool reduce) {
+static void parse_wpn_name(char* buf, VehWeapon wpn, bool reduce) {
     const char* name = Weapon[wpn].name_short;
     const int len = min(strlen(name), (size_t)MaxProtoNameLen);
     if (reduce) {
@@ -2409,7 +2409,7 @@ void parse_wpn_name(char* buf, VehWeapon wpn, bool reduce) {
     strncat(buf, " ", 2);
 }
 
-void parse_arm_name(char* buf, VehArmor arm, bool reduce) {
+static void parse_arm_name(char* buf, VehArmor arm, bool reduce) {
     const char* name = Armor[arm].name_short;
     if (reduce && strlen(name) >= 8) {
         strncat(buf, name, 4);
@@ -2420,7 +2420,7 @@ void parse_arm_name(char* buf, VehArmor arm, bool reduce) {
     strncat(buf, " ", 2);
 }
 
-void parse_chs_name(char* buf, const char* name1, const char* name2) {
+static void parse_chs_name(char* buf, const char* name1, const char* name2) {
     // Convert Speeder to Rover (short form)
     if (strlen(name1) >= 7 && strlen(name1) > strlen(name2) && strlen(name2)) {
         strncat(buf, name2, MaxProtoNameLen);
@@ -2431,7 +2431,7 @@ void parse_chs_name(char* buf, const char* name1, const char* name2) {
     strncat(buf, " ", 2);
 }
 
-void parse_chs_name(char* buf, const char* name) {
+static void parse_chs_name(char* buf, const char* name) {
     strncat(buf, name, MaxProtoNameLen);
     strncat(buf, " ", 2);
 }

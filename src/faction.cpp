@@ -185,7 +185,8 @@ bool both_non_enemy(int faction1, int faction2) {
 }
 
 bool want_revenge(int faction1, int faction2) {
-    return Factions[faction1].diplo_status[faction2] & (DIPLO_ATROCITY_VICTIM | DIPLO_WANT_REVENGE);
+    return faction1 >= 0 && faction2 >= 0 && faction1 != faction2
+        && Factions[faction1].diplo_status[faction2] & (DIPLO_ATROCITY_VICTIM | DIPLO_WANT_REVENGE);
 }
 
 bool allow_expand(int faction_id) {
@@ -245,10 +246,6 @@ int find_hq(int faction_id) {
         }
     }
     return -1;
-}
-
-int faction_might(int faction_id) {
-    return plans[faction_id].mil_strength + 4*Factions[faction_id].pop_total;
 }
 
 void __cdecl treaty_off(int faction_id_1, int faction_id_2, uint32_t status) {

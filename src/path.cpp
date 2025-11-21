@@ -20,55 +20,54 @@ void TileSearch::add_start(int x, int y) {
     }
 }
 
-void TileSearch::init(int x, int y, int tp) {
+void TileSearch::init(int x, int y, int ts_type) {
     reset();
-    type = tp;
+    type = ts_type;
     add_start(x, y);
 }
 
-void TileSearch::init(int x, int y, int tp, int skip) {
+void TileSearch::init(int x, int y, int ts_type, int ts_skip) {
     reset();
-    type = tp;
-    y_skip = skip;
+    type = ts_type;
+    y_skip = ts_skip;
     add_start(x, y);
 }
 
-void TileSearch::init(const PointList& points, TSType tp, int skip) {
+void TileSearch::init(const PointList& points, TSType ts_type, int ts_skip) {
     reset();
-    type = tp;
-    y_skip = skip;
+    type = ts_type;
+    y_skip = ts_skip;
     for (auto& p : points) {
         add_start(p.x, p.y);
     }
 }
 
 void TileSearch::get_route(PointList& pp) {
+    std::vector<int> route;
     pp.clear();
-    int i = 0;
-    int j = current;
-    while (j >= 0 && ++i < PathLimit) {
-        auto& p = paths[j];
-        j = p.prev;
-        pp.push_front({p.x, p.y});
+    for (int p = current, i = 0; p >= 0 && i <= PathLimit; ++i) {
+        route.push_back(p);
+        p = paths[p].prev;
     }
+    for (auto it = route.rbegin(); it != route.rend(); ++it) {
+        pp.push_back({paths[*it].x, paths[*it].y});
+    }
+    assert((int)pp.size() == dist + 1);
 }
 
 void TileSearch::adjust_roads(PMTable& tbl, int value) {
-    int i = 0;
-    int j = current;
-    while (j >= 0 && ++i < PathLimit) {
-        auto& p = paths[j];
-        j = p.prev;
-        tbl[{p.x, p.y}].roads += value;
+    for (int p = current, i = 0; p >= 0 && i <= PathLimit; ++i) {
+        tbl[{paths[p].x, paths[p].y}].roads += value;
+        p = paths[p].prev;
     }
 }
 
-void TileSearch::connect_roads(PMTable& tbl, int x, int y, int pact_id) {
+void TileSearch::connect_roads(PMTable& tbl, int x, int y, int plr_id) {
     if (!is_ocean(mapsq(x, y)) && tbl[{x, y}].roads < 1) {
         MAP* cur;
         init(x, y, TRIAD_LAND, 1);
         while ((cur = get_next()) != NULL && dist < 10) {
-            if (cur->is_base() && cur->owner == pact_id) {
+            if (cur->is_base() && cur->owner == plr_id) {
                 adjust_roads(tbl, 1);
                 return;
             }
@@ -79,19 +78,16 @@ void TileSearch::connect_roads(PMTable& tbl, int x, int y, int pact_id) {
 /*
 Traverse current search path and check for zones of control.
 */
-bool TileSearch::has_zoc(int pact_id) {
+bool TileSearch::has_zoc(int plr_id) {
     bool prev_zoc = false;
-    int i = 0;
-    int j = current;
-    while (j >= 0 && ++i < PathLimit) {
-        auto& p = paths[j];
-        j = p.prev;
-        if (mod_zoc_any(p.x, p.y, pact_id)) {
+    for (int p = current, i = 0; p >= 0 && i <= PathLimit; ++i) {
+        if (mod_zoc_any(paths[p].x, paths[p].y, plr_id)) {
             if (prev_zoc) return true;
             prev_zoc = true;
         } else {
             prev_zoc = false;
         }
+        p = paths[p].prev;
     }
     return false;
 }
@@ -324,12 +320,12 @@ void update_move_path(PMTable& tbl, int veh_id, int tx, int ty) {
     VEH* veh = &Vehs[veh_id];
     MAP* sq = mapsq(tx, ty);
     if (thinker_move_upkeep(veh->faction_id)
-    && sq && (sq->owner == veh->faction_id || (at_war(veh->faction_id, sq->owner)
-    && 2*faction_might(veh->faction_id) > faction_might(sq->owner)))
+    && sq && (sq->owner == veh->faction_id
+    || (at_war(veh->faction_id, sq->owner) && compare_might(veh->faction_id, sq->owner)))
     && veh->triad() == TRIAD_LAND && map_range(veh->x, veh->y, tx, ty) > 2
     && has_terra(FORMER_RAISE_LAND, TRIAD_LAND, veh->faction_id)
     && (tbl[{tx, ty}].enemy_dist > 0 || (sq->is_base() && at_war(veh->faction_id, sq->owner)))
-    && tbl[{tx, ty}].enemy_dist < 15) {
+    && tbl[{tx, ty}].enemy_dist < 16) {
         debug("update_path %2d %2d -> %2d %2d %s\n", veh->x, veh->y, tx, ty, veh->name());
         int val = 0;
         int dist = 0;
@@ -407,7 +403,7 @@ bool safe_path(TileSearch& ts, int faction_id, bool skip_owner) {
     int i = 0;
     const PathNode* node = &ts.paths[ts.current];
 
-    while (node->dist > 0 && ++i < PathLimit) {
+    while (node->dist > 0 && ++i <= PathLimit) {
         if (!(sq = mapsq(node->x, node->y)) || node->prev < 0) {
             assert(0);
             return false;
@@ -455,7 +451,7 @@ int defender_goal(int x, int y, int faction_id, int triad) {
     && p.naval_start_x == x && p.naval_start_y == y) {
         return clamp(p.land_combat_units/32 + p.transport_units/2, 4, 12);
     }
-    for (int i = 0; i < *BaseCount; i++) {
+    for (int i = 0, cnt = *BaseCount; i < cnt; ++i) {
         BASE* base = &Bases[i];
         if (base->x == x && base->y == y) {
             int goal = clamp(base->defend_goal
@@ -549,19 +545,19 @@ int move_to_base(int veh_id, bool ally) {
     return mod_veh_skip(veh_id);
 }
 
-int escape_move(const int id) {
-    VEH* veh = &Vehs[id];
+int escape_move(int veh_id) {
+    VEH* veh = &Vehs[veh_id];
     MAP* sq = mapsq(veh->x, veh->y);
     if (defend_tile(veh, sq)) {
-        return set_order_none(id);
+        return set_order_none(veh_id);
     }
     int tx = -1;
     int ty = -1;
     TileSearch ts;
-    if (search_escape(ts, id, &tx, &ty)) {
-        return set_move_to(id, tx, ty);
+    if (search_escape(ts, veh_id, &tx, &ty)) {
+        return set_move_to(veh_id, tx, ty);
     }
-    return mod_veh_skip(id);
+    return mod_veh_skip(veh_id);
 }
 
 static int escape_score(int x, int y, int range, VEH* veh, MAP* sq) {
@@ -609,32 +605,46 @@ int search_base(TileSearch& ts, int veh_id, bool ally, int* tx, int* ty) {
     MAP* sq = mapsq(veh->x, veh->y);
     *tx = -1;
     *ty = -1;
-    if (!sq || veh_id < 0) {
+    if (veh_id < 0 || !sq) {
         assert(0);
         return 0;
     }
     if (sq->is_base() && (sq->owner == veh->faction_id || ally)) {
         return 0;
     }
-    int type = (veh->triad() == TRIAD_SEA ? TS_SEA_AND_SHORE : veh->triad());
-    int best_score = escape_score(veh->x, veh->y, 0, veh, sq);
+    int triad = veh->triad();
+    int type = (triad == TRIAD_SEA ? TS_SEA_AND_SHORE : triad);
     int score;
+    int best_score;
+    int max_dist;
+    if (triad == TRIAD_AIR && veh->need_refuel()) {
+        best_score = INT_MIN;
+        max_dist = max(0, (veh_speed(veh_id, 0) - veh->moves_spent)
+            / Rules->move_rate_roads);
+    } else {
+        best_score = escape_score(veh->x, veh->y, 0, veh, sq);
+        max_dist = 20;
+    }
     ts.init(veh->x, veh->y, type, 1);
-    while ((sq = ts.get_next()) != NULL && ts.dist <= 20) {
-        if (sq->is_base() && (sq->owner == veh->faction_id
-        || (ally && has_pact(veh->faction_id, sq->owner)))) {
-            *tx = ts.rx;
-            *ty = ts.ry;
-            if (veh->triad() == TRIAD_AIR || random(2)) {
-                break;
+    while ((sq = ts.get_next()) != NULL && ts.dist <= max_dist) {
+        if (sq->is_base()) {
+            if (sq->owner == veh->faction_id
+            || (ally && has_pact(veh->faction_id, sq->owner))) {
+                *tx = ts.rx;
+                *ty = ts.ry;
+                if (triad == TRIAD_AIR || random(2)) {
+                    break;
+                }
             }
-        } else if (*tx < 0 && ts.dist < 5
-        && allow_move(ts.rx, ts.ry, veh->faction_id, veh->triad())
-        && (score = escape_score(ts.rx, ts.ry, ts.dist, veh, sq)) > best_score
-        && !ts.has_zoc(veh->faction_id)) {
-            *tx = ts.rx;
-            *ty = ts.ry;
-            best_score = score;
+        } else if (*tx < 0 && (ts.dist <= 5 || triad == TRIAD_AIR)
+        && allow_move(ts.rx, ts.ry, veh->faction_id, triad)
+        && (score = escape_score(ts.rx, ts.ry, ts.dist, veh, sq)) > best_score) {
+            if ((triad == TRIAD_AIR && sq->is_airbase())
+            || (triad != TRIAD_AIR && !ts.has_zoc(veh->faction_id))) {
+                *tx = ts.rx;
+                *ty = ts.ry;
+                best_score = score;
+            }
         }
     }
     return *tx >= 0;
@@ -720,7 +730,7 @@ int search_route(TileSearch& ts, int veh_id, int* tx, int* ty) {
             return true;
         }
     }
-    for (int i = 0; i < *BaseCount; i++) {
+    for (int i = 0, cnt = *BaseCount; i < cnt; ++i) {
         BASE* base = &Bases[i];
         if (base->faction_id == veh->faction_id && (sq = mapsq(base->x, base->y))) {
             int score = route_score(veh, base->x, base->y, 4, sq);
@@ -774,7 +784,7 @@ int search_route(TileSearch& ts, int veh_id, int* tx, int* ty) {
     if (px >= 0 && has_gate) {
         int tgt_id = -1;
         best_score = -20;
-        for (int i = 0; i < *BaseCount; i++) {
+        for (int i = 0, cnt = *BaseCount; i < cnt; ++i) {
             BASE* base = &Bases[i];
             if (base->faction_id == veh->faction_id && has_fac_built(FAC_PSI_GATE, i)
             && region_at(base->x, base->y) == region_at(px, py)) {
@@ -796,11 +806,11 @@ int search_route(TileSearch& ts, int veh_id, int* tx, int* ty) {
     }
     if (px >= 0 && !same_reg && (!at_base || !veh->is_artifact())) {
         PointList start;
-        start.push_front({px, py});
+        start.push_back({px, py});
         ts.init(px, py, TS_TERRITORY_PACT);
         while ((sq = ts.get_next()) != NULL) {
             if (is_ocean(sq)) {
-                start.push_front({ts.rx, ts.ry});
+                start.push_back({ts.rx, ts.ry});
             }
             if (veh->x == ts.rx && veh->y == ts.ry
             && ts.dist < 8 + 2*map_range(veh->x, veh->y, px, py)) {

@@ -41,12 +41,12 @@ static bool check_disband(int unit_id, int faction_id) {
     Points units;
     Points other;
 
-    for (int i = 0; i < *BaseCount; i++) {
+    for (int i = 0, cnt = *BaseCount; i < cnt; ++i) {
         if (Bases[i].faction_id == faction_id) {
             bases.insert({Bases[i].x, Bases[i].y});
         }
     }
-    for (int i = 0; i < *VehCount; i++) {
+    for (int i = 0, cnt = *VehCount; i < cnt; ++i) {
         if (Vehs[i].faction_id == faction_id) {
             if (Vehs[i].unit_id == unit_id) {
                 units.insert({Vehs[i].x, Vehs[i].y});
@@ -310,12 +310,20 @@ void design_units(int faction_id) {
 }
 
 bool need_police(int faction_id) {
-    Faction* f = &Factions[faction_id];
-    return f->SE_police > -2 && f->SE_police < 3 && !has_project(FAC_TELEPATHIC_MATRIX, faction_id);
+    Faction& f = Factions[faction_id];
+    return f.SE_police > -2 && f.SE_police < 3 && !has_project(FAC_TELEPATHIC_MATRIX, faction_id);
+}
+
+int faction_might(int faction_id) {
+    return plans[faction_id].mil_strength + 8*Factions[faction_id].pop_total;
+}
+
+int compare_might(int faction_id, int faction_id_tgt) {
+    return 4*faction_might(faction_id) >= 3*faction_might(faction_id_tgt);
 }
 
 int psi_score(int faction_id) {
-    Faction* f = &Factions[faction_id];
+    Faction& f = Factions[faction_id];
     int weapon_value = Weapon[best_weapon(faction_id)].offense_value;
     int enemy_weapon_value = 0;
     for (int i = 1; i < MaxPlayerNum; i++) {
@@ -324,7 +332,7 @@ int psi_score(int faction_id) {
                 enemy_weapon_value, (int)Weapon[best_weapon(i)].offense_value);
         }
     }
-    int psi = max(-6, 2 - weapon_value);
+    int psi = max(-6, 2 - weapon_value) + (f.SE_planet_base > 0);
     if (has_project(FAC_NEURAL_AMPLIFIER, faction_id)) {
         psi += min(5, conf.neural_amplifier_bonus/20);
     }
@@ -346,7 +354,7 @@ int psi_score(int faction_id) {
     if (enemy_weapon_value) {
         psi += clamp((enemy_weapon_value - weapon_value)/2, -3, 3);
     }
-    psi += MFactions[faction_id].rule_psi/10 + 2*f->SE_planet;
+    psi += clamp(MFactions[faction_id].rule_psi/10, -8, 8) + clamp(f.SE_planet, -8, 8);
     return psi;
 }
 
@@ -423,9 +431,9 @@ void plans_upkeep(int faction_id) {
         plan_upkeep_turn = *CurrentTurn;
     }
     if (thinker_enabled(faction_id) || governor) {
-        int base_pop[MaxBaseNum] = {};
-        int base_min[MaxBaseNum] = {};
-        int base_eng[MaxBaseNum] = {};
+        std::vector<int> base_pop;
+        std::vector<int> base_min;
+        std::vector<int> base_eng;
         Faction* f = &Factions[faction_id];
         AIPlans* p = &plans[faction_id];
         memset((void*)p, 0, sizeof(AIPlans));
@@ -435,31 +443,31 @@ void plans_upkeep(int faction_id) {
         for (int i = 0; i < MaxPlayerNum; i++) {
             plans[i].mil_strength = 0;
         }
-        for (int i = 0; i < *VehCount; i++) {
+        for (int i = 0, cnt = *VehCount; i < cnt; ++i) {
             VEH* veh = &Vehs[i];
             if (veh->faction_id > 0) {
-                plans[veh->faction_id].mil_strength += (veh->eval_offense()
-                     + veh->eval_defense()) * (veh->speed() > 1 ? 3 : 2);
+                int reactor_val = veh->is_planet_buster();
+                plans[veh->faction_id].mil_strength += (reactor_val > 0 ? 80*reactor_val :
+                    (2*veh->eval_offense() + veh->eval_defense())) * (veh->speed() > 1 ? 3 : 2);
             }
             if (veh->faction_id == faction_id) {
                 int triad = veh->triad();
-                if (veh->is_combat_unit() || veh->is_probe() || veh->is_transport()) {
+                if (veh->is_combat_unit() || veh->is_garrison_unit()
+                || veh->is_probe() || veh->is_transport()) {
                     if (triad == TRIAD_LAND) {
                         p->land_combat_units++;
                     } else if (triad == TRIAD_SEA) {
                         p->sea_combat_units++;
+                        p->transport_units += veh->is_transport();
                     } else {
                         p->air_combat_units++;
                     }
                     if (veh->is_probe()) {
                         p->probe_units++;
                     }
-                    if (veh->is_transport() && triad == TRIAD_SEA) {
-                        p->transport_units++;
+                    if (veh->is_missile()) {
+                        p->missile_units++;
                     }
-                }
-                if (veh->is_missile()) {
-                    p->missile_units++;
                 }
                 if (veh->plan() <= PLAN_RECON) {
                     p->max_offense_value = max(p->max_offense_value, proto_offense(veh->unit_id));
@@ -468,9 +476,10 @@ void plans_upkeep(int faction_id) {
             }
         }
         debug("plans_totals %d %d bases: %3d land: %3d sea: %3d air: %3d "\
-            "probe: %3d missile: %3d transport: %3d\n", *CurrentTurn, faction_id, f->base_count,
-            p->land_combat_units, p->sea_combat_units, p->air_combat_units,
-            p->probe_units, p->missile_units, p->transport_units);
+        "probe: %3d missile: %3d transport: %3d might: %d\n",
+        *CurrentTurn, faction_id, f->base_count,
+        p->land_combat_units, p->sea_combat_units, p->air_combat_units,
+        p->probe_units, p->missile_units, p->transport_units, faction_might(faction_id));
 
         for (int i = 1; i < MaxPlayerNum; i++) {
             if (faction_id != i && is_alive(i)) {
@@ -496,28 +505,25 @@ void plans_upkeep(int faction_id) {
         }
         int enemy_sum = 0;
         int n = 0;
-        for (int i = 0; i < *BaseCount; i++) {
+        for (int i = 0, cnt = *BaseCount; i < cnt; ++i) {
             BASE* base = &Bases[i];
             if (base->faction_id == faction_id) {
-                base_pop[n] = base->pop_size;
-                base_min[n] = base->mineral_surplus;
-                base_eng[n] = base->energy_surplus;
+                base_pop.push_back(base->pop_size);
+                base_min.push_back(base->mineral_surplus);
+                base_eng.push_back(base->energy_surplus);
                 n++;
                 // Update enemy base threat distances
                 int base_region = region_at(base->x, base->y);
                 int enemy_range = MaxEnemyRange;
-                for (int j = 0; j < *BaseCount; j++) {
+                for (int j = 0; j < cnt; ++j) {
                     BASE* b = &Bases[j];
                     if (faction_id != b->faction_id
                     && !has_pact(faction_id, b->faction_id)) {
                         int border_dist = map_range(base->x, base->y, b->x, b->y);
                         int enemy_dist = border_dist
-                            * (region_at(b->x, b->y) == base_region ? 4 : 5)
-                            * (b->faction_id_former == faction_id ? 4 : 5);
-                        if (!at_war(faction_id, b->faction_id)) {
-                            enemy_dist *= 4;
-                        }
-                        enemy_range = min(enemy_range, enemy_dist / 16);
+                            * (region_at(b->x, b->y) == base_region ? 2 : 3)
+                            * (at_war(faction_id, b->faction_id) ? 1 : 4);
+                        enemy_range = min(enemy_range, enemy_dist / 2);
                     }
                 }
                 base->defend_range = enemy_range;
@@ -543,24 +549,30 @@ void plans_upkeep(int faction_id) {
                 + min(2, p->captured_bases/2)
                 + min(2, p->enemy_factions/2), 1, 4);
         }
-        std::sort(base_pop, base_pop+n);
-        std::sort(base_min, base_min+n);
-        std::sort(base_eng, base_eng+n);
-        if (f->base_count >= 40) {
-            p->project_limit = max(5, base_min[n*3/4]);
-        } else {
-            p->project_limit = max(5, base_min[n*2/3]);
-        }
+        std::sort(base_pop.begin(), base_pop.end());
+        std::sort(base_min.begin(), base_min.end());
+        std::sort(base_eng.begin(), base_eng.end());
         bool full_value = has_tech(Facility[FAC_AEROSPACE_COMPLEX].preq_tech, faction_id)
             || has_project(FAC_CLOUDBASE_ACADEMY, faction_id)
             || has_project(FAC_SPACE_ELEVATOR, faction_id);
-        p->median_limit = max(5, base_min[n/2]);
-        p->energy_limit = max(15, base_eng[n*3/4]);
-        p->satellite_goal = min(conf.max_satellites,
-            base_pop[n*7/8] * (full_value ? 1 : 2));
-
+        if (n > 0) {
+            if (n >= 40) {
+                p->project_limit = max(5, base_min[n*3/4]);
+            } else {
+                p->project_limit = max(5, base_min[n*2/3]);
+            }
+            p->median_limit = max(5, base_min[n/2]);
+            p->energy_limit = max(15, base_eng[n*3/4]);
+            p->satellite_goal = min(conf.max_satellites,
+                base_pop[n*7/8] * (full_value ? 1 : 2));
+        } else {
+            p->project_limit = 5;
+            p->median_limit = 5;
+            p->energy_limit = 15;
+            p->satellite_goal = 0;
+        }
         debug("plans_upkeep %d %d proj_limit: %2d sat_goal: %2d psi: %2d keep_fungus: %d "\
-            "plant_fungus: %d enemy_bases: %2d enemy_mil: %.4f enemy_range: %.4f\n",
+            "plant_fungus: %d enemy_bases: %d enemy_mil: %.4f enemy_range: %.4f\n",
             *CurrentTurn, faction_id, p->project_limit, p->satellite_goal,
             p->psi_score, p->keep_fungus, p->plant_fungus,
             p->enemy_bases, p->enemy_mil_factor, p->enemy_base_range);

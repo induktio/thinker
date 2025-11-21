@@ -118,7 +118,7 @@ Using the default settings, the game's random map generator produces bland-looki
 
 This feature supports all the world settings chosen from the game menus such as map size, ocean coverage, erosion, natives and rainfall level. With Thinker's version, it is possible to set the average ocean coverage level with `world_sea_levels` option, and this will provide a consistent way of setting the ocean amounts for any random maps. Changing this variable has a very high impact on the generated maps. Lower numbers are almost always pangaea maps while higher numbers tend towards archipelago layouts. There is no simple way of accurately doing this with the default map generator.
 
-From the menu options it is also possible to choose the random map style from larger or smaller continents. Note that this has only significant impact if the ocean coverage is at least average, since at low levels all generated maps will tend towards pangaea layouts.
+From the menu options it is also possible to choose the random map style from larger or smaller continents, same as `world_continents` option. Note that this has only significant impact if the ocean coverage is at least average, since at low levels all generated maps will tend towards pangaea layouts.
 
 All landmarks that are placed on random maps can also be configured from `thinker.ini`. Nessus Canyon is available but disabled by default. When new map generator is enabled, `modified_landmarks` option replaces the default Monsoon Jungle landmark with multiple smaller jungles dispersed across the equator area. Planet rainfall level will determine how many jungle tiles are placed. Borehole Cluster is also expanded to four tiles and Fossil Field Ridge is placed on ocean shelf tiles.
 
@@ -337,7 +337,7 @@ These edits will introduce fairly minimal differences on the game mechanics and 
 2. Fix: Disabled the "Clean Reactor" special ability for Probe Teams because they already don't require any support.
 3. The frequency of climate change effects is reduced. Thinker level AIs regularly achieve much higher mineral production and eco damage than the AIs in the base game. As a result, excessive sea level rise may occur early on unless this is modified.
 4. WorldBuilder is modified to produce bigger continents, less tiny islands, more rivers and ocean shelf on random maps.
-5. Large map size is increased to 50x100. Previous value was nearly the same as a standard map.
+5. Large map size is increased to 50x100. Another map size 80x160 is added which is larger than the previous huge map.
 6. Descriptions of various configuration values have been updated to reflect their actual meaning.
 7. Add new predefined units Trance Infantry, Police Garrison and Drop Colony Pod.
 8. Plasma Shard weapon strength is raised to 14.
@@ -407,7 +407,7 @@ Known limitations
 Currently the features listed here may not be fully supported or may have issues while Thinker is enabled. The list may be subject to change in future releases.
 
 1. Network multiplayer (TCP/IP) should be supported, however this is less stable than the singleplayer configuration, so some issues might occur. At minimum every client needs to use the same configuration files. In case of network problems, refer to other manuals on how to configure firewalls and open the necessary ports for multiplayer. Simultaneous turns option for network multiplayer is known to cause issues. If the game desyncs, it is possible to save it to a file and host it again.
-2. Most notable limits in the game engine are 8 factions with one for native life, 512 bases, 64 prototypes for each faction, and 2048 units unless increased by options. These limits were fixed in the game binary at compilation time and the faction limit may not be feasible to increase without substantial rewrites.
+2. Most notable limits in the game engine are 8 factions with one for native life, 512 bases, 64 prototypes for each faction, and 2048 units unless increased by `modify_unit_limit` option. These limits were fixed in the game binary at compilation time and the faction limit may not be feasible to increase without substantial rewrites.
 3. Faction selection dialog in the game setup is limited to showing only the first 24 factions even if installed factions in alphax.txt exceed this number.
 4. Most custom settings in "Special Scenario Rules" should be supported even when starting random maps. However these rules may cause inconsistent behavior when used from the main menu: `Force current difficulty level` and `Force player to play current faction`.
 5. DirectDraw mode is not supported while using thinker.exe launcher. In this case the game may fail to start properly unless `DirectDraw=0` config option is used.
@@ -425,20 +425,20 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 
 1. Modify governor worker allocation to better take into account any psych-related issues and convert workers into specialists as needed. Worker tile selection is improved to emphasize high-yielding tiles such as boreholes.
 2. Governor is able to choose from multiple specialist types based on social engineering choices and various factors. The default specialist type chosen by the game has less emphasis on psych compared to the original version.
-3. Fix issue where attacking other satellites doesn't work in Orbital Attack View when smac_only is activated.
-4. Fix engine rendering issue where ocean fungus tiles displayed inconsistent graphics compared to the adjacent land fungus tiles.
-5. Fix game showing redundant "rainfall patterns have been altered" messages when these events are caused by other factions. This also removes excessive friction and treaty penalties when another faction alters rainfall patterns during terraforming.
-6. Fix a bug that occurs after the player does an artillery attack on unoccupied tile and then selects another unit to view combat odds and cancels the attack. After this veh_attack_flags will not get properly cleared and the next bombardment on an unoccupied tile always results in the destruction of the bombarding unit.
-7. Disable legacy upkeep code in the game engine that might cause AI formers to be reassigned to nearby bases that are owned by other factions.
-8. Patch the game engine to use significantly less CPU time when idle by using a method similar to [smac-cpu-fix](https://github.com/vinceho/smac-cpu-fix/). Normally the game uses 100% of CPU time which can be be a problem on laptop devices.
-9. When capturing a base, Recycling Tanks and Recreation Commons are not always destroyed unlike previously. They are sometimes randomly destroyed like other facilities (facility_capture_fix).
-10. Patch any faction with negative research rating to start accumulating labs on the first turn. In vanilla rules each negative point results in an additional 5 turn delay before the faction starts accumulating labs, for example Believers had a 10 turn delay. Players on two lowest difficulty levels will also start accumulating labs immediately instead of 5 turns later (early_research_start).
-11. Fix faction graphics bug that appears when Alpha Centauri.ini has a different set of faction filenames than the loaded scenario file. The patch will make sure the correct graphics set is loaded when opening the scenario. This bug only happened with scenario files, while regular save games were unaffected.
-12. Patch the game to use the Command Center maintenance cost that is set in alphax.txt. Normally the game would ignore this value and make the cost dependent on faction's best reactor value which is inconsistent with the other settings for facilities in alphax.txt.
-13. Sometimes the base window population row would display superdrones even though they would be suppressed by psych-related effects. The patch removes superdrone icons from the main population row and uses regular worker/drone/talent icons if applicable, so any drones should not be displayed there if they are suppressed by psych effects. To check the superdrone status, open the psych sub window.
-14. Fix visual bug where population icons in base window would randomly switch their type when clicking on them.
+3. Sometimes the base window population row would display superdrones even though they would be suppressed by psych-related effects. The patch removes superdrone icons from the main population row and uses regular worker/drone/talent icons if applicable, so any drones should not be displayed there if they are suppressed by psych effects. To check the superdrone status, open the psych sub window.
+4. Fix faction graphics bug that appears when Alpha Centauri.ini has a different set of faction filenames than the loaded scenario file. The patch will make sure the correct graphics set is loaded when opening the scenario. This bug only happened with scenario files, while regular save games were unaffected.
+5. Fix issue where attacking other satellites doesn't work in Orbital Attack View when smac_only is activated.
+6. Fix issue where TECHSHARE faction ability always skips the checks for infiltration conditions while smac_only mode is activated. Spying by probe team, pact, governor or Empath Guild is required.
+7. Fix visual bug where population icons in base window would randomly switch their type when clicking on them.
+8. Fix engine rendering issue where ocean fungus tiles displayed inconsistent graphics compared to the adjacent land fungus tiles.
+9. Fix game showing redundant "rainfall patterns have been altered" messages when these events are caused by other factions. This also removes excessive friction and treaty penalties when another faction alters rainfall patterns during terraforming.
+10. Fix a bug that occurs after the player does an artillery attack on unoccupied tile and then selects another unit to view combat odds and cancels the attack. After this veh_attack_flags will not get properly cleared and the next bombardment on an unoccupied tile always results in the destruction of the bombarding unit.
+11. Patch the game engine to use significantly less CPU time when idle by using a method similar to [smac-cpu-fix](https://github.com/vinceho/smac-cpu-fix/). Normally the game uses 100% of CPU time which can be a problem on laptop devices.
+12. When capturing a base, Recycling Tanks and Recreation Commons are not always destroyed unlike previously. They are sometimes randomly destroyed like other facilities (facility_capture_fix).
+13. Patch any faction with negative research rating to start accumulating labs on the first turn. In original rules each negative point results in an additional 5 turn delay before the faction starts accumulating labs, for example Believers had a 10 turn delay. Players on two lowest difficulty levels will also start accumulating labs immediately instead of 5 turns later (early_research_start).
+14. Patch the game to use the Command Center maintenance cost that is set in alphax.txt. Normally the game would ignore this value and make the cost dependent on faction's best reactor value which is inconsistent with the other settings for facilities in alphax.txt.
 15. Patch AIs to initiate much less diplomacy dialogs when the player captures their bases. Previously this happened at least once for every turn the AI loses any bases and would repeat the same dialog every time if the player didn't agree to the peace terms. The patch makes the initiation of dialog more dependent on random chance unless the AI would finally accept surrender terms.
-16. Patch genetic warfare probe team action to cause much less damage for any units defending the base. In vanilla game mechanics even one attack instantly inflicted almost 80% damage. In the patched version population loss mechanic is unaffected, but even multiple attacks should do substantially less damage for defender units.
+16. Patch genetic warfare probe team action to cause much less damage for any units defending the base. In original game mechanics even one attack instantly inflicted almost 80% damage. In the patched version population loss mechanic is unaffected, but even multiple attacks should do substantially less damage for defender units.
 17. Patch terrain drawing engine to render more detailed tiles when zooming out from the default level instead of the blocky, less detailed versions. Main menu setup screen will update the planet preview on all resolutions. Interlude and credits backgrounds are scaled on all resolutions. Base window support tab will also render a zoomable terrain view that can be adjusted with the mousewheel (render_high_detail).
 18. Modify multiplayer setup screen to use average values for each of the random map generator settings, instead of the highest possible like previously.
 19. Fix potential crash when a game is loaded after using Edit Map > Generate/Remove Fungus > No Fungus.
@@ -458,9 +458,9 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 33. Fix diplomacy dialog appearing multiple times when both human and alien factions are involved in a base capture by removing the event that spawns additional colony pods.
 34. Fix missing defender bonus mentioned in the manual "Units in a headquarters base automatically gain +1 Morale when defending".
 35. Fix multiple issues in unit morale calculation, see more details in "Improved combat mechanics" section.
-36. Fix issue where TECHSHARE faction ability always skips the checks for infiltration conditions while smac_only mode is activated. Spying by probe team, pact, governor or Empath Guild is required.
-37. Fix issue where Accelerated Start option may sometimes freeze the game when selecting a random secret project for Hive. Patched version will not assign Citizens Defense Force or Command Nexus for a faction that already has those facilities for free, unless all other choices among the first seven projects have been exhausted, also Empath Guild is always skipped.
-38. Disable legacy game startup code that spawned additional colony pods for factions if the difficulty level matched pre-defined rules. The same starting units can now be selected from the config file for all difficulty levels (skip_default_balance).
+36. Fix issue where Accelerated Start option may sometimes freeze the game when selecting a random secret project for Hive. Patched version will not assign Citizens Defense Force or Command Nexus for a faction that already has those facilities for free, unless all other choices among the first seven projects have been exhausted, also Empath Guild is always skipped.
+37. Disable legacy upkeep code in the game engine that might cause AI formers to be reassigned to nearby bases that are owned by other factions.
+38. Disable undocumented game startup code that spawned additional colony pods for factions if the difficulty level matched pre-defined rules. The same starting units can now be selected from the config file for all difficulty levels (skip_default_balance).
 39. Prevent the AI from making unnecessary trades where it sells their techs for maps owned by the player. The patch removes TRADETECH4 / TRADETECH5 dialogue paths making the AI usually demand a credit payment for any techs.
 40. Fix some issues where AI declared war based on calculations using incorrect variables. AI is also less likely to declare war at early stages when it has only few bases built.
 41. Fix visual issues where the game sometimes did not update the map properly when recentering it offscreen on native resolution mode.
@@ -564,12 +564,12 @@ The following binary fixes from Scient's patch are automatically applied at game
 
 Contributions
 =============
-Source code provided by following people has been incorporated into Thinker Mod in various parts of the project.
+Source code provided by following people has been used as reference or incorporated into Thinker Mod in various parts of the project.
 
-* Brendan Casey for [OpenSMACX](https://github.com/b-casey/OpenSMACX) related insights into the game engine and Scient's patch.
-* Tim Nevolin's [Will To Power Mod](https://github.com/tnevolin/thinker-doer) for unit healing and reactor power patch and various other game engine config options.
-* PlotinusRedux's [PRACX Patch](https://github.com/DrazharLn/pracx) for additional graphics rendering code.
-* DrazharLn's [SMAC in SMACX Mod](https://github.com/DrazharLn/smac-in-smax) for modified txt files.
+* Brendan Casey for OpenSMACX related insights into the game engine and Scient's patch.
+* Tim Nevolin's Will To Power Mod for game mechanics related config options.
+* PlotinusRedux's PRACX Patch for additional graphics rendering code.
+* DrazharLn's SMAC in SMACX Mod for modified txt files.
 * Pianoslum for German language translation of alphax.txt.
 * Markus Hartung for additional cross-platform build scripts for MinGW.
 

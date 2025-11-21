@@ -741,11 +741,11 @@ void __cdecl mod_world_geothermal(int x, int y) {
     name_landmark(x, y, LM_GEOTHERMAL);
 }
 
-static float world_fractal(FastNoiseLite& noise, int x, int y) {
-    float value = 1.0f * noise.GetNoise(3.0f*x, 2.0f*y)
+static float world_fractal(FastNoiseLite& noise, float w, int x, int y) {
+    float value = 1.0f * noise.GetNoise(1.5f*w*x, w*y)
         + 0.3f * (2 + *MapErosiveForces) * noise.GetNoise(-6.0f*x, -4.0f*y);
     if (x < 8 && *MapAreaX >= 16 && !map_is_flat()) {
-        value = x/8.0f * value + (1.0f - x/8.0f) * world_fractal(noise, *MapAreaX + x, y);
+        value = x/8.0f * value + (1.0f - x/8.0f) * world_fractal(noise, w, *MapAreaX + x, y);
     }
     return value;
 }
@@ -851,43 +851,25 @@ void world_generate(uint32_t seed) {
     *MapRandomSeed = (seed % 0x7fff) + 1; // Must be non-zero, supply pod placement
     *MapLandCoverage = 2 - *MapOceanCoverage;
 
-    Points conts;
-    size_t continents = clamp(*MapAreaSqRoot / 12, 4, 20);
     int levels[256] = {};
     int x = 0, y = 0, i = 0;
-
-    if (conf.world_continents && *MapAreaY >= 32) {
-        while (++i <= 200 && conts.size() < continents) {
-            y = (map_rand.get(*MapAreaY - 16) + 8);
-            x = (map_rand.get(*MapAreaX) &~1) + (y&1);
-            if (i & 1 && min_vector(conts, x, y) <= *MapAreaSqRoot/6) {
-                conts.insert({x, y});
-            }
-            if (~i & 1 && min_vector(conts, x, y) >= *MapAreaSqRoot/3) {
-                conts.insert({x, y});
-            }
-        }
-    }
 
     const float L = AltNatural[ALT_SHORE_LINE]; // Default shoreline altitude = 45
     const float Wmid = (50 - conf.world_sea_levels[*MapOceanCoverage])*0.01f;
     const float Wsea = 0.1f + 0.01f * conf.world_ocean_mod;
     const float Wland = 0.1f + 0.01f * conf.world_hills_mod + 0.25f * (*MapErosiveForces);
-    const float Wdist = 1.0f / clamp(*MapAreaSqRoot * 0.1f, 1.0f, 15.0f);
+    const float Warea = (conf.world_continents && *MapAreaY >= 32 ? 144.0f : 240.0f)
+        / clamp(*MapAreaSqRoot, 120, 240);
 
     for (y = 0; y < *MapAreaY; y++) {
         float Wcaps = 1.0f - min(1.0f, (min(y, *MapAreaY - y) / (max(1.0f, *MapAreaY * 0.2f))));
 
         for (x = y&1; x < *MapAreaX; x+=2) {
-            float Wcont = 1.5f - clamp(min_vector(conts, x, y) * Wdist, 0.75f, 1.5f);
-            float value = world_fractal(noise, x, y) + Wmid - 0.5f*Wcaps;
+            float value = world_fractal(noise, Warea, x, y) + Wmid - 0.5f*Wcaps;
             if (value > 0) {
                 value = value * Wland;
             } else {
                 value = value * Wsea;
-            }
-            if (conf.world_continents && value < 0.2f) {
-                value += Wcont * Wland;
             }
             sq = mapsq(x, y);
             sq->contour = clamp((int)(L + L*value), 0, 255);

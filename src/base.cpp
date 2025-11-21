@@ -849,7 +849,8 @@ void __cdecl mod_base_yield() {
     int SE_police = base->SE_police(SE_Pending);
     bool can_grow = base_unused_space(base_id) > 0;
     bool can_riot = base_can_riot(base_id, true);
-    bool need_labs = !has_fac_built(FAC_PUNISHMENT_SPHERE, base_id);
+    bool need_labs = !(*GameRules & RULES_SCN_NO_TECH_ADVANCES)
+        && !has_fac_built(FAC_PUNISHMENT_SPHERE, base_id);
     bool pacifism = can_riot && SE_police <= -3 && *BaseVehPacifismCount > 0;
     int threshold = Rules->nutrient_intake_req_citizen * (base_pop_boom(base_id) ? 1 : 2);
     int effic_val = 16 - mod_black_market(base_id, 16);
@@ -878,6 +879,7 @@ void __cdecl mod_base_yield() {
     }
     if (is_human(faction_id)) {
         Wmineral = 3 + (gov & GOV_PRIORITY_BUILD ? 1 : 0) + (gov & GOV_PRIORITY_CONQUER ? 1 : 0);
+        Wmineral += (Wmineral == 5);
     }
 
     for (int i = 0; i < MaxBaseSpecNum; i++) {
@@ -913,6 +915,7 @@ void __cdecl mod_base_yield() {
                     && (Ev * f->SE_alloc_psych + 4) / 10 < 2) ? 6 : 4;
                 if (can_grow) {
                     score = m.nutrient * max(4 + 4*(Nv < 0) + 4*(Nv < threshold)
+                        + (base->pop_size == 1 && Nv <= 0 && Mv > 0 ? 6 : 0)
                         + max(0, 5 - base->pop_size) - max(0, Nv - 1)/4, 2)
                         + m.mineral * (5 + 5*(Mv < 0) + 4*(Mv < 2))
                         + (m.energy * effic_val + 15) / 16 * energy_val;

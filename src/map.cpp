@@ -60,19 +60,19 @@ int vector_dist(int x1, int y1, int x2, int y2) {
 }
 
 int min_range(const Points& S, int x, int y) {
-    int z = MaxMapDist;
+    int v = 2048;
     for (auto& p : S) {
-        z = min(z, map_range(x, y, p.x, p.y));
+        v = min(v, map_range(x, y, p.x, p.y));
     }
-    return z;
+    return v;
 }
 
 int min_vector(const Points& S, int x, int y) {
-    int z = MaxMapDist;
+    int v = 2048;
     for (auto& p : S) {
-        z = min(z, vector_dist(x, y, p.x, p.y));
+        v = min(v, vector_dist(x, y, p.x, p.y));
     }
-    return z;
+    return v;
 }
 
 double avg_range(const Points& S, int x, int y) {
@@ -260,7 +260,6 @@ int __cdecl alt_at(int x, int y) {
     if (sq) {
         return sq->alt_level();
     }
-    assert(sq);
     return 0;
 }
 
@@ -1637,6 +1636,9 @@ static bool valid_start(int faction_id, int iter, int x, int y) {
     if ((goody_at(x, y) > 0 || bonus_at(x, y) > 0) && iter < 160) {
         return false;
     }
+    if (Continents[sq->region].tile_count < *MapAreaTiles / ((aquatic ? 20 : 40) << (iter/40))) {
+        return false;
+    }
     if (min_range(natives, x, y) < max(native_limit, 8 - iter/16)) {
         return false;
     }
@@ -1649,11 +1651,7 @@ static bool valid_start(int faction_id, int iter, int x, int y) {
     if (spawn_range < clamp(*MapAreaSqRoot/4 + 8 - iter/8, spawn_limit, 32)) {
         return false;
     }
-    if (aquatic) {
-        if (Continents[sq->region].tile_count < *MapAreaTiles / (16 << (iter/32))) {
-            return false;
-        }
-    } else {
+    if (!aquatic) {
         for (int i = 2; i < 20; i+=2) {
             if (is_ocean(mapsq(wrap(x-i), y)) || is_ocean(mapsq(wrap(x+i), y))) {
                 break;

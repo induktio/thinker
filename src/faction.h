@@ -33,7 +33,6 @@ bool allow_expand(int faction_id);
 bool has_active_veh(int faction_id, VehPlan plan);
 int veh_count(int faction_id, int unit_id);
 int find_hq(int faction_id);
-int faction_might(int faction_id);
 
 void __cdecl treaty_off(int faction_id_1, int faction_id_2, uint32_t status);
 void __cdecl agenda_off(int faction_id_1, int faction_id_2, uint32_t status);

@@ -277,7 +277,7 @@ struct MFaction {
         return rule_flags & RFLAG_AQUATIC;
     }
     bool is_alien() {
-        return rule_flags & RFLAG_ALIEN;
+        return *ExpansionEnabled && rule_flags & RFLAG_ALIEN;
     }
 };
 

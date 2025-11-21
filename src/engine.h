@@ -40,11 +40,13 @@ extern MFaction* MFactions;
 extern int* const GameState;
 extern int* const GameRules;
 extern int* const CurrentTurn;
+extern int* const ExpansionEnabled;
 extern const int MaxVehNum;
 extern const int MaxProtoNum;
 extern const int MaxPlayerNum;
 extern const int MaxBaseSpecNum;
 extern const int MaxProtoFactionNum;
+extern const int MaxEnemyRange;
 bool is_human(int faction_id);
 bool can_repair(int unit_id);
 bool can_monolith(int unit_id);
@@ -136,7 +138,7 @@ struct WItem {
     int AI_fight;
 };
 
-struct PItem {
+struct BItem {
     int item_id;
     int explore;
     int discover;
@@ -150,23 +152,24 @@ struct PInfo {
     int safety;
     int target;
     int roads;
-    int shore;
+    int flags;
     int unit_near;
     int unit_path;
     int enemy;
     int enemy_near;
     int enemy_dist;
+    int enemy_rank;
     int overlay;
 
     int get_enemy_dist() const {
-        return (enemy_dist > 0 ? enemy_dist : 20);
+        return (enemy_dist > 0 ? enemy_dist : MaxEnemyRange/2);
     }
 };
 
 typedef std::unordered_map<Point, PInfo> PMTable;
 typedef std::set<MapNode> NodeSet;
 typedef std::set<Point> Points;
-typedef std::list<Point> PointList;
+typedef std::vector<Point> PointList;
 typedef std::set<std::string> set_str_t;
 typedef std::vector<std::string> vec_str_t;
 typedef std::map<std::string, std::string> map_str_t;

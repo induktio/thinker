@@ -68,26 +68,28 @@ void __cdecl mod_enemy_turn(int faction_id) {
     Factions[faction_id].player_flags &= ~PFLAG_UNK_10000;
     // Additional goal planning after movement upkeep
     if (thinker_move_upkeep(faction_id)) {
-        score_max_queue_t scores;
+        point_max_queue_t scores;
         for (const auto& m : mapdata) {
             MAP* sq;
-            if (m.second.unit_path > 0 && (sq = mapsq(m.first.x, m.first.y))
-            && !sq->is_base() && (sq->owner == faction_id || at_war(faction_id, sq->owner))
-            && near_sea_coast(m.first.x, m.first.y)) {
-                int score = 4*m.second.unit_path - m.second.get_enemy_dist()
-                    + 8*mapnodes.count({m.first.x, m.first.y, NODE_GOAL_RAISE_LAND});
-                scores.push({(m.first.x ^ (m.first.y << 16)), score});
+            int x = m.first.x;
+            int y = m.first.y;
+            if (m.second.unit_path > 0 && (sq = mapsq(x, y))
+            && !sq->is_base() && (sq->owner == faction_id || at_war(faction_id, sq->owner))) {
+                if (near_sea_coast(x, y)) {
+                    int score = 4*m.second.unit_path - m.second.get_enemy_dist()
+                        + 8*mapnodes.count({x, y, NODE_GOAL_RAISE_LAND});
+                    scores.push({x, y, score});
+                }
             }
         }
         int score_limit = clamp(7 + plans[faction_id].land_combat_units/16, 15, 25);
         int num = 0;
         while (scores.size() > 0) {
             auto p = scores.top();
-            int x = p.item_id & 0xffff;
-            int y = p.item_id >> 16;
             if (p.score >= score_limit && ++num <= 8) {
-                debug("raise_goal %2d %2d score: %d\n", x, y, p.score);
-                add_goal(faction_id, AI_GOAL_RAISE_LAND, 5, x, y, -1);
+                debug("raise_land %d %d %2d %2d score: %d\n",
+                    *CurrentTurn, faction_id, p.x, p.y, p.score);
+                add_goal(faction_id, AI_GOAL_RAISE_LAND, 5, p.x, p.y, -1);
             }
             scores.pop();
         }
@@ -107,28 +109,28 @@ int __cdecl mod_enemy_veh(size_t veh_id) {
         && !mod_zoc_any(veh->x, veh->y, veh->faction_id);
 
     if (!skip && mod_enemy_move(veh_id) != VEH_SYNC) {
-        return 1;
+        return VEH_SKIP;
     }
     if (skip || veh_speed(veh_id, 0) - veh->moves_spent > 0) {
         if (net_sync) {
             synch_veh(veh_id);
             NetDaemon_await_synch(NetState);
             if (NetDaemon_action(NetState, veh_id, 1)) {
-                return 1;
+                return VEH_SKIP;
             }
         } else {
             if (!action(veh_id)) {
                 mod_veh_skip(veh_id);
             }
         }
-        return 0;
+        return VEH_SYNC;
     } else {
         if (net_sync) {
             synch_veh(veh_id);
             NetDaemon_await_synch(NetState);
             NetDaemon_unlock_veh(NetState);
         }
-        return 1;
+        return VEH_SKIP;
     }
 }
 

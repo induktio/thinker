@@ -44,7 +44,7 @@ const int TableOffsetY[] = {
     -7,  -8,  -9, -10, -11, -12, -13, -14, -15,
 };
 
-const int PathLimit = 128;
+const int PathLimit = 160;
 const int QueueSize = 8192;
 const int MaxTileSearchType = 6;
 
@@ -93,13 +93,13 @@ class TileSearch {
     int rx, ry, dist, current, faction_id, y_skip;
     PathNode paths[QueueSize];
     Points oldtiles;
-    void init(int x, int y, int tp);
-    void init(int x, int y, int tp, int skip);
-    void init(const PointList& points, TSType tp, int skip);
+    void init(int x, int y, int ts_type);
+    void init(int x, int y, int ts_type, int ts_skip);
+    void init(const PointList& points, TSType ts_type, int ts_skip);
     void get_route(PointList& pp);
     void adjust_roads(PMTable& tbl, int value);
-    void connect_roads(PMTable& tbl, int x, int y, int pact_id);
-    bool has_zoc(int pact_id);
+    void connect_roads(PMTable& tbl, int x, int y, int plr_id);
+    bool has_zoc(int plr_id);
     PathNode& get_prev();
     PathNode& get_node();
     MAP* get_next();
