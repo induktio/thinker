@@ -1042,7 +1042,6 @@ void move_upkeep(int faction_id, UpdateMode mode) {
         std::vector<int> sorter;
         values.reserve(MaxBaseNum);
         sorter.reserve(MaxBaseNum);
-        int bases = 0;
         for (int i = 0, cnt = *BaseCount; i < cnt; ++i) {
             BASE* base = &Bases[i];
             if (base->faction_id == faction_id) {
@@ -1054,27 +1053,27 @@ void move_upkeep(int faction_id, UpdateMode mode) {
                     - (base->defend_range > 0 ? base->defend_range : MaxEnemyRange/2);
                 values.push_back(value);
                 sorter.push_back(value);
-                bases++;
             }
         }
         std::sort(sorter.begin(), sorter.end());
-
-        for (int i = 0, cnt = *BaseCount; i < cnt; ++i) {
+        const int num = values.size();
+        for (int i = 0, n = 0, cnt = *BaseCount; i < cnt; ++i) {
             BASE* base = &Bases[i];
-            if (base->faction_id == faction_id) {
-                if (values[i] >= sorter[bases*15/16] && values[i] > 0) {
+            if (base->faction_id == faction_id && n < num) {
+                int value = values.at(n++);
+                if (value >= sorter.at(num*15/16) && num >= 10 && value > 0) {
                     base->defend_goal = 5;
-                } else if (values[i] >= sorter[bases*7/8]) {
+                } else if (value >= sorter.at(num*7/8)) {
                     base->defend_goal = 4;
-                } else if (values[i] >= sorter[bases*3/4]) {
+                } else if (value >= sorter.at(num*3/4)) {
                     base->defend_goal = 3;
-                } else if (values[i] >= sorter[bases*1/2]) {
+                } else if (value >= sorter.at(num*1/2)) {
                     base->defend_goal = 2;
                 } else {
                     base->defend_goal = 1;
                 }
-                debug("base_defend range: %2d goal: %d score: %d %s\n",
-                base->defend_range, base->defend_goal, values[i], base->name);
+                debug("base_defend range: %2d goal: %d score: %3d %s\n",
+                base->defend_range, base->defend_goal, value, base->name);
             }
         }
     }
