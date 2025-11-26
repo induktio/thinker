@@ -1,6 +1,28 @@
 
 # Thinker mod release changelog
 
+## Version 5.3 (2025-11-26)
+* Add option base_event_turns to adjust duration for base specific random events (Bumper Crops and others).
+* Add option facility_talent_value to modify effects for Paradise Garden, Human Genome Project and Clinical Immortality.
+* Add more fine tuning options for planet_defense_bonus. Rename facility_defense_bonus to facility_defense_value.
+* Map generator is adjusted when world_continents is enabled and it will tend to create more connected landmasses.
+* Governor is able to choose from more custom units such as gravship probes or defend only garrison units without attack value.
+* These custom units will not be designed automatically and they must be provided by modified predefined units section in alphax.txt.
+* Modify config reader to display an error if None/Disable are used as chassis/weapon/armor identifiers for predefined units in alphax.txt.
+* Player automated formers may sometimes raise land when this is enabled from preferences.
+* Governor does more accurate estimates for effic, talent, police and support social effects.
+* Governor secret project building is enabled by default for player bases at the start.
+* Rebuild destroyed secret projects option is enabled by default.
+* Rewrites on combat movement code such as needlejets and avoiding pacifism drones when moving units outside territory. Modded AI also handles planet buster units.
+* AI may use airbase tiles for refueling if there are no bases nearby. AI may also use PSI gates in more situations.
+* Aquatic factions will expand less often on land.
+* CRECHE event can sometimes increase population beyond base facility limits as in the original game.
+* Fix original game issue where low numbers on nutrient/mineral cost factors could crash the game during base calculations.
+* Fix issues where AI tried to build specific defensive units when those were not allowed by options.
+* Fix some issues where factions spawning late on small maps were not able to find available space.
+* Fix skip_faction option not working during multiplayer.
+
+
 ## Version 5.2 (2025-10-02)
 * Add option skip_event to disable specific random events. See thinker.ini for event details.
 * Add option intercept_max_range to adjust automated interceptor scrambling.

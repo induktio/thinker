@@ -16,6 +16,7 @@ By patching the game to use an additional DLL, many new features can be develope
 This mod is tested to work with the [GOG version](https://www.gog.com/game/sid_meiers_alpha_centauri) of Alpha Centauri.
 Note that official Alien Crossfire patch version 2.0 must be installed for the launcher to work with terranx.exe.
 Older game version 1.0 is NOT supported by Thinker. Installing Scient's patch v2 also works since this terranx.exe can be used by the launcher.
+Thinker also includes changes to remove issues on Windows 11 that prevent playing the game expansion due to crashes after ending the turn.
 
 [See more information](Details.md) about the features and recommended settings.
 It's strongly recommended to read Details.md since many features are added not provided by the original game.
@@ -55,7 +56,6 @@ but otherwise it is not necessary.
 The current GOG Alpha Centauri Planetary Pack (13 November 2024) may not work on Windows XP by default. When starting the game
 there can be an error message "The application failed to start because dwmapi.dll was not found." To fix this simply remove ddraw.dll
 from the game folder. This file was added on the latest GOG version and it is not necessary to run the game on Windows XP.
-At minimum Thinker should support all versions between Windows XP and Windows 10.
 
 Alt-tabbing may sometimes not work by default in Alpha Centauri's GOG version. To re-enable alt-tab feature, follow these steps.
 First open a command prompt with administrator privileges in Alpha Centauri's installation folder. After entering the commands
@@ -74,7 +74,8 @@ Then after entering the command below DirectPlay should be automatically install
 Other mods
 ----------
 * [SMAC-in-SMACX mod](Details.md#smac-in-smacx-mod) can be installed to play a game similar to original SMAC while Thinker is enabled.
-* [OpenSMACX](https://github.com/b-casey/OpenSMACX) is a long-term project to decompile and create a full open source clone of SMACX.
+* [Scient's patch](https://github.com/DrazharLn/scient-unofficial-smacx-patch) combines many fixes for the original game.
+* [OpenSMACX](https://github.com/b-casey/OpenSMACX) has been a long-term project to recreate SMACX game engine.
 * Also see [compatibility with other mods such as PRACX](Details.md#compatibility-with-other-mods).
 
 
