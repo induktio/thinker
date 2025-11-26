@@ -597,7 +597,7 @@ void __cdecl read_faction(MFaction* plr, int toggle) {
     plr->AI_growth = clamp(text_item_number(), 0, 1);
     text_get();
     char* parse_check;
-    while (parse_check = text_item(), strlen(parse_check) > 0) {
+    while ((parse_check = text_item()) && strlen(parse_check) > 0) {
         char parse_rule[StrBufLen];
         strcpy_n(parse_rule, StrBufLen, parse_check);
         char* parse_param = text_item();

@@ -12,6 +12,16 @@ static bool check_retool(BASE* base) {
         && base->minerals_accumulated > Rules->retool_exemption;
 }
 
+static bool check_probe(BASE* base, Triad triad) {
+    for (int i = *VehCount - 1; i >= 0; --i) {
+        VEH* veh = &Vehs[i];
+        if (veh->x == base->x && veh->y == base->y && veh->is_probe() && veh->triad() == triad) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static bool has_retool(int base_id, int item_id, int retool) {
     return retool != -1 && retool != 0 && retool != mod_base_making(item_id, base_id);
 }
@@ -85,20 +95,19 @@ int __cdecl mod_base_hurry() {
                 return 0;
             }
         }
-        int num = 0;
         int proj_score = 0;
-        int values[256] = {};
+        std::vector<int> values;
         for (int i = SP_ID_First; i <= SP_ID_Last; i++) {
             if (Facility[i].preq_tech != TECH_Disable) {
-                values[num] = facility_score((FacilityId)i, Wgov) + random(8);
+                int score = facility_score((FacilityId)i, Wgov) + random(8);
                 if (i == -t) {
-                    proj_score = values[num];
+                    proj_score = score;
                 }
-                num++;
+                values.push_back(score);
             }
         }
-        std::sort(values, values+num);
-        if (proj_score < max(4, values[num/2])) {
+        std::sort(values.begin(), values.end());
+        if (values.size() > 0 && proj_score < max(4, values[values.size()/2])) {
             return 0;
         }
         mins = mineral_cost(base_id, t) - b->minerals_accumulated
@@ -152,6 +161,11 @@ int __cdecl mod_base_hurry() {
         if (t == -FAC_AEROSPACE_COMPLEX
         && (f->satellites_ODP > 0 || f->satellites_nutrient > 0
         || f->satellites_mineral > 0 || f->satellites_energy > 0)) {
+            return hurry_item(base_id, mins, cost);
+        }
+        if (t == -FAC_PSI_GATE && b->defend_range < 16
+        && p->main_region != p->target_land_region
+        && region_at(b->x, b->y) == p->target_land_region) {
             return hurry_item(base_id, mins, cost);
         }
     }
@@ -529,8 +543,8 @@ int unit_score(BASE* base, int unit_id, int psi_score, int psi_atk, int psi_def,
     } else {
         v += clamp(4*u->speed(), 0, 48) + 16*(u->range() == 0);
         if (u->is_missile()) {
-            v += (f->player_flags_ext & PFLAG_EXT_STRAT_LOTS_MISSILES ? 16 : 0);
-            v -= 8 * p->missile_units;
+            v += (f->player_flags_ext & PFLAG_EXT_STRAT_LOTS_MISSILES ? 20 : 0);
+            v -= 4 * p->missile_units;
         }
     }
     if (u->ability_flags & ABL_ARTILLERY) {
@@ -540,7 +554,7 @@ int unit_score(BASE* base, int unit_id, int psi_score, int psi_atk, int psi_def,
         } else {
             v -= 8;
         }
-        v += (f->player_flags_ext & PFLAG_EXT_STRAT_LOTS_ARTILLERY ? 16 : 0);
+        v += (f->player_flags_ext & PFLAG_EXT_STRAT_LOTS_ARTILLERY ? 20 : 0);
     }
     if (u->ability_flags & ABL_POLICE_2X && need_police(base->faction_id)) {
         v += (u->speed() > 1 ? 16 : 32);
@@ -706,10 +720,18 @@ int select_combat(int base_id, bool sea_base, bool build_ships) {
     bool sea = gov & (GOV_MAY_PROD_NAVAL_COMBAT | GOV_MAY_PROD_TRANSPORT);
     bool air = gov & (GOV_MAY_PROD_AIR_COMBAT | GOV_MAY_PROD_AIR_DEFENSE);
 
-    if (probes && (!(land || sea || air) || !random(w_probes) || !reserve)
-    && (choice = find_proto(base_id,
-    (build_ships ? TRFLAG_SEA : TRFLAG_LAND) | TRFLAG_AIR, WMODE_PROBE, DEF)) >= 0) {
-        return choice;
+    if (probes && (!(land || sea || air) || !random(w_probes) || !reserve)) {
+        TriadFlag triad = TRFLAG_LAND | TRFLAG_AIR;
+        if (build_ships) {
+            triad = TRFLAG_SEA | TRFLAG_AIR;
+            if (sea_base && p->contacted_factions && !check_probe(base, TRIAD_LAND)
+            && base->defend_range > 0 && base->defend_range < random(64)) {
+                triad |= TRFLAG_LAND;
+            }
+        }
+        if ((choice = find_proto(base_id, triad, WMODE_PROBE, DEF)) >= 0) {
+            return choice;
+        }
     }
     if (air && (!(land || sea) || !random(w_air))
     && (choice = find_proto(base_id, TRFLAG_AIR, WMODE_COMBAT, ATT)) >= 0) {
@@ -1029,7 +1051,7 @@ int select_build(int base_id) {
                 if (num < 4) {
                     continue;
                 }
-                score += 8 * (num - 4) + (formers || near_formers ? 0 : 4 * num);
+                score += 8 * (num - 4) + (formers || near_formers || defend_range < 8 ? 0 : 4 * num);
                 if ((sea*2 >= num || sea_base)
                 && (choice = find_proto(base_id, TRFLAG_SEA|TRFLAG_AIR, WMODE_TERRAFORM, DEF)) >= 0) {
                     push_item(builds, base_id, choice, retool, score, --Wt);
@@ -1070,8 +1092,8 @@ int select_build(int base_id) {
         if (t == ColonyUnit && allow_pods && pods < 2 && gov & GOV_MAY_PROD_COLONY_POD) {
             if ((choice = select_colony(base_id, pods, allow_ships)) >= 0) {
                 score += clamp(*MapAreaSqRoot*2 - f->base_count, 0, 80);
-                score += (pods ? 0 : 16*max(0, 8 - f->base_count));
-                score += 32*clamp(f->SE_effic_pending + 2, -2, 0);
+                score += clamp(f->SE_effic_pending + 4, 0, 4)
+                    * (pods ? 1 : 2) * (max(0, 16 - f->base_count));
                 push_item(builds, base_id, choice, retool, score, --Wt);
                 continue;
             }
@@ -1162,6 +1184,7 @@ int select_build(int base_id) {
         if (t == FAC_BIOLOGY_LAB) {
             score += 2*Wenergy*conf.biology_lab_bonus;
             score -= (f->SE_planet_pending <= 0 ? 4 : 2)*base->energy_surplus;
+            score -= 40*(base->energy_surplus <= base->energy_inefficiency);
         }
         if (t == FAC_BIOLOGY_LAB || t == FAC_CENTAURI_PRESERVE) {
             score += 8*min(4, p->psi_score);
@@ -1182,7 +1205,8 @@ int select_build(int base_id) {
             continue;
         }
         if (t == FAC_COMMAND_CENTER || t == FAC_NAVAL_YARD || t == FAC_BIOENHANCEMENT_CENTER) {
-            if (minerals < reserve || (base->defend_goal < 3 && Facility[t].maint)) {
+            if (minerals < max(reserve, p->project_limit)
+            || (defend_range > MaxEnemyRange/2 && Facility[t].maint)) {
                 continue;
             }
             score -= 4*(Facility[t].cost + Facility[t].maint);
@@ -1210,7 +1234,8 @@ int select_build(int base_id) {
                     dist = min(dist, (base_reg == region_at(b->x, b->y) ? 1 : 2) * map_range(base, b));
                 }
             }
-            score += (sea_base ? 2 : 8)*max(0, dist - 4);
+            score += (sea_base ? 2 : 8) * max(0, dist - 4)
+                * (p->main_region != p->target_land_region && base_reg == p->target_land_region ? 4 : 1);
             score += (base->x == p->naval_start_x && base->y == p->naval_start_y ? 160 : 0);
         }
         assert(t > 0 && t <= SP_ID_Last);

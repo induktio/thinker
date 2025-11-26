@@ -122,6 +122,12 @@ void design_units(int faction_id) {
     int wpn_v = Weapon[wpn].offense_value;
     int arm_v = Weapon[arm].offense_value;
 
+    map_int_t units_active;
+    for (int i = *VehCount - 1; i >= 0; --i) {
+        if (Vehs[i].faction_id == fc) {
+            units_active[Vehs[i].unit_id]++;
+        }
+    }
     if (upgrade) {
         score_max_queue_t old_units;
         std::vector<int> new_units;
@@ -134,7 +140,7 @@ void design_units(int faction_id) {
                 && u->is_prototyped() && !(u->obsolete_factions & (1 << fc))) {
                     new_units.push_back(i);
                 }
-                if (Factions[fc].units_active[i]) {
+                if (units_active[i]) {
                     int atk_val = u->offense_value();
                     int def_val = u->defense_value();
                     if ((u->obsolete_factions & (1 << fc))
@@ -178,21 +184,26 @@ void design_units(int faction_id) {
                 }
             }
         }
+        units_active.clear();
+        for (int i = *VehCount - 1; i >= 0; --i) {
+            if (Vehs[i].faction_id == fc) {
+                units_active[Vehs[i].unit_id]++;
+            }
+        }
     }
     score_min_queue_t obsolete;
     int active = 0;
     for (int i = 0; i < MaxProtoNum; i++) {
         UNIT* u = &Units[i];
-        if (i / MaxProtoFactionNum == fc && u->is_active()) {
+        if (i >= MaxProtoFactionNum && i / MaxProtoFactionNum == fc && u->is_active()) {
             active++;
             if (u->is_prototyped()
             && u->obsolete_factions & (1 << fc)
-            && Factions[fc].units_active[i] < 8
-            && (!Factions[fc].units_active[i]
+            && units_active[i] < 8
+            && (!units_active[i]
             || (!u->is_colony() && !u->is_supply()
             && !u->is_transport() && !u->is_missile()))) {
-                int score = (u->cost + 1)*(u->triad() == TRIAD_AIR ? 4 : 1)
-                    * Factions[fc].units_active[i];
+                int score = units_active[i] * (u->cost+1) * (u->triad() == TRIAD_AIR ? 4 : 1);
                 obsolete.push({i, score});
             }
         }
@@ -204,8 +215,8 @@ void design_units(int faction_id) {
             obsolete.pop();
             if (--active >= (score ? 56 : 48)
             && (!score || (upgrade && check_disband(unit_id, fc)))) {
-                debug("retire_proto %d %d %3d %3d %3d %s\n", *CurrentTurn, fc,
-                    unit_id, score, Factions[fc].units_active[unit_id], Units[unit_id].name);
+                debug("retire_proto %d %d count: %d score: %d / %d %s\n", *CurrentTurn, fc,
+                    units_active[unit_id], score, unit_id, Units[unit_id].name);
                 retire_proto(unit_id, fc);
             }
         }

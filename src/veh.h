@@ -30,6 +30,7 @@ int __cdecl veh_cargo(int veh_id);
 int __cdecl want_monolith(int veh_id);
 void __cdecl mod_monolith(int veh_id);
 int __cdecl mod_goody_box(int veh_id);
+int __cdecl mod_study_artifact(int veh_id);
 int __cdecl contribution(int veh_id, int terraform_id);
 int __cdecl arm_strat(int armor_id, int faction_id);
 int __cdecl weap_strat(int weapon_id, int faction_id);

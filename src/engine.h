@@ -173,6 +173,7 @@ typedef std::vector<Point> PointList;
 typedef std::set<std::string> set_str_t;
 typedef std::vector<std::string> vec_str_t;
 typedef std::map<std::string, std::string> map_str_t;
+typedef std::map<int, int> map_int_t;
 
 typedef int (__cdecl *fp_none)();
 typedef int (__cdecl *fp_1int)(int);

@@ -345,7 +345,7 @@ struct AIPlans {
     int main_region_x = -1;
     int main_region_y = -1;
     int main_sea_region = -1;
-    int target_land_region = 0;
+    int target_land_region = -1;
     int prioritize_naval = 0;
     int naval_scout_x = -1;
     int naval_scout_y = -1;

@@ -13,7 +13,7 @@ void TileSearch::reset() {
 
 void TileSearch::add_start(int x, int y) {
     assert(type >= 0 && type <= MaxTileSearchType);
-    if (tail < QueueSize/2 && (sq = mapsq(x, y)) && !oldtiles.count({x, y})) {
+    if (tail < QueueSize && (sq = mapsq(x, y)) && !oldtiles.count({x, y})) {
         paths[tail] = {x, y, 0, -1};
         oldtiles.insert({x, y});
         tail++;
@@ -93,7 +93,9 @@ bool TileSearch::has_zoc(int plr_id) {
 }
 
 PathNode& TileSearch::get_prev() {
-    return paths[paths[current].prev];
+    int p = paths[current].prev;
+    assert(p >= 0);
+    return paths[p];
 }
 
 PathNode& TileSearch::get_node() {
@@ -625,6 +627,7 @@ int search_base(TileSearch& ts, int veh_id, bool ally, int* tx, int* ty) {
         best_score = escape_score(veh->x, veh->y, 0, veh, sq);
         max_dist = 20;
     }
+    bool found = false;
     ts.init(veh->x, veh->y, type, 1);
     while ((sq = ts.get_next()) != NULL && ts.dist <= max_dist) {
         if (sq->is_base()) {
@@ -632,11 +635,12 @@ int search_base(TileSearch& ts, int veh_id, bool ally, int* tx, int* ty) {
             || (ally && has_pact(veh->faction_id, sq->owner))) {
                 *tx = ts.rx;
                 *ty = ts.ry;
+                found = true;
                 if (triad == TRIAD_AIR || random(2)) {
                     break;
                 }
             }
-        } else if (*tx < 0 && (ts.dist <= 5 || triad == TRIAD_AIR)
+        } else if (!found && (ts.dist <= 5 || triad == TRIAD_AIR)
         && allow_move(ts.rx, ts.ry, veh->faction_id, triad)
         && (score = escape_score(ts.rx, ts.ry, ts.dist, veh, sq)) > best_score) {
             if ((triad == TRIAD_AIR && sq->is_airbase())
@@ -655,7 +659,6 @@ static int route_score(VEH* veh, int x, int y, int modifier, MAP* sq) {
     bool sea = is_ocean(sq);
     int score = (sea ? 0 : min(16, Continents[sq->region].tile_count/32))
         + 32*(sq->region == plan.main_region)
-        + 16*(plan.main_region != plan.target_land_region || sq->region != plan.target_land_region)
         - modifier * (sea ? 2 : 1) * map_range(veh->x, veh->y, x, y)
         - 4*mapdata[{x, y}].target;
     if (veh->is_artifact() && !mapnodes.count({x, y, NODE_NAVAL_START})) {
@@ -699,6 +702,7 @@ int search_route(TileSearch& ts, int veh_id, int* tx, int* ty) {
         if (!veh->is_transport()) {
             return false;
         }
+        bool invade = plan.naval_start_x >= 0 && invasion_unit(veh_id);
         ts.init(veh->x, veh->y, TS_SEA_AND_SHORE);
         while ((sq = ts.get_next()) != NULL) {
             if (sq->is_base() && sq->owner == veh->faction_id) {
@@ -709,6 +713,10 @@ int search_route(TileSearch& ts, int veh_id, int* tx, int* ty) {
                     continue;
                 }
                 int score = route_score(veh, ts.rx, ts.ry, 1, sq);
+                if (invade) {
+                    score -= 4*min(map_range(ts.rx, ts.ry, plan.naval_start_x, plan.naval_start_y),
+                        map_range(ts.rx, ts.ry, plan.naval_end_x, plan.naval_end_y));
+                }
                 if (score > best_score) {
                     *tx = ts.rx;
                     *ty = ts.ry;

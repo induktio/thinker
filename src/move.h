@@ -12,10 +12,15 @@ enum EnemyVehMove { // Return codes for enemy_veh processing
     VEH_SKIP = 1,
 };
 
-const int PM_SAFE = -20;
-const int PM_NEAR_SAFE = -40;
 const uint32_t BIT_SIMPLE = (BIT_FARM | BIT_MINE | BIT_SOLAR | BIT_FOREST);
 const uint32_t BIT_ADVANCED = (BIT_CONDENSER | BIT_THERMAL_BORE);
+
+const int PM_SAFE = -20;
+const int PM_NEAR_SAFE = -40;
+const int PM_ShoreLine = 0x100;
+const int PM_ShoreMask = 0xff;
+const int PM_NearOwnBase = 0x10000;
+const int PM_PsiGateBase = 0x20000;
 
 extern PMTable mapdata;
 extern NodeSet mapnodes;

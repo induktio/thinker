@@ -1374,6 +1374,57 @@ GOODY_NEXT:
     }
 }
 
+int __cdecl mod_study_artifact(int veh_id) {
+    VEH* veh = &Vehs[veh_id];
+    int x = veh->x;
+    int y = veh->y;
+    int faction_id = veh->faction_id;
+    int base_id = base_at(x, y);
+    if (base_id >= 0 && project_base(FAC_UNIVERSAL_TRANSLATOR) != base_id) {
+        BASE* base = &Bases[base_id];
+        if (base->state_flags & BSTATE_ARTIFACT_LINKED) {
+            if (!(base->state_flags & BSTATE_ARTIFACT_ALREADY_LINKED)
+            && faction_id == *CurrentPlayerFaction) {
+                parse_says(0, base->name, -1, -1);
+                NetMsg_pop(NetMsg, "ALREADYARTIFACT", -5000, 0, "art_dis_sm.pcx");
+                base->state_flags |= BSTATE_ARTIFACT_ALREADY_LINKED;
+            }
+            return 0;
+        }
+    }
+    veh_kill(veh_id);
+    draw_tile(x, y, 2);
+    if (faction_id == *CurrentPlayerFaction) {
+        FX_play(Sounds, 35);
+        popp(ScriptFile, "ARTIFACTTECH", 0, "art_dis_sm.pcx", 0);
+    }
+    if (Factions[faction_id].player_flags & PFLAG_UNK_10) {
+        Factions[faction_id].player_flags |= PFLAG_UNK_4;
+    } else {
+        Factions[faction_id].player_flags |= PFLAG_UNK_10;
+    }
+    if (base_id >= 0) {
+        Bases[base_id].state_flags |= BSTATE_ARTIFACT_LINKED;
+    }
+    int best_tech_id = -1;
+    int best_val = -1;
+    for (int i = 0; i < MaxTechnologyNum; i++) {
+        if (!has_tech(i, faction_id) && mod_tech_avail(i, faction_id)) {
+            // Fix: removed here additional code that was never used
+            // due to conditions in tech_avail already excluding it.
+            int rnd_val = game_randv(8);
+            if (rnd_val > best_val) {
+                best_val = rnd_val;
+                best_tech_id = i;
+            }
+        }
+    }
+    if (best_tech_id >= 0) {
+        tech_achieved(faction_id, best_tech_id, 0, 0);
+    }
+    return 1;
+}
+
 /*
 Calculate the former rate to perform terrain enhancements.
 This is only called from veh_wake but it can be inlined on other functions.
@@ -2596,8 +2647,11 @@ VehArmor best_armor(int faction_id, int max_cost) {
 
 VehWeapon best_weapon(int faction_id) {
     int best_id = WPN_HAND_WEAPONS;
-    for (int i = WPN_HAND_WEAPONS; i <= WPN_STRING_DISRUPTOR; i++) {
-        if (has_tech(Weapon[i].preq_tech, faction_id)) {
+    for (int i = 0; i < MaxWeaponNum; i++) {
+        if (has_tech(Weapon[i].preq_tech, faction_id)
+        && Weapon[i].mode <= WMODE_MISSILE
+        && Weapon[i].offense_value < 99
+        && i != WPN_CONVENTIONAL_PAYLOAD) {
             int diff = Weapon[i].offense_value - Weapon[best_id].offense_value;
             if (diff > 0 || (diff == 0 && Weapon[best_id].cost >= Weapon[i].cost)) {
                 best_id = i;
