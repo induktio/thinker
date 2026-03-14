@@ -86,7 +86,7 @@ For information on how to compile Thinker, see [Technical.md](Technical.md).
 
 License
 -------
-This software is licensed under the GNU General Public License version 2, or (at your option) version 3 of the GPL. See [License.txt](License.txt) for details.
+This software is licensed under the MIT License. Check [License.md](License.md) for detailed conditions.
 
 The original game assets are not covered by this license and remain property of Firaxis Games Inc and Electronic Arts Inc.
 
