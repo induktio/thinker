@@ -529,6 +529,9 @@ int unit_score(BASE* base, int unit_id, int psi_score, int psi_atk, int psi_def,
         v = (atk_val >= 0 ? 16 * (atk_val + (atk_val > 1)) : 12 * psi_atk + 16 * psi_score)
             + (def_val >= 0 ? 2 * def_val : psi_def + psi_score);
     }
+    if (psi_score <= 0 && u->is_psi_unit()) {
+        v += 8*(psi_score - 2);
+    }
     if (combat && atk_val >= 0) {
         if (!atk_val) {
             v -= (defend ? 100 : 1000);
@@ -631,7 +634,7 @@ int find_proto(int base_id, TriadFlag triad, VehWeaponMode mode, bool defend) {
                 }
                 if ((!combat && Weapon[u->weapon_id].mode != mode)
                 || (combat && (u->offense_value() == 0 && (!defend || u->plan > PLAN_RECON)))
-                || (u->is_psi_unit() && psi_score <= 0)) {
+                || (u->is_psi_unit() && !(gov & GOV_MAY_PROD_NATIVE))) {
                     continue;
                 }
                 if (combat && u->triad() == TRIAD_AIR) {
@@ -1108,6 +1111,15 @@ int select_build(int base_id) {
             score += Wenergy * item.energy * base->energy_surplus / 4;
             score -= 2*base->energy_inefficiency;
         }
+        if (t >= 1 && t <= 64 && is_human(base->faction_id)
+        && conf.skip_gov_facility & (1 << (t - 1))) {
+            continue;
+        }
+        if (!(gov & GOV_MAY_FORCE_PSYCH) && (t == FAC_PUNISHMENT_SPHERE
+        || (t == FAC_GENEJACK_FACTORY && base_can_riot(base_id, false)
+        && Rules->drones_induced_genejack_factory > 0))) {
+            continue;
+        }
         if (t == FAC_RECYCLING_TANKS) {
             score += 16*(ResInfo->recycling_tanks.energy
                 + clamp(5 - base->nutrient_surplus, 1, 3) * ResInfo->recycling_tanks.nutrient
@@ -1124,7 +1136,7 @@ int select_build(int base_id) {
         }
         if (t == FAC_PUNISHMENT_SPHERE) {
             int turns = base->assimilation_turns_left;
-            if (!(gov & GOV_MAY_FORCE_PSYCH) || (!drone_riots && !turns && drones < base->pop_size/2)) {
+            if (!drone_riots && !turns && drones < base->pop_size/2) {
                 continue;
             }
             if (clamp((turns - 5) / 10, 0, 3)

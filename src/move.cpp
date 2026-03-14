@@ -23,6 +23,8 @@ to the square chosen by escape_move.
 PMTable mapdata;
 NodeSet mapnodes;
 static Points nonally;
+static int nonally_veh_count = 0;
+static int nonally_faction_id = 0;
 static std::set<int> region_enemy;
 static std::set<int> region_probe;
 static const int VehRemoveTurns = 60;
@@ -340,9 +342,7 @@ bool ally_near_tile(int x, int y, int faction_id, int skip_veh_id, int max_range
 
 bool non_ally_in_tile(int x, int y, int faction_id) {
     assert(mapsq(x, y));
-    static int prev_veh_num = 0;
-    static int prev_faction = 0;
-    if (prev_veh_num != *VehCount || prev_faction != faction_id) {
+    if (nonally_veh_count != *VehCount || nonally_faction_id != faction_id) {
         nonally.clear();
         for (int i = *VehCount - 1; i >= 0; --i) {
             VEH* veh = &Vehs[i];
@@ -351,8 +351,8 @@ bool non_ally_in_tile(int x, int y, int faction_id) {
             }
         }
         debug("refresh %d %d %d\n", *CurrentTurn, faction_id, *VehCount);
-        prev_veh_num = *VehCount;
-        prev_faction = faction_id;
+        nonally_veh_count = *VehCount;
+        nonally_faction_id = faction_id;
     }
     return nonally.count({x, y}) > 0;
 }
@@ -447,83 +447,22 @@ bool near_sea_coast(int x, int y) {
     return false;
 }
 
-int __cdecl mod_enemy_move(int veh_id) {
-    assert(veh_id >= 0 && veh_id < *VehCount);
-    if (veh_id < 0) {
-        return enemy_move(veh_id); // fallback to enemy_move, special case for tutorials
-    }
-    VEH* veh = &Vehs[veh_id];
-    MAP* sq;
-    bool plr_unit = veh->plr_owner();
-    debug("enemy_move %d %2d %2d %s\n", veh_id, veh->x, veh->y, veh->name());
-
-    if (!(sq = mapsq(veh->x, veh->y))) {
-        return VEH_SYNC;
-    }
-    if (!veh->faction_id && !(*MultiplayerActive && veh->faction_id == *CurrentPlayerFaction)) {
-        return alien_move(veh_id);
-    }
-    if (plr_unit) {
-        if (!*CurrentBase) {
-            int base_id = mod_base_find3(veh->x, veh->y, veh->faction_id, -1, -1, -1);
-            if (base_id >= 0) {
-                set_base(base_id);
-            }
-        }
-        if (conf.manage_player_units && move_upkeep_faction != veh->faction_id) {
-            move_upkeep(veh->faction_id, UM_Player);
-        }
-    }
-    if (thinker_move_upkeep(veh->faction_id)) {
-        int triad = veh->triad();
-        if (plr_unit && veh->is_patrol_order()) {
-            if (veh->need_refuel() && (sq->is_airbase()
-            || mod_stack_check(veh_id, 6, ABL_CARRIER, -1, -1))) {
-                veh->apply_refuel();
-                return mod_veh_skip(veh_id);
-            }
-            // fallback to enemy_move
-        } else if (!plr_unit && veh->flags & (VFLAG_LURKER|VFLAG_INVISIBLE)) {
-            return mod_veh_skip(veh_id);
-        } else if (veh->is_colony()) {
-            return colony_move(veh_id);
-        } else if (veh->is_former()) {
-            return former_move(veh_id);
-        } else if (veh->is_supply()) {
-            return crawler_move(veh_id);
-        } else if (veh->is_artifact()) {
-            return artifact_move(veh_id);
-        } else if (triad == TRIAD_SEA && veh_cargo(veh_id) > 0) {
-            return trans_move(veh_id);
-        } else if (veh->is_planet_buster()) {
-            return nuclear_move(veh_id);
-        } else {
-            return combat_move(veh_id);
-        }
-    }
-    int num = *VehCount;
-    int iter = veh->iter_count;
-    int value = enemy_move(veh_id);
-    if (value == VEH_SKIP && veh->iter_count == iter && num == *VehCount) {
-        // Avoid infinite loops if enemy_move does not update the vehicle
-        return VEH_SYNC;
-    }
-    return value;
-}
-
 int __cdecl veh_kill_lift(int veh_id) {
     // This function is called in veh_kill when a vehicle is removed/killed for any reason
     VEH* veh = &Vehs[veh_id];
     if (on_map(veh->x, veh->y) && at_war(move_upkeep_faction, veh->faction_id)) {
-        if (mapdata[{veh->x, veh->y}].enemy > 0) {
+        auto& mp = mapdata[{veh->x, veh->y}];
+        if (mp.enemy > 0) {
             adjust_enemy_near(veh->x, veh->y, 3, -1);
-            mapdata[{veh->x, veh->y}].enemy--;
+            mp.enemy--;
+            if (!mp.enemy) {
+                nonally_veh_count = 0;
+            }
         }
-        if (mapdata[{veh->x, veh->y}].target > 0) {
-            mapdata[{veh->x, veh->y}].target--;
+        if (mp.target > 0) {
+            mp.target--;
         }
     }
-    debug("veh_kill %d %d %d %d %s\n", veh->faction_id, veh_id, veh->x, veh->y, veh->name());
     return veh_lift(veh_id);
 }
 
@@ -1532,7 +1471,7 @@ bool can_bridge(int x, int y, int faction_id, MAP* sq) {
             }
         }
     }
-    if (coast_tiles(x, y) < 3) {
+    if (coast_tiles(x, y) < 3 || sq->landmarks & LM_JUNGLE) {
         return false;
     }
     const int range = 4;
@@ -2323,10 +2262,10 @@ bool allow_conv_missile(int veh_id, int enemy_veh_id, MAP* sq) {
 
 bool can_airdrop(int veh_id, MAP* sq) {
     VEH* veh = &Vehs[veh_id];
-    return has_abil(veh->unit_id, ABL_DROP_POD)
+    return sq && sq->is_airbase()
+        && has_abil(veh->unit_id, ABL_DROP_POD)
         && !(veh->state & VSTATE_MADE_AIRDROP)
-        && !veh->moves_spent
-        && sq->is_airbase();
+        && !veh->moves_spent;
 }
 
 bool allow_airdrop(int x, int y, int faction_id, bool combat, MAP* sq) {
@@ -2464,7 +2403,7 @@ int trans_move(const int id) {
                         artifact++;
                     }
                     if (at_base && !mapnodes.count({veh->x, veh->y, NODE_NAVAL_START})) {
-                        mod_veh_wake(i);
+                        veh_wake(i);
                     }
                 }
             } else if (map_range(veh->x, veh->y, v->x, v->y) == 1) {
@@ -2557,6 +2496,13 @@ int trans_move(const int id) {
 
     int best_score = INT_MIN;
     int max_dist = ((*CurrentTurn + id) % 4 ? 8 : 16) + (artifact ? 20 : 0);
+    int atk_dist = (veh->is_combat_unit() ? 2 - at_base : 0);
+    int atk_moves = (atk_dist ? veh_speed(id, 0) - veh->moves_spent : 0);
+    int px = -1;
+    int py = -1;
+    double best_odds = (cargo ? 1.8 : 1.4)
+        - 0.004*min(50, mapdata[{veh->x, veh->y}].unit_near)
+        - 0.0005*min(500, p.transport_units + p.sea_combat_units);
 
     if (mapnodes.count({veh->x, veh->y, NODE_NAVAL_START})) {
         max_dist = 4;
@@ -2568,9 +2514,34 @@ int trans_move(const int id) {
     ts.init(veh->x, veh->y, TS_SEA_AND_SHORE);
 
     while ((sq = ts.get_next()) != NULL && ts.dist <= max_dist) {
-        bool own_base = sq->is_base() && sq->owner == veh->faction_id;
-        bool can_move = own_base || allow_move(ts.rx, ts.ry, veh->faction_id, TRIAD_SEA);
-        if (!can_move) {
+        bool to_base = sq->is_base();
+        bool own_base = to_base && sq->owner == veh->faction_id;
+        auto& mp = mapdata[{ts.rx, ts.ry}];
+        if (!own_base && ts.dist <= atk_dist && is_ocean(sq)) {
+            bool to_enemy = at_war(veh->faction_id, sq->owner);
+            int id2;
+            if (to_base && to_enemy && sq->veh_who() < 0
+            && mp.target < 2 + random(16)) {
+                px = ts.rx;
+                py = ts.ry;
+                break;
+            }
+            if ((!to_base || to_enemy)
+            && (id2 = choose_defender(ts.rx, ts.ry, id, sq)) >= 0) {
+                VEH* veh2 = &Vehs[id2];
+                if (!to_base && veh2->chassis_type() == CHS_NEEDLEJET
+                && !has_abil(veh->unit_id, ABL_AIR_SUPERIORITY)) {
+                    continue;
+                }
+                double odds = battle_priority(id, id2, ts.dist, atk_moves, sq);
+                if (odds > best_odds) {
+                    px = ts.rx;
+                    py = ts.ry;
+                    best_odds = odds;
+                }
+            }
+        }
+        if (!own_base && !allow_move(ts.rx, ts.ry, veh->faction_id, TRIAD_SEA)) {
             continue;
         }
         if (ts.dist <= 2 && !veh->need_heals() && goody_at(ts.rx, ts.ry)) {
@@ -2593,7 +2564,7 @@ int trans_move(const int id) {
             }
         } else if (!artifact) {
             if (tx < 0 && allow_scout(veh->faction_id, sq)
-            && mapdata[{ts.rx, ts.ry}].safety > PM_SAFE && ts.dist < random(16)) {
+            && mp.safety > PM_SAFE && ts.dist < random(16)) {
                 tx = ts.rx;
                 ty = ts.ry;
             }
@@ -2617,7 +2588,7 @@ int trans_move(const int id) {
             }
         }
         if (mapnodes.count({ts.rx, ts.ry, NODE_NEED_FERRY})
-        && !cargo && mapdata[{ts.rx, ts.ry}].target <= random(8)) {
+        && !cargo && mp.target <= random(8)) {
             debug("trans_ferry %2d %2d -> %2d %2d\n", veh->x, veh->y, ts.rx, ts.ry);
             return set_move_to(id, ts.rx, ts.ry);
         }
@@ -2626,6 +2597,10 @@ int trans_move(const int id) {
             tx = ts.rx;
             ty = ts.ry;
         }
+    }
+    if (px >= 0) {
+        debug("trans_attack %2d %2d -> %2d %2d\n", veh->x, veh->y, px, py);
+        return set_move_to(id, px, py);
     }
     if (tx >= 0) {
         debug("trans_move %2d %2d -> %2d %2d\n", veh->x, veh->y, tx, ty);
@@ -2817,9 +2792,10 @@ int nuclear_move(const int id) {
     return mod_veh_skip(id);
 }
 
-int airdrop_move(const int id, MAP* sq) {
+int airdrop_move(const int id) {
     VEH* const veh = &Vehs[id];
-    if (!can_airdrop(id, sq)) {
+    MAP* const veh_sq = mapsq(veh->x, veh->y);
+    if (!can_airdrop(id, veh_sq)) {
         return false;
     }
     int faction_id = veh->faction_id;
@@ -2831,6 +2807,7 @@ int airdrop_move(const int id, MAP* sq) {
     int base_range;
 
     for (int i = 0, cnt = *BaseCount; i < cnt; ++i) {
+        MAP* sq;
         BASE* base = &Bases[i];
         bool allow_defend = base->faction_id == faction_id && (*CurrentTurn + id) & 1;
         bool allow_attack = at_war(faction_id, base->faction_id);
@@ -2960,7 +2937,7 @@ int combat_move(const int id) {
             + (p.contacted_factions ? 0 : 4),
             (high_damage ? 2 : 3), 8 + 4*(veh->speed() > 1)
         );
-        if (veh_sq->is_airbase() && airdrop_move(id, veh_sq)) {
+        if (airdrop_move(id)) {
             return VEH_SKIP;
         }
         if (triad == TRIAD_LAND && mapnodes.count({veh->x, veh->y, NODE_NAVAL_END})) {
@@ -3101,6 +3078,7 @@ int combat_move(const int id) {
         else if (needlejet && !refuel && mp.enemy_rank > 0
         && (tx < 0 || map_range(tx, ty, ts.rx, ts.ry) <= 1)
         && (score = mp.enemy_rank - (sq->owner == faction_id ? 2 : 4)*ts.dist) > best_cover
+        && allow_move(ts.rx, ts.ry, faction_id, TRIAD_AIR)
         && !needlejet_check(veh, ts.rx, ts.ry)) {
             px = ts.rx;
             py = ts.ry;

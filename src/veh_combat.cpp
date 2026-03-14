@@ -67,19 +67,6 @@ int __cdecl psi_factor(int value, int faction_id, int is_attack, int is_fungal_t
 }
 
 /*
-Modify planetpearls income after wiping out any planet-owned units.
-*/
-int __cdecl battle_kill_credits(int veh_id) {
-    if (conf.planetpearls > 1) { // Original value
-        return 10 * (mod_morale_alien(veh_id, 0) + 1);
-    } else if (conf.planetpearls == 1) {
-        return 10 + 5 * mod_morale_alien(veh_id, 0);
-    } else {
-        return 0;
-    }
-}
-
-/*
 Generate an output string for the specified unit's morale.
 Contains rewrites to update Children's Creche, Brood Pit and Headquarters effects.
 */
@@ -1081,13 +1068,14 @@ void __cdecl promote(int veh_id) {
                 int mod_morale = mod_morale_veh(veh_id, 1, 0);
                 if (morale != mod_morale && veh->faction_id == MapWin->cOwner && is_human(veh->faction_id)) {
                     parse_says(1, veh->name(), -1, -1);
+                    // When the popups are disabled promotions are also delayed notifications
+                    int delay = (conf.game_event_popup ? -5000 : 5000);
                     if (veh->is_native_unit()) {
                         parse_says(0, Morale[mod_morale].name_lifecycle, -1, -1);
-                        // Change promotions to delayed notifications instead of popups
-                        net_pop("MORALE2", "batwon_sm.pcx");
+                        NetMsg_pop(NetMsg, "MORALE2", delay, 0, "batwon_sm.pcx");
                     } else {
                         parse_says(0, Morale[mod_morale].name, -1, -1);
-                        net_pop("MORALE", "batwon_sm.pcx");
+                        NetMsg_pop(NetMsg, "MORALE", delay, 0, "batwon_sm.pcx");
                     }
                 }
             }
@@ -1203,13 +1191,16 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
     int marine_detach = 0;
     int detach_value = 0;
 
-    VEH* veh_atk = {};
-    VEH* veh_def = {};
     MAP* sq_atk = {};
     MAP* sq_def = mapsq(tx, ty);
+    VEH* veh_atk = {};
+    VEH* veh_def = {};
+    UNIT* unit_atk = {};
+    UNIT* unit_def = {};
 
     if (veh_id_atk >= 0) {
         veh_atk = &Vehs[veh_id_atk];
+        unit_atk = &Units[veh_atk->unit_id];
         faction_id_atk = veh_atk->faction_id;
         sq_atk = mapsq(veh_atk->x, veh_atk->y);
         x = veh_atk->x;
@@ -1238,6 +1229,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
     veh_id_def = find_defender(veh_id_def, veh_id_atk, combat_type);
     if (veh_id_def >= 0) {
         veh_def = &Vehs[veh_id_def];
+        unit_def = &Units[veh_def->unit_id];
         faction_id_def = veh_def->faction_id;
         if (DEBUG && option && faction_id_atk == faction_id_def) {
             print_veh(veh_id_atk);
@@ -1608,7 +1600,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                     veh_id_def = veh_def->next_veh_id_stack;
                     continue;
                 }
-                mod_veh_skip(veh_id_atk);
+                veh_skip(veh_id_atk);
                 mod_battle_compute(veh_id_atk, veh_id_def, &offense_out, &defense_out, 1);
                 int def_value = max(1, defense_out * Rules->artillery_dmg_denominator);
                 int damage_value = combat_rand(clamp(offense_out * Rules->artillery_dmg_numerator / def_value + 1, 1, 999));
@@ -1816,7 +1808,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                                 veh->home_base_id = iter_base_id;
                             }
                             debug("battle_fight detach %s -> %s\n", veh_atk->name(), veh->name());
-                            mod_veh_skip(iter_veh_id);
+                            veh_skip(iter_veh_id);
                             iter_veh_id = veh->next_veh_id_stack;
                         };
                     }
@@ -2123,7 +2115,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
             }
         }
         if (base_id < 0) {
-            goto END_BATTLE;
+            goto END_UPKEEP;
         }
         BASE* base = &Bases[base_id];
         base->state_flags |= BSTATE_COMBAT_LOSS_LAST_TURN;
@@ -2172,7 +2164,11 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
 
 END_UPKEEP:
     if (faction_id_atk && faction_id_def) {
-        mon_enemy_destroyed(faction_id_atk, faction_id_def);
+        if (atk_alive) {
+            mon_enemy_destroyed(faction_id_atk, faction_id_def);
+        } else {
+            mon_enemy_destroyed(faction_id_def, faction_id_atk);
+        }
     }
     if (num_relics && !is_human(faction_id_def)) {
         if (!has_treaty(faction_id_atk, faction_id_def, DIPLO_VENDETTA)) {
@@ -2290,8 +2286,9 @@ END_BATTLE:
         NetMsg_pop2("PACTATTACKING", 0);
         break;
     }
-    Units[veh_atk->unit_id].combat_factions |= (1 << faction_id_def);
-    Units[veh_def->unit_id].combat_factions |= (1 << faction_id_atk);
+    // Fix: avoid using expired pointers for vehicles
+    unit_atk->combat_factions |= (1 << faction_id_def);
+    unit_def->combat_factions |= (1 << faction_id_atk);
     if (interlude_base_attack) {
         interlude(0, 0, 1, 0);
     }
@@ -2302,23 +2299,23 @@ END_BATTLE:
     VEH* veh = &Vehs[*CurrentVehID];
     int veh_range = veh->range();
     if (veh->triad() == TRIAD_SEA || (veh->triad() == TRIAD_AIR && veh_range != 1)) {
-        mod_veh_skip(*CurrentVehID); // TODO check why increase moves_spent after veh_skip
-        veh->moves_spent += Rules->move_rate_roads;
+        veh_skip(*CurrentVehID);
+        // Fix: removed moves_spent increase after veh_skip is already called
         veh->flags &= ~VFLAG_FULL_MOVE_SKIPPED;
     }
-    int result = 1;
+    // Fix: immediate return after veh is removed, adjust return value based on fuel status
     if (veh->is_missile()) {
         kill(*CurrentVehID);
-        result = 0;
+        return 0;
     }
     if (is_human(faction_id_atk)
     || base_id < 0
     || veh_who(tx, ty) >= 0
     || veh->triad() != TRIAD_AIR
     || veh_range == 0) {
-        return result;
+        return 1;
     }
-    return (veh->movement_turns + 1 < veh_range ? result : 1);
+    return (veh->movement_turns + 1 < veh_range);
 }
 
 

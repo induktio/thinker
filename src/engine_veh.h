@@ -348,7 +348,7 @@ enum VehState {
     VSTATE_UNK_8 = 0x8, // used in repair_phase
     VSTATE_REQUIRES_SUPPORT = 0x10,
     VSTATE_MADE_AIRDROP = 0x20,
-    VSTATE_UNK_40 = 0x40,
+    VSTATE_UNK_40 = 0x40, // action_destroy
     VSTATE_DESIGNATE_DEFENDER = 0x80,
     VSTATE_MONOLITH_UPGRADED = 0x100,
     VSTATE_ON_ALERT = 0x200, // related to ORDERA_ON_ALERT, cleared in veh_wake

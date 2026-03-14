@@ -39,8 +39,11 @@ struct MAP {
     int lm_items() {
         return landmarks & 0xFFFF;
     }
-    bool is_visible(int faction) {
-        return visibility & (1 << faction);
+    bool is_visible(int faction_id) {
+        return visibility & (1 << faction_id);
+    }
+    bool is_known(int faction_id) {
+        return is_visible(faction_id) || map_is_known(faction_id);
     }
     bool is_owned() {
         return owner >= 0;
@@ -87,7 +90,7 @@ struct MAP {
     bool is_rainy_or_moist() {
         return climate & (TILE_MOIST | TILE_RAINY);
     }
-    bool volcano_center() { // Volcano also counts as rocky
+    bool volcano_center() {
         return landmarks & LM_VOLCANO && code_at() == 0;
     }
     bool veh_in_tile() {
@@ -102,9 +105,9 @@ struct MAP {
     bool allow_supply() {
         return !(items & (BIT_BASE_IN_TILE|BIT_VEH_IN_TILE|BIT_MONOLITH|BIT_SUPPLY_REMOVE));
     }
-    int veh_owner() {
+    int veh_owner() { // this does not check for items, usually who functions are called directly
         if ((val2 & 0xF) >= MaxPlayerNum) {
-            return -1; // No vehicles in this tile
+            return -1;
         }
         return val2 & 0xF;
     }
@@ -277,7 +280,8 @@ struct MFaction {
         return rule_flags & RFLAG_AQUATIC;
     }
     bool is_alien() {
-        return *ExpansionEnabled && rule_flags & RFLAG_ALIEN;
+        // compatibility edge cases, does not check for ExpansionEnabled unlike is_alien(faction_id)
+        return rule_flags & RFLAG_ALIEN;
     }
 };
 

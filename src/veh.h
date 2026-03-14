@@ -15,8 +15,13 @@ bool can_monolith(int unit_id);
 int __cdecl veh_at(int x, int y);
 int __cdecl veh_who(int x, int y);
 int __cdecl veh_top(int veh_id);
-int __cdecl stack_fix(int veh_id);
+void __cdecl stack_put(int veh_id, int x, int y);
 void __cdecl stack_sort(int veh_id);
+void __cdecl stack_sort_2(int veh_id);
+int __cdecl stack_fix(int veh_id);
+int __cdecl stack_veh(int veh_id, int flag);
+void __cdecl stack_kill(int veh_id);
+
 int __cdecl veh_lift(int veh_id);
 int __cdecl veh_drop(int veh_id, int x, int y);
 void __cdecl veh_put(int veh_id, int x, int y);
@@ -24,8 +29,20 @@ void __cdecl sleep(int veh_id);
 void __cdecl veh_demote(int veh_id);
 void __cdecl veh_promote(int veh_id);
 void __cdecl veh_clear(int veh_id, int unit_id, int faction_id);
+int __cdecl veh_init(int unit_id, int faction_id, int x, int y);
+int __cdecl veh_init_free(int unit_id, int faction_id, int x, int y);
+int __cdecl mod_veh_kill(int veh_id);
+void __cdecl veh_kill(int veh_id);
+void __cdecl kill(int veh_id);
+int __cdecl battle_kill(
+    int veh_id, int* num_killed, int* num_relics, int* num_credits, int veh_id_atk, int faction_id_atk);
+void __cdecl battle_kill_stack(
+    int veh_id, int* num_killed, int* num_relics, int* num_credits, int veh_id_atk, int faction_id_atk);
+int __cdecl battle_kill_credits(int veh_id);
+int __cdecl veh_find(int x, int y, int faction_id, int skip_veh_id);
+
 int __cdecl proto_speed(int unit_id);
-int __cdecl veh_speed(int veh_id, bool skip_morale);
+int __cdecl veh_speed(int veh_id, int skip_morale);
 int __cdecl veh_cargo(int veh_id);
 int __cdecl want_monolith(int veh_id);
 void __cdecl mod_monolith(int veh_id);
@@ -50,12 +67,11 @@ void __cdecl full_upgrade(int faction_id, int new_unit_id, int old_unit_id);
 int __cdecl mod_veh_avail(int unit_id, int faction_id, int base_id);
 int __cdecl mod_stack_check(int veh_id, int type, int cond1, int cond2, int cond3);
 
-int __cdecl mod_veh_init(int unit_id, int faction_id, int x, int y);
-int __cdecl mod_veh_kill(int veh_id);
-int __cdecl mod_veh_jail(int veh_id);
+int __cdecl veh_jail(int veh_id);
+void __cdecl veh_skip(int veh_id);
 int __cdecl mod_veh_skip(int veh_id);
-int __cdecl mod_veh_fake(int unit_id, int faction_id);
-int __cdecl mod_veh_wake(int veh_id);
+int __cdecl veh_fake(int unit_id, int faction_id);
+int __cdecl veh_wake(int veh_id);
 int __cdecl find_return_base(int veh_id);
 int __cdecl probe_return_base(int UNUSED(x), int UNUSED(y), int veh_id);
 int __cdecl create_proto(int faction_id, VehChassis chs, VehWeapon wpn, VehArmor arm,

@@ -388,8 +388,9 @@ int __cdecl has_agenda(int faction_id_1, int faction_id_2, uint32_t status) {
 }
 
 void __cdecl atrocity(int faction_id, int faction_id_tgt, int skip_init_check, int skip_human_check) {
-    MFaction* m = &MFactions[faction_id];
     Faction* plr = &Factions[faction_id];
+    MFaction* m_plr = &MFactions[faction_id];
+    MFaction* m_tgt = &MFactions[faction_id_tgt];
     bool prev_victim = has_treaty(faction_id_tgt, faction_id, DIPLO_ATROCITY_VICTIM);
     set_treaty(faction_id_tgt, faction_id, DIPLO_ATROCITY_VICTIM|DIPLO_WANT_REVENGE, 1);
     set_agenda(faction_id_tgt, faction_id, AGENDA_UNK_4, 1);
@@ -399,10 +400,10 @@ void __cdecl atrocity(int faction_id, int faction_id_tgt, int skip_init_check, i
             if (faction_id == *CurrentPlayerFaction) {
                 NetMsg_pop(NetMsg, "ATROCITYSPOTS", 5000, 0, 0);
             }
-        } else if (!*ExpansionEnabled || skip_human_check || (!is_alien(faction_id) && !is_alien(faction_id_tgt))) {
+        } else if (!*ExpansionEnabled || skip_human_check || (!m_plr->is_alien() && !m_tgt->is_alien())) {
             for (int i = 1; i < MaxPlayerNum; i++) {
                 if (i != faction_id && i != faction_id_tgt && has_treaty(i, faction_id, DIPLO_COMMLINK)
-                && (!*ExpansionEnabled || !skip_human_check || is_alien(faction_id) || !is_alien(i))) {
+                && (!*ExpansionEnabled || !skip_human_check || m_plr->is_alien() || !MFactions[i].is_alien())) {
                     if (has_treaty(i, faction_id, DIPLO_UNK_200000)) {
                         cause_friction(i, faction_id, 5);
                         if (!is_human(i) && is_human(faction_id) && !prev_victim
@@ -422,9 +423,9 @@ void __cdecl atrocity(int faction_id, int faction_id_tgt, int skip_init_check, i
                             if (toggle) {
                                 if (faction_id == *CurrentPlayerFaction) {
                                     *plurality_default = 0;
-                                    *gender_default = m->is_leader_female;
-                                    parse_says(0, m->title_leader, -1, -1);
-                                    parse_says(1, m->name_leader, -1, -1);
+                                    *gender_default = m_plr->is_leader_female;
+                                    parse_says(0, m_plr->title_leader, -1, -1);
+                                    parse_says(1, m_plr->name_leader, -1, -1);
                                     diplomacy_caption(faction_id, i);
                                     X_pops3("ATROCIOUSITY", FactionPortraits[i], 0);
                                 }
@@ -452,15 +453,15 @@ void __cdecl atrocity(int faction_id, int faction_id_tgt, int skip_init_check, i
                     Factions[faction_id_tgt].player_flags |= PFLAG_COMMIT_ATROCITIES_WANTONLY;
                 }
                 *plurality_default = 0;
-                *gender_default = m->is_leader_female;
-                parse_says(0, m->title_leader, -1, -1);
-                parse_says(1, m->name_leader, -1, -1);
+                *gender_default = m_plr->is_leader_female;
+                parse_says(0, m_plr->title_leader, -1, -1);
+                parse_says(1, m_plr->name_leader, -1, -1);
                 *plurality_default = 0;
                 *gender_default = MFactions[faction_id_tgt].is_leader_female;
                 parse_says(2, MFactions[faction_id_tgt].title_leader, -1, -1);
                 parse_says(3, MFactions[faction_id_tgt].name_leader, -1, -1);
                 parse_num(0, turns);
-                if (!is_alien(faction_id)) {
+                if (!m_plr->is_alien()) {
                     if (faction_id == *CurrentPlayerFaction) {
                         NetMsg_pop(NetMsg, "ATROCITY2", 5000, 0, 0);
                     } else if (faction_id_tgt == faction_id) {
@@ -1245,9 +1246,10 @@ static int social_score(int faction_id, int sf, int sm, bool pop_boom) {
             sc += 20;
         }
         if (vals.growth < -2) {
-            sc -= 20;
+            sc -= 5*clamp(6 - def_val, 2, 4);
         }
-        sc += ((def_val < 3 ? 5 : 3) + (pop_boom ? 3 : 0)) * clamp(vals.growth, -3, GrowthPopBoom);
+        sc += (def_val < 3 ? 5 + 3*pop_boom : 3 + 2*pop_boom)
+            * clamp(vals.growth, -3, GrowthPopBoom);
     }
     if (plans[faction_id].keep_fungus) {
         sc += 3*clamp(vals.planet, -3, 0); // penalty for reduced fungus yield
@@ -1556,18 +1558,6 @@ int __cdecl mod_wants_to_attack(int faction_id, int faction_id_tgt, int faction_
     debug("wants_to_attack turn: %d factions: %d %d %d value: %d\n",
         *CurrentTurn, faction_id, faction_id_tgt, faction_id_unk, value);
     return value;
-}
-
-static int veh_init_free(int unit_id, int faction_id, int x, int y) {
-    int veh_id = veh_init(unit_id, faction_id, x, y);
-    if (veh_id >= 0) {
-        Vehs[veh_id].home_base_id = -1;
-        if (thinker_enabled(faction_id)) {
-            Vehs[veh_id].state |= VSTATE_UNK_40000;
-            Vehs[veh_id].state &= ~VSTATE_UNK_2000;
-        }
-    }
-    return veh_id;
 }
 
 static int veh_init_last(int unit_id, int faction_id, int x, int y) {
@@ -2105,7 +2095,7 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
             int coast = is_coast(x, y, 0);
             if (coast && (*DiffLevel > 1 || *MultiplayerActive || Continents[region].tile_count <= 32)) {
                 // Calculation for nearby opponents is slightly modified from the original to exclude native units
-                int nearby = 0;
+                uint32_t nearby = 0;
                 for (int i = 1; i < MaxPlayerNum; i++) {
                     if (Factions[i].region_total_bases[region]) {
                         nearby |= (1 << Bases[i].faction_id);

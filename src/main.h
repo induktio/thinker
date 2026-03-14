@@ -208,13 +208,14 @@ struct Config {
     int auto_minimise = 0;
     int render_base_info = 1;
     int render_high_detail = 1; // unlisted option
+    int editor_free_units = 1; // unlisted option
     int autosave_interval = 1;
     int warn_on_former_replace = 1;
     int manage_player_bases = 0;
     int manage_player_units = 0;
     int render_probe_labels = 1;
     int foreign_treaty_popup = 0;
-    int editor_free_units = 1;
+    int game_event_popup = 0;
     int new_base_names = 1;
     int new_unit_names = 1;
     int design_units = 1;
@@ -328,8 +329,9 @@ struct Config {
     LMConfig landmarks;
     int minimal_popups = 0; // unlisted option
     int diplo_patience = 0; // internal variable
-    int skip_random_events = 0; // internal variable
-    int skip_random_factions = 0; // internal variable
+    uint32_t skip_random_events = 0; // internal variable
+    uint32_t skip_random_factions = 0; // internal variable
+    uint64_t skip_gov_facility = 0; // internal variable
     int faction_file_count = 14; // internal variable
     int reduced_mode = 0; // internal variable
     int debug_mode = DEBUG; // internal variable

@@ -56,6 +56,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->render_base_info = atoi(value);
     } else if (MATCH("render_high_detail")) {
         cf->render_high_detail = atoi(value);
+    } else if (MATCH("editor_free_units")) {
+        cf->editor_free_units = atoi(value);
     } else if (MATCH("autosave_interval")) {
         cf->autosave_interval = atoi(value);
     } else if (MATCH("warn_on_former_replace")) {
@@ -68,8 +70,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->render_probe_labels = atoi(value);
     } else if (MATCH("foreign_treaty_popup")) {
         cf->foreign_treaty_popup = atoi(value);
-    } else if (MATCH("editor_free_units")) {
-        cf->editor_free_units = atoi(value);
+    } else if (MATCH("game_event_popup")) {
+        cf->game_event_popup = atoi(value);
     } else if (MATCH("new_base_names")) {
         cf->new_base_names = atoi(value);
     } else if (MATCH("new_unit_names")) {
@@ -288,9 +290,14 @@ int option_handler(void* user, const char* section, const char* name, const char
             cf->debug_verbose = !atoi(value);
         }
     } else if (MATCH("skip_event")) {
-        cf->skip_random_events |= 1 << clamp(atoi(value) - 1, 0, 31);
+        int val = clamp(atoi(value), 0, 32);
+        cf->skip_random_events = (!val ? 0 : cf->skip_random_events | (1 << (val - 1)));
     } else if (MATCH("skip_faction")) {
-        cf->skip_random_factions |= 1 << clamp(atoi(value) - 1, 0, 31);
+        int val = clamp(atoi(value), 0, 32);
+        cf->skip_random_factions = (!val ? 0 : cf->skip_random_factions | (1 << (val - 1)));
+    } else if (MATCH("skip_facility")) {
+        int val = clamp(atoi(value), 0, 64);
+        cf->skip_gov_facility = (!val ? 0 : cf->skip_gov_facility | (1 << (val - 1)));
     } else if (MATCH("crater")) {
         cf->landmarks.crater = max(0, atoi(value));
     } else if (MATCH("volcano")) {

@@ -51,7 +51,7 @@ int __cdecl config_game_rand() {
 }
 
 int __cdecl skip_action_destroy(int id) {
-    mod_veh_skip(id);
+    veh_skip(id);
     *VehAttackFlags = 0;
     return 0;
 }
@@ -59,17 +59,21 @@ int __cdecl skip_action_destroy(int id) {
 /*
 Change FORESTGROWS / KELPGROWS / PRODUCE popups into delayed notification items on the message log.
 */
-int __cdecl alien_fauna_pop2(const char* label, const char* imagefile, int UNUSED(a3)) {
+int __cdecl alien_fauna_pop2(const char* label, const char* imagefile, int a3) {
+    if (conf.game_event_popup) {
+        return POP2(label, imagefile, a3);
+    }
     return NetMsg_pop(NetMsg, label, 5000, 0, imagefile);
 }
 
 int __cdecl base_production_popp(const char* textfile, const char* label, int a3, const char* imagefile, int a5) {
     int item_id = (*CurrentBase ? (*CurrentBase)->item() : 0);
-    if (item_id == -FAC_SKY_HYDRO_LAB
+    if (!conf.game_event_popup
+    && (item_id == -FAC_SKY_HYDRO_LAB
     || item_id == -FAC_ORBITAL_POWER_TRANS
     || item_id == -FAC_NESSUS_MINING_STATION
     || item_id == -FAC_ORBITAL_DEFENSE_POD
-    || item_id == -FAC_GEOSYNC_SURVEY_POD) {
+    || item_id == -FAC_GEOSYNC_SURVEY_POD)) {
         return NetMsg_pop(NetMsg, label, 5000, 0, imagefile);
     }
     return popp(textfile, label, a3, imagefile, a5);
@@ -550,17 +554,23 @@ bool patch_setup(Config* cf) {
     write_jump(0x5B44D0, (int)social_upkeep);
     write_jump(0x5B4550, (int)social_upheaval);
     write_jump(0x5B4730, (int)society_avail);
+    write_jump(0x5B8EE0, (int)stack_veh);
+    write_jump(0x5B9510, (int)stack_kill);
     write_jump(0x5B9C40, (int)say_tech);
     write_jump(0x5B9FE0, (int)tech_category);
     write_jump(0x5BF1F0, (int)has_abil);
     write_jump(0x5BF310, (int)X_pop2);
+    write_jump(0x5C03D0, (int)veh_init);
+    write_jump(0x5C08C0, (int)veh_kill);
+    write_jump(0x5C0B00, (int)kill);
     write_jump(0x5C0DB0, (int)can_arty);
     write_jump(0x5C0E40, (int)mod_morale_veh);
     write_jump(0x5C1540, (int)veh_speed);
-    write_jump(0x5C1C40, (int)mod_veh_jail);
-    write_jump(0x5C1D20, (int)mod_veh_skip);
-    write_jump(0x5C1D50, (int)mod_veh_fake);
-    write_jump(0x5C1D70, (int)mod_veh_wake);
+    write_jump(0x5C1760, (int)veh_cargo);
+    write_jump(0x5C1C40, (int)veh_jail);
+    write_jump(0x5C1D20, (int)veh_skip);
+    write_jump(0x5C1D50, (int)veh_fake);
+    write_jump(0x5C1D70, (int)veh_wake);
     write_jump(0x5C2020, (int)world_alt_set);
     write_jump(0x5C2380, (int)world_raise_alt);
     write_jump(0x5C23E0, (int)world_lower_alt);
@@ -609,6 +619,7 @@ bool patch_setup(Config* cf) {
     write_call(0x528289, (int)mod_enemy_turn); // control_turn
     write_call(0x5295C0, (int)mod_enemy_turn); // net_upkeep
     write_call(0x513F08, (int)mod_enemy_veh); // Console::veh_turn
+    write_call(0x56B65E, (int)mod_alien_move); // enemy_move
     write_call(0x579703, (int)mod_enemy_veh); // enemy_turn
     write_call(0x579362, (int)mod_enemy_move); // enemy_veh
     write_call(0x40F45A, (int)mod_base_draw); // BaseWin::draw_farm
@@ -1118,7 +1129,7 @@ bool patch_setup(Config* cf) {
         write_jump(0x5ABD20, (int)mod_auto_save);
     }
     if (cf->editor_free_units) {
-        write_call(0x4DF19B, (int)mod_veh_init); // Console_editor_veh
+        write_call(0x4DF19B, (int)veh_init_free); // Console_editor_veh
     }
     if (cf->altitude_limit > ALT_THREE_ABOVE_SEA) {
         write_word(0x4D4479, 192, 224); // Console_terraform
@@ -1337,8 +1348,8 @@ bool patch_setup(Config* cf) {
         write_call(0x49DEA5, (int)ReportWin_draw_ops_strcat);
     }
     if (cf->render_probe_labels) {
-        memset((void*)0x559590, 0x90, 2);
-        memset((void*)0x5599DE, 0x90, 6);
+        memset((void*)0x559590, 0x90, 2); // veh_draw
+        memset((void*)0x5599DE, 0x90, 6); // veh_draw
     }
 
     /*
@@ -1572,8 +1583,8 @@ bool patch_setup(Config* cf) {
     if (!cf->spawn_fungal_towers) {
         // Spawn nothing in this case.
         remove_call(0x4F7143);
-        remove_call(0x5C363F);
         remove_call(0x57BBC9);
+        remove_call(0x5C363F);
     }
     if (!cf->spawn_spore_launchers) {
         // Patch the game to spawn Mind Worms instead.

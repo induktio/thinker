@@ -1047,8 +1047,8 @@ void __cdecl mod_turn_upkeep() {
             }
         }
     }
-    alien_fauna();
-    do_fungal_towers();
+    mod_alien_fauna();
+    mod_do_fungal_towers();
 
     if ((*CurrentTurn == 4 && !game_randv(4))
     || (*CurrentTurn == 5 && !game_randv(3))
@@ -1460,7 +1460,7 @@ void __cdecl mod_production_phase(int faction_id) {
     }
 
     f->player_flags &= ~PFLAG_SELF_AWARE_COLONY_LOST_MAINT;
-    *dword_93A958 = f->energy_credits;
+    *EnergyCredits = f->energy_credits;
     /*
     Reset all fields listed below.
     int32_t social_support[8];

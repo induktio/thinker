@@ -951,7 +951,7 @@ void world_generate(uint32_t seed) {
                     }
                 }
             }
-            if (__builtin_popcount(sea) > 1) {
+            if (bit_count(sea) > 1) {
                 if (land_count > *MapAreaTiles/8 || pair_hash(seed^(x/8), y/8) & 1) {
                     bridges.insert({x, y});
                     if (DEBUG) mapdata[{x, y}].overlay = -2;

@@ -41,6 +41,14 @@ int wrap(int x) {
     return x;
 }
 
+int x_dist(int x1, int x2) {
+    int dx = abs(x1 - x2);
+    if (!map_is_flat() && dx > *MapHalfX) {
+        dx = *MapAreaX - dx;
+    }
+    return dx;
+}
+
 int map_range(int x1, int y1, int x2, int y2) {
     int dx = abs(x1 - x2);
     int dy = abs(y1 - y2);
@@ -60,7 +68,7 @@ int vector_dist(int x1, int y1, int x2, int y2) {
 }
 
 int min_range(const Points& S, int x, int y) {
-    int v = 2048;
+    int v = 9999;
     for (auto& p : S) {
         v = min(v, map_range(x, y, p.x, p.y));
     }
@@ -68,7 +76,7 @@ int min_range(const Points& S, int x, int y) {
 }
 
 int min_vector(const Points& S, int x, int y) {
-    int v = 2048;
+    int v = 9999;
     for (auto& p : S) {
         v = min(v, vector_dist(x, y, p.x, p.y));
     }
@@ -103,6 +111,11 @@ bool is_shore_level(MAP* sq) {
 
 bool map_is_flat() {
     return *MapToggleFlat & 1;
+}
+
+bool map_is_known(int faction_id) {
+    assert(faction_id >= 0 && faction_id < MaxPlayerNum);
+    return Factions[faction_id].player_flags & PFLAG_MAP_REVEALED;
 }
 
 bool adjacent_region(int x, int y, int owner, int threshold, bool ocean) {
@@ -245,14 +258,6 @@ int __cdecl base_at(int x, int y) {
         assert(0);
     }
     return -1;
-}
-
-int __cdecl x_dist(int x1, int x2) {
-    int dist = abs(x1 - x2);
-    if (!map_is_flat() && dist > *MapHalfX) {
-        dist = *MapAreaX - dist;
-    }
-    return dist;
 }
 
 int __cdecl alt_at(int x, int y) {
@@ -1916,16 +1921,16 @@ void __cdecl mod_time_warp() {
 
                 for (int j = 0; j < num; j++) {
                     if (ocean) {
-                        mod_veh_init(j&1 ? BSC_UNITY_GUNSHIP : BSC_TRANSPORT_FOIL, i, base->x, base->y);
+                        veh_init_free(j&1 ? BSC_UNITY_GUNSHIP : BSC_TRANSPORT_FOIL, i, base->x, base->y);
                     } else {
-                        mod_veh_init(j&1 ? BSC_UNITY_ROVER : BSC_SCOUT_PATROL, i, base->x, base->y);
+                        veh_init_free(j&1 ? BSC_UNITY_ROVER : BSC_SCOUT_PATROL, i, base->x, base->y);
                     }
                 }
                 for (int j = 0; j < num - ocean - alien; j++) {
-                    mod_veh_init(ocean ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD, i, base->x, base->y);
+                    veh_init_free(ocean ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD, i, base->x, base->y);
                 }
                 for (int j = 0; j < num; j++) {
-                    mod_veh_init(ocean ? BSC_SEA_FORMERS : BSC_FORMERS, i, base->x, base->y);
+                    veh_init_free(ocean ? BSC_SEA_FORMERS : BSC_FORMERS, i, base->x, base->y);
                 }
                 int fixed = 0;
                 int added = 0;

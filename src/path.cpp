@@ -6,6 +6,8 @@ void TileSearch::reset() {
     type = 0;
     head = 0;
     tail = 0;
+    dist = 0;
+    current = 0;
     y_skip = 0;
     faction_id = -1;
     oldtiles.clear();
@@ -13,7 +15,7 @@ void TileSearch::reset() {
 
 void TileSearch::add_start(int x, int y) {
     assert(type >= 0 && type <= MaxTileSearchType);
-    if (tail < QueueSize && (sq = mapsq(x, y)) && !oldtiles.count({x, y})) {
+    if (tail < QueueSize && mapsq(x, y) && !oldtiles.count({x, y})) {
         paths[tail] = {x, y, 0, -1};
         oldtiles.insert({x, y});
         tail++;

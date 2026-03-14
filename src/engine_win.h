@@ -1044,6 +1044,16 @@ struct GraphicWin {
     int field_A10;
 };
 
+struct BasePop : GraphicWin {
+    // BasePop -> Popup -> GraphicWin
+    int field_A14[379];
+    int field_1000[1024];
+    int field_2000[1024];
+    int field_3000[1024];
+    int field_4000[1024];
+    int field_5000[221];
+};
+
 struct CClass3B {
     GraphicWin oWinBuffed;
     int field_A14;
@@ -2403,6 +2413,7 @@ static_assert(sizeof(RenderWindow) == 168508, "");
 static_assert(sizeof(BaseWindow) == 293040, "");
 static_assert(sizeof(Lock) == 236, "");
 static_assert(sizeof(AlphaNet) == 5280, "");
+static_assert(sizeof(BasePop) == 21364, "");
 static_assert(offsetof(RenderWindow, field_1D000) == 0x1D000, "");
 static_assert(offsetof(RenderWindow, field_23000) == 0x23000, "");
 static_assert(offsetof(RenderWindow, oCanvas1) == offsetof(Console, oCanvas1), "");

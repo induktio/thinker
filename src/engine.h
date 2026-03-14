@@ -50,6 +50,7 @@ extern const int MaxEnemyRange;
 bool is_human(int faction_id);
 bool can_repair(int unit_id);
 bool can_monolith(int unit_id);
+bool map_is_known(int faction_id);
 
 #include "engine_enums.h"
 #include "engine_types.h"
@@ -123,6 +124,19 @@ const T& max (const T& a, const T& b) {
 template <class T>
 const T& clamp (const T& value, const T& low, const T& high) {
     return (value < low ? low : (value > high ? high : value));
+}
+
+template <typename T>
+int bit_count(T value) {
+    static_assert(std::is_integral<T>::value, "integer type required");
+    using U = typename std::make_unsigned<T>::type;
+    if (sizeof(U) <= sizeof(unsigned int)) {
+        return __builtin_popcount(static_cast<unsigned int>(value));
+    } else if (sizeof(U) <= sizeof(unsigned long)) {
+        return __builtin_popcountl(static_cast<unsigned long>(value));
+    } else {
+        return __builtin_popcountll(static_cast<unsigned long long>(value));
+    }
 }
 
 inline TriadFlag operator| (TriadFlag a, TriadFlag b) { return (TriadFlag)((int)a | (int)b); }
@@ -290,8 +304,9 @@ extern int* const GameRules;
 extern int* const GameMoreRules;
 extern int* const DiffLevel;
 extern int* const ExpansionEnabled;
-extern int* const MultiplayerActive;
+extern int* const EnergyCredits;
 extern int* const PbemActive;
+extern int* const MultiplayerActive;
 extern int* const CurrentTurn;
 extern int* const CurrentFaction;
 extern int* const CurrentPlayerFaction;
@@ -349,7 +364,6 @@ extern int* const diplo_second_faction;
 extern int* const diplo_third_faction;
 extern int* const diplo_tech_faction;
 extern int* const reportwin_opponent_faction;
-extern int* const dword_93A958;
 extern int* const diplo_value_93FA24;
 extern int* const diplo_value_93FA70;
 extern int* const diplo_value_93FA98;
@@ -364,6 +378,7 @@ extern int* const VehAttackFlags;
 extern int* const VehDrawAttackID;
 extern int* const VehDrawDefendID;
 extern int* const CurrentVehID;
+extern int* const VehFindDist;
 extern int* const dword_6E8150;
 extern int* const dword_7AD330;
 extern int* const dword_74DA9C;
@@ -376,6 +391,11 @@ extern int* const dword_93A98C;
 extern int* const dword_93E960;
 extern int* const dword_9A6510;
 extern int* const dword_9B206C;
+extern int* const dword_8C6B2C;
+extern int* const dword_8C6B34;
+extern int* const dword_93928C;
+extern int* const dword_939290;
+extern int** const dword_93E908;
 extern int* const ScreenWidth;
 extern int* const ScreenHeight;
 extern char256* const ParseStrBuffer;
@@ -441,9 +461,8 @@ extern VEH* const VehsDef;
 extern VEH* Vehs;
 extern MAP** MapTiles;
 extern uint8_t** MapAbstract;
-extern Continent* Continents;
 extern Landmark* Landmarks;
-extern Console* MapWin;
+extern Continent* Continents;
 extern BaseWindow* BaseWin;
 extern Win* BattleWin;
 extern Win* CouncilWin;
@@ -455,7 +474,8 @@ extern Win* InfoWin;
 extern Win* MainWin;
 extern FlatButton* FlatButtons;
 extern Win* StringBox;
-extern Win* DetailWin;
+extern Console** MapWinPtr;
+extern Console** DetailWinPtr;
 extern Win* BaseMapWin;
 extern Win* MessageWin;
 extern Win* MonuWin;
@@ -470,12 +490,14 @@ extern Win* SocialWin;
 extern Win* StatusWin;
 extern Win* TutWin;
 extern Win* WorldWin;
+extern Console* MapWin;
 extern Font** MapLabelFont;
 extern Sprite** FactionPortraits;
 extern void* Sounds;
 extern void* NetMsg;
 extern AlphaNet* NetState;
 extern Lock* LockState;
+extern void* DeleteList;
 extern Path* Paths;
 extern FileFindPath* FileFind;
 extern void* TextTable;
@@ -544,8 +566,8 @@ typedef int(__cdecl *Fname_proto)(char* name, int unit_id, int faction_id,
 VehChassis chassis, VehWeapon weapon, VehArmor armor, VehAblFlag abls, VehReactor reactor);
 typedef void(__cdecl *Fbattle_compute)(
     int veh_id_atk, int veh_id_def, int* offense_out, int* defense_out, int combat_type);
-typedef void(__cdecl *Fbattle_kill)(
-    int veh_id_def, int* a2, int* a3, int* credits_income, int veh_id_atk, int faction_id_atk);
+typedef int(__cdecl *Fbattle_kill)(
+    int veh_id, int* num_killed, int* num_relics, int* credits_income, int veh_id_atk, int faction_id_atk);
 
 typedef int(__cdecl *Fbase_draw)(Buffer* buffer, int base_id, int x, int y, int zoom, int opts);
 typedef int(__cdecl *Fnet_energy)(int faction_id1, int faction_sum1, int faction_id2, int faction_sum2, int await_diplo);
@@ -584,6 +606,9 @@ extern FPOP2 POP2;
 extern FPOP3 POP3;
 extern FPopup_start Popup_start;
 extern FGenWin BaseWin_focus;
+extern tc_2int BaseWin_check_base;
+extern tc_4int BaseWin_check_loc;
+extern tc_2int BaseWin_check_veh;
 extern FBaseWin_zoom BaseWin_zoom;
 extern FGenWin BaseWin_nerve_staple;
 extern FGenWin BaseWin_on_redraw;
@@ -604,6 +629,9 @@ extern FPlanWin_blink PlanWin_blink;
 extern Fpopp popp;
 extern Fpopb popb;
 extern fp_none turn_timer;
+extern tc_2int DeletionList_clear;
+extern tc_3int DeletionList_convert;
+extern tc_2int DeletionList_add_deletion;
 //extern Fhas_abil has_abil;
 extern FX_pop X_pop;
 extern FX_pops X_pops;
@@ -1414,7 +1442,7 @@ extern fp_none base_maint;
 extern fp_none base_ecology;
 extern fp_1int base_upkeep;
 extern fp_1int make_base_unique;
-//extern fp_2int x_dist;
+//extern fp_2int vector_dist;
 //extern fp_2int has_project;
 extern fp_6int base_claimed;
 extern fp_4int base_build;
@@ -1434,15 +1462,15 @@ extern fp_3int best_defender;
 extern fp_3int boom;
 extern fp_none sub_505D40;
 extern fp_none sub_505D60;
-extern Fbattle_kill battle_kill;
-extern Fbattle_kill battle_kill_stack;
+//extern Fbattle_kill battle_kill;
+//extern Fbattle_kill battle_kill_stack;
 //extern fp_1int promote;
 extern fp_1int invasions;
 //extern fp_4int interceptor;
 extern Fbattle_fight_1 battle_fight_1; // renamed
 extern Fbattle_fight_2 battle_fight_2; // renamed
 extern fp_1int say_num;
-extern fp_4int POP3_;
+//extern fp_4int POP3_;
 extern fp_1int sub_50B8F0;
 extern fp_1int sub_50B910;
 //extern fp_1int parse_set;
@@ -1624,7 +1652,7 @@ extern fp_1int enemy_move;
 extern fp_1int enemy_veh;
 extern fp_1int enemy_turn;
 //extern fp_1int rnd;
-extern fp_2int cursor_dist;
+//extern fp_2int x_dist;
 extern fp_3int site_at;
 //extern fp_3int is_known;
 extern fp_2int base_who;
@@ -1871,12 +1899,12 @@ extern fp_3int spot_loc;
 extern fp_3int want_to_wake;
 extern fp_1int wake_stack;
 extern fp_2int spot_all;
-extern fp_3int stack_put;
+//extern fp_3int stack_put;
 //extern fp_1int stack_sort;
-extern fp_1int stack_sort2;
+//extern fp_1int stack_sort_2;
 //extern fp_1int stack_fix;
-extern fp_2int stack_veh;
-extern fp_1int stack_kill;
+//extern fp_2int stack_veh;
+//extern fp_1int stack_kill;
 extern fp_5int stack_check;
 //extern fp_void g_WAVE_ctor;
 //extern fp_void g_WAVE_dtor;
@@ -1915,10 +1943,10 @@ extern fp_3int do_unity_crash;
 //extern fp_1int veh_demote;
 //extern fp_1int veh_promote;
 //extern fp_3int veh_clear;
-extern fp_4int veh_init;
-extern fp_1int veh_kill;
-extern fp_1int kill;
-extern fp_4int veh_find;
+//extern fp_4int veh_init;
+//extern fp_1int veh_kill;
+//extern fp_1int kill;
+//extern fp_4int veh_find;
 //extern fp_2int can_arty;
 extern fp_3int morale_veh;
 extern fp_3int offense_proto;
@@ -1931,10 +1959,10 @@ extern Fveh_cost veh_cost;
 extern fp_1int veh_selectable;
 extern fp_1int veh_unmoved;
 extern fp_1int veh_ready;
-extern fp_1int veh_jail;
-extern fp_1int veh_skip;
-extern fp_2int veh_fake;
-extern fp_1int veh_wake;
+//extern fp_1int veh_jail;
+//extern fp_1int veh_skip;
+//extern fp_2int veh_fake;
+//extern fp_1int veh_wake;
 
 //extern fp_4int world_alt_set;
 //extern fp_2int world_raise_alt;

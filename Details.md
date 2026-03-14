@@ -490,6 +490,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 65. Fix issues that prevented KELPWIPE or PLATFORMWIPE events from happening due to incorrect tile checks. These may now happen at similar probability as other events for suitable bases.
 66. Fix NEWRESOURCE event sometimes appearing on a tile that already has bonus resources.
 67. Modify config reader to display an error if None/Disable are used as chassis/weapon/armor identifiers for predefined units on alphax.txt.
+68. Fix XMINDWORMS event never occurring due to original game code. This event may now sometimes happen at the three highest difficulty levels.
 
 
 Scient's patch

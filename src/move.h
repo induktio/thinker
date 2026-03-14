@@ -7,11 +7,6 @@ enum StackType {ST_NeutralOnly, ST_NonPactOnly, ST_EnemyOnly, ST_EnemyOneUnit};
 enum FormerMode {FM_Auto_Full, FM_Auto_Roads, FM_Auto_Tubes, FM_Auto_Sensors,
     FM_Remove_Fungus, FM_Farm_Road, FM_Mine_Road};
 
-enum EnemyVehMove { // Return codes for enemy_veh processing
-    VEH_SYNC = 0,
-    VEH_SKIP = 1,
-};
-
 const uint32_t BIT_SIMPLE = (BIT_FARM | BIT_MINE | BIT_SOLAR | BIT_FOREST);
 const uint32_t BIT_ADVANCED = (BIT_CONDENSER | BIT_THERMAL_BORE);
 
@@ -50,7 +45,6 @@ bool invasion_unit(int veh_id);
 bool near_landing(int veh_id);
 int make_landing(int veh_id);
 
-int __cdecl mod_enemy_move(int veh_id);
 int __cdecl veh_kill_lift(int veh_id);
 void update_main_region(int faction_id);
 void move_upkeep(int faction_id, UpdateMode mode);
@@ -60,6 +54,6 @@ int former_move(const int id);
 int artifact_move(const int id);
 int trans_move(const int id);
 int nuclear_move(const int id);
-int airdrop_move(const int id, MAP* sq);
+int airdrop_move(const int id);
 int combat_move(const int id);
 
