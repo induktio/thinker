@@ -18,7 +18,7 @@ int map_range(int x1, int y1, int x2, int y2);
 int vector_dist(int x1, int y1, int x2, int y2);
 int min_range(const Points& S, int x, int y);
 int min_vector(const Points& S, int x, int y);
-double avg_range(const Points& S, int x, int y);
+int avg_range(const Points& S, int x, int y);
 bool is_ocean(MAP* sq);
 bool is_ocean(BASE* base);
 bool is_ocean_shelf(MAP* sq);

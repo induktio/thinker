@@ -5,7 +5,23 @@
 struct Win;
 struct Scroll;
 struct GraphicWin;
-struct CWinFonted;
+
+struct ListNode {
+    void** vtable;
+    int tagged_id;
+    void* obj;
+    ListNode* next;
+    ListNode* prev;
+};
+
+struct ListRoot {
+    void** vtable;
+    int field_4;
+    ListNode* first;
+    ListNode* current;
+    int cur_count;
+    int last_index;
+};
 
 struct Heap {
     int err_flags;
@@ -1044,14 +1060,18 @@ struct GraphicWin {
     int field_A10;
 };
 
-struct BasePop : GraphicWin {
-    // BasePop -> Popup -> GraphicWin
+struct SetupWin : GraphicWin {
+    int field_A14[379];
+    int field_1000[424];
+};
+
+struct Popup : GraphicWin {
     int field_A14[379];
     int field_1000[1024];
     int field_2000[1024];
     int field_3000[1024];
     int field_4000[1024];
-    int field_5000[221];
+    int field_5000[223];
 };
 
 struct CClass3B {
@@ -1080,34 +1100,6 @@ struct CClass3B {
     int field_AB0;
     int field_AB4;
     int field_AB8;
-};
-
-struct CClass3ArrayItem {
-    int field_0;
-    int pszCaption;
-    int iFlags;
-    int field_C;
-    CWinFonted* poWinFonted;
-};
-
-struct CMainWnd {
-    HWND hwndScreen;
-    void** ppddDirectDraw;
-    int dword_9C6B20;
-    void** ppdsSurface;
-    RECT* prScreenRect;
-};
-
-struct CWinFonted {
-    GraphicWin oWinBuffed;
-    int field_A14;
-    int iArrayCount;
-    int field_A1C;
-    int field_A20;
-    int iHitBoxTagClicked;
-    int field_A28;
-    SpotList oHitBoxList;
-    CClass3ArrayItem astArray[15];
 };
 
 struct TTilePos {
@@ -1324,7 +1316,7 @@ struct Console {
     int* vtbl;
     TTilePos* paTilePos;
     int field_8;
-    NameNode oUnknown[201];
+    NameNode oUnknown[201]; // MapWin constructor
     int iZoomX2;
     int iWhatToDrawFlags;
     int iDrawToggleA;
@@ -2381,8 +2373,6 @@ typedef Palette CPalette;
 
 // TODO: Unresolved names/classes to be renamed
 //CClass3B
-//CClass3ArrayItem
-//CWinFonted
 //CKeyFileIndex
 //CKeyFile
 //CList
@@ -2390,7 +2380,6 @@ typedef Palette CPalette;
 //CMenu
 //CMenuItem
 //CMainMenuItem / used with PullDown
-//CMainWnd
 
 static_assert(sizeof(Heap) == 20, "");
 static_assert(sizeof(Spot) == 24, "");
@@ -2413,7 +2402,8 @@ static_assert(sizeof(RenderWindow) == 168508, "");
 static_assert(sizeof(BaseWindow) == 293040, "");
 static_assert(sizeof(Lock) == 236, "");
 static_assert(sizeof(AlphaNet) == 5280, "");
-static_assert(sizeof(BasePop) == 21364, "");
+static_assert(sizeof(SetupWin) == 5792, "");
+static_assert(sizeof(Popup) == 21372, "");
 static_assert(offsetof(RenderWindow, field_1D000) == 0x1D000, "");
 static_assert(offsetof(RenderWindow, field_23000) == 0x23000, "");
 static_assert(offsetof(RenderWindow, oCanvas1) == offsetof(Console, oCanvas1), "");

@@ -455,7 +455,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 30. Remove drone revolt event due to issues with the original code. Sometimes this caused rioting player-owned bases to join other factions while this did not happen on AI factions.
 31. Patch captured base extra drone effect to last a variable time from 20 to 50 turns depending on the captured base size. The AI will also rename captured bases only after they are fully assimilated.
 32. When a base is captured that was previously owned by active third faction and the time to assimilate the base was more than zero, the previous owner is preserved after capture.
-33. Fix diplomacy dialog appearing multiple times when both human and alien factions are involved in a base capture by removing the event that spawns additional colony pods.
+33. Fix diplomacy dialog appearing multiple times when both human and alien factions are involved in a base capture by adjusting the location for spawned colony pods.
 34. Fix missing defender bonus mentioned in the manual "Units in a headquarters base automatically gain +1 Morale when defending".
 35. Fix multiple issues in unit morale calculation, see more details in "Improved combat mechanics" section.
 36. Fix issue where Accelerated Start option may sometimes freeze the game when selecting a random secret project for Hive. Patched version will not assign Citizens Defense Force or Command Nexus for a faction that already has those facilities for free, unless all other choices among the first seven projects have been exhausted, also Empath Guild is always skipped.

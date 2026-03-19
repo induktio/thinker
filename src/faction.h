@@ -30,6 +30,7 @@ bool both_neutral(int faction1, int faction2);
 bool both_non_enemy(int faction1, int faction2);
 bool want_revenge(int faction1, int faction2);
 bool allow_expand(int faction_id);
+bool has_plr_rule(int faction_id, FactionRuleType rule, int* val1, int* val2);
 bool has_active_veh(int faction_id, VehPlan plan);
 int veh_count(int faction_id, int unit_id);
 int find_hq(int faction_id);

@@ -18,44 +18,44 @@ void parse_noun_name(int faction_id, size_t title_value, size_t name_value)
     parse_says(name_value, MFactions[faction_id].name_leader, -1, -1);
 }
 
-int __cdecl X_pop2(const char* label, int a2)
+int __cdecl X_pop2(const char* label, fp_none fn)
 {
     if (!conf.warn_on_former_replace && !strcmp(label, "MIMIMI")) {
         return 1;
     }
-    return X_pop(ScriptFile, label, -1, 0, 0, a2);
+    return X_pop(ScriptFile, label, -1, 0, 0, fn);
 }
 
-int __cdecl X_pop3(const char* filename, const char* label, int a3)
+int __cdecl X_pop3(const char* filename, const char* label, fp_none fn)
 {
-    return X_pop(filename, label, -1, 0, 0, a3);
+    return X_pop(filename, label, -1, 0, 0, fn);
 }
 
-int __cdecl X_pop7(const char* label, int a2, int a3)
+int __cdecl X_pop7(const char* label, int a2, fp_none fn)
 {
-    return X_pop(ScriptFile, label, -1, 0, a2, a3);
+    return X_pop(ScriptFile, label, -1, 0, a2, fn);
 }
 
-int __cdecl X_pops3(const char* label, Sprite* a2, int a3)
+int __cdecl X_pops3(const char* label, Sprite* a2, fp_none fn)
 {
-    return X_pops(ScriptFile, label, -1, 0, 0, (int)a2, 1, 1, a3);
+    return X_pops(ScriptFile, label, -1, 0, 0, a2, 1, 1, fn);
 }
 
-int __cdecl X_pops4(const char* label, int a2, Sprite* a3, int a4)
+int __cdecl X_pops4(const char* label, int a2, Sprite* a3, fp_none fn)
 {
-    return X_pops(ScriptFile, label, -1, 0, a2, (int)a3, 1, 1, a4);
+    return X_pops(ScriptFile, label, -1, 0, a2, a3, 1, 1, fn);
 }
 
 int __cdecl X_dialog(const char* label, int faction2)
 {
     return X_pops(ScriptFile, label, -1, 0, PopDialogUnk100000,
-        (int)FactionPortraits[faction2], 1, 1, (int)sub_5398E0);
+        FactionPortraits[faction2], 1, 1, sub_5398E0);
 }
 
 int __cdecl X_dialog(const char* filename, const char* label, int faction2)
 {
     return X_pops(filename, label, -1, 0, PopDialogUnk100000,
-        (int)FactionPortraits[faction2], 1, 1, (int)sub_5398E0);
+        FactionPortraits[faction2], 1, 1, sub_5398E0);
 }
 
 /*
@@ -72,12 +72,12 @@ int __cdecl DiploPop_spying(int faction_id)
 /*
 Skip social engineering choices dialog SOCIETY while diplomacy is active.
 */
-int __cdecl tech_achieved_pop3(const char* filename, const char* label, int a3)
+int __cdecl tech_achieved_pop3(const char* filename, const char* label, fp_none fn)
 {
     if (*DiploWinState) {
         return 0;
     }
-    return X_pop3(filename, label, a3);
+    return X_pop3(filename, label, fn);
 }
 
 /*

@@ -215,6 +215,18 @@ bool allow_expand(int faction_id) {
     return true;
 }
 
+bool has_plr_rule(int faction_id, FactionRuleType rule, int* val1, int* val2) {
+    MFaction* m = &MFactions[faction_id];
+    for (int i = 0; i < m->faction_bonus_count; i++) {
+        if (rule == m->faction_bonus_id[i]) {
+            if (val1) *val1 = m->faction_bonus_val1[i];
+            if (val2) *val2 = m->faction_bonus_val2[i];
+            return true;
+        }
+    }
+    return false;
+}
+
 bool has_active_veh(int faction_id, VehPlan plan) {
     assert(faction_id >= 0 && faction_id < MaxPlayerNum);
     for (int i = 0; i < *VehCount; i++) {
@@ -731,7 +743,7 @@ int __cdecl steal_tech(int faction_id, int faction_id_tgt, int is_steal) {
         }
         tech_achieved(faction_id, tech_id, faction_id_tgt, 0);
         if (!is_human(faction_id) && tech_id != 9999) {
-            bases_reset(-1, faction_id, 0);
+            mod_bases_reset(-1, faction_id, 0);
         }
     }
     return tech_id == 9999;

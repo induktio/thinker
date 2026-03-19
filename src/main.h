@@ -283,6 +283,7 @@ struct Config {
     int max_veh_num = MaxVehNum; // internal variable
     int skip_default_balance = 1; // unlisted option
     int early_research_start = 1; // unlisted option
+    int base_capture_fix = 1; // unlisted option
     int facility_capture_fix = 1; // unlisted option
     int territory_border_fix = 1;
     int auto_relocate_hq = 1;

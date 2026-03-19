@@ -1603,14 +1603,14 @@ void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, 
 }
 
 int __cdecl BaseWin_staple_popp(
-const char* filename, const char* label, int a3, const char* imagefile, int a5)
+const char* filename, const char* label, int a3, const char* imagefile, fp_none fn)
 {
     BASE* base = *CurrentBase;
     if (base && base->assimilation_turns_left
     && base->faction_id_former != MapWin->cOwner && is_alive(base->faction_id_former)) {
-        return popp("modmenu", "NERVESTAPLE2", a3, imagefile, a5);
+        return popp("modmenu", "NERVESTAPLE2", a3, imagefile, fn);
     }
-    return popp(filename, label, a3, imagefile, a5);
+    return popp(filename, label, a3, imagefile, fn);
 }
 
 /*

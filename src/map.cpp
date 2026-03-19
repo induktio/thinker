@@ -83,14 +83,14 @@ int min_vector(const Points& S, int x, int y) {
     return v;
 }
 
-double avg_range(const Points& S, int x, int y) {
+int avg_range(const Points& S, int x, int y) {
     size_t n = 0;
-    double sum = 0;
+    size_t sum = 0;
     for (auto& p : S) {
         sum += map_range(x, y, p.x, p.y);
         n++;
     }
-    return (n > 0 ? sum / n : 0);
+    return (n > 0 ? (sum << 8) / n : 0);
 }
 
 bool is_ocean(MAP* sq) {

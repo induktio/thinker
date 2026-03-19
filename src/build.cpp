@@ -3,6 +3,11 @@
 
 static const int GOV_NONE = MaxProtoNum;
 
+static bool skip_facility(BASE* base, int item_id) {
+    return base->plr_owner() && item_id >= 1 && item_id <= 64
+        && conf.skip_gov_facility & (1 << (item_id - 1));
+}
+
 static bool check_retool(BASE* base) {
     return base->plr_owner()
         && Factions[base->faction_id].diff_level > DIFF_SPECIALIST
@@ -288,11 +293,13 @@ int find_satellite(int base_id) {
     AIPlans& p = plans[base.faction_id];
     bool has_complex = has_facility(FAC_AEROSPACE_COMPLEX, base_id)
         || has_project(FAC_SPACE_ELEVATOR, base.faction_id);
+    bool build_complex = !has_complex && can_build(base_id, FAC_AEROSPACE_COMPLEX)
+        && !skip_facility(&base, FAC_AEROSPACE_COMPLEX);
 
     if (!has_complex && ((base_id + *CurrentTurn)/8) & 1) {
         return GOV_NONE;
     }
-    if (!has_complex && !can_build(base_id, FAC_AEROSPACE_COMPLEX)) {
+    if (!has_complex && !build_complex) {
         return GOV_NONE;
     }
     bool defense_only = clamp(p.enemy_odp - f.satellites_ODP + 7, 0, 14) > random(16);
@@ -310,7 +317,7 @@ int find_satellite(int base_id) {
         if (built_num + prod_num >= goal_num) {
             continue;
         }
-        if (!has_complex && can_build(base_id, FAC_AEROSPACE_COMPLEX)) {
+        if (!has_complex && build_complex) {
             return -FAC_AEROSPACE_COMPLEX;
         }
         if (has_complex) {
@@ -413,7 +420,8 @@ int find_project(int base_id, WItem& Wgov) {
             if (gov & GOV_MAY_PROD_PROTOTYPE || has_works || !extra_cost) {
                 debug("find_project %d %d %s\n", faction_id, unit_id, prod_name(unit_id));
                 if (extra_cost >= 50 && gov & GOV_MAY_PROD_FACILITIES
-                && can_build(base_id, FAC_SKUNKWORKS) && works < 2) {
+                && can_build(base_id, FAC_SKUNKWORKS) && works < 2
+                && !skip_facility(base, FAC_SKUNKWORKS)) {
                     return -FAC_SKUNKWORKS;
                 }
                 if (has_works || !works || !extra_cost) {
@@ -424,7 +432,8 @@ int find_project(int base_id, WItem& Wgov) {
     }
     int similar_limit = min(4, base->minerals_accumulated / 50);
     if (projs + (nukes > 0) < min(3 + (nuke_limit > 0) + similar_limit, bases/4)) {
-        if (can_build(base_id, FAC_SUBSPACE_GENERATOR)) {
+        if (can_build(base_id, FAC_SUBSPACE_GENERATOR)
+        && !skip_facility(base, FAC_SUBSPACE_GENERATOR)) {
             return -FAC_SUBSPACE_GENERATOR;
         }
         int best_value = INT_MIN;
@@ -1101,7 +1110,10 @@ int select_build(int base_id) {
                 continue;
             }
         }
-        if (t < 0) { // Skip facility evaluation
+        if (t < 0) { // skip other conditions for units
+            continue;
+        }
+        if (skip_facility(base, t)) {
             continue;
         }
         if (item.energy > 0) {
@@ -1110,10 +1122,6 @@ int select_build(int base_id) {
             }
             score += Wenergy * item.energy * base->energy_surplus / 4;
             score -= 2*base->energy_inefficiency;
-        }
-        if (t >= 1 && t <= 64 && is_human(base->faction_id)
-        && conf.skip_gov_facility & (1 << (t - 1))) {
-            continue;
         }
         if (!(gov & GOV_MAY_FORCE_PSYCH) && (t == FAC_PUNISHMENT_SPHERE
         || (t == FAC_GENEJACK_FACTORY && base_can_riot(base_id, false)

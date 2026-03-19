@@ -7,11 +7,13 @@ const uint32_t GOV_ALLOW_COMBAT =
 
 int __cdecl mod_base_init(int faction_id, int x, int y);
 void __cdecl mod_base_kill(int base_id);
-void __cdecl mod_base_reset(int base_id, bool has_gov);
-int __cdecl mod_base_build(int base_id, bool has_gov);
+void __cdecl mod_capture_base(int base_id, int faction_id, int is_probe);
+void __cdecl mod_base_reset(int base_id, int has_gov);
+void __cdecl mod_bases_reset(int region, int faction_id, int defend_only);
+int __cdecl mod_base_build(int base_id, int has_gov);
 void __cdecl base_first(int base_id);
 void __cdecl set_base(int base_id);
-void __cdecl base_compute(bool update_prev);
+void __cdecl base_compute(int update_prev);
 void __cdecl mod_base_mark(int base_id);
 int __cdecl mod_black_market(int base_id, int energy);
 int __cdecl mod_cost_factor(int faction_id, BaseResType type, int base_id);
@@ -32,7 +34,6 @@ void __cdecl mod_drone_riot();
 void __cdecl mod_base_drones();
 void __cdecl mod_base_maint();
 int __cdecl mod_base_upkeep(int base_id);
-int __cdecl mod_capture_base(int base_id, int faction_id, int is_probe);
 int __cdecl base_psych_content_pop();
 void __cdecl mod_psych_check(int faction_id, int32_t* content_pop, int32_t* base_limit);
 

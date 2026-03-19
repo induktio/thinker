@@ -1093,7 +1093,7 @@ void __cdecl mod_turn_upkeep() {
                 set_treaty(caretake_id, faction_id, DIPLO_UNK_40, 1);
                 Factions[faction_id].diplo_spoke[caretake_id] = *CurrentTurn;
                 if (faction_id == *CurrentPlayerFaction) {
-                    X_pops4("NOTRANSCEND", 0x100000, FactionPortraits[caretake_id], (int)sub_5398E0);
+                    X_pops4("NOTRANSCEND", 0x100000, FactionPortraits[caretake_id], sub_5398E0);
                 }
             }
         }
@@ -1662,7 +1662,7 @@ void __cdecl mod_name_base(int faction_id, char* name, bool save_offset, bool se
             return;
         }
     }
-    for (int i = *BaseCount; i <= 2*MaxBaseNum; i++) {
+    for (int i = *BaseCount + 1; i <= 2*MaxBaseNum; i++) {
         name[0] = '\0';
         snprintf(name, MaxBaseNameLen, "Sector %d", i);
         if (!all_names.count(name)) {

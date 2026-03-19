@@ -828,7 +828,7 @@ int battle_kill(int veh_id, int* num_killed, int* num_relics, int* num_credits, 
             *plurality_default = MFactions[atk_faction_id].is_noun_plural;
             *gender_default = MFactions[atk_faction_id].noun_gender;
             parse_says(7, MFactions[atk_faction_id].noun_faction, -1, -1);
-            interlude(6, (int)&Bases[base_id].name[0], 1, 0);
+            interlude(6, Bases[base_id].name, 1, 0);
         }
     }
     if (!veh->faction_id && Vehs[veh_id_atk].faction_id && num_credits) {

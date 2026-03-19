@@ -171,6 +171,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->skip_default_balance = atoi(value);
     } else if (MATCH("early_research_start")) {
         cf->early_research_start = atoi(value);
+    } else if (MATCH("base_capture_fix")) {
+        cf->base_capture_fix = atoi(value);
     } else if (MATCH("facility_capture_fix")) {
         cf->facility_capture_fix = atoi(value);
     } else if (MATCH("territory_border_fix")) {

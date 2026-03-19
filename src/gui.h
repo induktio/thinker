@@ -88,7 +88,7 @@ void __thiscall BaseWin_draw_farm_set_font(Buffer* This, Font* font, int a3, int
 void __thiscall BaseWin_draw_energy_set_text_color(Buffer* This, int a2, int a3, int a4, int a5);
 void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, int opts);
 void __cdecl BaseWin_draw_psych_strcat(char* buffer, char* source);
-int __cdecl BaseWin_staple_popp(const char* filename, const char* label, int a3, const char* imagefile, int a5);
+int __cdecl BaseWin_staple_popp(const char* filename, const char* label, int a3, const char* imagefile, fp_none fn);
 void __cdecl BaseWin_action_staple(int base_id);
 void __cdecl popb_action_staple(int base_id);
 int __thiscall BaseWin_click_staple(Win* This);

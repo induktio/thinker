@@ -66,7 +66,7 @@ int __cdecl alien_fauna_pop2(const char* label, const char* imagefile, int a3) {
     return NetMsg_pop(NetMsg, label, 5000, 0, imagefile);
 }
 
-int __cdecl base_production_popp(const char* textfile, const char* label, int a3, const char* imagefile, int a5) {
+int __cdecl base_production_popp(const char* textfile, const char* label, int a3, const char* imagefile, fp_none fn) {
     int item_id = (*CurrentBase ? (*CurrentBase)->item() : 0);
     if (!conf.game_event_popup
     && (item_id == -FAC_SKY_HYDRO_LAB
@@ -76,7 +76,7 @@ int __cdecl base_production_popp(const char* textfile, const char* label, int a3
     || item_id == -FAC_GEOSYNC_SURVEY_POD)) {
         return NetMsg_pop(NetMsg, label, 5000, 0, imagefile);
     }
-    return popp(textfile, label, a3, imagefile, a5);
+    return popp(textfile, label, a3, imagefile, fn);
 }
 
 int __cdecl MapWin_gen_terrain_nearby_fungus(int x, int y) {
@@ -786,10 +786,10 @@ bool patch_setup(Config* cf) {
     write_call(0x4C9870, (int)mod_base_init); // action_build
     write_call(0x5AF926, (int)mod_base_init); // time_warp
     write_call(0x5B2BB8, (int)mod_base_init); // setup_player
-    // write_call(0x41CC8F, (int)mod_base_kill); // BaseWin::base_editor
+    write_call(0x41CC8F, (int)mod_base_kill); // BaseWin::base_editor
     write_call(0x4CD629, (int)mod_base_kill); // action_oblit
-    // write_call(0x4D2EC8, (int)mod_base_kill); // Console::disband2
-    // write_call(0x4E07AC, (int)mod_base_kill); // Console::editor_eliminate
+    write_call(0x4D2EC8, (int)mod_base_kill); // Console::disband2
+    write_call(0x4E07AC, (int)mod_base_kill); // Console::editor_eliminate
     write_call(0x4EF319, (int)mod_base_kill); // base_growth
     write_call(0x4F1466, (int)mod_base_kill); // base_production
     write_call(0x500FD7, (int)mod_base_kill); // planet_busting
@@ -798,10 +798,10 @@ bool patch_setup(Config* cf) {
     write_call(0x50CE5B, (int)mod_base_kill); // capture_base
     write_call(0x520E1A, (int)mod_base_kill); // random_events
     write_call(0x521121, (int)mod_base_kill); // random_events
-    // write_call(0x5890E7, (int)mod_base_kill); // alien_start
+    write_call(0x5890E7, (int)mod_base_kill); // alien_start
     write_call(0x5915A6, (int)mod_base_kill); // alt_set
     write_call(0x598673, (int)mod_base_kill); // order_veh
-    // write_call(0x5B0FF1, (int)mod_base_kill); // setup_player
+    write_call(0x5B0FF1, (int)mod_base_kill); // setup_player
     write_call(0x415F35, (int)mod_base_reset); // BaseWin::unk4
     write_call(0x41605A, (int)mod_base_reset); // BaseWin::gov_on
     write_call(0x417F83, (int)mod_base_reset); // BaseWin::production
@@ -822,6 +822,10 @@ bool patch_setup(Config* cf) {
     write_call(0x561607, (int)mod_base_reset); // enemy_strategy
     write_call(0x564850, (int)mod_base_reset); // enemy_strategy
     write_call(0x5B01C7, (int)mod_base_reset); // time_warp
+    write_call(0x50C490, (int)mod_bases_reset); // steal_tech
+    write_call(0x50DA9D, (int)mod_bases_reset); // capture_base
+    write_call(0x5634BD, (int)mod_bases_reset); // enemy_strategy
+    write_call(0x5BE62C, (int)mod_bases_reset); // tech_advance
     write_call(0x4E4C2F, (int)mod_replay_base); // base_init
     write_call(0x4E5378, (int)mod_replay_base); // base_kill
     write_call(0x4F579E, (int)mod_replay_base); // drone_riot
@@ -1384,14 +1388,6 @@ bool patch_setup(Config* cf) {
         const byte old_bytes[] = {0x3B,0xC8,0x0F,0x8C,0x65,0x01,0x00,0x00};
         const byte new_bytes[] = {0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90};
         write_bytes(0x5259CE, old_bytes, new_bytes, sizeof(new_bytes));
-    }
-
-    /*
-    Fix diplomacy dialog appearing multiple times when both human and alien factions are
-    involved in a base capture by removing the event that spawns additional colony pods.
-    */
-    {
-        long_jump(0x50D67A);
     }
 
     /*
