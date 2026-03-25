@@ -161,21 +161,21 @@ void __cdecl net_double_cross(int a1, int a2, int a3, int wait_diplo) {
     }
 }
 
-int __cdecl net_action_build(size_t veh_id, const char* name) {
+int __cdecl net_action_build(size_t veh_id, char* name) {
     VEH* veh = &Vehs[veh_id];
     if (*MultiplayerActive && veh->faction_id == *CurrentPlayerFaction) {
         debug_ver("net_action_build %d %d %d\n", veh_id, veh->x, veh->y);
         if (!name) {
             char buf[LineBufLen] = {};
             mod_name_base(veh->faction_id, &buf[0], 1, is_ocean(mapsq(veh->x, veh->y)));
-            message_base(0x2408, veh_id, (int)&buf, 0);
+            message_base(0x2408, veh_id, &buf[0], 0);
         } else {
-            message_base(0x2408, veh_id, (int)name, 0);
+            message_base(0x2408, veh_id, name, 0);
         }
         NetDaemon_await_exec(NetState, 1);
         return VEH_SKIP;
     }
-    action_build(veh_id, (int)name);
+    action_build(veh_id, name);
     return VEH_SKIP;
 }
 

@@ -210,8 +210,8 @@ int __cdecl mod_tech_selection(int faction_id) {
             NetDaemon_net_tasks(NetState);
             if (!done) {
                 done = true;
-                *plurality_default = 0;
-                *gender_default = MFactions[faction_id].is_leader_female;
+                *PluralDefault = 0;
+                *GenderDefault = MFactions[faction_id].is_leader_female;
                 parse_says(0, &MFactions[faction_id].title_leader[0], -1, -1);
                 parse_says(1, &MFactions[faction_id].name_leader[0], -1, -1);
                 // Note that this script label does not display title/name by default
@@ -242,7 +242,7 @@ Note that tech_pick is also used for TECHSTEAL faction ability.
 */
 int __cdecl mod_tech_pick(int faction_id, int flag, int other_faction_id, const char* label) {
     Faction& plr = Factions[faction_id];
-    int tech_id = tech_pick(faction_id, flag, other_faction_id, (int)label);
+    int tech_id = tech_pick(faction_id, flag, other_faction_id, label);
     debug("tech_pick %d %d %d prev: %d %d tech: %d %s\n", *CurrentTurn, faction_id, other_faction_id,
         plr.tech_research_id, plr.tech_cost, tech_id, tech_str(tech_id));
     if (other_faction_id < 0 && revised_tech_cost()) {

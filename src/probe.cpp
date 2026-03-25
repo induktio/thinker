@@ -290,7 +290,7 @@ int probe_upkeep(int faction1) {
     return 0;
 }
 
-int __thiscall probe_popup_start(Win* This, int veh_id1, int base_id, int a4, int a5, int a6, int a7) {
+int __thiscall probe_popup_start(Popup* This, int veh_id1, int base_id, int a4, char* a5, int a6, GraphicWin* a7) {
     if (base_id >= 0 && base_id < *BaseCount) {
         int faction1 = Vehs[veh_id1].faction_id;
         int faction2 = Bases[base_id].faction_id;

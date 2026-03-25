@@ -95,7 +95,7 @@ int __cdecl MapWin_gen_terrain_nearby_fungus(int x, int y) {
 /*
 Fix possible crash when say_orders is called without CurrentBase pointer being set.
 */
-int mod_say_orders(char* buf, int veh_id) {
+void mod_say_orders(char* buf, int veh_id) {
     VEH* veh = &Vehs[veh_id];
     if (!*CurrentBase) {
         if (veh->home_base_id >= 0) {
@@ -107,7 +107,7 @@ int mod_say_orders(char* buf, int veh_id) {
             }
         }
     }
-    return say_orders((int)buf, veh_id);
+    return say_orders(buf, veh_id);
 }
 
 /*

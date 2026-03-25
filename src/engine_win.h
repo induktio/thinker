@@ -2,12 +2,27 @@
 
 #pragma pack(push, 1)
 
+typedef int StringList;
+typedef int Vert;
+typedef void HSV;
+typedef void ListBox;
+typedef void EdgeScan;
+typedef void NCSprites;
+typedef void BorderSizing;
+typedef void BoxSpriteParams;
+typedef void ExtDirectDraw;
+typedef void ServiceList;
+typedef void ServiceStruct;
+typedef void SessionStruct;
+typedef void NetThreadInfo;
+typedef void DeletionList;
+
 struct Win;
 struct Scroll;
 struct GraphicWin;
 
 struct ListNode {
-    void** vtable;
+    void* vtable;
     int tagged_id;
     void* obj;
     ListNode* next;
@@ -15,7 +30,7 @@ struct ListNode {
 };
 
 struct ListRoot {
-    void** vtable;
+    void* vtable;
     int field_4;
     ListNode* first;
     ListNode* current;
@@ -66,7 +81,7 @@ struct CListItem {
 };
 
 struct CList {
-    int* vtbl;
+    void* vtable;
     CListItem* pFirst;
     CListItem* pCurrent;
     int iCount;
@@ -74,17 +89,72 @@ struct CList {
     Heap* poMemAllocator;
 };
 
-struct Font {
+struct NameNode {
     int field_0;
-    int iFlags;
-    HGDIOBJ hgdiobjFont;
-    int iLineHeight;
-    int iHeight;
-    int iInternalLeading;
-    int iAscent;
-    int iDescent;
+    int field_4;
+    int field_8[150];
+};
+
+struct Lock {
+    int field_0;
+    int field_4;
+    int field_8;
+    int field_C;
+    int field_10;
+    int field_14;
+    int field_18;
+    int field_1C;
     int field_20;
-    char* pszFileName;
+    int field_24;
+    int field_28;
+    int field_2C;
+    int field_30;
+    int field_34;
+    int field_38;
+    int field_3C;
+    int field_40;
+    int field_44;
+    int field_48;
+    int field_4C;
+    int field_50;
+    int field_54;
+    int field_58;
+    int field_5C;
+    int field_60;
+    int field_64;
+    int field_68;
+    int field_6C;
+    int field_70;
+    int field_74;
+    int field_78;
+    int field_7C;
+    int field_80;
+    int field_84;
+    int field_88;
+    int field_8C;
+    int field_90;
+    int field_94;
+    int field_98;
+    int field_9C;
+    int field_A0;
+    int field_A4;
+    int field_A8;
+    int field_AC;
+    int field_B0;
+    int field_B4;
+    int field_B8;
+    int field_BC;
+    int field_C0;
+    int field_C4;
+    int field_C8;
+    int field_CC;
+    int field_D0;
+    int field_D4;
+    int field_D8;
+    int field_DC;
+    int field_E0;
+    int field_E4;
+    int field_E8;
 };
 
 struct Time {
@@ -100,6 +170,63 @@ struct Time {
     int field_24;
 };
 
+struct Font {
+    int field_0;
+    int iFlags;
+    HGDIOBJ hgdiobjFont;
+    int iLineHeight;
+    int iHeight;
+    int iInternalLeading;
+    int iAscent;
+    int iDescent;
+    int field_20;
+    char* pszFileName;
+};
+
+struct FontQueue {
+    Font font1;
+    Font font2;
+    Font font3;
+    int field_78;
+    int field_7C;
+    int field_80;
+    int field_84;
+    int field_88;
+    int field_8C;
+    int field_90;
+    int field_94;
+    int field_98;
+    Font* field_9C;
+};
+
+struct Wave {
+    void* vtable;
+    int volume;
+    int field_8;
+    int field_C[5];
+    int field_20;
+    int field_24;
+    int field_28;
+    int field_2C;
+    int field_30;
+    int field_34;
+    int field_38;
+    int field_3C;
+    int field_40;
+    int field_44;
+    int field_48;
+    char* fname;
+    int field_50;
+    int field_54;
+    int pitch;
+    float reverb_mix;
+    int ms_length;
+    int field_64;
+    int field_68;
+};
+
+struct Effect : Wave {};
+
 struct PaletteInternal {
     int field_0;
     Time* ptrTime;
@@ -110,7 +237,7 @@ struct PaletteInternal {
     void* field_C;
 };
 
-struct Palette { // PRACX version did not have seed and paletteInternal
+struct Palette {
     PALETTEENTRY colors[256];
     int seed;
     PaletteInternal paletteInternal[5];
@@ -816,7 +943,7 @@ struct Caviar {
 };
 
 struct Buffer {
-    int* vtbl;
+    void* vtable;
     Win* poOwner;
     int (__cdecl *pfcnScrollText)(char* pszText, int x, int y, int iCharsToScroll);
     int dwordC;
@@ -922,7 +1049,7 @@ struct Texture {
 };
 
 struct Win {
-    int* vtbl;
+    void* vtable;
     int field_4;
     int field_8;
     int field_C;
@@ -1037,8 +1164,7 @@ struct Win {
     Scroll* scroll_horz;
 };
 
-struct GraphicWin {
-    Win oWinBase;
+struct GraphicWin : Win {
     Buffer oCanvas;
     int field_9CC;
     int field_9D0;
@@ -1060,73 +1186,9 @@ struct GraphicWin {
     int field_A10;
 };
 
-struct SetupWin : GraphicWin {
-    int field_A14[379];
-    int field_1000[424];
-};
-
-struct Popup : GraphicWin {
-    int field_A14[379];
-    int field_1000[1024];
-    int field_2000[1024];
-    int field_3000[1024];
-    int field_4000[1024];
-    int field_5000[223];
-};
-
-struct CClass3B {
-    GraphicWin oWinBuffed;
-    int field_A14;
-    int field_A18;
-    Time oTimer1;
-    int field_A44;
-    int field_A48;
-    Time oTimer2;
-    int field_A74;
-    int field_A78;
-    int field_A7C;
-    int field_A80;
-    int field_A84;
-    int field_A88;
-    int field_A8C;
-    int field_A90;
-    int field_A94;
-    int field_A98;
-    int field_A9C;
-    int field_AA0;
-    int field_AA4;
-    int field_AA8;
-    int field_AAC;
-    int field_AB0;
-    int field_AB4;
-    int field_AB8;
-};
-
-struct TTilePos {
-    char field_0;
-    char field_1;
-    char field_2;
-    char field_3;
-    char field_4;
-    char field_5;
-    char field_6;
-    char field_7;
-    char field_8;
-    char field_9;
-    char field_A;
-    char field_B;
-};
-
-struct NameNode {
-    int field_0;
-    int field_4;
-    int field_8[150];
-};
-
 struct ButtonGroup;
 
-struct BaseButton {
-    GraphicWin graphicWin;
+struct BaseButton : GraphicWin {
     int field_A14;
     int field_A18;
     Time time1;
@@ -1159,6 +1221,27 @@ struct ButtonGroup {
     int field_88;
     int field_8C;
     int field_90;
+};
+
+struct PushButton : BaseButton {
+    int field_AB8;
+    int field_ABC;
+    int field_AC0;
+    int field_AC4;
+    int field_AC8;
+    int field_ACC;
+    int field_AD0;
+    int field_AD4;
+    int field_AD8;
+    int field_ADC;
+    int field_AE0;
+    int field_AE4;
+    int field_AE8;
+    int field_AEC;
+    int field_AF0;
+    int field_AF4;
+    int field_AF8;
+    int field_AFC;
 };
 
 struct FlatButton : BaseButton {
@@ -1247,6 +1330,26 @@ struct Scroll {
     int field_2148;
 };
 
+struct SetupWin : GraphicWin {
+    int field_A14[379];
+    int field_1000[424];
+};
+
+struct BasePop : GraphicWin {
+    int field_A14[379];
+    int field_1000[1024];
+    int field_2000[1024];
+    int field_3000[140];
+};
+
+struct Popup : BasePop {
+    Scroll scroll;
+};
+
+struct NetMessage : Popup {
+    Time time;
+};
+
 struct CMenuItem {
     int pszCaption;
     int pszHotKey;
@@ -1279,30 +1382,9 @@ struct CMainMenuItem {
     CMenu* poSubMenu;
 };
 
-struct CKeyFileIndex {
-    char szFileName[256];
-    char* pszSections;
-    int field_104;
-    int iSectionCount;
-    int field_10C;
-    int field_110;
-    int field_114;
-};
-
-struct CKeyFile {
-    char szFileName[80];
-    char szSomeString[256];
-    char* pszValues;
-    FILE* pFile;
-    char* pszFileBuffer;
-    int pszNextValue;
-};
-
-typedef int(__cdecl *MENU_HANDLER_CB_F)(int iMenuItemId);
-
 struct Menu {
     GraphicWin oWinBuffed;
-    MENU_HANDLER_CB_F pMenuHandlerCB;
+    int (__cdecl *pfcnMenuHandler)(int iMenuItemId);
     int iBaseMenuItemCount;
     int field_A1C;
     int field_A20;
@@ -1312,8 +1394,51 @@ struct Menu {
     CMainMenuItem aMainMenuItems[15];
 };
 
+struct CClass3B {
+    GraphicWin oWinBuffed;
+    int field_A14;
+    int field_A18;
+    Time oTimer1;
+    int field_A44;
+    int field_A48;
+    Time oTimer2;
+    int field_A74;
+    int field_A78;
+    int field_A7C;
+    int field_A80;
+    int field_A84;
+    int field_A88;
+    int field_A8C;
+    int field_A90;
+    int field_A94;
+    int field_A98;
+    int field_A9C;
+    int field_AA0;
+    int field_AA4;
+    int field_AA8;
+    int field_AAC;
+    int field_AB0;
+    int field_AB4;
+    int field_AB8;
+};
+
+struct TTilePos {
+    char field_0;
+    char field_1;
+    char field_2;
+    char field_3;
+    char field_4;
+    char field_5;
+    char field_6;
+    char field_7;
+    char field_8;
+    char field_9;
+    char field_A;
+    char field_B;
+};
+
 struct Console {
-    int* vtbl;
+    void* vtable;
     TTilePos* paTilePos;
     int field_8;
     NameNode oUnknown[201]; // MapWin constructor
@@ -1539,27 +1664,7 @@ struct StatusWin {
     SpotList oHitBoxList;
 };
 
-struct RenderWindow {
-    Win oWinBase;
-    Buffer oCanvas;
-    int field_9CC;
-    int field_9D0;
-    int field_9D4;
-    int field_9D8;
-    int field_9DC;
-    int field_9E0;
-    int field_9E4;
-    int field_9E8;
-    int field_9EC;
-    int field_9F0;
-    int field_9F4;
-    int field_9F8;
-    int field_9FC;
-    int field_A00;
-    int field_A04;
-    Buffer* poCanvas;
-    int field_A0C;
-    int field_A10;
+struct RenderWindow : GraphicWin {
     int field_A14[379];
     int field_1000[1024];
     int field_2000[1024];
@@ -1711,26 +1816,7 @@ struct RenderWindow {
     int field_29000[143];
 };
 
-struct BaseWindow : Win {
-    Buffer oCanvas;
-    int field_9CC;
-    int field_9D0;
-    int field_9D4;
-    int field_9D8;
-    int field_9DC;
-    int field_9E0;
-    int field_9E4;
-    int field_9E8;
-    int field_9EC;
-    int field_9F0;
-    int field_9F4;
-    int field_9F8;
-    int field_9FC;
-    int field_A00;
-    int field_A04;
-    Buffer* poCanvas;
-    int field_A0C;
-    int field_A10;
+struct BaseWindow : GraphicWin {
     int field_A14;
     int field_A18;
     int field_A1C;
@@ -2143,68 +2229,6 @@ struct BaseWindow : Win {
     RenderWindow oRender;
 };
 
-struct Lock {
-    int field_0;
-    int field_4;
-    int field_8;
-    int field_C;
-    int field_10;
-    int field_14;
-    int field_18;
-    int field_1C;
-    int field_20;
-    int field_24;
-    int field_28;
-    int field_2C;
-    int field_30;
-    int field_34;
-    int field_38;
-    int field_3C;
-    int field_40;
-    int field_44;
-    int field_48;
-    int field_4C;
-    int field_50;
-    int field_54;
-    int field_58;
-    int field_5C;
-    int field_60;
-    int field_64;
-    int field_68;
-    int field_6C;
-    int field_70;
-    int field_74;
-    int field_78;
-    int field_7C;
-    int field_80;
-    int field_84;
-    int field_88;
-    int field_8C;
-    int field_90;
-    int field_94;
-    int field_98;
-    int field_9C;
-    int field_A0;
-    int field_A4;
-    int field_A8;
-    int field_AC;
-    int field_B0;
-    int field_B4;
-    int field_B8;
-    int field_BC;
-    int field_C0;
-    int field_C4;
-    int field_C8;
-    int field_CC;
-    int field_D0;
-    int field_D4;
-    int field_D8;
-    int field_DC;
-    int field_E0;
-    int field_E4;
-    int field_E8;
-};
-
 struct NetFifo {
     int field_0;
     int field_4;
@@ -2237,8 +2261,8 @@ struct VoiceTx {
     int field_54;
 };
 
-struct AlphaNet {
-    LPVOID vtable;
+struct Net {
+    void* vtable;
     int field_4;
     int field_8;
     int field_C;
@@ -2341,7 +2365,11 @@ struct AlphaNet {
     int field_400[64];
     int field_500[64];
     int field_600[64];
-    int field_700[64];
+    int field_700[24];
+};
+
+struct AlphaNet : Net {
+    int field_760[40];
     int field_800[256];
     int field_C00[256];
     int field_1000[256];
@@ -2351,11 +2379,35 @@ struct AlphaNet {
 
 #pragma pack(pop)
 
+// TODO: these are placeholders
+typedef GraphicWin BattleWindow;
+typedef GraphicWin CouncilWindow;
+typedef GraphicWin DatalinkWindow;
+typedef GraphicWin DesignWindow;
+typedef GraphicWin DiploWindow;
+typedef GraphicWin FameWindow;
+typedef GraphicWin InfoWindow;
+typedef GraphicWin MainWindow;
+typedef GraphicWin MessageWindow;
+typedef GraphicWin MonuWindow;
+typedef GraphicWin MultiWindow;
+typedef GraphicWin NetWindow;
+typedef GraphicWin NetTechWindow;
+typedef GraphicWin PickWindow;
+typedef GraphicWin PlanWindow;
+typedef GraphicWin PrefWindow;
+typedef GraphicWin ReportWindow;
+typedef GraphicWin SocialWindow;
+typedef GraphicWin StatusWindow;
+typedef GraphicWin TutWindow;
+typedef GraphicWin WorldWindow;
+
 typedef MAP CTile;
 typedef BASE CCity;
 typedef Console CMain;
 typedef StatusWin CInfoWin;
 typedef GraphicWin CWinBuffed;
+typedef GraphicWin PullDown;
 typedef Win CWinBase;
 typedef Menu CMainMenu;
 typedef Buffer CCanvas;
@@ -2373,44 +2425,50 @@ typedef Palette CPalette;
 
 // TODO: Unresolved names/classes to be renamed
 //CClass3B
-//CKeyFileIndex
-//CKeyFile
 //CList
 //CListItem
 //CMenu
 //CMenuItem
 //CMainMenuItem / used with PullDown
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Winvalid-offsetof"
+
 static_assert(sizeof(Heap) == 20, "");
 static_assert(sizeof(Spot) == 24, "");
 static_assert(sizeof(SpotList) == 12, "");
-static_assert(sizeof(Font) == 40, "");
+static_assert(sizeof(NameNode) == 608, "");
+static_assert(sizeof(Lock) == 236, "");
 static_assert(sizeof(Time) == 40, "");
+static_assert(sizeof(Font) == 40, "");
+static_assert(sizeof(FontQueue) == 160, "");
+static_assert(sizeof(Effect) == 108, "");
+static_assert(sizeof(Caviar) == 5072, "");
+static_assert(sizeof(Buffer) == 1416, "");
 static_assert(sizeof(Sprite) == 44, "");
 static_assert(sizeof(Texture) == 112, "");
-static_assert(sizeof(NameNode) == 608, "");
 static_assert(sizeof(Win) == 1092, "");
-static_assert(sizeof(Buffer) == 1416, "");
-static_assert(sizeof(Caviar) == 5072, "");
-static_assert(sizeof(Menu) == 2916, "");
 static_assert(sizeof(GraphicWin) == 2580, "");
 static_assert(sizeof(BaseButton) == 2744, "");
+static_assert(sizeof(PushButton) == 2816, "");
 static_assert(sizeof(FlatButton) == 2892, "");
+static_assert(sizeof(Menu) == 2916, "");
 static_assert(sizeof(Scroll) == 8524, "");
+static_assert(sizeof(SetupWin) == 5792, "");
+static_assert(sizeof(BasePop) == 12848, "");
+static_assert(sizeof(Popup) == 21372, "");
+static_assert(sizeof(NetMessage) == 21412, "");
 static_assert(sizeof(Console) == 149412, "");
 static_assert(sizeof(RenderWindow) == 168508, "");
 static_assert(sizeof(BaseWindow) == 293040, "");
-static_assert(sizeof(Lock) == 236, "");
 static_assert(sizeof(AlphaNet) == 5280, "");
-static_assert(sizeof(SetupWin) == 5792, "");
-static_assert(sizeof(Popup) == 21372, "");
 static_assert(offsetof(RenderWindow, field_1D000) == 0x1D000, "");
 static_assert(offsetof(RenderWindow, field_23000) == 0x23000, "");
 static_assert(offsetof(RenderWindow, oCanvas1) == offsetof(Console, oCanvas1), "");
 static_assert(offsetof(RenderWindow, iZoomFactor) == offsetof(Console, iZoomFactor), "");
 static_assert(offsetof(RenderWindow, iWhatToDrawFlags) == offsetof(Console, iWhatToDrawFlags), "");
-static_assert(offsetof(AlphaNet, field_154) == 0x154, "");
-static_assert(offsetof(AlphaNet, field_700) == 0x700, "");
-static_assert(offsetof(AlphaNet, field_1400) == 0x1400, "");
+static_assert(offsetof(Net, field_154) == 0x154, "");
+static_assert(offsetof(Net, field_700) == 0x700, "");
 
+#pragma GCC diagnostic pop
 

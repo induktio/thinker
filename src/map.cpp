@@ -359,7 +359,7 @@ void __cdecl alt_set(int x, int y, int altitude) {
             int next_veh_id = veh->next_veh_id_stack;
             if (veh->triad() != TRIAD_AIR && (veh->triad() == TRIAD_SEA) != is_sea
             && !(veh->flags & VFLAG_IS_OBJECTIVE)) {
-                MapBaseIdClosestSubmergedVeh[veh->faction_id] = base_find2(x, y, veh->faction_id);
+                MapBaseIdClosestSubmergedVeh[veh->faction_id] = base_find_2(x, y, veh->faction_id);
                 veh_kill(veh_id);
                 if (next_veh_id > veh_id) {
                     --next_veh_id;
@@ -1422,7 +1422,7 @@ int __cdecl mod_base_find3(int x, int y, int faction_id, int region, int faction
         }
     }
     if (DEBUG && !conf.territory_border_fix) {
-        int value = base_find3(x, y, faction_id, region, faction_id_2, faction_id_3);
+        int value = base_find_3(x, y, faction_id, region, faction_id_2, faction_id_3);
         assert(base_id == value);
         assert(base_dist == *BaseFindDist);
     }

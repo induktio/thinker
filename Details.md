@@ -452,8 +452,8 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 27. Patch Stockpile Energy when it enabled double production if the base produces one item and then switches to Stockpile Energy on the same turn gaining additional credits.
 28. Patch Energy Market Crash event to reduce energy reserves only by 1/2 instead of 3/4. The event can also be entirely disabled with skip_event option.
 29. Bases that have sufficient drone control facilities before the growth phase can grow without triggering possible drone riots on the same turn (delay_drone_riots).
-30. Remove drone revolt event due to issues with the original code. Sometimes this caused rioting player-owned bases to join other factions while this did not happen on AI factions.
-31. Patch captured base extra drone effect to last a variable time from 20 to 50 turns depending on the captured base size. The AI will also rename captured bases only after they are fully assimilated.
+30. Remove drone revolt event due to issues with the original code. Sometimes this caused rioting player-owned bases to join other factions while this did not happen on AI factions. REVOLT faction ability has alternative usage and it can lower the captured base assimilation time.
+31. Patch captured base extra drone effect to last a variable time from 20 to 50 turns depending on the base size and faction modifiers. The AI will also rename captured bases only after they are fully assimilated.
 32. When a base is captured that was previously owned by active third faction and the time to assimilate the base was more than zero, the previous owner is preserved after capture.
 33. Fix diplomacy dialog appearing multiple times when both human and alien factions are involved in a base capture by adjusting the location for spawned colony pods.
 34. Fix missing defender bonus mentioned in the manual "Units in a headquarters base automatically gain +1 Morale when defending".

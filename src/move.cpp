@@ -796,12 +796,14 @@ void move_upkeep(int faction_id, UpdateMode mode) {
             if ((sq = mapsq(x, y)) && sq->region == p.main_sea_region) {
                 adjust_shore(x, y, 1, PM_ShoreLine);
             }
-            assert(goody_at(x, y) == mod_goody_at(x, y));
-            assert(bonus_at(x, y) == mod_bonus_at(x, y));
-            assert(zoc_any(x, y, faction_id) == mod_zoc_any(x, y, faction_id));
-            assert(zoc_sea(x, y, faction_id) == mod_zoc_sea(x, y, faction_id));
-            assert(zoc_veh(x, y, faction_id) == mod_zoc_veh(x, y, faction_id));
-            assert(zoc_move(x, y, faction_id) == mod_zoc_move(x, y, faction_id));
+            if (DEBUG && mode == UM_Full) {
+                assert(goody_at(x, y) == mod_goody_at(x, y));
+                assert(bonus_at(x, y) == mod_bonus_at(x, y));
+                assert(zoc_any(x, y, faction_id) == mod_zoc_any(x, y, faction_id));
+                assert(zoc_sea(x, y, faction_id) == mod_zoc_sea(x, y, faction_id));
+                assert(zoc_veh(x, y, faction_id) == mod_zoc_veh(x, y, faction_id));
+                assert(zoc_move(x, y, faction_id) == mod_zoc_move(x, y, faction_id));
+            }
         }
     }
     for (int i = 0, cnt = *VehCount; i < cnt; ++i) {
@@ -986,6 +988,7 @@ void move_upkeep(int faction_id, UpdateMode mode) {
                     + (is_objective(i) ? 16 + 16*defend : 0)
                     + 16*has_fac_built(FAC_HEADQUARTERS, i)
                     + 8*mapdata[{base->x, base->y}].enemy_near
+                    + (base->state_flags & BSTATE_UNK_100000 ? 8 : 0)
                     + (base->state_flags & BSTATE_COMBAT_LOSS_LAST_TURN ? 8 : 0)
                     - (base->defend_range > 0 ? base->defend_range : MaxEnemyRange/2);
                 values.push_back(value);
@@ -1089,13 +1092,13 @@ void move_upkeep(int faction_id, UpdateMode mode) {
 
 ResType want_convoy(int veh_id, int x, int y, int* score, MAP* sq) {
     VEH* veh = &Vehs[veh_id];
-    BASE* base = &Bases[veh->home_base_id];
     ResType choice = RES_NONE;
     int base_id = veh->home_base_id;
     *score = 0;
 
     if (!sq->is_base() && base_id >= 0
     && (sq->owner == veh->faction_id || !sq->is_owned())) {
+        BASE* base = &Bases[veh->home_base_id];
         for (int i = *VehCount - 1; i >= 0; --i) {
             if (veh_id != i && Vehs[i].x == x && Vehs[i].y == y
             && Vehs[i].is_supply() && Vehs[i].order == ORDER_CONVOY) {
@@ -1432,7 +1435,7 @@ int colony_move(const int id) {
     if (!veh->plr_owner()) {
         AIPlans& p = plans[faction_id];
         if (p.naval_start_x >= 0 && veh_region == p.main_region
-        && veh->x != p.naval_start_x && veh->y != p.naval_start_y) {
+        && !(veh->x == p.naval_start_x && veh->y == p.naval_start_y)) {
             debug("colony_naval %2d %2d -> %2d %2d\n",
                 veh->x, veh->y, p.naval_start_x, p.naval_start_y);
             return set_move_to(id, p.naval_start_x, p.naval_start_y);
@@ -1620,13 +1623,11 @@ bool can_sensor(int x, int y, int faction_id, MAP* sq) {
     if (sq->is_fungus() && !has_tech(Rules->tech_preq_improv_fungus, faction_id)) {
         return false;
     }
-    int i = 1;
     for (auto& m : iterate_tiles(x, y, 1, 25)) {
         if (m.sq->owner == faction_id && (m.sq->items & BIT_SENSOR
         || mapnodes.count({m.x, m.y, NODE_SENSOR_ARRAY}))) {
             return false;
         }
-        i++;
     }
     if (is_human(faction_id) && !(*GameMorePreferences & MPREF_AUTO_FORMER_BUILD_SENSORS)) {
         return false;
@@ -3338,7 +3339,7 @@ int combat_move(const int id) {
         if (tx >= 0 && ((at_base && !defenders) || random(256) < min(224, best_score))) {
             debug("combat_arty %2d %2d -> %2d %2d score: %d %s\n",
                 veh->x, veh->y, tx, ty, best_score, veh->name());
-            battle_fight_1(id, offset, 1, 1, 0);
+            mod_battle_fight(id, offset, 1, 1, 0);
             return VEH_SYNC;
         }
     }

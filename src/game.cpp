@@ -67,8 +67,8 @@ char* label_get(size_t index) {
 }
 
 char* __cdecl parse_set(int faction_id) {
-    *gender_default = MFactions[faction_id].noun_gender;
-    *plurality_default = MFactions[faction_id].is_noun_plural;
+    *GenderDefault = MFactions[faction_id].noun_gender;
+    *PluralDefault = MFactions[faction_id].is_noun_plural;
     return MFactions[faction_id].noun_faction;
 }
 
@@ -88,11 +88,11 @@ int __cdecl parse_says(size_t index, const char* src, int gender, int plural) {
        return 3;
    }
    if (gender < 0) {
-       gender = *gender_default;
+       gender = *GenderDefault;
    }
    ParseStrGender[index] = gender;
    if (plural < 0) {
-       plural = *plurality_default;
+       plural = *PluralDefault;
    }
    ParseStrPlurality[index] = plural;
    strcpy_n(ParseStrBuffer[index].str, StrBufLen, src);
@@ -1028,7 +1028,7 @@ void __cdecl mod_turn_upkeep() {
     *dword_90DB84 = 0; // action_terraform
     rankings(1);
     *CurrentMissionYear = game_year(++(*CurrentTurn));
-    MapWin_main_caption();
+    MapWin_main_caption(MapWin);
 
     if (*ClimateFutureChange) {
         int val = *ClimateValueA + *ClimateValueC;
@@ -1093,7 +1093,7 @@ void __cdecl mod_turn_upkeep() {
                 set_treaty(caretake_id, faction_id, DIPLO_UNK_40, 1);
                 Factions[faction_id].diplo_spoke[caretake_id] = *CurrentTurn;
                 if (faction_id == *CurrentPlayerFaction) {
-                    X_pops4("NOTRANSCEND", 0x100000, FactionPortraits[caretake_id], sub_5398E0);
+                    X_pops4("NOTRANSCEND", 0x100000, FactionPortraits[caretake_id], pop_wait);
                 }
             }
         }
@@ -1119,8 +1119,8 @@ void __cdecl mod_turn_upkeep() {
         MFaction& m_plr = MFactions[*CurrentPlayerFaction];
         if (!(plr.player_flags & PFLAG_UNK_2000)) {
             plr.player_flags |= PFLAG_UNK_2000;
-            *plurality_default = 0;
-            *gender_default = m_plr.is_leader_female;
+            *PluralDefault = 0;
+            *GenderDefault = m_plr.is_leader_female;
             parse_says(0, m_plr.title_leader, -1, -1);
             parse_says(1, m_plr.name_leader, -1, -1);
             popp(ScriptFile, "ASCENT", 0, "asctran_sm.pcx", 0);
@@ -1139,9 +1139,11 @@ file header for savegames to prevent these files from being opened on the origin
 */
 int __cdecl save_daemon_header(const char* header, FILE* file) {
     if (*VehCount > MaxVehNum && !strcmp(header, "TERRAN")) {
-        return header_write("TERRAE", file);
+        header_write("TERRAE", file);
+        return 0;
     }
-    return header_write(header, file);
+    header_write(header, file);
+    return 0;
 }
 
 int __cdecl load_daemon_strcmp(const char* value, const char* header) {
@@ -1152,13 +1154,13 @@ int __cdecl load_daemon_strcmp(const char* value, const char* header) {
     return strcmp(value, header);
 }
 
-int __cdecl mod_load_map_daemon(const char* name) {
+int __cdecl mod_load_map_daemon(char* name) {
     // Another map selected from various dialogs
     reset_state();
     return load_map_daemon(name);
 }
 
-int __cdecl mod_load_daemon(const char* name, int flag) {
+int __cdecl mod_load_daemon(char* name, int flag) {
     // Another savegame opened from selection dialog
     reset_state();
     return load_daemon(name, flag);
@@ -1236,11 +1238,11 @@ void __cdecl mod_faction_upkeep(int faction_id) {
                 f->corner_market_cost = cost;
                 f->energy_credits -= cost;
 
-                *gender_default = m->noun_gender;
-                *plurality_default = 0;
+                *GenderDefault = m->noun_gender;
+                *PluralDefault = 0;
                 parse_says(0, m->title_leader, -1, -1);
                 parse_says(1, m->name_leader, -1, -1);
-                *plurality_default = m->is_noun_plural;
+                *PluralDefault = m->is_noun_plural;
                 parse_says(2, m->noun_faction, -1, -1);
                 parse_says(3, m->adj_name_faction, -1, -1);
                 ParseNumTable[0] = game_year(f->corner_market_turn);

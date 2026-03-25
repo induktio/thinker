@@ -42,6 +42,14 @@ writes output to `debug.txt` in the game folder if the game happens to crash for
 Original game mechanics
 =======================
 
+Endgame replay window
+---------------------
+The saves written by the game have certain limitations when storing events for the endgame replay window.
+At most 1024 base creation/capture/remove events can be stored in the savegame and after that the original game
+may crash when writing additional events. The modded version stops writing any events after the limit so that
+those events are excluded from the replay.
+
+
 Faction definition files
 ------------------------
 Due to limitations in the savegame format, the faction txt file parser is able to read only up to eight different

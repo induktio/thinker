@@ -1375,12 +1375,12 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
         || ((def_status & DIPLO_COMMLINK || atk_status & DIPLO_UNK_800)
         && !(def_status & DIPLO_VENDETTA)))) {
             if (faction_id_def == player_id || *PbemActive) {
-                *plurality_default = 0;
-                *gender_default = m_atk->is_leader_female;
+                *PluralDefault = 0;
+                *GenderDefault = m_atk->is_leader_female;
                 parse_says(0, m_atk->title_leader, -1, -1);
                 parse_says(1, m_atk->name_leader, -1, -1);
-                *plurality_default = m_atk->is_noun_plural;
-                *gender_default = m_atk->noun_gender;
+                *PluralDefault = m_atk->is_noun_plural;
+                *GenderDefault = m_atk->noun_gender;
                 parse_says(2, m_atk->noun_faction, -1, -1);
             }
             if (faction_id_def == player_id) {
@@ -1887,7 +1887,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
     bool def_alive = veh_def_last_hp > 0;
 
     if (render_battle || render_tile) {
-        draw_tile_fixup2(x, y, tx, ty, 2, 2);
+        draw_tile_fixup_2(x, y, tx, ty, 2, 2);
         if (def_has_moved && (x != draw_x || y != draw_y) && (tx != draw_x || ty != draw_y)) {
             draw_tile_fixup(draw_x, draw_y, 2, 2);
         }
@@ -2273,17 +2273,17 @@ END_BATTLE:
     case 1:
         parse_says(0, m_atk->adj_name_faction, -1, -1);
         parse_says(1, parse_set(faction_id_def), -1, -1);
-        NetMsg_pop2("VENDETTAREPORT", 0);
+        NetMsg_pop_2("VENDETTAREPORT", 0);
         break;
     case 2:
         parse_says(0, m_atk->adj_name_faction, -1, -1);
         parse_says(1, parse_set(faction_id_def), -1, -1);
-        NetMsg_pop2("PACTATTACKED", 0);
+        NetMsg_pop_2("PACTATTACKED", 0);
         break;
     case 3:
         parse_says(0, parse_set(faction_id_atk), -1, -1);
         parse_says(1, parse_set(faction_id_def), -1, -1);
-        NetMsg_pop2("PACTATTACKING", 0);
+        NetMsg_pop_2("PACTATTACKING", 0);
         break;
     }
     // Fix: avoid using expired pointers for vehicles

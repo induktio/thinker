@@ -67,7 +67,7 @@ void __cdecl social_upkeep(int faction_id);
 int __cdecl social_upheaval(int faction_id, CSocialCategory* choices);
 int __cdecl society_avail(int soc_category, int soc_model, int faction_id);
 int __cdecl SocialWin_social_ai(int faction_id, int a2, int a3, int a4, int a5, int a6);
-int __cdecl mod_social_ai(int faction_id, int a2, int a3, int a4, int a5, int a6);
+int __cdecl mod_social_ai(int faction_id, int a2, int a3, int a4, int a5, CSocialCategory* a6);
 int __cdecl mod_wants_to_attack(int faction_id, int faction_id_tgt, int faction_id_unk);
 int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe);
 int __cdecl mod_eliminate_player(int faction_id, int setup_id);

@@ -599,6 +599,7 @@ enum PlayerFlags {
     PFLAG_GENETIC_PLAGUE_INTRO = 0x400, // +1 to defense against after 1st time faction experiences
     PFLAG_UNK_1000 = 0x1000, // setup_player
     PFLAG_UNK_2000 = 0x2000, // turn_upkeep
+    PFLAG_UNK_4000 = 0x4000,
     PFLAG_BEEN_ELECTED_GOVERNOR = 0x8000, // used to determine whether #GOVERNOR has been displayed
     PFLAG_UNK_10000 = 0x10000,
     PFLAG_UNK_20000 = 0x20000, // compute_score

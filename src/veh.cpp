@@ -4,10 +4,10 @@
 
 int __cdecl can_arty(int unit_id, bool allow_sea_arty) {
     assert(unit_id >= 0 && unit_id < MaxProtoNum);
-    UNIT* u = &Units[unit_id];
     if (unit_id < 0 || unit_id >= MaxProtoNum) {
         return false;
     }
+    UNIT* u = &Units[unit_id];
     if ((u->offense_value() <= 0 // PSI + non-combat
     || u->defense_value() < 0) // PSI
     && unit_id != BSC_SPORE_LAUNCHER) { // Spore Launcher exception
@@ -599,7 +599,7 @@ int __cdecl veh_init(int unit_id, int faction_id, int x, int y) {
         }
     }
     if (best_enemy >= 0) {
-        base_find3(x, y, best_enemy, region_id, -1, -1);
+        mod_base_find3(x, y, best_enemy, region_id, -1, -1);
         if (vector_dist(x, y, plr->target_x, plr->target_y) > *BaseFindDist) {
             return veh_id;
         }
@@ -817,16 +817,16 @@ int battle_kill(int veh_id, int* num_killed, int* num_relics, int* num_credits, 
         int atk_faction_id = veh_atk->faction_id;
         int base_id = veh_atk->home_base_id;
         if (base_id < 0) {
-            base_id = base_find2(veh_atk->x, veh_atk->y, atk_faction_id);
+            base_id = base_find_2(veh_atk->x, veh_atk->y, atk_faction_id);
         }
         if (base_id >= 0) {
             Bases[base_id].state_flags |= BSTATE_ASSISTANT_KILLER_HOME;
             Factions[atk_faction_id].player_flags |= PFLAG_UNK_1000;
-            *plurality_default = 0;
-            *gender_default = MFactions[atk_faction_id].is_leader_female;
+            *PluralDefault = 0;
+            *GenderDefault = MFactions[atk_faction_id].is_leader_female;
             parse_says(6, MFactions[atk_faction_id].name_leader, -1, -1);
-            *plurality_default = MFactions[atk_faction_id].is_noun_plural;
-            *gender_default = MFactions[atk_faction_id].noun_gender;
+            *PluralDefault = MFactions[atk_faction_id].is_noun_plural;
+            *GenderDefault = MFactions[atk_faction_id].noun_gender;
             parse_says(7, MFactions[atk_faction_id].noun_faction, -1, -1);
             interlude(6, Bases[base_id].name, 1, 0);
         }
@@ -908,10 +908,10 @@ int __cdecl proto_speed(int unit_id) {
     UNIT* u = &Units[unit_id];
     int speed_val = u->speed();
     int triad = u->triad();
-    int weapon_id = Units[unit_id].weapon_id;
+    int weapon_id = u->weapon_id;
 
     if (triad == TRIAD_AIR) {
-        speed_val += Units[unit_id].reactor_id * 2;
+        speed_val += u->reactor_id * 2;
     }
     if (Weapon[weapon_id].mode == WMODE_TRANSPORT) {
         speed_val--;
@@ -920,7 +920,7 @@ int __cdecl proto_speed(int unit_id) {
         speed_val--;
     }
     if (has_abil(unit_id, ABL_ANTIGRAV_STRUTS)) {
-        speed_val += (triad == TRIAD_AIR) ? Units[unit_id].reactor_id * 2 : 1;
+        speed_val += (triad == TRIAD_AIR) ? u->reactor_id * 2 : 1;
     }
     if (triad == TRIAD_AIR) {
         if (has_abil(unit_id, ABL_FUEL_NANOCELLS)) {
@@ -1360,9 +1360,9 @@ GOODY_START:
             goto GOODY_START;
         }
         int fc_base_id, item_id;
-        fc_base_id = base_find2(x, y, faction_id);
-        item_id = Bases[fc_base_id].queue_items[0];
-        if (!*MultiplayerActive && fc_base_id >= 0 && item_id > -SP_ID_First) {
+        fc_base_id = base_find_2(x, y, faction_id);
+        if (!*MultiplayerActive && fc_base_id >= 0
+        && (item_id = Bases[fc_base_id].queue_items[0], item_id > -SP_ID_First)) {
             int cost;
             if (item_id < 0) {
                 cost = Facility[-item_id].cost;
@@ -1490,7 +1490,7 @@ GOODY_START:
         alt_unit_id = BSC_UNITY_ROVER;
         if (TechOwners[TECH_Fossil]) {
             if (!goody_rand(3) && !f->units_active[BSC_UNITY_SCOUT_CHOPPER]) {
-                base_find2(x, y, faction_id);
+                base_find_2(x, y, faction_id);
                 if (*BaseFindDist <= 3 * proto_speed(BSC_UNITY_SCOUT_CHOPPER)) {
                     alt_unit_id = BSC_UNITY_SCOUT_CHOPPER;
                 }
@@ -1565,12 +1565,12 @@ GOODY_START:
                 MFaction* m = &MFactions[rnd_id];
                 treaty_on(faction_id, rnd_id, DIPLO_COMMLINK);
                 if (is_player) {
-                    *gender_default = m->is_leader_female;
-                    *plurality_default = 0;
+                    *GenderDefault = m->is_leader_female;
+                    *PluralDefault = 0;
                     parse_says(0, m->title_leader, -1, -1);
                     parse_says(1, m->name_leader, -1, -1);
-                    *gender_default = m->noun_gender;
-                    *plurality_default = m->is_noun_plural;
+                    *GenderDefault = m->noun_gender;
+                    *PluralDefault = m->is_noun_plural;
                     parse_says(2, m->noun_faction, -1, -1);
                     NetMsg_pop(NetMsg, "GOODYCOMM", is_sea ? 5000 : -5000, 0, "supply_sm.pcx");
                 }
@@ -1732,7 +1732,7 @@ GOODY_START:
         }
         int find_dist, is_spore_launcher;
         is_spore_launcher = 0;
-        base_find2(x, y, faction_id);
+        base_find_2(x, y, faction_id);
         find_dist = *BaseFindDist;
         base_find(x, y);
         if (*BaseFindDist <= 1) {
@@ -3047,7 +3047,8 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
             }
             return 0;
         }
-        return name_proto(name, unit_id, faction_id, chs, wpn, arm, abls, rec);
+        name_proto(name, unit_id, faction_id, chs, wpn, arm, abls, rec);
+        return 0;
     }
     for (int i = 0; i < 2; i++) {
         buf[0] = '\0';

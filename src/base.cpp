@@ -258,7 +258,7 @@ void __cdecl mod_base_kill(int base_id) {
         if (veh->home_base_id == base_id) {
             if (veh->faction_id == faction_id) {
                 base->faction_id = -1;
-                int near_base_id = base_find2(base_x, base_y, faction_id);
+                int near_base_id = base_find_2(base_x, base_y, faction_id);
                 base->faction_id = faction_id;
                 if (near_base_id < 0) {
                     kill(i);
@@ -274,6 +274,7 @@ void __cdecl mod_base_kill(int base_id) {
     if (base_id < *BaseCount - 1) {
         memmove(&Bases[base_id], &Bases[base_id + 1], (*BaseCount - base_id - 1) * sizeof(BASE));
     }
+    base = nullptr;
     --(*BaseCount);
     if (base_id == *ComputeBaseID) {
         *ComputeBaseID = -1;
@@ -304,7 +305,7 @@ void __cdecl mod_base_kill(int base_id) {
                 }
                 lr->current = node->next;
                 void* obj = node->obj;
-                ((void (__thiscall *)(ListRoot*, void*))(lr->vtable)[1])(lr, obj);
+                ((void (__thiscall *)(ListRoot*, void*))((void**)lr->vtable)[1])(lr, obj);
                 if (obj) {
                     void* adj = (char*)obj + ((int32_t*)((void**)obj)[0])[1];
                     ((void (__thiscall *)(void*, int))(*(void***)adj)[0])(adj, 1);
@@ -351,7 +352,7 @@ void __cdecl mod_base_kill(int base_id) {
             site_set(tx, ty, 0);
             if (i < 21) {
                 bit_set(tx, ty, BIT_BASE_RADIUS, 0);
-                if ((mapsq(tx, ty)->val3 & 7) == faction_id) {
+                if (using_at(tx, ty) == faction_id) {
                     using_set(tx, ty, 0);
                 }
             }
@@ -449,12 +450,12 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
                     parse_says(1, Facility[item_id].name, -1, -1);
                     popp(ScriptFile, "SURVIVEPROJECT", 0, "secproj_sm.pcx", 0);
                 } else {
-                    *gender_default = MFactions[faction_id].is_leader_female;
-                    *plurality_default = 0;
+                    *GenderDefault = MFactions[faction_id].is_leader_female;
+                    *PluralDefault = 0;
                     parse_says(0, MFactions[faction_id].title_leader, -1, -1);
                     parse_says(1, MFactions[faction_id].name_leader, -1, -1);
-                    *gender_default = MFactions[faction_id].noun_gender;
-                    *plurality_default = MFactions[faction_id].is_noun_plural;
+                    *GenderDefault = MFactions[faction_id].noun_gender;
+                    *PluralDefault = MFactions[faction_id].is_noun_plural;
                     parse_says(2, MFactions[faction_id].noun_faction, -1, -1);
                     parse_says(3, Facility[item_id].name, -1, -1);
                     popp(ScriptFile, "HALTPROJECT", 0, "secproj_sm.pcx", 0);
@@ -522,8 +523,8 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
                             NetMsg_pop(NetMsg, "ESCAPED2", 5000, 0, 0);
                         }
                     } else {
-                        *plurality_default = MFactions[faction_id].is_noun_plural;
-                        *gender_default = MFactions[faction_id].noun_gender;
+                        *PluralDefault = MFactions[faction_id].is_noun_plural;
+                        *GenderDefault = MFactions[faction_id].noun_gender;
                         parse_says(2, MFactions[faction_id].noun_faction, -1, -1);
                         NetMsg_pop(NetMsg, "ESCAPED", 5000, 0, 0);
                     }
@@ -590,7 +591,7 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
             }
             int val = 0;
             if (has_plr_rule(faction_id_atk, RULE_REVOLT, &val, 0)) {
-                val = clamp(100 - val/3, 50, 100);
+                val = clamp(100 - val/2, 50, 100);
                 base->assimilation_turns_left =
                     clamp((((num + base->pop_size) * 5 + 10) * val) / 100, 20, 50);
             } else {
@@ -668,7 +669,7 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
                 continue;
             }
             base->faction_id = -1;
-            int nearest = base_find2(base_x, base_y, faction_id);
+            int nearest = base_find_2(base_x, base_y, faction_id);
             base->faction_id = faction_id_atk;
             if (nearest < 0 || !map_range(base, v)) {
                 kill(i);
@@ -697,18 +698,19 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
         mod_base_kill(base_id);
         draw_map(1);
         base_id = -1; // skip all actions below that require captured base
+        base = nullptr;
     }
     owner_set(base_x, base_y, faction_id_atk);
     draw_map(1);
     *GameDrawState |= 2u;
     GraphicWin_redraw(WorldWin);
 
-    *gender_default = MFactions[faction_id_atk].noun_gender;
-    *plurality_default = MFactions[faction_id_atk].is_noun_plural;
+    *GenderDefault = MFactions[faction_id_atk].noun_gender;
+    *PluralDefault = MFactions[faction_id_atk].is_noun_plural;
     parse_says(0, MFactions[faction_id_atk].noun_faction, -1, -1);
     parse_says(1, old_name, -1, -1);
-    *gender_default = MFactions[faction_id].noun_gender;
-    *plurality_default = MFactions[faction_id].is_noun_plural;
+    *GenderDefault = MFactions[faction_id].noun_gender;
+    *PluralDefault = MFactions[faction_id].is_noun_plural;
     parse_says(2, MFactions[faction_id].noun_faction, -1, -1);
     parse_num(0, energy_taken);
     char event_label[256];
@@ -748,8 +750,8 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
     if (base_id >= 0 && alien_fight) {
         if (base->pop_size > 1) {
             int pop_left = base->pop_size / 2;
-            *gender_default = MFactions[faction_id_atk].noun_gender;
-            *plurality_default = MFactions[faction_id_atk].is_noun_plural;
+            *GenderDefault = MFactions[faction_id_atk].noun_gender;
+            *PluralDefault = MFactions[faction_id_atk].is_noun_plural;
             parse_says(0, MFactions[faction_id_atk].noun_faction, -1, -1);
             parse_says(1, old_name, -1, -1);
             parse_num(0, pop_left);
@@ -847,7 +849,7 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
         if (DEBUG && !conf.base_capture_fix) { mod_bases_reset(faction_id, base_region, 0); }
         else { mod_bases_reset(base_region, faction_id, 0); }
     }
-    mon_conquer_base(faction_id_atk, (int)old_name);
+    mon_conquer_base(faction_id_atk, old_name);
     if (base_id >= 0 && faction_id_atk == player_id
     && (base->state_flags & BSTATE_ASSISTANT_KILLER_HOME)
     && !(*GamePreferences & PREF_AV_INTERLUDES_DISABLED) && !*MultiplayerActive) {
@@ -873,7 +875,7 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
             parse_says(2, Bases[best_id].name, -1, -1);
         }
         const char* dir_label;
-        int def_base_id = base_find2(base_x, base_y, faction_id);
+        int def_base_id = base_find_2(base_x, base_y, faction_id);
         if (def_base_id < 0) {
             dir_label = label_get(403); // North
         } else {
@@ -1153,12 +1155,10 @@ Original version always used dist=16 when the faction does not have headquarters
 int __cdecl mod_black_market(int base_id, int energy) {
     BASE* base = &Bases[base_id];
     Faction* plr = &Factions[base->faction_id];
-    int value;
+    int value = 0;
     int dist_hq = 9999;
     bool found = false;
-    if (energy <= 0) {
-        value = 0;
-    } else {
+    if (energy > 0) {
         for (int i = 0; i < *BaseCount; i++) {
             if (Bases[i].faction_id == base->faction_id && has_fac_built(FAC_HEADQUARTERS, i)) {
                 int dist = vector_dist(Bases[i].x, Bases[i].y, base->x, base->y);
@@ -3089,7 +3089,7 @@ bool satellite_bonus(int base_id, int* nutrient, int* mineral, int* energy) {
     BASE& base = Bases[base_id];
     Faction& f = Factions[base.faction_id];
 
-    if (f.satellites_nutrient > 0 || f.satellites_mineral > 0 || f.satellites_mineral > 0) {
+    if (f.satellites_nutrient > 0 || f.satellites_mineral > 0 || f.satellites_energy > 0) {
         bool full_value = has_facility(FAC_AEROSPACE_COMPLEX, base_id)
             || has_project(FAC_SPACE_ELEVATOR, base.faction_id);
 
