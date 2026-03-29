@@ -199,15 +199,6 @@ typedef int (__cdecl *fp_6int)(int, int, int, int, int, int);
 typedef int (__cdecl *fp_7int)(int, int, int, int, int, int, int);
 typedef int (__cdecl *fp_8int)(int, int, int, int, int, int, int, int);
 
-typedef int (__thiscall *tc_1int)(void*);
-typedef int (__thiscall *tc_2int)(void*, int);
-typedef int (__thiscall *tc_3int)(void*, int, int);
-typedef int (__thiscall *tc_4int)(void*, int, int, int);
-typedef int (__thiscall *tc_5int)(void*, int, int, int, int);
-typedef int (__thiscall *tc_6int)(void*, int, int, int, int, int);
-typedef int (__thiscall *tc_7int)(void*, int, int, int, int, int, int);
-typedef int (__thiscall *tc_8int)(void*, int, int, int, int, int, int, int);
-
 /*
 pad_1 in MFaction is reserved for faction specific variables.
 pad_2 in MFaction[0] is reserved for global game state.
@@ -547,16 +538,16 @@ extern char** PlansFullName;
 
 
 typedef int(__thiscall *FGenVoid)(void* This);
-typedef int(__thiscall *FGenWin)(Win* This);
+typedef int(__thiscall *FPlanwin)(PlanWindow* This);
 typedef int(__thiscall *FStringBox_clip_ids)(void* This, int len);
 typedef int(__stdcall *FWinProc)(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
-typedef int(__thiscall *FDesignWin_exec)(Win* This, int faction_id, int unit_id);
+typedef int(__thiscall *FDesignWin_exec)(DesignWindow* This, int faction_id, int unit_id);
 
 extern FDesignWin_exec DesignWin_exec;
 extern FGenVoid SubInterface_delete_iface_mode;
 extern FGenVoid SubInterface_set_iface_mode;
 extern FGenVoid SubInterface_release_iface_mode;
-extern FGenWin PlanWin_blink;
+extern FPlanwin PlanWin_blink;
 extern FWinProc WinProc;
 extern FStringBox_clip_ids StringBox_clip_ids;
 extern fp_none game_random_state; // renamed
@@ -2323,7 +2314,7 @@ extern Fworld_site world_site;
 extern fp_none world_analysis;
 //extern Fworld_alt_put_detail world_alt_put_detail;
 extern fp_none world_polar_caps;
-extern fp_none world_climate;
+//extern fp_none world_climate;
 extern fp_none world_linearize_contours;
 //extern Fnear_landmark near_landmark;
 extern Fworld_crater world_crater;

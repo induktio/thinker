@@ -10,6 +10,11 @@ static_assert(sizeof(ElevDetail) == 44, "");
 
 int __cdecl near_landmark(int x, int y);
 bool locate_landmark(int* x, int* y, bool ocean);
+void __cdecl world_climate();
+void __cdecl mod_world_temperature();
+void __cdecl mod_world_rivers();
+void __cdecl mod_world_rainfall();
+void __cdecl mod_world_analysis();
 void __cdecl mod_world_rocky();
 void __cdecl mod_world_riverbeds();
 void __cdecl mod_world_shorelines();

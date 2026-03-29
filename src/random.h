@@ -18,6 +18,7 @@ class GameRandom {
     uint32_t get_state();
     int32_t get(int32_t limit);
     int32_t get(int32_t low, int32_t high);
+    MAP* pick_tile(int dy, int& x, int& y);
 };
 extern GameRandom map_rand;
 

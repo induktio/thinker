@@ -33,6 +33,10 @@ template <class A, class B>
 int map_range(const A* a, const B* b) {
     return map_range(a->x, a->y, b->x, b->y);
 }
+template <class A, class B>
+int vector_dist(const A* a, const B* b) {
+    return vector_dist(a->x, a->y, b->x, b->y);
+}
 
 int __cdecl is_known(int x, int y, int faction_id);
 int __cdecl is_coast(int x, int y, bool is_base_radius);

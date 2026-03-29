@@ -715,6 +715,7 @@ enum MapLandmark {
     LM_UNITY = 0x4000,
     LM_FOSSIL = 0x8000,
     LM_UNK_400000 = 0x400000, // set_dirty()
+    LM_UNK_800000 = 0x800000,
     LM_DISABLE = 0x80000000, // most landmark effects skipped
 };
 

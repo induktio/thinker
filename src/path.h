@@ -5,6 +5,8 @@
 const int NearbyTiles[][2] = {{1,-1}, {2,0}, {1,1}, {0,2}, {-1,1}, {-2,0}, {-1,-1}, {0,-2}};
 const int BaseOffsetX[] = { 1, 2, 1, 0, -1, -2, -1,  0, 0}; // Path::find offset
 const int BaseOffsetY[] = {-1, 0, 1, 2,  1,  0, -1, -2, 0}; // Path::find offset
+const int NearOffsetX[] = {1, 1, -1, -1, 0};
+const int NearOffsetY[] = {-1, 1, 1, -1, 0};
 const int MaxTableRange = 8;
 const int TableRange[] = {1, 9, 25, 49, 81, 121, 169, 225, 289};
 

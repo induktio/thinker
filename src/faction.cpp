@@ -71,24 +71,22 @@ bool has_terra(FormerItem frm_id, bool ocean, int faction_id) {
 }
 
 bool has_project(FacilityId item_id) {
-    assert(item_id >= SP_ID_First && item_id <= SP_ID_Last);
-    int base_id = SecretProjects[item_id - SP_ID_First];
-    return base_id >= 0;
+    return project_base(item_id) >= 0;
 }
 
 bool has_project(FacilityId item_id, int faction_id) {
-    assert(item_id >= SP_ID_First && item_id <= SP_ID_Last);
-    int base_id = SecretProjects[item_id - SP_ID_First];
+    int base_id = project_base(item_id);
     return base_id >= 0 && faction_id >= 0 && Bases[base_id].faction_id == faction_id;
 }
 
 int project_base(FacilityId item_id) {
     assert(item_id >= SP_ID_First && item_id <= SP_ID_Last);
-    return SecretProjects[item_id - SP_ID_First];
+    return (item_id >= SP_ID_First && item_id <= SP_ID_Last ?
+        SecretProjects[item_id - SP_ID_First] : -SP_Unbuilt);
 }
 
 int facility_count(FacilityId item_id, int faction_id) {
-    assert(valid_player(faction_id) && item_id < SP_ID_First);
+    assert(item_id > 0 && item_id < SP_ID_First);
     int n = 0;
     for (int i = 0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];

@@ -529,6 +529,8 @@ bool patch_setup(Config* cf) {
     write_jump(0x591040, (int)map_wipe);
     write_jump(0x591290, (int)alt_set);
     write_jump(0x5918F0, (int)alt_set_both);
+    write_jump(0x591D60, (int)bit_set);
+    write_jump(0x591DB0, (int)bit2_set);
     write_jump(0x591E50, (int)synch_bit);
     write_jump(0x592250, (int)say_loc);
     write_jump(0x592550, (int)find_landmark);
@@ -574,6 +576,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x5C2020, (int)world_alt_set);
     write_jump(0x5C2380, (int)world_raise_alt);
     write_jump(0x5C23E0, (int)world_lower_alt);
+    write_jump(0x5C5A30, (int)world_climate);
     write_jump(0x626250, (int)log_say2);
     write_jump(0x6262F0, (int)log_say);
     write_jump(0x626350, (int)log_say_hex2);
@@ -655,8 +658,13 @@ bool patch_setup(Config* cf) {
     write_call(0x46B705, (int)world_lower_alt); // MapWin::editor
     write_call(0x4CA13A, (int)world_lower_alt); // action_terraform
     write_call(0x500EFD, (int)world_lower_alt); // planet_busting
+    write_call(0x4E0F85, (int)mod_world_polar_caps); // Console::editor_polar
+    write_call(0x5C8861, (int)mod_world_polar_caps); // world_build
+    write_call(0x4E14BA, (int)mod_world_rocky); // Console::editor_rockiness
+    write_call(0x5C8959, (int)mod_world_rocky); // world_build
+    write_call(0x5C888D, (int)mod_world_temperature); // world_build
+    write_call(0x5C8892, (int)mod_world_riverbeds); // world_build
     write_call(0x5C2D05, (int)mod_world_shorelines); // world_erosion
-    write_call(0x5C5A4A, (int)mod_world_shorelines); // world_climate
     write_call(0x5C8866, (int)mod_world_shorelines); // world_build
     write_call(0x5A98C9, (int)mod_world_linearize_contours); // load_daemon
     write_call(0x5C8949, (int)mod_world_linearize_contours); // world_build
@@ -850,6 +858,9 @@ bool patch_setup(Config* cf) {
     write_call(0x49366B, (int)mod_base_making); // ProdPicker::calculate
     write_call(0x4E5B06, (int)mod_base_making); // base_change
     write_call(0x4E5B1B, (int)mod_base_making); // base_change
+    write_call(0x4E61B1, (int)mod_base_change); // base_reset
+    write_call(0x4E61D7, (int)mod_base_change); // base_reset
+    write_call(0x4E62BB, (int)mod_base_change); // base_reset
     write_call(0x52B0E1, (int)mod_wants_to_attack); // wants_prop
     write_call(0x52B0F4, (int)mod_wants_to_attack); // wants_prop
     write_call(0x52B21A, (int)mod_wants_to_attack); // wants_prop

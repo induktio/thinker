@@ -41,6 +41,572 @@ bool locate_landmark(int* x, int* y, bool ocean) {
     return true;
 }
 
+/*
+Refresh climate effects each time terrain related features are changed on the map.
+Note that world_temperature and world_rivers are refactored to use local random
+instead of the global state since changing it would not be necessary.
+*/
+void __cdecl world_climate() {
+    debug("world_climate_start\n");
+    mod_world_shorelines();
+    mod_world_temperature();
+    mod_world_rivers();
+    mod_world_rainfall();
+    Path_continents(Paths);
+    mod_world_analysis();
+    if (!*WorldSkipTerritory) {
+        reset_territory();
+    }
+    if (!*GameHalted) {
+        for (int i = 0; i < 8; i++) {
+            if (MapWinPtr[i]->iDrawToggleA) {
+                MapWin_clear_terrain(MapWinPtr[i]);
+            }
+        }
+        WorldWin_clear_terrain(WorldWin);
+    }
+    do_all_non_input();
+    debug("world_climate_done\n");
+}
+
+void __cdecl mod_world_temperature() {
+    GameRandom loc_rnd;
+    loc_rnd.reseed(*MapRandomSeed + 17);
+    int solar_scale = *MapAreaY / WorldBuilder->solar_energy;
+    int thermal_scale = *MapAreaY / WorldBuilder->thermal_band;
+    int deviance_scale = *MapAreaY / WorldBuilder->thermal_deviance;
+    int warming_scale = *MapAreaY / WorldBuilder->global_warming;
+
+    for (int y = 0; y < *MapAreaY; y++) {
+        for (int x = y & 1; x < *MapAreaX; x += 2) {
+            MAP* sq = mapsq(x, y);
+            if ((sq->landmarks & (LM_DISABLE | LM_CRATER)) == LM_CRATER && sq->code_at() < 21) {
+                continue;
+            }
+            int dev_rand = loc_rnd.get(0, 2 * deviance_scale);
+            int orb_rand = loc_rnd.get(0, *MapPlanetaryOrbit + 1);
+            int lat_dist = abs(deviance_scale + *MapAreaY / 2 - dev_rand - y);
+            int temp_raw = (thermal_scale / 2
+                + 2 * (lat_dist - solar_scale * (*MapPlanetaryOrbit - 1)
+                - warming_scale * *MapSeaLevelCouncil)) / thermal_scale;
+            int temp_base;
+            if (temp_raw > 2) {
+                temp_base = (temp_raw <= 9) ? 2 : 1;
+            } else {
+                temp_base = 3;
+            }
+            int alt = sq->alt_level();
+            int temp = temp_base;
+            for (int i = 0; i < 9; i++) {
+                int nx = wrap(x + TableOffsetX[i]);
+                int ny = y + TableOffsetY[i];
+                MAP* nsq = mapsq(nx, ny);
+                if (nsq && (nsq->items & BIT_THERMAL_BORE)
+                && (alt <= 4 || nsq->alt_level() >= alt)) {
+                    temp = temp_base + 1;
+                    break;
+                }
+            }
+            if (temp > 1) {
+                if (alt <= 5) {
+                    if (alt > 4 && !orb_rand) {
+                        temp--;
+                    }
+                } else if (*MapPlanetaryOrbit < 2 || !loc_rnd.get(0, 2)) {
+                    temp--;
+                }
+            }
+            temp_set(x, y, clamp(temp - 1, 0, 2));
+        }
+    }
+}
+
+void __cdecl mod_world_rivers() {
+    GameRandom loc_rnd;
+    const int n_tiles = *MapAreaTiles;
+    int river_count = 0;
+
+    for (int i = 0; i < n_tiles; i++) {
+        (*MapTiles)[i].items &= ~(BIT_RIVER_LAKE | BIT_RIVER);
+    }
+    for (int y = 0; y < *MapAreaY; y++) {
+        for (int x = y & 1; x < *MapAreaX; x += 2) {
+            MAP* const sq = mapsq(x, y);
+            if (is_ocean(sq) || !(sq->items & BIT_RIVER_SRC)) {
+                continue;
+            }
+            for (int i = 0; i < n_tiles; i++) {
+                (*MapTiles)[i].landmarks &= ~LM_UNK_800000;
+            }
+            loc_rnd.reseed(31 * x + 47 * y);
+            int dir = loc_rnd.get(0, 4);
+            int cur_x = x;
+            int cur_y = y;
+            int cur_alt = sq->alt_level();
+            int cur_contour = sq->contour;
+            sq->landmarks |= LM_UNK_800000;
+
+            int steps = 0;
+            int in_water = 0;
+            int alt_streak = 1;
+            int make_lake = !(sq->items & BIT_THERMAL_BORE);
+
+            while (make_lake && ++steps <= 1000) {
+                int pref_dir = (dir - (steps & 1) + loc_rnd.get(0, 2)) & 3;
+                int back_dir = dir ^ 2;
+                int min_uphill = 9999;
+                int dir_counter = 8;
+                int num_choices = 0;
+                int total_weight = 0;
+                int choice_dir[3] = {};
+                int choice_water[3] = {};
+                int choice_weight[3] = {};
+
+                for (int nd = 0; nd < 4; nd++) {
+                    int nx = wrap(cur_x + NearOffsetX[nd]);
+                    int ny = cur_y + NearOffsetY[nd];
+                    MAP* const nsq = mapsq(nx, ny);
+                    if (!nsq || nd == back_dir) {
+                        continue;
+                    }
+                    if (nsq->items & BIT_RIVER) {
+                        num_choices = 0;
+                        make_lake = 0;
+                        break;
+                    }
+                    if (nsq->items & BIT_RIVER_SRC) {
+                        int src_count = 0;
+                        for (int i = 0; i < 4; i++) {
+                            int px = wrap(nx + NearOffsetX[i]);
+                            int py = ny + NearOffsetY[i];
+                            MAP* psq = mapsq(px, py);
+                            if (psq && psq->items & BIT_RIVER_SRC) {
+                                src_count++;
+                            }
+                        }
+                        if (src_count > 1) {
+                            num_choices = 0;
+                            make_lake = 0;
+                            break;
+                        }
+                    }
+                    if (nsq->alt_level() > cur_alt) {
+                        continue;
+                    }
+                    int nsq_contour = nsq->contour;
+                    int score = 32 * clamp(cur_contour - nsq_contour + 2, 1, 9999)
+                        + (nd == pref_dir ? 31 : 0);
+                    int water_flag = 0;
+                    int uphill_adj = 0;
+                    if (nsq_contour > cur_contour) {
+                        if (nsq_contour >  min_uphill) { continue; }
+                        min_uphill = nsq_contour;
+                        score = dir_counter++;
+                    }
+                    bool next_loop = false;
+                    for (int i = 0; i < 4; i++) {
+                        if (i == (nd ^ 2)) { continue; }
+                        int px = wrap(nx + NearOffsetX[i]);
+                        int py = ny + NearOffsetY[i];
+                        MAP* psq = mapsq(px, py);
+                        if (psq) {
+                            if (is_ocean(psq) && !is_ocean(nsq) && alt_streak < 5) {
+                                score /= 2;
+                            }
+                            if (psq->contour > nsq_contour) {
+                                uphill_adj++;
+                                if (psq->items & BIT_RIVER) {
+                                    next_loop = true;
+                                    break;
+                                }
+                            }
+                            if (psq->landmarks & LM_UNK_800000) {
+                                if (in_water || is_ocean(psq)) {
+                                    next_loop = true;
+                                    break;
+                                }
+                                water_flag = 1;
+                                score /= 8;
+                            }
+                        }
+                    }
+                    if (next_loop) {
+                        continue;
+                    }
+                    if (score) {
+                        if (uphill_adj == 3) { score = 1; }
+                        total_weight += score;
+                        assert(num_choices < 3);
+                        choice_weight[num_choices] = score;
+                        choice_water[num_choices] = water_flag;
+                        choice_dir[num_choices] = nd;
+                        num_choices++;
+                    }
+                }
+                if (num_choices <= 0) {
+                    break;
+                }
+                int pick = loc_rnd.get(0, total_weight);
+                int* wp = choice_weight;
+                int sel = 0;
+                dir = 0;
+                while (sel < num_choices && pick >= *wp) {
+                    pick -= *wp;
+                    sel++;
+                    wp++;
+                }
+                if (sel < num_choices) {
+                    dir = choice_dir[sel];
+                    in_water = choice_water[sel];
+                }
+                cur_x = wrap(cur_x + NearOffsetX[dir]);
+                cur_y = cur_y + NearOffsetY[dir];
+                MAP* cur_sq = mapsq(cur_x, cur_y);
+                if (cur_alt != cur_sq->alt_level()) {
+                    alt_streak = 0;
+                }
+                cur_alt = cur_sq->alt_level();
+                int new_contour = cur_sq->contour;
+                if (new_contour > cur_contour) {
+                    new_contour = ElevDetail[cur_alt];
+                    if (cur_contour - 1 > new_contour) {
+                        new_contour = cur_contour - 1;
+                    }
+                    alt_put_detail(cur_x, cur_y, new_contour);
+                }
+                cur_contour = new_contour;
+                cur_sq->landmarks |= LM_UNK_800000;
+                alt_streak++;
+                if (cur_sq->items & BIT_THERMAL_BORE) {
+                    make_lake = 0;
+                    break;
+                }
+            }
+            if (make_lake && cur_alt >= 3) {
+                MAP* cur_sq = mapsq(cur_x, cur_y);
+                if (!(cur_sq->items & BIT_RIVER) && cur_sq->anything_at() < 0) {
+                    cur_sq->items |= BIT_RIVER_LAKE;
+                }
+            }
+            river_count++;
+            for (int i = 0; i < n_tiles; i++) {
+                if ((*MapTiles)[i].landmarks & LM_UNK_800000) {
+                    (*MapTiles)[i].items |= BIT_RIVER;
+                }
+            }
+        }
+    }
+    for (int i = 0; i < n_tiles; i++) {
+        (*MapTiles)[i].landmarks &= ~LM_UNK_800000;
+    }
+}
+
+void __cdecl mod_world_rainfall() {
+    int* const dword_9B22E0 = (int*)0x9B22E0;
+    int* const dword_9B22DC = (int*)0x9B22DC;
+    const int player_id = *CurrentPlayerFaction;
+    const int n_tiles = *MapAreaTiles;
+    *dword_9B22E0 = -1;
+    *dword_9B22DC = -1;
+
+    for (int i = 0; i < n_tiles; i++) {
+        (*MapTiles)[i].unk_1 = 0;
+    }
+
+    for (int y = 0; y < *MapAreaY; y++) {
+        for (int x = y & 1; x < *MapAreaX; x += 2) {
+            MAP* const sq = mapsq(x, y);
+            if (sq->items & BIT_CONDENSER) {
+                for (int i = 0; i < 9; i++) {
+                    int nx = wrap(x + TableOffsetX[i]);
+                    int ny = y + TableOffsetY[i];
+                    MAP* nsq = mapsq(nx, ny);
+                    if (nsq) {
+                        nsq->unk_1 |= (nsq->unk_1 & 1 ? 4 : 1);
+                    }
+                }
+            }
+            if (is_ocean(sq)) {
+                for (int i = 0, px = x; i < 3; i++, px -= 2) {
+                    MAP* nsq = mapsq(wrap(px - 2), y);
+                    MAP* csq = mapsq(wrap(px), y);
+                    if (nsq && csq
+                    && nsq->alt_level() >= csq->alt_level()
+                    && i <= *MapCloudCover) {
+                        nsq->unk_1 &= 0xEF;
+                    }
+                }
+                MAP* psq = mapsq(wrap(x + 2), y);
+                if (psq) {
+                    psq->unk_1 |= 0x80;
+                }
+                if (*MapCloudCover > 0) {
+                    MAP* nsq = mapsq(wrap(x + 4), y);
+                    if (nsq && ((nsq->climate & 7u) > 1 || *MapCloudCover > 1)) {
+                        nsq->unk_1 |= 0x80;
+                        if (*MapCloudCover > 1) {
+                            MAP* csq = mapsq(wrap(x + 6), y);
+                            if (csq && csq->climate & 7u) {
+                                csq->unk_1 |= 0x80;
+                            }
+                        }
+                    }
+                }
+            }
+            int alt = sq->alt_level();
+            if (alt <= 4) {
+                if (alt >= 3 && sq->items & BIT_FOREST) {
+                    for (int i = 0; i < 3; i++) {
+                        MAP* nsq = mapsq(wrap(x + BaseOffsetX[i]), y + BaseOffsetY[i]);
+                        if (nsq) {
+                            nsq->unk_1 |= 0x40;
+                        }
+                    }
+                    if (!(x & 1)) {
+                        sq->unk_1 |= 0x40;
+                    }
+                }
+            } else {
+                int cloudmass = (alt <= 5) ? WorldBuilder->cloudmass_hills : WorldBuilder->cloudmass_peaks;
+                int rainfall = WorldBuilder->rainfall_coeff * (*MapCloudCover - 1);
+                int max_back_steps = cloudmass + rainfall;
+                if (max_back_steps >= 1) {
+                    for (int step = 1, bx = x - 2; step <= max_back_steps; ++step, bx -= 2) {
+                        MAP* bsq = mapsq(wrap(bx), y);
+                        if (!bsq || is_ocean(bsq) || bsq->alt_level() >= alt) {
+                            break;
+                        }
+                        bsq->unk_1 |= 0x20;
+                    }
+                }
+                int max_fwd_steps = cloudmass - rainfall;
+                if (max_fwd_steps >= 1) {
+                    for (int step = 1, fx = x + 2; step <= max_fwd_steps; ++step, fx += 2) {
+                        MAP* fsq = mapsq(wrap(fx), y);
+                        if (!fsq || is_ocean(fsq) || fsq->alt_level() >= alt) {
+                            break;
+                        }
+                        fsq->unk_1 |= 0x10;
+                    }
+                }
+            }
+        }
+    }
+
+    int rain_steps = 0;
+    int rain_flag = 0;
+    int dry_steps = 0;
+
+    for (int y = 0; y < *MapAreaY; y++) {
+        for (int x = y & 1; x < *MapAreaX; x += 2) {
+            MAP* const sq = mapsq(x, y);
+            if (y <= 0 || y >= *MapAreaY - 1) {
+                sq->climate &= 0xE7u;
+                continue;
+            }
+            int alt = sq->alt_level();
+            int landmarks = sq->landmarks;
+            int temperature = sq->climate & 7;
+            int moisture_mod = 0;
+            int moisture = 0;
+            int sloping = 0;
+            if ((landmarks & (LM_DISABLE | LM_DUNES)) == LM_DUNES
+            || (landmarks & (LM_DISABLE | LM_MESA))  == LM_MESA) {
+                rain_flag = 1;
+            }
+            if (sq->unk_1 & 0x20) {
+                moisture = 1;
+                rain_flag = 1;
+                dry_steps = 0;
+                sloping = 1;
+            }
+            if (sq->unk_1 & 0x80) {
+                rain_flag = (temperature > 1) ? 1 : 0;
+                rain_steps = 0;
+                dry_steps = 0;
+                if (*MapCloudCover >= 1) {
+                    moisture_mod = 1;
+                }
+            }
+            if (sq->unk_1 & 0x10) {
+                if (rain_flag) { --rain_flag; }
+                --moisture_mod;
+            }
+            if ((sq->unk_1 & 0x40) && alt <= 4) {
+                rain_steps = 0;
+                dry_steps = 0;
+                moisture_mod = max(0, moisture_mod);
+                moisture = sloping;
+            }
+            if (alt > 3) {
+                if (++rain_steps > 4 * *MapCloudCover * WorldBuilder->rainfall_coeff + 1 && rain_flag) {
+                    --rain_flag;
+                }
+                moisture = sloping;
+            } else {
+                bool reset_moist = false;
+                if (alt == 3) {
+                    if (rain_flag) {
+                        reset_moist = true;
+                        if (rain_steps == 0 && ++dry_steps > 4 * *MapCloudCover + 2) {
+                            rain_flag = 0;
+                            dry_steps = 0;
+                        }
+                    }
+                } else {
+                    rain_flag = 1;
+                    dry_steps = 0;
+                }
+                if (rain_steps > 0) {
+                    reset_moist = true;
+                    rain_steps = rain_steps - 1 - *MapCloudCover;
+                    if (rain_steps < 1) {
+                        rain_steps = 0;
+                        dry_steps = 0;
+                        if (*MapCloudCover > 0 || alt < 3) {
+                            rain_flag = 1;
+                        }
+                    }
+                }
+                if (reset_moist) {
+                    moisture = sloping;
+                }
+            }
+            if (sq->items & BIT_RIVER) {
+                if ((x >> 1) % 3 && moisture_mod < 0) {
+                    moisture_mod = 0;
+                }
+                rain_flag = 1;
+                dry_steps = 0;
+            }
+            if (sq->unk_1 & 2) {
+                --moisture;
+                rain_flag = 0;
+            } else if (rain_flag) {
+                moisture_mod += rain_flag;
+            }
+            if (alt <= (temperature != 0) + 4) {
+                moisture += moisture_mod;
+            } else if (*MapCloudCover - alt + temperature + 5 >= 2 && moisture_mod > 0) {
+                ++moisture;
+            }
+            if ((landmarks & (LM_DISABLE | LM_JUNGLE)) == LM_JUNGLE && !is_ocean(sq) && alt < 6) {
+                int code = landmarks >> 24;
+                if (code < 0) { code = -code; }
+                if (code >= 49) {
+                    if (code >= 81 || alt >= 5) { ++moisture; }
+                    else { moisture += 2; }
+                } else {
+                    moisture += 2;
+                }
+            }
+            if ((landmarks & (LM_DISABLE | LM_DUNES)) == LM_DUNES) {
+                moisture = 0;
+            }
+            if ((landmarks & (LM_DISABLE | LM_UNITY)) == LM_UNITY || moisture < 0) {
+                moisture = 0;
+            } else if (moisture > 2) {
+                moisture = 2;
+            }
+            if (sq->unk_1 & 1) {
+                rain_flag = 1;
+                if (moisture < 2) { ++moisture; }
+            }
+            if (sq->unk_1 & 4) {
+                rain_flag = 1;
+                if (moisture < 2) { ++moisture; }
+            }
+            if (*CurrentTurn) {
+                // action_terraform related popup TERRAMINE
+                // remove unused dword_9B22DC base_find with the popup changes
+                int old_moisture = (sq->climate >> 3) & 3;
+                if (old_moisture != moisture && *dword_9B22E0 < 0) {
+                    int base_id = base_find_2(x, y, player_id);
+                    if (base_id >= 0 && *BaseFindDist <= 2) {
+                        *dword_9B22E0 = base_id;
+                    }
+                }
+            }
+            climate_set(x, y, moisture);
+        }
+    }
+
+    for (int y = 0; y < *MapAreaY; y++) {
+        for (int x = y & 1; x < *MapAreaX; x += 2) {
+            MAP* sq = mapsq(x, y);
+            if (sq && !sq->is_rainy_or_moist()) {
+                for (int i = 0; i < 8; i++) {
+                    int nx = wrap(x + BaseOffsetX[i]);
+                    int ny = y + BaseOffsetY[i];
+                    MAP* nsq = mapsq(nx, ny);
+                    if (nsq && !is_ocean(nsq) && nsq->is_rainy()) {
+                        climate_set(x, y, 1);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void __cdecl mod_world_analysis() {
+    for (int i = 0; i < MaxRegionNum; i++) {
+        Continents[i].open_terrain = 0;
+    }
+    for (int y = 0; y < *MapAreaY; y++) {
+        for (int x = y & 1; x < *MapAreaX; x += 2) {
+            MAP* const sq = mapsq(x, y);
+            assert(sq->region < MaxRegionNum);
+            if (!is_ocean(sq) && sq->is_rainy_or_moist()
+            && !sq->is_rocky() && !sq->is_fungus()) {
+                Continents[sq->region].open_terrain++;
+            }
+            sq->items &= ~(BIT_DOUBLE_SEA | BIT_CANAL_COAST);
+            if (!is_ocean(sq)) {
+                int last_is_ocean = -1;
+                int changes_inner = 0;
+                int changes_outer = 0;
+                for (int i = 1; i <= 20; i++) {
+                    int nx = wrap(x + TableOffsetX[i]);
+                    int ny = y + TableOffsetY[i];
+                    MAP* const nsq = mapsq(nx, ny);
+                    if (!nsq) {
+                        continue;
+                    }
+                    int ocean = is_ocean(nsq);
+                    if (i <= 8) {
+                        if (ocean != last_is_ocean) {
+                            last_is_ocean = ocean;
+                            changes_inner++;
+                            if (changes_inner == 4 && Continents[sq->region].tile_count >= 80) {
+                                sq->items |= BIT_DOUBLE_SEA;
+                            }
+                        }
+                    } else {
+                        if (ocean != last_is_ocean || i == 9) {
+                            last_is_ocean = ocean;
+                            changes_outer++;
+                        }
+                        if (ny > 4 && ny < *MapAreaY - 4) {
+                            if (nsq->region < MaxRegionLandNum && nsq->region != sq->region
+                            && Continents[nsq->region].tile_count >= 40
+                            && Continents[sq->region].tile_count >= 40) {
+                                sq->items |= BIT_CANAL_COAST;
+                            }
+                        }
+                    }
+                }
+                if (changes_outer < 4) {
+                    sq->items &= ~BIT_DOUBLE_SEA;
+                }
+            }
+        }
+    }
+    for (int i = 0; i < *MapAreaTiles; i++) {
+        (*MapTiles)[i].val2 &= 0xF;
+    }
+}
+
 void __cdecl mod_world_rocky() {
     for (int y = 0; y < *MapAreaY; y++) {
         for (int x = y & 1; x < *MapAreaX; x += 2) {

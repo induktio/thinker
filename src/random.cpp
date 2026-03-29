@@ -69,6 +69,13 @@ int32_t GameRandom::get(int32_t limit) {
     return ((state & 0xffff) * limit) >> 16;
 }
 
+MAP* GameRandom::pick_tile(int dy, int& x, int& y) {
+    y = get(*MapAreaY - 2*dy) + dy;
+    x = get(*MapAreaX);
+    x = ((x ^ y) & 1) ^ x;
+    return mapsq(x, y);
+}
+
 #ifdef BUILD_DEBUG
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wuseless-cast"

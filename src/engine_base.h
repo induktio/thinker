@@ -114,6 +114,17 @@ const uint32_t BaseGovOptions[][2] = {
     {0x100000, GOV_MAY_HURRY_PRODUCTION},
 };
 
+const int32_t BaseSupportCosts[8][2]  = {
+    {2, 0}, // -4, Each unit costs 2 to support; no free minerals for new base.
+    {1, 0}, // -3, Each unit costs 1 to support; no free minerals for new base.
+    {1, 1}, // -2, Support 1 unit free per base; no free minerals for new base.
+    {1, 1}, // -1, Support 1 unit free per base
+    {1, 2}, //  0, Support 2 units free per base
+    {1, 3}, //  1, Support 3 units free per base
+    {1, 4}, //  2, Support 4 units free per base!
+    {1,-4}, //  3, Support 4 units OR up to base size for free!!
+};
+
 enum BaseRadius {
     BR_NOT_AVAILABLE = 1,
     BR_NOT_VISIBLE = 2,
