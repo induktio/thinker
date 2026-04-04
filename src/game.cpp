@@ -27,7 +27,7 @@ static const char* resource_icon(int value, bool ocean, bool add) {
 }
 
 static bool territory_avail(int faction_id, int x, int y) {
-    int owner = mod_whose_territory(faction_id, x, y, 0, 0);
+    int owner = whose_territory(faction_id, x, y, 0, 0);
     return owner < 0 || owner == faction_id;
 }
 
@@ -1181,7 +1181,7 @@ void __cdecl mod_auto_save() {
 Store base related events for the endgame replay screen.
 0 = create base, 1 = change base owner, 2 = kill base.
 */
-int __cdecl mod_replay_base(int event, int x, int y, int faction_id) {
+int __cdecl replay_base(int event, int x, int y, int faction_id) {
     assert(mapsq(x, y) && event >= 0 && event <= 2);
     debug("replay_base %d %d %d %d %d %d\n",
         *ReplayEventSize, *CurrentTurn, event, faction_id, x, y);
@@ -1355,7 +1355,7 @@ void __cdecl mod_repair_phase(int faction_id) {
                 value = conf.repair_fungus;
             }
             if (conf.repair_friendly > 0
-            && mod_whose_territory(faction_id, veh->x, veh->y, 0, 0) == faction_id) {
+            && whose_territory(faction_id, veh->x, veh->y, 0, 0) == faction_id) {
                 value += conf.repair_friendly;
             }
             if (triad == TRIAD_AIR && sq->items & BIT_AIRBASE) {

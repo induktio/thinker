@@ -125,6 +125,12 @@ const int32_t BaseSupportCosts[8][2]  = {
     {1,-4}, //  3, Support 4 units OR up to base size for free!!
 };
 
+enum BaseReplayEvent {
+    REPLAY_INIT = 0,
+    REPLAY_CAPTURE = 1,
+    REPLAY_KILL = 2,
+};
+
 enum BaseRadius {
     BR_NOT_AVAILABLE = 1,
     BR_NOT_VISIBLE = 2,

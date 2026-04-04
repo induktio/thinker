@@ -1750,31 +1750,42 @@ void __cdecl say_loc(char* dest, int x, int y, int a4, int a5, int a6)
 {
     int base_id = -1;
     MAP* sq;
-
     if ((sq = mapsq(x, y)) && sq->is_base()
     && (*GameState & STATE_SCENARIO_EDITOR || sq->is_visible(MapWin->cOwner))) {
         base_id = base_at(x, y);
     }
+    const char* prefix = "";
+    const char* prefix_space = "";
     if (a4 != 0 && base_id < 0) {
-        a6 = 0;
         base_id = mod_base_find3(x, y, -1, -1, -1, MapWin->cOwner);
         if (base_id >= 0) {
-            strncat(dest, label_get(62), 32); // near
-            strncat(dest, " ", 2);
+            a6 = 0;
+            prefix = label_get(62); // near
+            prefix_space = " ";
         }
     }
+    const char* base_name = "";
+    const char* trail_space = "";
     if (base_id >= 0) {
         if (a6) {
-            strncat(dest, label_get(8), 32); // at
-            strncat(dest, " ", 2);
+            prefix = label_get(8); // at
+            prefix_space = " ";
         }
-        strncat(dest, Bases[base_id].name, MaxBaseNameLen);
+        base_name = Bases[base_id].name;
         if (a5) {
-            strncat(dest, " ", 2);
+            trail_space = " ";
         }
     }
-    if (a5 == 1 || (a5 == 2 && base_id < 0)) {
-        snprintf(dest + strlen(dest), 32, "(%d, %d)", x, y);
+    size_t len = strlen(dest);
+    if (len < LineBufLen) {
+        size_t remaining = LineBufLen - len;
+        if (a5 == 1 || (a5 == 2 && base_id < 0)) {
+            snprintf(dest + len, remaining, "%s%s%s%s(%d, %d)",
+                prefix, prefix_space, base_name, trail_space, x, y);
+        } else {
+            snprintf(dest + len, remaining, "%s%s%s%s",
+                prefix, prefix_space, base_name, trail_space);
+        }
     }
 }
 

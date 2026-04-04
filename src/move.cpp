@@ -2899,7 +2899,7 @@ int combat_move(const int id) {
     const bool hold_tile = needlejet && !refuel && max_range < 4
         && mapdata[{veh->x, veh->y}].enemy_rank > random(64)
         && !needlejet_check(veh, veh->x, veh->y);
-    const bool pacifism = combat && !aircraft && !at_enemy && veh->plan() < support_plan()
+    const bool pacifism = combat && !aircraft && !at_enemy && veh->plan() < unit_support_plan()
         && !(veh->state & VSTATE_PACIFISM_FREE_SKIP)
         && Factions[faction_id].SE_police_pending < -2
         && veh->home_base_id >= 0 && base_can_riot(veh->home_base_id, true)

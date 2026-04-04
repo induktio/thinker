@@ -25,6 +25,7 @@ bool use_nerve_gas(int faction_id_atk, int faction_id_def);
 bool use_nerve_gas(int faction_id_atk);
 void __cdecl add_bat(int type, int modifier, const char* display_str);
 void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out, int* defense_out, int combat_type);
+void __cdecl planet_busting(int veh_id, int tx, int ty);
 void __cdecl promote(int veh_id);
 int __cdecl interceptor(int faction_id_def, int faction_id_atk, int tx, int ty);
 int __cdecl mod_battle_fight(int veh_id, int offset, int table_offset, int option, int* def_id);

@@ -336,6 +336,7 @@ enum GameMoreRules {
     MRULES_NO_SOCIAL_ENGINEERING = 0x8,
     MRULES_UNK_10 = 0x10, // multiplayer simultaneous moves related
     MRULES_UNK_20 = 0x20, // save_daemon / load_daemon
+    MRULES_UNK_80 = 0x80,
 };
 
 enum GameWarnings {

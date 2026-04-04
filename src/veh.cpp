@@ -1968,11 +1968,10 @@ int __cdecl mod_study_artifact(int veh_id) {
 
 /*
 Calculate the former rate to perform terrain enhancements.
-This is only called from veh_wake but it can be inlined on other functions.
 */
 int __cdecl contribution(int veh_id, int terraform_id) {
     int value = has_abil(Vehs[veh_id].unit_id, ABL_SUPER_TERRAFORMER) ? 4 : 2;
-    if (terraform_id == (ORDER_REMOVE_FUNGUS - 4) || terraform_id == (ORDER_PLANT_FUNGUS - 4)) {
+    if (terraform_id == FORMER_REMOVE_FUNGUS || terraform_id == FORMER_PLANT_FUNGUS) {
         if (has_project(FAC_XENOEMPATHY_DOME, Vehs[veh_id].faction_id)) {
             value *= 2; // Doubled
         }
@@ -3149,11 +3148,6 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
     }
     strcpy_n(name, MaxProtoNameLen, buf);
     return 0;
-}
-
-VehPlan support_plan() {
-    return (conf.modify_unit_support == 1 ? PLAN_SUPPLY :
-        (conf.modify_unit_support == 2 ? PLAN_PROBE : PLAN_TERRAFORM));
 }
 
 VehArmor best_armor(int faction_id, int max_cost) {

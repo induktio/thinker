@@ -302,12 +302,9 @@ void __cdecl mod_world_rivers() {
 }
 
 void __cdecl mod_world_rainfall() {
-    int* const dword_9B22E0 = (int*)0x9B22E0;
-    int* const dword_9B22DC = (int*)0x9B22DC;
     const int player_id = *CurrentPlayerFaction;
     const int n_tiles = *MapAreaTiles;
     *dword_9B22E0 = -1;
-    *dword_9B22DC = -1;
 
     for (int i = 0; i < n_tiles; i++) {
         (*MapTiles)[i].unk_1 = 0;
@@ -517,7 +514,7 @@ void __cdecl mod_world_rainfall() {
                 if (moisture < 2) { ++moisture; }
             }
             if (*CurrentTurn) {
-                // action_terraform related popup TERRAMINE
+                // action_terraform related popup TERRAMINE / TERRAYOURS
                 // remove unused dword_9B22DC base_find with the popup changes
                 int old_moisture = (sq->climate >> 3) & 3;
                 if (old_moisture != moisture && *dword_9B22E0 < 0) {

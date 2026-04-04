@@ -453,10 +453,15 @@ bool patch_setup(Config* cf) {
     write_offset(0x64A3C0, (void*)mod_except_handler3);
     write_offset(0x64D947, (void*)mod_except_handler3);
 
+    write_jump(0x421670, (int)has_fac);
     write_jump(0x4688E0, (int)MapWin_gen_overlays);
-    write_jump(0x4E3EF0, (int)mod_whose_territory);
-    write_jump(0x4E4020, (int)mod_best_specialist);
-    write_jump(0x4E4350, (int)mod_base_mark);
+    write_jump(0x4C9B00, (int)action_terraform);
+    write_jump(0x4CB310, (int)action_go_to);
+    write_jump(0x4CB580, (int)action_road_to);
+    write_jump(0x4CF740, (int)action);
+    write_jump(0x4E3EF0, (int)whose_territory);
+    write_jump(0x4E4020, (int)best_specialist);
+    write_jump(0x4E4350, (int)base_mark);
     write_jump(0x4E4430, (int)mod_cost_factor);
     write_jump(0x4E4AA0, (int)base_first);
     write_jump(0x4E6400, (int)morale_mod);
@@ -468,6 +473,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x4E9CB0, (int)mod_base_minerals);
     write_jump(0x4EB560, (int)mod_base_energy);
     write_jump(0x4EC3B0, (int)base_compute);
+    write_jump(0x4F06E0, (int)base_queue);
     write_jump(0x4F6510, (int)fac_maint);
     write_jump(0x500320, (int)drop_range);
     write_jump(0x501350, (int)mod_morale_alien);
@@ -552,6 +558,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x59EE50, (int)corner_market);
     write_jump(0x59E950, (int)prefs_use);
     write_jump(0x5AC060, (int)is_objective);
+    write_jump(0x5ADE80, (int)replay_base);
     write_jump(0x5B4210, (int)social_calc);
     write_jump(0x5B44D0, (int)social_upkeep);
     write_jump(0x5B4550, (int)social_upheaval);
@@ -834,11 +841,6 @@ bool patch_setup(Config* cf) {
     write_call(0x50DA9D, (int)mod_bases_reset); // capture_base
     write_call(0x5634BD, (int)mod_bases_reset); // enemy_strategy
     write_call(0x5BE62C, (int)mod_bases_reset); // tech_advance
-    write_call(0x4E4C2F, (int)mod_replay_base); // base_init
-    write_call(0x4E5378, (int)mod_replay_base); // base_kill
-    write_call(0x4F579E, (int)mod_replay_base); // drone_riot
-    write_call(0x50CF02, (int)mod_replay_base); // capture_base
-    write_call(0x54D313, (int)mod_replay_base); // give_a_base
     write_call(0x41B8BF, (int)mod_facility_avail); // BaseWin::base_editor_fac
     write_call(0x41CC07, (int)mod_facility_avail); // BaseWin::base_editor
     write_call(0x49357A, (int)mod_facility_avail); // ProdPicker::calculate
@@ -1181,19 +1183,6 @@ bool patch_setup(Config* cf) {
     */
     remove_call(0x468175);
     remove_call(0x468186);
-
-    /*
-    Hide "<other faction> have altered the rainfall patterns" messages from status display.
-    This also removes excessive friction and treaty penalties when another faction alters
-    rainfall patterns during terraforming.
-    */
-    {
-        const byte old_bytes[] = {0x75,0x07};
-        const byte new_bytes[] = {0x75,0x16};
-        write_bytes(0x4CA44E, old_bytes, new_bytes, sizeof(new_bytes)); // action_terraform
-        remove_call(0x4CA3DD); // set_treaty
-        remove_call(0x4CA3EB); // cause_friction
-    }
 
     /*
     Remove old code for selecting secret projects in time_warp.

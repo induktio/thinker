@@ -83,7 +83,6 @@ void __cdecl mod_make_proto(int unit_id, VehChassis chassis_id,
 int __cdecl mod_name_proto(char* name, int unit_id, int faction_id,
     VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec);
 
-VehPlan support_plan();
 VehArmor best_armor(int faction_id, int max_cost);
 VehWeapon best_weapon(int faction_id);
 VehReactor best_reactor(int faction_id);

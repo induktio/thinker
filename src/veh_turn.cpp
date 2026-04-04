@@ -618,7 +618,7 @@ void __cdecl mod_alien_fauna() {
                         if (i == player_id) {
                             int base_id = mod_base_find3(tx, ty, -1, -1, -1, player_id);
                             if (base_id < 0 || Bases[base_id].faction_id != player_id
-                            || (*BaseFindDist > 3 && mod_whose_territory(player_id, tx, ty, 0, 0) != player_id)) {
+                            || (*BaseFindDist > 3 && whose_territory(player_id, tx, ty, 0, 0) != player_id)) {
                                 draw_tiles(tx, ty, 2);
                             } else {
                                 if (!MapWin_focus(MapWinPtr[0], tx, ty)) {

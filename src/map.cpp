@@ -651,6 +651,17 @@ void __cdecl synch_bit(int x, int y, int faction_id) {
     }
 }
 
+void __cdecl site_radius(int x, int y) {
+    for (int i = 0; i < 21; i++) {
+        int x2 = wrap(x + TableOffsetX[i]);
+        int y2 = y + TableOffsetY[i];
+        MAP* sq = mapsq(x2, y2);
+        if (sq) {
+            sq->val2 &= 0x0F;
+        }
+    }
+}
+
 /*
 First Manifold Nexus tile must also be visible to the owner for the effect to take place.
 */
@@ -711,7 +722,7 @@ Return Value: Does the faction have control of the tile to set a landmark? true/
 int __cdecl valid_landmark(int x, int y, int faction_id) {
     MAP* sq;
     int owner = *MultiplayerActive ? (sq = mapsq(x, y), sq ? sq->owner : -1)
-        : mod_whose_territory(faction_id, x, y, NULL, false);
+        : whose_territory(faction_id, x, y, NULL, false);
     if (owner == faction_id) {
         return true;
     }
@@ -1433,7 +1444,7 @@ int __cdecl mod_base_find3(int x, int y, int faction_id, int region, int faction
     return base_id;
 }
 
-int __cdecl mod_whose_territory(int faction_id, int x, int y, int* base_id, int ignore_comm) {
+int __cdecl whose_territory(int faction_id, int x, int y, int* base_id, int ignore_comm) {
     MAP* sq = mapsq(x, y);
     if (!sq || sq->owner < 0) { // Fix: invalid coordinates return -1 (no owner)
         return -1;

@@ -282,6 +282,9 @@ enum VehOrder {
     ORDER_ROAD_TO = 27,          // (r)
     ORDER_MAGTUBE_TO = 28,       // (t)
     ORDER_AI_GO_TO = 88,         //  - ; ORDER_GO_TO (0x18) | 0x40 > 0x58 ? only used by AI funcs
+    VehOrderResetFlag = 0x40,
+    VehOrderFormerFirst = ORDER_FARM,
+    VehOrderFormerLast = ORDER_PLACE_MONOLITH,
 };
 
 enum VehOrderAutoType {

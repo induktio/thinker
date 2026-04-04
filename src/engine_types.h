@@ -39,6 +39,9 @@ struct MAP {
     int lm_items() {
         return landmarks & 0xFFFF;
     }
+    int rocky_level() {
+        return val3 >> 6;
+    }
     bool is_visible(int faction_id) {
         return visibility & (1 << faction_id);
     }
@@ -402,7 +405,7 @@ struct Faction {
     int32_t AI_power;
     int32_t target_x;
     int32_t target_y;
-    int32_t best_mineral_output; // For faction bases highest mineral_intake_2 + 2 * mineral_surplus
+    int32_t best_mineral_output;
     int32_t council_call_turn;
     int32_t unk_29[11]; // Council related
     int32_t unk_30[11]; // Council related

@@ -572,7 +572,7 @@ int unit_score(BASE* base, int unit_id, int psi_score, int psi_atk, int psi_def,
         v += (u->speed() > 1 ? 16 : 32);
         v += 8*min(4, base->specialist_adjust);
     }
-    if (u->ability_flags & ABL_CLEAN_REACTOR && u->plan <= support_plan()
+    if (u->ability_flags & ABL_CLEAN_REACTOR && u->plan <= unit_support_plan()
     && (f->SE_support_pending < 3 || base->mineral_consumption > 0)) {
         v += 16;
     }
@@ -596,7 +596,7 @@ int unit_score(BASE* base, int unit_id, int psi_score, int psi_atk, int psi_def,
     // More detailed prototype cost calculations are skipped here
     int mins = max(4, base->mineral_surplus);
     int turns = (max(0, u->cost*10 - base->minerals_accumulated) + mins - 1) / mins;
-    int score = v - turns * (u->is_colony() ? 6 : 3)
+    int score = v - turns*turns/10 - turns * (u->is_colony() ? 6 : 3)
         * (max(2, 8 - *CurrentTurn/16) + max(0, 2 - base->mineral_surplus/4));
     debug("unit_score %3d psi: %d cost: %d turns: %d score: %d %s\n",
         unit_id, psi_score, u->cost, turns, score, u->name);

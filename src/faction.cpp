@@ -1666,7 +1666,7 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
     }
     for (int i = *BaseCount - 1; i >= 0; --i) {
         if (Bases[i].faction_id == faction_id) {
-            base_kill(i); // Skip find_relocate_base check
+            mod_base_kill(i);
         }
     }
     for (int i = *VehCount - 1; i >= 0; --i) {

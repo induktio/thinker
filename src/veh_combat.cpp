@@ -951,7 +951,7 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
                 if ((def_state & DF_Enable) && !(def_state & DF_Sensor)) {
                     for (auto& m : iterate_tiles(veh_def->x, veh_def->y, 0, 25)) {
                         if (m.sq->items & BIT_SENSOR) {
-                            int owner = mod_whose_territory(faction_id_def, m.x, m.y, 0, 0);
+                            int owner = whose_territory(faction_id_def, m.x, m.y, 0, 0);
                             if (owner < 0 || owner == faction_id_def) {
                                 def_state |= DF_Sensor;
                             }
@@ -1051,6 +1051,125 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
     }
     if (defense_out) {
         *defense_out = defense;
+    }
+}
+
+void __cdecl planet_busting(int veh_id, int tx, int ty) {
+    if (veh_id < 0 || veh_id >= *VehCount) {
+        assert(0);
+        return;
+    }
+    int* const dword_90F7D4 = (int*)0x90F7D4;
+    int* const dword_74B5DC = (int*)0x74B5DC;
+    const int player_id = *CurrentPlayerFaction;
+    VEH* veh = &Vehs[veh_id];
+    int faction_id = veh->faction_id;
+    int reactor_range = veh->is_planet_buster();
+    int blast_range = TableRange[reactor_range];
+    Console_focus(MapWin, tx, ty, faction_id);
+    int base_id = base_find(tx, ty);
+    int found[MaxPlayerNum] = {};
+    int shoot_value = 0;
+
+    if (faction_id != player_id && base_id >= 0) {
+        MFaction& m = MFactions[faction_id];
+        *PluralDefault = 0;
+        *GenderDefault = m.is_leader_female;
+        parse_says(0, m.title_leader, -1, -1);
+        parse_says(1, m.name_leader, -1, -1);
+        *PluralDefault = m.is_noun_plural;
+        *GenderDefault = m.noun_gender;
+        parse_says(2, m.noun_faction, -1, -1);
+        parse_says(3, Bases[base_id].name, -1, -1);
+        int dist = map_range(Bases[base_id].x, Bases[base_id].y, tx, ty);
+        const char* img = (dist > reactor_range) ? "astp_sm.pcx" : "baseobl_sm.pcx";
+        popp(ScriptFile, "PLANETBUSTER", 0, img, 0);
+    }
+    for (int i = 0; i < blast_range; i++) {
+        int nx = wrap(tx + TableOffsetX[i]);
+        int ny = ty + TableOffsetY[i];
+        if (!on_map(nx, ny)) {
+            continue;
+        }
+        int near_id = base_at(nx, ny);
+        if (near_id < 0) {
+            int v = stack_fix(veh_at(nx, ny));
+            if (v >= 0) {
+                int veh_fc_id = Vehs[v].faction_id;
+                if (faction_id != veh_fc_id && !has_pact(faction_id, veh_fc_id)) {
+                    if (!found[veh_fc_id]) {
+                        // note that original uses tx, ty location here
+                        shoot_value = shoot(faction_id, veh_fc_id, tx, ty);
+                        if (shoot_value) { break; }
+                        found[veh_fc_id] = 1;
+                    }
+                }
+            }
+        } else {
+            int base_fc_id = Bases[near_id].faction_id;
+            if (faction_id != base_fc_id && !found[base_fc_id]) {
+                shoot_value = shoot(faction_id, base_fc_id, nx, ny);
+                if (shoot_value) { break; }
+                found[base_fc_id] = 1;
+            }
+        }
+    }
+    if (!shoot_value) {
+        int owner_id = whose_territory(faction_id, tx, ty, 0, 0);
+        if (owner_id >= 0 && owner_id != faction_id && !found[owner_id]) {
+            shoot_value = shoot(faction_id, owner_id, tx, ty);
+        }
+    }
+    kill(veh_id);
+    draw_radius(tx, ty, 0, 2);
+    if (!shoot_value) {
+        *VehBattleState = 1;
+        int tgt_veh_faction_id = -1;
+        int tgt_base_faction_id = -1;
+
+        for (int i = 0; i < reactor_range; i++) {
+            world_lower_alt(tx, ty);
+        }
+        world_climate();
+        *dword_9B22E0 = -1; // skip displaying TERRAMINE / TERRAYOURS
+        FX_play(Sounds, 59);
+        *dword_90F7D4 = reactor_range;
+        boom(tx, ty, 32);
+
+        for (int i = 0; i < blast_range; i++) {
+            int nx = wrap(tx + TableOffsetX[i]);
+            int ny = ty + TableOffsetY[i];
+            if (!on_map(nx, ny)) {
+                continue;
+            }
+            int b = base_at(nx, ny);
+            if (b >= 0) {
+                if (tgt_base_faction_id < 0 && Bases[b].faction_id != faction_id) {
+                    tgt_base_faction_id = Bases[b].faction_id;
+                }
+                mod_base_kill(b);
+            }
+            int v = stack_fix(veh_at(nx, ny));
+            if (v >= 0) {
+                if (tgt_veh_faction_id < 0 && Vehs[v].faction_id != faction_id) {
+                    tgt_veh_faction_id = Vehs[v].faction_id;
+                }
+                stack_kill(v);
+            }
+        }
+        *VehBattleState = 0;
+        if (tgt_base_faction_id < 0) {
+            tgt_base_faction_id = tgt_veh_faction_id;
+        }
+        draw_map(0);
+        boom(tx, ty, 64);
+        while ((*(int (__thiscall**)(int*))(*dword_74B5DC + 92))(dword_74B5DC)) {
+            do_task();
+        }
+        FX_play(Sounds, 60);
+        boom(tx, ty, 17);
+        boom(tx, ty, 18);
+        major_atrocity(faction_id, tgt_base_faction_id);
     }
 }
 

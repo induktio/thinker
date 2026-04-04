@@ -22,6 +22,7 @@
 
 typedef uint8_t byte;
 typedef struct { char str[256]; } char256;
+typedef volatile int net_int_t;
 
 struct CChassis;
 extern CChassis* Chassis;
@@ -137,6 +138,18 @@ int bit_count(T value) {
     } else {
         return __builtin_popcountll(static_cast<unsigned long long>(value));
     }
+}
+
+template<typename F>
+struct CleanupHandler {
+    F f;
+    explicit CleanupHandler(F&& func) : f(std::forward<F>(func)) {}
+    ~CleanupHandler() { f(); }
+};
+
+template<typename F>
+CleanupHandler<F> cleanup_handler(F&& f) {
+    return CleanupHandler<F>(std::forward<F>(f));
 }
 
 inline TriadFlag operator| (TriadFlag a, TriadFlag b) { return (TriadFlag)((int)a | (int)b); }
@@ -281,6 +294,7 @@ extern int* const BaseCommerceImport;
 extern int* const BaseCommerceExport;
 extern int* const BaseTerraformEnergy;
 extern int* const BaseTerraformReduce;
+extern int* const TutWinMapState;
 extern int* const ReplayEventSize;
 extern int* const ScnVictFacilityObj;
 extern int* const SolarFlaresEvent;
@@ -380,7 +394,9 @@ extern int* const dword_7F685C;
 extern int* const dword_7FE06C;
 extern int* const dword_8C6B3C;
 extern int* const dword_90DB84;
+extern int* const dword_9B22E0;
 extern int* const dword_90EA3C;
+extern int* const dword_90EA40;
 extern int* const dword_93A96C;
 extern int* const dword_93A98C;
 extern int* const dword_93E960;
@@ -390,7 +406,7 @@ extern int* const dword_8C6B2C;
 extern int* const dword_8C6B34;
 extern int* const dword_93928C;
 extern int* const dword_939290;
-extern int** const dword_93E908;
+extern net_int_t** const dword_93E908;
 extern int* const ScreenWidth;
 extern int* const ScreenHeight;
 extern char256* const ParseStrBuffer;
@@ -443,6 +459,11 @@ extern int* const DiploFriction;
 extern int* const DiploFrictionFactionIDWith;
 extern int* const DiploFrictionFactionID;
 
+extern Sprite* const ImgMapMine;
+extern Sprite* const ImgMapFarm;
+extern Sprite* const ImgMapSolar;
+extern Sprite* const ImgMapSoilEnr;
+
 const int MaxVehModNum = 8192;
 extern VEH ArrayVehs[MaxVehModNum+2];
 extern VEH* const VehsMod;
@@ -488,13 +509,13 @@ extern WorldWindow* WorldWin;
 extern Console* MapWin;
 extern Font** MapLabelFont;
 extern Sprite** FactionPortraits;
-extern void* Sounds;
+extern Wave* Sounds;
 extern NetMessage* NetMsg;
 extern AlphaNet* NetState;
 extern Lock* LockState;
 extern DeletionList* DeleteList;
 extern Path* Paths;
-extern void* WaveState;
+extern Wave* WaveState;
 extern FileFindPath* FileFind;
 extern Strings* TextTable;
 extern Label* TextLabels;
@@ -558,7 +579,7 @@ extern fp_1int game_srand;  // renamed
 
 
 typedef void(__cdecl *Famovie_project)(int);
-typedef void(__cdecl *Famovie_project_2)(char*);
+typedef void(__cdecl *Famovie_project_2)(const char*);
 typedef void(__cdecl *Fsprite_draw_func)(Sprite*, GraphicWin*, int, int, int);
 typedef int(__cdecl *FPOP2)(const char* label, const char* pcx_filename, int a3);
 typedef void(__cdecl *FPOP3)(const char* label, const char* pcx_filename, int a3, int a4, int a5);
@@ -813,7 +834,7 @@ typedef void(__cdecl *Fturn_timer)(int unused);
 typedef void(__cdecl *Fgo_timer)(int);
 typedef void(__cdecl *Fdo_checksums)(int);
 typedef void(__cdecl *Frandom_events)(int);
-typedef void(__cdecl *Finterlude)(int event_id, char* text, int a3, int a4);
+typedef void(__cdecl *Finterlude)(int event_id, const char* text, int a3, int a4);
 typedef int(__cdecl *Fgenerators)(int, int*);
 typedef int(__cdecl *Fend_of_game)(int);
 typedef void(__cdecl *Frepair_phase)(int);
@@ -1578,11 +1599,11 @@ extern fp_none get_sound_version;
 extern Fterraform_cost terraform_cost;
 extern Faction_build action_build;
 //extern Fcontribution contribution;
-extern Faction_terraform action_terraform;
+//extern Faction_terraform action_terraform;
 extern Faction_staple action_staple;
 extern Faction_destroy action_destroy;
-extern Faction_go_to action_go_to;
-extern Faction_road_to action_road_to;
+//extern Faction_go_to action_go_to;
+//extern Faction_road_to action_road_to;
 extern Faction_home action_home;
 extern Faction_airdrop action_airdrop;
 extern fp_none action_feature;
@@ -1597,7 +1618,7 @@ extern Faction_fungal action_fungal;
 extern Faction_give action_give;
 extern Faction_gate action_gate;
 extern Faction_sat_attack action_sat_attack;
-extern F_action action;
+//extern F_action action;
 //extern Fset_base set_base;
 extern Fsay_base say_base;
 //extern Fbase_at base_at;
@@ -1608,8 +1629,8 @@ extern Fbase_find_3 base_find_3;
 extern Fbase_territory base_territory;
 //extern fp_none best_specialist;
 extern Fname_base name_base;
-extern Fbase_mark base_mark;
-extern Fcost_factor cost_factor;
+//extern Fbase_mark base_mark;
+//extern Fcost_factor cost_factor;
 extern Fbase_making base_making;
 extern Fbase_lose_minerals base_lose_minerals;
 //extern Fset_fac set_fac;
@@ -1637,7 +1658,7 @@ extern fp_none base_minerals;
 extern Fblack_market black_market;
 extern Fpsych_check psych_check;
 extern fp_none base_psych;
-extern Fbase_rank base_rank;
+//extern Fbase_rank base_rank;
 extern fp_none base_energy;
 //extern Fbase_compute base_compute;
 extern Fbase_connect base_connect;
@@ -1651,7 +1672,7 @@ extern Fupgrade_cost upgrade_cost;
 extern Fupgrade_prototype upgrade_prototype;
 extern Fupgrade_prototypes upgrade_prototypes;
 extern Fupgrade_any_prototypes upgrade_any_prototypes;
-extern Fbase_queue base_queue;
+//extern Fbase_queue base_queue;
 extern fp_none base_production;
 extern fp_none base_hurry;
 extern fp_none base_check_support;
@@ -1684,7 +1705,7 @@ extern Fbase_project base_project;
 extern Fplanet_buster2 planet_buster2;
 extern Fplanet_buster planet_buster;
 extern Fshoot shoot;
-extern Fplanet_busting planet_busting;
+//extern Fplanet_busting planet_busting;
 extern Fdefense_value defense_value;
 extern Fmorale_alien morale_alien;
 //extern Fpsi_factor psi_factor;
@@ -2067,7 +2088,7 @@ extern Fminerals_at minerals_at;
 extern Fbonus_at bonus_at;
 extern Fgoody_at goody_at;
 //extern Fsay_loc say_loc;
-extern Fsite_radius site_radius;
+//extern Fsite_radius site_radius;
 //extern Ffind_landmark find_landmark;
 //extern Fnew_landmark new_landmark;
 //extern Fvalid_landmark valid_landmark;
@@ -2163,7 +2184,7 @@ extern Fascending ascending;
 extern Frankings rankings;
 extern Fcompute_score compute_score;
 extern fp_none show_replay;
-extern Freplay_base replay_base;
+//extern Freplay_base replay_base;
 extern Fcrash_landing crash_landing;
 extern Fget_plan get_plan;
 extern fp_none time_warp;
@@ -2887,7 +2908,7 @@ typedef int(__thiscall *FBasePop_set_ok_text)(BasePop* This, char* a2);
 typedef int(__thiscall *FBasePop_set_cancel_text)(BasePop* This, char* a2);
 typedef int(__cdecl *FBasePop_set_def_ok_text)(char* a1);
 typedef int(__cdecl *FBasePop_set_def_cancel_text)(char* a1);
-typedef int(__thiscall *FBasePop_string)(BasePop* This, char* a2);
+typedef int(__thiscall *FBasePop_string)(BasePop* This, const char* a2);
 typedef int(__thiscall *FBasePop_button)(BasePop* This, char* a2);
 typedef int(__thiscall *FBasePop_UNK1)(BasePop* This, char* a2);
 typedef void(__thiscall *FBasePop_set_height)(BasePop* This, int a2);
@@ -3323,7 +3344,7 @@ extern FPalette_UNK9 Palette_UNK9;
 
 typedef int(__thiscall *FSprite)(Sprite* This);
 typedef int(__thiscall *FSprite_dtor)(Sprite* This);
-typedef int(__thiscall *FSprite_init)(Sprite* This, char* a2, int a3, int a4);
+typedef int(__thiscall *FSprite_init)(Sprite* This, const char* a2, int a3, int a4);
 typedef int(__thiscall *FSprite_extract)(Sprite* This, Buffer* a2, int a3, RECT* a4, void* a5);
 typedef int(__thiscall *FSprite_extract_2)(Sprite* This, Buffer* a2, int a3, int x, int y, int width, int height, void* a8);
 typedef int(__thiscall *FSprite_draw_mono)(Sprite* This, Buffer* a2, int a3, int a4, int a5, int a6, int a7, int a8);
@@ -4227,6 +4248,38 @@ extern FTutWin TutWin_dtor;
 extern FTutWin_scalar_dtor TutWin_scalar_dtor;
 extern FTutWin_operator_delete TutWin_operator_delete;
 
+typedef int(__thiscall *FSetupWin)(SetupWin* This);
+typedef int(__thiscall *FSetupWin_UNK1)(SetupWin* This, int a2);
+typedef int(__thiscall *FSetupWin_UNK2)(SetupWin* This, int a2);
+typedef int(__thiscall *FSetupWin_UNK3)(SetupWin* This, int a2);
+typedef int(__thiscall *FSetupWin_UNK4)(SetupWin* This, int a2);
+typedef int(__thiscall *FSetupWin_do_menu)(SetupWin* This, char* a2, int a3, int a4);
+typedef int(__thiscall *FSetupWin_do_menu_2)(SetupWin* This, Popup* a2, int a3, int a4);
+typedef int(__thiscall *FSetupWin_do_menu_rightside)(SetupWin* This, char* section_id, int a3);
+typedef void(__thiscall *FSetupWin_on_left_click)(SetupWin* This, int x, int y);
+typedef int(__thiscall *FSetupWin_on_mouse_move)(SetupWin* This, int x, int y);
+typedef int(__thiscall *FSetupWin_on_key_click)(SetupWin* This, int a2, int a3);
+typedef int(__thiscall *FSetupWin_draw_item)(SetupWin* This, int position, int a3);
+typedef void*(__thiscall *FSetupWin_scalar_dtor)(SetupWin* This, uint32_t a2);
+typedef void(__cdecl *FSetupWin_operator_delete)(void* a1, uint32_t a2);
+
+extern FSetupWin SetupWin_ctor;
+extern FSetupWin SetupWin_close;
+extern FSetupWin_UNK1 SetupWin_UNK1;
+extern FSetupWin_UNK2 SetupWin_UNK2;
+extern FSetupWin_UNK3 SetupWin_UNK3;
+extern FSetupWin_UNK4 SetupWin_UNK4;
+extern FSetupWin_do_menu SetupWin_do_menu;
+extern FSetupWin_do_menu_2 SetupWin_do_menu_2;
+extern FSetupWin_do_menu_rightside SetupWin_do_menu_rightside;
+extern FSetupWin_on_left_click SetupWin_on_left_click;
+extern FSetupWin_on_mouse_move SetupWin_on_mouse_move;
+extern FSetupWin_on_key_click SetupWin_on_key_click;
+extern FSetupWin_draw_item SetupWin_draw_item;
+extern FSetupWin_scalar_dtor SetupWin_scalar_dtor;
+extern FSetupWin SetupWin_dtor;
+extern FSetupWin_operator_delete SetupWin_operator_delete;
+
 typedef int(__thiscall *FNetMsg)(NetMessage* This);
 typedef void(__cdecl *FNetMsg_timer_daemon)(int a1);
 typedef void(__thiscall *FNetMsg_on_button_clicked)(NetMessage* This, int a2);
@@ -4246,9 +4299,79 @@ extern FNetMsg NetMsg_dtor;
 extern FNetMsg_operator_delete NetMsg_operator_delete;
 extern FNetMsg_pop_2 NetMsg_pop_2;
 
-typedef int(__thiscall *FFX_init)(void* This);
-typedef int(__thiscall *FFX_play2)(void* This, int a2, int a3, int a4);
-typedef void(__thiscall *FFX_play)(void* This, int a2);
+typedef int(__thiscall *FSound)(Sound* This);
+typedef void(__thiscall *FSound_fade_2)(Sound* This, uint32_t a2);
+
+extern FSound Sound_fade;
+extern FSound_fade_2 Sound_fade_2;
+
+typedef int(__thiscall *FWave)(Wave* This);
+typedef int(__thiscall *FWave_play)(Wave* This, int a2);
+typedef void(__thiscall *FWave_init)(Wave* This, char* a2, uint32_t a3);
+typedef int(__thiscall *FWave_set_fname)(Wave* This, const char* a2);
+typedef int(__thiscall *FWave_dyna_load)(Wave* This, char* a2);
+typedef int(__thiscall *FWave_load)(Wave* This, const char* a2);
+typedef int(__thiscall *FWave_load_3)(Wave* This, char* a2, uint32_t a3);
+typedef void(__thiscall *FWave_set_pitch)(Wave* This, int a2);
+typedef void(__thiscall *FWave_set_attrib)(Wave* This, uint32_t a2);
+typedef int(__thiscall *FWave_get_time)(Wave* This, uint32_t a2);
+typedef int(__thiscall *FWave_get_device_description)(Wave* This, char* a2, int a3, int a4);
+typedef int(__thiscall *FWave_UNK1)(Wave* This, int a2);
+typedef int(__thiscall *FWave_set_reverb_mix)(Wave* This, float a2);
+typedef int(__thiscall *FWave_set_bufflimit)(Wave* This, uint32_t a2);
+typedef int(__thiscall *FWave_set_attack)(Wave* This, uint32_t a2, uint32_t a3, uint32_t a4);
+typedef int(__thiscall *FWave_set_sustain)(Wave* This, uint32_t a2, uint32_t a3, uint32_t a4);
+typedef int(__thiscall *FWave_set_decay)(Wave* This, uint32_t a2, uint32_t a3, uint32_t a4);
+typedef int(__thiscall *FWave_set_release)(Wave* This, uint32_t a2, uint32_t a3, uint32_t a4);
+typedef void(__thiscall *FWave_set_volume)(Wave* This, int a2);
+typedef int(__thiscall *FWave_set_position3d)(Wave* This, float a2, float a3, float a4);
+typedef int(__thiscall *FWave_set_xpos)(Wave* This, float a2);
+typedef int(__thiscall *FWave_set_ypos)(Wave* This, float a2);
+typedef int(__thiscall *FWave_set_zpos)(Wave* This, float a2);
+typedef void*(__thiscall *FWave_scalar_dtor)(Wave* This, uint32_t a2);
+
+extern FWave Wave_ctor;
+extern FWave Wave_dtor;
+extern FWave_play Wave_play;
+extern FWave Wave_play_2;
+extern FWave_init Wave_init;
+extern FWave Wave_is_hwbuffer;
+extern FWave Wave_get_ms_length;
+extern FWave Wave_is_playing;
+extern FWave_set_fname Wave_set_fname;
+extern FWave_dyna_load Wave_dyna_load;
+extern FWave_load Wave_load;
+extern FWave Wave_load_2;
+extern FWave_load_3 Wave_load_3;
+extern FWave Wave_reload;
+extern FWave Wave_unload;
+extern FWave_set_pitch Wave_set_pitch;
+extern FWave_set_attrib Wave_set_attrib;
+extern FWave Wave_get_attrib;
+extern FWave_get_time Wave_get_time;
+extern FWave Wave_get_current_marker;
+extern FWave Wave_get_game_hwnd;
+extern FWave Wave_get_ndevices;
+extern FWave_get_device_description Wave_get_device_description;
+extern FWave_UNK1 Wave_UNK1;
+extern FWave_set_reverb_mix Wave_set_reverb_mix;
+extern FWave_set_bufflimit Wave_set_bufflimit;
+extern FWave Wave_set_asdr;
+extern FWave_set_attack Wave_set_attack;
+extern FWave_set_sustain Wave_set_sustain;
+extern FWave_set_decay Wave_set_decay;
+extern FWave_set_release Wave_set_release;
+extern FWave_set_volume Wave_set_volume;
+extern FWave_set_position3d Wave_set_position3d;
+extern FWave_set_xpos Wave_set_xpos;
+extern FWave_set_ypos Wave_set_ypos;
+extern FWave_set_zpos Wave_set_zpos;
+extern FWave Wave_is_3d;
+extern FWave_scalar_dtor Wave_scalar_dtor;
+
+typedef int(__thiscall *FFX_init)(Wave* This);
+typedef int(__thiscall *FFX_play2)(Wave* This, int a2, int a3, int a4);
+typedef void(__thiscall *FFX_play)(Wave* This, int a2);
 
 extern FFX_init FX_init;
 extern FFX_play2 FX_play2;

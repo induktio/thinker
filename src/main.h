@@ -162,6 +162,8 @@ const int ResonanceWeaponValue = 25;
 const int FlechetteDefenseValue = 50;
 const int FlechetteDefenseRange = 2;
 const int GeosyncSurveyPodRange = 3;
+const int PlanetaryTransitPopSize = 3;
+const int UniversalTranslatorTechs = 2;
 
 const int StrBufLen = 256;
 const int LineBufLen = 128;
@@ -416,6 +418,7 @@ struct AIPlans {
 #include "gui_dialog.h"
 #include "veh.h"
 #include "veh_turn.h"
+#include "veh_action.h"
 #include "veh_combat.h"
 #include "net.h"
 #include "map.h"
