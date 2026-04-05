@@ -432,7 +432,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 7. Fix visual bug where population icons in base window would randomly switch their type when clicking on them.
 8. Fix engine rendering issue where ocean fungus tiles displayed inconsistent graphics compared to the adjacent land fungus tiles.
 9. Fix game showing redundant "rainfall patterns have been altered" messages when these events are caused by other factions. This also removes excessive friction and treaty penalties when another faction alters rainfall patterns during terraforming.
-10. Fix a bug that occurs after the player does an artillery attack on unoccupied tile and then selects another unit to view combat odds and cancels the attack. After this veh_attack_flags will not get properly cleared and the next bombardment on an unoccupied tile always results in the destruction of the bombarding unit.
+10. Fix bug that occurs after an artillery attack on unoccupied tile and then selecting another unit to view combat odds and cancel the attack. After this internal state will not get cleared and bombarding next unoccupied tile always destroys the bombarding unit.
 11. Patch the game engine to use significantly less CPU time when idle by using a method similar to [smac-cpu-fix](https://github.com/vinceho/smac-cpu-fix/). Normally the game uses 100% of CPU time which can be a problem on laptop devices.
 12. When capturing a base, Recycling Tanks and Recreation Commons are not always destroyed unlike previously. They are sometimes randomly destroyed like other facilities (facility_capture_fix).
 13. Patch any faction with negative research rating to start accumulating labs on the first turn. In original rules each negative point results in an additional 5 turn delay before the faction starts accumulating labs, for example Believers had a 10 turn delay. Players on two lowest difficulty levels will also start accumulating labs immediately instead of 5 turns later (early_research_start).
@@ -491,6 +491,9 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 66. Fix NEWRESOURCE event sometimes appearing on a tile that already has bonus resources.
 67. Modify config reader to display an error if None/Disable are used as chassis/weapon/armor identifiers for predefined units on alphax.txt.
 68. Fix XMINDWORMS event never occurring due to original game code. This event may now sometimes happen at the three highest difficulty levels.
+69. Fix SURVIVEPROJECT event not properly displaying restored secret project name.
+70. Fix Brood Pit not providing lifecycle bonus for built native units as mentioned in the manual.
+71. Fix game never displaying ABANDONBASE1 event with turns remaining when building the colony pod would disband the base with nutrient surplus.
 
 
 Scient's patch

@@ -1938,26 +1938,26 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
                     X_pop2("YOULOSE2", 0);
                 }
                 *GameState |= STATE_GAME_DONE;
-                *dword_9B206C = setup_id ? 7 : 15; // TODO investigate values
+                *GameVictoryType = setup_id ? VIC_LOST_CAPTURE : VIC_LOST_REMOVE;
             }
             if (!is_player) {
                 if (num_active - num_allied < 2) {
                     if (num_allied) {
                         popp(ScriptFile, "CONQCOOP", 0, "conq_sm.pcx", 0);
-                        if (!*dword_9B206C) {
-                            *dword_9B206C = 5;
+                        if (*GameVictoryType == VIC_NONE) {
+                            *GameVictoryType = VIC_UNIFY_COOP;
                         }
                     } else if (other_id == *CurrentPlayerFaction) {
                         popp(ScriptFile, "CONQSING", 0, "conq_sm.pcx", 0);
-                        if (!*dword_9B206C) {
-                            *dword_9B206C = 4;
+                        if (*GameVictoryType == VIC_NONE) {
+                            *GameVictoryType = VIC_UNIFY_SOLO;
                         }
                     }
                     *GameState |= (STATE_GAME_DONE | STATE_VICTORY_CONQUER);
                 }
             }
         } else {
-            *dword_9B206C = 7;
+            *GameVictoryType = VIC_LOST_CAPTURE;
             *GameState |= STATE_GAME_DONE;
             set_alive(faction_id, false);
         }
@@ -2085,7 +2085,7 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
             if (*GameRules & RULES_LOOK_FIRST && !(*GameRules & RULES_TIME_WARP)) {
                 veh_init_free(colony_unit, faction_id, x, y);
             } else {
-                int base_id = base_init(faction_id, x, y);
+                int base_id = mod_base_init(faction_id, x, y);
                 if (base_id >= 0 && !_stricmp(m->filename, "FUNGBOY") && special_spawn) {
                     Bases[base_id].pop_size = 3;
                 }

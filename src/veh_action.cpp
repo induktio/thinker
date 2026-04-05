@@ -21,6 +21,67 @@ int __cdecl action(int veh_id) {
     return 1;
 }
 
+int __cdecl action_build(int veh_id, const char* name) {
+    const int player_id = *CurrentPlayerFaction;
+    VEH* veh = &Vehs[veh_id];
+    int veh_x = veh->x;
+    int veh_y = veh->y;
+    int faction_id = veh->faction_id;
+    MAP* sq = mapsq(veh_x, veh_y);
+    debug("action_build %d %d %2d %2d\n", *CurrentTurn, faction_id, veh_x, veh_y);
+
+    if (sq && sq->val3 & TILE_ROCKY) {
+        rocky_set(veh_x, veh_y, LEVEL_ROLLING);
+    }
+    if (faction_id == player_id
+    || veh->is_visible(player_id)
+    || (*GameState & STATE_OMNISCIENT_VIEW)) {
+        Console_focus(MapWin, veh_x, veh_y, faction_id);
+    }
+    int owner = whose_territory(faction_id, veh_x, veh_y, 0, 0);
+    if (Factions[faction_id].base_count > 0 && owner >= 0 && owner != faction_id
+    && !(Factions[faction_id].diplo_status[owner] & (DIPLO_VENDETTA | DIPLO_PACT))
+    && (is_human(faction_id) || is_human(owner))) {
+        if (Factions[faction_id].diplo_status[owner] & DIPLO_TREATY) {
+            double_cross(faction_id, owner, -1);
+        } else {
+            treaty_on(faction_id, owner, DIPLO_VENDETTA);
+        }
+    }
+    int base_id = mod_base_init(faction_id, veh_x, veh_y);
+    if (base_id >= 0) {
+        if (is_human(faction_id)) {
+            int home_base_id = veh->home_base_id;
+            if (home_base_id >= 0) {
+                Bases[base_id].governor_flags = Bases[home_base_id].governor_flags;
+            }
+            if (veh->state & VSTATE_ON_ALERT) {
+                Bases[base_id].governor_flags |= GOV_ACTIVE;
+            }
+        }
+        Factions[faction_id].last_base_turn = *CurrentTurn;
+        if (name && strlen(name) > 0) {
+            strcpy_n(Bases[base_id].name, MaxBaseNameLen, name);
+            make_base_unique(base_id);
+        }
+        veh_kill(veh_id);
+        if (faction_id == player_id
+        || Bases[base_id].faction_id == player_id
+        || (Bases[base_id].visibility & (1 << player_id))
+        || (*GameState & STATE_OMNISCIENT_VIEW)) {
+            draw_map(1);
+        }
+        for (int i = 1; i < MaxPlayerNum; i++) {
+            del_site(i, 8, veh_x, veh_y, 2);
+        }
+        mon_colony_founded(faction_id, Bases[base_id].name);
+        return base_id;
+    } else {
+        veh_skip(veh_id);
+        return base_id;
+    }
+}
+
 int __cdecl action_terraform(int veh_id, int item_id, int toggle) {
     const int player_id = *CurrentPlayerFaction;
     VEH* const veh = &Vehs[veh_id];
@@ -468,4 +529,224 @@ void __cdecl action_road_to(net_int_t veh_id) {
 }
 
 #pragma GCC diagnostic pop
+
+void __cdecl action_destroy(int veh_id, int tgt_item, int tgt_x, int tgt_y) {
+    const int player_id = *CurrentPlayerFaction;
+    VEH* veh = &Vehs[veh_id];
+    int faction_id = veh->faction_id;
+    int tx = tgt_x;
+    int ty = tgt_y;
+    // Fix bug that occurs after an artillery attack on unoccupied tile and then selecting
+    // another unit to view combat odds and cancel the attack. After this VehAttackFlags will not
+    // get cleared and bombarding next unoccupied tile always destroys the bombarding unit.
+    veh_skip(veh_id);
+    *VehAttackFlags = 0;
+    veh->state |= VSTATE_UNK_40;
+    bool is_forest_destroy = false;
+    bool is_bombard = false;
+    bool do_combat = false;
+    bool do_arty = false;
+
+    if (!on_map(tx, ty)) {
+        tx = veh->x;
+        ty = veh->y;
+        do_arty = true; // unusual case, should not happen
+    } else {
+        if (mapsq(tx, ty)->base_who() >= 0) {
+            if (faction_id == player_id) {
+                boom(tx, ty, 128);
+            }
+            return;
+        }
+        if ((game_rand() % 2) == 0) {
+            do_combat = true;
+            do_arty = true;
+        }
+    }
+    if (do_combat) {
+        is_bombard = true;
+        bool skip_boom = false;
+        if (faction_id != player_id) {
+            int terr = whose_territory(player_id, tx, ty, 0, 0);
+            if (terr != player_id) {
+                skip_boom = true;
+            }
+        }
+        if (!skip_boom) {
+            if (faction_id && faction_id != player_id) {
+                boom(tx, ty, 128);
+                boom(veh->x, veh->y, 128);
+            }
+            boom(tx, ty, 128);
+        }
+        int owner = whose_territory(faction_id, tx, ty, 0, 0);
+        if (owner != faction_id) {
+            for (int i = 1; i < 25; i++) {
+                int px = wrap(veh->x + TableOffsetX[i]);
+                int py = veh->y + TableOffsetY[i];
+                if (on_map(px, py) && map_range(veh->x, veh->y, px, py) <= 2) {
+                    int stack_id = stack_fix(veh_at(px, py));
+                    if (stack_id >= 0) {
+                        if (mod_stack_check(stack_id, 15, owner, -1, -1)) {
+                            mod_battle_fight(veh_id, i, 1, 1, 0);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (do_arty) {
+        int unit_id = veh->unit_id;
+        if (Units[unit_id].triad() == TRIAD_AIR && !Units[unit_id].is_missile()) {
+            if ((game_rand() % 4) == 0) {
+                if (faction_id == player_id) {
+                    NetMsg_pop(NetMsg, "BOMBFAILED", 5000, 0, 0);
+                }
+                order_veh(veh_id, -1, 3);
+                return;
+            }
+        }
+        int item_flags;
+        if (tgt_item <= 0) {
+            item_flags = bit_at(tx, ty);
+        } else {
+            item_flags = bit_at(tx, ty) & tgt_item;
+            tgt_item = item_flags;
+            if (item_flags == 0) {
+                order_veh(veh_id, -1, 3);
+                return;
+            }
+            bit_set(tx, ty, item_flags, 0);
+        }
+        if (!has_abil(unit_id, ABL_FUNGICIDAL)) {
+            item_flags &= ~BIT_FUNGUS;
+        }
+        int tf_idx = -1;
+        int tf_found;
+        while (true) {
+            tf_found = FORMER_SENSOR;
+            if (tf_idx >= 0) {
+                tf_found = tf_idx;
+            }
+            if (item_flags & Terraform[tf_found].bit) {
+                break;
+            }
+            if (++tf_idx >= 19) {
+                debug("action_destroy_fail %08X %08X\n", tgt_item, item_flags);
+                if (is_bombard) {
+                    if (faction_id == player_id) {
+                        NetMsg_pop(NetMsg, "ARTYBOMBFAILED", 5000, 0, 0);
+                    }
+                } else if (Units[unit_id].triad() == TRIAD_AIR && faction_id == player_id) {
+                    NetMsg_pop(NetMsg, "BOMBFAILED", 5000, 0, 0);
+                }
+                order_veh(veh_id, -1, 3);
+                return;
+            }
+        }
+        int tf_bit = Terraform[tf_found].bit | tgt_item;
+        bit_set(tx, ty, Terraform[tf_found].bit, 0);
+        bool is_sea = is_ocean(mapsq(tx, ty));
+        char* tf_name = is_sea ? Terraform[tf_found].name_sea : Terraform[tf_found].name;
+        parse_says(2, tf_name, -1, -1);
+        if (tf_found == FORMER_FOREST) {
+            is_forest_destroy = 1;
+        }
+        if (Units[unit_id].triad() == TRIAD_AIR && faction_id == player_id) {
+            NetMsg_pop(NetMsg, "BOMBSUCCEEDED", 5000, 0, 0);
+        }
+        synch_bit(tx, ty, faction_id);
+        int owner = whose_territory(faction_id ? faction_id : player_id, tx, ty, 0, 0);
+        synch_bit(tx, ty, owner);
+
+        if (tf_bit & (BIT_THERMAL_BORE | BIT_ECH_MIRROR | BIT_CONDENSER)) {
+            world_climate();
+            draw_map(1);
+        } else if (!(tf_bit & BIT_SENSOR) || owner != player_id) {
+            draw_tiles(tx, ty, 2);
+        } else {
+            draw_radius(tx, ty, 2, 2);
+        }
+        if (faction_id) {
+            if (is_bombard && faction_id == player_id) {
+                NetMsg_pop(NetMsg, "BOMBARDSUCCEEDED", 5000, 0, 0);
+            }
+            if (owner >= 0 && owner != faction_id
+            && Factions[faction_id].diplo_status[owner] & DIPLO_COMMLINK && is_known(tx, ty, owner)) {
+                synch_bit(tx, ty, owner);
+                add_goal(owner, AI_GOAL_ATTACK, 5, veh->x, veh->y, -1);
+                if (owner == player_id) {
+                    int base_id = mod_base_find3(tx, ty, -1, -1, -1, player_id);
+                    *GenderDefault = MFactions[faction_id].noun_gender;
+                    *PluralDefault = MFactions[faction_id].is_noun_plural;
+                    parse_says(0, MFactions[faction_id].noun_faction, -1, -1);
+                    parse_says(1, base_id >= 0 ? Bases[base_id].name : "", -1, -1);
+                    parse_says(3, MFactions[faction_id].adj_name_faction, -1, -1);
+                    const char* msg = is_bombard ? "HAVEDESTROYED1" : "HAVEDESTROYED";
+                    NetMsg_pop(NetMsg, msg, 5000, 0, 0);
+                }
+            }
+        } else {
+            if (is_known(tx, ty, player_id) && owner == player_id) {
+                int base_id = mod_base_find3(tx, ty, -1, -1, -1, player_id);
+                if (base_id >= 0 && Bases[base_id].faction_id == player_id) {
+                    parse_says(0, Bases[base_id].name, -1, -1);
+                    parse_says(1, Units[unit_id].name, -1, -1);
+                    Console_focus(MapWin, tx, ty, 0);
+                    if (is_forest_destroy) {
+                        if (unit_id == BSC_SPORE_LAUNCHER) {
+                            popp(ScriptFile, "SPOREFOREST", 0, "sporlnch_sm.pcx", 0);
+                        } else {
+                            NetMsg_pop(NetMsg, "ATEFOREST", 5000, 0, 0);
+                        }
+                    } else if (unit_id == BSC_SPORE_LAUNCHER) {
+                        popp(ScriptFile, "SPORESLAUNCHED", 0, "sporlnch_sm.pcx", 0);
+                    } else {
+                        NetMsg_pop(NetMsg, "ATESTUFF", 5000, 0, 0);
+                    }
+                }
+            }
+        }
+        order_veh(veh_id, -1, 3);
+        return;
+    }
+    if (faction_id == player_id) {
+        NetMsg_pop(NetMsg, "ARTYBOMBFAILED", 5000, 0, 0);
+    }
+}
+
+void __cdecl mod_action_arty(int veh_id, int x, int y) {
+    VEH* veh = &Vehs[veh_id];
+    if (*MultiplayerActive) {
+        action_arty(veh_id, x, y);
+        return;
+    }
+    if (veh->faction_id == *CurrentPlayerFaction) {
+        if (!veh_ready(veh_id)) {
+            NetMsg_pop(NetMsg, "UNITMOVED", 5000, 0, 0);
+            return;
+        }
+    }
+    int veh_range = arty_range(veh->unit_id);
+    if (map_range(veh->x, veh->y, x, y) <= veh_range) {
+        int veh_id_tgt = stack_fix(veh_at(x, y));
+        if (veh_id_tgt >= 0) {
+            if (veh->faction_id != Vehs[veh_id_tgt].faction_id
+            && !has_pact(veh->faction_id, Vehs[veh_id_tgt].faction_id)) {
+                int offset = radius_move_2(veh->x, veh->y, x, y, TableRange[veh_range]);
+                if (offset >= 0) {
+                    *VehAttackFlags = 3;
+                    mod_battle_fight(veh_id, offset, 1, 1, 0);
+                    return;
+                }
+            }
+        } else {
+            action_destroy(veh_id, 0, x, y);
+            return;
+        }
+    } else {
+        NetMsg_pop(NetMsg, "OUTOFRANGE", 5000, 0, 0);
+    }
+}
 

@@ -30,6 +30,8 @@ int __cdecl load_daemon_strcmp(const char* value, const char* header);
 int __cdecl mod_load_map_daemon(char* name);
 int __cdecl mod_load_daemon(char* name, int flag);
 void __cdecl mod_auto_save();
+int __cdecl generators(int faction_id, int* pop_size_req);
+int __cdecl end_of_game(int flag);
 int __cdecl replay_base(int event, int x, int y, int faction_id);
 void __cdecl mod_random_events(int flag);
 void __cdecl mod_turn_upkeep();

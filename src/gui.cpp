@@ -862,7 +862,7 @@ int __cdecl mod_Win_init_class(const char* lpWindowName)
     return value;
 }
 
-void __cdecl mod_amovie_project(char* name)
+void __cdecl mod_amovie_project(const char* name)
 {
     if (!strlen(name) || !conf.video_player) {
         return;
@@ -1862,40 +1862,6 @@ int __cdecl mod_design_new_veh(int faction_id, int unit_id) {
         }
     }
     return DesignWin_exec(DesignWin, faction_id, unit_id);
-}
-
-int __cdecl mod_action_arty(int veh_id, int x, int y)
-{
-    VEH* veh = &Vehs[veh_id];
-    if (*MultiplayerActive) {
-        action_arty(veh_id, x, y);
-        return 0;
-    }
-    if (veh->faction_id == *CurrentPlayerFaction) {
-        if (!veh_ready(veh_id)) {
-            return NetMsg_pop(NetMsg, "UNITMOVED", 5000, 0, 0);
-        }
-    }
-    int veh_range = arty_range(veh->unit_id);
-    if (map_range(veh->x, veh->y, x, y) <= veh_range) {
-        int veh_id_tgt = stack_fix(veh_at(x, y));
-        if (veh_id_tgt >= 0) {
-            if (veh->faction_id != Vehs[veh_id_tgt].faction_id
-            && !has_pact(veh->faction_id, Vehs[veh_id_tgt].faction_id)) {
-                int offset = radius_move_2(veh->x, veh->y, x, y, TableRange[veh_range]);
-                if (offset >= 0) {
-                    *VehAttackFlags = 3;
-                    return mod_battle_fight(veh_id, offset, 1, 1, 0);
-                }
-            }
-        } else {
-            action_destroy(veh_id, 0, x, y);
-            return 0;
-        }
-    } else {
-        return NetMsg_pop(NetMsg, "OUTOFRANGE", 5000, 0, 0);
-    }
-    return 0;
 }
 
 int __cdecl MapWin_right_menu_arty(int veh_id, int x, int y)

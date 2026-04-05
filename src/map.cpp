@@ -148,9 +148,11 @@ void refresh_overlay(std::function<int(int, int)> tile_value) {
 }
 
 int __cdecl is_known(int x, int y, int faction_id) {
-    assert(faction_id >= 0 && faction_id < MaxPlayerNum && mapsq(x, y));
-    return Factions[faction_id].player_flags & PFLAG_MAP_REVEALED
-        || (mapsq(x, y)->visibility & (1 << faction_id));
+    MAP* sq;
+    assert(faction_id >= 0 && faction_id < MaxPlayerNum);
+    return faction_id >= 0 && faction_id < MaxPlayerNum
+        && (Factions[faction_id].player_flags & PFLAG_MAP_REVEALED
+        || ((sq = mapsq(x, y)) && sq->visibility & (1 << faction_id)));
 }
 
 int __cdecl is_coast(int x, int y, bool is_base_radius) {

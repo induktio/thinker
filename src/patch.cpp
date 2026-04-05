@@ -455,7 +455,9 @@ bool patch_setup(Config* cf) {
 
     write_jump(0x421670, (int)has_fac);
     write_jump(0x4688E0, (int)MapWin_gen_overlays);
+    write_jump(0x4C96E0, (int)action_build);
     write_jump(0x4C9B00, (int)action_terraform);
+    write_jump(0x4CAA50, (int)action_destroy);
     write_jump(0x4CB310, (int)action_go_to);
     write_jump(0x4CB580, (int)action_road_to);
     write_jump(0x4CF740, (int)action);
@@ -483,6 +485,8 @@ bool patch_setup(Config* cf) {
     write_jump(0x50C2E0, (int)act_of_aggression);
     write_jump(0x50C340, (int)steal_tech);
     write_jump(0x50C4B0, (int)steal_energy);
+    write_jump(0x5247B0, (int)generators);
+    write_jump(0x524870, (int)end_of_game);
     write_jump(0x527290, (int)mod_faction_upkeep);
     write_jump(0x52AD30, (int)council_votes);
     write_jump(0x52AE20, (int)eligible);

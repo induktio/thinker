@@ -841,6 +841,28 @@ enum CouncilProposal {
     PROP_REINSTATE_UN_CHARTER = 9,
 };
 
+enum VictoryType {
+    VIC_NONE = 0,
+    VIC_TRANSCEND_PLR = 1,
+    VIC_TRANSCEND_UNK = 2,
+    VIC_TRANSCEND_LOSS = 3,
+    VIC_UNIFY_SOLO = 4,
+    VIC_UNIFY_COOP = 5,
+    VIC_DIPLOMATIC_SOLO = 6,
+    VIC_LOST_CAPTURE = 7,
+    VIC_TIME_LIMIT = 8,
+    VIC_SUDDEN_DEATH = 9,
+    VIC_DIPLOMATIC_COOP = 10,
+    VIC_DIPLOMATIC_LOSS = 11,
+    VIC_ECONOMIC_SOLO = 12,
+    VIC_ECONOMIC_COOP = 13,
+    VIC_ECONOMIC_LOSS = 14,
+    VIC_LOST_REMOVE = 15,
+    VIC_ALIEN_SOLO = 16,
+    VIC_ALIEN_COOP = 17,
+    VIC_ALIEN_LOSS = 18,
+};
+
 enum MapwinState {
     MAPWIN_DRAW_TRANSLUCENT = 0x1, // render translucent sprites, farm/forest/kelp excl. fungus
     MAPWIN_UNK_2 = 0x2,

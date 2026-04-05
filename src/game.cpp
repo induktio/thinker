@@ -1177,6 +1177,352 @@ void __cdecl mod_auto_save() {
     }
 }
 
+int __cdecl generators(int faction_id, int* pop_size_req) {
+    if (pop_size_req) {
+        *pop_size_req = 0;
+    }
+    if (!MFactions[faction_id].is_alien()) {
+        return 0;
+    }
+    int completed = 0;
+    for (int i = 0; i < *BaseCount; i++) {
+        BASE* base = &Bases[i];
+        if (base->faction_id == faction_id && base->has_fac_built(FAC_SUBSPACE_GENERATOR)) {
+            if (base->pop_size < Rules->base_size_subspace_gen) {
+                if (pop_size_req) {
+                    ++(*pop_size_req);
+                }
+            } else {
+                ++completed;
+            }
+        }
+    }
+    return completed;
+}
+
+int __cdecl end_of_game(int flag) {
+    const int player_id = *CurrentPlayerFaction;
+    if ((*GameState & STATE_GAME_DONE) && (*GameState & STATE_FINAL_SCORE_DONE)) {
+        return 0;
+    }
+    int winner_id = -1;
+    if (!(*GameState & STATE_GAME_DONE) && flag) {
+        if (*CurrentMissionYear >= *EndingMissionYear) {
+            *GameVictoryType = VIC_TIME_LIMIT;
+            *GameState |= STATE_GAME_DONE;
+        }
+        for (int fc_id = 1; fc_id < MaxPlayerNum; fc_id++) {
+            if (!is_alive(fc_id)) { continue; }
+            // Alien Victory (Subspace Generators)
+            if (MFactions[fc_id].is_alien()) {
+                int active_generators = generators(fc_id, 0);
+                if (active_generators >= Rules->subspace_gen_req) {
+                    Factions[fc_id].player_flags |= PFLAG_UNK_100000;
+                    if (fc_id == player_id) {
+                        *GameVictoryType = VIC_ALIEN_SOLO;
+                    } else if ((Factions[fc_id].diplo_status[player_id] & DIPLO_PACT)
+                    && (*GameRules & RULES_VICTORY_COOPERATIVE)) {
+                        if (*GameVictoryType != VIC_ALIEN_SOLO) {
+                            *GameVictoryType = VIC_ALIEN_COOP;
+                        }
+                    } else {
+                        if (*GameVictoryType != VIC_ALIEN_SOLO && *GameVictoryType != VIC_ALIEN_COOP) {
+                            *GameVictoryType = VIC_ALIEN_LOSS;
+                        }
+                    }
+                    *GameState |= STATE_GAME_DONE;
+                    if (winner_id < 0 || fc_id == player_id) {
+                        winner_id = fc_id;
+                    }
+                    *GameMoreRules |= MRULES_UNK_80;
+                }
+            }
+            // Economic Victory
+            int market_turn = Factions[fc_id].corner_market_turn;
+            if (market_turn > 0 && market_turn == *CurrentTurn && Factions[fc_id].corner_market_cost > 0) {
+                Factions[fc_id].player_flags |= PFLAG_UNK_40000;
+                if (fc_id == player_id) {
+                    *GameVictoryType = VIC_ECONOMIC_SOLO;
+                } else if ((Factions[fc_id].diplo_status[player_id] & DIPLO_PACT)
+                && (*GameRules & RULES_VICTORY_COOPERATIVE)) {
+                    if (*GameVictoryType != VIC_ECONOMIC_SOLO) {
+                        *GameVictoryType = VIC_ECONOMIC_COOP;
+                    }
+                } else {
+                    if (*GameVictoryType != VIC_ECONOMIC_SOLO && *GameVictoryType != VIC_ECONOMIC_COOP) {
+                        *GameVictoryType = VIC_ECONOMIC_LOSS;
+                    }
+                }
+                *GameState |= (STATE_VICTORY_ECONOMIC | STATE_GAME_DONE);
+                winner_id = fc_id;
+                if (fc_id == player_id) { break; } // skip other checks
+            }
+            // Sudden Death Scenario Objectives
+            else if ((is_human(fc_id) || !(*GameRules & RULES_SCN_VICT_SOLO_MISSION))
+            && *ObjectivesSuddenDeathVictory >= 1) {
+                if (num_objectives(fc_id, *GameRules & RULES_VICTORY_COOPERATIVE)
+                >= *ObjectivesSuddenDeathVictory) {
+                    *GameVictoryType = VIC_SUDDEN_DEATH;
+                    *GameState |= STATE_GAME_DONE;
+                    if (winner_id < 0 || fc_id == player_id) {
+                        winner_id = fc_id;
+                    }
+                }
+            }
+        }
+    }
+    if (flag && !(*GameState & STATE_GAME_DONE)) {
+        if (!(*GameState & STATE_IS_SCENARIO) && *CurrentMissionYear == *EndingMissionYear - 20) {
+            parse_num(0, *EndingMissionYear);
+            snprintf(StrBuffer, StrBufLen, "%d", *EndingMissionYear);
+            parse_says(0, StrBuffer, -1, -1);
+            X_pop("RETIREWARNING", 0);
+        } else if ((*GameState & STATE_IS_SCENARIO)) {
+            if (*CurrentMissionYear == *EndingMissionYear - 20
+            || *CurrentMissionYear == *EndingMissionYear - 10) {
+                parse_num(0, *EndingMissionYear);
+                snprintf(StrBuffer, StrBufLen, "%d", *EndingMissionYear);
+                parse_says(0, StrBuffer, -1, -1);
+                X_pop_2("SCENARIO", "SCENARIOWARNING", 0);
+            }
+        }
+    }
+    if (!(*GameState & STATE_GAME_DONE) || (*GameState & STATE_FINAL_SCORE_DONE)) {
+        return 0;
+    }
+    int victor_id = 0;
+    for (int i = 1; i < MaxPlayerNum; i++) {
+        if (Factions[i].player_flags & PFLAG_UNK_20000) {
+            victor_id = i;
+        }
+        if ((Factions[i].player_flags & PFLAG_UNK_40000)
+        && (!victor_id || victor_id == player_id
+        || (Factions[victor_id].diplo_status[player_id] & DIPLO_PACT))) {
+            victor_id = i;
+        }
+    }
+    auto setup_parser = [](int id) {
+        *PluralDefault = 0;
+        *GenderDefault = MFactions[id].is_leader_female;
+        parse_says(0, MFactions[id].title_leader, -1, -1);
+
+        *GenderDefault = MFactions[id].is_leader_female;
+        *PluralDefault = 0;
+        parse_says(1, MFactions[id].name_leader, -1, -1);
+
+        *GenderDefault = MFactions[id].noun_gender;
+        *PluralDefault = MFactions[id].is_noun_plural;
+        parse_says(2, MFactions[id].noun_faction, -1, -1);
+    };
+    bool play_credits = false;
+
+    switch (*GameVictoryType) {
+    case VIC_TRANSCEND_PLR:
+    case VIC_TRANSCEND_UNK:
+    case VIC_TRANSCEND_LOSS:
+        play_credits = true;
+        break;
+
+    case VIC_DIPLOMATIC_SOLO:
+        popp(ScriptFile, "DIPLOMATICVICTORY", 0, "dipvic_sm.pcx", 0);
+        break;
+
+    case VIC_LOST_CAPTURE:
+        if (*GamePreferences & PREF_AV_SECRET_PROJECT_MOVIES) {
+            if (!MFactions[player_id].is_alien()) {
+                mod_amovie_project(MFactions[player_id].is_leader_female ? "losewoman" : "loseman");
+            } else {
+                mod_amovie_project("losealien");
+            }
+        }
+        break;
+
+    case VIC_TIME_LIMIT:
+        parse_num(0, *CurrentMissionYear);
+        StrBuffer[0] = 0;
+        say_year(StrBuffer);
+        parse_says(0, StrBuffer, -1, -1);
+        if (*GameState & STATE_IS_SCENARIO) {
+            if (!*ObjectiveReqVictory || (*GameState & STATE_SCN_VICT_HIGHEST_AC_SCORE_WINS)) {
+                int best_fc_id = player_id;
+                int best_score = -9999;
+                for (int i = 1; i < MaxPlayerNum; i++) {
+                    if (is_alive(i)) {
+                        int current_score;
+                        if (*GameState & STATE_SCN_VICT_HIGHEST_AC_SCORE_WINS) {
+                            int score_val = 0, other_val = 0;
+                            compute_score(i, &score_val, &other_val, 1);
+                            current_score = score_val;
+                        } else {
+                            current_score = num_objectives(i, *GameRules & RULES_VICTORY_COOPERATIVE);
+                        }
+                        if (current_score > best_score || (current_score == best_score && i == player_id)) {
+                            best_fc_id = i;
+                            best_score = current_score;
+                        }
+                    }
+                }
+                setup_parser(best_fc_id);
+                if (best_fc_id == player_id) {
+                    X_pop_2("SCENARIO", "SCENTIMEWIN", 0);
+                } else {
+                    X_pop_2("SCENARIO", "SCENTIMELOSS", 0);
+                }
+            } else {
+                X_pop_2("SCENARIO", "SCENTIMELIMIT", 0);
+            }
+        } else {
+            X_pop("TIMELIMIT", 0);
+        }
+        break;
+
+    case VIC_SUDDEN_DEATH:
+        setup_parser(winner_id);
+        if (winner_id == player_id) {
+            X_pop_2("SCENARIO", "SUDDENDEATH0", 0);
+        } else {
+            X_pop_2("SCENARIO", "SUDDENDEATH", 0);
+        }
+        break;
+
+    case VIC_DIPLOMATIC_COOP:
+        setup_parser(victor_id);
+        popp(ScriptFile, "DIPLOMATICCOOP", 0, "dipvic_sm.pcx", 0);
+        break;
+
+    case VIC_DIPLOMATIC_LOSS:
+        setup_parser(victor_id);
+        {
+            const char* popup_str = "DIPLOMATICLOSE2";
+            if (!(Factions[victor_id].diplo_status[player_id] & (DIPLO_WANT_REVENGE | DIPLO_ATROCITY_VICTIM))) {
+                popup_str = "DIPLOMATICLOSE";
+            }
+            popp(ScriptFile, popup_str, 0, "dipvic_sm.pcx", 0);
+        }
+        break;
+
+    case VIC_ECONOMIC_SOLO:
+        popp(ScriptFile, "ECONOMICVICTORY", 0, "econwin_sm.pcx", 0);
+        break;
+
+    case VIC_ECONOMIC_COOP:
+        setup_parser(victor_id);
+        popp(ScriptFile, "ECONOMICCOOP", 0, "econwin_sm.pcx", 0);
+        break;
+
+    case VIC_ECONOMIC_LOSS:
+        setup_parser(victor_id);
+        {
+            const char* popup_str = "ECONOMICLOSE2";
+            if (!(Factions[victor_id].diplo_status[player_id] & (DIPLO_ATROCITY_VICTIM | DIPLO_WANT_REVENGE))) {
+                popup_str = "ECONOMICLOSE";
+            }
+            popp(ScriptFile, popup_str, 0, "econwin_sm.pcx", 0);
+        }
+        break;
+
+    case VIC_LOST_REMOVE:
+        if (*GameLanguage) {
+            X_pop("YOULOSE2", 0);
+        }
+        break;
+
+    case VIC_ALIEN_SOLO:
+        interlude(32, 0, 4, 0);
+        setup_parser(victor_id);
+        popp(ScriptFile, "ENDBEACON", 0, "beacon_sm.pcx", 0);
+
+        if (*GamePreferences & PREF_AV_SECRET_PROJECT_MOVIES) {
+            if (!strcmpi("CARETAKE", MFactions[player_id].search_key)) {
+                mod_amovie_project("close_ct");
+            } else {
+                mod_amovie_project("close_us");
+            }
+        }
+        break;
+
+    case VIC_ALIEN_COOP:
+        setup_parser(victor_id);
+        popp(ScriptFile, "ENDBEACONCOOP", 0, "beacon_sm.pcx", 0);
+        break;
+
+    case VIC_ALIEN_LOSS:
+        if (!MFactions[player_id].is_alien()) {
+            *GenderDefault = MFactions[victor_id].noun_gender;
+            *PluralDefault = MFactions[victor_id].is_noun_plural;
+            interlude(29, MFactions[victor_id].noun_faction, 1, 0);
+        }
+        setup_parser(victor_id);
+        popp(ScriptFile, "ENDBEACONLOSE", 0, "beaconlose_sm.pcx", 0);
+        break;
+    }
+
+    switch (*GameVictoryType) {
+    case VIC_UNIFY_SOLO:
+    case VIC_UNIFY_COOP:
+    case VIC_DIPLOMATIC_SOLO:
+    case VIC_ECONOMIC_SOLO:
+        mon_winning_unify(player_id, -1);
+        break;
+    case VIC_DIPLOMATIC_COOP:
+    case VIC_ECONOMIC_COOP:
+        mon_winning_unify(victor_id, -1);
+        mon_winning_unify(player_id, victor_id);
+        break;
+    case VIC_DIPLOMATIC_LOSS:
+    case VIC_ECONOMIC_LOSS:
+        mon_winning_unify(victor_id, -1);
+        break;
+    }
+
+    if (!(*GamePreferences & PREF_AV_INTERLUDES_DISABLED)) {
+        switch (*GameVictoryType) {
+        case VIC_UNIFY_SOLO:
+        case VIC_DIPLOMATIC_SOLO:
+        case VIC_ECONOMIC_SOLO:
+            if (!MFactions[player_id].is_alien()) {
+                interlude(19, 0, 4, 0);
+            } else {
+                interlude(33, 0, 4, 0);
+            }
+            play_credits = true;
+            break;
+        case VIC_UNIFY_COOP:
+        case VIC_DIPLOMATIC_COOP:
+        case VIC_ECONOMIC_COOP:
+            interlude(20, 0, 4, 0);
+            play_credits = true;
+            break;
+        }
+    }
+    if (play_credits
+    || *GameVictoryType == VIC_TRANSCEND_PLR
+    || *GameVictoryType == VIC_TRANSCEND_UNK
+    || *GameVictoryType == VIC_TRANSCEND_LOSS) {
+        show_credits();
+    }
+    report_score(1);
+    if (!(*GameState & STATE_IS_SCENARIO)) {
+        quayle(player_id);
+        hall_of_fame(1);
+    }
+    show_replay();
+    *GameState |= STATE_FINAL_SCORE_DONE;
+    bool should_exit = (*MultiplayerActive || *GameVictoryType == VIC_LOST_CAPTURE);
+    if (!should_exit) {
+        should_exit = !popp(ScriptFile, "GAMEOVERMAN", 0, "stars_sm.pcx", 0);
+    }
+    if (should_exit) {
+        *ControlTurnB = (*MultiplayerActive == 0);
+        if (*MultiplayerActive) {
+            net_game_close();
+        }
+        *ControlTurnA = 1;
+        return 1;
+    }
+    return 0;
+}
+
 /*
 Store base related events for the endgame replay screen.
 0 = create base, 1 = change base owner, 2 = kill base.

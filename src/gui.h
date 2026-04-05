@@ -59,7 +59,7 @@ bool win_has_focus();
 int __thiscall Win_is_visible(Win* This);
 LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 int __cdecl mod_Win_init_class(const char* lpWindowName);
-void __cdecl mod_amovie_project(char* name);
+void __cdecl mod_amovie_project(const char* name);
 void restore_video_mode();
 void set_video_mode(bool reset_window);
 void set_minimised(bool minimise);
@@ -105,7 +105,6 @@ int __thiscall mod_NetMsg_pop(NetMessage* This, const char* label, int delay, in
 int __thiscall mod_BasePop_start(
     BasePop* This, const char* filename, const char* label, int a4, char* a5, int a6, GraphicWin* a7);
 int __cdecl mod_design_new_veh(int faction_id, int unit_id);
-int __cdecl mod_action_arty(int veh_id, int x, int y);
 int __cdecl MapWin_right_menu_arty(int veh_id, int x, int y);
 void __thiscall Console_arty_cursor_on(Console* This, int cursor_type, int veh_id);
 

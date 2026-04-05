@@ -3952,9 +3952,9 @@ int __cdecl mod_base_production() {
             }
             if (faction_id == player_id) {
                 interlude(17, 0, 2, 0);
-                *dword_9B206C = 1;
+                *GameVictoryType = VIC_TRANSCEND_PLR;
             } else {
-                *dword_9B206C = 3;
+                *GameVictoryType = VIC_TRANSCEND_LOSS;
                 *PluralDefault = 0;
                 *GenderDefault = MFactions[faction_id].is_leader_female;
                 parse_says(5, MFactions[faction_id].name_leader, -1, -1);
