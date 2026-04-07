@@ -460,6 +460,8 @@ bool patch_setup(Config* cf) {
     write_jump(0x4CAA50, (int)action_destroy);
     write_jump(0x4CB310, (int)action_go_to);
     write_jump(0x4CB580, (int)action_road_to);
+    write_jump(0x4CD2F0, (int)action_destruct);
+    write_jump(0x4CD4E0, (int)action_oblit);
     write_jump(0x4CF740, (int)action);
     write_jump(0x4E3EF0, (int)whose_territory);
     write_jump(0x4E4020, (int)best_specialist);
@@ -1537,9 +1539,9 @@ bool patch_setup(Config* cf) {
         write_call(0x5082AF, (int)battle_fight_parse_num);
         write_call(0x5082B7, (int)battle_fight_parse_num);
     }
-    if (cf->long_range_artillery > 0) {
-        write_call(0x46D42F, (int)mod_action_arty); // MapWin::right_menu
-        write_call(0x46E1FF, (int)mod_action_arty); // MapWin::click
+    /* if (cf->long_range_artillery > 0) */ {
+        write_call(0x46D42F, (int)action_arty); // MapWin::right_menu
+        write_call(0x46E1FF, (int)action_arty); // MapWin::click
 
         const byte old_cursor[] = {0x8B,0x0D,0x44,0x97,0x94,0x00,0x51};
         const byte new_cursor[] = {0x57,0x90,0x90,0x90,0x90,0x90,0x90};

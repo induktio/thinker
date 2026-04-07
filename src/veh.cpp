@@ -263,9 +263,9 @@ int __cdecl stack_veh(int veh_id, int flag) {
     if (veh_id < 0) {
         return flag != 0 ? veh_id : 0;
     }
-    VEH& veh = Vehs[veh_id];
-
-    if (!veh_cargo(veh_id) && !has_abil(veh.unit_id, ABL_CARRIER)) {
+    VEH* const veh = &Vehs[veh_id];
+    const int faction_id = veh->faction_id;
+    if (!veh_cargo(veh_id) && !has_abil(veh->unit_id, ABL_CARRIER)) {
         if (!flag) {
             return 0;
         }
@@ -274,106 +274,96 @@ int __cdecl stack_veh(int veh_id, int flag) {
     if (*MultiplayerActive) {
         stack_fix(veh_id);
     }
+    MAP* const veh_sq = mapsq(veh->x, veh->y);
     if (flag) {
         if (flag > 1) {
-            MAP* sq = mapsq(veh.x, veh.y);
-            if ((sq->items & BIT_BASE_IN_TILE) && (sq->val2 & 0xF) < 8) {
+            if (veh_sq && veh_sq->base_who() >= 0) {
                 return veh_drop(veh_lift(veh_id), -2, -2);
             }
         }
         stack_sort(veh_id);
     } else {
-        int head = veh_top(veh_id);
-        for (int cur = head; cur >= 0; cur = Vehs[cur].next_veh_id_stack) {
-            Vehs[cur].state &= ~VSTATE_IN_TRANSPORT;
+        for (int i = veh_top(veh_id); i >= 0; i = Vehs[i].next_veh_id_stack) {
+            Vehs[i].state &= ~VSTATE_IN_TRANSPORT;
         }
     }
-    bool at_open_sea = false;
-    bool has_airbase = false;
-    if (on_map(veh.x, veh.y)) {
-        MAP* sq = mapsq(veh.x, veh.y);
-        at_open_sea = is_ocean(sq) && sq->base_who() < 0;
-        // check moved before the loop, skips bases with owner=0
-        has_airbase = (sq->base_who() >= 1 || sq->items & BIT_AIRBASE);
-    }
-    bool is_aircraft = (veh.triad() == TRIAD_AIR);
-    int faction_id = veh.faction_id;
+    bool at_open_sea = veh_sq && is_ocean(veh_sq) && veh_sq->base_who() < 0;
+    bool is_air = veh->triad() == TRIAD_AIR;
     int cargo_val = veh_cargo(veh_id);
-    int carrier_val = has_abil(veh.unit_id, ABL_CARRIER) ? max(1, cargo_val) : 0;
+    int carrier_val = has_abil(veh->unit_id, ABL_CARRIER) ? max(1, cargo_val) : 0;
     if (!faction_id) {
         cargo_val = 99;
     }
-    int iter_limit = (flag <= 1) ? 2 : 1;
-    for (int iter = 0; iter < iter_limit; iter++) {
-        int cur = veh_id;
-        if (!flag) {
-            cur = veh_top(veh_id);
+    auto do_load = [&](int cur_id) {
+        if (flag || !(Vehs[cur_id].state & VSTATE_IN_TRANSPORT)) {
+            sleep(cur_id);
+            Vehs[cur_id].waypoint_x[0] = veh_id;
+            if (flag) {
+                veh_drop(veh_lift(cur_id), -2, -2);
+                Vehs[cur_id].state &= ~VSTATE_UNK_10000;
+            } else {
+                Vehs[cur_id].state |= VSTATE_IN_TRANSPORT;
+            }
+            if (carrier_val > 0) {
+                --carrier_val;
+            }
+            if (cargo_val > 0) {
+                --cargo_val;
+            }
         }
-        for (; cur >= 0 && (cargo_val || carrier_val); cur = Vehs[cur].next_veh_id_stack) {
+    };
+    int max_iter = (flag <= 1) ? 2 : 1;
+    for (int iter = 0; iter < max_iter; ++iter) {
+        int cur = (flag ? veh_id : veh_top(veh_id));
+        int next = cur;
+        while (next >= 0) {
+            if (!cargo_val && !carrier_val) {
+                break;
+            }
+            cur = next;
+            next = Vehs[next].next_veh_id_stack;
             if (Vehs[cur].faction_id != faction_id) {
                 continue;
             }
-            int cur_triad = Vehs[cur].triad();
-            bool is_land = (cargo_val > 0 && cur_triad == TRIAD_LAND && !veh_cargo(cur));
-            bool is_air  = (carrier_val > 0 && cur_triad == TRIAD_AIR
-                && !has_abil(Vehs[cur].unit_id, ABL_CARRIER));
-
-            if (is_land || is_air) {
-                bool do_load = false;
-                if (iter == 0) {
-                    do_load = (Vehs[cur].order == ORDER_SENTRY_BOARD
-                        && Vehs[cur].waypoint_x[0] == (int16_t)veh_id);
-                } else {
-                    if (is_aircraft) {
-                        if (!has_airbase) {
-                            continue;
-                        }
+            if (!(cargo_val && Vehs[cur].triad() == TRIAD_LAND && !veh_cargo(cur))
+            && !(carrier_val && Vehs[cur].triad() == TRIAD_AIR && !has_abil(Vehs[cur].unit_id, ABL_CARRIER))) {
+                continue;
+            }
+            if (!iter) {
+                if (Vehs[cur].order == ORDER_SENTRY_BOARD && Vehs[cur].waypoint_x[0] == veh_id) {
+                    do_load(cur);
+                }
+                continue;
+            }
+            if (is_air && veh_sq->base_who() < 0 && !(veh_sq->items & BIT_AIRBASE)) {
+                continue;
+            }
+            if (!is_human(Vehs[cur].faction_id) || (veh->state & VSTATE_ON_ALERT && Vehs[cur].state & VSTATE_ON_ALERT)) {
+                int base_plan = Factions[Vehs[cur].faction_id].region_base_plan[region_at(Vehs[cur].x, Vehs[cur].y)];
+                if (Vehs[cur].state & VSTATE_UNK_40000) {
+                    if ((Vehs[cur].state & VSTATE_UNK_20000) && base_plan == PLAN_NAVAL_TRANSPORT) {
+                        do_load(cur);
                     }
-                    int cur_faction = Vehs[cur].faction_id;
-                    if (!is_human(cur_faction)
-                    || ((veh.state & VSTATE_ON_ALERT) && (Vehs[cur].state & VSTATE_ON_ALERT))) {
-                        int region = region_at(Vehs[cur].x, Vehs[cur].y);
-                        int region_plan = Factions[cur_faction].region_base_plan[region];
-                        if (Vehs[cur].state & VSTATE_UNK_40000) {
-                            if (Vehs[cur].state & VSTATE_UNK_20000) {
-                                do_load = (region_plan == PLAN_NAVAL_TRANSPORT);
-                            }
-                        } else if (Vehs[cur].order != ORDER_HOLD) {
-                            int unit_plan = Units[Vehs[cur].unit_id].plan;
-                            if (unit_plan != PLAN_ARTIFACT && unit_plan != PLAN_TERRAFORM) {
-                                if (!at_open_sea) {
-                                    if (on_map(Vehs[cur].x, Vehs[cur].y)) {
-                                        if (region_plan == PLAN_DEFENSE && unit_plan < PLAN_COLONY) {
-                                            // skip loading
-                                        } else {
-                                            do_load = true;
-                                        }
-                                    } else {
-                                        do_load = true;
-                                    }
-                                } else {
-                                    do_load = true;
-                                }
-                            }
+                    continue;
+                }
+                if (Vehs[cur].order != ORDER_HOLD) {
+                    int cur_plan = Vehs[cur].plan();
+                    if (cur_plan != PLAN_ARTIFACT && cur_plan != PLAN_TERRAFORM) {
+                        if (at_open_sea || !on_map(Vehs[cur].x, Vehs[cur].y)
+                        || cur_plan >= PLAN_COLONY || base_plan != PLAN_DEFENSE) {
+                            do_load(cur);
                         }
-                    } else if (Vehs[cur].order == ORDER_SENTRY_BOARD) {
-                        do_load = (Vehs[cur].waypoint_x[0] < 0);
-                    } else {
-                        do_load = at_open_sea;
+                        continue;
                     }
                 }
-                if (do_load && (flag || !(Vehs[cur].state & VSTATE_IN_TRANSPORT))) {
-                    sleep(cur);
-                    Vehs[cur].waypoint_x[0] = (int16_t)veh_id;
-                    if (flag) {
-                        veh_drop(veh_lift(cur), -2, -2);
-                        Vehs[cur].state &= ~VSTATE_UNK_10000;
-                    } else {
-                        Vehs[cur].state |= VSTATE_IN_TRANSPORT;
-                    }
-                    if (carrier_val > 0) { --carrier_val; }
-                    if (cargo_val > 0) { --cargo_val; }
+            } else if (Vehs[cur].order == ORDER_SENTRY_BOARD) {
+                if (Vehs[cur].waypoint_x[0] < 0) {
+                    do_load(cur);
                 }
+                continue;
+            }
+            if (at_open_sea) {
+                do_load(cur);
             }
         }
     }

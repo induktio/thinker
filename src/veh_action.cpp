@@ -716,37 +716,115 @@ void __cdecl action_destroy(int veh_id, int tgt_item, int tgt_x, int tgt_y) {
     }
 }
 
-void __cdecl mod_action_arty(int veh_id, int x, int y) {
+void __cdecl action_arty(net_int_t veh_id, int tx, int ty) {
     VEH* veh = &Vehs[veh_id];
-    if (*MultiplayerActive) {
-        action_arty(veh_id, x, y);
-        return;
-    }
-    if (veh->faction_id == *CurrentPlayerFaction) {
-        if (!veh_ready(veh_id)) {
-            NetMsg_pop(NetMsg, "UNITMOVED", 5000, 0, 0);
-            return;
-        }
-    }
-    int veh_range = arty_range(veh->unit_id);
-    if (map_range(veh->x, veh->y, x, y) <= veh_range) {
-        int veh_id_tgt = stack_fix(veh_at(x, y));
-        if (veh_id_tgt >= 0) {
-            if (veh->faction_id != Vehs[veh_id_tgt].faction_id
-            && !has_pact(veh->faction_id, Vehs[veh_id_tgt].faction_id)) {
-                int offset = radius_move_2(veh->x, veh->y, x, y, TableRange[veh_range]);
-                if (offset >= 0) {
-                    *VehAttackFlags = 3;
-                    mod_battle_fight(veh_id, offset, 1, 1, 0);
-                    return;
+    if (veh->faction_id != *CurrentPlayerFaction || veh_ready(veh_id)) {
+        const int range = arty_range(veh->unit_id);
+        if (map_range(veh->x, veh->y, tx, ty) <= range) {
+            int tgt_veh_id = stack_fix(veh_at(tx, ty));
+            if (tgt_veh_id >= 0) {
+                VEH* tgt = &Vehs[tgt_veh_id];
+                if (veh->faction_id != tgt->faction_id
+                && !(Factions[veh->faction_id].diplo_status[tgt->faction_id] & DIPLO_PACT)) {
+                    int offset = radius_move_2(veh->x, veh->y, tx, ty, TableRange[range]);
+                    if (offset >= 0) {
+                        if (*MultiplayerActive) {
+                            if (!NetDaemon_maybe_lock(NetState, &veh_id, 0, 0, tx, ty, 4)) {
+                                *VehAttackFlags = 1;
+                                if (mod_battle_fight(veh_id, offset, 1, 1, 0)) {
+                                    NetDaemon_unlock_veh(NetState);
+                                } else {
+                                    message_veh(0x2402, veh_id, offset, 0);
+                                    NetDaemon_await_exec(NetState, 1);
+                                }
+                            }
+                        } else {
+                            *VehAttackFlags = 3;
+                            mod_battle_fight(veh_id, offset, 1, 1, 0);
+                        }
+                    }
                 }
+            } else if (*MultiplayerActive) {
+                if (!NetDaemon_lock_veh(NetState, &veh_id, 4, tx, ty, 0)) {
+                    message_data(0x2413, 0, veh_id, tx, ty, 0);
+                    NetDaemon_await_exec(NetState, 1);
+                }
+            } else {
+                action_destroy(veh_id, 0, tx, ty);
             }
         } else {
-            action_destroy(veh_id, 0, x, y);
-            return;
+            NetMsg_pop(NetMsg, "OUTOFRANGE", 5000, 0, 0);
         }
     } else {
-        NetMsg_pop(NetMsg, "OUTOFRANGE", 5000, 0, 0);
+        NetMsg_pop(NetMsg, "UNITMOVED", 5000, 0, 0);
     }
 }
+
+void __cdecl action_destruct(int veh_id) {
+    VEH* veh = &Vehs[veh_id];
+    int vx = veh->x;
+    int vy = veh->y;
+    boom(vx, vy, 0);
+    int weapon_val = weap_val(veh->unit_id, veh->faction_id);
+    int blast_damage = clamp(weapon_val, 1, 20) * Units[veh->unit_id].reactor_id / 2;
+    kill(veh_id);
+
+    for (int i = 0; i < 9; i++) {
+        int tx = wrap(vx + TableOffsetX[i]);
+        int ty = vy + TableOffsetY[i];
+        if (on_map(tx, ty) && base_at(tx, ty) < 0) {
+            for (int n = veh_at(tx, ty); n >= 0; n = Vehs[n].next_veh_id_stack) {
+                Vehs[n].damage_taken += blast_damage;
+            }
+            int stack_top;
+            while ((stack_top = stack_fix(veh_at(tx, ty))) >= 0) {
+                int dead_veh = -1;
+                for (int n = stack_top; n >= 0; n = Vehs[n].next_veh_id_stack) {
+                    if (Vehs[n].damage_taken >= Vehs[n].max_hitpoints()) {
+                        dead_veh = n;
+                        break;
+                    }
+                }
+                if (dead_veh >= 0) {
+                    stack_veh(dead_veh, 1);
+                    stack_kill(dead_veh);
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+}
+
+void __cdecl action_oblit(int veh_id, int base_id) {
+    const int player_id = *CurrentPlayerFaction;
+    VEH* veh = &Vehs[veh_id];
+    BASE* base = &Bases[base_id];
+    int faction_id = veh->faction_id;
+    int faction_id_fmr = base->faction_id_former;
+    parse_num(0, 10 * base->pop_size);
+    parse_says(0, base->name, -1, -1);
+    *PluralDefault = 0;
+    *GenderDefault = MFactions[player_id].is_leader_female;
+    parse_says(1, MFactions[player_id].title_leader, -1, -1);
+    parse_says(2, MFactions[faction_id_fmr].adj_name_faction, -1, -1);
+    *PluralDefault = 0;
+    *GenderDefault = MFactions[faction_id].is_leader_female;
+    parse_says(3, MFactions[faction_id].title_leader, -1, -1);
+    parse_says(4, MFactions[faction_id].name_leader, -1, -1);
+
+    bool is_visible = (base->faction_id == player_id) || (base->visibility & (1 << player_id));
+    mod_base_kill(base_id);
+    draw_map(1);
+
+    if (faction_id == player_id) {
+        popp(ScriptFile, "OBLITTED", 0, "baseobl_sm.pcx", 0);
+    } else if (faction_id_fmr == player_id || is_visible) {
+        popp(ScriptFile, "OBLITTED2", 0, "baseobl_sm.pcx", 0);
+    }
+    if (Rules->tgl_oblit_base_atrocity) {
+        atrocity(faction_id, faction_id_fmr, 2, 0);
+    }
+}
+
 
