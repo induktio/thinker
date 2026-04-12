@@ -2275,10 +2275,10 @@ bool allow_airdrop(int x, int y, int faction_id, bool combat, MAP* sq) {
         return false;
     }
     // Aerospace Complex or Air Superiority unit stationed inside base prevents all drops
-    for (int i = 0, cnt = *BaseCount; i < cnt; ++i) {
+    for (int i = *BaseCount - 1; i >= 0; --i) {
         BASE* base = &Bases[i];
         if (at_war(faction_id, base->faction_id)
-        && map_range(base->x, base->y, x, y) <= 2
+        && map_range(base->x, base->y, x, y) <= AerospaceDefenseRange
         && (has_facility(FAC_AEROSPACE_COMPLEX, i)
         || mod_stack_check(veh_at(base->x, base->y), 2, PLAN_AIR_SUPERIORITY, -1, -1))) {
             return false;

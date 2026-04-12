@@ -57,19 +57,6 @@ bool has_ships(int faction_id) {
     return false;
 }
 
-bool has_terra(FormerItem frm_id, bool ocean, int faction_id) {
-    int preq_tech = (ocean ? Terraform[frm_id].preq_tech_sea : Terraform[frm_id].preq_tech);
-    if (preq_tech < TECH_None || (*GameRules & RULES_SCN_NO_TERRAFORMING
-    && (frm_id == FORMER_RAISE_LAND || frm_id == FORMER_LOWER_LAND))) {
-        return false;
-    }
-    if (frm_id >= FORMER_CONDENSER && frm_id <= FORMER_LEVEL_TERRAIN
-    && has_project(FAC_WEATHER_PARADIGM, faction_id)) {
-        return true;
-    }
-    return has_tech(preq_tech, faction_id);
-}
-
 bool has_project(FacilityId item_id) {
     return project_base(item_id) >= 0;
 }
@@ -1393,7 +1380,7 @@ static int __cdecl evaluate_attack(int faction_id, int faction_id_tgt, int facti
     if (has_treaty(faction_id, faction_id_tgt, DIPLO_WANT_REVENGE | DIPLO_UNK_40 | DIPLO_ATROCITY_VICTIM)) {
         return true;
     }
-    if (plr->major_atrocities && plr_tgt->major_atrocities) {
+    if (!plr->major_atrocities && plr_tgt->major_atrocities) {
         return true;
     }
     if (has_treaty(faction_id, faction_id_tgt, DIPLO_UNK_4000000)) {
@@ -1535,7 +1522,7 @@ static int __cdecl evaluate_attack(int faction_id, int faction_id_tgt, int facti
     if (!has_treaty(faction_id, faction_id_tgt, DIPLO_VENDETTA)) {
         modifier++;
     }
-    if (!has_treaty(faction_id, faction_id_tgt, DIPLO_PACT)) {
+    if (has_treaty(faction_id, faction_id_tgt, DIPLO_PACT)) {
         modifier++;
     }
     if (faction_id_unk > 0 && !great_satan(faction_id_unk, false)) {

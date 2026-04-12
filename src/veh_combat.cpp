@@ -951,8 +951,7 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
                 if ((def_state & DF_Enable) && !(def_state & DF_Sensor)) {
                     for (auto& m : iterate_tiles(veh_def->x, veh_def->y, 0, 25)) {
                         if (m.sq->items & BIT_SENSOR) {
-                            int owner = whose_territory(faction_id_def, m.x, m.y, 0, 0);
-                            if (owner < 0 || owner == faction_id_def) {
+                            if (m.sq->owner < 0 || m.sq->owner == faction_id_def) {
                                 def_state |= DF_Sensor;
                             }
                         }

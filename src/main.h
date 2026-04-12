@@ -159,9 +159,12 @@ const int GrowthPopBoom = 6;
 const int PulseArmorValue = 25;
 const int ResonanceArmorValue = 25;
 const int ResonanceWeaponValue = 25;
+const int AerospaceDefenseRange = 2;
 const int FlechetteDefenseValue = 50;
 const int FlechetteDefenseRange = 2;
 const int GeosyncSurveyPodRange = 3;
+const int MissileDefendChance = 50;
+const int OrbitalAttackChance = 50;
 const int PlanetaryTransitPopSize = 3;
 const int UniversalTranslatorTechs = 2;
 
@@ -273,6 +276,7 @@ struct Config {
     int base_event_turns = 10;
     int base_psych = 1;
     int nerve_staple = 2;
+    int nerve_staple_turns = 10;
     int nerve_staple_mod = -10;
     int delay_drone_riots = 0;
     int activate_skipped_units = 1; // unlisted option
@@ -408,12 +412,13 @@ struct AIPlans {
 #include "engine.h"
 #include "config.h"
 #include "strings.h"
-#include "faction.h"
-#include "random.h"
 #include "patch.h"
-#include "base.h"
-#include "build.h"
 #include "game.h"
+#include "random.h"
+#include "faction.h"
+#include "base.h"
+#include "basewin.h"
+#include "build.h"
 #include "gui.h"
 #include "gui_dialog.h"
 #include "veh.h"

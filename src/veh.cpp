@@ -518,7 +518,7 @@ void __cdecl veh_clear(int veh_id, int unit_id, int faction_id) {
         veh->waypoint_x[i] = -1;
         veh->waypoint_y[i] = -1;
     }
-    veh->morale = (uint8_t)(MFactions[faction_id].rule_morale + 1);
+    veh->morale = clamp(MFactions[faction_id].rule_morale + 1, 0, MaxMoraleNum-1);
     veh->movement_turns = 0;
     veh->order_auto_type = 0;
     veh->visibility = 0;
@@ -1433,7 +1433,7 @@ GOODY_START:
         if (*BaseFindDist < 3) {
             goto GOODY_NEXT;
         }
-        if (*MultiplayerActive && faction_id == *dword_9A6510 && !goody_rand(2)) {
+        if (*MultiplayerActive && faction_id == *RankingFactionIDUnk2 && !goody_rand(2)) {
             goto GOODY_NEXT;
         }
         bool val1, val2;
@@ -1734,7 +1734,7 @@ GOODY_START:
                 goto GOODY_NEXT;
             }
         }
-        if (*MultiplayerActive && faction_id == *dword_9A6510 && !goody_rand(2)) {
+        if (*MultiplayerActive && faction_id == *RankingFactionIDUnk2 && !goody_rand(2)) {
             goto GOODY_NEXT;
         }
         if (is_sea) {
@@ -1954,21 +1954,6 @@ int __cdecl mod_study_artifact(int veh_id) {
         tech_achieved(faction_id, best_tech_id, 0, 0);
     }
     return 1;
-}
-
-/*
-Calculate the former rate to perform terrain enhancements.
-*/
-int __cdecl contribution(int veh_id, int terraform_id) {
-    int value = has_abil(Vehs[veh_id].unit_id, ABL_SUPER_TERRAFORMER) ? 4 : 2;
-    if (terraform_id == FORMER_REMOVE_FUNGUS || terraform_id == FORMER_PLANT_FUNGUS) {
-        if (has_project(FAC_XENOEMPATHY_DOME, Vehs[veh_id].faction_id)) {
-            value *= 2; // Doubled
-        }
-    } else if (has_project(FAC_WEATHER_PARADIGM, Vehs[veh_id].faction_id)) {
-        value = (value * 3) / 2; // +50%
-    }
-    return value;
 }
 
 /*

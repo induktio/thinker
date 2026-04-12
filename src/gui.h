@@ -77,26 +77,11 @@ int __thiscall SetupWin_soft_update3(GraphicWin* This, int a2, int a3, int a4, i
 int __thiscall window_scale_load_pcx(Buffer* This, char* filename, Palette* a3, int a4, int a5);
 int __thiscall Credits_GraphicWin_init(
     GraphicWin* This, int a2, int a3, int a4, int a5, char* a6, int a7, Win* a8, Menu* a9, BorderSizing* a10);
-int __thiscall BaseWin_hurry_popup_start(
-    Popup* This, const char* filename, const char* label, int a4, char* a5, int a6, GraphicWin* a7);
-int __cdecl BaseWin_hurry_ask_number(const char* label, int value, fp_none fn);
-void  __thiscall BaseWin_hurry_unlock_base(AlphaNet* This, int base_id);
-int __thiscall BaseWin_gov_options(BaseWindow* This, int flag);
-void __thiscall BaseWin_draw_support(BaseWindow* This);
-void __thiscall BaseWin_draw_misc_eco_damage(Buffer* This, char* buf, int x, int y, int len);
-void __thiscall BaseWin_draw_farm_set_font(Buffer* This, Font* a2, Font* a3, Font* a4, Font* a5);
-void __thiscall BaseWin_draw_energy_set_text_color(Buffer* This, int a2, int a3, int a4, int a5);
-void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, int opts);
-void __cdecl BaseWin_draw_psych_strcat(char* buffer, char* source);
-int __cdecl BaseWin_staple_popp(const char* filename, const char* label, int a3, const char* imagefile, fp_none fn);
-void __cdecl BaseWin_action_staple(int base_id);
-void __cdecl popb_action_staple(int base_id);
-int __thiscall BaseWin_click_staple(BaseWindow* This);
 void __cdecl ReportWin_draw_ops_strcat(char* dst, char* src);
 void __thiscall ReportWin_draw_ops_color(Buffer* This, int UNUSED(a2), int a3, int a4, int a5);
 int __thiscall mod_MapWin_focus(Console* This, int x, int y);
 void __thiscall mod_MapWin_set_center(Console* This, int x, int y, int flag);
-void __thiscall ReportWin_close_handler(void* This);
+void __thiscall ReportWin_close_handler(SubInterface* This);
 void __thiscall Console_editor_fungus(Console* UNUSED(This));
 void __cdecl say_loc(char* dest, int x, int y, int a4, int a5, int a6);
 void __cdecl mod_diplomacy_caption(int faction1, int faction2);

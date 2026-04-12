@@ -142,6 +142,11 @@ Our infiltration on {$MSG0} has been discovered! The spies have been lost.
 #caption Operations Director
 We have discovered and removed {$MSG0} infiltration on our networks!
 
+#BASELIMIT
+#xs 440
+#caption Operations Director
+Unable to build more bases until any old ones are removed.
+
 #GOVHURRY
 #xs 600
 #caption Operations Director

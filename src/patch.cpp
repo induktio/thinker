@@ -455,13 +455,27 @@ bool patch_setup(Config* cf) {
 
     write_jump(0x421670, (int)has_fac);
     write_jump(0x4688E0, (int)MapWin_gen_overlays);
+    write_jump(0x4C9420, (int)terraform_cost);
     write_jump(0x4C96E0, (int)action_build);
+    write_jump(0x4C9A50, (int)contribution);
     write_jump(0x4C9B00, (int)action_terraform);
+    write_jump(0x4CA7F0, (int)action_staple);
     write_jump(0x4CAA50, (int)action_destroy);
     write_jump(0x4CB310, (int)action_go_to);
     write_jump(0x4CB580, (int)action_road_to);
+    write_jump(0x4CBAA0, (int)action_home);
+    write_jump(0x4CC360, (int)action_airdrop);
+    write_jump(0x4CD090, (int)action_arty);
     write_jump(0x4CD2F0, (int)action_destruct);
     write_jump(0x4CD4E0, (int)action_oblit);
+    write_jump(0x4CD6A0, (int)valid_patrol);
+    write_jump(0x4CDA30, (int)action_patrol);
+    write_jump(0x4CDAF0, (int)shoot_it);
+    write_jump(0x4CE210, (int)action_tectonic);
+    write_jump(0x4CE790, (int)action_fungal);
+    write_jump(0x4CEDE0, (int)action_give);
+    write_jump(0x4CF380, (int)action_gate);
+    write_jump(0x4CF480, (int)action_sat_attack);
     write_jump(0x4CF740, (int)action);
     write_jump(0x4E3EF0, (int)whose_territory);
     write_jump(0x4E4020, (int)best_specialist);
@@ -573,6 +587,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x5B9510, (int)stack_kill);
     write_jump(0x5B9C40, (int)say_tech);
     write_jump(0x5B9FE0, (int)tech_category);
+    write_jump(0x5BAB40, (int)terrain_avail);
     write_jump(0x5BF1F0, (int)has_abil);
     write_jump(0x5BF310, (int)X_pop2);
     write_jump(0x5C03D0, (int)veh_init);
@@ -1540,9 +1555,6 @@ bool patch_setup(Config* cf) {
         write_call(0x5082B7, (int)battle_fight_parse_num);
     }
     /* if (cf->long_range_artillery > 0) */ {
-        write_call(0x46D42F, (int)action_arty); // MapWin::right_menu
-        write_call(0x46E1FF, (int)action_arty); // MapWin::click
-
         const byte old_cursor[] = {0x8B,0x0D,0x44,0x97,0x94,0x00,0x51};
         const byte new_cursor[] = {0x57,0x90,0x90,0x90,0x90,0x90,0x90};
         write_bytes(0x4D927F, old_cursor, new_cursor, sizeof(new_cursor));

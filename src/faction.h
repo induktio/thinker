@@ -11,7 +11,6 @@ bool has_weapon(int faction_id, VehWeapon wpn);
 bool has_wmode(int faction_id, VehWeaponMode mode);
 bool has_aircraft(int faction_id);
 bool has_ships(int faction_id);
-bool has_terra(FormerItem frm_id, bool ocean, int faction_id);
 bool has_project(FacilityId item_id);
 bool has_project(FacilityId item_id, int faction_id);
 int project_base(FacilityId item_id);

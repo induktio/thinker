@@ -149,6 +149,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->base_psych = atoi(value);
     } else if (MATCH("nerve_staple")) {
         cf->nerve_staple = atoi(value);
+    } else if (MATCH("nerve_staple_turns")) {
+        cf->nerve_staple_turns = clamp(atoi(value), 0, 1000);
     } else if (MATCH("nerve_staple_mod")) {
         cf->nerve_staple_mod = atoi(value);
     } else if (MATCH("delay_drone_riots")) {

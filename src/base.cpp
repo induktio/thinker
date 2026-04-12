@@ -119,7 +119,6 @@ int __cdecl mod_base_init(int faction_id, int x, int y) {
     base->governor_flags = plr->base_governor_adv;
     base->minerals_accumulated = 0;
     base->nutrients_accumulated = 0;
-    base->nerve_staple_count = 0;
     base->autoforward_land_base_id = -1;
     base->autoforward_sea_base_id = -1;
     base->autoforward_air_base_id = -1;
@@ -4823,7 +4822,8 @@ bool can_build_unit(int base_id, int unit_id) {
 }
 
 bool can_staple(int base_id) {
-    return base_id >= 0 && conf.nerve_staple > Bases[base_id].plr_owner()
+    return base_id >= 0 && conf.nerve_staple_turns > 0
+        && conf.nerve_staple > Bases[base_id].plr_owner()
         && Bases[base_id].SE_police(SE_Current) >= 0;
 }
 
