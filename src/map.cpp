@@ -147,6 +147,29 @@ void refresh_overlay(std::function<int(int, int)> tile_value) {
     }
 }
 
+int __cdecl is_sensor(int x, int y) {
+    MAP* sq = mapsq(x, y);
+    if (sq && sq->items & BIT_SENSOR) {
+        return 1;
+    }
+    int base_dist = 9999;
+    int base_id = -1;
+    for (int i = 0, cnt = *BaseCount; i < cnt; ++i) {
+        int dist = vector_dist(x, y, Bases[i].x, Bases[i].y);
+        if (dist <= base_dist) {
+            base_dist = dist;
+            base_id = i;
+        }
+    }
+    if (base_id < 0 || !has_fac_built(FAC_GEOSYNC_SURVEY_POD, base_id)) {
+        return 0;
+    }
+    BASE* base = &Bases[base_id];
+    int dx = x_dist(x, base->x);
+    int dy = abs(y - base->y);
+    return (dx == 0 || dx == 2) && (dy == 0 || dy == 2) ? 2 : 0;
+}
+
 int __cdecl is_known(int x, int y, int faction_id) {
     MAP* sq;
     assert(faction_id >= 0 && faction_id < MaxPlayerNum);
@@ -252,7 +275,7 @@ int __cdecl base_at(int x, int y) {
             rebuild_base_bits();
             return -1;
         }
-        for (int i = 0; i < *BaseCount; ++i) {
+        for (int i = 0, cnt = *BaseCount; i < cnt; ++i) {
             if (Bases[i].x == x && Bases[i].y == y) {
                 return i;
             }
@@ -1372,7 +1395,7 @@ int __cdecl mod_goody_at(int x, int y) {
     return cmp == ((11 * (avg / 4) + 61 * (x_diff / 4) + *MapRandomSeed + 8) & 0x1F); // 0 or 1
 }
 
-int __cdecl mod_base_find(int x, int y) {
+int __cdecl base_find(int x, int y) {
     int base_dist = 9999;
     int base_id = -1;
     for (int i = 0; i < *BaseCount; i++) {
@@ -1389,7 +1412,7 @@ int __cdecl mod_base_find(int x, int y) {
     return base_id;
 }
 
-int __cdecl mod_base_find2(int x, int y, int faction_id) {
+int __cdecl base_find_2(int x, int y, int faction_id) {
     int base_dist = 9999;
     int base_id = -1;
     for (int i = 0; i < *BaseCount; i++) {
@@ -1411,7 +1434,7 @@ int __cdecl mod_base_find2(int x, int y, int faction_id) {
 /*
 This version adds support for modified territory borders (earlier bases claim tiles first).
 */
-int __cdecl mod_base_find3(int x, int y, int faction_id, int region, int faction_id_2, int faction_id_3) {
+int __cdecl base_find_3(int x, int y, int faction_id, int region, int faction_id_2, int faction_id_3) {
     int base_dist = 9999;
     int base_id = -1;
     bool border_fix = conf.territory_border_fix && region >= MaxRegionLandNum;
@@ -1434,11 +1457,6 @@ int __cdecl mod_base_find3(int x, int y, int faction_id, int region, int faction
             }
         }
     }
-    if (DEBUG && !conf.territory_border_fix) {
-        int value = base_find_3(x, y, faction_id, region, faction_id_2, faction_id_3);
-        assert(base_id == value);
-        assert(base_dist == *BaseFindDist);
-    }
     *BaseFindDist = 9999; // Default value is always written here
     if (base_id >= 0) {
         *BaseFindDist = base_dist;
@@ -1459,7 +1477,7 @@ int __cdecl whose_territory(int faction_id, int x, int y, int* base_id, int igno
             return -1;
         }
         if (base_id) {
-            *base_id = mod_base_find3(x, y, -1, sq->region, -1, -1);
+            *base_id = base_find_3(x, y, -1, sq->region, -1, -1);
         }
     }
     return sq->owner;

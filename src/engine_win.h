@@ -5,6 +5,7 @@
 typedef int StringList;
 typedef int Vert;
 typedef void HSV;
+typedef void Dialog;
 typedef void ListBox;
 typedef void EdgeScan;
 typedef void NCSprites;

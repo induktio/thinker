@@ -26,4 +26,5 @@ void __cdecl action_tectonic(int veh_id, int tx, int ty);
 void __cdecl action_fungal(int veh_id, int tx, int ty);
 void __cdecl action_give(int veh_id, int faction_id_tgt);
 void __cdecl action_gate(int veh_id, int base_id);
+int __cdecl order_veh(int veh_id, int offset, int flag);
 

@@ -1423,7 +1423,7 @@ void __cdecl say_loc(char* dest, int x, int y, int a4, int a5, int a6)
     const char* prefix = "";
     const char* prefix_space = "";
     if (a4 != 0 && base_id < 0) {
-        base_id = mod_base_find3(x, y, -1, -1, -1, MapWin->cOwner);
+        base_id = base_find_3(x, y, -1, -1, -1, MapWin->cOwner);
         if (base_id >= 0) {
             a6 = 0;
             prefix = label_get(62); // near

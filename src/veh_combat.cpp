@@ -928,31 +928,40 @@ void __cdecl mod_battle_compute(int veh_id_atk, int veh_id_def, int* offense_out
                 }
             }
             if (faction_id_def) {
-                // Sensor search is optimized to avoid repeated calls to is_sensor and base_find
-                int def_state = (conf.sensor_defense_ocean || !is_ocean(sq_def) ? DF_Enable : 0);
+                int def_state = 0;
                 int flechette = 100;
-                for (int i = 0; i < *BaseCount; i++) {
-                    if (Bases[i].faction_id == faction_id_def) {
-                        int dist = map_range(veh_def->x, veh_def->y, Bases[i].x, Bases[i].y);
-                        if (dist <= FlechetteDefenseRange
-                        && has_fac_built(FAC_FLECHETTE_DEFENSE_SYS, i)
-                        && veh_id_atk >= 0 && veh_atk->is_missile()) {
+                if (veh_id_atk >= 0 && veh_atk->is_missile()) {
+                    for (int i = 0, cnt = *BaseCount; i < cnt; ++i) {
+                        if (Bases[i].faction_id == faction_id_def
+                        && map_range(veh_def->x, veh_def->y, Bases[i].x, Bases[i].y)
+                        <= FlechetteDefenseRange
+                        && has_fac_built(FAC_FLECHETTE_DEFENSE_SYS, i)) {
                             // Multiple facilities are cumulative with missile defense
                             defense = defense * (FlechetteDefenseValue + 100) / 100;
                             flechette = flechette * (FlechetteDefenseValue + 100) / 100;
                             def_state |= DF_Flechette;
                         }
-                        if ((def_state & DF_Enable) && dist <= GeosyncSurveyPodRange
-                        && has_fac_built(FAC_GEOSYNC_SURVEY_POD, i)) {
-                            def_state |= (DF_Sensor | DF_GSP);
-                        }
                     }
                 }
-                if ((def_state & DF_Enable) && !(def_state & DF_Sensor)) {
-                    for (auto& m : iterate_tiles(veh_def->x, veh_def->y, 0, 25)) {
-                        if (m.sq->items & BIT_SENSOR) {
+                for (auto& m : iterate_tiles(veh_def->x, veh_def->y, 0, 25)) {
+                    int value = is_sensor(m.x, m.y);
+                    bool found = false;
+                    if (value > 0) {
+                        if (!conf.sensor_defense_ocean && is_ocean(m.sq)) {
+                            int near_id = base_find(m.x, m.y);
+                            if (near_id >= 0 && Bases[near_id].faction_id == faction_id_def) {
+                                found = true;
+                            }
+                        } else {
                             if (m.sq->owner < 0 || m.sq->owner == faction_id_def) {
-                                def_state |= DF_Sensor;
+                                found = true;
+                            }
+                        }
+                        if (found) {
+                            def_state |= (DF_Enable|DF_Sensor);
+                            if (value > 1) {
+                                def_state |= DF_GSP;
+                                break;
                             }
                         }
                     }
@@ -2057,7 +2066,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
             StrBuffer[0] = '\0';
             say_stats_3(StrBuffer, veh_atk->unit_id);
             parse_says(4, StrBuffer, -1, -1);
-            int tgt_base_id = mod_base_find3(tx, ty, -1, -1, -1, player_id);
+            int tgt_base_id = base_find_3(tx, ty, -1, -1, -1, player_id);
             if (tgt_base_id >= 0) {
                 parse_says(5, Bases[tgt_base_id].name, -1, -1);
             }
@@ -2120,7 +2129,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                 StrBuffer[0] = '\0';
                 say_stats_3(StrBuffer, veh_atk->unit_id);
                 parse_says(4, StrBuffer, -1, -1);
-                int tgt_base_id = mod_base_find3(tx, ty, -1, -1, -1, player_id);
+                int tgt_base_id = base_find_3(tx, ty, -1, -1, -1, player_id);
                 if (tgt_base_id >= 0) {
                     parse_says(5, Bases[tgt_base_id].name, -1, -1);
                 }
@@ -2150,7 +2159,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
             StrBuffer[0] = '\0';
             say_stats_3(StrBuffer, veh_atk->unit_id);
             parse_says(4, StrBuffer, -1, -1);
-            int tgt_base_id = mod_base_find3(tx, ty, -1, -1, -1, faction_id_def);
+            int tgt_base_id = base_find_3(tx, ty, -1, -1, -1, faction_id_def);
             if (tgt_base_id >= 0) {
                 parse_says(5, Bases[tgt_base_id].name, -1, -1);
             }

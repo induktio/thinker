@@ -2029,7 +2029,7 @@ int former_move(const int id) {
         }
     }
     int turns = (veh->order >= ORDER_FARM && veh->order < ORDER_MOVE_TO ?
-        Terraform[veh->order - 4].rate : 0);
+        Terraform[veh->order - VehOrderFormerFirst].rate : 0);
 
     if (safe || turns >= 12 || veh->plr_owner()) {
         if (turns > 0 && !(veh->order == ORDER_DRILL_AQUIFER
@@ -2050,7 +2050,7 @@ int former_move(const int id) {
             }
             debug("former_action %2d %2d cost: %d %s\n",
                 veh->x, veh->y, cost, Terraform[item].name);
-            return set_action(id, item+4, *Terraform[item].shortcuts);
+            return set_action(id, item + VehOrderFormerFirst, *Terraform[item].shortcuts);
         }
     } else if (!safe) {
         return escape_move(id);

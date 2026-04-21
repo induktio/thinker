@@ -171,7 +171,7 @@ int base_trade_value(int base_id, int faction1, int faction2)
         }
     }
     for (const auto& m : iterate_tiles(base->x, base->y, 0, 21)) {
-        if (mod_base_find3(m.x, m.y, -1, m.sq->region, -1, -1) == base_id) {
+        if (base_find_3(m.x, m.y, -1, m.sq->region, -1, -1) == base_id) {
             if (m.sq->landmarks & ~(LM_DUNES|LM_SARGASSO|LM_UNITY)) {
                 value += (m.sq->landmarks & LM_JUNGLE ? 20 : 15);
             }

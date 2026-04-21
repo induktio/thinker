@@ -59,9 +59,9 @@ To save the current queue to template, open a base and **right click** on the qu
 
 Summary of AI changes
 =====================
-Thinker introduces notable changes to the AI to manage the colonization and production much more effectively than usual which can result in changes on the difficulty curve. When playing on lower difficulties, it might make sense to apply additional limits on AI expansion by using options such as `expansion_limit=10` and `expansion_autoscale=1` so that the AI will expand roughly at the same speed as the player faction.
+Thinker introduces notable improvements to the AI, enabling far more effective management of colonization, production, military strategy and overall decision-making. When playing on lower difficulties, it might make sense to apply additional limits on AI expansion by using options such as `expansion_limit=10` and `expansion_autoscale=1` so that the AI will expand roughly at the same speed as the player faction.
 
-Thinker fully controls the movement of most units, combat and non-combat alike. For testing purposes it is also possible to run old/new AIs side-by-side. For example `factions_enabled=3` makes only the factions in the first 3 slots to use Thinker AI if they are not player-controlled. By default `factions_enabled=7` setting enables Thinker AI for all computer factions. Regardless of which AI is enabled, all of them should receive the same production bonuses that are set in the config file.
+Thinker fully controls the movement of nearly all units, combat and non-combat alike. For testing purposes it is also possible to run old/new AIs side-by-side. For example `factions_enabled=3` makes only the factions in the first 3 slots to use Thinker AI if they are not player-controlled. By default `factions_enabled=7` setting enables Thinker AI for all computer factions. Regardless of which AI is enabled, all of them should receive the same production bonuses that are set in the config file.
 
 Another novel addition has been naval invasions executed by the AI. This has been traditionally a weak spot for many AIs, since they lack the coordination between many units to pull off such strategies. Thinker however is capable of gathering an invasion fleet with many transports and using other combat ships as cover to move them into a landing zone. Combat ships will also use artillery attack on various targets much more than usual.
 
@@ -475,7 +475,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 50. Fix monolith energy to not be limited by tile yield restrictions in the early game. This limitation did not apply on monolith nutrients/minerals.
 51. Fix base tile energy output being inconsistent when SE Economy value is between 3 and 4.
 52. Fix issue with formers sometimes being able to move after completing improvements on the same turn.
-53. Fix GSP defense bonus range sometimes not being accurate at three tiles like the manual implies.
+53. Fix issue where native mind worms sometimes attacking empty bases could destroy free facilities granted in the faction definition when the intention was to preserve them.
 54. Fix inconsistent effects with unit repair facilities and Citizens Defense Force when the base tile is defended by an unit owned by third faction. The facility or the secret project providing it must be built by the base owner for it to have an effect.
 55. Fix issues where the game did not calculate upgrade costs correctly when the unit count exceeded 255. The costs will be applied correctly even if Security Nexus may show an inaccurate number.
 56. Patch the game to also parse "Free Technology" defined for each facility. This causes new bases to have these facilities built for free while it does not exclude facility maintenance costs.
@@ -536,7 +536,7 @@ The following binary fixes from Scient's patch are automatically applied at game
 22. ***Removed***
 23. [MISC] Fixed a registry check at startup (Vista/Win7) whether a complete installation has been performed. Prevents #FILEFIND_NOCD from being incorrectly displayed.
 24. [BUG] Units without the Amphibious Pods ability can no longer move to a land tile from a sea base without there being a transport in land tile.
-25. [BUG][SMAX] Prevent the Caretakers from being given the possibility of building secret project "Ascent to Transcendence" which goes against their philosphy and would cause them to declare war on themselves if built. Problem with logic, code exists which should of prevented it from displaying but didn't.
+25. [BUG][SMAX] Prevent the Caretakers from being given the possibility of building secret project "Ascent to Transcendence" which goes against their philosophy and would cause them to declare war on themselves if built. Problem with logic, code exists which should have prevented it from displaying but didn't.
 26. [BUG] Allow tiles with more than one probe ability to evict probes (more than one unit, probe has to be top most) ; when evicting probe, only send top unit to home base -> prevents non-probe units from being booted as well. -> using same code used to return probes to base after successful mission
 27. [BUG][SMAX] Fixed bug when AI successfully completes probe action of freeing a captured faction leader (FREEWILLY/FREEWHO) where it would reset a non-captured faction. The problem was that AI would always try to free the very first faction (usually PC) regardless of whether they were eliminated or not. Fix now obtains all potential faction leaders to free and randomly picks one.
 28. [BUG][SMAX] Add references to use a new file (movlistx.txt) for SMAX specific info after secret project movies rather than one shared between SMAC/SMAX (movlist.txt).

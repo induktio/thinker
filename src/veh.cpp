@@ -136,11 +136,6 @@ bool can_monolith(int unit_id) {
     return conf.repair_battle_ogre >= 10 || !is_battle_ogre(unit_id);
 }
 
-int __cdecl veh_who(int x, int y) {
-    MAP* sq = mapsq(x, y);
-    return (sq ? sq->veh_who() : -1);
-}
-
 int __cdecl veh_at(int x, int y) {
     MAP* sq = mapsq(x, y);
     if (sq && !sq->veh_in_tile()) {
@@ -165,6 +160,11 @@ int __cdecl veh_at(int x, int y) {
     }
     rebuild_vehicle_bits();
     return -1;
+}
+
+int __cdecl veh_who(int x, int y) {
+    MAP* sq = mapsq(x, y);
+    return (sq ? sq->veh_who() : -1);
 }
 
 int __cdecl veh_top(int veh_id) {
@@ -589,7 +589,7 @@ int __cdecl veh_init(int unit_id, int faction_id, int x, int y) {
         }
     }
     if (best_enemy >= 0) {
-        mod_base_find3(x, y, best_enemy, region_id, -1, -1);
+        base_find_3(x, y, best_enemy, region_id, -1, -1);
         if (vector_dist(x, y, plr->target_x, plr->target_y) > *BaseFindDist) {
             return veh_id;
         }
@@ -707,18 +707,18 @@ void __cdecl veh_kill(int veh_id) {
         if (*ptr == veh_id) { *ptr = -1; }
         else if (*ptr > veh_id) { --(*ptr); }
     };
-    update_veh_ref(dword_93928C);
-    update_veh_ref(dword_939290);
-    update_veh_ref(dword_8C6B2C);
-    update_veh_ref(dword_8C6B34);
+    update_veh_ref(&MapWin->iUnit);
+    update_veh_ref(&MapWin->field_23BE0);
+    update_veh_ref(dword_8C6B2C); // StatusWin
+    update_veh_ref(dword_8C6B34); // StatusWin
 
     if (*CurrentVehID && *CurrentVehID >= veh_id) {
         --(*CurrentVehID);
     }
     if (*MultiplayerActive
     && *dword_93E908
-    && *dword_93E908 != dword_93928C
-    && *dword_93E908 != dword_939290
+    && *dword_93E908 != &MapWin->iUnit
+    && *dword_93E908 != &MapWin->field_23BE0
     && *dword_93E908 != CurrentVehID
     && **dword_93E908 >= veh_id) {
         --(**dword_93E908);
@@ -1275,7 +1275,7 @@ GOODY_START:
         draw_map(1);
         if (is_player) {
             NetMsg_pop(NetMsg, "GOODYQUAKE", -5000, 0, "quake_sm.pcx");
-            if (!tut_check(2048)) {
+            if (!tut_check(0x800)) {
                 return 0;
             }
             TutWin_tut_map(TutWin, "TERRAFORM", x, y, -1, 0, 0, -1, -1);

@@ -42,7 +42,7 @@ int __cdecl terraform_cost(int x, int y, int faction_id) {
         cost *= (!TechOwners[TECH_DocAir] ? 4 : 2);
     }
     int own_base_id = base_find_2(x, y, faction_id);
-    int enemy_base_id = mod_base_find3(x, y, -1, -1, faction_id, -1);
+    int enemy_base_id = base_find_3(x, y, -1, -1, faction_id, -1);
 
     if (own_base_id >= 0) {
         BASE* own = &Bases[own_base_id];
@@ -746,7 +746,7 @@ void __cdecl action_destroy(int veh_id, int tgt_item, int tgt_x, int tgt_y) {
                 synch_bit(tx, ty, owner);
                 add_goal(owner, AI_GOAL_ATTACK, 5, veh->x, veh->y, -1);
                 if (owner == player_id) {
-                    int base_id = mod_base_find3(tx, ty, -1, -1, -1, player_id);
+                    int base_id = base_find_3(tx, ty, -1, -1, -1, player_id);
                     *GenderDefault = MFactions[faction_id].noun_gender;
                     *PluralDefault = MFactions[faction_id].is_noun_plural;
                     parse_says(0, MFactions[faction_id].noun_faction, -1, -1);
@@ -758,7 +758,7 @@ void __cdecl action_destroy(int veh_id, int tgt_item, int tgt_x, int tgt_y) {
             }
         } else {
             if (is_known(tx, ty, player_id) && owner == player_id) {
-                int base_id = mod_base_find3(tx, ty, -1, -1, -1, player_id);
+                int base_id = base_find_3(tx, ty, -1, -1, -1, player_id);
                 if (base_id >= 0 && Bases[base_id].faction_id == player_id) {
                     parse_says(0, Bases[base_id].name, -1, -1);
                     parse_says(1, Units[unit_id].name, -1, -1);
@@ -1066,7 +1066,7 @@ int __cdecl action_airdrop(int veh_id, int tx, int ty, int flags) {
         return 0;
     }
     if (is_visible && faction_id != player_id) {
-        int base_id = mod_base_find3(tx, ty, -1, -1, -1, 1);
+        int base_id = base_find_3(tx, ty, -1, -1, -1, 1);
         if (base_id >= 0) {
             parse_says(0, Bases[base_id].name, -1, -1);
         }
@@ -1096,7 +1096,7 @@ int __cdecl action_airdrop(int veh_id, int tx, int ty, int flags) {
     for (int v = veh_top(veh_id); v >= 0; v = Vehs[v].next_veh_id_stack) {
         if (v != veh_id) { veh_skip(v); }
     }
-    if (MapWin->fUnitNotViewMode) {
+    if (veh_id == MapWin->iUnit && MapWin->fUnitNotViewMode) {
         Console_cursor_next(MapWin, tx, ty);
     }
     stack_put(veh_id, tx, ty);
@@ -1298,7 +1298,7 @@ int __cdecl valid_patrol(int veh_id, int tx, int ty) {
 }
 
 int __cdecl action_patrol(int veh_id, int tx, int ty) {
-    // Fix #5. Setting more than one patrol waypoint with spacebar causes the values to be stored incorrectly.
+    // Fix 5. [BUG] Setting more than one patrol waypoint with spacebar causes the values to be stored incorrectly.
     int result = valid_patrol(veh_id, tx, ty);
     if (result) {
         VEH* veh = &Vehs[veh_id];
@@ -1776,10 +1776,1589 @@ void __cdecl action_gate(int veh_id, int base_id) {
         draw_tile(Bases[src_base_id].x, Bases[src_base_id].y, 2);
     }
     draw_tile(tgt->x, tgt->y, 2);
-    if (veh->faction_id == *CurrentPlayerFaction) {
+    if (veh_id == MapWin->iUnit) {
         Console_focus(MapWin, veh->x, veh->y, veh->faction_id);
     }
 }
 
+/*
+offset - Direction index [0-7] into BaseOffset representing the eight move directions.
+A negative value is normalised to 8 at the start. Values >= 8 signal a no-move action (skip/hold),
+which bypasses normal movement and can instead trigger the upkeep path or the aircraft home-return check.
+flag - Written to VehAttackFlags. Uses two lowest bits that are always set by non-MP action functions.
+*/
+int __cdecl order_veh(int veh_id, int offset, int flag) {
+    Ftext_get text_get = (Ftext_get)0x5FD570;
+    int* const dword_8CC210 = (int*)0x8CC210;
+    int* const dword_945AF4 = (int*)0x945AF4;
+    int* const dword_945AF8 = (int*)0x945AF8;
+
+    int goody_val;
+    int prev_vehcount;
+    int move_check_fuel;
+    int move_fight;
+    int move_no_base;
+    int move_probe;
+    int move_result;
+    int veh_at_sea;
+    int veh_fc_id;
+    int veh_triad;
+    int veh_x;
+    int veh_y;
+    int move_delay;
+    int cost_val;
+    int base_id;
+    int visual_tgl;
+    int stack_veh_id;
+    int tgt_region;
+    int tgt_owner;
+    int tgt_no_airbase;
+    int tgt_at_sea;
+    int tgt_fc_id;
+    int tgt_x;
+    int tgt_y;
+    int spawn_base_dist;
+    int spawn_chance;
+    MAP* veh_sq;
+    MAP* tgt_sq;
+
+    move_result = 0;
+    move_no_base = 0;
+    move_check_fuel = 0;
+    move_fight = 0;
+    move_probe = 0;
+    visual_tgl = 0; // Fix: always initialize to avoid randomly triggering effects
+
+    Popup cur_popup = {};
+    Popup_ctor(&cur_popup);
+    auto guard = cleanup_handler([&] { Popup_dtor(&cur_popup); });
+
+    *VehAttackFlags = flag;
+    if (flag & 1) {
+        MapWin->field_23BE4 = 0;
+    } else {
+        MapWin->field_23BF0 = 0;
+    }
+    prev_vehcount = *VehCount;
+    veh_x = Vehs[veh_id].x;
+    veh_y = Vehs[veh_id].y;
+    veh_fc_id = Vehs[veh_id].faction_id;
+    if (offset < 0) {
+        offset = 8;
+    }
+    tgt_x = wrap(veh_x + BaseOffsetX[offset]);
+    tgt_y = veh_y + BaseOffsetY[offset];
+    tgt_sq = mapsq(tgt_x, tgt_y);
+    if (!tgt_sq) {
+        goto MOV_END;
+    }
+    tgt_region = tgt_sq->region;
+    stack_veh_id = stack_fix(veh_at(tgt_x, tgt_y));
+    base_id = base_at(tgt_x, tgt_y);
+    if (base_id < 0) {
+        if (stack_veh_id < 0) {
+            tgt_fc_id = -1;
+        } else {
+            tgt_fc_id = Vehs[stack_veh_id].faction_id;
+        }
+    } else {
+        tgt_fc_id = Bases[base_id].faction_id;
+    }
+    veh_at_sea = is_ocean(mapsq(veh_x, veh_y));
+    tgt_at_sea = is_ocean(tgt_sq);
+    goody_val = goody_at(tgt_x, tgt_y);
+
+    while (true) {
+        move_delay = 0;
+        if (Vehs[veh_id].state & (VSTATE_EXPLORE|VSTATE_ON_ALERT)) {
+            move_delay = 1;
+        }
+        veh_triad = Vehs[veh_id].triad();
+        if (!is_human(veh_fc_id) && Vehs[veh_id].order == ORDER_MOVE_TO) {
+            tgt_owner = whose_territory(veh_fc_id, Vehs[veh_id].waypoint_x[0], Vehs[veh_id].waypoint_y[0], 0, 0);
+            if (tgt_owner >= 0 && tgt_owner != veh_fc_id
+            && !(Factions[veh_fc_id].diplo_status[tgt_owner] & (DIPLO_UNK_800|DIPLO_SHALL_BETRAY|DIPLO_VENDETTA|DIPLO_PACT))) {
+                Vehs[veh_id].order = ORDER_NONE;
+                goto MOV_END;
+            }
+        }
+        if (Vehs[veh_id].plan() == PLAN_ARTIFACT && !(Vehs[veh_id].flags & VFLAG_IS_OBJECTIVE)) {
+            if (*VehAttackFlags & 1) {
+                Vehs[veh_id].movement_turns = 0;
+            }
+            if (*VehAttackFlags & 1 && base_id >= 0 && (Bases[base_id].faction_id == veh_fc_id)) {
+                parse_says(0, Bases[base_id].name, -1, -1);
+                Popup_start(&cur_popup, "SCRIPT", "ARTIFACT", -1, 0, 0, 0);
+                int w = 0, h = 0;
+                if (!Buffer_get_pcx_dimensions("art_dis_sm.pcx", &w, &h)
+                && !Sprite_init(&cur_popup.sprite, "art_dis_sm.pcx", w, h)) {
+                    cur_popup.field_2144 = &cur_popup.sprite;
+                }
+                parse_num(0, Bases[base_id].minerals_accumulated);
+                int item_id = Bases[base_id].queue_items[0];
+                int cost;
+                if (item_id >= 0) {
+                    cost = mod_veh_cost(item_id, base_id, 0) * mod_cost_factor(veh_fc_id, RSC_MINERAL, -1);
+                } else {
+                    cost = Facility[-item_id].cost * mod_cost_factor(veh_fc_id, RSC_MINERAL, -1);
+                }
+                parse_num(1, cost);
+                if (!X_text_open("SCRIPT", "ARTIFACTMENU")) {
+                    StrBuffer[0] = 0;
+                    parse_string(text_get(), StrBuffer);
+                    Dialogs_item(&cur_popup.dialogs, StrBuffer, 0);
+                    int dialog_cnt = 1;
+                    char* str = text_get();
+                    if (has_fac_built(FAC_NETWORK_NODE, base_id)) {
+                        if (project_base(FAC_UNIVERSAL_TRANSLATOR) != base_id) {
+                            if (!(Bases[base_id].state_flags & BSTATE_ARTIFACT_ALREADY_LINKED)) {
+                                StrBuffer[0] = 0;
+                                parse_string(str, StrBuffer);
+                                Dialogs_item(&cur_popup.dialogs, StrBuffer, 1);
+                                dialog_cnt = 2;
+                                if (!is_human(veh_fc_id)) {
+                                    Vehs[veh_id].movement_turns = 1;
+                                }
+                            }
+                        }
+                    }
+                    str = text_get();
+                    if (project_base(FAC_UNIVERSAL_TRANSLATOR) == base_id) {
+                        StrBuffer[0] = 0;
+                        parse_string(str, StrBuffer);
+                        Dialogs_item(&cur_popup.dialogs, StrBuffer, 1);
+                        ++dialog_cnt;
+                        if (!is_human(veh_fc_id)) {
+                            Vehs[veh_id].movement_turns = 1;
+                        }
+                    }
+                    str = text_get();
+                    if (item_id <= -SP_ID_First) {
+                        StrBuffer[0] = 0;
+                        parse_says(1, Facility[abs(item_id)].name, -1, -1);
+                        parse_string(str, StrBuffer);
+                        Dialogs_item(&cur_popup.dialogs, StrBuffer, 2);
+                        ++dialog_cnt;
+                        if (!is_human(veh_fc_id)) {
+                            Vehs[veh_id].movement_turns = 2;
+                        }
+                    }
+                    str = text_get();
+                    if (item_id >= 0 && item_id >= MaxProtoFactionNum) {
+                        if (!(Units[item_id].unit_flags & UNIT_PROTOTYPED)) {
+                            StrBuffer[0] = 0;
+                            parse_says(2, Units[item_id].name, -1, -1);
+                            parse_string(str, StrBuffer);
+                            Dialogs_item(&cur_popup.dialogs, StrBuffer, 2);
+                            ++dialog_cnt;
+                        }
+                    }
+                    if (dialog_cnt > 1 && veh_fc_id == MapWin->cOwner && is_human(veh_fc_id)) {
+                        Vehs[veh_id].movement_turns = BasePop_exec_3(&cur_popup, 0, 0);
+                        if (*MultiplayerActive && !*ControlTurnC) { // Fix: added MP checks
+                            synch_veh(veh_id);
+                            NetDaemon_await_synch(NetState);
+                        }
+                    }
+                }
+            }
+        }
+        if (offset >= 8) {
+            if (Vehs[veh_id].triad() == TRIAD_AIR && Vehs[veh_id].range()) {
+                if ((*VehAttackFlags & 1) && veh_fc_id == MapWin->cOwner) {
+                    tgt_sq = mapsq(tgt_x, tgt_y);
+                    if (tgt_sq->base_who() < 0 && !(tgt_sq->items & BIT_AIRBASE)) {
+                        bool check = false;
+                        for (int cur_id = veh_top(veh_id); cur_id >= 0; cur_id = Vehs[cur_id].next_veh_id_stack) {
+                            if (has_abil(Vehs[cur_id].unit_id, ABL_CARRIER) // Fix: use correct veh_id in statement
+                            || (Vehs[cur_id].plan() == PLAN_SUPPLY && Vehs[cur_id].triad() == TRIAD_AIR)) {
+                                check = true;
+                                break;
+                            }
+                        }
+                        if (!check) {
+                            if (veh_speed(veh_id, 0) - Vehs[veh_id].moves_spent > 0
+                            && (Vehs[veh_id].range() == 1 || Vehs[veh_id].movement_turns)) {
+                                action_home(veh_id, 0);
+                                if (Vehs[veh_id].order == ORDER_MOVE_TO) {
+                                    if (*MultiplayerActive && !*ControlTurnC) {
+                                        synch_veh(veh_id);
+                                        NetDaemon_await_synch(NetState);
+                                    }
+                                    return 0;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            move_result = 1;
+            if (!(*VehAttackFlags & 2)) {
+                goto MOV_END;
+            }
+            veh_skip(veh_id);
+            Vehs[veh_id].state &= ~VSTATE_UNK_40;
+            goto MOV_UPKEEP;
+        }
+        Vehs[veh_id].state |= VSTATE_HAS_MOVED;
+        if (Vehs[veh_id].plan() == PLAN_PROBE && tgt_fc_id >= 0 && veh_fc_id != tgt_fc_id) {
+            bool check = true;
+            if (*VehAttackFlags & 1) {
+                Vehs[veh_id].flags &= ~VFLAG_PROBE_PACT_OPERATIONS;
+                if (Factions[veh_fc_id].diplo_status[tgt_fc_id] & DIPLO_PACT) {
+                    if (!move_delay && veh_fc_id == MapWin->cOwner) {
+                        if (base_id < 0) {
+                            if (mod_stack_check(stack_veh_id, 2, PLAN_PROBE, tgt_fc_id, -1)) {
+                                parse_says(0, MFactions[tgt_fc_id].adj_name_faction, -1, -1);
+                                if (X_pop("PROBEPACTTEAM", 0)) {
+                                    Vehs[veh_id].flags |= VFLAG_PROBE_PACT_OPERATIONS;
+                                } else {
+                                    check = false;
+                                }
+                            }
+                        } else {
+                            parse_says(0, Bases[base_id].name, -1, -1);
+                            parse_says(1, MFactions[tgt_fc_id].adj_name_faction, -1, -1);
+                            if (X_pop("PROBEPACT", 0)) {
+                                Vehs[veh_id].flags |= VFLAG_PROBE_PACT_OPERATIONS;
+                            } else {
+                                check = false;
+                            }
+                        }
+                    }
+                }
+            }
+            if (check) {
+                if (base_id < 0) {
+                    if (!(Factions[veh_fc_id].diplo_status[tgt_fc_id] & DIPLO_PACT)
+                    && (stack_veh_id < 0 || !mod_stack_check(stack_veh_id, 2, PLAN_PROBE, -1, -1))) {
+                        move_probe = 1;
+                        if (probe(veh_id, -1, stack_veh_id, 1) && *MultiplayerActive
+                        && !*ControlTurnC && *VehAttackFlags & 1 && !(*VehAttackFlags & 2)) {
+                            synch_veh(veh_id);
+                            NetDaemon_await_synch(NetState);
+                            return 1;
+                        }
+                        if (*VehCount != prev_vehcount) {
+                            return 0;
+                        }
+                        if (stack_veh_id >= 0) {
+                            tgt_fc_id = Vehs[stack_veh_id].faction_id;
+                        }
+                    }
+                } else if ((stack_veh_id < 0 || !mod_stack_check(stack_veh_id, 2, PLAN_PROBE, -1, -1))
+                && (is_human(veh_fc_id) || !(Factions[veh_fc_id].diplo_status[tgt_fc_id] & DIPLO_PACT)
+                || (Vehs[veh_id].waypoint_x[0] == Bases[base_id].x && Vehs[veh_id].waypoint_y[0] == Bases[base_id].y))) {
+                    if (tgt_fc_id == MapWin->cOwner) {
+                        Console_focus(MapWin, veh_x, veh_y, veh_fc_id);
+                        if (!*MultiplayerActive) {
+                            clock_wait(400);
+                        }
+                        stack_veh(veh_id, 1);
+                        veh_scoot(veh_id, veh_x, veh_y, offset, 0);
+                        stack_put(veh_id, veh_x, veh_y);
+                        draw_tile(tgt_x, tgt_y, 2);
+                    }
+                    if (!probe(veh_id, base_id, -1, 1) || !*MultiplayerActive || *ControlTurnC
+                    || !(*VehAttackFlags & 1) || *VehAttackFlags & 2) {
+                        goto MOV_END;
+                    }
+                    synch_veh(veh_id);
+                    NetDaemon_await_synch(NetState);
+                    return 1;
+                }
+            }
+        }
+        if (veh_triad == TRIAD_LAND && tgt_at_sea) {
+            if (veh_fc_id == tgt_fc_id || Factions[veh_fc_id].diplo_status[tgt_fc_id] & DIPLO_PACT) {
+                if (mod_stack_check(stack_veh_id, 8, veh_fc_id, -1, -1) <= 0) {
+                    if (base_id < 0
+                    || (!has_abil(Vehs[veh_id].unit_id, ABL_AMPHIBIOUS)
+                    && !mod_stack_check(stack_veh_id, 2, 7, -1, -1)
+                    && !mod_stack_check(veh_id, 2, 7, -1, -1))) {
+                        if (base_id >= 0
+                        && !mod_stack_check(stack_veh_id, 2, 7, -1, -1)
+                        && !mod_stack_check(veh_id, 2, 7, -1, -1)) {
+                            if (veh_fc_id == MapWin->cOwner && *VehAttackFlags & 1) {
+                                parse_says(0, Ability[abil_index(8)].name, -1, -1);
+                                NetMsg_pop(NetMsg, "AMPHIBBASE2", 5000, 0, 0);
+                            }
+                            goto MOV_END;
+                        }
+                        int stack_val = mod_stack_check(stack_veh_id, 2, 7, -1, -1);
+                        if (stack_val && veh_fc_id == MapWin->cOwner && *VehAttackFlags & 1) {
+                            if (stack_val <= 1) {
+                                NetMsg_pop(NetMsg, "FULLTRANSPORT", 5000, 0, 0);
+                            } else {
+                                NetMsg_pop(NetMsg, "FULLTRANSPORTS", 5000, 0, 0);
+                            }
+                        }
+                        goto MOV_END;
+                    }
+                }
+                if (base_id < 0) {
+                    move_no_base = 1;
+                }
+            } else if (base_id >= 0) {
+                if (!has_abil(Vehs[veh_id].unit_id, ABL_AMPHIBIOUS)) {
+                    if (veh_fc_id == MapWin->cOwner && *VehAttackFlags & 1) {
+                        parse_says(0, Ability[abil_index(8)].name, -1, -1);
+                        NetMsg_pop(NetMsg, "AMPHIBBASE", 5000, 0, 0);
+                    }
+                    goto MOV_END;
+                }
+            } else {
+                if (stack_veh_id < 0
+                || !has_abil(Vehs[veh_id].unit_id, ABL_AIR_SUPERIORITY)
+                || !mod_stack_check(stack_veh_id, 18, -1, -1, -1)
+                || mod_stack_check(stack_veh_id, 6, ABL_CARRIER, -1, -1)) {
+                    goto MOV_END;
+                }
+                goto MOV_SPOT;
+            }
+        }
+        if (!veh_at_sea && !tgt_at_sea) {
+            if (Vehs[veh_id].triad() == TRIAD_LAND
+            && Vehs[veh_id].plan() != PLAN_PROBE
+            && !(Units[Vehs[veh_id].unit_id].ability_flags & ABL_CLOAKED)
+            && stack_veh_id < 0
+            && mod_zoc_move(veh_x, veh_y, veh_fc_id)
+            && mod_zoc_move(tgt_x, tgt_y, veh_fc_id)) {
+                if (veh_fc_id != MapWin->cOwner || move_delay || !(*VehAttackFlags & 1)) {
+                    goto MOV_END;
+                }
+                FX_play(Sounds, 13);
+                if (*MultiplayerActive) {
+                    goto MOV_END;
+                }
+                if (veh_fc_id == MapWin->cOwner) {
+                    if (*GamePreferences & PREF_BSC_TUTORIAL_MSGS
+                    || (Factions[veh_fc_id].diff_level <= 1 && (++(*dword_945AF4), (*dword_945AF4 & 3) == 1))) {
+                        int a = 0, b = 0, c = 0, d = 0;
+                        parse_says(0, Ability[abil_index(4)].name, -1, -1);
+                        quick_zoc(veh_x, veh_y, veh_fc_id, tgt_x, tgt_y, &a, &b);
+                        quick_zoc(tgt_x, tgt_y, veh_fc_id, veh_x, veh_y, &c, &d);
+                        TutWin_tut_map(TutWin, "ZOCMSG", a, b, veh_id, 0, 0, c, d);
+                    }
+                }
+                move_probe = 0;
+                for (int i = 0; i < 8; i++) {
+                    int px = wrap(tgt_x + BaseOffsetX[i]);
+                    int py = tgt_y + BaseOffsetY[i];
+                    if (on_map(px, py)) {
+                        int cur_id = stack_fix(veh_at(px, py));
+                        if (cur_id >= 0 && Vehs[cur_id].faction_id != veh_fc_id) {
+                            if (!(Factions[veh_fc_id].diplo_status[Vehs[cur_id].faction_id] & DIPLO_PACT)
+                            && !(Vehs[cur_id].is_visible(veh_fc_id))) {
+                                spot_loc(px, py, veh_fc_id);
+                                move_probe = 1;
+                            }
+                        }
+                    }
+                }
+                if (move_probe) {
+                    draw_radius(tgt_x, tgt_y, 1, 2);
+                }
+                goto MOV_END;
+            }
+        }
+        if (Vehs[veh_id].plan() == PLAN_SUPPLY && base_id >= 0 && !*MultiplayerActive) {
+            int opt_val = supply_options(veh_id, base_id);
+            if (*VehAttackFlags & 2) {
+                if (opt_val) {
+                    goto MOV_END;
+                }
+            } else {
+                if (!opt_val) {
+                    goto MOV_END;
+                }
+            }
+        }
+        if (!(*VehAttackFlags & 2)
+        || Vehs[veh_id].triad() == TRIAD_AIR
+        || stack_veh_id >= 0
+        || !veh_fc_id
+        || !(tgt_sq = mapsq(tgt_x, tgt_y))
+        || !tgt_sq->is_fungus()
+        || tgt_sq->items & BIT_MAGTUBE
+        || veh_at_sea != tgt_at_sea
+        || goody_at(tgt_x, tgt_y)
+        || *GameRules & RULES_SCN_NO_NATIVE_LIFE) {
+            goto MOV_SPOT;
+        }
+        if ((!Vehs[veh_id].offense_value() || Vehs[veh_id].order == ORDER_MOVE_TO)
+        && has_project(FAC_XENOEMPATHY_DOME, veh_fc_id)) {
+            goto MOV_SPOT;
+        }
+        base_find(tgt_x, tgt_y);
+        if (*BaseFindDist <= 1) {
+            goto MOV_SPOT;
+        }
+        spawn_base_dist = clamp(*BaseFindDist, 0, 32);
+        spawn_chance = spawn_base_dist + 10 * *MapNativeLifeForms;
+        if (tgt_sq->items & BIT_SUPPLY_REMOVE) {
+            spawn_chance /= 2;
+            if (!*MapNativeLifeForms) {
+                spawn_chance /= 2;
+            }
+        }
+        if (tgt_at_sea) {
+            spawn_chance /= 2;
+            if (!*MapNativeLifeForms) {
+                spawn_chance /= 2;
+            }
+        }
+        if (tgt_sq->items & BIT_ROAD) {
+            spawn_chance /= 2;
+        }
+        if (Vehs[veh_id].is_native_unit()) { // remove redundant Spore Launcher reference
+            spawn_chance /= 2;
+        }
+        for (int i = 0; i < 25; i++) {
+            int px = wrap(tgt_x + TableOffsetX[i]);
+            int py = tgt_y + TableOffsetY[i];
+            MAP* psq = mapsq(px, py);
+            if (psq) {
+                if (psq->base_who() >= 0 || is_sensor(px, py)) {
+                    if (i >= 9) {
+                        spawn_chance /= 2;
+                    } else {
+                        spawn_chance /= 4;
+                    }
+                }
+            }
+        }
+        if (game_rand() % 100 < spawn_chance) {
+            VehBasicUnit spawn_unit_id;
+            if (tgt_at_sea) {
+                spawn_unit_id = BSC_ISLE_OF_THE_DEEP;
+            } else if (!(game_rand() % 5) && *ExpansionEnabled && conf.spawn_spore_launchers) {
+                spawn_unit_id = BSC_SPORE_LAUNCHER;
+            } else {
+                spawn_unit_id = BSC_MIND_WORMS;
+            }
+            stack_veh_id = veh_init(spawn_unit_id, 0, tgt_x, tgt_y);
+            if (stack_veh_id >= 0) {
+                Vehs[veh_id].order = ORDER_NONE;
+                spot_stack(stack_veh_id, veh_fc_id);
+                draw_tile(tgt_x, tgt_y, 2);
+                bit_set(tgt_x, tgt_y, BIT_SUPPLY_REMOVE, 1);
+                if (veh_fc_id == MapWin->cOwner) {
+                    FX_play(Sounds, 13);
+                    parse_says(0, MFactions[tgt_fc_id].adj_name_faction, -1, -1);
+                    parse_says(1, Vehs[stack_veh_id].name(), -1, -1);
+                    NetMsg_pop(NetMsg, tgt_at_sea ? "ISLESPOTTED" : "WORMSSPOTTED", 5000, 0, 0);
+                }
+                goto MOV_END;
+            }
+            goto MOV_NAVAL;
+        }
+MOV_SPOT:
+        if (stack_veh_id < 0) {
+            goto MOV_NAVAL;
+        }
+        if (!(Vehs[stack_veh_id].flags & VFLAG_INVISIBLE)
+        && (veh_fc_id == tgt_fc_id || (Factions[veh_fc_id].diplo_status[tgt_fc_id] & DIPLO_PACT
+        && (Vehs[veh_id].plan() != PLAN_PROBE || !(Vehs[veh_id].flags & VFLAG_PROBE_PACT_OPERATIONS))))) {
+            goto MOV_NAVAL;
+        }
+        if (move_probe) {
+            goto MOV_END;
+        }
+        if (Vehs[stack_veh_id].flags & VFLAG_INVISIBLE) {
+            Vehs[veh_id].order = ORDER_NONE;
+            spot_stack(stack_veh_id, veh_fc_id);
+            draw_tile(tgt_x, tgt_y, 2);
+            if (veh_fc_id == MapWin->cOwner) {
+                FX_play(Sounds, 13);
+                parse_says(0, MFactions[tgt_fc_id].adj_name_faction, -1, -1);
+                parse_says(1, Vehs[stack_veh_id].name(), -1, -1);
+                NetMsg_pop(NetMsg, tgt_fc_id ? "SPOTTED" : "SPOTTED0", 5000, 0, 0);
+            }
+            goto MOV_END;
+        }
+        if (base_id < 0
+        && (Vehs[stack_veh_id].faction_id != veh_fc_id
+        || (Vehs[stack_veh_id].is_invisible_lurker())) // Fix flags field access
+        && !(Vehs[stack_veh_id].is_visible(veh_fc_id)) && is_human(veh_fc_id)) {
+            if (*VehAttackFlags & 1 && veh_fc_id == MapWin->cOwner) {
+                Vehs[veh_id].order = ORDER_NONE;
+                spot_stack(stack_veh_id, veh_fc_id);
+                draw_tile(tgt_x, tgt_y, 2);
+                FX_play(Sounds, 13);
+                parse_says(0, MFactions[tgt_fc_id].adj_name_faction, -1, -1);
+                parse_says(1, Vehs[stack_veh_id].name(), -1, -1);
+                NetMsg_pop(NetMsg, tgt_fc_id ? "SPOTTED" : "SPOTTED0", 5000, 0, 0);
+                goto MOV_END;
+            }
+        }
+        if (base_id < 0 && !(mapsq(tgt_x, tgt_y)->items & BIT_AIRBASE)
+        && mod_stack_check(stack_veh_id, 18, -1, -1, -1)
+        && !mod_stack_check(stack_veh_id, 6, 128, -1, -1)
+        && !has_abil(Vehs[veh_id].unit_id, ABL_AIR_SUPERIORITY)) {
+            if (veh_fc_id == MapWin->cOwner && *VehAttackFlags & 1) {
+                parse_says(0, Ability[abil_index(32)].name, -1, -1);
+                NetMsg_pop(NetMsg, "FIGHTERRULE", 5000, 0, 0);
+            }
+            if (Vehs[veh_id].state & (VSTATE_EXPLORE|VSTATE_ON_ALERT)) {
+                veh_skip(veh_id);
+            }
+            goto MOV_END;
+        }
+        if (Vehs[veh_id].unit_id == BSC_SEALURK || veh_at_sea) {
+            if (Vehs[veh_id].unit_id != BSC_SEALURK) {
+                if (!tgt_at_sea && veh_triad == TRIAD_SEA
+                && !can_arty(Vehs[veh_id].unit_id, 1) && Vehs[veh_id].offense_value()) {
+                    if (veh_fc_id == MapWin->cOwner && *VehAttackFlags & 1) {
+                        NetMsg_pop(NetMsg, "PSIBOMB", 5000, 0, 0);
+                    }
+                    goto MOV_END;
+                }
+            }
+            if (veh_at_sea && veh_triad == TRIAD_LAND
+            && !has_abil(Vehs[veh_id].unit_id, ABL_AMPHIBIOUS)
+            && Vehs[veh_id].plan() != PLAN_PROBE) {
+                if (veh_fc_id == MapWin->cOwner && *VehAttackFlags & 1) {
+                    parse_says(0, Ability[abil_index(8)].name, -1, -1);
+                    veh_sq = mapsq(veh_x, veh_y);
+                    if (veh_sq->base_who() >= 0) {
+                        NetMsg_pop(NetMsg, "AMPHIBBASE", 5000, 0, 0);
+                    } else {
+                        NetMsg_pop(NetMsg, "NOTAMPHIB", 5000, 0, 0);
+                    }
+                }
+                goto MOV_END;
+            }
+        }
+        if (Vehs[veh_id].weapon_mode() != WMODE_PROBE || !mod_stack_check(stack_veh_id, 2, 11, -1, -1)) {
+            if (!Vehs[veh_id].offense_value()) {
+                if (*VehAttackFlags & 1 && veh_fc_id == MapWin->cOwner) {
+                    FX_play(Sounds, 51);
+                    NetMsg_pop(NetMsg, "NONCOMBATANT", 5000, 0, 0);
+                }
+                goto MOV_END;
+            }
+            if (Vehs[stack_veh_id].plan() == PLAN_PROBE
+            && mod_stack_check(stack_veh_id, 1, -1, -1, -1) >= 1
+            && !*MultiplayerActive
+            && (Factions[veh_fc_id].diplo_status[tgt_fc_id] & (DIPLO_TRUCE|DIPLO_TREATY))
+            && !(Factions[veh_fc_id].diplo_status[tgt_fc_id] & DIPLO_PACT)) {
+                int near_base_id = base_find(tgt_x, tgt_y);
+                if (near_base_id < 0 || Bases[near_base_id].faction_id != veh_fc_id) {
+                    if (veh_fc_id == MapWin->cOwner) {
+                        parse_says(0, MFactions[tgt_fc_id].adj_name_faction, -1, -1);
+                        parse_says(1, Vehs[stack_veh_id].name(), -1, -1);
+                        *PluralDefault = 0;
+                        *GenderDefault = MFactions[veh_fc_id].is_leader_female;
+                        parse_says(2, MFactions[veh_fc_id].title_leader, -1, -1);
+                        int choice;
+                        if (!MFactions[tgt_fc_id].is_alien()) {
+                            choice = popp(ScriptFile, "ENEMYPROBE2", 0, "capture_sm.pcx", 0);
+                        } else {
+                            choice = popp(ScriptFile, "ENEMYPROBE2", 0, "al_cap_sm.pcx", 0);
+                        }
+                        if (!choice) {
+                            goto MOV_END;
+                        }
+                    }
+                } else {
+                    parse_says(0, MFactions[tgt_fc_id].adj_name_faction, -1, -1);
+                    parse_says(1, Vehs[stack_veh_id].name(), -1, -1);
+                    *PluralDefault = 0;
+                    *GenderDefault = MFactions[veh_fc_id].is_leader_female;
+                    parse_says(2, MFactions[veh_fc_id].title_leader, -1, -1);
+                    int choice;
+                    if (!is_human(veh_fc_id)) {
+                        choice = 1;
+                    } else if (!MFactions[tgt_fc_id].is_alien()) {
+                        choice = popp(ScriptFile, "ENEMYPROBE", 0, "capture_sm.pcx", 0);
+                    } else {
+                        choice = popp(ScriptFile, "ENEMYPROBE", 0, "al_cap_sm.pcx", 0);
+                    }
+                    if (!choice) {
+                        goto MOV_END;
+                    }
+                    if (choice == 1) {
+                        if (veh_fc_id == MapWin->cOwner || tgt_fc_id == MapWin->cOwner) {
+                            Console_focus(MapWin, veh_x, veh_y, veh_fc_id);
+                            stack_veh(veh_id, 1);
+                            veh_scoot(veh_id, veh_x, veh_y, offset, 0);
+                            stack_put(veh_id, veh_x, veh_y);
+                            draw_tile(veh_x, veh_y, 2);
+                        }
+                        // Fix issue that caused sea-based probe teams to be returned to landlocked bases.
+                        int ret_base_id = find_return_base(stack_veh_id);
+                        if (ret_base_id < 0) {
+                            if (!is_human(tgt_fc_id)) {
+                                veh_kill(stack_veh_id);
+                            }
+                        } else {
+                            veh_put(stack_veh_id, Bases[ret_base_id].x, Bases[ret_base_id].y);
+                            Vehs[stack_veh_id].visibility = 0;
+                            parse_says(2, Bases[ret_base_id].name, -1, -1);
+                        }
+                        draw_tile(tgt_x, tgt_y, 2);
+                        if (tgt_fc_id == MapWin->cOwner) {
+                            parse_says(0, MFactions[veh_fc_id].adj_name_faction, -1, -1);
+                            *PluralDefault = 0;
+                            *GenderDefault = MFactions[tgt_fc_id].is_leader_female;
+                            parse_says(1, MFactions[tgt_fc_id].title_leader, -1, -1);
+                            NetMsg_pop(NetMsg, "GOTMYPROBE", 5000, 0, 0);
+                        } else if (veh_fc_id == MapWin->cOwner) {
+                            parse_says(0, MFactions[tgt_fc_id].adj_name_faction, -1, -1);
+                            *PluralDefault = 0;
+                            *GenderDefault = MFactions[veh_fc_id].is_leader_female;
+                            parse_says(1, MFactions[veh_fc_id].title_leader, -1, -1);
+                            NetMsg_pop(NetMsg, "GOTYOURPROBE", 5000, 0, 0);
+                        }
+                        goto MOV_END;
+                    }
+                }
+            }
+        }
+        int moves_avail;
+        moves_avail = clamp(veh_speed(veh_id, 0) - Vehs[veh_id].moves_spent, 0, 999);
+        if (moves_avail < Rules->move_rate_roads
+        && Vehs[veh_id].unit_id != BSC_SPORE_LAUNCHER
+        && Vehs[veh_id].unit_id != BSC_MIND_WORMS) {
+            if (veh_fc_id == MapWin->cOwner && !move_delay && *VehAttackFlags & 1) {
+                parse_says(0, Vehs[veh_id].name(), -1, -1);
+                parse_num(0, moves_avail);
+                parse_num(1, Rules->move_rate_roads);
+                if (popp(ScriptFile, "HASTY", 0, "bad_sm.pcx", 0)) {
+                    goto MOV_END;
+                }
+            } else if (!is_human(veh_fc_id)) {
+                // TODO this condition could be adjusted
+                if (moves_avail <= Rules->move_rate_roads / 2) {
+                    goto MOV_END;
+                }
+            }
+        }
+        *CurrentVehID = veh_id;
+        if (!(*VehAttackFlags & 2)) {
+            move_result = mod_battle_fight(veh_id, offset, 0, 1, 0) == 0;
+            goto MOV_END;
+        }
+        if (!tgt_fc_id && Vehs[veh_id].triad() != TRIAD_AIR) {
+            Faction* plr = &Factions[veh_fc_id];
+            int tgt_unit_id = Vehs[stack_veh_id].unit_id;
+            int unit_count = plr->units_active[tgt_unit_id];
+            if (plr->SE_planet > 0 && tgt_unit_id != BSC_ALIEN_ARTIFACT && tgt_unit_id != BSC_FUNGAL_TOWER) {
+                bool do_capture = plr->SE_planet_base > 0 && !unit_count;
+                if (do_capture || clamp(veh_speed(veh_id, 0) - Vehs[veh_id].moves_spent, 0, 999)
+                >= Rules->move_rate_roads) {
+                    if (*VehAttackFlags & 2) {
+                        int fc_base_id = base_find_2(tgt_x, tgt_y, veh_fc_id);
+                        if (Vehs[stack_veh_id].order_auto_type == veh_fc_id
+                        || (fc_base_id >= 0 && Bases[fc_base_id].eco_damage)) {
+                            // log_say_2("Agitated", 0, 0, 0);
+                            if (veh_fc_id == MapWin->cOwner) {
+                                NetMsg_pop(NetMsg, "WORMSAGITATED", 5000, 0, 0);
+                            }
+                        } else {
+                            // log_say_2("Precapture who, enemy", veh_fc_id, stack_veh_id, 0);
+                            // log_say_2("Precapture fac, proto", plr->SE_planet_base, plr->units_active[tgt_unit_id], 0);
+                            // log_say_2("Precapture type, soc2", tgt_unit_id, plr->SE_planet, 0);
+                            if (!(Vehs[stack_veh_id].flags & VFLAG_UNK_2000)) {
+                                if (game_rand() % 4 < plr->SE_planet) {
+                                    int rnd_val = game_randv(*CurrentTurn / 5 + 100);
+                                    if (rnd_val >= 10 * unit_count || !(game_rand() % 10)) {
+                                        do_capture = true;
+                                    }
+                                }
+                                if (do_capture) {
+                                    int cur_id = veh_top(stack_veh_id);
+                                    for (; cur_id >= 0; cur_id = Vehs[cur_id].next_veh_id_stack) {
+                                        Vehs[cur_id].faction_id = veh_fc_id;
+                                        Vehs[cur_id].morale = mod_morale_alien(cur_id, 0);
+                                        int near_id = base_find(tgt_x, tgt_y);
+                                        if (near_id < 0 || Bases[near_id].faction_id != veh_fc_id
+                                        || Bases[near_id].pop_size < 3) {
+                                            Vehs[cur_id].home_base_id = -1;
+                                        } else {
+                                            Vehs[cur_id].home_base_id = near_id;
+                                        }
+                                        veh_skip(cur_id);
+                                    }
+                                    bit_set(tgt_x, tgt_y, BIT_SUPPLY_REMOVE, 1);
+                                    owner_set(tgt_x, tgt_y, veh_fc_id);
+                                    if (veh_fc_id == MapWin->cOwner) {
+                                        draw_tile_fixup(tgt_x, tgt_y, 1, 2);
+                                    } else {
+                                        draw_tile(tgt_x, tgt_y, 2);
+                                    }
+                                    if (veh_fc_id == MapWin->cOwner) {
+                                        parse_says(0, Vehs[stack_veh_id].name(), -1, -1);
+                                        if (tgt_unit_id == BSC_SPORE_LAUNCHER) {
+                                            if (plr->units_active[BSC_SPORE_LAUNCHER]) {
+                                                NetMsg_pop(NetMsg, "WORMCAPTURE", 5000, 0, 0);
+                                            } else {
+                                                popp(ScriptFile, "WORMCAPTURE", 0, "sporlnch_sm.pcx", 0);
+                                            }
+                                        } else if (tgt_unit_id == BSC_SEALURK) {
+                                            if (plr->units_active[BSC_SEALURK]) {
+                                                NetMsg_pop(NetMsg, "WORMCAPTURE", 5000, 0, 0);
+                                            } else {
+                                                popp(ScriptFile, "WORMCAPTURE", 0, "sealrk_sm.pcx", 0);
+                                            }
+                                        } else if (plr->units_active[tgt_unit_id]) {
+                                            NetMsg_pop(NetMsg, "WORMCAPTURE", 5000, 0, 0);
+                                        } else {
+                                            bool sea = is_ocean(mapsq(tgt_x, tgt_y));
+                                            popp(ScriptFile, "WORMCAPTURE", 0, sea ? "isle_sm.pcx" : "mindworm_sm.pcx", 0);
+                                        }
+                                    }
+                                    // log_say_2("Captured", 0, 0, 0);
+                                    goto MOV_NAVAL;
+                                }
+                            }
+                            Vehs[stack_veh_id].flags |= VFLAG_UNK_2000;
+                            if (veh_fc_id == MapWin->cOwner) {
+                                NetMsg_pop(NetMsg, "WORMNOCAPTURE", 5000, 0, 0);
+                            }
+                            // log_say_2("No Capture", 0, 0, 0);
+                        }
+                    }
+                }
+            }
+        }
+        {
+            move_fight = 1;
+            int value = mod_battle_fight(veh_id, offset, 0, 1, 0);
+            if (!value) {
+                goto MOV_END;
+            }
+            if (value != 1) {
+                move_result = 0;
+                goto MOV_END;
+            }
+            veh_id = *CurrentVehID;
+            assert(veh_id >= 0 && veh_id < *VehCount);
+            assert(Vehs[veh_id].faction_id == veh_fc_id);
+            assert(Vehs[veh_id].x == veh_x && Vehs[veh_id].y == veh_y);
+            tgt_x = veh_x;
+            tgt_y = veh_y;
+            move_check_fuel = 1;
+            goody_val = 0;
+        }
+        goto MOV_UPKEEP; // break while loop
+
+MOV_NAVAL:
+        if (veh_at_sea && !tgt_at_sea) {
+            // Fix 24. [BUG] Units without the Amphibious Pods ability can no longer move to a land tile
+            // from a sea base without there being a transport in land tile.
+            if (veh_triad == TRIAD_LAND && !has_abil(Vehs[veh_id].unit_id, ABL_AMPHIBIOUS)) {
+                veh_sq = mapsq(veh_x, veh_y);
+                if (veh_sq->base_who() >= 0 && !mod_stack_check(veh_id, 2, PLAN_NAVAL_TRANSPORT, -1, -1)) {
+                    if (veh_fc_id == MapWin->cOwner && *VehAttackFlags & 1) {
+                        parse_says(0, Ability[abil_index(8)].name, -1, -1);
+                        NetMsg_pop(NetMsg, "AMPHIBBASE2", 5000, 0, 0);
+                    }
+                    goto MOV_END;
+                }
+            }
+        }
+        if (!tgt_at_sea && base_id < 0 && veh_triad == TRIAD_SEA) {
+            if (*MultiplayerActive
+            || veh_fc_id != MapWin->cOwner
+            || !(*VehAttackFlags & 1)) {
+                goto MOV_END;
+            }
+            // Fix 39. [BUG] #DISEMBARKFAIL wasn't being displayed due to incorrect logic check.
+            if (!mod_stack_check(veh_id, 2, PLAN_NAVAL_TRANSPORT, -1, -1)) {
+                goto MOV_END;
+            }
+            Vehs[veh_id].order = ORDER_NONE;
+            parse_says(0, Vehs[veh_id].name(), -1, -1);
+            Popup_start(&cur_popup, "SCRIPT", "DISEMBARK", -1, 0, 0, 0);
+            if (X_text_open("SCRIPT", "DISEMBARKERS")) {
+                goto MOV_END;
+            }
+            stack_veh(veh_id, 0);
+            char* str = text_get();
+            int iter_cnt = 0;
+            int last_id = -1;
+            int cur_id = veh_top(veh_id);
+            if (cur_id < 0) {
+                goto MOV_END;
+            }
+            for (; cur_id >= 0; cur_id = Vehs[cur_id].next_veh_id_stack) {
+                if (Vehs[cur_id].order == ORDER_SENTRY_BOARD && Vehs[cur_id].waypoint_x[0] == veh_id) {
+                    ++iter_cnt;
+                    if (veh_speed(cur_id, 0) - Vehs[cur_id].moves_spent > 0) {
+                        last_id = cur_id;
+                        StrBuffer[0] = 0;
+                        parse_says(1, Vehs[cur_id].name(), -1, -1);
+                        parse_string(str, StrBuffer);
+                        Dialogs_item(&cur_popup.dialogs, StrBuffer, cur_id + 1);
+                    }
+                }
+            }
+            if (last_id < 0) {
+                if (!iter_cnt) {
+                    NetMsg_pop(NetMsg, "DISEMBARKFAIL", 5000, 0, 0);
+                }
+                goto MOV_END;
+            }
+            // note veh_id is restored from popup choices
+            int pop_val = BasePop_exec_3(&cur_popup, 0, 0) - 1;
+            if (pop_val < 0) {
+                goto MOV_END;
+            }
+            veh_id = pop_val;
+            Vehs[pop_val].order = ORDER_NONE;
+            continue;
+        } else {
+            break;
+        }
+    }
+    // while loop ends here
+    bool check_move;
+    check_move = base_id < 0 || tgt_fc_id == veh_fc_id
+        || (Factions[veh_fc_id].diplo_status[tgt_fc_id] & DIPLO_PACT);
+    if (!check_move) {
+        if (veh_triad == TRIAD_AIR) {
+            if (Vehs[veh_id].range()) {
+                if (veh_fc_id == MapWin->cOwner && *VehAttackFlags & 1) {
+                    parse_says(0, Chassis[Units[Vehs[veh_id].unit_id].chassis_id].offsv1_name, -1, -1);
+                    NetMsg_pop(NetMsg, "AIRCONQUER", 5000, 0, 0);
+                }
+                goto MOV_END;
+            }
+        } else if (veh_triad == TRIAD_SEA) {
+            if (!tgt_at_sea) {
+                if (veh_fc_id == MapWin->cOwner && *VehAttackFlags & 1) {
+                    NetMsg_pop(NetMsg, "SEACONQUER", 5000, 0, 0);
+                }
+                goto MOV_END;
+            }
+        } else if (veh_triad == TRIAD_LAND) {
+            if (tgt_at_sea && !has_abil(Vehs[veh_id].unit_id, ABL_AMPHIBIOUS)) {
+                if (veh_fc_id == MapWin->cOwner && *VehAttackFlags & 1) {
+                    NetMsg_pop(NetMsg, "LANDCONQUER", 5000, 0, 0);
+                }
+                goto MOV_END;
+            }
+        }
+        if (!Vehs[veh_id].offense_value()) {
+            if (veh_fc_id == MapWin->cOwner && *VehAttackFlags & 1) {
+                NetMsg_pop(NetMsg, "COMBATCONQUER", 5000, 0, 0);
+            }
+            goto MOV_END;
+        }
+        if (!(Factions[veh_fc_id].diplo_status[tgt_fc_id] & (DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT))) {
+            check_move = true;
+        } else {
+            if (!is_human(veh_fc_id)) {
+                Vehs[veh_id].order = ORDER_NONE;
+                goto MOV_END;
+            }
+            if (veh_fc_id == MapWin->cOwner) {
+                if (*VehAttackFlags & 1) {
+                    if (break_treaty(veh_fc_id, tgt_fc_id, DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT)) {
+                        goto MOV_END;
+                    }
+                }
+                check_move = true;
+            }
+        }
+    }
+    if (check_move) {
+        if (veh_fc_id == MapWin->cOwner && is_human(veh_fc_id) && (*VehAttackFlags & 1)) {
+            if (Vehs[veh_id].order == ORDER_MOVE_TO
+            && (tgt_x != Vehs[veh_id].waypoint_x[0] || tgt_y != Vehs[veh_id].waypoint_y[0])
+            && Vehs[veh_id].triad() != TRIAD_AIR) {
+                if (!(Vehs[veh_id].state & (VSTATE_EXPLORE|VSTATE_ON_ALERT))
+                && goody_at(tgt_x, tgt_y) && popp(ScriptFile, "GOTOGOODY", 0, "supply_sm.pcx", 0)) {
+                    Vehs[veh_id].order = ORDER_NONE;
+                    goto MOV_END;
+                }
+            }
+        }
+    }
+    if (veh_speed(veh_id, 0) - Vehs[veh_id].moves_spent <= 0) {
+        goto MOV_END;
+    }
+    int move_val;
+    cost_val = mod_hex_cost(Vehs[veh_id].unit_id, veh_fc_id, veh_x, veh_y, tgt_x, tgt_y, 0);
+    move_val = clamp(veh_speed(veh_id, 0) - Vehs[veh_id].moves_spent, 0, 999);
+    if (cost_val > move_val && veh_triad == TRIAD_LAND) {
+        if (move_val < Rules->move_rate_roads
+        || (mapsq(tgt_x, tgt_y)->is_fungus()
+        && !Vehs[veh_id].is_native_unit()
+        && Vehs[veh_id].plan() != PLAN_TERRAFORM
+        && Vehs[veh_id].plan() != PLAN_ARTIFACT
+        && stack_veh_id < 0)) {
+            if (*VehAttackFlags & 1 || !is_human(veh_fc_id)) {
+                int rnd_val;
+                if (*ControlTurnC) {
+                    rnd_val = game_randv(cost_val);
+                } else {
+                    rnd_val = game_random(0, cost_val);
+                }
+                int addon_val = move_val + ((Vehs[veh_id].state & VSTATE_UNK_8000) ? Rules->move_rate_roads : 0);
+                if (rnd_val >= addon_val) {
+                    if (veh_fc_id == MapWin->cOwner) {
+                        if (Vehs[veh_id].order == ORDER_NONE
+                        && !shift_key_down()
+                        && (*VehAttackFlags & 1)
+                        && !(Vehs[veh_id].state & VSTATE_ON_ALERT)
+                        && !(*GameMorePreferences & MPREF_ADV_QUICK_MOVE_ALL_VEH)) {
+                            Console_focus(MapWin, veh_x, veh_y, MapWin->cOwner);
+                            stack_veh(veh_id, 1);
+                            veh_scoot(veh_id, veh_x, veh_y, offset + 8, 0);
+                            stack_put(veh_id, veh_x, veh_y);
+                            for (int i = 0; i < 8; i++) {
+                                int px = wrap(tgt_x + BaseOffsetX[i]);
+                                int py = tgt_y + BaseOffsetY[i];
+                                if (on_map(px, py)) {
+                                    spot_loc(px, py, veh_fc_id);
+                                }
+                            }
+                            draw_tiles(tgt_x, tgt_y, 2);
+                        }
+                        if (veh_fc_id == MapWin->cOwner) {
+                            tgt_sq = mapsq(tgt_x, tgt_y);
+                            if (tgt_sq->is_fungus() && Vehs[veh_id].order == ORDER_NONE) {
+                                int plan = Vehs[veh_id].plan();
+                                if (plan != PLAN_TERRAFORM && plan != PLAN_ARTIFACT && *VehAttackFlags & 1) {
+                                    if (tut_check(0x1000)) {
+                                        ++(*dword_945AF8);
+                                        FX_play(Sounds, 9);
+                                        TutWin_tut_map(TutWin, "SLOWFUNGUS", tgt_x, tgt_y, -1, 0, 0, -1, -1);
+                                        Vehs[veh_id].order = ORDER_NONE;
+                                        goto MOV_END;
+                                    }
+                                    if (!move_delay) {
+                                        ++(*dword_945AF8);
+                                    }
+                                }
+                            }
+                            if (veh_fc_id == MapWin->cOwner && !Vehs[veh_id].order && !(*dword_8CC210)) {
+                                if (*VehAttackFlags & 1 && !tgt_sq->is_fungus()) {
+                                    if (tut_check(0x4000)) {
+                                        TutWin_tut_map(TutWin, "FRACTIONALMOVE", tgt_x, tgt_y, veh_id, 0, 0, veh_x, veh_y);
+                                        Vehs[veh_id].order = ORDER_NONE;
+                                        goto MOV_END;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    veh_skip(veh_id);
+                    Vehs[veh_id].state |= VSTATE_UNK_8000;
+                    if ((*VehAttackFlags & 1) && *MultiplayerActive && !*ControlTurnC) {
+                        synch_veh(veh_id);
+                        NetDaemon_await_synch(NetState);
+                    }
+                    move_result = 1;
+                    goto MOV_END;
+                }
+            }
+        }
+    }
+    move_result = 1;
+    if (!(*VehAttackFlags & 2)) {
+        goto MOV_END;
+    }
+    Vehs[veh_id].moves_spent += cost_val;
+    Vehs[veh_id].state &= ~(VSTATE_UNK_8000|VSTATE_UNK_40);
+    if (base_id >= 0) {
+        if (tgt_fc_id != veh_fc_id && !(Factions[veh_fc_id].diplo_status[tgt_fc_id] & DIPLO_PACT)) {
+            if (Factions[tgt_fc_id].diplo_status[veh_fc_id] & (DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT)
+            && tgt_fc_id == MapWin->cOwner) {
+                *PluralDefault = 0;
+                *GenderDefault = MFactions[veh_fc_id].is_leader_female;
+                parse_says(0, MFactions[veh_fc_id].title_leader, -1, -1);
+                parse_says(1, MFactions[veh_fc_id].name_leader, -1, -1);
+                *PluralDefault = MFactions[veh_fc_id].is_noun_plural;
+                *GenderDefault = MFactions[veh_fc_id].noun_gender;
+                parse_says(2, MFactions[veh_fc_id].noun_faction, -1, -1);
+                NetMsg_pop(NetMsg, "SURPRISE", 5000, 0, 0);
+            }
+            if (veh_fc_id == MapWin->cOwner) {
+                visual_tgl = 1;
+            } else {
+                if (tgt_fc_id != MapWin->cOwner) {
+                    if (Bases[base_id].faction_id == MapWin->cOwner
+                    || ((1 << MapWin->cOwner) & Bases[base_id].visibility)) {
+                        if (veh_fc_id) {
+                            spot_stack(veh_id, MapWin->cOwner);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (veh_fc_id == MapWin->cOwner
+    || (Vehs[veh_id].faction_id == MapWin->cOwner
+    && !Vehs[veh_id].is_invisible_lurker())) {
+        visual_tgl = 1;
+    } else {
+        visual_tgl = (*GameState & STATE_OMNISCIENT_VIEW)
+            || Vehs[veh_id].is_visible(MapWin->cOwner);
+    }
+    if (!visual_tgl && !(*GameState & STATE_OMNISCIENT_VIEW)
+    && !is_known(tgt_x, tgt_y, MapWin->cOwner)) {
+        move_delay = 0;
+    } else {
+        if (!visual_tgl) {
+            tgt_sq = mapsq(tgt_x, tgt_y);
+            for (int i = 0; i < 21; i++) {
+                int px = wrap(tgt_x + TableOffsetX[i]);
+                int py = tgt_y + TableOffsetY[i];
+                MAP* psq = mapsq(px, py);
+                if (psq && tgt_sq
+                && (is_ocean(psq) != is_ocean(tgt_sq) || psq->region == tgt_sq->region)) {
+                    if (is_sensor(px, py) && MapWin->cOwner == whose_territory(MapWin->cOwner, px, py, 0, 0)) {
+                        visual_tgl = 1;
+                        break;
+                    }
+                    if (MapWin->cOwner == (i >= 9 ? psq->base_who() : psq->anything_at())) {
+                        visual_tgl = 1;
+                        break;
+                    }
+                }
+            }
+        }
+        if (!visual_tgl) {
+            move_delay = 0;
+        } else {
+            move_delay = 1;
+            if (veh_fc_id != MapWin->cOwner
+            && (!(*GamePreferences & PREF_BSC_DONT_QUICK_MOVE_ENEMY_VEH)
+            || Factions[MapWin->cOwner].diplo_status[veh_fc_id] & DIPLO_PACT)
+            && (!(*GamePreferences & PREF_BSC_DONT_QUICK_MOVE_ALLY_VEH)
+            || !(Factions[MapWin->cOwner].diplo_status[veh_fc_id] & DIPLO_PACT))) {
+                if (base_id < 0 || (veh_fc_id == Bases[base_id].faction_id)
+                || Factions[veh_fc_id].diplo_status[Bases[base_id].faction_id] & DIPLO_PACT) {
+                    move_delay = 0;
+                }
+            }
+            bool shift, toggle;
+            shift = shift_key_down();
+            toggle = true;
+            if (shift) {
+                move_delay = 0;
+            }
+            if (cost_val || veh_fc_id == MapWin->cOwner) {
+                if (cost_val || (!(Vehs[veh_id].state & (VSTATE_EXPLORE|VSTATE_ON_ALERT))
+                && Vehs[veh_id].order != ORDER_MOVE_TO)) {
+                    if (shift || (*GameMorePreferences & MPREF_ADV_QUICK_MOVE_ALL_VEH)) {
+                        toggle = true;
+                    } else if (!(*GameMorePreferences & MPREF_ADV_QUICK_MOVE_VEH_ORDERS)) {
+                        toggle = false;
+                    } else if (veh_fc_id != MapWin->cOwner && veh_triad != TRIAD_AIR) {
+                        toggle = false;
+                    } else if (veh_fc_id == MapWin->cOwner
+                    && !(Vehs[veh_id].state & (VSTATE_EXPLORE|VSTATE_ON_ALERT))
+                    && Vehs[veh_id].order != ORDER_MOVE_TO) {
+                        toggle = false;
+                    }
+                }
+            }
+            if (toggle) {
+                move_delay = 0;
+                MapWin->field_23BF0 = 1;
+                if (veh_fc_id == MapWin->cOwner) {
+                    MapWin->field_23BF0 = 2;
+                    Console_cursor_next(MapWin, tgt_x, tgt_y);
+                }
+            }
+        }
+    }
+    if (visual_tgl && !ctrl_key_down()
+    && (move_delay || !(*GamePreferences & PREF_ADV_NO_CENTER_VEH_ORDERS))) {
+        Console_focus(MapWin, veh_x, veh_y, veh_fc_id);
+    }
+    stack_veh(veh_id, 1);
+    if (move_delay) {
+        if (veh_fc_id == MapWin->cOwner) {
+            int delay = mapsq(tgt_x, tgt_y)->alt_level()
+                <= mapsq(veh_x, veh_y)->alt_level() ? 200 : 300;
+            FX_engine_pitch(Sounds, delay);
+        }
+        veh_scoot(veh_id, veh_x, veh_y, offset, 0);
+        if (veh_fc_id == MapWin->cOwner) {
+            FX_engine_pitch(Sounds, 0);
+        }
+    } else if (visual_tgl) {
+        veh_scoot(veh_id, veh_x, veh_y, offset, 0x4000);
+    } else {
+        Vehs[veh_id].rotate_angle = offset;
+    }
+    if (veh_fc_id) {
+        unspot_stack(veh_id);
+    } else {
+        Vehs[veh_id].visibility &= mapsq(tgt_x, tgt_y)->visibility;
+        for (int i = 1; i < MaxPlayerNum; i++) {
+            if ((1 << i) & Vehs[veh_id].visibility) {
+                base_find_2(tgt_x, tgt_y, i);
+                if (*BaseFindDist >= 8 && whose_territory(i, tgt_x, tgt_y, 0, 0) != i) {
+                    Vehs[veh_id].visibility &= ~(1 << i);
+                }
+            }
+        }
+        tgt_owner = MaxPlayerNum;
+    }
+    tgt_sq = mapsq(tgt_x, tgt_y);
+    if (tgt_sq->items & BIT_BUNKER && stack_veh_id < 0) {
+        if (Vehs[veh_id].triad() == TRIAD_LAND && Vehs[veh_id].plan() != PLAN_PROBE) {
+            tgt_owner = whose_territory(veh_fc_id, tgt_x, tgt_y, 0, 0);
+            if (tgt_owner >= 0 && tgt_owner != veh_fc_id
+            && !(Factions[veh_fc_id].diplo_status[tgt_owner] & DIPLO_PACT)) {
+                veh_skip(veh_id);
+                if (veh_fc_id == MapWin->cOwner) {
+                    NetMsg_pop(NetMsg, "BUNKERCAPTURED", 5000, 0, 0);
+                }
+            }
+        }
+    }
+    assert(base_id == base_at(tgt_x, tgt_y));
+    if (base_id >= 0 && veh_fc_id != tgt_fc_id && !veh_fc_id) {
+        for (int iter_val = 0; iter_val <= 100; iter_val++) {
+            // Fix: remove code that checked the wrong faction definition
+            // and always ignored the intention not to destroy free facilities.
+            // First does 100 attempts at destroying random facility before production loss.
+            if (iter_val < 100) {
+                int rnd_id = game_rand() % 70;
+                if (rnd_id <= 1 || rnd_id >= 65) {
+                    continue;
+                }
+                if (rnd_id == FAC_PRESSURE_DOME && is_ocean(mapsq(tgt_x, tgt_y))) {
+                    continue;
+                }
+                if (!has_fac_built((FacilityId)rnd_id, base_id)
+                || has_free_facility((FacilityId)rnd_id, tgt_fc_id)) {
+                    continue;
+                }
+                set_fac((FacilityId)rnd_id, base_id, 0);
+                parse_says(1, Facility[rnd_id].name, -1, -1);
+            }
+            parse_says(2, Vehs[veh_id].name(), -1, -1);
+            if (visual_tgl && tgt_fc_id == MapWin->cOwner) {
+                parse_says(0, Bases[base_id].name, -1, -1);
+                NetMsg_pop(NetMsg, iter_val < 100 ? "WORMSATTACK1" : "WORMSATTACK", 5000, 0, 0);
+            }
+            kill(veh_id);
+            int num = 0;
+            for (int i = 0; i < 25; i++) {
+                int px = wrap(tgt_x + TableOffsetX[i]);
+                int py = tgt_y + TableOffsetY[i];
+                if (on_map(px, py)) {
+                    veh_id = stack_fix(veh_at(px, py));
+                    if (veh_id >= 0 && !Vehs[veh_id].faction_id) {
+                        veh_id = veh_top(veh_id);
+                        int next_id = veh_id;
+                        while (next_id >= 0) {
+                            next_id = Vehs[veh_id].next_veh_id_stack;
+                            if (num >= Factions[tgt_fc_id].clean_minerals_modifier) {
+                                veh_kill(veh_id);
+                                if (next_id >= 0 && veh_id < next_id) {
+                                    --next_id;
+                                }
+                            } else {
+                                ++num;
+                            }
+                            veh_id = next_id;
+                        }
+                    }
+                }
+            }
+            if (*CurrentTurn >= 10) {
+                --Bases[base_id].pop_size;
+                if (is_objective(base_id)) {
+                    Bases[base_id].pop_size = max(1, (int)Bases[base_id].pop_size);
+                }
+            }
+            if (*CurrentTurn < 10 || Bases[base_id].pop_size > 0) {
+                if (iter_val >= 100) {
+                    Bases[base_id].minerals_accumulated = 0;
+                }
+                draw_tile(Bases[base_id].x, Bases[base_id].y, 2);
+                BaseWin_check_base(BaseWin, base_id);
+            } else {
+                mod_base_kill(base_id);
+                draw_map(1);
+                mod_eliminate_player(tgt_fc_id, 0);
+                draw_map(1);
+            }
+            goto MOV_END;
+        }
+    }
+    stack_put(veh_id, tgt_x, tgt_y);
+    if (base_id < 0) {
+        if (tgt_at_sea && Vehs[veh_id].triad() == TRIAD_SEA) {
+            int find_count = 0;
+            int find_fc_id = 0;
+            for (int i = 0; i < 25; i++) {
+                int px = wrap(tgt_x + TableOffsetX[i]);
+                int py = tgt_y + TableOffsetY[i];
+                if (on_map(px, py)) {
+                    int iter_id = stack_fix(veh_at(px, py));
+                    for (; iter_id >= 0; iter_id = Vehs[iter_id].next_veh_id_stack) {
+                        if (can_arty(Vehs[iter_id].unit_id, 1) && !Vehs[iter_id].triad()) {
+                            int iter_fc = Vehs[iter_id].faction_id;
+                            if (iter_fc != veh_fc_id) {
+                                if (Factions[veh_fc_id].diplo_status[iter_fc] & DIPLO_VENDETTA
+                                && ((Vehs[veh_id].faction_id == Vehs[iter_id].faction_id
+                                && (Vehs[veh_id].is_invisible_lurker()))
+                                || Vehs[veh_id].visibility & (1 << iter_fc))) {
+                                    ++find_count;
+                                    find_fc_id = iter_fc;
+                                    tgt_owner = iter_fc;
+                                    spot_stack(iter_id, veh_fc_id);
+                                } else {
+                                    find_fc_id = tgt_owner;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (find_count) {
+                Vehs[veh_id].moves_spent += find_count * Rules->move_rate_roads;
+                if (veh_fc_id == MapWin->cOwner) {
+                    parse_says(0, MFactions[find_fc_id].adj_name_faction, -1, -1);
+                    NetMsg_pop(NetMsg, "GIBRALTAR", 5000, 0, 0);
+                }
+            }
+        }
+    } else if (veh_fc_id != tgt_fc_id && !(Factions[veh_fc_id].diplo_status[tgt_fc_id] & DIPLO_PACT)) {
+        if (*ExpansionEnabled) {
+            if (!is_battle_ogre(Vehs[veh_id].unit_id)) {
+                Vehs[veh_id].damage_taken = 0;
+            }
+        }
+        *CurrentVehID = veh_id;
+        act_of_aggression(veh_fc_id, tgt_fc_id);
+        mod_capture_base(base_id, veh_fc_id, 0);
+        veh_id = *CurrentVehID;
+    }
+    if (base_id >= 0 && veh_cargo(veh_id)) {
+        if (veh_fc_id == MapWin->cOwner || (*MultiplayerActive && is_human(veh_fc_id))) {
+            if (Vehs[veh_id].order != ORDER_MOVE_TO
+            || (Vehs[veh_id].waypoint_x[0] == tgt_x && Vehs[veh_id].waypoint_y[0] == tgt_y)) {
+                for (int cur_id = veh_top(veh_id); cur_id >= 0; cur_id = Vehs[cur_id].next_veh_id_stack) {
+                    if (Vehs[cur_id].faction_id == veh_fc_id && Vehs[cur_id].order == ORDER_SENTRY_BOARD) {
+                        if (Vehs[cur_id].waypoint_x[0] < 0 || Vehs[cur_id].waypoint_x[0] == veh_id) {
+                            Vehs[cur_id].order = ORDER_NONE;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (veh_fc_id == MapWin->cOwner && *GamePreferences & PREF_AUTO_WAKE_VEH_TRANS_REACH_LAND) {
+        if (Vehs[veh_id].triad() == TRIAD_SEA && veh_cargo(veh_id) && tgt_at_sea) {
+            if ((veh_speed(veh_id, 0) - Vehs[veh_id].moves_spent <= 0)
+            && (Vehs[veh_id].order != ORDER_MOVE_TO
+            || (Vehs[veh_id].waypoint_x[0] == tgt_x && Vehs[veh_id].waypoint_y[0] == tgt_y))) {
+                for (int i = 0; i < 8; i++) {
+                    int px = wrap(tgt_x + BaseOffsetX[i]);
+                    int py = tgt_y + BaseOffsetY[i];
+                    MAP* psq = mapsq(px, py);
+                    if (psq && (!is_ocean(psq) || psq->base_who() >= 0)) {
+                        int cur_id = veh_top(veh_id);
+                        for (; cur_id >= 0; cur_id = Vehs[cur_id].next_veh_id_stack) {
+                            if (Vehs[cur_id].triad() == TRIAD_LAND
+                            && Vehs[cur_id].order == ORDER_SENTRY_BOARD
+                            && veh_speed(cur_id, 0) - Vehs[cur_id].moves_spent > 0) {
+                                Vehs[cur_id].order = ORDER_NONE;
+                                MapWin->iUnit = cur_id;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (veh_triad == TRIAD_LAND && veh_at_sea && !tgt_at_sea) {
+        ++Factions[veh_fc_id].region_total_combat_units[tgt_region];
+    }
+MOV_UPKEEP:
+    if (!Vehs[veh_id].offense_value()) {
+        veh_demote(veh_id);
+    }
+    tgt_sq = mapsq(tgt_x, tgt_y);
+    assert(tgt_sq);
+    if (!veh_fc_id && tgt_sq->is_fungus()) {
+        if (Vehs[veh_id].damage_taken > 0) {
+            --Vehs[veh_id].damage_taken;
+        }
+    }
+    spot_all(veh_id, 1);
+    if (veh_fc_id != MapWin->cOwner
+    && !is_human(veh_fc_id)
+    && !(*GameState & STATE_OMNISCIENT_VIEW)
+    && visual_tgl
+    && !MapWin->field_23BF0
+    && !shift_key_down()
+    && !*MultiplayerActive) {
+        clock_wait(!move_delay ? 5 : 100);
+    }
+    if (Vehs[veh_id].triad() == TRIAD_AIR) {
+        tgt_no_airbase = tgt_sq->base_who() < 0 && !(tgt_sq->items & BIT_AIRBASE);
+        for (int cur_id = veh_top(veh_id); tgt_no_airbase && cur_id >= 0; cur_id = Vehs[cur_id].next_veh_id_stack) {
+            if (has_abil(Vehs[cur_id].unit_id, ABL_CARRIER)) {
+                tgt_no_airbase = 0;
+            }
+        }
+        bool fuel_check = tgt_no_airbase;
+        if (!fuel_check && is_human(veh_fc_id)) {
+            int moves = veh_speed(veh_id, 0) - Vehs[veh_id].moves_spent;
+            if (Vehs[veh_id].range() == 1 && moves > 0 && move_check_fuel) {
+                fuel_check = true;
+            } else if (moves > 0) {
+                fuel_check = (clamp(moves, 0, 999) > Rules->move_rate_roads)
+                    || mod_zoc_veh(tgt_x, tgt_y, veh_fc_id);
+            }
+        }
+        if (fuel_check) {
+            int val_turns = Vehs[veh_id].movement_turns + 1;
+            int val_range = Vehs[veh_id].range();
+            if (val_range) {
+                auto ret_home = [&]() -> bool {
+                    return (veh_fc_id == MapWin->cOwner
+                    && (*GamePreferences & PREF_AUTO_AIR_VEH_RET_HOME_FUEL_RNG
+                    || (Vehs[veh_id].state & (VSTATE_EXPLORE|VSTATE_ON_ALERT)))
+                    && (Vehs[veh_id].state & (VSTATE_UNK_1000000|VSTATE_ON_ALERT))
+                    != (VSTATE_UNK_1000000|VSTATE_ON_ALERT)
+                    && ((Vehs[veh_id].state & (VSTATE_UNK_2000000|VSTATE_ON_ALERT))
+                    != (VSTATE_UNK_2000000|VSTATE_ON_ALERT)
+                    || Vehs[veh_id].patrol_current_point >= Vehs[veh_id].waypoint_count));
+                };
+                if (!is_human(veh_fc_id) || ret_home()) {
+                    action_home(veh_id, 1);
+                }
+                if (veh_speed(veh_id, 0) - Vehs[veh_id].moves_spent <= 0) {
+                    if (val_turns < val_range) {
+                        if (val_turns >= val_range / 2) {
+                            if (!is_human(veh_fc_id) || (ret_home() && Vehs[veh_id].order != ORDER_MOVE_TO)) {
+                                action_home(veh_id, 0);
+                            }
+                        }
+                        ++Vehs[veh_id].movement_turns;
+                    } else {
+                        Vehs[veh_id].state |= VSTATE_HAS_MOVED;
+                        if (visual_tgl) {
+                            boom(Vehs[veh_id].x, Vehs[veh_id].y, 128);
+                        }
+                        if (val_range != 1 || Vehs[veh_id].chassis_type() != CHS_COPTER) {
+                            // Fix: adjust incorrect upper bounds checking
+                            Vehs[veh_id].damage_taken = Vehs[veh_id].max_hitpoints();
+                        } else {
+                            Vehs[veh_id].damage_taken += 3 * Vehs[veh_id].reactor_type();
+                        }
+                        if (Vehs[veh_id].cur_hitpoints() <= 0) {
+                            kill(veh_id);
+                            if (visual_tgl && veh_fc_id == MapWin->cOwner) {
+                                NetMsg_pop(NetMsg, "PLANECRASH", 5000, 0, 0);
+                            }
+                            goto MOV_END;
+                        }
+                        Vehs[veh_id].movement_turns = 0;
+                        draw_tile(Vehs[veh_id].x, Vehs[veh_id].y, 2);
+                        if (visual_tgl && veh_fc_id == MapWin->cOwner) {
+                            NetMsg_pop(NetMsg, "CHOPPERFUEL", 5000, 0, 0);
+                        }
+                    }
+                }
+            }
+        } else {
+            Vehs[veh_id].movement_turns = 0;
+            veh_skip(veh_id);
+            veh_demote(veh_id);
+            draw_tile(Vehs[veh_id].x, Vehs[veh_id].y, 2);
+        }
+    }
+    if (tgt_sq->items & BIT_MONOLITH && veh_triad != TRIAD_AIR && !move_fight) {
+        if (offset >= 0 || (Vehs[veh_id].offense_value()
+        && (Vehs[veh_id].damage_taken || !(Vehs[veh_id].state & VSTATE_MONOLITH_UPGRADED)))) {
+            mod_monolith(veh_id);
+        }
+    }
+    if (goody_val && veh_triad != TRIAD_AIR && veh_fc_id && mod_goody_box(veh_id)) {
+        goto MOV_END;
+    }
+    if (Vehs[veh_id].plan() == PLAN_ARTIFACT && offset < 8 && base_id < 0
+    && mod_stack_check(veh_id, 1, -1, -1, -1) == 1) {
+        for (int i = 0; i < 8; i++) {
+            int px = wrap(tgt_x + BaseOffsetX[i]);
+            int py = tgt_y + BaseOffsetY[i];
+            if (!on_map(px, py) || is_ocean(mapsq(px, py))) {
+                continue;
+            }
+            int iter_id = stack_fix(veh_at(px, py));
+            if (iter_id >= 0) {
+                int iter_fc_id = Vehs[iter_id].faction_id;
+                if (iter_fc_id && iter_fc_id != veh_fc_id) {
+                    if (!(Factions[veh_fc_id].diplo_status[iter_fc_id] & DIPLO_PACT)) {
+                        if (mod_stack_check(iter_id, 1, -1, -1, -1) > mod_stack_check(iter_id, 2, 12, -1, -1)) {
+                            Vehs[veh_id].faction_id = Vehs[iter_id].faction_id;
+                            Vehs[veh_id].order = ORDER_NONE;
+                            draw_tile(tgt_x, tgt_y, 2);
+                            owner_set(tgt_x, tgt_y, Vehs[veh_id].faction_id);
+                            if (veh_fc_id == MapWin->cOwner) {
+                                MapWin->iUnit = -1;
+                                *PluralDefault = MFactions[iter_fc_id].is_noun_plural;
+                                *GenderDefault = MFactions[iter_fc_id].noun_gender;
+                                parse_says(0, MFactions[iter_fc_id].noun_faction, -1, -1);
+                                popp(ScriptFile, "TOOKARTIFACT", 0, "artstolen_sm.pcx", 0);
+                            } else if (Vehs[iter_id].faction_id == MapWin->cOwner) {
+                                parse_says(0, Vehs[iter_id].name(), -1, -1);
+                                *PluralDefault = MFactions[veh_fc_id].is_noun_plural;
+                                *GenderDefault = MFactions[veh_fc_id].noun_gender;
+                                parse_says(1, MFactions[veh_fc_id].noun_faction, -1, -1);
+                                popp(ScriptFile, "TAKENARTIFACT", 0, "artstolen_sm.pcx", 0);
+                            }
+                            veh_fc_id = Vehs[veh_id].faction_id;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (Vehs[veh_id].plan() == PLAN_ARTIFACT && base_id >= 0 && Vehs[veh_id].movement_turns) {
+        if (Vehs[veh_id].movement_turns == 1) {
+            if (mod_study_artifact(veh_id)) {
+                veh_id = -1;
+                goto MOV_END;
+            }
+        } else if (Vehs[veh_id].movement_turns == 2) {
+            int mins = 10 * Units[Vehs[veh_id].unit_id].cost / 2 + Bases[base_id].minerals_accumulated;
+            Bases[base_id].minerals_accumulated = mins;
+            Bases[base_id].minerals_accumulated_2 = mins;
+            Bases[base_id].production_id_last = Bases[base_id].queue_items[0];
+            kill(veh_id);
+            veh_id = -1;
+            BaseWin_check_base(BaseWin, base_id);
+            goto MOV_END;
+        }
+    }
+    if (veh_at_sea && !tgt_at_sea && Vehs[veh_id].plan() == PLAN_COLONY) {
+        Factions[veh_fc_id].region_flags[tgt_region] |= 2u;
+    }
+    if (move_no_base) {
+        sleep(veh_id);
+        veh_skip(veh_id);
+        for (int cur_id = veh_top(veh_id); cur_id >= 0; cur_id = Vehs[cur_id].next_veh_id_stack) {
+            if (!veh_cargo(cur_id)) {
+                if (Vehs[cur_id].moves_spent <= veh_speed(cur_id, 0)) { // might evaluate always true
+                    stack_veh(cur_id, 0);
+                    if (Vehs[veh_id].waypoint_x[0] == cur_id) {
+                        MapWin->iUnit = cur_id;
+                        Vehs[cur_id].order = ORDER_NONE;
+                        break;
+                    }
+                } else {
+                    Vehs[cur_id].order = ORDER_NONE;
+                }
+            }
+        }
+        draw_tile(tgt_x, tgt_y, 2);
+    }
+    if (!is_human(veh_fc_id)
+    && Vehs[veh_id].plan() == PLAN_NAVAL_TRANSPORT
+    && is_ocean(mapsq(tgt_x, tgt_y))
+    && base_id < 0) {
+        if (veh_speed(veh_id, 0) - Vehs[veh_id].moves_spent <= 0) {
+            if (mod_zoc_any(Vehs[veh_id].x, Vehs[veh_id].y, veh_fc_id)
+            || (!thinker_move_upkeep(veh_fc_id)
+            && (Vehs[veh_id].visibility & FactionStatus[0] || Vehs[veh_id].status_icon == 'u'))) {
+                for (int cur_id = veh_top(veh_id); cur_id >= 0; cur_id = Vehs[cur_id].next_veh_id_stack) {
+                    if (Vehs[cur_id].order == ORDER_SENTRY_BOARD && Vehs[cur_id].waypoint_x[0] == veh_id) {
+                        Vehs[veh_id].order = ORDER_NONE; // stops transport order
+                    }
+                }
+            }
+            int px = tgt_x;
+            int py = tgt_y;
+            if (Vehs[veh_id].order == ORDER_MOVE_TO) {
+                px = (tgt_x + Vehs[veh_id].waypoint_x[0]) / 2;
+                py = (tgt_y + Vehs[veh_id].waypoint_y[0]) / 2;
+                px = px - (px & 1) + (py & 1);
+                if (!is_ocean(mapsq(px, py))) {
+                    px = tgt_x;
+                    py = tgt_y;
+                }
+            }
+            if (is_ocean(mapsq(px, py))) {
+                add_goal(veh_fc_id, AI_GOAL_UNK_1, 2, px, py, -1);
+            }
+        }
+    }
+    if (veh_fc_id == MapWin->cOwner) {
+        if (Vehs[veh_id].order == ORDER_MOVE_TO || (Vehs[veh_id].state & (VSTATE_EXPLORE|VSTATE_ON_ALERT))) {
+            ++Vehs[veh_id].iter_count;
+            if (Vehs[veh_id].state & VSTATE_UNK_10000 && offset == (Vehs[veh_id].rotate_angle ^ 4)) {
+                Vehs[veh_id].iter_count += 8;
+            }
+            if (Vehs[veh_id].iter_count >= 32) {
+                parse_says(0, Vehs[veh_id].name(), -1, -1);
+                if (*MultiplayerActive || X_pop("KEEPMOVING", 0)) {
+                    Vehs[veh_id].order = ORDER_NONE;
+                    Vehs[veh_id].state &= ~(VSTATE_UNK_2000000|VSTATE_UNK_1000000|VSTATE_EXPLORE|VSTATE_ON_ALERT);
+                }
+                Vehs[veh_id].iter_count = 0;
+            }
+        }
+    }
+    if (offset < 0 || offset >= 8) {
+        Vehs[veh_id].state &= ~VSTATE_UNK_10000;
+    } else {
+        Vehs[veh_id].rotate_angle = offset;
+        Vehs[veh_id].state |= VSTATE_UNK_10000;
+    }
+MOV_END:
+    if (veh_id >= 0 && *VehCount == prev_vehcount) {
+        if (move_result) {
+            if (*VehAttackFlags & 2) {
+                if (offset >= 0 && offset < 8) {
+                    if (Vehs[veh_id].state & VSTATE_UNK_8
+                    && Vehs[veh_id].x == tgt_x
+                    && Vehs[veh_id].y == tgt_y
+                    && !mod_zoc_veh(tgt_x, tgt_y, veh_fc_id)) {
+                        Vehs[veh_id].state &= ~VSTATE_UNK_8;
+                    }
+                }
+                if (*MultiplayerActive && !*ControlTurnC
+                && Vehs[veh_id].order == ORDER_MOVE_TO
+                && Vehs[veh_id].x == Vehs[veh_id].waypoint_x[0]
+                && Vehs[veh_id].y == Vehs[veh_id].waypoint_y[0]) {
+                    Vehs[veh_id].order = ORDER_NONE;
+                    if ((Vehs[veh_id].state & (VSTATE_UNK_2000000|VSTATE_ON_ALERT)) == (VSTATE_UNK_2000000|VSTATE_ON_ALERT)) {
+                        int num = Vehs[veh_id].patrol_current_point;
+                        if (num < Vehs[veh_id].waypoint_count && num >= 0 && num < 3) {
+                            Vehs[veh_id].order = ORDER_MOVE_TO;
+                            Vehs[veh_id].patrol_current_point = num + 1;
+                            Vehs[veh_id].waypoint_x[0] = Vehs[veh_id].waypoint_x[num + 1];
+                            Vehs[veh_id].waypoint_y[0] = Vehs[veh_id].waypoint_y[num + 1];
+                            Vehs[veh_id].state &= ~(VSTATE_UNK_2000000|VSTATE_UNK_10000|VSTATE_ON_ALERT);
+                        }
+                    }
+                }
+            }
+        } else {
+            Vehs[veh_id].order = ORDER_NONE;
+            if (!is_human(veh_fc_id) || (Vehs[veh_id].state & (VSTATE_EXPLORE|VSTATE_ON_ALERT))) {
+                ++Vehs[veh_id].iter_count;
+                if (Vehs[veh_id].iter_count >= 24 || is_human(veh_fc_id)) {
+                    Vehs[veh_id].iter_count = 0;
+                    veh_skip(veh_id);
+                }
+            }
+            if (!(*VehAttackFlags & 2) && *MultiplayerActive && !*ControlTurnC) {
+                synch_veh(veh_id);
+                NetDaemon_await_synch(NetState);
+            }
+        }
+        return move_result;
+    } else {
+        return 0;
+    }
+}
 
 

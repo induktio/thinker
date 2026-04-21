@@ -101,7 +101,7 @@ void mod_say_orders(char* buf, int veh_id) {
         if (veh->home_base_id >= 0) {
             set_base(veh->home_base_id);
         } else {
-            int base_id = mod_base_find3(veh->x, veh->y, veh->faction_id, -1, -1, -1);
+            int base_id = base_find_3(veh->x, veh->y, veh->faction_id, -1, -1, -1);
             if (base_id >= 0) {
                 set_base(base_id);
             }
@@ -563,6 +563,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x592600, (int)new_landmark);
     write_jump(0x592650, (int)valid_landmark);
     write_jump(0x5926F0, (int)kill_landmark);
+    write_jump(0x5947C0, (int)order_veh);
     write_jump(0x59D980, (int)prefs_get2);
     write_jump(0x59DA20, (int)default_prefs);
     write_jump(0x59DAA0, (int)default_prefs2);
@@ -588,6 +589,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x5B9C40, (int)say_tech);
     write_jump(0x5B9FE0, (int)tech_category);
     write_jump(0x5BAB40, (int)terrain_avail);
+    write_jump(0x5BF010, (int)is_sensor);
     write_jump(0x5BF1F0, (int)has_abil);
     write_jump(0x5BF310, (int)X_pop2);
     write_jump(0x5C03D0, (int)veh_init);
@@ -928,25 +930,25 @@ bool patch_setup(Config* cf) {
     write_call(0x4E88CA, (int)mod_energy_yield); // base_yield
     write_call(0x4E971F, (int)mod_energy_yield); // base_support
     write_call(0x56C856, (int)mod_energy_yield); // enemy_move
-    write_call(0x46DB16, (int)mod_base_find3); // MapWin::click
-    write_call(0x4C94B8, (int)mod_base_find3); // terraform_cost
-    write_call(0x4CB104, (int)mod_base_find3); // action_destroy
-    write_call(0x4CB1F4, (int)mod_base_find3); // action_destroy
-    write_call(0x4CCC56, (int)mod_base_find3); // action_airdrop
-    write_call(0x4E3F8C, (int)mod_base_find3); // whose_territory
-    write_call(0x5224A0, (int)mod_base_find3); // alien_fauna
-    write_call(0x52293A, (int)mod_base_find3); // alien_fauna
-    write_call(0x523ED7, (int)mod_base_find3); // reset_territory
-    write_call(0x52417F, (int)mod_base_find3); // reset_territory
-    write_call(0x54AEA1, (int)mod_base_find3); // suggest_plan
-    write_call(0x54AF20, (int)mod_base_find3); // suggest_plan
-    write_call(0x563745, (int)mod_base_find3); // enemy_strategy
-    write_call(0x56B8F1, (int)mod_base_find3); // enemy_move
-    write_call(0x56B924, (int)mod_base_find3); // enemy_move
-    write_call(0x56E460, (int)mod_base_find3); // enemy_move
-    write_call(0x570C4B, (int)mod_base_find3); // enemy_move
-    write_call(0x5B19B3, (int)mod_base_find3); // setup_player
-    write_call(0x5C0609, (int)mod_base_find3); // veh_init
+    write_call(0x46DB16, (int)base_find_3); // MapWin::click
+    write_call(0x4C94B8, (int)base_find_3); // terraform_cost
+    write_call(0x4CB104, (int)base_find_3); // action_destroy
+    write_call(0x4CB1F4, (int)base_find_3); // action_destroy
+    write_call(0x4CCC56, (int)base_find_3); // action_airdrop
+    write_call(0x4E3F8C, (int)base_find_3); // whose_territory
+    write_call(0x5224A0, (int)base_find_3); // alien_fauna
+    write_call(0x52293A, (int)base_find_3); // alien_fauna
+    write_call(0x523ED7, (int)base_find_3); // reset_territory
+    write_call(0x52417F, (int)base_find_3); // reset_territory
+    write_call(0x54AEA1, (int)base_find_3); // suggest_plan
+    write_call(0x54AF20, (int)base_find_3); // suggest_plan
+    write_call(0x563745, (int)base_find_3); // enemy_strategy
+    write_call(0x56B8F1, (int)base_find_3); // enemy_move
+    write_call(0x56B924, (int)base_find_3); // enemy_move
+    write_call(0x56E460, (int)base_find_3); // enemy_move
+    write_call(0x570C4B, (int)base_find_3); // enemy_move
+    write_call(0x5B19B3, (int)base_find_3); // setup_player
+    write_call(0x5C0609, (int)base_find_3); // veh_init
     write_call(0x467711, (int)mod_hex_cost); // MapWin::dest_line
     write_call(0x572518, (int)mod_hex_cost); // enemy_move
     write_call(0x5772D7, (int)mod_hex_cost); // enemy_move

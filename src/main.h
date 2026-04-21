@@ -162,7 +162,6 @@ const int ResonanceWeaponValue = 25;
 const int AerospaceDefenseRange = 2;
 const int FlechetteDefenseValue = 50;
 const int FlechetteDefenseRange = 2;
-const int GeosyncSurveyPodRange = 3;
 const int MissileDefendChance = 50;
 const int OrbitalAttackChance = 50;
 const int PlanetaryTransitPopSize = 3;

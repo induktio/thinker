@@ -3836,7 +3836,7 @@ int __cdecl mod_base_production() {
             }
             BasePop_string(&cur_popup, "^------");
             BasePop_string(&cur_popup, "^");
-            Popup_start(&cur_popup, "SCRIPT.txt", "PRODUCE2", -1, 0, 128, 0);
+            Popup_start(&cur_popup, "SCRIPT", "PRODUCE2", -1, 0, 128, 0);
             if (full_game_turn()) {
                 int w = 0, h = 0;
                 if (!Buffer_get_pcx_dimensions("secproj_sm.pcx", &w, &h)
@@ -4874,6 +4874,7 @@ bool has_facility(FacilityId item_id, int base_id) {
 }
 
 bool has_free_facility(FacilityId item_id, int faction_id) {
+    assert(faction_id >= 0 && faction_id < MaxPlayerNum);
     MFaction& m = MFactions[faction_id];
     for (int i = 0; i < m.faction_bonus_count; i++) {
         if (m.faction_bonus_val1[i] == item_id

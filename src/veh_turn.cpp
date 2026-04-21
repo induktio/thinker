@@ -152,7 +152,7 @@ int __cdecl mod_enemy_move(int veh_id) {
     }
     if (plr_unit) {
         if (!*CurrentBase) {
-            int base_id = mod_base_find3(veh->x, veh->y, veh->faction_id, -1, -1, -1);
+            int base_id = base_find_3(veh->x, veh->y, veh->faction_id, -1, -1, -1);
             if (base_id >= 0) {
                 set_base(base_id);
             }
@@ -616,7 +616,7 @@ void __cdecl mod_alien_fauna() {
                     && sq->visible_items[i - 1] & new_item) {
                         nsq->visible_items[i - 1] = (new_item | nsq->visible_items[i - 1]) & ~BIT_FUNGUS;
                         if (i == player_id) {
-                            int base_id = mod_base_find3(tx, ty, -1, -1, -1, player_id);
+                            int base_id = base_find_3(tx, ty, -1, -1, -1, player_id);
                             if (base_id < 0 || Bases[base_id].faction_id != player_id
                             || (*BaseFindDist > 3 && whose_territory(player_id, tx, ty, 0, 0) != player_id)) {
                                 draw_tiles(tx, ty, 2);
@@ -735,7 +735,7 @@ void __cdecl mod_alien_fauna() {
         if (bad_reg(sq->region) || sq->base_who() >= 0) {
             continue;
         }
-        int base_id = mod_base_find3(rx, ry, -1, sq->region, -1, -1);
+        int base_id = base_find_3(rx, ry, -1, sq->region, -1, -1);
         int veh_owner_id = sq->veh_who();
         if (veh_owner_id > 0 && !(base_id >= 0 && *BaseFindDist <= 2)) {
             for (int i = 0; i < 16; i++) {
