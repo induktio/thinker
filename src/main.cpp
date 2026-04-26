@@ -147,8 +147,6 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->base_event_turns = clamp(atoi(value), 1, 1000);
     } else if (MATCH("base_psych")) {
         cf->base_psych = atoi(value);
-    } else if (MATCH("nerve_staple")) {
-        cf->nerve_staple = atoi(value);
     } else if (MATCH("nerve_staple_turns")) {
         cf->nerve_staple_turns = clamp(atoi(value), 0, 1000);
     } else if (MATCH("nerve_staple_mod")) {
@@ -157,6 +155,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->delay_drone_riots = atoi(value);
     } else if (MATCH("activate_skipped_units")) {
         cf->activate_skipped_units = atoi(value);
+    } else if (MATCH("probe_action_fix")) {
+        cf->probe_action_fix = atoi(value);
     } else if (MATCH("counter_espionage")) {
         cf->counter_espionage = atoi(value);
     } else if (MATCH("ignore_reactor_power")) {

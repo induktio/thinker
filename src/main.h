@@ -274,11 +274,11 @@ struct Config {
     int chopper_attack_rate = 1;
     int base_event_turns = 10;
     int base_psych = 1;
-    int nerve_staple = 2;
     int nerve_staple_turns = 10;
     int nerve_staple_mod = -10;
     int delay_drone_riots = 0;
     int activate_skipped_units = 1; // unlisted option
+    int probe_action_fix = 1; // unlisted option
     int counter_espionage = 0;
     int ignore_reactor_power = 0;
     int long_range_artillery = 0;

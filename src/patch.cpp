@@ -578,6 +578,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x59E980, (int)vulnerable);
     write_jump(0x59EE50, (int)corner_market);
     write_jump(0x59E950, (int)prefs_use);
+    write_jump(0x59F120, (int)probe);
     write_jump(0x5AC060, (int)is_objective);
     write_jump(0x5ADE80, (int)replay_base);
     write_jump(0x5B4210, (int)social_calc);
@@ -751,10 +752,6 @@ bool patch_setup(Config* cf) {
     write_call(0x54F4E2, (int)mod_threaten);
     write_call(0x54F532, (int)mod_threaten);
     write_call(0x54F702, (int)mod_threaten);
-    write_call(0x5A3F7D, (int)probe_veh_health);
-    write_call(0x5A3F98, (int)probe_veh_health);
-    write_call(0x5A4972, (int)probe_mind_control_range);
-    write_call(0x5A4B8C, (int)probe_thought_control);
     write_call(0x5BBEB0, (int)tech_achieved_pop3);
     write_call(0x4868B2, (int)mod_tech_avail); // PickTech::pick
     write_call(0x4DFC41, (int)mod_tech_avail); // Console::editor_tech
@@ -1380,37 +1377,13 @@ bool patch_setup(Config* cf) {
     }
 
     /*
-    Find nearest base for returned probes in order_veh and probe functions.
-    */
-    {
-        const byte old_order_veh[] = {
-            0xBA,0x46,0xD0,0x97,0x00,0x33,0xC9,0x8A,0x4A,0xFE,
-            0x3B,0x4D,0xE4,0x75,0x0B,0x0F,0xBE,0x0A,0x3B,0xCF,
-            0x7E,0x04,0x8B,0xF9,0x8B,0xF0,0x40,0x81,0xC2,0x34,
-            0x01,0x00,0x00,0x3B,0xC3,0x7C,0xE0
-        };
-        const byte new_order_veh[] = {
-            0x8B,0x7D,0xE0,0x57,0xE8,0x00,0x00,0x00,0x00,0x8B,
-            0xF0,0x83,0xC4,0x04,0x90,0x90,0x90,0x90,0x90,0x90,
-            0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,
-            0x90,0x90,0x90,0x90,0x90,0x90,0x90
-        };
-        const byte old_probe[] = {0x53};
-        const byte new_probe[] = {0x50};
-        write_bytes(0x597021, old_order_veh, new_order_veh, sizeof(new_order_veh));
-        write_call(0x597025, (int)find_return_base);
-        write_bytes(0x5A430F, old_probe, new_probe, sizeof(new_probe));
-        write_call(0x5A432C, (int)probe_return_base);
-    }
-
-    /*
     Fix bug that prevents the turn from advancing after force-ending the turn
     while any player-owned needlejet in flight has moves left.
     */
     {
         const byte old_bytes[] = {0x3B,0xC8,0x0F,0x8C,0x65,0x01,0x00,0x00};
         const byte new_bytes[] = {0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90};
-        write_bytes(0x5259CE, old_bytes, new_bytes, sizeof(new_bytes));
+        write_bytes(0x5259CE, old_bytes, new_bytes, sizeof(new_bytes)); // turn_upkeep
     }
 
     /*
@@ -1421,7 +1394,7 @@ bool patch_setup(Config* cf) {
     {
         const byte old_bytes[] = {0x74,0x51};
         const byte new_bytes[] = {0x90,0x90};
-        write_bytes(0x5BC386, old_bytes, new_bytes, sizeof(new_bytes));
+        write_bytes(0x5BC386, old_bytes, new_bytes, sizeof(new_bytes)); // tech_achieved
     }
 
     /*
@@ -1430,7 +1403,7 @@ bool patch_setup(Config* cf) {
     making the AI usually demand a credit payment for any techs.
     */
     {
-        long_jump(0x5414AA);
+        long_jump(0x5414AA); // tech_trade
     }
 
     /*

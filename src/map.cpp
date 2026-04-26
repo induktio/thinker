@@ -1646,7 +1646,9 @@ static void process_map(int faction_id, int k) {
         }
     }
     for (int i = 0; i < *BaseCount; i++) {
-        spawns.insert({Bases[i].x, Bases[i].y});
+        if (Bases[i].faction_id != faction_id) {
+            spawns.insert({Bases[i].x, Bases[i].y});
+        }
     }
     if (goodtiles.size() * 3 < land_area) {
         goodtiles.clear();

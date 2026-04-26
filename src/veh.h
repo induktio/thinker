@@ -72,7 +72,6 @@ int __cdecl mod_veh_skip(int veh_id);
 int __cdecl veh_fake(int unit_id, int faction_id);
 int __cdecl veh_wake(int veh_id);
 int __cdecl find_return_base(int veh_id);
-int __cdecl probe_return_base(int UNUSED(x), int UNUSED(y), int veh_id);
 int __cdecl create_proto(int faction_id, VehChassis chs, VehWeapon wpn, VehArmor arm,
     VehAblFlag abls, VehReactor rec, VehPlan ai_plan);
 int __cdecl mod_propose_proto(int faction_id, VehChassis chs, VehWeapon wpn, VehArmor arm,

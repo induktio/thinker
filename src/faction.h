@@ -60,6 +60,14 @@ int __cdecl get_mood(int friction);
 int __cdecl reputation(int faction_id, int faction_id_with);
 int __cdecl get_patience(int faction_id_with, int faction_id);
 int __cdecl energy_value(int loan_principal);
+char* __cdecl get_adjective(int faction_id);
+char* __cdecl get_noun(int faction_id);
+char* __cdecl get_name(int faction_id);
+char* __cdecl get_title(int faction_id);
+char* __cdecl get_pact_hood(int faction_id, int faction_id_2);
+char* __cdecl get_his_her(int faction_id, int tgl);
+char* __cdecl get_him_her(int faction_id, int tgl);
+char* __cdecl get_he_she(int faction_id, int tgl);
 void __cdecl social_calc(CSocialCategory* category, CSocialEffect* effect,
 int faction_id, int UNUSED(toggle), int is_quick_calc);
 void __cdecl social_upkeep(int faction_id);

@@ -548,7 +548,6 @@ void plans_upkeep(int faction_id) {
                 p->enemy_bases++;
             }
         }
-        assert(n == f->base_count);
         p->enemy_base_range = (n > 0 ? (1.0f*enemy_sum)/n : MaxEnemyRange);
         p->psi_score = psi_score(faction_id);
         if (!p->enemy_factions) {

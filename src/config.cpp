@@ -3,6 +3,7 @@
 
 const char* AlphaFile = "alphax";
 const char* ScriptFile = "script";
+const char* PopupScriptFile = "SCRIPT.txt";
 const char* ModAlphaFile = "smac_mod\\alphax";
 const char* ModHelpFile = "smac_mod\\helpx";
 const char* ModTutorFile = "smac_mod\\tutor";
@@ -175,6 +176,10 @@ static int text_item_binary() {
 static int text_get_number(int min_val, int max_val) {
     text_get();
     return clamp(text_item_number(), min_val, max_val);
+}
+
+char* text_buf_ptr() {
+    return *TextBufferGetPtr; // legacy text_get()
 }
 
 /*

@@ -1,6 +1,7 @@
 
 #include "faction.h"
 
+static char PlrBuf[StrBufLen] = {};
 
 bool has_chassis(int faction_id, VehChassis chs) {
     return has_tech(Chassis[chs].preq_tech, faction_id);
@@ -274,6 +275,11 @@ void __cdecl agenda_off(int faction_id_1, int faction_id_2, uint32_t status) {
 
 void __cdecl treaty_on(int faction_id_1, int faction_id_2, uint32_t status) {
     debug("treaty_on %d %d %08X\n", faction_id_1, faction_id_2, status);
+    if (!(faction_id_1 >= 0 && faction_id_1 < MaxPlayerNum
+    && faction_id_2 >= 0 && faction_id_2 < MaxPlayerNum)) {
+        assert(0);
+        return;
+    }
     const bool is_player = (faction_id_1 == *CurrentPlayerFaction || faction_id_2 == *CurrentPlayerFaction);
     Faction* plr1 = &Factions[faction_id_1];
     Faction* plr2 = &Factions[faction_id_2];
@@ -316,6 +322,11 @@ void __cdecl treaty_on(int faction_id_1, int faction_id_2, uint32_t status) {
 
 void __cdecl agenda_on(int faction_id_1, int faction_id_2, uint32_t status) {
     debug("agenda_on %d %d %08X\n", faction_id_1, faction_id_2, status);
+    if (!(faction_id_1 >= 0 && faction_id_1 < MaxPlayerNum
+    && faction_id_2 >= 0 && faction_id_2 < MaxPlayerNum)) {
+        assert(0);
+        return;
+    }
     Faction* plr1 = &Factions[faction_id_1];
     Faction* plr2 = &Factions[faction_id_2];
     if (status & AGENDA_UNK_20) {
@@ -1008,6 +1019,70 @@ int __cdecl energy_value(int loan_principal) {
         goodwill += ((weight >= 0) ? ((energy > weight) ? weight : energy) : 0) / divisor++;
     }
     return (goodwill + 4) / 5;
+}
+
+char* __cdecl get_adjective(int faction_id) {
+    return MFactions[faction_id].adj_name_faction;
+}
+
+char* __cdecl get_noun(int faction_id) {
+    *PluralDefault = MFactions[faction_id].is_noun_plural;
+    *GenderDefault = MFactions[faction_id].noun_gender;
+    return MFactions[faction_id].noun_faction;
+}
+
+char* __cdecl get_name(int faction_id) {
+    *PluralDefault = 0;
+    *GenderDefault = MFactions[faction_id].is_leader_female;
+    return MFactions[faction_id].name_leader;
+}
+
+char* __cdecl get_title(int faction_id) {
+    *PluralDefault = 0;
+    *GenderDefault = MFactions[faction_id].is_leader_female;
+    return MFactions[faction_id].title_leader;
+}
+
+char* __cdecl get_pact_hood(int faction_id, int faction_id_2) {
+    *PluralDefault = 0;
+    *GenderDefault = 0;
+    if (MFactions[faction_id].is_leader_female && MFactions[faction_id_2].is_leader_female) {
+        return label_get(206); // Pact of Sisterhood
+    }
+    return label_get(205); // Pact of Brotherhood
+}
+
+char* __cdecl get_his_her(int faction_id, int tgl) {
+    snprintf(PlrBuf, StrBufLen, "%s",
+        MFactions[faction_id].is_leader_female ? label_get(208) : label_get(207));
+    if (tgl == 1) {
+        PlrBuf[0] = toupper((unsigned char)PlrBuf[0]);
+    } else if (tgl != 0) {
+        CharUpperA(PlrBuf);
+    }
+    return PlrBuf;
+}
+
+char* __cdecl get_him_her(int faction_id, int tgl) {
+    snprintf(PlrBuf, StrBufLen, "%s",
+        MFactions[faction_id].is_leader_female ? label_get(200) : label_get(199));
+    if (tgl == 1) {
+        PlrBuf[0] = toupper((unsigned char)PlrBuf[0]);
+    } else if (tgl != 0) {
+        CharUpperA(PlrBuf);
+    }
+    return PlrBuf;
+}
+
+char* __cdecl get_he_she(int faction_id, int tgl) {
+    snprintf(PlrBuf, StrBufLen, "%s",
+        MFactions[faction_id].is_leader_female ? label_get(210) : label_get(209));
+    if (tgl == 1) {
+        PlrBuf[0] = toupper((unsigned char)PlrBuf[0]);
+    } else if (tgl != 0) {
+        CharUpperA(PlrBuf);
+    }
+    return PlrBuf;
 }
 
 /*

@@ -1584,7 +1584,7 @@ void  __cdecl action_fungal(int veh_id, int tx, int ty) {
         }
     }
     if (!shot_down) {
-        int spawn_count = Units[unit_id].reactor_id + 1;
+        int spawn_count = (conf.ignore_reactor_power ? 5 : Units[unit_id].reactor_id + 1);
         int spawn = 0;
         for (int i = 0; i < 50 && spawn < spawn_count; i++) {
             int n = (i == 0) ? 0 : (game_rand() & 7) + 1;
@@ -2576,7 +2576,7 @@ MOV_NAVAL:
                 goto MOV_END;
             }
             stack_veh(veh_id, 0);
-            char* str = text_get();
+            text_get();
             int iter_cnt = 0;
             int last_id = -1;
             int cur_id = veh_top(veh_id);
@@ -2590,7 +2590,7 @@ MOV_NAVAL:
                         last_id = cur_id;
                         StrBuffer[0] = 0;
                         parse_says(1, Vehs[cur_id].name(), -1, -1);
-                        parse_string(str, StrBuffer);
+                        parse_string(text_buf_ptr(), StrBuffer);
                         Dialogs_item(&cur_popup.dialogs, StrBuffer, cur_id + 1);
                     }
                 }

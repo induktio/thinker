@@ -4,6 +4,7 @@
 
 extern const char* AlphaFile;
 extern const char* ScriptFile;
+extern const char* PopupScriptFile;
 extern const char* ModAlphaFile;
 extern const char* ModHelpFile;
 extern const char* ModTutorFile;
@@ -45,6 +46,7 @@ static_assert(DefaultMorePref == 0x327168, "");
 static_assert(DefaultWarnPref == 0x3C3A9, "");
 static_assert(DefaultRules == 0x1A0E, "");
 
+char* text_buf_ptr();
 int __cdecl tech_name(char* name);
 int __cdecl chas_name(char* name);
 int __cdecl weap_name(char* name);

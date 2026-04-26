@@ -4823,7 +4823,6 @@ bool can_build_unit(int base_id, int unit_id) {
 
 bool can_staple(int base_id) {
     return base_id >= 0 && conf.nerve_staple_turns > 0
-        && conf.nerve_staple > Bases[base_id].plr_owner()
         && Bases[base_id].SE_police(SE_Current) >= 0;
 }
 

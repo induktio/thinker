@@ -144,6 +144,7 @@ enum VehPlan {
     PLAN_TECTONIC_MISSILE = 13,
     PLAN_FUNGAL_MISSILE = 14,
     PLAN_AUTO_CALCULATE = -1,
+    PLAN_PROTOTYPE_DONE = -2,
 };
 
 enum VehAbl {

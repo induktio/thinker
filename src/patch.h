@@ -12,8 +12,6 @@ const int RegisterClassImport = 0x66929C;
 const int GetSystemMetricsImport = 0x669334;
 const int GetPrivateProfileStringAImport = 0x669108;
 
-const int8_t NetVersion = 12; // Network multiplayer
-
 void write_jump(int32_t addr, int32_t func);
 void short_jump(int32_t addr);
 void long_jump(int32_t addr);
