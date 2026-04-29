@@ -1,6 +1,33 @@
 
 # Thinker mod release changelog
 
+## Version 5.4 (2026-04-29)
+* Add option game_event_popup to choose whether to keep multiple events as separate popups.
+* Add option skip_facility to prevent the governor from choosing various facilities for production.
+* Add option nerve_staple_turns to set how many turns the effect will last. Setting it to zero disables stapling for all factions.
+* Remove option nerve_staple when it is replaced by nerve_staple_turns.
+* Game displays delayed notification when attempting to build more bases after the base limit 512 is reached.
+* REVOLT special ability has alternative usage and it can make captured bases assimilate faster depending on the config value.
+* When ignore_reactor_power is enabled, all fungal missiles produce an equal amount of five fungus tiles.
+* GSP sensor range calculation is restored to use the original distance metric.
+* Modify TERRAYOURS messages to be displayed only when they occur within five tile distance from any friendly base.
+* Restore event that happens when both human and alien factions are involved in a base capture. To fix diplomacy dialogue occurring twice during the same turn, the colony pods are spawned further away.
+* Restore game mechanic where fungal pops on water are sometimes increased up to 9 tiles based on difficulty related modifiers.
+* Governor may choose PSI units slightly more often for production. However option "may produce native combat units" still controls whether to build any units with PSI attack.
+* Governor will not select Genejack Factory if building it would induce drones and facilities with psych side effects are disabled.
+* AI is more likely to select SE choices with growth penalties when the combat situation warrants priority adjustments.
+* AI has reduced expansion speed at the three lowest difficulty levels when expansion_autoscale is enabled. This is in addition to separate limits set by expansion_limit.
+* Fix AI not using Isle of the Deep transports to attack nearby enemies.
+* Fix issues where the combat victory monument was sometimes incorrectly triggered.
+* Fix XMINDWORMS event never occurring due to original game code. This event may now sometimes happen at the three highest difficulty levels if Bell Curve or skip_event=24 is not set.
+* Fix SURVIVEPROJECT event not properly displaying restored secret project name.
+* Fix game never displaying ABANDONBASE1 popup with turns remaining when building the colony pod would disband the base with nutrient surplus.
+* Fix AI governor sometimes not reconsidering production in other bases after their own base was captured.
+* Fix Brood Pit not providing lifecycle bonus for built native units as mentioned in the manual.
+* Fix issue where native mind worms sometimes attacking empty bases could destroy free facilities granted in the faction definition when the intention was to preserve them.
+* Fix edge case where probe team might fail to find techs to steal even if there are some available.
+
+
 ## Version 5.3 (2025-11-26)
 * Add option base_event_turns to adjust duration for base specific random events (Bumper Crops and others).
 * Add option facility_talent_value to modify effects for Paradise Garden, Human Genome Project and Clinical Immortality.
