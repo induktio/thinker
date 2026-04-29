@@ -3055,6 +3055,9 @@ void __cdecl mod_base_ecology() {
         if (!nsq || (i != 0 && !is_ocean(nsq))) {
             continue;
         }
+        if (i > 0 && (!*MapNativeLifeForms || game_rand() & 1)) {
+            continue;
+        }
         if (nsq->is_fungus() || nsq->base_who() >= 0) {
             continue;
         }

@@ -18,7 +18,7 @@ int __cdecl mod_armor_proto(int unit_id, int veh_id_atk, int is_bombard);
 int __cdecl mod_get_basic_offense(int veh_id_atk, int veh_id_def, int psi_combat_type, int is_bombard, int unk_tgl);
 int __cdecl mod_get_basic_defense(int veh_id_def, int veh_id_atk, int psi_combat_type, int is_bombard);
 
-int __cdecl mod_best_defender(int veh_id_def, int veh_id_atk, int check_arty);
+int __cdecl mod_best_defender(int veh_id_def, int veh_id_atk, int combat_type);
 int __cdecl battle_fight_parse_num(int index, int value);
 int terrain_defense(VEH* veh_def, VEH* veh_atk);
 bool use_nerve_gas(int faction_id_atk, int faction_id_def);

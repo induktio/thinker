@@ -569,8 +569,8 @@ void __cdecl mod_alien_fauna() {
     const int player_id = *CurrentPlayerFaction;
     int growth_limit = *MapAreaTiles / (*CurrentTurn / 4 + 32);
     for (int iter = 0; iter < growth_limit; iter++) {
-        int tx = (*MapAreaX > 1) ? game_rand() % *MapAreaX : 0;
-        int ty = (*MapAreaY > 1) ? game_rand() % *MapAreaY : 0;
+        int tx = game_randv(*MapAreaX);
+        int ty = game_randv(*MapAreaY);
         tx = tx + (ty & 1) - (tx & 1);
         if (!on_map(tx, ty)) {
             continue;
@@ -659,8 +659,8 @@ void __cdecl mod_alien_fauna() {
         int mx;
         int my;
         while (true) {
-            mx = (*MapAreaX > 1) ? game_rand() % *MapAreaX : 0;
-            my = (*MapAreaY > 1) ? game_rand() % *MapAreaY : 0;
+            mx = game_randv(*MapAreaX);
+            my = game_randv(*MapAreaY);
             mx = mx + (my & 1) - (mx & 1);
             MAP* sq = mapsq(mx, my);
             assert(sq);
@@ -724,8 +724,8 @@ void __cdecl mod_alien_fauna() {
     int loop_limit = 2 * *MapNativeLifeForms + 2;
 
     for (int iter = 0; iter < loop_limit; iter++) {
-        int rx = (*MapAreaX > 1) ? game_rand() % *MapAreaX : 0;
-        int ry = (*MapAreaY > 1) ? game_rand() % *MapAreaY : 0;
+        int rx = game_randv(*MapAreaX);
+        int ry = game_randv(*MapAreaY);
         rx = rx + (ry & 1) - (rx & 1);
         MAP* sq = mapsq(rx, ry);
         assert(sq);
@@ -780,12 +780,15 @@ void __cdecl mod_alien_fauna() {
     // Enable XMINDWORMS event spawning additional native life with minor rewrites
     // Previously this event was never triggered due to flawed original code
     if (spawn_base_id >= 0 && *DiffLevel >= DIFF_LIBRARIAN
+    && !(*GameRules & RULES_BELL_CURVE)
+    && !(conf.skip_random_events & (1 << 23))
     && *CurrentTurn >= 10 * (5 - *MapNativeLifeForms)) {
         BASE* base = &Bases[spawn_base_id];
         Faction* plr = &Factions[base->faction_id];
-        int spawn_val = clamp(((*MapNativeLifeForms + 1)
-            * (((*GameState & STATE_PERIHELION_ACTIVE) != 0) + 1)
-            * (base->pop_size + 3)) / 4, 1 + allow_locusts, 16);
+        int spawn_val = clamp(min(*MapNativeLifeForms + base->pop_size + base->eco_damage/8,
+            ((*MapNativeLifeForms + 1)
+            * (*GameState & STATE_PERIHELION_ACTIVE ? 2 : 1)
+            * (base->pop_size + 3)) / 4), 1 + allow_locusts, 10);
         if (plr->base_count < clamp(*CurrentTurn / 8, 4, 20)) {
             spawn_val = (spawn_val + 1) / 2;
         }

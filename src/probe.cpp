@@ -298,9 +298,9 @@ int probe_upkeep(int faction1) {
     return 0;
 }
 
-int __thiscall probe_popup_start(Popup* This, int veh_id1, int base_id, int a4, char* a5, int a6, GraphicWin* a7) {
+int __thiscall probe_popup_start(Popup* This, int veh_id, int base_id, int a4, char* a5, int a6, GraphicWin* a7) {
     if (base_id >= 0 && base_id < *BaseCount) {
-        int faction1 = Vehs[veh_id1].faction_id;
+        int faction1 = Vehs[veh_id].faction_id;
         int faction2 = Bases[base_id].faction_id;
         int turns = MFactions[faction1].thinker_probe_end_turn[faction2] - *CurrentTurn;
         bool always_active = faction1 == *GovernorFaction || has_project(FAC_EMPATH_GUILD, faction1);
@@ -316,11 +316,13 @@ int __thiscall probe_popup_start(Popup* This, int veh_id1, int base_id, int a4, 
     return Popup_start(This, ScriptFile, "PROBE", a4, a5, a6, a7);
 }
 
+/*
+Option probe_action_fix enables several useful feature changes and fixes issues.
+For random sources GameRandom instance replaces previous uses of engine game_random.
+Externally reseeded game_rand is used as before but random replaces any instances of timeGetTime.
+*/
 int __cdecl probe(int veh_id, int tgt_base_id, int tgt_veh_id, int toggle) {
     debug("probe %d %d %d %d\n", veh_id, tgt_base_id, tgt_veh_id, toggle);
-    // GameRandom instance replaces previous uses of engine game_random
-    // game_rand is used as before and may be seeded in other functions
-    // random replaces any instances of timeGetTime
     Ftext_get text_get = (Ftext_get)0x5FD570;
 
     GameRandom loc_rnd;
@@ -941,10 +943,9 @@ MOV_START:
         plr->energy_credits -= mc_cost;
         plr->mind_control_total += 4;
         tgt->diplo_mind_control[veh_fc_id] += 4;
-        if (veh_fc_id != MapWin->cOwner) {
-            goto MOV_FRAME;
+        if (veh_fc_id == MapWin->cOwner) {
+            Console_update_data(MapWin, 0);
         }
-        Console_update_data(MapWin, 0);
         goto MOV_FRAME;
     }
 MOV_CHECK:

@@ -218,7 +218,7 @@ int __cdecl action_terraform(int veh_id, int item_id, int toggle) {
         for (int cur_id = veh_top(veh_id); cur_id >= 0; cur_id = Vehs[cur_id].next_veh_id_stack) {
             if (cur_id == veh_id) { continue; }
             VEH* other = &Vehs[cur_id];
-            if (other->order != item_id + 4) { continue; }
+            if (other->order != item_id + VehOrderFormerFirst) { continue; }
             if (!toggle) {
                 helper_rate += contribution(cur_id, item_id);
                 helper_done += other->movement_turns;

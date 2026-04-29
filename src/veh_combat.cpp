@@ -429,7 +429,7 @@ int __cdecl mod_get_basic_defense(int veh_id_def, int veh_id_atk, int psi_combat
 Determine the best defender in a stack for a given attacker.
 Value comparisons start with INT_MIN to enable more generic code.
 */
-static int __cdecl find_defender(int veh_id_def, int veh_id_atk, int check_arty) {
+static int __cdecl find_defender(int veh_id_def, int veh_id_atk, int combat_type) {
     assert(veh_id_atk >= 0 && veh_id_atk < *VehCount);
     assert(veh_id_def >= 0 && veh_id_def < *VehCount);
     VEH* veh_def = &Vehs[veh_id_def];
@@ -480,8 +480,8 @@ static int __cdecl find_defender(int veh_id_def, int veh_id_atk, int check_arty)
         if (!offense_out) {
             break;
         }
-        int score = offense_val * defense_out * min(veh->cur_hitpoints(), 9999)
-            / veh->max_hitpoints() / offense_out / 8 - veh->offense_value();
+        int value = defense_out * veh->cur_hitpoints() / veh->max_hitpoints();
+        int score = offense_val * value / offense_out / 8 - veh->offense_value();
         if (veh->plan() <= PLAN_NAVAL_TRANSPORT || veh->plan() == PLAN_TERRAFORM) {
             score *= 16;
         }
@@ -492,7 +492,7 @@ static int __cdecl find_defender(int veh_id_def, int veh_id_atk, int check_arty)
         || (has_abil(veh_atk->unit_id, ABL_AIR_SUPERIORITY)
         && base_id < 0 && !is_airbase && !mod_stack_check(veh_id, 6, ABL_CARRIER, -1, -1)))) {
             score += 0x80000;
-        } else if (check_arty) {
+        } else if (combat_type) {
             if (can_arty(veh->unit_id, true)) {
                 score += 0x80000;
             }
@@ -514,9 +514,9 @@ static int __cdecl find_defender(int veh_id_def, int veh_id_atk, int check_arty)
 static int current_atk_veh_id = -1;
 static int current_def_veh_id = -1;
 
-int __cdecl mod_best_defender(int veh_id_def, int veh_id_atk, int check_arty) {
-    int veh_id = find_defender(veh_id_def, veh_id_atk, check_arty);
-    if (check_arty) {
+int __cdecl mod_best_defender(int veh_id_def, int veh_id_atk, int combat_type) {
+    int veh_id = find_defender(veh_id_def, veh_id_atk, combat_type);
+    if (combat_type) {
         current_atk_veh_id = -1;
         current_def_veh_id = -1;
     } else {

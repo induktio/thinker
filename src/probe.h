@@ -14,6 +14,6 @@ int __cdecl probe_has_renew(int faction_id, int faction_id_tgt);
 int probe_roll_value(int faction_id);
 int probe_upkeep(int faction1);
 int probe_active_turns(int faction1, int faction2);
-int __thiscall probe_popup_start(Popup* This, int veh_id1, int base_id, int a4, char* a5, int a6, GraphicWin* a7);
+int __thiscall probe_popup_start(Popup* This, int veh_id, int base_id, int a4, char* a5, int a6, GraphicWin* a7);
 int __cdecl probe(int veh_id, int tgt_base_id, int tgt_veh_id, int toggle);
 

@@ -66,6 +66,28 @@ char* label_get(size_t index) {
     return (TextLabels->labels)[index];
 }
 
+void __cdecl clear() {
+    StrBuffer[0] = '\0';
+}
+
+char* __cdecl says(const char* buf) {
+    size_t len = strnlen(StrBuffer, StrBufLen);
+    snprintf(StrBuffer + len, StrBufLen - len, "%s", buf);
+    return StrBuffer;
+}
+
+char* __cdecl say_num(int value) {
+    size_t len = strnlen(StrBuffer, StrBufLen);
+    snprintf(StrBuffer + len, StrBufLen - len, "%d", value);
+    return StrBuffer;
+}
+
+char* __cdecl say_year(char* buf) {
+    size_t len = strnlen(buf, StrBufLen);
+    snprintf(buf + len, StrBufLen - len, "%d", *CurrentTurn + *StartingMissionYear);
+    return buf;
+}
+
 char* __cdecl parse_set(int faction_id) {
     *GenderDefault = MFactions[faction_id].noun_gender;
     *PluralDefault = MFactions[faction_id].is_noun_plural;
@@ -297,7 +319,7 @@ void __cdecl mod_random_events(int flag) {
     Faction* plr = &Factions[base->faction_id];
     const int faction_id = base->faction_id;
     const bool is_player = faction_id == *CurrentPlayerFaction;
-    const bool is_visible = base->visibility & (uint8_t)(1 << *CurrentPlayerFaction);
+    const bool is_visible = base->visibility & (1 << *CurrentPlayerFaction);
     const int bx = base->x;
     const int by = base->y;
     if (base->pop_size <= 3 || plr->base_count <= 1 || base->event_flags & BEVENT_VISIBLE) {
@@ -739,7 +761,7 @@ void __cdecl mod_random_events(int flag) {
                 }
             }
         }
-        world_crater(bx, by);
+        mod_world_crater(bx, by);
         world_climate();
         if (!visible || !Console_focus(MapWin, bx, by, *CurrentPlayerFaction)) {
             draw_map(1);

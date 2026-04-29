@@ -267,33 +267,34 @@ Craft an output string related to a specific technology. For techs outside the s
 range, craft a string related to world map, comm links or prototypes.
 */
 void __cdecl say_tech(char* output, int tech_id, int incl_category) {
-    char* buf = &output[strlen(output)];
+    size_t prev = strnlen(output, StrBufLen);
+    char* buf = output + prev;
+    size_t len = StrBufLen - prev;
     if (tech_id < -1) {
-        snprintf(buf, LineBufLen, "%s", label_get(310)); // "Not Available"
+        snprintf(buf, len, "%s", label_get(310)); // Not Available
     } else if (tech_id < 0) {
-        snprintf(buf, LineBufLen, "%s", label_get(25)); // "NONE"
+        snprintf(buf, len, "%s", label_get(25)); // NONE
     } else if (tech_id == 9999) {
-        snprintf(buf, LineBufLen, "%s", label_get(306)); // "World Map"
+        snprintf(buf, len, "%s", label_get(306)); // World Map
     } else if (tech_id < MaxTechnologyNum) {
         if (incl_category) {
-            snprintf(buf, LineBufLen, "%s (%s%d)", Tech[tech_id].name,
+            snprintf(buf, len, "%s (%s%d)", Tech[tech_id].name,
                 label_get(629 + tech_category(tech_id)), // 'E#', 'D#', 'B#', 'C#'
                 tech_level(tech_id, 0));
         } else {
-            snprintf(buf, LineBufLen, "%s", Tech[tech_id].name);
+            snprintf(buf, len, "%s", Tech[tech_id].name);
         }
     } else if (tech_id < 97) {
         int faction_id = tech_id - MaxTechnologyNum;
         if (*GameLanguage) {
-            snprintf(buf, LineBufLen, "%s (%s)", label_get(487), // 'Comm Frequency'
+            snprintf(buf, len, "%s (%s)", label_get(487), // Comm Frequency
                 parse_set(faction_id));
         } else {
-            snprintf(buf, LineBufLen, "%s %s",
-                MFactions[faction_id].adj_name_faction, label_get(487)); // 'Comm Frequency'
+            snprintf(buf, len, "%s %s",
+                MFactions[faction_id].adj_name_faction, label_get(487)); // Comm Frequency
         }
     } else {
-        char* name = Units[tech_id - 97].name;
-        snprintf(buf, LineBufLen, "%s %s", name, label_get(185)); // 'Prototype'
+        snprintf(buf, len, "%s %s", Units[tech_id - 97].name, label_get(185)); // Prototype
     }
 }
 

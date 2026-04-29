@@ -34,8 +34,7 @@ struct ConsoleState {
 
 /*
 The following lists contain definitions copied directly from PRACX (e.g. functions with _F suffix).
-These are mostly provided for reference and using them should be avoided because the names should be
-converted to the actual names reversed from the SMACX binary (add F prefix for function prototypes).
+These are mostly provided for reference and using them should be avoided instead of engine.h definitions.
 */
 
 typedef int(__stdcall *START_F)(HINSTANCE, HINSTANCE, LPSTR, int);
@@ -247,11 +246,8 @@ bool do_scroll(double x, double y) {
             fScrolled = true;
             CState.ScrollOffsetX = 0;
         }
-        if (x > 0 &&
-                (!map_is_flat() ||
-                 MapWin->iMapTileLeft +
-                 MapWin->iMapTilesEvenX +
-                 MapWin->iMapTilesOddX <= mx)) {
+        if (x > 0 && (!map_is_flat()
+        || MapWin->iMapTileLeft + MapWin->iMapTilesEvenX + MapWin->iMapTilesOddX <= mx)) {
             i = (int)CState.ScrollOffsetX;
             CState.ScrollOffsetX -= x;
             fScrolled = fScrolled || (i != (int)CState.ScrollOffsetX);
@@ -284,8 +280,7 @@ bool do_scroll(double x, double y) {
         }
         d = (MapWin->iTileY - iMinTileY) * MapWin->iPixelsPerHalfTileY - (int)CState.ScrollOffsetY;
         if (y < 0 && d > 0 ) {
-            if (y < -d)
-                y = -d;
+            if (y < -d) { y = -d; }
             i = (int)CState.ScrollOffsetY;
             CState.ScrollOffsetY -= y;
             fScrolled = fScrolled || (i != (int)CState.ScrollOffsetY);
@@ -296,8 +291,7 @@ bool do_scroll(double x, double y) {
         }
         d = (iMaxTileY - MapWin->iTileY + 1) * MapWin->iPixelsPerHalfTileY + (int)CState.ScrollOffsetY;
         if (y > 0 && d > 0) {
-            if (y > d)
-                y = d;
+            if (y > d) { y = d; }
             i = (int)CState.ScrollOffsetY;
             CState.ScrollOffsetY -= y;
             fScrolled = fScrolled || (i != (int)CState.ScrollOffsetY);
@@ -1442,16 +1436,14 @@ void __cdecl say_loc(char* dest, int x, int y, int a4, int a5, int a6)
             trail_space = " ";
         }
     }
-    size_t len = strlen(dest);
-    if (len < LineBufLen) {
-        size_t remaining = LineBufLen - len;
-        if (a5 == 1 || (a5 == 2 && base_id < 0)) {
-            snprintf(dest + len, remaining, "%s%s%s%s(%d, %d)",
-                prefix, prefix_space, base_name, trail_space, x, y);
-        } else {
-            snprintf(dest + len, remaining, "%s%s%s%s",
-                prefix, prefix_space, base_name, trail_space);
-        }
+    size_t prev = strnlen(dest, StrBufLen);
+    size_t len = StrBufLen - prev;
+    if (a5 == 1 || (a5 == 2 && base_id < 0)) {
+        snprintf(dest + prev, len, "%s%s%s%s(%d, %d)",
+            prefix, prefix_space, base_name, trail_space, x, y);
+    } else {
+        snprintf(dest + prev, len, "%s%s%s%s",
+            prefix, prefix_space, base_name, trail_space);
     }
 }
 
