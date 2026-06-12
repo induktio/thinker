@@ -1354,7 +1354,7 @@ int __cdecl mod_bonus_at(int x, int y) {
     if (alt < ALT_OCEAN_SHELF) {
         return 0;
     }
-    int ret = (alt < ALT_SHORE_LINE && !conf.rare_supply_pods) ? chk % 3 + 1 : (chk % 5) & 3;
+    int ret = (alt < ALT_SHORE_LINE) ? chk % 3 + 1 : (chk % 5) & 3;
     if (!ret || bit & BIT_NUTRIENT_RES) {
         if (bit & BIT_ENERGY_RES) {
             return 3; // energy
@@ -1376,7 +1376,7 @@ int __cdecl mod_goody_at(int x, int y) {
         return 0; // nothing, supply pod already opened or monolith
     }
     if (*GameRules & RULES_NO_UNITY_SCATTERING) {
-        return (bit & (BIT_UNK_4000000 | BIT_UNK_8000000)) ? 2 : 0; // ?
+        return (bit & (BIT_UNK_4000000 | BIT_UNK_8000000)) ? 2 : 0; // near landing site
     }
     if (bit & BIT_SUPPLY_POD) {
         return 1; // supply pod

@@ -332,12 +332,15 @@ static void init_video_config(Config* cf) {
     };
     char buf_path[4096] = {};
     char buf_args[4096] = {};
+    char buf_extn[256] = {};
     GetPrivateProfileStringA(GameAppName, "MoviePlayerPath", "<DEFAULT>", buf_path, 4096, GameIniFile);
     GetPrivateProfileStringA(GameAppName, "MoviePlayerArgs",
         "--fullscreen --video-on-top --play-and-exit --no-repeat --swscale-mode=2", buf_args, 4096, GameIniFile);
+    GetPrivateProfileStringA(GameAppName, "MovieExtension", "", buf_extn, 256, GameIniFile);
 
     char* path = strtrim(&buf_path[0]);
     char* args = strtrim(&buf_args[0]);
+    char* extn = strtrim(&buf_extn[0]);
     if (!strlen(path)) {
         cf->video_player = 1;
     } else {
@@ -378,6 +381,8 @@ static void init_video_config(Config* cf) {
                 prefs_put2("MoviePlayerArgs", args);
             }
         }
+        video_player_extn = extn;
+        prefs_put2("MovieExtension", extn);
     }
     if (!FileExists("modmenu.txt")) {
         MessageBoxA(0, "Error while opening modmenu.txt. Game might not work as intended.",
@@ -1595,7 +1600,6 @@ bool patch_setup(Config* cf) {
     }
     if (cf->rare_supply_pods) {
         short_jump(0x592085); // bonus_at
-        short_jump(0x5920E9); // bonus_at
         short_jump(0x5921C8); // goody_at
     }
 

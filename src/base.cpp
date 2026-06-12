@@ -4811,13 +4811,17 @@ bool can_build(int base_id, int item_id) {
 
 bool can_build_unit(int base_id, int unit_id) {
     assert(base_id >= 0 && base_id < *BaseCount && unit_id >= -1);
-    UNIT* u = &Units[unit_id];
     BASE* b = &Bases[base_id];
     if (unit_id >= 0 && !(unit_id < MaxProtoFactionNum
     || (unit_id / MaxProtoFactionNum) == b->faction_id)) {
         return false;
     }
-    if (unit_id >= 0 && u->triad() == TRIAD_SEA
+    if (unit_id >= 0 && Units[unit_id].is_colony() && b->nutrient_surplus <= 0
+    && b->pop_size == 1 && Factions[b->faction_id].diff_level > 1
+    && (*DiffLevel <= 3 || is_human(b->faction_id))) {
+        return false;
+    }
+    if (unit_id >= 0 && Units[unit_id].triad() == TRIAD_SEA
     && !adjacent_region(b->x, b->y, -1, 10, TRIAD_SEA)) {
         return false;
     }

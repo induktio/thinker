@@ -683,9 +683,8 @@ int select_colony(int base_id, int num_colony, bool build_ships) {
     int limit = (start || (!random(4) && (land || (build_ships && sea))) ? 2 : 1)
         + ((extra_land || extra_sea) && !random(4));
 
-    if (conf.expansion_autoscale > 0 && f->base_count >= 4 && *DiffLevel <= DIFF_TALENT) {
-        limit = min(limit, !random(4) + (*DiffLevel > DIFF_CITIZEN ?
-            !random(*DiffLevel > DIFF_SPECIALIST ? 4 : 8) : 0));
+    if (conf.expansion_autoscale > 0 && f->base_count >= 4 && *DiffLevel <= DIFF_SPECIALIST) {
+        limit = min(limit, !random(4) + (*DiffLevel > DIFF_CITIZEN ? !random(4) : 0));
     }
     if (num_colony >= limit) {
         return -1;

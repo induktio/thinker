@@ -389,7 +389,16 @@ Custom programs can be used to play game movies if they have support for the app
 If it is not found, custom path can be set in `MoviePlayerPath` and command line options in `MoviePlayerArgs` in Alpha Centauri.ini. If these options are left empty, the game uses the default video player.
 If the lines are removed, the mod will reset to the default VLC installation path and options shown below when the game is restarted. Note that Thinker's video player options always override any other movie player settings used by PRACX.
 
-    C:\Program Files\VideoLAN\VLC\vlc.exe --fullscreen --video-on-top --play-and-exit --no-repeat --swscale-mode=2
+    MoviePlayerPath=C:\Program Files\VideoLAN\VLC\vlc.exe
+    MoviePlayerArgs=--fullscreen --video-on-top --play-and-exit --no-repeat --swscale-mode=2
+
+Alternatively the following options can be used to start VLC with all user interface elements hidden.
+
+    MoviePlayerPath=C:\Program Files\VideoLAN\VLC\vlc.exe
+    MoviePlayerArgs=-I dummy --fullscreen --play-and-exit --no-repeat
+
+It is also possible to instruct the game to look for video files encoded in other formats instead of the game's original wve format when an external movie player is used. This can be changed with `MovieExtension` option in Alpha Centauri.ini.
+For example, adding `MovieExtension=mp4` makes the game automatically look for and play the mp4 movie file if it exists in the movies folder. If the custom extension is not found, the game will fall back to the original wve file.
 
 It should be possible to run both Thinker and [PRACX](https://github.com/DrazharLn/pracx) graphics enhancement patch at the same time. For easiest installation, download [version 1.11 or later](https://github.com/DrazharLn/pracx/releases/). However this combination of patches will not receive as much testing as the normal configuration, so some issues might occur.
 
@@ -542,7 +551,7 @@ The following binary fixes from Scient's patch are automatically applied at game
 28. [BUG][SMAX] Add references to use a new file (movlistx.txt) for SMAX specific info after secret project movies rather than one shared between SMAC/SMAX (movlist.txt).
 29. [MOD] Add "Nessus Canyon" landmark placement on random map generation.
 30. [BUG] Fixed "attacking along road" combat bonus in alpha/x.txt. Set to 0 by default.
-31. [BUG/MOD] Fixed NEWRESOURCE and PETERSOUT events to display the correct corrosponding image to match resource type.
+31. [BUG/MOD] Fixed NEWRESOURCE and PETERSOUT events to display the correct corresponding image to match resource type.
 32. [MOD] Add ability to set individual datalink entries for armor and reactors (ARMORDESC#/REACTORDESC#) in help/x.txt.
 33. [MOD] Enable the display of Sea Formers unit (UNITDESC4) in datalinks. Also, hide '*' from showing in name.
 34. [BUG] Fixed logic in PB code to prevent ODP/Flechette defenses being called a 2nd time (with a chance for defenses to fail) even after PB had already been shot down. Each faction has one chance to defend against incoming missile based on closest base or unit to PB blast. However, there is secondary check to give the tile owner a chance to defend against PB even if they have no units or bases in this space. This check didn't take into account whether or not PB had already been shot down.

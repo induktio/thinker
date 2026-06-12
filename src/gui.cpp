@@ -17,6 +17,7 @@ char label_unit_reactor[4][StrBufLen] = {};
 
 std::string video_player_path = "";
 std::string video_player_args = "";
+std::string video_player_extn = "";
 
 struct ConsoleState {
     const int ScrollMin = 1;
@@ -859,9 +860,21 @@ void __cdecl mod_amovie_project(const char* name)
         conf.playing_movie = true;
         PROCESS_INFORMATION pi = {};
         STARTUPINFO si = {};
+        std::string base_path = ".\\movies\\" + std::string(name);
+        std::string movie_path = base_path + ".wve";
+        if (!video_player_extn.empty()) {
+            std::string custom_extn = video_player_extn;
+            if (custom_extn[0] != '.') custom_extn = "." + custom_extn;
+            std::string custom_path = base_path + custom_extn;
+            if (FileExists(custom_path.c_str())) {
+                movie_path = custom_path;
+            }
+        }
         std::string cmd = "\"" + video_player_path + "\" " + video_player_args
-            + " .\\movies\\" + std::string(name) + ".wve";
-        if (CreateProcessA(NULL, (char*)cmd.c_str(),
+            + " " + movie_path;
+        std::vector<char> cmd_buf(cmd.begin(), cmd.end());
+        cmd_buf.push_back('\0');
+        if (CreateProcessA(NULL, cmd_buf.data(),
         NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
             WaitForSingleObject(pi.hProcess, INFINITE);
             CloseHandle(pi.hProcess);
@@ -1001,13 +1014,13 @@ void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
                             buf[1] = (goal.type < Thinker_Goal_ID_First ? '*' : 'g');
                             break;
                     }
-                    _itoa(goal.priority, &buf[2], 10);
+                    snprintf(&buf[2], sizeof(buf) - 2, "%d", goal.priority);
                 }
             }
         }
         if (!found && value != 0) {
             color = (value >= 0 ? ColorWhite : ColorYellow);
-            _itoa(value, buf, 10);
+            snprintf(buf, sizeof(buf), "%d", value);
         }
         if (found || value) {
             Buffer_set_text_color(Canvas, color, 0, 1, 1);

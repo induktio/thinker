@@ -1444,6 +1444,7 @@ int colony_move(const int id) {
             return set_move_to(id, tx, ty);
         }
         if (*CurrentTurn > VehRemoveTurns
+        && (*BaseCount < MaxBaseNum || Factions[faction_id].base_count >= 2)
         && (veh->home_base_id >= 0 || *BaseCount > 16 + random(256))
         && (!at_base || defender_count(veh->x, veh->y, id) > random(8))) {
             return mod_veh_kill(id);

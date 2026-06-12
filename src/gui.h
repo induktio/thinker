@@ -28,6 +28,7 @@ extern char label_unit_reactor[4][StrBufLen];
 
 extern std::string video_player_path;
 extern std::string video_player_args;
+extern std::string video_player_extn;
 
 // Bottom middle UI console size in pixels
 const int ConsoleHeight = 219;

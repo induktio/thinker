@@ -402,6 +402,9 @@ int cmd_parse(Config* cf) {
     int argc;
     LPWSTR* argv;
     argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+    if (!argv) {
+        return 0;
+    }
     for (int i = 1; i < argc; i++) {
         if (wcscmp(argv[i], L"-smac") == 0) {
             cf->smac_only = 1;
@@ -413,6 +416,7 @@ int cmd_parse(Config* cf) {
             cf->video_mode = VM_Window;
         }
     }
+    LocalFree(argv);
     return 1;
 }
 
