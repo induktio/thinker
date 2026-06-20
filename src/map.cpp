@@ -101,6 +101,10 @@ bool is_ocean(BASE* base) {
     return is_ocean(mapsq(base->x, base->y));
 }
 
+bool is_ocean(int x, int y) {
+    return is_ocean(mapsq(x, y));
+}
+
 bool is_ocean_shelf(MAP* sq) {
     return (sq && (sq->climate >> 5) == ALT_OCEAN_SHELF);
 }
@@ -1607,7 +1611,7 @@ int item_yield(int x, int y, int faction_id, int bonus, MapItem item) {
     return N+M+E;
 }
 
-static void process_map(int faction_id, int k) {
+static void find_reset(int faction_id, int k) {
     spawns.clear();
     natives.clear();
     goodtiles.clear();
@@ -1653,7 +1657,7 @@ static void process_map(int faction_id, int k) {
     if (goodtiles.size() * 3 < land_area) {
         goodtiles.clear();
     }
-    debug("process_map x: %d y: %d sqrt: %d tiles: %d good: %d\n",
+    debug("find_reset x: %d y: %d sqrt: %d tiles: %d good: %d\n",
         *MapAreaX, *MapAreaY, *MapAreaSqRoot, *MapAreaTiles, goodtiles.size());
 }
 
@@ -1671,7 +1675,7 @@ static bool valid_start(int faction_id, int iter, int x, int y) {
     if (aquatic != is_ocean(sq) || ((sq->lm_items() & ~LM_FRESH) && iter < 160)) {
         return false;
     }
-    if ((goody_at(x, y) > 0 || bonus_at(x, y) > 0) && iter < 160) {
+    if ((goody_at(x, y) || bonus_at(x, y)) && iter < 160) {
         return false;
     }
     if (Continents[sq->region].tile_count < *MapAreaTiles / ((aquatic ? 20 : 40) << (iter/40))) {
@@ -1682,40 +1686,26 @@ static bool valid_start(int faction_id, int iter, int x, int y) {
     }
     int spawn_range = min_range(spawns, x, y);
     int min_sc = 80 - iter/4 + 20 * max(0, 12 - spawn_range);
+    int max_dst = (*MapAreaTiles >= 6400 ? 7 : 5);
+    int dst[4] = {0, 0, 0, 0};
     int sea = 0;
     int sc = 0;
-    int xd = 0;
-    int yd = 0;
     if (spawn_range < clamp(*MapAreaSqRoot/4 + 8 - iter/8, spawn_limit, 32)) {
         return false;
-    }
-    if (!aquatic) {
-        for (int i = 2; i < 20; i+=2) {
-            if (is_ocean(mapsq(wrap(x-i), y)) || is_ocean(mapsq(wrap(x+i), y))) {
-                break;
-            }
-            xd++;
-        }
-        for (int i = 2; i < 20; i+=2) {
-            if (is_ocean(mapsq(x, y-i)) || is_ocean(mapsq(x, y+i))) {
-                break;
-            }
-            yd++;
-        }
     }
     for (auto& m : iterate_tiles(x, y, 0, 45)) {
         int bonus = bonus_at(m.x, m.y);
         if (is_ocean(m.sq)) {
             if (!is_ocean_shelf(m.sq)) {
-                sc--;
+                sc -= 2;
             } else if (aquatic) {
                 sc += 4;
             }
             sea++;
         } else {
-            sc += (m.sq->is_rainy_or_moist() ? 3 : 1);
+            sc += (m.sq->is_rainy() ? 3 : (m.sq->is_moist() ? 2 : 1));
             if (m.sq->items & BIT_RIVER) {
-                sc += 5;
+                sc += 4;
             }
             if (m.sq->items & BIT_FOREST) {
                 sc += 4;
@@ -1725,26 +1715,44 @@ static bool valid_start(int faction_id, int iter, int x, int y) {
             }
         }
         if (bonus != RES_NONE) {
-            sc += (m.i < 25 ? 15 : 10);
+            sc += (m.i < 25 ? 10 : 8);
         }
-        if (goody_at(m.x, m.y) > 0) {
-            sc += 15;
+        if (goody_at(m.x, m.y)) {
+            sc += 10;
         }
         if (m.sq->items & BIT_FUNGUS) {
-            sc -= (m.i <= 20 ? 4 : 2) * (is_ocean(m.sq) ? 1 : 2);
+            sc -= (m.i < 25 ? 4 : 2) * (is_ocean(m.sq) ? 1 : 2);
         }
         if (m.sq->items & BIT_MONOLITH) {
             sc += 8;
         }
     }
-    debug("find_score %d %3d x: %3d y: %3d xd: %d yd: %d min: %d score: %d\n",
-        faction_id, iter, x, y, xd, yd, min_sc, sc);
+    if (!aquatic) {
+        for (int i = 1; i <= max_dst && !is_ocean(wrap(x-i*2), y); ++i) {
+            dst[0] = i;
+        }
+        for (int i = 1; i <= max_dst && !is_ocean(wrap(x+i*2), y); ++i) {
+            dst[1] = i;
+        }
+        for (int i = 1; i <= max_dst && !is_ocean(wrap(x), y-i*2); ++i) {
+            dst[2] = i;
+        }
+        for (int i = 1; i <= max_dst && !is_ocean(wrap(x), y+i*2); ++i) {
+            dst[3] = i;
+        }
+        sc -= 16*clamp(max_dst - std::max({dst[0], dst[1], dst[2], dst[3]}), 0, 3);
+        sc -= 2*clamp(sea - 10, 0, 20);
+        sc -= (!dst[0] && !dst[1] ? 20 : 0);
+        sc -= (!dst[2] && !dst[3] ? 20 : 0);
+    }
+    debug("find_score %d %3d x: %3d y: %3d dst: %d %d %d %d sea: %2d rng: %2d min: %d score: %d\n",
+        faction_id, iter, x, y, dst[0], dst[1], dst[2], dst[3], sea, spawn_range, min_sc, sc);
 
-    if (!aquatic && iter < 100) { // Avoid spawns without sufficient land nearby
-        if (sea > 20) {
+    if (!aquatic && iter < 200) {
+        if (sea > 20 + (iter / 16)) {
             return false;
         }
-        if (max(xd, yd) < 4) {
+        if (max(min(dst[0], dst[1]), min(dst[2], dst[3])) < clamp(iter % 8, 1, 4)) {
             return false;
         }
     }
@@ -1867,7 +1875,7 @@ void __cdecl find_start(int faction_id, int* tx, int* ty) {
     int y = 0;
     int i = 0;
     int k = (*MapAreaY < 80 ? 4 : 8);
-    process_map(faction_id, k/2);
+    find_reset(faction_id, k/2);
 
     while (++i <= 1000) {
         if (!aquatic && goodtiles.size() > 0 && i <= 200) {
@@ -1892,8 +1900,8 @@ void __cdecl find_start(int faction_id, int* tx, int* ty) {
             break;
         }
     }
-    debug("find_start %d %3d x: %3d y: %3d range: %d\n",
-        faction_id, i, *tx, *ty, min_range(spawns, *tx, *ty));
+    debug("find_start %d %3d x: %3d y: %3d %s\n",
+        faction_id, i, *tx, *ty, MFactions[faction_id].filename);
     flushlog();
 }
 

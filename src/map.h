@@ -21,6 +21,7 @@ int min_vector(const Points& S, int x, int y);
 int avg_range(const Points& S, int x, int y);
 bool is_ocean(MAP* sq);
 bool is_ocean(BASE* base);
+bool is_ocean(int x, int y);
 bool is_ocean_shelf(MAP* sq);
 bool is_shore_level(MAP* sq);
 bool map_is_flat();

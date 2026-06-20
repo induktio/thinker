@@ -551,8 +551,9 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
             }
         }
     }
+    // increased energy_credits limit since it can be shown in the user interface
     plr_atk->energy_credits += energy_taken;
-    plr_def->energy_credits = clamp(plr_def->energy_credits - energy_taken, 0, 9999999);
+    plr_def->energy_credits = clamp(plr_def->energy_credits - energy_taken, 0, 99999999);
 
     if (is_probe
     || is_recapture

@@ -292,11 +292,12 @@ struct Config {
     int facility_capture_fix = 1; // unlisted option
     int territory_border_fix = 1;
     int auto_relocate_hq = 1;
+    int rebuild_secret_projects = 0;
+    int steal_energy_rate = 100;
     int simple_hurry_cost = 1;
     int eco_damage_fix = 1;
     int clean_minerals = 16;
     int biology_lab_bonus = 2;
-    int rebuild_secret_projects = 0;
     int spawn_fungal_towers = 1;
     int spawn_spore_launchers = 1;
     int spawn_sealurks = 1;

@@ -88,9 +88,12 @@ Return Value: Energy taken
 */
 int __cdecl steal_energy(int base_id) {
     BASE* base = &Bases[base_id];
-    int energy = Factions[base->faction_id].energy_credits;
-    return (energy <= 0) ? 0
-        : ((energy * Bases[base_id].pop_size) / (Factions[base->faction_id].pop_total + 1));
+    int64_t energy = Factions[base->faction_id].energy_credits;
+    if (energy > 0) {
+        return clamp((energy * conf.steal_energy_rate * Bases[base_id].pop_size)
+            / 100 / max(1, Factions[base->faction_id].pop_total + 1), int64_t{0}, energy);
+    }
+    return 0;
 }
 
 /*

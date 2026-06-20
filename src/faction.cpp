@@ -1887,11 +1887,9 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
     if (initial_spawn) {
         memset(&plr->tech_pact_shared_goals, 0, 48u);
         memset(&plr->tech_trade_source, 0, 88u);
+        memset(&plr->facility_announced, 0, 12u);
         plr->unk_27 = 0;
         plr->unk_28 = 0;
-        plr->unk_33 = 0;
-        plr->facility_announced[0] = 0;
-        plr->facility_announced[1] = 0;
         plr->satellites_nutrient = 0;
         plr->satellites_mineral = 0;
         plr->satellites_energy = 0;

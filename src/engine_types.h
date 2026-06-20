@@ -409,8 +409,7 @@ struct Faction {
     int32_t council_call_turn;
     int32_t unk_29[11]; // Council related
     int32_t unk_30[11]; // Council related
-    int32_t facility_announced[2]; // bitfield - used to determine one time play of fac audio blurb
-    int32_t unk_33;
+    uint8_t facility_announced[12]; // bitfield - used to determine one time play of fac audio blurb
     int32_t clean_minerals_modifier; // Starts from zero and increases by one after each fungal pop
     int32_t base_id_attack_target; // Battle planning of base to attack, -1 if not set
     int32_t unk_37;

@@ -2906,6 +2906,11 @@ int combat_move(const int id) {
         && veh->home_base_id >= 0 && base_can_riot(veh->home_base_id, true)
         && Bases[veh->home_base_id].faction_id == faction_id
         && Bases[veh->home_base_id].pop_size > 2;
+    const bool look_first = !aircraft && !Factions[faction_id].base_count
+        && mod_stack_check(id, 2, PLAN_COLONY, -1, -1);
+    auto skip_patrol = [&](TileSearch& ts) -> bool {
+        return look_first && ts.dist <= 2 && veh->iter_count < 4 && goody_at(ts.rx, ts.ry);
+    };
 
     int max_dist; // can be modified during search
     int defenders = 0;
@@ -3138,6 +3143,9 @@ int combat_move(const int id) {
         && path_cost(veh->x, veh->y, ts.rx, ts.ry, veh->unit_id, faction_id, moves) >= 0) {
             return set_move_to(id, ts.rx, ts.ry);
 
+        } else if (skip_patrol(ts)) {
+            continue;
+
         } else if (tx < 0 && mapnodes.count({ts.rx, ts.ry, NODE_PATROL})) {
             return set_move_to(id, ts.rx, ts.ry);
 
@@ -3183,7 +3191,7 @@ int combat_move(const int id) {
                 }
             }
             if (tx < 0 && mapnodes.count({ts.rx, ts.ry, NODE_PATROL})
-            && allow_move(ts.rx, ts.ry, faction_id, triad)) {
+            && allow_move(ts.rx, ts.ry, faction_id, triad) && !skip_patrol(ts)) {
                 tx = ts.rx;
                 ty = ts.ry;
             }
