@@ -149,7 +149,7 @@ void __cdecl mod_tech_research(int faction_id, int value) {
     Faction& plr = Factions[faction_id];
     if (value > 0) {
         if (!is_human(faction_id) && climactic_battle()) {
-            // Original also checked for faction_id <= 0 before applying this hidden AI bonus.
+            // Original also applied this hidden AI bonus for faction_id <= 0.
             // The reason for this is unclear and it may not be useful so it is removed.
             // PSI Gate checks are related to conditions on climactic_battle.
             if ((fac_psigate.preq_tech != TECH_None
@@ -210,10 +210,8 @@ int __cdecl mod_tech_selection(int faction_id) {
             NetDaemon_net_tasks(NetState);
             if (!done) {
                 done = true;
-                *PluralDefault = 0;
-                *GenderDefault = MFactions[faction_id].is_leader_female;
-                parse_says(0, &MFactions[faction_id].title_leader[0], -1, -1);
-                parse_says(1, &MFactions[faction_id].name_leader[0], -1, -1);
+                parse_says(0, get_title(faction_id), -1, -1);
+                parse_says(1, get_name(faction_id), -1, -1);
                 // Note that this script label does not display title/name by default
                 NetMsg_pop(NetMsg, "PICKINGTECH", 0, 0, 0);
             }
@@ -256,10 +254,53 @@ int __cdecl mod_tech_pick(int faction_id, int flag, int other_faction_id, const 
 
 int __cdecl mod_tech_rate(int faction_id) {
     Faction& plr = Factions[faction_id];
-    if (!revised_tech_cost()) {
-        return tech_rate(faction_id);
+    if (revised_tech_cost()) {
+        return (plr.tech_cost > 0 ? plr.tech_cost : 9999);
     }
-    return (plr.tech_cost > 0 ? plr.tech_cost : 9999);
+    // Calculate the original game tech cost values
+    if (plr.tech_cost >= 0) {
+        assert(plr.tech_cost == tech_rate(faction_id));
+        return plr.tech_cost;
+    }
+    if (!Rules->tech_discovery_rate) {
+        assert(999999999 == tech_rate(faction_id));
+        return 999999999;
+    }
+    int plr_tech_rating = clamp(plr.tech_ranking + 2 * plr.earned_techs_saved - plr.unk_27, 2, 9999);
+    int max_tech = 0;
+    for (int i = 0; i < MaxPlayerNum; ++i) {
+        max_tech = max(max_tech, Factions[i].tech_ranking + 2 * Factions[i].earned_techs_saved);
+    }
+    bool is_plr = is_human(faction_id);
+    bool is_stagnate = *GameRules & RULES_TECH_STAGNATION;
+    int half_max_tech = max_tech / 2;
+    int half_plr_tech = plr_tech_rating / 2;
+    int diff = is_plr ? plr.diff_level : *DiffLevel;
+    int diff_adj = (diff < 3) ? (diff + 1) : diff;
+    int diff_val = is_plr ? 3 : *DiffLevel;
+    int factor = is_plr ? (4 * diff_adj + 8) : (29 - 3 * diff_adj);
+    factor = clamp(factor, 12 - half_plr_tech, 12 + half_plr_tech);
+    int turn_penalty = half_plr_tech - (*CurrentTurn / (is_stagnate ? 12 : 8));
+    turn_penalty = clamp(turn_penalty, 0, (factor * (is_stagnate ? 3 : 2)) / 2);
+    int factor_adj = turn_penalty + factor;
+    int reduction = (half_max_tech - diff_val - half_plr_tech + 7) / (8 - diff_val);
+    reduction = clamp(reduction, 0, (diff_val * factor_adj / 10) + 1);
+    int tech_multiplier = clamp(half_plr_tech - clamp(plr.SE_research_base, -1, 1), 1, 99999);
+    // Fix: avoid possible overflow issues with custom rules by casting values to int64_t
+    int64_t cost = int64_t(factor_adj - reduction) * tech_multiplier;
+    if (Rules->tech_discovery_rate != 100) {
+        cost = (cost * 100) / Rules->tech_discovery_rate;
+    }
+    if (MFactions[faction_id].rule_techcost != 100) {
+        cost = (cost * MFactions[faction_id].rule_techcost) / 100;
+    }
+    cost = cost * *MapAreaSqRoot / 56;
+    if (is_stagnate) {
+        cost += cost / 2;
+    }
+    cost = clamp(cost, int64_t(1), int64_t(99999999));
+    assert(cost == tech_rate(faction_id));
+    return cost;
 }
 
 /*

@@ -539,8 +539,10 @@ bool patch_setup(Config* cf) {
     write_jump(0x55BA80, (int)agenda_on);
     write_jump(0x55BB30, (int)set_treaty);
     write_jump(0x55BBA0, (int)set_agenda);
+    write_jump(0x55BC00, (int)spying);
     write_jump(0x55EEE0, (int)atrocity);
     write_jump(0x55F450, (int)major_atrocity);
+    write_jump(0x55F770, (int)break_treaty);
     write_jump(0x579A30, (int)add_goal);
     write_jump(0x579B70, (int)add_site);
     write_jump(0x579E00, (int)clear_goals);

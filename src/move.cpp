@@ -389,6 +389,36 @@ bool allow_civ_move(int x, int y, int faction_id, int triad) {
     return false;
 }
 
+bool can_alter_level(int x, int y, int faction_id, bool raise) {
+    MAP* sq = mapsq(x, y);
+    if (!sq) {
+        assert(0);
+        return false;
+    }
+    int target_alt = sq->alt_level() + (raise ? 1 : -1);
+    int dist = 0;
+    if (raise) {
+        if (target_alt > 3) {
+            dist = min(3, target_alt - 3);
+        }
+    } else {
+        target_alt = max(0, target_alt);
+        if (target_alt < 3) {
+            dist = 4 - target_alt;
+        }
+    }
+    int num = TableRange[clamp(dist, 0, MaxTableRange)];
+    for (auto& m : iterate_tiles(x, y, 0, num)) {
+        int owner = whose_territory(faction_id, m.x, m.y, nullptr, 0);
+        if (owner >= 0 && owner != faction_id) {
+            if (Factions[faction_id].diplo_status[owner] & (DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 bool stack_search(int x, int y, int faction_id, StackType type, VehWeaponMode mode) {
     bool found = false;
     for (int i = *VehCount - 1; i >= 0; --i) {
@@ -471,17 +501,17 @@ Evaluate possible land bridge routes from home continent to other regions.
 Planned routes are stored in the faction goal struct and persist in save games.
 */
 void land_raise_plan(int faction_id) {
+    Faction& f = Factions[faction_id];
     AIPlans& p = plans[faction_id];
     if (p.main_region < 0) {
         return;
     }
     if (!has_terra(FORMER_RAISE_LAND, TRIAD_LAND, faction_id)
-    || (is_human(faction_id) && !(*GamePreferences & PREF_AUTO_FORMER_RAISE_LWR_TERRAIN))
-    || Factions[faction_id].energy_credits < 50) {
+    || (is_human(faction_id) && !(*GamePreferences & PREF_AUTO_FORMER_RAISE_LWR_TERRAIN))) {
         return;
     }
     bool expand = allow_expand(faction_id);
-    int best_score = 20;
+    int best_score = 0;
     int goal_count = 0;
     int i = 0;
     int v = 0;
@@ -505,7 +535,8 @@ void land_raise_plan(int faction_id) {
             }
         }
     }
-    int max_dist = (v > min(10, b+1) ? clamp(b/4, 6, 12) : 12);
+    int max_dist = clamp(b/4 + max(0, 10 - v/4), 6, 12)
+        / (v > max(b + 20, i/4) ? 2 : 1);
     debug("raise_plan %d region: %d tiles: %d dist: %d expand: %d\n",
         faction_id, p.main_region, Continents[p.main_region].tile_count, max_dist, expand);
     ts.init(path, TS_SEA_AND_SHORE, 4);
@@ -520,11 +551,17 @@ void land_raise_plan(int faction_id) {
         && !compare_might(faction_id, sq->owner)) {
             continue;
         }
-        int score = min(160, Continents[sq->region].tile_count) - ts.dist*ts.dist/2
-            + (has_goal(faction_id, AI_GOAL_RAISE_LAND, ts.rx, ts.ry) > 0 ? 30 : 0);
+        ts.get_route(path);
+        assert(path.size() > 2);
+        if (!path.size() || !can_alter_level(path.begin()->x, path.begin()->y, faction_id, true)) {
+            continue;
+        }
+        int score = min(400, Continents[sq->region].tile_count
+            * (!sq->is_owned() || sq->owner == faction_id ? 3 : 2) / 2)
+            + (has_goal(faction_id, AI_GOAL_RAISE_LAND, ts.rx, ts.ry) ? 40 : 0)
+            - ts.dist*ts.dist;
 
         if (score > best_score) {
-            ts.get_route(path);
             best_score = score;
             debug("raise_goal %2d %2d -> %2d %2d dist: %2d size: %3d owner: %d score: %d\n",
                 path.begin()->x, path.begin()->y, ts.rx, ts.ry, ts.dist,
@@ -536,8 +573,42 @@ void land_raise_plan(int faction_id) {
             }
         }
         if (goal_count > 15) {
-            return;
+            break;
         }
+    }
+    Points added;
+    point_max_queue_t shore;
+    int max_size = clamp(f.base_count / 4, 4, 10);
+    for (const auto& mp : mapdata) {
+        if (mp.second.flags & PM_LandBaseRds
+        && mp.first.y >= 2
+        && mp.first.y < *MapAreaY - 2
+        && (sq = mapsq(mp.first.x, mp.first.y), !is_ocean(sq))
+        && coast_tiles(mp.first.x, mp.first.y)
+        && can_alter_level(mp.first.x, mp.first.y, faction_id, true)) {
+            for (auto& m : iterate_tiles(mp.first.x, mp.first.y, 1, 9)) {
+                if (is_ocean(m.sq) && Continents[m.sq->region].tile_count <= max_size) {
+                    int score = mapdata[{mp.first.x, mp.first.y}].former
+                        + (region_at(mp.first.x, mp.first.y) == p.main_region ? 10 : 0)
+                        + 4*coast_tiles(mp.first.x, mp.first.y)
+                        + (sq->items & BIT_ROAD ? 4 : 0)
+                        - (sq->lm_items() & (LM_CRATER|LM_JUNGLE|LM_URANIUM) ? 16 : 0)
+                        - (m.sq->items & (BIT_FARM|BIT_MINE|BIT_SOLAR) ? 4 : 0)
+                        - map_range(mp.first.x, mp.first.y, p.main_region_x, p.main_region_y);
+                    shore.push({mp.first.x, mp.first.y, score});
+                    break;
+                }
+            }
+        }
+    }
+    for (i = 0; shore.size() > 0 && i < 8; ++i) {
+        auto pp = shore.top();
+        mapdata[{pp.x, pp.y}].overlay = pp.score;
+        if (pp.score > 0 && min_range(added, pp.x, pp.y) >= 2 && ++goal_count < 20) {
+            add_goal(faction_id, AI_GOAL_RAISE_LAND, 2, pp.x, pp.y, -1);
+            added.insert({pp.x, pp.y});
+        }
+        shore.pop();
     }
 }
 
@@ -776,6 +847,9 @@ void move_upkeep(int faction_id, UpdateMode mode) {
                     || tile_count[sq->region] > tile_count[p.main_sea_region]) {
                         p.main_sea_region = sq->region;
                     }
+                } else if (sq->owner == faction_id
+                && sq->items & BIT_BASE_RADIUS && !sq->is_base()) {
+                    mapdata[{x, y}].flags |= PM_LandBaseRds;
                 }
             }
             if (sq->owner == faction_id && ((!p.build_tubes && sq->items & BIT_ROAD)
@@ -1457,7 +1531,8 @@ bool can_bridge(int x, int y, int faction_id, MAP* sq) {
     if (is_ocean(sq)
     || !has_terra(FORMER_RAISE_LAND, TRIAD_LAND, faction_id)
     || (is_human(faction_id) && !(*GamePreferences & PREF_AUTO_FORMER_RAISE_LWR_TERRAIN))
-    || (sq->owner != faction_id && !at_war(faction_id, sq->owner))) {
+    || (sq->owner != faction_id && !at_war(faction_id, sq->owner))
+    || !can_alter_level(x, y, faction_id, true)) {
         return false;
     }
     int alt = sq->alt_level();
@@ -1465,15 +1540,6 @@ bool can_bridge(int x, int y, int faction_id, MAP* sq) {
     && alt <= ALT_SHORE_LINE + (mapdata[{x, y}].get_enemy_dist() < 10)
     && near_sea_coast(x, y)) {
         return true;
-    }
-    if (coast_tiles(x, y) && sq->is_base_radius() && (x&1) && (y&2)) {
-        for (auto& m : iterate_tiles(x, y, 1, 9)) {
-            if (m.sq->region > MaxRegionLandNum
-            && !m.sq->is_pole_tile()
-            && Continents[m.sq->region].tile_count < 6) {
-                return true;
-            }
-        }
     }
     if (coast_tiles(x, y) < 3 || sq->landmarks & LM_JUNGLE) {
         return false;
@@ -1938,7 +2004,7 @@ int select_item(int x, int y, int faction_id, FormerMode mode, MAP* sq) {
 int former_tile_score(int x, int y, int faction_id, MAP* sq) {
     const int priority[][2] = {
         {BIT_RIVER, 4},
-        {BIT_FARM, -3},
+        {BIT_FARM, -2},
         {BIT_SOLAR, -2},
         {BIT_FOREST, -4},
         {BIT_MINE, -4},
@@ -1946,6 +2012,7 @@ int former_tile_score(int x, int y, int faction_id, MAP* sq) {
         {BIT_SOIL_ENRICHER, -4},
         {BIT_THERMAL_BORE, -8},
     };
+    int alt = sq->alt_level();
     int bonus = bonus_at(x, y);
     int score = (sq->lm_items() & ~(LM_DUNES|LM_SARGASSO|LM_UNITY|LM_NEXUS) ? 4 : 0);
 
@@ -1971,7 +2038,7 @@ int former_tile_score(int x, int y, int faction_id, MAP* sq) {
     || (plans[faction_id].build_tubes && !(sq->items & BIT_MAGTUBE)))) {
         score += 15;
     }
-    if (is_shore_level(sq) && mapnodes.count({x, y, NODE_GOAL_RAISE_LAND})) {
+    if (alt == ALT_SHORE_LINE && mapnodes.count({x, y, NODE_GOAL_RAISE_LAND})) {
         score += 20;
     }
     return score + min(8, mapdata[{x, y}].former) + min(0, mapdata[{x, y}].safety);

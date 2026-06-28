@@ -1138,13 +1138,10 @@ void __cdecl mod_turn_upkeep() {
     }
     if (voice_of_planet()) {
         Faction& plr = Factions[*CurrentPlayerFaction];
-        MFaction& m_plr = MFactions[*CurrentPlayerFaction];
         if (!(plr.player_flags & PFLAG_UNK_2000)) {
             plr.player_flags |= PFLAG_UNK_2000;
-            *PluralDefault = 0;
-            *GenderDefault = m_plr.is_leader_female;
-            parse_says(0, m_plr.title_leader, -1, -1);
-            parse_says(1, m_plr.name_leader, -1, -1);
+            parse_says(0, get_title(*CurrentPlayerFaction), -1, -1);
+            parse_says(1, get_name(*CurrentPlayerFaction), -1, -1);
             popp(ScriptFile, "ASCENT", 0, "asctran_sm.pcx", 0);
         }
     }
@@ -1324,17 +1321,9 @@ int __cdecl end_of_game(int flag) {
         }
     }
     auto setup_parser = [](int id) {
-        *PluralDefault = 0;
-        *GenderDefault = MFactions[id].is_leader_female;
-        parse_says(0, MFactions[id].title_leader, -1, -1);
-
-        *GenderDefault = MFactions[id].is_leader_female;
-        *PluralDefault = 0;
-        parse_says(1, MFactions[id].name_leader, -1, -1);
-
-        *GenderDefault = MFactions[id].noun_gender;
-        *PluralDefault = MFactions[id].is_noun_plural;
-        parse_says(2, MFactions[id].noun_faction, -1, -1);
+        parse_says(0, get_title(id), -1, -1);
+        parse_says(1, get_name(id), -1, -1);
+        parse_says(2, get_noun(id), -1, -1);
     };
     bool play_credits = false;
 
@@ -1567,7 +1556,6 @@ int __cdecl replay_base(int event, int x, int y, int faction_id) {
 
 void __cdecl mod_faction_upkeep(int faction_id) {
     Faction* f = &Factions[faction_id];
-    MFaction* m = &MFactions[faction_id];
     debug("faction_upkeep %d %d\n", *CurrentTurn, faction_id);
 
     init_save_game(faction_id);
@@ -1605,14 +1593,10 @@ void __cdecl mod_faction_upkeep(int faction_id) {
                 f->corner_market_turn = *CurrentTurn + Rules->turns_corner_global_energy_market;
                 f->corner_market_cost = cost;
                 f->energy_credits -= cost;
-
-                *GenderDefault = m->noun_gender;
-                *PluralDefault = 0;
-                parse_says(0, m->title_leader, -1, -1);
-                parse_says(1, m->name_leader, -1, -1);
-                *PluralDefault = m->is_noun_plural;
-                parse_says(2, m->noun_faction, -1, -1);
-                parse_says(3, m->adj_name_faction, -1, -1);
+                parse_says(0, get_title(faction_id), -1, -1);
+                parse_says(1, get_name(faction_id), -1, -1);
+                parse_says(2, get_noun(faction_id), -1, -1);
+                parse_says(3, get_adjective(faction_id), -1, -1);
                 ParseNumTable[0] = game_year(f->corner_market_turn);
                 popp(ScriptFile, "CORNERWARNING", 0, "econwin_sm.pcx", 0);
             }

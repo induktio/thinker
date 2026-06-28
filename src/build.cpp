@@ -835,7 +835,7 @@ int select_build(int base_id) {
     bool allow_units = can_build_unit(base_id, -1) && !project_change;
     bool allow_supply = !sea_base && gov & GOV_MAY_PROD_TERRAFORMERS;
     bool allow_ships = has_ships(faction_id)
-        && adjacent_region(base->x, base->y, -1, *MapAreaSqRoot + 10, TRIAD_SEA);
+        && adjacent_region(base->x, base->y, -1, *MapAreaSqRoot, TRIAD_SEA);
     bool allow_pods = allow_expand(faction_id) && (base->pop_size > 1 || base->nutrient_surplus > 0);
     bool drone_riots = base->drone_riots() || base->drone_riots_active();
     int drones = base->drone_total + base->specialist_adjust;
@@ -885,6 +885,8 @@ int select_build(int base_id) {
             near_formers++;
         } else if (dist <= 4 && veh->is_artifact()) {
             artifacts++;
+        } else if (dist == 0 && veh->is_transport()) {
+            transports++;
         } else if (veh->is_supply()) {
             all_crawlers++;
         }
@@ -1097,7 +1099,7 @@ int select_build(int base_id) {
                 continue;
             }
         }
-        if (t == FerryUnit && gov & GOV_MAY_PROD_TRANSPORT && allow_ships && need_ferry) {
+        if (t == FerryUnit && gov & GOV_MAY_PROD_TRANSPORT && need_ferry) {
             if ((choice = find_proto(base_id, TRFLAG_SEA, WMODE_TRANSPORT, DEF)) >= 0) {
                 score += (p->target_land_region > 0 || p->transport_units < 4 ? 40 : 0);
                 push_item(builds, base_id, choice, retool, score, --Wt);

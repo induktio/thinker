@@ -215,22 +215,15 @@ This way it is not required to write any of the actual patches to the exe file, 
 applied dynamically at runtime. Thinker also performs some sanity checks during patching, and it
 will close the game process with an error message if any of the checks fail.
 
+Due to the simplicity of Thinker's loading method, the game binary can be patched manually
+in a hex editor to also load Thinker at startup.
 
-Patching OpenSMACX to work with Thinker
-=======================================
-Due to the simplicity of Thinker's loading method, [OpenSMACX](https://github.com/b-casey/OpenSMACX/)
-or the default terranx.exe can be patched manually in a hex editor to also load Thinker at startup.
-
-Note that this combination of patches is not fully tested and some issues may appear due
-to the combination of these binaries. After patching, OpenSMACX binary will not start
-unless Windows can also load thinker.dll from the same folder.
-
-1. Open `terranx_opensmacx_v0.2.1.exe` (or latest release) in a hex editor.
+1. Open `terranx.exe` in a hex editor.
 2. Replace any string `SHELL32.dll` with `thinker.dll`
 3. Replace any string `ShellExecuteA` with `ThinkerModule`
-4. Move all exe and dll files to the same folder with Alpha Centauri.
+4. Install Thinker files in the same folder with Alpha Centauri.
 
-Thinker should now start along with OpenSMACX. Thinker version should always be visible in the game
+Thinker should now start along with the game. Thinker version should always be visible in the game
 version menu (Ctrl+F4). If this is not the case, Thinker did not start correctly with the game.
 Check if you are actually running the game binary with the imports patched as described above.
 

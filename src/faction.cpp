@@ -532,6 +532,32 @@ void __cdecl major_atrocity(int faction_id, int faction_id_tgt) {
     }
 }
 
+int __cdecl break_treaty(int faction_id, int faction_id_tgt, uint32_t status) {
+    uint32_t current = Factions[faction_id].diplo_status[faction_id_tgt];
+    if ((current & DIPLO_VENDETTA) || !(current & status)) {
+        return 0;
+    }
+    parse_says(0, get_title(faction_id_tgt), -1, -1);
+    parse_says(1, get_name(faction_id_tgt), -1, -1);
+    parse_says(2, get_noun(faction_id_tgt), -1, -1);
+    parse_says(3, get_pact_hood(faction_id, faction_id_tgt), -1, -1);
+    parse_says(4, get_adjective(faction_id_tgt), -1, -1);
+    if (current & DIPLO_PACT) {
+        NetMsg_pop(NetMsg, "BREAKINGPACT", -5000, 0, "break_sm.pcx");
+        return 1;
+    }
+    if (current & DIPLO_TREATY) {
+        return popp(ScriptFile, "BREAKINGTREATY", 0, "break_sm.pcx", 0) == 0;
+    }
+    if ((current & DIPLO_TRUCE) && !(current & DIPLO_UNK_10000)) {
+        return popp(ScriptFile, "BREAKINGTRUCE", 0, "break_sm.pcx", 0) == 0;
+    }
+    if (status & DIPLO_UNK_10000) {
+        return 0;
+    }
+    return popp(ScriptFile, "BEGINVENDETTA", 0, "break_sm.pcx", 0) == 0;
+}
+
 void __cdecl intervention(int faction_id_def, int faction_id_atk) {
     for (int i = 1; i < MaxPlayerNum; i++) {
         MFaction* m = &MFactions[i];
@@ -743,6 +769,12 @@ int __cdecl steal_tech(int faction_id, int faction_id_tgt, int is_steal) {
         }
     }
     return tech_id == 9999;
+}
+
+int __cdecl spying(int faction_id) {
+    return has_treaty(MapWin->cOwner, faction_id, DIPLO_HAVE_INFILTRATOR)
+        || has_project(FAC_EMPATH_GUILD, MapWin->cOwner)
+        || (MapWin->cOwner == *GovernorFaction && !MFactions[faction_id].is_alien());
 }
 
 /*
@@ -1043,6 +1075,51 @@ char* __cdecl get_title(int faction_id) {
     return MFactions[faction_id].title_leader;
 }
 
+char* __cdecl get_adjective_leader(int faction_id) {
+    return MFactions[faction_id].adj_leader;
+}
+
+char* __cdecl get_adjective_insult_leader(int faction_id) {
+    return MFactions[faction_id].adj_insult_leader;
+}
+
+char* __cdecl get_adjective_faction(int faction_id) {
+    return MFactions[faction_id].adj_faction;
+}
+
+char* __cdecl get_adjective_insult_faction(int faction_id) {
+    return MFactions[faction_id].adj_insult_faction;
+}
+
+char* __cdecl get_insult_leader(int faction_id) {
+    *PluralDefault = 0;
+    *GenderDefault = MFactions[faction_id].is_leader_female;
+    return MFactions[faction_id].insult_leader;
+}
+
+char* __cdecl get_pact(int faction_id) {
+    *PluralDefault = 0;
+    *GenderDefault = MFactions[faction_id].is_leader_female;
+    if (MFactions[faction_id].is_leader_female) {
+        return label_get(202); // Pact Sister
+    }
+    return label_get(201); // Pact Brother
+}
+
+char* __cdecl get_pacts(int faction_id) {
+    *PluralDefault = 1;
+    *GenderDefault = MFactions[faction_id].is_leader_female;
+    return label_get(MFactions[faction_id].is_leader_female ? 204 : 203);
+}
+
+char* __cdecl get_pacts_2(int faction_id, int faction_id_2) {
+    int is_female_1 = MFactions[faction_id].is_leader_female;
+    int is_female_2 = MFactions[faction_id_2].is_leader_female;
+    *PluralDefault = 1;
+    *GenderDefault = is_female_1 && is_female_2;
+    return label_get(is_female_1 && is_female_2 ? 204 : 203);
+}
+
 char* __cdecl get_pact_hood(int faction_id, int faction_id_2) {
     *PluralDefault = 0;
     *GenderDefault = 0;
@@ -1094,10 +1171,10 @@ int faction_id, int UNUSED(toggle), int is_quick_calc) {
     MFaction* m = &MFactions[faction_id];
     memset(effect, 0, sizeof(CSocialEffect));
     for (int cat = 0; cat < MaxSocialCatNum; cat++) {
-        int model = *(&category->politics + cat);
+        int model = category->models[cat];
         assert(model >= 0 && model < MaxSocialModelNum);
         for (int eff = 0; eff < MaxSocialEffectNum; eff++) {
-            int effect_val = *(&SocialField[cat].soc_effect[model].economy + eff);
+            int effect_val = SocialField[cat].soc_effect[model].values[eff];
             if (effect_val < 0) {
                 if (cat == SOCIAL_C_FUTURE) {
                     if (model == SOCIAL_M_CYBERNETIC) {
@@ -1118,15 +1195,15 @@ int faction_id, int UNUSED(toggle), int is_quick_calc) {
                         if (m->faction_bonus_val1[i] == cat
                         && m->faction_bonus_val2[i] == model) {
                             if (m->faction_bonus_id[i] == RULE_IMPUNITY) {
-                                *(&effect->economy + eff) -= effect_val; // negates neg effects
+                                effect->values[eff] -= effect_val; // negates neg effects
                             } else if (m->faction_bonus_id[i] == RULE_PENALTY) {
-                                *(&effect->economy + eff) += effect_val; // doubles neg effects
+                                effect->values[eff] += effect_val; // doubles neg effects
                             }
                         }
                     }
                 }
             }
-            *(&effect->economy + eff) += effect_val;
+            effect->values[eff] += effect_val;
         }
     }
     if (!is_quick_calc) {
@@ -1138,25 +1215,24 @@ int faction_id, int UNUSED(toggle), int is_quick_calc) {
         }
         if (has_temple(faction_id)) {
             effect->planet++;
-            if (is_alien(faction_id)) {
-                effect->research++; // bonus documented in conceptsx.txt but not manual
+            if (m->is_alien()) {
+                effect->research++;
             }
         }
-        CSocialEffect* effect_base = (CSocialEffect*)&f->SE_economy_base;
+        auto initial = (CSocialEffect*)&f->SE_economy_base;
         for (int eff = 0; eff < MaxSocialEffectNum; eff++) {
-            *(&effect->economy + eff) += *(&effect_base->economy + eff);
+            effect->values[eff] += initial->values[eff];
         }
         for (int i = 0; i < m->faction_bonus_count; i++) {
             int bonus_id = m->faction_bonus_id[i];
             int bonus_val = m->faction_bonus_val1[i];
             if (bonus_id == RULE_IMMUNITY || bonus_id == RULE_ROBUST) {
-                int32_t* effect_value = (&effect->economy + bonus_val);
                 assert(bonus_val >= 0 && bonus_val < MaxSocialEffectNum);
                 if (bonus_id == RULE_IMMUNITY) { // cancels neg effects
-                    *effect_value = clamp(*effect_value, 0, 999);
+                    effect->values[bonus_val] = clamp(effect->values[bonus_val], 0, 999);
                 } else if (bonus_id == RULE_ROBUST) { // halves neg effects
-                    if (*effect_value < 0) {
-                        *effect_value /= 2;
+                    if (effect->values[bonus_val] < 0) {
+                        effect->values[bonus_val] /= 2;
                     }
                 }
             }
@@ -1169,8 +1245,8 @@ Handle the social engineering turn upkeep for the specified faction.
 */
 void __cdecl social_upkeep(int faction_id) {
     Faction* f = &Factions[faction_id];
-    CSocialCategory* pending = (CSocialCategory*)&f->SE_Politics_pending;
-    CSocialCategory* current = (CSocialCategory*)&f->SE_Politics;
+    auto pending = (CSocialCategory*)&f->SE_Politics_pending;
+    auto current = (CSocialCategory*)&f->SE_Politics;
     memcpy(current, pending, sizeof(CSocialCategory));
     social_calc(pending, (CSocialEffect*)&f->SE_economy_pending, faction_id, false, false);
     social_calc(pending, (CSocialEffect*)&f->SE_economy, faction_id, false, false);
@@ -1184,9 +1260,10 @@ Return Value: Social upheaval cost
 */
 int __cdecl social_upheaval(int faction_id, CSocialCategory* choices) {
     Faction* f = &Factions[faction_id];
+    auto current = (CSocialCategory*)&f->SE_Politics;
     int changes = 0;
     for (int i = 0; i < MaxSocialCatNum; i++) {
-        if (*(&choices->politics + i) != (&f->SE_Politics)[i]) {
+        if (choices->models[i] != current->models[i]) {
             changes++;
         }
     }
@@ -1231,13 +1308,14 @@ static int social_score(int faction_id, int sf, int sm, bool pop_boom) {
     CSocialEffect vals;
     CSocialCategory soc;
     memcpy(&soc, &f->SE_Politics, sizeof(soc));
+    auto current = (CSocialCategory*)&f->SE_Politics;
 
-    if ((&soc.politics)[sf] == sm) {
+    if (soc.models[sf] == sm) {
         // Evaluate the current active social model.
         memcpy(&vals, &f->SE_economy, sizeof(vals));
     } else {
         // Take the faction base social values and apply all modifiers.
-        (&soc.politics)[sf] = sm;
+        soc.models[sf] = sm;
         memcpy(&vals, &f->SE_economy_base, sizeof(vals));
         social_calc(&soc, &vals, faction_id, 0, 0);
     }
@@ -1249,16 +1327,16 @@ static int social_score(int faction_id, int sf, int sm, bool pop_boom) {
                 sc -= conf.social_ai_bias;
             }
         } else {
-            if ((&f->SE_Politics)[m->soc_priority_category] == m->soc_priority_model) {
+            if (current->models[m->soc_priority_category] == m->soc_priority_model) {
                 sc += conf.social_ai_bias;
-            } else if ((&f->SE_Politics)[m->soc_priority_category] != SOCIAL_M_FRONTIER) {
+            } else if (current->models[m->soc_priority_category] != SOCIAL_M_FRONTIER) {
                 sc -= conf.social_ai_bias;
             }
         }
     }
     // AIs also take into account Social Effect priorities whenever social_ai_bias >= 10
     if (m->soc_priority_effect >= 0 && m->soc_priority_effect < MaxSocialEffectNum) {
-        sc += clamp((&vals.economy)[m->soc_priority_effect], -4, 4)
+        sc += clamp(vals.values[m->soc_priority_effect], -4, 4)
             * clamp(conf.social_ai_bias / 10, 0, 2);
     }
     if (vals.economy >= 2) {
@@ -1406,9 +1484,11 @@ int __cdecl mod_social_ai(int faction_id, int a2, int a3, int a4, int a5, CSocia
     int sf = -1;
     int sm2 = -1;
     CSocialCategory soc;
+    auto pending = (CSocialCategory*)&f->SE_Politics_pending;
+    auto current = (CSocialCategory*)&f->SE_Politics;
 
     for (int i = 0; i < MaxSocialCatNum; i++) {
-        int sm1 = (&f->SE_Politics)[i];
+        int sm1 = current->models[i];
         int sc1 = social_score(faction_id, i, sm1, pop_boom);
         for (int j = 0; j < MaxSocialModelNum; j++) {
             if (j == sm1 || !society_avail(i, j, faction_id)) {
@@ -1420,14 +1500,14 @@ int __cdecl mod_social_ai(int faction_id, int a2, int a3, int a4, int a5, CSocia
                 sm2 = j;
                 score_diff = sc2 - sc1;
                 memcpy(&soc, &f->SE_Politics, sizeof(soc));
-                *(&soc.politics + sf) = sm2;
+                soc.models[sf] = sm2;
             }
         }
     }
     int cost;
     if (sf >= 0 && f->energy_credits > (cost = social_upheaval(faction_id, &soc))) {
-        int sm1 = (&f->SE_Politics)[sf];
-        (&f->SE_Politics_pending)[sf] = sm2;
+        int sm1 = current->models[sf];
+        pending->models[sf] = sm2;
         f->energy_credits -= cost;
         f->SE_upheaval_cost_paid += cost;
         debug("social_change %d %d %8s cost: %d score: %d %s -> %s\n",
@@ -2195,7 +2275,8 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
             for (int i = 0; i < bonus_count; i++) {
                 if (m->faction_bonus_id[i] == RULE_SOCIAL) {
                     assert(m->faction_bonus_val1[i] >= 0 && m->faction_bonus_val1[i] < 11);
-                    (&plr->SE_economy_base)[m->faction_bonus_val1[i]] += m->faction_bonus_val2[i];
+                    auto effects = (CSocialEffect*)&plr->SE_economy_base;
+                    effects->values[m->faction_bonus_val1[i]] += m->faction_bonus_val2[i];
                 } else if (m->faction_bonus_id[i] == RULE_UNIT) {
                     veh_init_last(m->faction_bonus_val1[i], faction_id, x, y);
                     if (m->faction_bonus_val1[i] == BSC_COLONY_POD) {

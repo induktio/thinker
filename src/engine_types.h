@@ -1,5 +1,7 @@
 #pragma once
 #pragma pack(push, 1)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 
 struct MAP {
     uint8_t climate; // 000 00 000 | altitude (3 bit) ; rainfall (2 bit) ; temperature (3 bit)
@@ -781,24 +783,34 @@ struct CTimeControl {
 };
 
 struct CSocialCategory {
-    int32_t politics;
-    int32_t economics;
-    int32_t values;
-    int32_t future;
+    union {
+        struct {
+            int32_t politics;
+            int32_t economics;
+            int32_t values;
+            int32_t future;
+        };
+        int32_t models[4];
+    };
 };
 
 struct CSocialEffect {
-    int32_t economy;
-    int32_t efficiency;
-    int32_t support;
-    int32_t talent;
-    int32_t morale;
-    int32_t police;
-    int32_t growth;
-    int32_t planet;
-    int32_t probe;
-    int32_t industry;
-    int32_t research;
+    union {
+        struct {
+            int32_t economy;
+            int32_t efficiency;
+            int32_t support;
+            int32_t talent;
+            int32_t morale;
+            int32_t police;
+            int32_t growth;
+            int32_t planet;
+            int32_t probe;
+            int32_t industry;
+            int32_t research;
+        };
+        int32_t values[11];
+    };
 };
 
 struct CSocialParam {
@@ -906,5 +918,6 @@ struct CWorldbuilder {
 };
 
 
+#pragma GCC diagnostic pop
 #pragma pack(pop)
 
