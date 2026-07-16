@@ -1320,29 +1320,27 @@ void __cdecl ReportWin_draw_ops_strcat(char* dst, char* UNUSED(src))
 {
     BASE* base = *CurrentBase;
     uint32_t gov = base->governor_flags;
-    char buf[StrBufLen] = {};
+    size_t len = 0;
     dst[0] = '\0';
 
-    if (base->faction_id == MapWin->cOwner) {
-        if (gov & GOV_ACTIVE) {
-            if (gov & GOV_PRIORITY_EXPLORE) {
-                strncat(dst, label_get(521), 32);
-            } else if (gov & GOV_PRIORITY_DISCOVER) {
-                strncat(dst, label_get(522), 32);
-            } else if (gov & GOV_PRIORITY_BUILD) {
-                strncat(dst, label_get(523), 32);
-            } else if (gov & GOV_PRIORITY_CONQUER) {
-                strncat(dst, label_get(524), 32);
-            } else {
-                strncat(dst, label_get(457), 32); // Governor
-            }
-            strncat(dst, " ", 32);
+    if (base->faction_id == MapWin->cOwner && gov & GOV_ACTIVE) {
+        const char* type;
+        if (gov & GOV_PRIORITY_EXPLORE) {
+            type = label_get(521);
+        } else if (gov & GOV_PRIORITY_DISCOVER) {
+            type = label_get(522);
+        } else if (gov & GOV_PRIORITY_BUILD) {
+            type = label_get(523);
+        } else if (gov & GOV_PRIORITY_CONQUER) {
+            type = label_get(524);
+        } else {
+            type = label_get(457); // Governor
         }
+        len += snprintf(dst, StrBufLen, "%s ", type);
     }
-    if (strlen(label_base_surplus)) {
-        snprintf(buf, StrBufLen, label_base_surplus,
+    if (strlen(label_base_surplus) && len < StrBufLen) {
+        snprintf(dst + len, StrBufLen - len, label_base_surplus,
             base->nutrient_surplus, base->mineral_surplus, base->energy_surplus);
-        strncat(dst, buf, StrBufLen);
     }
 }
 
@@ -1390,10 +1388,10 @@ Original version changed MapWin->cOwner variable for unknown reason which is ski
 void __thiscall Console_editor_fungus(Console* UNUSED(This))
 {
     auto_undo();
-    int v1 = X_pop7("FUNGOSITY", PopDialogBtnCancel, 0);
+    int v1 = X_pop_6("FUNGOSITY", PopDialogBtnCancel, 0);
     if (v1 >= 0) {
         int v2 = 0;
-        if (!v1 || (v2 = X_pop7("FUNGMOTIZE", PopDialogBtnCancel, 0)) > 0) {
+        if (!v1 || (v2 = X_pop_6("FUNGMOTIZE", PopDialogBtnCancel, 0)) > 0) {
             MAP* sq = *MapTiles;
             for (int i = 0; i < *MapAreaTiles; ++i, ++sq) {
                 sq->items &= ~BIT_FUNGUS;

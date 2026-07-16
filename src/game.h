@@ -43,6 +43,7 @@ void __cdecl mod_turn_upkeep();
 void __cdecl mod_faction_upkeep(int faction_id);
 void __cdecl mod_repair_phase(int faction_id);
 void __cdecl mod_production_phase(int faction_id);
+void __cdecl mod_allocate_energy(int faction_id);
 void __cdecl mod_name_base(int faction_id, char* name, bool save_offset, bool water);
 int __cdecl load_music_strcmpi(const char* active, const char* label);
 

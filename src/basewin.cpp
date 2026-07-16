@@ -229,10 +229,10 @@ void __thiscall BaseWin_draw_energy_set_text_color(Buffer* This, int a2, int a3,
             color = ColorIntakeSurplus;
         }
         Buffer_set_text_color(This, color, a3, a4, a5);
-        snprintf(buf, StrBufLen, label_pop_size,
+        size_t len = snprintf(buf, StrBufLen, label_pop_size,
             base->talent_total, workers, base->drone_total, base->specialist_total);
-        if (DEBUG) {
-            strncat(buf, conf.base_psych ? " / B" : " / A", 32);
+        if (DEBUG && len < StrBufLen) {
+            snprintf(buf + len, StrBufLen - len, conf.base_psych ? " / B" : " / A");
         }
         Buffer_write_right_l_5(This, buf, 690, 423 - 42, LineBufLen);
 

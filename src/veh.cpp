@@ -118,6 +118,11 @@ bool has_ability(int faction_id, VehAbl abl, VehChassis chs, VehWeapon wpn) {
     return has_tech(Ability[abl].preq_tech, faction_id);
 }
 
+bool is_native_unit(int unit_id) {
+    assert(unit_id >= 0 && unit_id < MaxProtoNum);
+    return unit_id >= 0 && unit_id < MaxProtoFactionNum && Units[unit_id].offense_value() < 0;
+}
+
 /*
 Fractional healing at monoliths is not implemented and for this reason
 Battle Ogres may be excluded from healing/promoting at monoliths.
@@ -1581,7 +1586,7 @@ GOODY_START:
             int rand_val = goody_rand(MaxTechnologyNum);
             while (true) {
                 int tech_id = (rand_val + iter_val) % MaxTechnologyNum;
-                if (!has_tech(tech_id, faction_id) && mod_tech_avail(tech_id, faction_id)
+                if (!has_tech(tech_id, faction_id) && tech_avail(tech_id, faction_id)
                 && (!tech_is_preq(tech_id, TECH_Brain, 9999) || TechOwners[TECH_Brain])) {
                     int val = 0;
                     for (int iter_id : {Tech[tech_id].preq_tech1, Tech[tech_id].preq_tech2}) {
@@ -1940,7 +1945,7 @@ int __cdecl mod_study_artifact(int veh_id) {
     int best_tech_id = -1;
     int best_val = -1;
     for (int i = 0; i < MaxTechnologyNum; i++) {
-        if (!has_tech(i, faction_id) && mod_tech_avail(i, faction_id)) {
+        if (!has_tech(i, faction_id) && tech_avail(i, faction_id)) {
             // Fix: removed here additional code that was never used
             // due to conditions in tech_avail already excluding it.
             int rnd_val = game_randv(8);

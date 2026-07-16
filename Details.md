@@ -503,6 +503,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 69. Fix SURVIVEPROJECT event not properly displaying restored secret project name.
 70. Fix Brood Pit not providing lifecycle bonus for built native units as mentioned in the manual.
 71. Fix game never displaying ABANDONBASE1 event with turns remaining when building the colony pod would disband the base with nutrient surplus.
+72. Modify AI psych energy allocation for rewritten governor specialist priorities and fix inconsistent calculations in the original game during energy allocation.
 
 
 Scient's patch

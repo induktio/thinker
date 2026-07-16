@@ -156,6 +156,7 @@ const int MaxBonusNameNum = 41;
 const int MaxProposalNum = 11;
 
 const int GrowthPopBoom = 6;
+const int ConvoyBaseValue = 1;
 const int PulseArmorValue = 25;
 const int ResonanceArmorValue = 25;
 const int ResonanceWeaponValue = 25;
@@ -164,6 +165,7 @@ const int FlechetteDefenseValue = 50;
 const int FlechetteDefenseRange = 2;
 const int MissileDefendChance = 50;
 const int OrbitalAttackChance = 50;
+const int PlanetaryDatalinksCount = 3;
 const int PlanetaryTransitPopSize = 3;
 const int UniversalTranslatorTechs = 2;
 

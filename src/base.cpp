@@ -512,7 +512,7 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
 
                 bool relocate = true;
                 if (!*MultiplayerActive && faction_id == player_id) {
-                    relocate = X_pop2("ESCAPE", 0);
+                    relocate = X_pop("ESCAPE", 0);
                 }
                 if (relocate) {
                     plr_def->energy_credits -= 1000;
@@ -1674,11 +1674,11 @@ void __cdecl mod_base_support() {
                     BaseResourceConvoyTo[type] += value;
                 }
                 if (sq->is_base()) {
-                    BaseResourceConvoyFrom[type]++;
+                    BaseResourceConvoyFrom[type] += ConvoyBaseValue;
                 }
             } else if (veh->x == base->x && veh->y == base->y
             && veh->home_base_id >= 0 && type <= RSC_UNUSED) {
-                BaseResourceConvoyTo[type]++;
+                BaseResourceConvoyTo[type] += ConvoyBaseValue;
             }
         }
         if (veh->home_base_id == base_id) {
@@ -2055,9 +2055,11 @@ void __cdecl mod_base_minerals() {
     int base_id = *CurrentBaseID;
     int faction_id = base->faction_id;
 
-    base->mineral_intake_2 += BaseResourceConvoyTo[RSC_MINERAL];
     base->mineral_intake_2 = (base->mineral_intake_2
         * (mineral_output_modifier(base_id) + 2)) / 2;
+    // Fix: original game added convoyed minerals from other bases to mineral_intake_2
+    // before it is multiplied potentially enabling the minerals to be multiplied twice
+    base->mineral_intake_2 += BaseResourceConvoyTo[RSC_MINERAL];
     base->mineral_consumption = *BaseForcesMaintCost
         + BaseResourceConvoyFrom[RSC_MINERAL];
     base->mineral_surplus = base->mineral_intake_2
@@ -2656,7 +2658,7 @@ void __cdecl mod_base_research() {
         } else {
             f->net_random_event = v2;
         }
-        mod_tech_research(faction_id, v1 / 100);
+        tech_research(faction_id, v1 / 100);
     }
 }
 
@@ -4047,7 +4049,9 @@ int __cdecl mod_base_upkeep(int base_id) {
 
     set_base(base_id);
     *BaseUpkeepFlag = 0;
-    base->state_flags &= ~(BSTATE_PSI_GATE_USED|BSTATE_FACILITY_SCRAPPED);
+    // Fix: clear hurry production flags before mod_base_production runs
+    // to allow rushing the following production item during turn upkeep
+    base->state_flags &= ~(BSTATE_PSI_GATE_USED|BSTATE_FACILITY_SCRAPPED|BSTATE_HURRY_PRODUCTION);
     base_compute(1); // Always update
     if (mod_base_production()) {
         return 1; // Current base was removed
@@ -4301,7 +4305,7 @@ int base_unused_space(int base_id) {
 
 int base_growth_goal(int base_id) {
     BASE* base = &Bases[base_id];
-    return clamp(24 - base->pop_size, 0, base_unused_space(base_id));
+    return clamp((32 - base->pop_size)/2, 0, base_unused_space(base_id));
 }
 
 int stockpile_energy(int base_id) {

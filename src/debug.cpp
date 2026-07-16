@@ -149,25 +149,25 @@ Original (legacy) game engine logging functions.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
-void __cdecl log_say(const char* a1, int a2, int a3, int a4) {
+void __cdecl log_say_2(const char* a1, int a2, int a3, int a4) {
     if (conf.debug_verbose) {
         debug("**** %s %d %d %d\n", a1, a2, a3, a4);
     }
 }
 
-void __cdecl log_say2(const char* a1, const char* a2, int a3, int a4, int a5) {
+void __cdecl log_say(const char* a1, const char* a2, int a3, int a4, int a5) {
     if (conf.debug_verbose) {
         debug("**** %s %s %d %d %d\n", a1, a2, a3, a4, a5);
     }
 }
 
-void __cdecl log_say_hex(const char* a1, int a2, int a3, int a4) {
+void __cdecl log_say_hex_2(const char* a1, int a2, int a3, int a4) {
     if (conf.debug_verbose) {
         debug("**** %s %04x %04x %04x\n", a1, a2, a3, a4);
     }
 }
 
-void __cdecl log_say_hex2(const char* a1, const char* a2, int a3, int a4, int a5) {
+void __cdecl log_say_hex(const char* a1, const char* a2, int a3, int a4, int a5) {
     if (conf.debug_verbose) {
         debug("**** %s %s %04x %04x %04x\n", a1, a2, a3, a4, a5);
     }

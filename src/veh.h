@@ -8,6 +8,7 @@ int __cdecl arty_range(int unit_id);
 int __cdecl drop_range(int faction_id);
 bool has_orbital_drops(int faction_id);
 bool has_ability(int faction_id, VehAbl abl, VehChassis chs, VehWeapon wpn);
+bool is_native_unit(int unit_id);
 bool is_battle_ogre(int unit_id);
 bool can_repair(int unit_id);
 bool can_monolith(int unit_id);

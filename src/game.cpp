@@ -1115,7 +1115,7 @@ void __cdecl mod_turn_upkeep() {
                 set_treaty(caretake_id, faction_id, DIPLO_UNK_40, 1);
                 Factions[faction_id].diplo_spoke[caretake_id] = *CurrentTurn;
                 if (faction_id == *CurrentPlayerFaction) {
-                    X_pops4("NOTRANSCEND", 0x100000, FactionPortraits[caretake_id], pop_wait);
+                    X_pops_11("NOTRANSCEND", 0x100000, FactionPortraits[caretake_id], pop_wait);
                 }
             }
         }
@@ -1569,7 +1569,7 @@ void __cdecl mod_faction_upkeep(int faction_id) {
     mod_production_phase(faction_id);
     do_all_non_input();
     if (full_game_turn()) {
-        allocate_energy(faction_id);
+        mod_allocate_energy(faction_id);
         do_all_non_input();
         enemy_diplomacy(faction_id);
         do_all_non_input();
@@ -1605,7 +1605,8 @@ void __cdecl mod_faction_upkeep(int faction_id) {
     for (int i = 0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];
         if (base->faction_id == faction_id) {
-            base->state_flags &= ~(BSTATE_UNK_1 | BSTATE_HURRY_PRODUCTION);
+            // Fix: clear hurry production flags moved to mod_base_upkeep
+            base->state_flags &= ~BSTATE_UNK_1;
         }
     }
     f->energy_credits -= f->hurry_cost_total;
@@ -1791,7 +1792,7 @@ void __cdecl mod_production_phase(int faction_id) {
     f->energy_surplus_total = 0;
     f->facility_maint_total = 0;
     f->turn_commerce_income = 0;
-    mod_tech_effects(faction_id);
+    tech_effects(faction_id);
 
     for (int i = 1; i < MaxPlayerNum; i++) {
         if (faction_id != i && is_alive(faction_id) && is_alive(i)) {
@@ -1830,14 +1831,12 @@ void __cdecl mod_production_phase(int faction_id) {
     f->nutrient_surplus_total = 0;
     f->labs_total = 0;
 
-    if (*BaseCount > 0) {
-        for (int base_id = 0; base_id < *BaseCount; base_id++) {
-            if (Bases[base_id].faction_id == faction_id) {
-                if (mod_base_upkeep(base_id)) {
-                    base_id--; // Base was removed for some reason
-                }
-                do_all_non_input();
+    for (int base_id = 0; base_id < *BaseCount; base_id++) {
+        if (Bases[base_id].faction_id == faction_id) {
+            if (mod_base_upkeep(base_id)) {
+                base_id--; // Base was removed for some reason
             }
+            do_all_non_input();
         }
     }
     /*
@@ -1897,6 +1896,158 @@ void __cdecl mod_production_phase(int faction_id) {
                 }
             }
         }
+    }
+}
+
+void __cdecl mod_allocate_energy(int faction_id) {
+    Faction* plr = &Factions[faction_id];
+    MFaction* fac = &MFactions[faction_id];
+    int alloc_val;
+    int psych_val;
+
+    if (is_human(faction_id)) {
+        if (plr->diff_level > 1 && faction_id == MapWin->cOwner && plr->base_count > 1) {
+            if (plr->energy_credits < 100 && 11 * plr->energy_credits - 10 * *EnergyCredits < 0) {
+                if (10 - plr->SE_alloc_labs - plr->SE_alloc_psych >= 5) {
+                    if (has_tech(Units[BSC_FORMERS].preq_tech, faction_id) && !(*CurrentTurn % 5)) {
+                        popp(ScriptFile, "INFRASTRUCTURE2", 0, "genwarning_sm.pcx", 0);
+                    }
+                } else if (popp(ScriptFile, "INFRASTRUCTURE", 0, "genwarning_sm.pcx", 0)) {
+                    social_select(faction_id);
+                }
+            }
+        }
+        return;
+    }
+    alloc_val = 10 - plr->SE_alloc_psych - plr->SE_alloc_labs;
+    if (plr->SE_police_pending >= -2) {
+        if (plr->SE_police_pending == -2) {
+            psych_val = 2;
+        } else {
+            psych_val = plr->SE_police_pending <= 1;
+        }
+    } else {
+        psych_val = 4;
+    }
+    /*
+    Modified psych energy allocation for rewritten governor specialist priorities
+    where the scoring heuristic avoids situations in which the governor is forced
+    to convert workers into specialists as counted by specialist_adjust.
+    This replaces the original game version which used incorrect base iterators
+    while the rest of this function uses previous decision methods.
+    */
+    if (has_project(FAC_TELEPATHIC_MATRIX, faction_id)) {
+        plr->SE_alloc_psych = 0;
+    } else {
+        int pop_total = 0;
+        int pop_score = 0;
+        for (int base_id = 0; base_id < *BaseCount; base_id++) {
+            BASE* b = &Bases[base_id];
+            if (b->faction_id == faction_id && base_can_riot(base_id, true)) {
+                int coeff_psych = 4;
+                if (has_fac_built(FAC_HOLOGRAM_THEATRE, base_id)
+                || (has_project(FAC_VIRTUAL_WORLD, faction_id)
+                && has_fac_built(FAC_NETWORK_NODE, base_id))) {
+                    coeff_psych += 2;
+                }
+                if (has_fac_built(FAC_RESEARCH_HOSPITAL, base_id)) {
+                    coeff_psych += 1;
+                }
+                if (has_fac_built(FAC_NANOHOSPITAL, base_id)) {
+                    coeff_psych += 1;
+                }
+                if (has_fac_built(FAC_TREE_FARM, base_id)) {
+                    coeff_psych += 2;
+                }
+                if (has_fac_built(FAC_HYBRID_FOREST, base_id)) {
+                    coeff_psych += 2;
+                }
+                pop_score += coeff_psych
+                    * (b->drone_riots_active() ? 2 : 1)
+                    * (b->assimilation_turns_left ? 1 : 2)
+                    * (b->energy_surplus >= min(20, 2 + 2*b->pop_size) ? 2 : 1)
+                    * max(0, (coeff_psych > 4 ? b->pop_size/4 : 0)
+                    + 2*b->specialist_adjust + b->drone_total - b->talent_total);
+                pop_total += b->pop_size;
+            }
+        }
+        pop_score = pop_score * clamp(4 - plr->SE_police_pending, 1, 4) / 4;
+        if (pop_score <= 3*pop_total) {
+            if (plr->SE_alloc_psych > psych_val / 2) {
+                if (pop_score <= 2*pop_total || plr->SE_alloc_psych - psych_val >= 2
+                || plr->SE_police_pending >= (plr->SE_alloc_psych <= 1)) {
+                    --plr->SE_alloc_psych;
+                }
+            }
+        } else if (plr->SE_alloc_psych < psych_val) {
+            if (++plr->SE_alloc_psych < psych_val && plr->SE_police_pending < 0) {
+                plr->SE_alloc_psych += (pop_score >= 4*pop_total);
+            }
+        }
+        plr->SE_alloc_psych = clamp(plr->SE_alloc_psych,
+            (plr->SE_police_pending >= -1 || pop_score <= 2*pop_total ? 0 : 2), 4);
+    }
+
+    plr->SE_alloc_labs = (plr->AI_tech - plr->AI_power - plr->SE_alloc_psych + 11) / 2 - plr->AI_wealth;
+    if (*CurrentTurn < 25 * (plr->AI_tech - plr->AI_power - plr->AI_wealth + 3)) {
+        ++plr->SE_alloc_labs;
+    }
+    plr->SE_alloc_labs += plr->energy_credits
+        / (2 * (*CurrentTurn + (plr->AI_power + plr->AI_wealth + 1) * fac->rule_techcost));
+    bool defense = false;
+    for (int i = 1; i < MaxRegionNum; i++) {
+        if (plr->region_total_bases[i]) {
+            if (plr->region_base_plan[i] == PLAN_DEFENSE) {
+                --plr->SE_alloc_labs;
+                defense = true;
+                break;
+            }
+            if (plr->region_base_plan[i] == PLAN_OFFENSE && (plr->AI_wealth || plr->AI_power)) {
+                --plr->SE_alloc_labs;
+            }
+        }
+    }
+    if (plr->AI_tech && !plr->AI_wealth && !plr->AI_power && !defense) {
+        ++plr->SE_alloc_labs;
+    }
+    if (alloc_val && 10 - plr->SE_alloc_labs - plr->SE_alloc_psych >= alloc_val) {
+        int sum = 0;
+        for (int i = 0; i < *BaseCount; i++) {
+            if (Bases[i].faction_id == faction_id) {
+                sum += Bases[i].unk_total;
+                for (int fc = 0; fc <= Fac_ID_Last; fc++) {
+                    if (has_fac_built((FacilityId)fc, i)) {
+                        sum -= fac_maint(fc, faction_id);
+                    }
+                }
+            }
+        }
+        int base_mul = plr->base_count * (2 * plr->AI_wealth + 4 - plr->AI_tech) / 4;
+        if (sum <= base_mul) {
+            if (sum < base_mul / 2) {
+                --plr->SE_alloc_labs;
+            }
+        } else {
+            while (10 - plr->SE_alloc_labs - plr->SE_alloc_psych >= alloc_val) {
+                ++plr->SE_alloc_labs;
+            }
+        }
+    }
+    if (plr->tech_research_id == TECH_TranT) {
+        --plr->SE_alloc_labs;
+    }
+    plr->SE_alloc_labs = max(0, min(plr->SE_alloc_labs,
+        min(energy_limit(faction_id), 10 - plr->SE_alloc_psych)));
+    while (10 - plr->SE_alloc_labs - plr->SE_alloc_psych > energy_limit(faction_id)) {
+        ++plr->SE_alloc_labs;
+    }
+    int effic_val = clamp(plr->SE_effic_2, 0, 99) + clamp(3 - plr->base_count, 0, 3) + 1;
+    plr->SE_alloc_labs = clamp(plr->SE_alloc_labs, 0, 10);
+    while (plr->SE_alloc_labs > 10 + effic_val - plr->SE_alloc_psych - plr->SE_alloc_labs) {
+        --plr->SE_alloc_labs;
+    }
+    while (10 - plr->SE_alloc_labs - plr->SE_alloc_psych > effic_val + plr->SE_alloc_labs) {
+        ++plr->SE_alloc_labs;
     }
 }
 

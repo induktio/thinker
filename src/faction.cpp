@@ -70,7 +70,7 @@ bool has_project(FacilityId item_id, int faction_id) {
 int project_base(FacilityId item_id) {
     assert(item_id >= SP_ID_First && item_id <= SP_ID_Last);
     return (item_id >= SP_ID_First && item_id <= SP_ID_Last ?
-        SecretProjects[item_id - SP_ID_First] : -SP_Unbuilt);
+        SecretProjects[item_id - SP_ID_First] : SP_Unbuilt);
 }
 
 int facility_count(FacilityId item_id, int faction_id) {
@@ -435,7 +435,7 @@ void __cdecl atrocity(int faction_id, int faction_id_tgt, int skip_init_check, i
                                     parse_says(0, m_plr->title_leader, -1, -1);
                                     parse_says(1, m_plr->name_leader, -1, -1);
                                     diplomacy_caption(faction_id, i);
-                                    X_pops3("ATROCIOUSITY", FactionPortraits[i], 0);
+                                    X_pops("ATROCIOUSITY", FactionPortraits[i], 0);
                                 }
                                 treaty_on(faction_id, i, DIPLO_VENDETTA);
                                 Factions[i].diplo_status[faction_id] |= DIPLO_UNK_40;
@@ -590,9 +590,9 @@ void __cdecl intervention(int faction_id_def, int faction_id_atk) {
                 set_treaty(i, faction_id_atk, DIPLO_UNK_40, 1);
             }
             if (faction_id_atk == *CurrentPlayerFaction) {
-                X_pop2("AIDSTHEM", 0);
+                X_pop("AIDSTHEM", 0);
             } else if (faction_id_def == *CurrentPlayerFaction) {
-                X_pop2("AIDSUS", 0);
+                X_pop("AIDSUS", 0);
             }
         }
     }
@@ -1291,10 +1291,27 @@ int __cdecl society_avail(int soc_category, int soc_model, int faction_id) {
     return has_tech(SocialField[soc_category].soc_preq_tech[soc_model], faction_id);
 }
 
+static int max_social_value(int faction_id, SocialEffect SE_type) {
+    auto initial = (CSocialEffect*)&Factions[faction_id].SE_economy_base;
+    int value = initial->values[SE_type];
+    for (int sf = 0; sf < 4; ++sf) {
+        int cur_val = INT_MIN;
+        for (int sm = 0; sm < 4; ++sm) {
+            if (society_avail(sf, sm, faction_id)) {
+                cur_val = max(cur_val, SocialField[sf].soc_effect[sm].values[SE_type]);
+            }
+        }
+        if (cur_val > INT_MIN) {
+            value += cur_val;
+        }
+    }
+    return value;
+}
+
 /*
 Improved social engineering AI choices feature.
 */
-static int social_score(int faction_id, int sf, int sm, bool pop_boom) {
+static int social_score(int faction_id, int sf, int sm, int pop_boom) {
     assert(sf >= 0 && sf < 4 && sm >= 0 && sm < 4);
     Faction* f = &Factions[faction_id];
     MFaction* m = &MFactions[faction_id];
@@ -1398,7 +1415,7 @@ static int social_score(int faction_id, int sf, int sm, bool pop_boom) {
         if (vals.growth < -2) {
             sc -= 5*clamp(6 - def_val, 2, 4);
         }
-        sc += (def_val < 3 ? 5 + 3*pop_boom : 3 + 2*pop_boom)
+        sc += (def_val < 3 ? 4 + (def_val < 2) + 2*pop_boom : 3 + pop_boom)
             * clamp(vals.growth, -3, GrowthPopBoom);
     }
     if (plans[faction_id].keep_fungus) {
@@ -1458,7 +1475,7 @@ int __cdecl mod_social_ai(int faction_id, int a2, int a3, int a4, int a5, CSocia
     int def_value = p->defense_modifier;
     int want_pop = 0;
     int pop_total = 0;
-    bool pop_boom = 0;
+    int pop_boom = 0;
     bool has_creche = has_tech(Facility[FAC_CHILDREN_CRECHE].preq_tech, faction_id)
         || has_free_facility(FAC_CHILDREN_CRECHE, faction_id);
     assert(!memcmp(&f->SE_Politics, &f->SE_Politics_pending, 16));
@@ -1469,13 +1486,19 @@ int __cdecl mod_social_ai(int faction_id, int a2, int a3, int a4, int a5, CSocia
         for (int i = 0; i < *BaseCount; i++) {
             BASE* b = &Bases[i];
             if (b->faction_id == faction_id) {
-                want_pop += (pop_goal(i) - b->pop_size)
-                    * (b->nutrient_surplus > 1 && has_facility(FAC_CHILDREN_CRECHE, i) ? 4 : 1);
+                bool creche = has_facility(FAC_CHILDREN_CRECHE, i);
+                want_pop += base_growth_goal(i)
+                    * ((b->nutrient_surplus >= Rules->nutrient_intake_req_citizen
+                    && ((f->SE_growth + (creche ? 2 : 0) + (b->golden_age() ? 2 : 0)
+                    >= GrowthPopBoom) || creche)) ? 4 : 1);
                 pop_total += b->pop_size;
             }
         }
-        if (pop_total > 0) {
-            pop_boom = ((f->SE_growth < GrowthPopBoom-2 ? 1 : 2) * want_pop) >= pop_total;
+        if (pop_total > 0 && ((f->SE_growth <= GrowthPopBoom-4 ? 1 : 2) * want_pop) >= pop_total) {
+            pop_boom = 1;
+            if (max_social_value(faction_id, SE_GROWTH) + (has_creche ? 2 : 0) >= GrowthPopBoom) {
+                pop_boom += (want_pop >= 2*pop_total ? 2 : 1);
+            }
         }
     }
     debug("social_params %d %d %8s defense: %d creche: %d pop_boom: %d want_pop: %3d pop_total: %3d\n",
@@ -1966,10 +1989,9 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
     }
     if (initial_spawn) {
         memset(&plr->tech_pact_shared_goals, 0, 48u);
-        memset(&plr->tech_trade_source, 0, 88u);
+        memset(&plr->tech_trade_source, 0, 92u);
         memset(&plr->facility_announced, 0, 12u);
         plr->unk_27 = 0;
-        plr->unk_28 = 0;
         plr->satellites_nutrient = 0;
         plr->satellites_mineral = 0;
         plr->satellites_energy = 0;
@@ -2073,9 +2095,9 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
                     *ControlTurnA = 1;
                 }
                 if (setup_id || *GameLanguage) {
-                    X_pop2("YOULOSE", 0);
+                    X_pop("YOULOSE", 0);
                 } else {
-                    X_pop2("YOULOSE2", 0);
+                    X_pop("YOULOSE2", 0);
                 }
                 *GameState |= STATE_GAME_DONE;
                 *GameVictoryType = setup_id ? VIC_LOST_CAPTURE : VIC_LOST_REMOVE;

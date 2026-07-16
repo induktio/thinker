@@ -14,6 +14,42 @@ const char* tech_str(int tech_id) {
     return "-";
 }
 
+/*
+Craft an output string related to a specific technology. For techs outside the standard
+range, craft a string related to world map, comm links or prototypes.
+*/
+void __cdecl say_tech(char* output, int tech_id, int incl_category) {
+    size_t prev = strnlen(output, StrBufLen);
+    char* buf = output + prev;
+    size_t len = StrBufLen - prev;
+    if (tech_id < -1) {
+        snprintf(buf, len, "%s", label_get(310)); // Not Available
+    } else if (tech_id < 0) {
+        snprintf(buf, len, "%s", label_get(25)); // NONE
+    } else if (tech_id == 9999) {
+        snprintf(buf, len, "%s", label_get(306)); // World Map
+    } else if (tech_id < MaxTechnologyNum) {
+        if (incl_category) {
+            snprintf(buf, len, "%s (%s%d)", Tech[tech_id].name,
+                label_get(629 + tech_category(tech_id)), // 'E#', 'D#', 'B#', 'C#'
+                tech_level(tech_id, 0));
+        } else {
+            snprintf(buf, len, "%s", Tech[tech_id].name);
+        }
+    } else if (tech_id < 97) {
+        int faction_id = tech_id - MaxTechnologyNum;
+        if (*GameLanguage) {
+            snprintf(buf, len, "%s (%s)", label_get(487), // Comm Frequency
+                parse_set(faction_id));
+        } else {
+            snprintf(buf, len, "%s %s",
+                MFactions[faction_id].adj_name_faction, label_get(487)); // Comm Frequency
+        }
+    } else {
+        snprintf(buf, len, "%s %s", Units[tech_id - 97].name, label_get(185)); // Prototype
+    }
+}
+
 int __cdecl has_tech(int tech_id, int faction_id) {
     assert(faction_id >= 0 && faction_id < MaxPlayerNum);
     assert(tech_id >= TECH_Disable && tech_id <= TECH_TranT);
@@ -73,7 +109,7 @@ int __cdecl tech_category(int tech_id) {
 Check to see whether provided faction can research a specific technology.
 Includes checks to prevent SMACX specific techs from being researched in SMAC mode.
 */
-int __cdecl mod_tech_avail(int tech_id, int faction_id) {
+int __cdecl tech_avail(int tech_id, int faction_id) {
     assert(faction_id >= 0 && faction_id < MaxPlayerNum && tech_id >= 0);
     if (has_tech(tech_id, faction_id) || tech_id >= MaxTechnologyNum || (!*ExpansionEnabled
     && (tech_id == TECH_PrPsych || tech_id == TECH_FldMod || tech_id == TECH_AdapDoc
@@ -92,7 +128,7 @@ int __cdecl mod_tech_avail(int tech_id, int faction_id) {
 /*
 Calculate the tech related bonuses for commerce and resource production in fungus.
 */
-void __cdecl mod_tech_effects(int faction_id) {
+void __cdecl tech_effects(int faction_id) {
     Faction* f = &Factions[faction_id];
     MFaction* m = &MFactions[faction_id];
     f->tech_commerce_bonus = m->rule_commerce;
@@ -142,7 +178,7 @@ void __cdecl mod_tech_effects(int faction_id) {
     }
 }
 
-void __cdecl mod_tech_research(int faction_id, int value) {
+void __cdecl tech_research(int faction_id, int value) {
     assert(faction_id >= 0 && faction_id < MaxPlayerNum && value >= 0);
     CFacility& fac_psigate = Facility[FAC_PSI_GATE];
     CFacility& fac_ascent = Facility[FAC_ASCENT_TO_TRANSCENDENCE];
@@ -245,7 +281,7 @@ int __cdecl mod_tech_pick(int faction_id, int flag, int other_faction_id, const 
         plr.tech_research_id, plr.tech_cost, tech_id, tech_str(tech_id));
     if (other_faction_id < 0 && revised_tech_cost()) {
         if (tech_id >= 0 && (tech_id != plr.tech_research_id || plr.tech_cost <= 0)) {
-            plr.tech_cost = tech_cost(tech_id, faction_id);
+            plr.tech_cost = tech_alt_cost(tech_id, faction_id);
         }
     }
     flushlog();
@@ -301,42 +337,6 @@ int __cdecl mod_tech_rate(int faction_id) {
     cost = clamp(cost, int64_t(1), int64_t(99999999));
     assert(cost == tech_rate(faction_id));
     return cost;
-}
-
-/*
-Craft an output string related to a specific technology. For techs outside the standard
-range, craft a string related to world map, comm links or prototypes.
-*/
-void __cdecl say_tech(char* output, int tech_id, int incl_category) {
-    size_t prev = strnlen(output, StrBufLen);
-    char* buf = output + prev;
-    size_t len = StrBufLen - prev;
-    if (tech_id < -1) {
-        snprintf(buf, len, "%s", label_get(310)); // Not Available
-    } else if (tech_id < 0) {
-        snprintf(buf, len, "%s", label_get(25)); // NONE
-    } else if (tech_id == 9999) {
-        snprintf(buf, len, "%s", label_get(306)); // World Map
-    } else if (tech_id < MaxTechnologyNum) {
-        if (incl_category) {
-            snprintf(buf, len, "%s (%s%d)", Tech[tech_id].name,
-                label_get(629 + tech_category(tech_id)), // 'E#', 'D#', 'B#', 'C#'
-                tech_level(tech_id, 0));
-        } else {
-            snprintf(buf, len, "%s", Tech[tech_id].name);
-        }
-    } else if (tech_id < 97) {
-        int faction_id = tech_id - MaxTechnologyNum;
-        if (*GameLanguage) {
-            snprintf(buf, len, "%s (%s)", label_get(487), // Comm Frequency
-                parse_set(faction_id));
-        } else {
-            snprintf(buf, len, "%s %s",
-                MFactions[faction_id].adj_name_faction, label_get(487)); // Comm Frequency
-        }
-    } else {
-        snprintf(buf, len, "%s %s", Units[tech_id - 97].name, label_get(185)); // Prototype
-    }
 }
 
 /*
@@ -614,7 +614,7 @@ int __cdecl mod_tech_ai(int faction_id) {
     int tech_id = -1;
     int best_value = INT_MIN;
     for (int i = 0; i < MaxTechnologyNum; i++) {
-        if (mod_tech_avail(i, faction_id)) {
+        if (tech_avail(i, faction_id)) {
             int tech_value = mod_tech_val(i, faction_id, false);
             debug("tech_val %d %d value: %3d tech: %2d %s\n",
             *CurrentTurn, faction_id, tech_value, i, Tech[i].name);
@@ -637,7 +637,500 @@ int __cdecl mod_tech_ai(int faction_id) {
     return tech_id;
 }
 
-int tech_cost(int tech_id, int faction_id) {
+int __cdecl tech_advance(int faction_id) {
+    Faction* plr = &Factions[faction_id];
+    MFaction* fac = &MFactions[faction_id];
+    log_say("Earning a Tech", fac->name_leader, plr->tech_research_id, 0, 0);
+    if (*MultiplayerActive && *NetUpkeepState == 1) {
+        log_say("Saving Earned Tech for Later", fac->name_leader, faction_id, 0, 0);
+        ++plr->earned_techs_saved;
+        return -1;
+    }
+    if (*PbemActive && is_human(faction_id) && faction_id != MapWin->cOwner) {
+        ++plr->earned_techs_saved;
+        return -1;
+    }
+    int tech_id = plr->tech_research_id;
+    if (tech_id >= 0 || (tech_id = mod_tech_selection(faction_id), tech_id >= 0)) {
+        plr->tech_research_id = -1;
+        tech_achieved(faction_id, tech_id, 0, 0);
+        if (!is_human(faction_id)) {
+            int base_id = *CurrentBaseID;
+            mod_bases_reset(-1, faction_id, 0);
+            if (*CurrentTurn) {
+                if (base_id >= 0 && base_id < *BaseCount) {
+                    set_base(base_id);
+                    base_compute(0);
+                }
+            }
+        }
+        if ((*MultiplayerActive || faction_id == MapWin->cOwner)
+        && !*SkipTechScreenA && !*SkipTechScreenB && plr->tech_research_id < 0) {
+            plr->tech_research_id = mod_tech_selection(faction_id);
+        }
+    }
+    return tech_id;
+}
+
+/*
+Applies all side effects of gaining a tech: notifications, prototype designs,
+free facility grants, map reveal, social engineering prompts, and propagation
+to other factions via Planetary Datalinks and TECHSHARE faction ability.
+Also multiplexes several unrelated events through tech_id's range.
+
+faction_id   - Faction receiving the item. Must be in range 0..7.
+tech_id      - 0..88    : a real technology (TECH_TranT == 88 is the last one).
+               89..96   : grant comm-frequency with faction (tech_id - 89).
+               97..9998 : propose prototype for unit_id (tech_id - 97).
+               >= 9999  : gift/trade world map from faction_id_2.
+faction_id_2 - Meaningful only when tech_id < 89 or >= 9999:
+               >0 : source faction_id, trade/gift/steal.
+                0 : no other source, researched normally.
+               -1 : internal, granted via Planetary Datalinks propagation.
+               -2 : internal, granted via TECHSHARE propagation.
+is_share     - Non-zero for a shared/leaked tech (changes popup text).
+*/
+void __cdecl tech_achieved(int faction_id, int tech_id, int faction_id_2, int is_share) {
+    if (!(faction_id >= 0 && faction_id < MaxPlayerNum)) {
+        assert(0);
+        return;
+    }
+    if (tech_id < 0) {
+        return;
+    }
+    Faction* plr = &Factions[faction_id];
+    MFaction* fac = &MFactions[faction_id];
+    const int bm_fac = 1 << faction_id;
+    Popup cur_popup = {};
+    Popup_ctor(&cur_popup);
+    auto guard = cleanup_handler([&] { Popup_dtor(&cur_popup); });
+
+    log_say("Gaining a TECH", fac->name_leader, faction_id, tech_id, faction_id_2);
+    if (is_human(faction_id)) {
+        ambience(201);
+    }
+    if (tech_id >= 9999) {
+        if (!(faction_id_2 >= 0 && faction_id_2 < MaxPlayerNum)) {
+            assert(0);
+            return;
+        }
+        const int bm_tgt = 1 << faction_id_2;
+        plr->traded_maps |= bm_tgt | Factions[faction_id_2].traded_maps;
+        for (int i = 0; i < *MapAreaTiles; ++i) {
+            MAP* sq = &(*MapTiles)[i];
+            if (sq->visibility & bm_tgt) {
+                sq->visibility |= bm_fac;
+                if (faction_id && faction_id_2) {
+                    sq->visible_items[faction_id - 1] |= sq->items & sq->visible_items[faction_id_2 - 1];
+                }
+            }
+        }
+        for (int i = 0; i < *BaseCount; ++i) {
+            if ((Bases[i].visibility & bm_tgt) || Bases[i].faction_id == faction_id_2) {
+                spot_base(i, faction_id);
+            }
+        }
+        if (faction_id == MapWin->cOwner) {
+            draw_map(1);
+            *GameDrawState |= 4u;
+            GraphicWin_redraw(WorldWin);
+        }
+        return;
+    }
+    if (tech_id >= 89) {
+        if (tech_id < 97) {
+            treaty_on(faction_id, tech_id - 89, DIPLO_COMMLINK);
+            return;
+        }
+        if (tech_id - 97 >= MaxProtoNum) {
+            assert(0);
+            return;
+        }
+        UNIT* src = &Units[tech_id - 97];
+        int uid = mod_propose_proto(
+            faction_id,
+            (VehChassis)src->chassis_id,
+            (VehWeapon)src->weapon_id,
+            (VehArmor)src->armor_id,
+            (VehAblFlag)src->ability_flags,
+            (VehReactor)src->reactor_id,
+            PLAN_PROTOTYPE_DONE,
+            src->name);
+        if (uid >= 0) {
+            if (*MultiplayerActive && is_human(faction_id)) {
+                Units[uid].unit_flags |= UNIT_UNK_100;
+            } else {
+                prune_protos(faction_id, uid, 0);
+                upgrade_any_prototypes(faction_id);
+            }
+        }
+        return;
+    }
+    if (plr->tech_research_id == tech_id) {
+        plr->tech_research_id = -1;
+    }
+    plr->tech_trade_source[tech_id] = faction_id_2 <= 0 ? 0 : faction_id_2;
+    int is_first = TechOwners[tech_id] == 0;
+    TechOwners[tech_id] |= (1 << faction_id);
+    ++plr->tech_achieved;
+    if (!*CurrentTurn || *SkipTechScreenA) {
+        return;
+    }
+    ++plr->tech_ranking;
+    if (plr->unk_27) {
+        --plr->unk_27;
+    }
+    ++plr->tech_ranking;
+    if (plr->unk_27) {
+        --plr->unk_27;
+    }
+    if (tech_id == TECH_TranT) {
+        ++plr->tech_count_transcendent;
+    }
+    int best_rc_id = 0;
+    for (int rc_id = REC_FUSION; rc_id <= REC_SINGULARITY; ++rc_id) {
+        if (tech_id == Reactor[rc_id - 1].preq_tech) {
+            for (int i = 0; i < MaxProtoFactionNum; ++i) {
+                int unit_id = i + (faction_id * MaxProtoFactionNum);
+                UNIT* cur = &Units[unit_id];
+                if ((cur->unit_flags & UNIT_ACTIVE)
+                && !(cur->obsolete_factions & bm_fac) && cur->reactor_id < rc_id) {
+                    // Fix: remove redundant loop code
+                    int uid = mod_propose_proto(
+                        faction_id,
+                        (VehChassis)cur->chassis_id,
+                        (VehWeapon)cur->weapon_id,
+                        (VehArmor)cur->armor_id,
+                        (VehAblFlag)cur->ability_flags,
+                        (VehReactor)rc_id,
+                        (cur->unit_flags & UNIT_PROTOTYPED) ? PLAN_PROTOTYPE_DONE : PLAN_AUTO_CALCULATE,
+                        0);
+                    if (uid != unit_id) {
+                        if (*MultiplayerActive && is_human(faction_id)) {
+                            Units[uid].unit_flags |= UNIT_UNK_100;
+                        } else {
+                            prune_protos(faction_id, uid, 0);
+                            upgrade_any_prototypes(faction_id);
+                        }
+                    }
+                    best_rc_id = rc_id;
+                }
+            }
+        }
+    }
+    if (best_rc_id && faction_id == MapWin->cOwner && !*MultiplayerActive) {
+        parse_says(0, Reactor[best_rc_id - 1].name, -1, -1);
+        X_pop("REACTORUPGRADE", 0);
+    }
+    *dword_68F0F0 = -1;
+    if (*MultiplayerActive) {
+        plr->player_flags |= PFLAG_MULTI_TECH_ACHIEVED;
+    } else if (!is_human(faction_id) || *GamePreferences & PREF_BSC_AUTO_DESIGN_VEH) {
+        for (int i = 0; i < MaxProtoFactionNum; ++i) {
+            Units[(faction_id * MaxProtoFactionNum) + i].unit_flags &= ~0xC0u;
+        }
+        consider_designs(faction_id);
+        if (faction_id == MapWin->cOwner) {
+            for (int i = 0; i < MaxProtoFactionNum; ++i) {
+                UNIT* unit = &Units[i];
+                if ((unit->unit_flags & UNIT_ACTIVE) && tech_id == unit->preq_tech && *dword_68F0F0 < 0) {
+                    *dword_68F0F0 = i;
+                }
+            }
+        }
+    }
+    *dword_7591A4 = -1;
+    *dword_7591A8 = -1;
+    if (faction_id == MapWin->cOwner || *GameState & STATE_OMNISCIENT_VIEW) {
+        StrBuffer[0] = 0;
+        say_tech(StrBuffer, tech_id, 0);
+        parse_says(0, StrBuffer, -1, -1);
+        parse_says(1, get_noun(faction_id), -1, -1);
+        if (faction_id_2 <= 0) {
+            if (faction_id_2 < 0) {
+                if (faction_id_2 == -1) {
+                    parse_says(2, Facility[FAC_PLANETARY_DATALINKS].name, -1, -1);
+                } else {
+                    parse_says(2, label_get(215), -1, -1); // Data Links
+                }
+            }
+        } else {
+            parse_says(2, get_noun(faction_id_2), -1, -1);
+        }
+        int pop_flag = 0;
+        if (faction_id == MapWin->cOwner) {
+            snprintf(StrBuffer, StrBufLen, "TECH%d", tech_id);
+            BasePop_init(&cur_popup, 0, 0);
+            BasePop_set_width(&cur_popup, 500);
+            Popup_start(&cur_popup, BlurbsxFile, StrBuffer, -1, 0, 128, 0);
+            BasePop_string(&cur_popup, "^");
+            BasePop_string(&cur_popup, "^------");
+            BasePop_string(&cur_popup, "^");
+            pop_flag = 128;
+        }
+        StrBuffer[0] = 0;
+        if (faction_id == MapWin->cOwner) {
+            strcat(StrBuffer, "WE");
+        } else {
+            strcat(StrBuffer, "THEY");
+        }
+        if (faction_id_2) {
+            strcat(StrBuffer, "ACQUIRE");
+        } else {
+            strcat(StrBuffer, "DEVELOP");
+        }
+        if (is_share) {
+            StrBuffer[0] = 0;
+            strcat(StrBuffer, "WEGETSHARETECH");
+        }
+        cur_popup.field_2144 = (cur_popup.dialogs.data[41] == 0 ? TechIcons[tech_id] : 0);
+        SpriteBox_sprite((SpriteBox*)&cur_popup.dialogs.data[28], TechIcons[tech_id], 0, tech_id);
+        cur_popup.field_3104 = 1;
+        cur_popup.field_3108 = 2;
+        Popup_start(&cur_popup, PopupScriptFile, StrBuffer, -1, 0, pop_flag, 0);
+        if (faction_id == MapWin->cOwner) {
+            help_tech_info_2(&cur_popup, tech_id, faction_id);
+        }
+        FX_play(Sounds, 51);
+        if (faction_id == MapWin->cOwner) {
+            if (*MultiplayerActive && (*DiploWinState || *dword_7492CC || *ControlWaitLoop)) {
+                parse_says(0, Tech[tech_id].name, -1, -1);
+                NetMsg_pop(NetMsg, "TECHOBTAINED", 5000, 0, 0);
+            } else {
+                NewTechWin_exec(NetTechWin, tech_id, faction_id_2);
+            }
+        } else if (!*MultiplayerActive) {
+            BasePop_exec_3(&cur_popup, 0, 0);
+        }
+    }
+    int has_freefac = 0;
+    for (int i = 0; i < fac->faction_bonus_count; ++i) {
+        if (fac->faction_bonus_id[i] == RULE_FREEFAC
+        && tech_id == Facility[fac->faction_bonus_val1[i]].preq_tech) {
+            has_freefac = 1;
+            for (int base_id = 0; base_id < *BaseCount; ++base_id) {
+                if (Bases[base_id].faction_id == faction_id) {
+                    set_fac((FacilityId)fac->faction_bonus_val1[i], base_id, 1);
+                }
+            }
+            if (faction_id == MapWin->cOwner) {
+                parse_says(0, Tech[tech_id].name, -1, -1);
+                parse_says(1, Facility[fac->faction_bonus_val1[i]].name, -1, -1);
+                NetMsg_pop(NetMsg, "FREEFACTECH", -5000, 0, 0);
+            }
+        }
+    }
+    if (has_freefac) {
+        NetDaemon_synch(NetState, 20, 0, 0, 0, 0, 1u, 0x2101);
+    }
+    for (int i = 0; i < fac->faction_bonus_count; ++i) {
+        if (fac->faction_bonus_id[i] == RULE_FREEABIL
+        && tech_id == Ability[fac->faction_bonus_val1[i]].preq_tech
+        && faction_id == MapWin->cOwner) {
+            parse_says(0, Tech[tech_id].name, -1, -1);
+            parse_says(1, Ability[fac->faction_bonus_val1[i]].name, -1, -1);
+            NetMsg_pop(NetMsg, "FREEABILTECH", -5000, 0, 0);
+        }
+    }
+    if (Tech[tech_id].flags & TFLAG_SECRETS) {
+        mon_secrets_of_tech(faction_id);
+    }
+    if (faction_id == MapWin->cOwner
+    && tech_id == Terraform[FORMER_FOREST].preq_tech && !*MultiplayerActive) {
+        parse_says(0, Tech[tech_id].name, -1, -1);
+        X_pop_2(TutorFile, "TREETIME", 0);
+    }
+    if (faction_id == MapWin->cOwner
+    && (*GamePreferences & PREF_BSC_AUTO_DESIGN_VEH)
+    && *dword_68F0F0 >= 0 && !*MultiplayerActive) {
+        int choice = 0;
+        *dword_90EA3C = 0;
+        *dword_73396C = 1;
+        for (int i = 0; i < MaxProtoFactionNum; ++i) {
+            // Fix: remove redundant Spore Launcher reference
+            if ((Units[i].unit_flags & UNIT_ACTIVE)
+            && tech_id == Units[i].preq_tech && !is_native_unit(i)) {
+                if (choice) {
+                    if (choice > 0) {
+                        design_new_veh(-faction_id, i);
+                    }
+                } else {
+                    if (!X_pop("ASKSEEDESIGN", 0)) {
+                        choice = -1;
+                    } else {
+                        choice = 1;
+                        design_new_veh(-faction_id, i);
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < MaxProtoFactionNum; ++i) {
+            int uid = i + (faction_id * MaxProtoFactionNum);
+            UNIT* cur = &Units[uid];
+            if (cur->unit_flags & UNIT_UNK_80 && !(cur->obsolete_factions & bm_fac)) {
+                if (choice) {
+                    if (choice > 0) {
+                        design_new_veh(-faction_id, uid);
+                    }
+                } else {
+                    if (!X_pop("ASKSEEDESIGN", 0)) {
+                        choice = -1;
+                    } else {
+                        choice = 1;
+                        design_new_veh(-faction_id, uid);
+                    }
+                }
+                cur->unit_flags &= ~UNIT_UNK_80;
+            }
+        }
+        DesignWin_shutdown(DesignWin);
+        for (int i = 0; i < MaxProtoFactionNum; ++i) {
+            int uid = i + (faction_id * MaxProtoFactionNum);
+            UNIT* cur = &Units[uid];
+            if (!(cur->obsolete_factions & bm_fac)
+            && cur->unit_flags & UNIT_UNK_100 && (!*MultiplayerActive || !is_human(faction_id))) {
+                upgrade_prototypes(faction_id, uid);
+            }
+        }
+    }
+    // Modify diplomacy to skip social engineering choices dialog SOCIETY
+    // while DiploWinState is active, otherwise use the previous conditions.
+    if (faction_id == MapWin->cOwner && plr->diff_level > 1
+    && !*MultiplayerActive && !*DiploWinState) {
+        for (int sf = 0; sf < 4; ++sf) {
+            for (int sm = 0; sm < 4; ++sm) {
+                if (tech_id == SocialField[sf].soc_preq_tech[sm] && society_avail(sf, sm, faction_id)) {
+                    int choice;
+                    do {
+                        parse_says(0, Tech[tech_id].name, -1, -1);
+                        parse_says(1, SocialField[sf].soc_name[sm], -1, -1);
+                        choice = X_pop_2(TutorFile, "SOCIETY", 0);
+                        if (choice) {
+                            social_select(faction_id);
+                        }
+                    } while (choice == 2);
+                }
+            }
+        }
+    }
+    if ((Tech[tech_id].flags & TFLAG_REVEALS_MAP)
+    && !(plr->player_flags & PFLAG_MAP_REVEALED)) {
+        for (int i = 0; i < *MapAreaTiles; ++i) {
+            (*MapTiles)[i].visibility |= bm_fac;
+            if (faction_id) {
+                (*MapTiles)[i].visible_items[faction_id - 1] = (*MapTiles)[i].items;
+            }
+        }
+        for (int i = 0; i < *BaseCount; ++i) {
+            Bases[i].visibility |= bm_fac;
+            Bases[i].factions_pop_size_intel[faction_id] = Bases[i].pop_size;
+        }
+        plr->player_flags |= PFLAG_MAP_REVEALED;
+        if (*CurrentTurn && faction_id == MapWin->cOwner) {
+            parse_says(0, Tech[tech_id].name, -1, -1);
+            popp(ScriptFile, "SEEMAP2", 0, "native_sm.pcx", 0);
+            draw_map(1);
+            set_dirty();
+            GraphicWin_redraw(WorldWin);
+        }
+    }
+    auto tech_owner = [](int cur_id, int plr_id) {
+        assert(plr_id >= 0 && plr_id < MaxPlayerNum);
+        return cur_id >= 0 && cur_id <= TECH_TranT && TechOwners[cur_id] & (1 << plr_id);
+    };
+    tech_effects(faction_id);
+    if (faction_id == MapWin->cOwner) {
+        if (tech_id == Facility[FAC_BIOLOGY_LAB].preq_tech) {
+            interlude(1, 0, 1, 0);
+        }
+        if (tech_id == TECH_CentMed) {
+            interlude(2, 0, 1, 0);
+        }
+        if (project_base(FAC_VOICE_OF_PLANET) != SP_Unbuilt && faction_id > 0
+        && Tech[TECH_HAL9000].preq_tech1 >= -1
+        && (Tech[TECH_HAL9000].preq_tech2 >= -1 || Tech[TECH_HAL9000].preq_tech1 == -1)) {
+            if (Tech[TECH_Matter].preq_tech1 >= -1
+            && (Tech[TECH_Matter].preq_tech2 >= -1 || Tech[TECH_Matter].preq_tech1 == -1)) {
+                if (tech_owner(TECH_HAL9000, faction_id)
+                && tech_owner(TECH_Matter, faction_id)) {
+                    interlude(15, 0, 1, 0);
+                    interlude(16, 0, 0, 0);
+                }
+            }
+        }
+        if (tech_id == TECH_Psych && fac->is_alien()) {
+            for (int i = 1; i < MaxPlayerNum; ++i) {
+                if (faction_id != i && !MFactions[i].is_alien()
+                && (plr->diplo_status[i] & DIPLO_COMMLINK)) {
+                    interlude(36, 0, 1, 0);
+                }
+            }
+        }
+    }
+    // Fix: remove redundant conditions that check for tech_id == -1 that will never occur
+    // TECH_TranT seems to be excluded by the following code on purpose
+    auto is_valid_tech = [](int cur_id) {
+        return cur_id >= 0 && cur_id < TECH_TranT
+            && Tech[cur_id].preq_tech1 >= -1
+            && (Tech[cur_id].preq_tech2 >= -1 || Tech[cur_id].preq_tech1 == -1);
+    };
+    int links_base_id = project_base(FAC_PLANETARY_DATALINKS);
+    int links_owner_id;
+    if (faction_id > 0 && links_base_id >= 0
+    && (links_owner_id = Bases[links_base_id].faction_id, links_owner_id > 0)) {
+        if (is_valid_tech(tech_id) && tech_owner(tech_id, faction_id)) {
+            if (!tech_owner(tech_id, links_owner_id)) {
+                int num = 0;
+                for (int fc_id = 1; fc_id < MaxPlayerNum; ++fc_id) {
+                    if (tech_owner(tech_id, fc_id)) {
+                        ++num;
+                    }
+                }
+                if (num >= PlanetaryDatalinksCount) {
+                    tech_achieved(links_owner_id, tech_id, -1, 0);
+                }
+            }
+        }
+    }
+    if (faction_id > 0 && is_valid_tech(tech_id) && tech_owner(tech_id, faction_id)) {
+        for (int fc_id = 1; fc_id < MaxPlayerNum; ++fc_id) {
+            if (MFactions[fc_id].rule_sharetech > 0 && !tech_owner(tech_id, fc_id)) {
+                int num = 0;
+                for (int tgt_id = 1; tgt_id < MaxPlayerNum; ++tgt_id) {
+                    if (tech_owner(tech_id, tgt_id)) {
+                        /*
+                        Fix issue where TECHSHARE faction ability always skips the checks
+                        for infiltration conditions while smac_only mode is activated.
+                        Spying by probe team, pact, governor or Empath Guild is required.
+                        Inverted RFLAG_TECHSHARE condition preserved for compatibility
+                        but not possible without additional modding.
+                        */
+                        if (!(MFactions[fc_id].rule_flags & RFLAG_TECHSHARE)
+                        || Factions[fc_id].diplo_status[tgt_id] & DIPLO_HAVE_INFILTRATOR
+                        || Factions[fc_id].diplo_status[tgt_id] & DIPLO_PACT
+                        || has_project(FAC_EMPATH_GUILD, fc_id)
+                        || (fc_id == *GovernorFaction && !MFactions[tgt_id].is_alien())) {
+                            ++num;
+                        }
+                    }
+                }
+                if (num >= MFactions[fc_id].rule_sharetech) {
+                    tech_achieved(fc_id, tech_id, -2, 1);
+                }
+            }
+        }
+    }
+    if (*CurrentTurn && is_first && Tech[tech_id].flags & TFLAG_SECRETS) {
+        plr->player_flags |= PFLAG_FIRST_SECRETS;
+        parse_says(0, Tech[tech_id].name, -1, -1);
+        parse_says(1, fac->adj_name_faction, -1, -1);
+        snprintf(StrBuffer, StrBufLen, "THESECRET%d", faction_id != MapWin->cOwner);
+        X_pop(StrBuffer, 0);
+        log_say("Learning a SECRET", fac->name_leader, faction_id, tech_id, TechOwners[tech_id]);
+    }
+}
+
+int __cdecl tech_alt_cost(int tech_id, int faction_id) {
     assert(valid_player(faction_id));
     MFaction* m = &MFactions[faction_id];
     int level = 1;

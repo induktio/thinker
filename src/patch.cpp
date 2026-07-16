@@ -597,9 +597,13 @@ bool patch_setup(Config* cf) {
     write_jump(0x5B9C40, (int)say_tech);
     write_jump(0x5B9FE0, (int)tech_category);
     write_jump(0x5BAB40, (int)terrain_avail);
+    write_jump(0x5BAE60, (int)tech_effects);
+    write_jump(0x5BB000, (int)tech_achieved);
+    write_jump(0x5BCB60, (int)tech_is_preq);
+    write_jump(0x5BE530, (int)tech_advance);
     write_jump(0x5BF010, (int)is_sensor);
     write_jump(0x5BF1F0, (int)has_abil);
-    write_jump(0x5BF310, (int)X_pop2);
+    write_jump(0x5BF310, (int)X_pop);
     write_jump(0x5C03D0, (int)veh_init);
     write_jump(0x5C08C0, (int)veh_kill);
     write_jump(0x5C0B00, (int)kill);
@@ -615,10 +619,10 @@ bool patch_setup(Config* cf) {
     write_jump(0x5C2380, (int)world_raise_alt);
     write_jump(0x5C23E0, (int)world_lower_alt);
     write_jump(0x5C5A30, (int)world_climate);
-    write_jump(0x626250, (int)log_say2);
-    write_jump(0x6262F0, (int)log_say);
-    write_jump(0x626350, (int)log_say_hex2);
-    write_jump(0x6263F0, (int)log_say_hex);
+    write_jump(0x626250, (int)log_say);
+    write_jump(0x6262F0, (int)log_say_2);
+    write_jump(0x626350, (int)log_say_hex);
+    write_jump(0x6263F0, (int)log_say_hex_2);
     write_jump(0x645460, (int)limit_strcpy);
 
     remove_call(0x415F69); // base_doctors
@@ -759,13 +763,12 @@ bool patch_setup(Config* cf) {
     write_call(0x54F4E2, (int)mod_threaten);
     write_call(0x54F532, (int)mod_threaten);
     write_call(0x54F702, (int)mod_threaten);
-    write_call(0x5BBEB0, (int)tech_achieved_pop3);
-    write_call(0x4868B2, (int)mod_tech_avail); // PickTech::pick
-    write_call(0x4DFC41, (int)mod_tech_avail); // Console::editor_tech
-    write_call(0x558246, (int)mod_tech_avail); // communicate
-    write_call(0x57C0CC, (int)mod_tech_avail); // goody_box
-    write_call(0x57D130, (int)mod_tech_avail); // study_artifact
-    write_call(0x5BDC38, (int)mod_tech_avail); // tech_ai
+    write_call(0x4868B2, (int)tech_avail); // PickTech::pick
+    write_call(0x4DFC41, (int)tech_avail); // Console::editor_tech
+    write_call(0x558246, (int)tech_avail); // communicate
+    write_call(0x57C0CC, (int)tech_avail); // goody_box
+    write_call(0x57D130, (int)tech_avail); // study_artifact
+    write_call(0x5BDC38, (int)tech_avail); // tech_ai
     write_call(0x486A1B, (int)mod_tech_val); // PickTech::pick
     write_call(0x53E9B4, (int)mod_tech_val); // tech_analysis
     write_call(0x53EA56, (int)mod_tech_val); // tech_analysis

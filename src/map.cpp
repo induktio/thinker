@@ -362,10 +362,10 @@ void __cdecl alt_set(int x, int y, int altitude) {
                     Console_focus(MapWin, base->x, base->y, *CurrentPlayerFaction);
                     parse_says(0, &base->name[0], -1, -1);
                     if (is_player) {
-                        X_pop3("BASESUBMERGED", "subbase_sm.pcx", 0);
+                        X_pop_2("BASESUBMERGED", "subbase_sm.pcx", 0);
                     } else {
                         parse_says(1, &MFactions[base->faction_id].adj_name_faction[0], -1, -1);
-                        X_pop3("BASESUBMERGED2", "subbase_sm.pcx", 0);
+                        X_pop_2("BASESUBMERGED2", "subbase_sm.pcx", 0);
                     }
                 }
                 return set_alt();

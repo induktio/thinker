@@ -393,8 +393,7 @@ struct Faction {
     int32_t unk_27;
     int32_t ODP_deployed;
     int32_t tech_count_transcendent; // Transcendent Thoughts achieved
-    int8_t tech_trade_source[88];
-    int32_t unk_28;
+    int8_t tech_trade_source[92];
     int32_t tech_accumulated;
     int32_t tech_research_id;
     int32_t tech_cost;

@@ -1,9 +1,15 @@
 
 #include "config.h"
 
-const char* AlphaFile = "alphax";
-const char* ScriptFile = "script";
+const char* AlphaFile = "ALPHAX";
+const char* ScriptFile = "SCRIPT";
+const char* BlurbsxFile = "BLURBSX";
+const char* OpeningFile = "OPENING";
+const char* MovlistFile = "MOVLIST";
+const char* TutorFile = "TUTOR";
 const char* PopupScriptFile = "SCRIPT.txt";
+const char* MovlistTxtFile = "movlist.txt";
+const char* ExpMovlistTxtFile = "movlistx.txt";
 const char* ModAlphaFile = "smac_mod\\alphax";
 const char* ModHelpFile = "smac_mod\\helpx";
 const char* ModTutorFile = "smac_mod\\tutor";
@@ -12,10 +18,6 @@ const char* ModAlphaTxtFile = "smac_mod\\alphax.txt";
 const char* ModHelpTxtFile = "smac_mod\\helpx.txt";
 const char* ModTutorTxtFile = "smac_mod\\tutor.txt";
 const char* ModConceptsTxtFile = "smac_mod\\conceptsx.txt";
-const char* OpeningFile = "opening";
-const char* MovlistFile = "movlist";
-const char* MovlistTxtFile = "movlist.txt";
-const char* ExpMovlistTxtFile = "movlistx.txt";
 
 char*  const TextBufferFileName = (char* )0x9B7BA0;
 char*  const TextBufferFilePath = (char* )0x9B7BF0;
@@ -202,7 +204,7 @@ int __cdecl tech_name(char* name) {
     parse_says(0, Text.FilePath, -1, -1);
     parse_says(1, name, -1, -1);
     parse_says(2, Text.SrcPtr, -1, -1);
-    X_pop2("BADTECHKEY", 0);
+    X_pop("BADTECHKEY", 0);
     exit_fail(); // Game would crash after parser errors
     return TECH_Disable;
 }
@@ -227,7 +229,7 @@ static int __cdecl get_chas_name(char* name, bool check) {
     parse_says(0, Text.FilePath, -1, -1);
     parse_says(1, name, -1, -1);
     parse_says(2, Text.SrcPtr, -1, -1);
-    X_pop2("BADCHASKEY", 0);
+    X_pop("BADCHASKEY", 0);
     exit_fail();
     return 0;
 }
@@ -256,7 +258,7 @@ static int __cdecl get_weap_name(char* name, bool check) {
     parse_says(0, Text.FilePath, -1, -1);
     parse_says(1, name, -1, -1);
     parse_says(2, Text.SrcPtr, -1, -1);
-    X_pop2("BADWEAPKEY", 0);
+    X_pop("BADWEAPKEY", 0);
     exit_fail();
     return 0;
 }
@@ -285,7 +287,7 @@ static int __cdecl get_arm_name(char* name, bool check) {
     parse_says(0, Text.FilePath, -1, -1);
     parse_says(1, name, -1, -1);
     parse_says(2, Text.SrcPtr, -1, -1);
-    X_pop2("BADARMKEY", 0);
+    X_pop("BADARMKEY", 0);
     exit_fail();
     return 0;
 }
@@ -494,7 +496,7 @@ int __cdecl read_tech() {
                 parse_says(0, Tech[i].short_name, -1, -1);
                 parse_says(1, Text.FilePath, -1, -1); // Changed pointer to directly reference Text class
                 parse_says(2, Text.SrcPtr, -1, -1);
-                X_pop2("DUPLICATETECH", 0);
+                X_pop("DUPLICATETECH", 0);
                 exit_fail();
             }
         }
@@ -573,7 +575,7 @@ void __cdecl read_faction(MFaction* plr, int toggle) {
     && text_open(plr->filename, plr->filename)) {
         parse_says(0, plr->search_key, -1, -1);
         parse_says(1, plr->filename, -1, -1);
-        X_pop2("PLAYERFILE", 0);
+        X_pop("PLAYERFILE", 0);
         return;
     }
     text_get();
