@@ -1151,51 +1151,6 @@ void __cdecl mod_turn_upkeep() {
     do_all_non_input();
 }
 
-/*
-Original file headers use TERRAN (savegames) and TERRANMAP (maps without game state).
-When unit count exceeds previous limit 2048, this extended version will use a modified
-file header for savegames to prevent these files from being opened on the original game.
-*/
-int __cdecl save_daemon_header(const char* header, FILE* file) {
-    if (*VehCount > MaxVehNum && !strcmp(header, "TERRAN")) {
-        header_write("TERRAE", file);
-        return 0;
-    }
-    header_write(header, file);
-    return 0;
-}
-
-int __cdecl load_daemon_strcmp(const char* value, const char* header) {
-    if (conf.modify_unit_limit && !strcmp(header, "TERRAN")) {
-        // Both original and extended version allowed
-        return strcmp(value, "TERRAN") && strcmp(value, "TERRAE");
-    }
-    return strcmp(value, header);
-}
-
-int __cdecl mod_load_map_daemon(char* name) {
-    // Another map selected from various dialogs
-    reset_state();
-    return load_map_daemon(name);
-}
-
-int __cdecl mod_load_daemon(char* name, int flag) {
-    // Another savegame opened from selection dialog
-    reset_state();
-    return load_daemon(name, flag);
-}
-
-void __cdecl mod_auto_save() {
-    if ((!*PbemActive || *MultiplayerActive)
-    && (!(*GameRules & RULES_IRONMAN) || *GameState & STATE_SCENARIO_EDITOR)) {
-        if (conf.autosave_interval > 0 && !(*CurrentTurn % conf.autosave_interval)) {
-            char buf[256];
-            snprintf(buf, sizeof(buf), "saves/auto/Autosave_%d.sav", game_year(*CurrentTurn));
-            save_daemon(buf);
-        }
-    }
-}
-
 int __cdecl generators(int faction_id, int* pop_size_req) {
     if (pop_size_req) {
         *pop_size_req = 0;

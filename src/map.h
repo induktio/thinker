@@ -87,7 +87,6 @@ int __cdecl find_landmark(int x, int y, size_t range_offset);
 int __cdecl new_landmark(int x, int y, const char* name);
 int __cdecl valid_landmark(int x, int y, int faction_id);
 void __cdecl kill_landmark(int x, int y);
-void __cdecl map_wipe();
 int __cdecl resource_yield(BaseResType type, int faction_id, int base_id, int x, int y);
 int __cdecl mod_crop_yield(int faction_id, int base_id, int x, int y, int flag);
 int __cdecl mod_mine_yield(int faction_id, int base_id, int x, int y, int flag);

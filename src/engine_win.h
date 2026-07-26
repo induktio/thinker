@@ -38,6 +38,40 @@ struct ListRoot {
     int last_index;
 };
 
+struct StringStructData {
+    void* vtable;
+    char* text;
+    int32_t field_8;
+    int32_t field_C;
+    void* field_10;
+    void* field_14;
+};
+
+struct StringStructNode {
+    void* vtable;
+    int32_t id;
+    StringStructData* data;
+    StringStructNode* next;
+    StringStructNode* prev;
+    void* field_14;
+    void* field_18;
+};
+
+struct StringStruct {
+    void* vtable;
+    void* type_desc;
+    StringStructNode* head;
+    StringStructNode* cursor;
+    int32_t count;
+    uint32_t position;
+    uint32_t flags;
+    void* src_text;
+    int32_t field_20;
+    int32_t field_24;
+    int32_t field_28;
+    int32_t field_2C;
+};
+
 struct Heap {
     int err_flags;
     int base_ptr;
@@ -2898,6 +2932,9 @@ typedef Palette CPalette;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winvalid-offsetof"
 
+static_assert(sizeof(StringStructData) == 0x18, "");
+static_assert(sizeof(StringStructNode) == 0x1C, "");
+static_assert(sizeof(StringStruct) == 0x30, "");
 static_assert(sizeof(Heap) == 20, "");
 static_assert(sizeof(Spot) == 24, "");
 static_assert(sizeof(SpotList) == 12, "");

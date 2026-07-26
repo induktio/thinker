@@ -460,6 +460,7 @@ bool patch_setup(Config* cf) {
 
     write_jump(0x421670, (int)has_fac);
     write_jump(0x4688E0, (int)MapWin_gen_overlays);
+    write_jump(0x4A0260, (int)sat_attack);
     write_jump(0x4C9420, (int)terraform_cost);
     write_jump(0x4C96E0, (int)action_build);
     write_jump(0x4C9A50, (int)contribution);
@@ -559,6 +560,8 @@ bool patch_setup(Config* cf) {
     write_jump(0x586F30, (int)read_factions);
     write_jump(0x587240, (int)read_units);
     write_jump(0x5873C0, (int)read_rules);
+    write_jump(0x590E90, (int)map_shutdown);
+    write_jump(0x590ED0, (int)map_init);
     write_jump(0x591040, (int)map_wipe);
     write_jump(0x591290, (int)alt_set);
     write_jump(0x5918F0, (int)alt_set_both);
@@ -632,13 +635,19 @@ bool patch_setup(Config* cf) {
 
     write_call(0x58D84C, (int)mod_load_map_daemon); // map_menu
     write_call(0x5AB891, (int)mod_load_map_daemon); // load_map
+    write_call(0x5ABCE3, (int)mod_save_map_daemon); // save_map
     write_call(0x5AAD7D, (int)mod_load_daemon); // load_game
     write_call(0x5ABEB3, (int)mod_load_daemon); // load_undo
     write_call(0x5ADCD7, (int)mod_load_daemon); // show_replay
-    write_call(0x5A9653, (int)save_daemon_header); // save_daemon
-    write_call(0x5A9BA8, (int)save_daemon_header); // save_map_daemon
-    write_call(0x5A97B3, (int)load_daemon_strcmp); // load_daemon
-    write_call(0x5A9CA0, (int)load_daemon_strcmp); // load_map_daemon
+    write_call(0x5296D7, (int)mod_save_daemon); // net_upkeep
+    write_call(0x52A2BE, (int)mod_save_daemon); // net_end_of_turn
+    write_call(0x5AA4C0, (int)mod_save_daemon); // save_game
+    write_call(0x5ABD97, (int)mod_save_daemon); // auto_save
+    write_call(0x5ABDDC, (int)mod_save_daemon); // auto_save
+    write_call(0x5ABE32, (int)mod_save_daemon); // auto_save
+    write_call(0x5ABFE2, (int)mod_save_daemon); // auto_undo
+    write_call(0x5ADC76, (int)mod_save_daemon); // show_replay
+
     write_call(0x4E1061, (int)mod_world_build); // Console::editor_generate
     write_call(0x4E113B, (int)mod_world_build); // Console::editor_fast
     write_call(0x58B9BF, (int)mod_world_build); // config_game

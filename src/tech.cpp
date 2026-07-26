@@ -792,9 +792,13 @@ void __cdecl tech_achieved(int faction_id, int tech_id, int faction_id_2, int is
         if (tech_id == Reactor[rc_id - 1].preq_tech) {
             for (int i = 0; i < MaxProtoFactionNum; ++i) {
                 int unit_id = i + (faction_id * MaxProtoFactionNum);
+                // The original game does not check for MPREF_BSC_AUTO_PRUNE_OBS_VEH when discovering
+                // better reactors, usually resulting in dozens of popups for each reactor tech
                 UNIT* cur = &Units[unit_id];
                 if ((cur->unit_flags & UNIT_ACTIVE)
-                && !(cur->obsolete_factions & bm_fac) && cur->reactor_id < rc_id) {
+                && !(cur->obsolete_factions & bm_fac) && cur->reactor_id < rc_id
+                && (!conf.ignore_reactor_power || !is_human(faction_id)
+                || *GameMorePreferences & MPREF_BSC_AUTO_PRUNE_OBS_VEH)) {
                     // Fix: remove redundant loop code
                     int uid = mod_propose_proto(
                         faction_id,

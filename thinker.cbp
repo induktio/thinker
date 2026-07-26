@@ -85,6 +85,7 @@
 		<Unit filename="src/engine.cpp" />
 		<Unit filename="src/engine.h" />
 		<Unit filename="src/engine_base.h" />
+		<Unit filename="src/engine_data.h" />
 		<Unit filename="src/engine_enums.h" />
 		<Unit filename="src/engine_types.h" />
 		<Unit filename="src/engine_veh.h" />
@@ -126,6 +127,8 @@
 		<Unit filename="src/probe.h" />
 		<Unit filename="src/random.cpp" />
 		<Unit filename="src/random.h" />
+		<Unit filename="src/savegame.cpp" />
+		<Unit filename="src/savegame.h" />
 		<Unit filename="src/strings.cpp" />
 		<Unit filename="src/strings.h" />
 		<Unit filename="src/tech.cpp" />

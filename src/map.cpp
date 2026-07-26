@@ -777,27 +777,6 @@ void __cdecl kill_landmark(int x, int y) {
     }
 }
 
-/*
-Reset the map to a blank state. Original doesn't wipe unk_1 and owner fields.
-This is simplified by zeroing all fields first and then setting specific fields.
-*/
-void __cdecl map_wipe() {
-    *MapSeaLevel = 0;
-    *MapSeaLevelCouncil = 0;
-    *MapLandmarkCount = 0;
-    *MapRandomSeed = random(0x7FFF) + 1;
-    memset(*MapTiles, 0, *MapAreaTiles * sizeof(MAP));
-    for (int i = 0; i < *MapAreaTiles; i++) {
-        (*MapTiles)[i].climate = 0x20;
-        (*MapTiles)[i].contour = 20;
-        (*MapTiles)[i].val2 = 0xF;
-        (*MapTiles)[i].owner = -1;
-    }
-    reset_state();
-    mapdata.clear();
-    mapnodes.clear();
-}
-
 int __cdecl resource_yield(BaseResType type, int faction_id, int base_id, int x, int y) {
     if (type == RSC_NUTRIENT) {
         return mod_crop_yield(faction_id, base_id, x, y, 0);

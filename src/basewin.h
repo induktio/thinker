@@ -4,6 +4,7 @@
 
 void __cdecl action_staple(int base_id);
 void __cdecl action_sat_attack(int faction_id, int faction_id_tgt, int target_id, int base_id);
+void __cdecl sat_attack(int faction_id, int faction_id_tgt, int target_id);
 void BaseWin_support_zoom(bool zoom_in);
 int __thiscall BaseWin_hurry_popup_start(
     Popup* This, const char* filename, const char* label, int a4, char* a5, int a6, GraphicWin* a7);

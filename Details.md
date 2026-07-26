@@ -152,8 +152,8 @@ In Alpha Centauri, Fusion reactor technology was extremely important for militar
 
 When `ignore_reactor_power` option is enabled, it is recommended to adjust some game preferences to reduce automated prototype additions when new techs are discovered.
 Recommended option to disable is `Design units automatically` which affects some but not all automated designs.
-Another option to disable is `Auto-prune obsolete units` which is triggered whenever the faction discovers a new reactor tech, and this can result in dozens of repetitive popups.
-Note that even if the original user interface shows the auto-prune option as recommended, the dozens of generated dialogs with each reactor tech can be an obstacle for smooth gameplay.
+Another option to disable is `Auto-prune obsolete units` which is triggered whenever the faction discovers a new reactor tech and normally this can result in dozens of repetitive popups.
+Note that even if the user interface shows the auto-prune option as recommended, this option is strongly recommended to disable when `ignore_reactor_power` is used.
 
 Another notable change is the introduction of reduced unit healing rates. In the original game, units were often able to fully heal in a single turn inside a base but this is no longer the case. Prolonged offensives are no longer trivially easy against opponents since units may have to stop healing for multiple turns. The healing rate can be significantly increased by building Command Centers and other similar base facilities.
 
@@ -504,6 +504,8 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 70. Fix Brood Pit not providing lifecycle bonus for built native units as mentioned in the manual.
 71. Fix game never displaying ABANDONBASE1 event with turns remaining when building the colony pod would disband the base with nutrient surplus.
 72. Modify AI psych energy allocation for rewritten governor specialist priorities and fix inconsistent calculations in the original game during energy allocation.
+73. Remove original leftover debug code that activated the scenario editor mode when any savegame with specific filenames were loaded.
+74. Fix multiple significant data consistency issues or possible game crashes when loading or writing savegames. The game will do additional checks to reject any savegames that may contain corrupted data.
 
 
 Scient's patch

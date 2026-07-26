@@ -81,6 +81,7 @@
 #include <algorithm>
 #include <functional>
 #include <unordered_map>
+#include "engine.h"
 
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 #define GameAppName "Alpha Centauri"
@@ -100,78 +101,6 @@
 
 const bool DEF = true;
 const bool ATT = false;
-
-const int MaxNaturalNum = 16;
-const int MaxLandmarkNum = 64;
-const int MaxRegionNum = 128;
-const int MaxRegionLandNum = 64;
-const int RegionBounds = 63;
-
-const int MaxDiffNum = 6;
-const int MaxPlayerNum = 8;
-const int MaxGoalsNum = 75;
-const int MaxSitesNum = 25;
-const int MaxBaseNum = 512;
-const int MaxVehNum = 2048;
-const int MaxProtoNum = 512;
-const int MaxProtoFactionNum = 64;
-const int MaxBaseNameLen = 25;
-const int MaxProtoNameLen = 32;
-const int MaxBasePopSize = 127;
-const int MaxBaseSpecNum = 16;
-
-const int MaxTechnologyNum = 89;
-const int MaxChassisNum = 9;
-const int MaxWeaponNum = 26;
-const int MaxArmorNum = 14;
-const int MaxReactorNum = 4;
-const int MaxAbilityNum = 29;
-const int MaxMoraleNum = 7;
-const int MaxDefenseModeNum = 3;
-const int MaxOffenseModeNum = 3;
-const int MaxOrderNum = 30;
-const int MaxPlanNum = 15;
-const int MaxTriadNum = 3;
-
-const int MaxResourceInfoNum = 9;
-const int MaxTimeControlNum = 6;
-const int MaxCompassNum = 8;
-const int MaxResourceNum = 4;
-const int MaxEnergyNum = 3;
-
-const int MaxMandateNum = 4;
-const int MaxFacilityNum = 64; // 0 slot unused
-const int MaxSecretProjectNum = 64;
-const int MaxTerrainNum = 20;
-const int MaxSocialCatNum = 4;
-const int MaxSocialModelNum = 4;
-const int MaxSocialEffectNum = 11;
-const int MaxSpecialistNum = 7;
-const int MaxCitizenNum = 10;
-const int MaxMoodNum = 9;
-const int MaxReputeNum = 8;
-const int MaxMightNum = 7;
-const int MaxBonusNum = 8;
-const int MaxBonusNameNum = 41;
-const int MaxProposalNum = 11;
-
-const int GrowthPopBoom = 6;
-const int ConvoyBaseValue = 1;
-const int PulseArmorValue = 25;
-const int ResonanceArmorValue = 25;
-const int ResonanceWeaponValue = 25;
-const int AerospaceDefenseRange = 2;
-const int FlechetteDefenseValue = 50;
-const int FlechetteDefenseRange = 2;
-const int MissileDefendChance = 50;
-const int OrbitalAttackChance = 50;
-const int PlanetaryDatalinksCount = 3;
-const int PlanetaryTransitPopSize = 3;
-const int UniversalTranslatorTechs = 2;
-
-const int StrBufLen = 256;
-const int LineBufLen = 128;
-const int MaxEnemyRange = 50;
 
 enum VideoMode {
     VM_Native = 0,
@@ -411,9 +340,9 @@ struct AIPlans {
     int captured_bases = 0;
 };
 
-#include "engine.h"
 #include "config.h"
 #include "strings.h"
+#include "savegame.h"
 #include "patch.h"
 #include "game.h"
 #include "random.h"

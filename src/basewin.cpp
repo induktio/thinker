@@ -97,6 +97,95 @@ void __cdecl action_sat_attack(int faction_id, int faction_id_tgt, int target_id
     }
 }
 
+void __cdecl sat_attack(int faction_id, int faction_id_tgt, int target_id) {
+    Popup cur_popup = {};
+    Popup_ctor(&cur_popup);
+    auto guard = cleanup_handler([&] { Popup_dtor(&cur_popup); });
+
+    if (faction_id == faction_id_tgt) {
+        return;
+    }
+    if (faction_id_tgt <= 0) {
+        return;
+    }
+    Faction* const plr = &Factions[faction_id];
+    Faction* const tgt = &Factions[faction_id_tgt];
+    if (!plr->satellites_ODP) {
+        if (faction_id == MapWin->cOwner) {
+            popp(ScriptFile, "NOKILLERS", 0, "space_sm.pcx", 0);
+        }
+        return;
+    }
+    if (plr->ODP_deployed >= plr->satellites_ODP) {
+        if (faction_id == MapWin->cOwner) {
+            popp(ScriptFile, "KILLERSDEPLOYED", 0, "space_sm.pcx", 0);
+        }
+        return;
+    }
+    int gsp_count = 0;
+    for (int i = 0; i < *BaseCount; i++) {
+        BASE* base = &Bases[i];
+        if (base->faction_id == faction_id_tgt && has_fac_built(FAC_GEOSYNC_SURVEY_POD, i)) {
+            ++gsp_count;
+        }
+    }
+    switch (target_id) {
+    case 0: if (!tgt->satellites_nutrient) { return; } break;
+    case 1: if (!tgt->satellites_mineral) { return; } break;
+    case 2: if (!tgt->satellites_energy) { return; } break;
+    case 3: if (!tgt->satellites_ODP) { return; } break;
+    case 4: if (!gsp_count) { return; } break;
+    default: assert(0); return;
+    }
+    if (break_treaty(faction_id, faction_id_tgt, DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT)) {
+        return;
+    }
+    if (diplo_lock(100)) {
+        return;
+    }
+    // diplo_unlock() must be called now before exiting the function
+    auto diplo_guard = cleanup_handler([&] { diplo_unlock(); });
+    if (plr->satellites_ODP && plr->ODP_deployed < plr->satellites_ODP) {
+        int choice;
+        if (target_id == 4) {
+            if (!gsp_count) {
+                return;
+            }
+            int w, h;
+            Popup_start(&cur_popup, PopupScriptFile, "WHICHGSP", -1, 0, 64, 0);
+            if (!Buffer_get_pcx_dimensions("satbat_sm.pcx", &w, &h)
+            && !Sprite_init(&cur_popup.sprite, "satbat_sm.pcx", w, h)) {
+                cur_popup.field_2144 = &cur_popup.sprite;
+            }
+            for (int i = 0; i < *BaseCount; i++) {
+                BASE* base = &Bases[i];
+                if (base->faction_id == faction_id_tgt && has_fac_built(FAC_GEOSYNC_SURVEY_POD, i)) {
+                    Dialogs_item(&cur_popup.dialogs, base->name, i);
+                }
+            }
+            choice = BasePop_exec_3(&cur_popup, 0, 0);
+            if (choice < 0) {
+                return;
+            }
+        } else {
+            switch (target_id) {
+            case 0: if (!tgt->satellites_nutrient) { return; } break;
+            case 1: if (!tgt->satellites_mineral) { return; } break;
+            case 2: if (!tgt->satellites_energy) { return; } break;
+            case 3: if (!tgt->satellites_ODP) { return; } break;
+            default: assert(0); return;
+            }
+            choice = faction_id;
+        }
+        if (*MultiplayerActive) {
+            message_data(0x2412, 0, faction_id, faction_id_tgt, target_id, choice);
+            NetDaemon_await_exec(NetState, 0);
+        } else {
+            ReportWin_start_attack(ReportWin, faction_id, faction_id_tgt, target_id, choice);
+        }
+    }
+}
+
 void BaseWin_support_zoom(bool zoom_in) {
     base_zoom_factor = clamp(base_zoom_factor + (zoom_in ? 2 : -2), -14, 0);
     GraphicWin_redraw(BaseWin);
