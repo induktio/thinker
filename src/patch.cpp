@@ -2,22 +2,7 @@
 #include "patch.h"
 #include "patchdata.h"
 #include "patchveh.h"
-#include <mutex>
 
-static std::mutex FileLock;
-
-/*
-Replace existing file locking on fwrite and similar statically linked library functions
-since MSVC documentation mentions these functions must lock the calling thread (also thread-safe).
-Previously this used file specific locks that apparently caused crashes on newer Windows versions.
-*/
-void __cdecl mod_lock_file(void*) {
-    FileLock.lock();
-}
-
-void __cdecl mod_unlock_file(void*) {
-    FileLock.unlock();
-}
 
 int __cdecl BaseWin_random_seed() {
     return *CurrentBaseID ^ *MapRandomSeed;
@@ -134,10 +119,9 @@ Patch the game engine to use significantly less CPU time by modifying the idle l
 */
 BOOL WINAPI ModPeekMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg)
 {
-    int* top_menu_handle = (int*)0x945824;
-    int* peek_msg_status = (int*)0x9B7B9C;
+    int* const PeekMsgStatus = (int*)0x9B7B9C;
     static bool wait_next = false;
-    int wait_time = (wait_next && (*top_menu_handle != 0 || *peek_msg_status == 0) ? 8 : 0);
+    int wait_time = (wait_next && (*TopMenuWin != 0 || *PeekMsgStatus == 0) ? 4 : 0);
     int wait_result = MsgWaitForMultipleObjectsEx(0, 0, wait_time, QS_ALLINPUT, MWMO_INPUTAVAILABLE);
 
     if (wait_result == WAIT_TIMEOUT) {
@@ -351,8 +335,8 @@ static void init_video_config(Config* cf) {
                     cf->video_player = 2;
                     video_player_path = std::string(cur_path);
                     video_player_args = std::string(args);
-                    prefs_put2("MoviePlayerPath", cur_path);
-                    prefs_put2("MoviePlayerArgs", args);
+                    prefs_put("MoviePlayerPath", cur_path);
+                    prefs_put("MoviePlayerArgs", args);
                     found = true;
                     break;
                 }
@@ -361,8 +345,8 @@ static void init_video_config(Config* cf) {
             cf->video_player = 2;
             video_player_path = std::string(path);
             video_player_args = std::string(args);
-            prefs_put2("MoviePlayerPath", path);
-            prefs_put2("MoviePlayerArgs", args);
+            prefs_put("MoviePlayerPath", path);
+            prefs_put("MoviePlayerArgs", args);
             found = true;
         }
         if (!found) {
@@ -373,16 +357,16 @@ static void init_video_config(Config* cf) {
                 MOD_VERSION, MB_YESNO | MB_ICONWARNING);
             if (value == IDYES) {
                 cf->video_player = 1;
-                prefs_put2("MoviePlayerPath", "");
-                prefs_put2("MoviePlayerArgs", "");
+                prefs_put("MoviePlayerPath", "");
+                prefs_put("MoviePlayerArgs", "");
             } else {
                 cf->video_player = 0;
-                prefs_put2("MoviePlayerPath", "<DEFAULT>");
-                prefs_put2("MoviePlayerArgs", args);
+                prefs_put("MoviePlayerPath", "<DEFAULT>");
+                prefs_put("MoviePlayerArgs", args);
             }
         }
         video_player_extn = extn;
-        prefs_put2("MovieExtension", extn);
+        prefs_put("MovieExtension", extn);
     }
     if (!FileExists("modmenu.txt")) {
         MessageBoxA(0, "Error while opening modmenu.txt. Game might not work as intended.",
@@ -509,7 +493,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x50C4B0, (int)steal_energy);
     write_jump(0x5247B0, (int)generators);
     write_jump(0x524870, (int)end_of_game);
-    write_jump(0x527290, (int)mod_faction_upkeep);
+    write_jump(0x527290, (int)faction_upkeep);
     write_jump(0x52AD30, (int)council_votes);
     write_jump(0x52AE20, (int)eligible);
     write_jump(0x5391C0, (int)net_treaty_on);
@@ -574,16 +558,16 @@ bool patch_setup(Config* cf) {
     write_jump(0x592650, (int)valid_landmark);
     write_jump(0x5926F0, (int)kill_landmark);
     write_jump(0x5947C0, (int)order_veh);
-    write_jump(0x59D980, (int)prefs_get2);
+    write_jump(0x59D980, (int)prefs_get);
     write_jump(0x59DA20, (int)default_prefs);
     write_jump(0x59DAA0, (int)default_prefs2);
     write_jump(0x59DB20, (int)default_warn);
     write_jump(0x59DB30, (int)default_rules);
-    write_jump(0x59DB40, (int)prefs_get);
+    write_jump(0x59DB40, (int)prefs_get_2);
     write_jump(0x59DBD0, (int)prefs_fac_load);
     write_jump(0x59DCF0, (int)prefs_load);
-    write_jump(0x59E510, (int)prefs_put2);
-    write_jump(0x59E530, (int)prefs_put);
+    write_jump(0x59E510, (int)prefs_put);
+    write_jump(0x59E530, (int)prefs_put_2);
     write_jump(0x59E5D0, (int)prefs_save);
     write_jump(0x59E980, (int)vulnerable);
     write_jump(0x59EE50, (int)corner_market);
@@ -648,6 +632,21 @@ bool patch_setup(Config* cf) {
     write_call(0x5ABFE2, (int)mod_save_daemon); // auto_undo
     write_call(0x5ADC76, (int)mod_save_daemon); // show_replay
 
+    write_call(0x52AC4A, (int)top_menu); // control_game
+    write_call(0x58DBA5, (int)top_menu); // multiplayer_init
+    write_call(0x58E768, (int)map_menu); // top_menu
+    write_call(0x4E12C6, (int)size_of_planet); // Console::editor_clear
+    write_call(0x58D780, (int)size_of_planet); // map_menu
+    write_call(0x58E919, (int)size_of_planet); // top_menu
+    write_call(0x4E0FA9, (int)custom_planet); // Console::editor_climate
+    write_call(0x58D7A3, (int)custom_planet); // map_menu
+    write_call(0x52AC07, (int)setup_game); // control_game
+    write_call(0x58B9C9, (int)setup_game); // config_game
+    write_call(0x58DDFA, (int)setup_game); // multiplayer_init
+    write_call(0x58E846, (int)setup_game); // top_menu
+    write_call(0x58E955, (int)setup_game); // top_menu
+    write_call(0x52768A, (int)turn_upkeep); // control_turn
+    write_call(0x52A4AD, (int)turn_upkeep); // net_control_turn
     write_call(0x4E1061, (int)mod_world_build); // Console::editor_generate
     write_call(0x4E113B, (int)mod_world_build); // Console::editor_fast
     write_call(0x58B9BF, (int)mod_world_build); // config_game
@@ -666,8 +665,6 @@ bool patch_setup(Config* cf) {
     write_call(0x5274F5, (int)mod_eliminate_player); // faction_upkeep
     write_call(0x598685, (int)mod_eliminate_player); // order_veh
     write_call(0x5B41E9, (int)mod_time_warp);  // setup_game
-    write_call(0x52768A, (int)mod_turn_upkeep); // control_turn
-    write_call(0x52A4AD, (int)mod_turn_upkeep); // net_control_turn
     write_call(0x527039, (int)mod_base_upkeep); // production_phase
     write_call(0x4F7A38, (int)mod_base_hurry); // base_upkeep
     write_call(0x528289, (int)mod_enemy_turn); // control_turn
@@ -1138,28 +1135,6 @@ bool patch_setup(Config* cf) {
     write_call(0x62794B, (int)mod_BasePop_start); // pop_ask
     write_call(0x627C90, (int)mod_BasePop_start); // pop_ask_number
 
-    // Replace standard library file locking
-    write_call(0x6455AE, (int)mod_lock_file); // _fclose
-    write_call(0x646046, (int)mod_lock_file); // _fwrite
-    write_call(0x64617F, (int)mod_lock_file); // _fread
-    write_call(0x64685C, (int)mod_lock_file); // _fgetc
-    write_call(0x64688D, (int)mod_lock_file); // _fputc
-    write_call(0x647283, (int)mod_lock_file); // _fgets
-    write_call(0x6472D6, (int)mod_lock_file); // _rewind
-    write_call(0x647337, (int)mod_lock_file); // _fseek
-    write_call(0x64781D, (int)mod_lock_file); // _fprintf
-    write_call(0x647927, (int)mod_lock_file); // _ftell
-    write_call(0x6455BC, (int)mod_unlock_file); // _fclose
-    write_call(0x646061, (int)mod_unlock_file); // _fwrite
-    write_call(0x64619A, (int)mod_unlock_file); // _fread
-    write_call(0x64687B, (int)mod_unlock_file); // _fgetc
-    write_call(0x6468B6, (int)mod_unlock_file); // _fputc
-    write_call(0x6472BF, (int)mod_unlock_file); // _fgets
-    write_call(0x647325, (int)mod_unlock_file); // _rewind
-    write_call(0x64734F, (int)mod_unlock_file); // _fseek
-    write_call(0x647843, (int)mod_unlock_file); // _fprintf
-    write_call(0x647935, (int)mod_unlock_file); // _ftell
-
     if (!cf->reduced_mode) {
         write_call(0x62D3EC, (int)mod_Win_init_class);
     }
@@ -1207,15 +1182,6 @@ bool patch_setup(Config* cf) {
     write_byte(0x4E3222, 9, NetVersion); // AlphaNet::setup
     write_byte(0x52AA5C, 9, NetVersion); // control_game
     write_byte(0x627C8B, 9, 11); // pop_ask_number maximum length
-    /*
-    Allow custom map sizes up to 512x512. Warning dialog will be displayed if size exceeds 256x256.
-    */
-    write_word(0x58D3A2, 256, 512); // size_of_planet
-    write_word(0x58D3A9, 256, 512); // size_of_planet
-    write_word(0x58D3BB, 256, 512); // size_of_planet
-    write_word(0x58D3C2, 256, 512); // size_of_planet
-    write_word(0x58D3CF, 128, 256); // size_of_planet
-    write_word(0x58D3D7, 128, 256); // size_of_planet
 
     /*
     Hide unnecessary region_base_plan display next to base names in debug mode.

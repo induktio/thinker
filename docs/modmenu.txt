@@ -85,6 +85,20 @@ __Governor may produce psych facilities with side effects.
 __Governor may produce secret projects.
 __Governor may HURRY production.
 
+#TOPMENU
+#xs 420
+#itemlist
+#x -5
+#y -5
+START GAME
+QUICK START
+SCENARIO
+LOAD GAME
+MULTIPLAYER
+CHANGE OPTIONS
+VIEW CREDITS
+EXIT GAME
+
 #HURRY
 #xs 400
 #caption Operations Director

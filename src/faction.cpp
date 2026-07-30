@@ -1881,35 +1881,7 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
         plr->sanction_turns = 0;
         plr->council_call_turn = -999;
         TectonicDetonationCount[faction_id] = 0;
-        // Fix issue with randomized faction agendas where they might be given agendas that are
-        // their opposition social models making the choice unusable. Future social models can be
-        // also selected but much less often. Additionally randomized leader personalities
-        // always selects at least one AI priority.
-        if (*GameState & STATE_RAND_FAC_LEADER_SOCIAL_AGENDA) {
-            for (int i = 0; i < 1000; i++) {
-                int val = game_randv(4) ? 3 : 4;
-                int sfield = game_randv(val);
-                int smodel = game_randv(3) + 1;
-                if (SocialField[sfield].soc_preq_tech[smodel] == TECH_Disable
-                || (sfield == m->soc_opposition_category && smodel == m->soc_opposition_model)) {
-                    continue;
-                }
-                bool valid = true;
-                for (int j = 1; j < MaxPlayerNum; j++) {
-                    if (faction_id != j && is_alive(j)
-                    && MFactions[j].soc_priority_category == sfield
-                    && MFactions[j].soc_priority_model == smodel) {
-                        valid = false;
-                    }
-                }
-                if (valid) {
-                    m->soc_priority_category = sfield;
-                    m->soc_priority_model = smodel;
-                    debug("setup_player_agenda %s %d %d\n",  m->filename, sfield, smodel);
-                    break;
-                }
-            }
-        }
+        // Fix: randomized leader personalities always selects at least one AI priority.
         if (*GameState & STATE_RAND_FAC_LEADER_PERSONALITIES) {
             plr->AI_fight = game_randv(3) - 1;
             int val = 0;
@@ -2063,7 +2035,7 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
             region = sq->region;
         }
     }
-    if (!sq || (!is_probe && (spawn_flag || spawn_skip))) {
+    if (!is_probe && (spawn_flag || spawn_skip)) {
         if (!is_human(faction_id) || *MultiplayerActive) {
             plr->unk_102 = 0;
             set_alive(faction_id, false);
@@ -2125,6 +2097,9 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
         }
         return 0; // Spawn failed, always return zero
     } else {
+        if (!sq) {
+            return 0; // No suitable spawn location found
+        }
         assert(sq && sq->anything_at() < 0);
         assert(region > 0);
         plr->SE_alloc_labs = 5;
@@ -2279,11 +2254,11 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
                         nearby |= (1 << Vehs[i].faction_id);
                     }
                 }
-                if ((*MultiplayerActive && is_human(faction_id)
-                && Continents[region].tile_count / (__builtin_popcount(nearby) + 1) <= 75)
-                || (Continents[region].tile_count / (__builtin_popcount(nearby) + 1) <= 50)) {
-                    int x2 = wrap(x + TableOffsetX[coast]);
-                    int y2 = y + TableOffsetY[coast];
+                int tile_ratio = Continents[region].tile_count / (bit_count(nearby) + 1);
+                int num = (tile_ratio <= 50) + (*MultiplayerActive && is_human(faction_id) && tile_ratio <= 75);
+                int x2 = wrap(x + TableOffsetX[coast]);
+                int y2 = y + TableOffsetY[coast];
+                while (--num >= 0) {
                     int veh_id = veh_init(BSC_UNITY_FOIL, faction_id, x2, y2);
                     if (veh_id >= 0) {
                         Vehs[veh_id].home_base_id = -1;

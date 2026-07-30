@@ -1326,15 +1326,15 @@ void __cdecl ReportWin_draw_ops_strcat(char* dst, char* UNUSED(src))
     if (base->faction_id == MapWin->cOwner && gov & GOV_ACTIVE) {
         const char* type;
         if (gov & GOV_PRIORITY_EXPLORE) {
-            type = label_get(521);
+            type = label_get(TL_Explore);
         } else if (gov & GOV_PRIORITY_DISCOVER) {
-            type = label_get(522);
+            type = label_get(TL_Discover);
         } else if (gov & GOV_PRIORITY_BUILD) {
-            type = label_get(523);
+            type = label_get(TL_Build);
         } else if (gov & GOV_PRIORITY_CONQUER) {
-            type = label_get(524);
+            type = label_get(TL_Conquer);
         } else {
-            type = label_get(457); // Governor
+            type = label_get(TL_Governor);
         }
         len += snprintf(dst, StrBufLen, "%s ", type);
     }

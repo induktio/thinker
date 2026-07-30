@@ -326,7 +326,6 @@ Externally reseeded game_rand is used as before but random replaces any instance
 */
 int __cdecl probe(int veh_id, int tgt_base_id, int tgt_veh_id, int toggle) {
     debug("probe %d %d %d %d\n", veh_id, tgt_base_id, tgt_veh_id, toggle);
-    Ftext_get text_get = (Ftext_get)0x5FD570;
 
     GameRandom loc_rnd;
     char name_buf[StrBufLen];
@@ -1397,38 +1396,41 @@ MOV_DEFEND:
             }
         }
         if (capture_id >= 0) {
-            if (Vehs[veh_id].home_base_id < 0) {
-                veh_kill(veh_id);
-            }
+            // Fix: original did not check setup_player return value and
+            // always removed probes without home bases here which could
+            // cause unrelated veh_id to be accessed later
             set_alive(capture_id, true);
-            mod_setup_player(capture_id, tgt_fc_id, 1);
-            tgt->eliminated_count--;
-            reset_captured_leader(tgt_fc_id, capture_id);
-            if (veh_fc_id == MapWin->cOwner || tgt_fc_id == MapWin->cOwner) {
-                parse_says(0, get_title(capture_id), -1, -1);
-                parse_says(1, get_name(capture_id), -1, -1);
-                parse_says(2, get_noun(capture_id), -1, -1);
-                NetMsg_pop_2("WILLYFREE", "fac_escape_sm.pcx");
-            }
-            if (!(*GameRules & RULES_SCN_NO_TECH_TRADING)) {
-                for (prb_tech_id = 0; prb_tech_id < MaxTechnologyNum; prb_tech_id++) {
-                    if (has_tech(prb_tech_id, capture_id) && !has_tech(prb_tech_id, veh_fc_id)) {
-                        net_tech(veh_fc_id, prb_tech_id, capture_id, 0);
+            if (!mod_setup_player(capture_id, tgt_fc_id, 1)) {
+                set_alive(capture_id, false);
+            } else {
+                tgt->eliminated_count--;
+                reset_captured_leader(tgt_fc_id, capture_id);
+                if (veh_fc_id == MapWin->cOwner || tgt_fc_id == MapWin->cOwner) {
+                    parse_says(0, get_title(capture_id), -1, -1);
+                    parse_says(1, get_name(capture_id), -1, -1);
+                    parse_says(2, get_noun(capture_id), -1, -1);
+                    NetMsg_pop_2("WILLYFREE", "fac_escape_sm.pcx");
+                }
+                if (!(*GameRules & RULES_SCN_NO_TECH_TRADING)) {
+                    for (prb_tech_id = 0; prb_tech_id < MaxTechnologyNum; prb_tech_id++) {
+                        if (has_tech(prb_tech_id, capture_id) && !has_tech(prb_tech_id, veh_fc_id)) {
+                            net_tech(veh_fc_id, prb_tech_id, capture_id, 0);
+                        }
                     }
                 }
+                *dword_7AD330 = 0;
+                Console_update_data(MapWin, 0);
+                plr->diplo_friction[capture_id] = 0;
+                net_treaty_off(capture_id, veh_fc_id, DIPLO_WANT_REVENGE, 1);
+                net_treaty_on(veh_fc_id, capture_id, DIPLO_UNK_8000000|DIPLO_COMMLINK|DIPLO_TREATY, 0);
+                net_set_treaty(capture_id, veh_fc_id, DIPLO_HAVE_SURRENDERED, 1, 0);
+                net_treaty_on(capture_id, veh_fc_id, DIPLO_UNK_1000000|DIPLO_PACT, 0);
+                Factions[capture_id].diplo_patience[veh_fc_id] = 0;
+                plr->diplo_spoke[capture_id] = 0;
+                diplomacy_check(veh_fc_id, capture_id, 0);
+                plr->diplo_reputation++;
+                Factions[capture_id].diplo_reputation++;
             }
-            *dword_7AD330 = 0;
-            Console_update_data(MapWin, 0);
-            plr->diplo_friction[capture_id] = 0;
-            net_treaty_off(capture_id, veh_fc_id, DIPLO_WANT_REVENGE, 1);
-            net_treaty_on(veh_fc_id, capture_id, DIPLO_UNK_8000000|DIPLO_COMMLINK|DIPLO_TREATY, 0);
-            net_set_treaty(capture_id, veh_fc_id, DIPLO_HAVE_SURRENDERED, 1, 0);
-            net_treaty_on(capture_id, veh_fc_id, DIPLO_UNK_1000000|DIPLO_PACT, 0);
-            Factions[capture_id].diplo_patience[veh_fc_id] = 0;
-            plr->diplo_spoke[capture_id] = 0;
-            diplomacy_check(veh_fc_id, capture_id, 0);
-            plr->diplo_reputation++;
-            Factions[capture_id].diplo_reputation++;
         }
         break;
     case PRB_INTRODUCE_GENETIC_PLAGUE:

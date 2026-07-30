@@ -7,13 +7,6 @@
 const char* FileExtensionMap = "MP";
 const char* FileExtensionSave = "SAV";
 
-int* const SaveFileWrite = (int*)0x945D6C;
-int* const SaveFileEncrypt = (int*)0x945D74;
-int* const dword_945D78 = (int*)0x945D78;
-int* const SaveFileStatus = (int*)0x945D7C;
-int* const SaveFileVersion = (int*)0x9A6810;
-int* const DiploStateA = (int*)0x93F678; // [8]
-int (*const DiploStateB)[8] = (int (*)[8])(0x93F698); // [8][8]
 int* const dword_6FF69C = (int*)0x6FF69C;
 int* const dword_6FF6A0 = (int*)0x6FF6A0;
 int* const dword_6FF6A4 = (int*)0x6FF6A4;
@@ -66,11 +59,6 @@ static void StringStruct_add_node(StringStruct* cur, int id, char* text) {
     // memory allocation related, should be set to zero
     cur->flags = 0;
     StringStruct_add(cur, id);
-}
-
-static FILE* env_open(const char* path, const char* mode) {
-    char* path_alt = filefind_get(path);
-    return fopen(path_alt ? path_alt : path, mode);
 }
 
 static int __cdecl file_feed(void* buf, size_t len, size_t cnt, FILE* fp) {
@@ -227,8 +215,23 @@ int __cdecl game_data(FILE* fp, int write_file) {
         }
     }
     debug_ver("game_data ver=%d wrt=%d enc=%d\n", *SaveFileVersion, *SaveFileWrite != 0, *SaveFileEncrypt != 0);
-    if (!file_feed(&MapWin->cOwner, 4u, 1u, fp)) {
+    int32_t player_id = MapWin->cOwner;
+    if (!file_feed(&player_id, 4u, 1u, fp)) {
         return 1;
+    }
+    if (!*SaveFileWrite) {
+        if (player_id >= 0 && player_id < MaxPlayerNum) {
+            MapWin->cOwner = player_id;
+        } else {
+            debug("game_data error player=%d\n", player_id);
+            return 1;
+        }
+        for (int i = 0; i < 64; ++i) {
+            if (SecretProjects[i] >= MaxBaseNum) {
+                debug("game_data error project=%d base=%d\n", i, SecretProjects[i]);
+                return 1;
+            }
+        }
     }
     if (*SaveFileVersion >= 11) {
         if (!file_feed(Factions, 0x10660u, 1u, fp)) {
@@ -265,7 +268,7 @@ int __cdecl game_data(FILE* fp, int write_file) {
     if (!file_feed(FactionRankingsUnk, 0x20u, 1u, fp)) {
         return 1;
     }
-    if (!*SaveFileWrite && !*dword_945D78 && !(*GameState & STATE_GAME_DONE)) {
+    if (!*SaveFileWrite && !*SaveFileMenu && !(*GameState & STATE_GAME_DONE)) {
         if (bit_count(FactionStatus[0] & FactionStatus[1]) > 1) {
             for (int i = 1; i < MaxPlayerNum; ++i) {
                 if (is_alive(i) && is_human(i) && Factions[i].unk_102) {
@@ -287,6 +290,7 @@ int __cdecl game_data(FILE* fp, int write_file) {
     if (*ReplayEventSize < 0 || *ReplayEventSize > 8192
     || *VehCount < 0 || *VehCount > conf.max_veh_num
     || *BaseCount < 0 || *BaseCount > MaxBaseNum) {
+        debug("game_data error bases=%d vehs=%d replay=%d\n", *BaseCount, *VehCount, *ReplayEventSize);
         return 1; // Fix: added bounds checking
     }
     if (*ReplayEventSize) {
@@ -828,7 +832,7 @@ Original file headers use TERRAN (savegames) and TERRANMAP (maps without game st
 When unit count exceeds previous limit 2048, this extended version will use a modified
 file header for savegames to prevent these files from being opened in the original game.
 */
-int __cdecl mod_save_daemon(char* filename) {
+int __cdecl mod_save_daemon(const char* filename) {
     if (*PbemActive) {
         ++*dword_93A9B4;
     }
@@ -885,7 +889,7 @@ int __cdecl mod_save_daemon(char* filename) {
     return status;
 }
 
-int __cdecl mod_load_daemon(char* filename, int flag) {
+int __cdecl mod_load_daemon(const char* filename, int flag) {
     debug("load_daemon flag=%d %s\n", flag, filename);
     const char* header_1 = "TERRAN";
     const char* header_2 = conf.modify_unit_limit ? "TERRAE" : "TERRAN";
@@ -998,7 +1002,7 @@ int __cdecl mod_load_daemon(char* filename, int flag) {
     return SAVE_LOAD_VALID;
 }
 
-int __cdecl mod_save_map_daemon(char* filename) {
+int __cdecl mod_save_map_daemon(const char* filename) {
     int status = 1;
     char path[StrBufLen];
 
@@ -1026,7 +1030,7 @@ int __cdecl mod_save_map_daemon(char* filename) {
     return status;
 }
 
-int __cdecl mod_load_map_daemon(char* filename) {
+int __cdecl mod_load_map_daemon(const char* filename) {
     int is_save = 0;
     char* ext = strrchr(filename, '.'); // Fix: select the last dot from the filename
     if (ext && !_stricmp(ext + 1, FileExtensionSave)) {

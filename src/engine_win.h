@@ -5,7 +5,6 @@
 typedef int StringList;
 typedef int Vert;
 typedef void HSV;
-typedef void ListBox;
 typedef void EdgeScan;
 typedef void NCSprites;
 typedef void BorderSizing;
@@ -1371,7 +1370,19 @@ struct Scroll : GraphicWin {
 };
 
 struct SetupWin : GraphicWin {
-    int field_A14[379];
+    int field_A14;
+    int field_A18;
+    Buffer* field_A1C;
+    Buffer* field_A20;
+    Buffer* field_A24;
+    int field_A28;
+    int field_A2C;
+    int field_A30;
+    int field_A34;
+    int field_A38;
+    int field_A3C;
+    GraphicWin* pMenuWin;
+    int field_A48[367];
     int field_1000[424];
 };
 
@@ -1432,6 +1443,43 @@ struct Dialog {
     int field_F0;
 };
 
+struct Dialogs {
+    int listBox[17];
+    int radioButton[5];
+    int checkBox[6];
+    int spriteBox[34];
+    int editGroup[34];
+    int field_180;
+    int field_184;
+    GraphicWin graphicWin;
+    int field_B9C;
+    Dialog dialog;
+};
+
+struct ListBox {
+    int field_0;
+    int field_4;
+    int field_8;
+    int field_C;
+    int field_10;
+    int field_14;
+    int field_18;
+    int field_1C;
+    int field_20;
+    int field_24;
+    int field_28;
+    int field_2C;
+    int field_30;
+    int field_34;
+    int field_38;
+    int field_3C;
+    int field_40;
+    int field_44;
+    GraphicWin graphicWin;
+    int field_A5C;
+    Dialog dialog;
+};
+
 struct SpriteBox {
     int field_0;
     int field_4;
@@ -1471,10 +1519,42 @@ struct SpriteBox {
     Dialog dialog;
 };
 
-struct Dialogs {
-    int data[98];
+struct EditGroup {
+    int field_0;
+    int field_4;
+    int field_8;
+    void* field_C;
+    SpotList spot;
+    int field_1C;
+    int field_20;
+    int field_24;
+    int field_28;
+    int field_2C;
+    int field_30;
+    int field_34;
+    int field_38;
+    int field_3C;
+    void* field_40;
+    void* field_44;
+    void* field_48;
+    int field_4C;
+    int field_50;
+    int field_54;
+    int field_58;
+    int field_5C;
+    int field_60;
+    int field_64;
+    int field_68;
+    int field_6C;
+    int field_70;
+    int field_74;
+    int field_78;
+    int field_7C;
+    int field_80;
+    int field_84;
+    int field_88p;
     GraphicWin graphicWin;
-    int field_B9C;
+    void* field_AA0;
     Dialog dialog;
 };
 
@@ -2959,7 +3039,9 @@ static_assert(sizeof(Menu) == 2916, "");
 static_assert(sizeof(Scroll) == 8524, "");
 static_assert(sizeof(Dialog) == 244, "");
 static_assert(sizeof(Dialogs) == 3220, "");
+static_assert(sizeof(ListBox) == 2900, "");
 static_assert(sizeof(SpriteBox) == 2968, "");
+static_assert(sizeof(EditGroup) == 2968, "");
 static_assert(sizeof(SetupWin) == 5792, "");
 static_assert(sizeof(BasePop) == 12848, "");
 static_assert(sizeof(Popup) == 21372, "");

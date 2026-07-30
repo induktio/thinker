@@ -1788,7 +1788,6 @@ which bypasses normal movement and can instead trigger the upkeep path or the ai
 flag - Written to VehAttackFlags. Uses two lowest bits that are always set by non-MP action functions.
 */
 int __cdecl order_veh(int veh_id, int offset, int flag) {
-    Ftext_get text_get = (Ftext_get)0x5FD570;
     int* const dword_8CC210 = (int*)0x8CC210;
     int* const dword_945AF4 = (int*)0x945AF4;
     int* const dword_945AF8 = (int*)0x945AF8;

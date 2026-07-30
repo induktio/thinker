@@ -94,6 +94,8 @@
 		<Unit filename="src/faction.h" />
 		<Unit filename="src/game.cpp" />
 		<Unit filename="src/game.h" />
+		<Unit filename="src/gameturn.cpp" />
+		<Unit filename="src/gameturn.h" />
 		<Unit filename="src/goal.cpp" />
 		<Unit filename="src/goal.h" />
 		<Unit filename="src/gui.cpp" />

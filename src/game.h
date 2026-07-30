@@ -8,6 +8,7 @@ const uint32_t GAME_RULES_MASK = 0x7808FFFF;
 const uint32_t GAME_MRULES_MASK = 0xFFFFFFF0;
 const int8_t NetVersion = 14; // Network multiplayer
 
+const char* resource_icon(int res_type, bool ocean, bool add);
 bool un_charter();
 bool global_trade_pact();
 bool victory_done();
@@ -30,15 +31,14 @@ void __cdecl bitmask(uint32_t input, uint32_t* offset, uint32_t* mask);
 void show_rules_menu();
 void init_world_config();
 void init_save_game(int faction_id);
+int __cdecl custom_planet(int use_images, int use_defaults);
+int __cdecl size_of_planet(int setup_mode);
+int __cdecl map_menu(int flag);
+int __cdecl top_menu(int flag);
+void __cdecl setup_game(int flag);
 int __cdecl generators(int faction_id, int* pop_size_req);
 int __cdecl end_of_game(int flag);
 int __cdecl replay_base(int event, int x, int y, int faction_id);
-void __cdecl mod_random_events(int flag);
-void __cdecl mod_turn_upkeep();
-void __cdecl mod_faction_upkeep(int faction_id);
-void __cdecl mod_repair_phase(int faction_id);
-void __cdecl mod_production_phase(int faction_id);
-void __cdecl mod_allocate_energy(int faction_id);
 void __cdecl mod_name_base(int faction_id, char* name, bool save_offset, bool water);
 int __cdecl load_music_strcmpi(const char* active, const char* label);
 

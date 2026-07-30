@@ -23,9 +23,9 @@ int __cdecl map_read(FILE* fp);
 int __cdecl map_data(FILE* fp, int save_flag, int extended_flag);
 int __cdecl header_check(char* dst, FILE* fp);
 int __cdecl header_write(const char* src, FILE* fp);
-int __cdecl mod_save_daemon(char* filename);
-int __cdecl mod_load_daemon(char* filename, int flag);
-int __cdecl mod_save_map_daemon(char* filename);
-int __cdecl mod_load_map_daemon(char* filename);
+int __cdecl mod_save_daemon(const char* filename);
+int __cdecl mod_load_daemon(const char* filename, int flag);
+int __cdecl mod_save_map_daemon(const char* filename);
+int __cdecl mod_load_map_daemon(const char* filename);
 void __cdecl mod_auto_save();
 

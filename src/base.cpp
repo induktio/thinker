@@ -329,7 +329,7 @@ void __cdecl mod_base_kill(int base_id) {
         }
         lr->last_index = lr->cur_count - 1;
     }
-    ListBox_update_changes(dword_7F685C);
+    ListBox_update_changes((ListBox*)dword_7F685C);
 
     for (int i = 0; i <= SP_ID_Last - SP_ID_First; i++) {
         if (SecretProjects[i] == base_id) {

@@ -673,22 +673,27 @@ static int route_score(VEH* veh, int x, int y, int modifier, MAP* sq) {
 }
 
 int search_route(TileSearch& ts, int veh_id, int* tx, int* ty) {
+    if (veh_id < 0 || veh_id >= *VehCount) {
+        assert(0);
+        return false;
+    }
     VEH* veh = &Vehs[veh_id];
-    MAP* sq = mapsq(veh->x, veh->y);
+    MAP* veh_sq = mapsq(veh->x, veh->y);
+    MAP* sq;
     debug("search_route %2d %2d %s\n", veh->x, veh->y, veh->name());
     *tx = -1;
     *ty = -1;
-    if (!sq || veh_id < 0) {
+    if (!veh_sq) {
         assert(0);
         return false;
     }
     Faction& plr = Factions[veh->faction_id];
     AIPlans& plan = plans[veh->faction_id];
-    int veh_reg = sq->region;
+    int veh_reg = veh_sq->region;
     bool combat = veh->is_combat_unit();
     bool scout = combat && !bad_reg(veh_reg)
         && Continents[veh_reg].pods > Continents[veh_reg].tile_count/32;
-    bool at_base = sq->is_base() && sq->owner == veh->faction_id;
+    bool at_base = veh_sq->is_base() && veh_sq->owner == veh->faction_id;
     bool same_reg = false;
     bool has_gate = false;
     int best_score = INT_MIN;
@@ -757,7 +762,7 @@ int search_route(TileSearch& ts, int veh_id, int* tx, int* ty) {
     ts.init(veh->x, veh->y, TS_TERRITORY_PACT);
     best_score = INT_MIN;
     if (at_base && veh->is_artifact()) {
-        best_score = route_score(veh, veh->x, veh->y, 1, sq);
+        best_score = route_score(veh, veh->x, veh->y, 1, veh_sq);
     }
     while ((sq = ts.get_next()) != NULL) {
         if (ts.dist == 1 && (!combat || !scout)

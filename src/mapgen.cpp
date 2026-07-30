@@ -1526,7 +1526,7 @@ void world_generate(uint32_t seed) {
         world_alt_set(p.x, p.y, ALT_OCEAN, 1);
         world_alt_set(p.x, p.y, ALT_OCEAN_SHELF, 1);
     }
-    world_temperature();
+    mod_world_temperature();
     mod_world_riverbeds();
     mod_world_fungus(noise);
     Path_continents(Paths);

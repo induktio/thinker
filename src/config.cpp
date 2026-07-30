@@ -42,7 +42,7 @@ public:
 
 static TextBuffer Text = {};
 
-static const char* alpha_file() {
+const char* alpha_file() {
     return conf.smac_only ? ModAlphaFile : AlphaFile;
 }
 
@@ -64,19 +64,24 @@ static char* prefs_get_binary(char* buf, int value) {
     return buf;
 }
 
-static FILE* env_open(const char* path, const char* mode) {
+FILE* env_open(const char* path, const char* mode) {
     char* path_alt = filefind_get(path);
-    return fopen(path_alt ?  path_alt : path, mode);
+    return fopen(path_alt ? path_alt : path, mode);
 }
 
-static void text_close() {
-    if (Text.File) {
-        fclose(Text.File);
-        Text.File = NULL;
+int __cdecl X_text_open(const char* filename, const char* label) {
+    int value;
+    if (strcmp(filename, ScriptFile)) {
+        return text_open(filename, label);
     }
+    if (!*ExpansionEnabled || !MFactions[MapWin->cOwner].is_alien()
+    || (value = text_open("alienIscript", label)) != 0) {
+        value = text_open(filename, label);
+    }
+    return value;
 }
 
-static int text_open(const char* filename, const char* label) {
+int __cdecl text_open(const char* filename, const char* label) {
     debug("text_open %s / %s\n", filename, label);
     bool is_seeking = false;
     if (filename) {
@@ -127,12 +132,24 @@ static int text_open(const char* filename, const char* label) {
     return false;
 }
 
+void __cdecl text_close() {
+    if (Text.File) {
+        fclose(Text.File);
+        Text.File = NULL;
+    }
+}
+
 static char* text_update() {
     Text.Position = Text.SrcPtr;
     return Text.SrcPtr;
 }
 
-static char* text_get() {
+char* text_buf_ptr() {
+    // TextBufferGetPtr with legacy text_get()
+    return Text.SrcPtr;
+}
+
+char* __cdecl text_get() {
     if (feof(Text.File)) {
         Text.SrcPtr[0] = '\0';
         return NULL;
@@ -147,7 +164,7 @@ static char* text_get() {
     }
 }
 
-static char* text_item() {
+char* __cdecl text_item() {
     char* dst = Text.DstPtr;
     char** src = &Text.Position;
     while (**src != '\0' && **src != ',') {
@@ -163,25 +180,21 @@ static char* text_item() {
     return Text.DstPtr;
 }
 
-static char* text_item_string() {
+char* __cdecl text_item_string() {
     return Strings_put(TextTable, text_item());
 }
 
-static int text_item_number() {
+int __cdecl text_item_number() {
     return stoi(text_item());
 }
 
-static int text_item_binary() {
+int __cdecl text_item_binary() {
     return btoi(text_item());
 }
 
-static int text_get_number(int min_val, int max_val) {
+int __cdecl text_get_number(int min_val, int max_val) {
     text_get();
     return clamp(text_item_number(), min_val, max_val);
-}
-
-char* text_buf_ptr() {
-    return *TextBufferGetPtr; // legacy text_get()
 }
 
 /*
@@ -1375,7 +1388,7 @@ char* __cdecl prefs_get_strcpy(char* dst, const char* src) {
 /*
 Deprecated function. Attempt to read the setting string value from the ini file.
 */
-char* __cdecl prefs_get2(const char* key_name, const char* default_value, int use_default) {
+char* __cdecl prefs_get(const char* key_name, const char* default_value, int use_default) {
     if (use_default || GetPrivateProfileIntA(GameAppName, "Prefs Format", 0, GameIniFile) != 12) {
         snprintf(Text.SrcPtr, 256, "%s", default_value);
     } else {
@@ -1388,7 +1401,7 @@ char* __cdecl prefs_get2(const char* key_name, const char* default_value, int us
 Attempt to read the setting integer value from the ini file. This version removes
 references on Text_update / TextBufferGetPtr because the result is returned as integer.
 */
-int __cdecl prefs_get(const char* key_name, int default_value, int use_default) {
+int __cdecl prefs_get_2(const char* key_name, int default_value, int use_default) {
     if (conf.directdraw >= 0 && !strcmp(key_name, "DirectDraw")) {
         return (conf.directdraw ? 1 : 0);
     }
@@ -1419,7 +1432,7 @@ uint32_t __cdecl default_prefs() {
     if (conf.ignore_reactor_power) {
         base_prefs &= ~PREF_BSC_AUTO_DESIGN_VEH;
     }
-    return prefs_get("Laptop", 0, false) ? base_prefs :
+    return prefs_get_2("Laptop", 0, false) ? base_prefs :
         base_prefs | PREF_AV_SECRET_PROJECT_MOVIES | PREF_AV_SLIDING_WINDOWS | PREF_AV_MAP_ANIMATIONS;
 }
 
@@ -1432,7 +1445,7 @@ uint32_t __cdecl default_prefs2() {
         // Skip possibly redundant upgrade prototype dialogs when new reactor techs are discovered
         base_prefs2 &= ~MPREF_BSC_AUTO_PRUNE_OBS_VEH;
     }
-    return prefs_get("Laptop", 0, false) ? base_prefs2 : base_prefs2 | MPREF_AV_SLIDING_SCROLLBARS;
+    return prefs_get_2("Laptop", 0, false) ? base_prefs2 : base_prefs2 | MPREF_AV_SLIDING_SCROLLBARS;
 }
 
 /*
@@ -1480,11 +1493,11 @@ Load the most common preferences from the game's ini to globals.
 void __cdecl prefs_load(int use_default) {
     char dst[StrBufLen];
     char src[StrBufLen];
-    set_language(prefs_get("Language", 0, false));
-    DefaultPrefs->difficulty = prefs_get("Difficulty", 0, false);
-    DefaultPrefs->map_type = prefs_get("Map Type", 0, false);
-    DefaultPrefs->top_menu = prefs_get("Top Menu", 0, false);
-    DefaultPrefs->faction_id = prefs_get("Faction", 1, false);
+    set_language(prefs_get_2("Language", 0, false));
+    DefaultPrefs->difficulty = prefs_get_2("Difficulty", 0, false);
+    DefaultPrefs->map_type = prefs_get_2("Map Type", 0, false);
+    DefaultPrefs->top_menu = prefs_get_2("Top Menu", 0, false);
+    DefaultPrefs->faction_id = prefs_get_2("Faction", 1, false);
     uint32_t prefs = default_prefs();
     if (DefaultPrefs->difficulty < DIFF_TALENT) {
         prefs |= PREF_BSC_TUTORIAL_MSGS;
@@ -1495,27 +1508,27 @@ void __cdecl prefs_load(int use_default) {
     AlphaIniPrefs->more_preferences = btoi(strtrim(dst));
     prefs_read(dst, StrBufLen, "Semaphore", "00000000", use_default);
     AlphaIniPrefs->semaphore = btoi(strtrim(dst));
-    AlphaIniPrefs->customize = prefs_get("Customize", 0, false);
+    AlphaIniPrefs->customize = prefs_get_2("Customize", 0, false);
     prefs_read(dst, StrBufLen, "Rules", prefs_get_binary(src, default_rules()), use_default);
     AlphaIniPrefs->rules = btoi(strtrim(dst));
     prefs_read(dst, StrBufLen, "Announce", prefs_get_binary(src, default_warn()), use_default);
     AlphaIniPrefs->announce = btoi(strtrim(dst));
     prefs_read(dst, StrBufLen, "Custom World", "2, 1, 1, 1, 1, 1, 1,", use_default);
     opt_list_parse(&AlphaIniPrefs->custom_world[0], dst, 7, 0, 100);
-    AlphaIniPrefs->time_controls = prefs_get("Time Controls", 1, use_default);
+    AlphaIniPrefs->time_controls = prefs_get_2("Time Controls", 1, use_default);
 }
 
 /*
 Write the string value to the pref key of the ini.
 */
-void __cdecl prefs_put2(const char* key_name, const char* value) {
+void __cdecl prefs_put(const char* key_name, const char* value) {
     WritePrivateProfileStringA(GameAppName, key_name, value, GameIniFile);
 }
 
 /*
 Write the value as either an integer or a binary string to the pref key inside the ini.
 */
-void __cdecl prefs_put(const char* key_name, int value, int tgl_binary) {
+void __cdecl prefs_put_2(const char* key_name, int value, int tgl_binary) {
     char buf[LineBufLen] = {};
     if (tgl_binary) {
         prefs_get_binary(buf, value);
@@ -1529,17 +1542,17 @@ void __cdecl prefs_put(const char* key_name, int value, int tgl_binary) {
 Save the most common preferences from memory to the game's ini.
 */
 void __cdecl prefs_save(int save_factions) {
-    prefs_put("Prefs Format", 12, false);
-    prefs_put("Difficulty", DefaultPrefs->difficulty, false);
-    prefs_put("Map Type", DefaultPrefs->map_type, false);
-    prefs_put("Top Menu", DefaultPrefs->top_menu, false);
-    prefs_put("Faction", DefaultPrefs->faction_id, false);
-    prefs_put("Preferences", AlphaIniPrefs->preferences, true);
-    prefs_put("More Preferences", AlphaIniPrefs->more_preferences, true);
-    prefs_put("Semaphore", AlphaIniPrefs->semaphore, true);
-    prefs_put("Announce", AlphaIniPrefs->announce, true);
-    prefs_put("Rules", AlphaIniPrefs->rules, true);
-    prefs_put("Customize", AlphaIniPrefs->customize, false);
+    prefs_put_2("Prefs Format", 12, false);
+    prefs_put_2("Difficulty", DefaultPrefs->difficulty, false);
+    prefs_put_2("Map Type", DefaultPrefs->map_type, false);
+    prefs_put_2("Top Menu", DefaultPrefs->top_menu, false);
+    prefs_put_2("Faction", DefaultPrefs->faction_id, false);
+    prefs_put_2("Preferences", AlphaIniPrefs->preferences, true);
+    prefs_put_2("More Preferences", AlphaIniPrefs->more_preferences, true);
+    prefs_put_2("Semaphore", AlphaIniPrefs->semaphore, true);
+    prefs_put_2("Announce", AlphaIniPrefs->announce, true);
+    prefs_put_2("Rules", AlphaIniPrefs->rules, true);
+    prefs_put_2("Customize", AlphaIniPrefs->customize, false);
     char buf[LineBufLen] = {};
     snprintf(buf, LineBufLen, "%d, %d, %d, %d, %d, %d, %d,",
         AlphaIniPrefs->custom_world[0], // MapSizePlanet
@@ -1550,13 +1563,13 @@ void __cdecl prefs_save(int save_factions) {
         AlphaIniPrefs->custom_world[5], // MapCloudCover
         AlphaIniPrefs->custom_world[6]  // MapNativeLifeForms
     );
-    prefs_put2("Custom World", buf);
-    prefs_put("Time Controls", AlphaIniPrefs->time_controls, false);
+    prefs_put("Custom World", buf);
+    prefs_put_2("Time Controls", AlphaIniPrefs->time_controls, false);
     // Original version checked for ExpansionEnabled but this is not necessary.
     if (save_factions) {
         for (int i = 1; i < MaxPlayerNum; i++) {
             snprintf(buf, LineBufLen, "Faction %d", i);
-            prefs_put2(buf, MFactions[i].filename);
+            prefs_put(buf, MFactions[i].filename);
         }
     }
 }

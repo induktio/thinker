@@ -965,3 +965,17 @@ enum MapwinState {
     MAPWIN_DRAW_SOLID_BORDERS = 0x80000000, // faction borders solid color terrain view
 };
 
+enum TextLabel {
+    TL_MissionYear = 0,
+    TL_Alien = 244,
+    TL_Aliens = 245,
+    TL_Governor = 457,
+    TL_Explore = 521,
+    TL_Discover = 522,
+    TL_Build = 523,
+    TL_Conquer = 524,
+    TL_CustomSize = 1089,
+    TL_Horizontal = 1090,
+    TL_Vertical = 1091,
+};
+

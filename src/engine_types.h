@@ -165,7 +165,7 @@ struct DefaultPref {
 
 struct Label {
     char** labels;
-    int32_t label_count;
+    uint32_t label_count;
 };
 
 struct Landmark {

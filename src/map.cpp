@@ -1644,7 +1644,7 @@ static bool valid_start(int faction_id, int iter, int x, int y) {
     MAP* sq = mapsq(x, y);
     bool aquatic = MFactions[faction_id].is_aquatic();
     // Minimum spawn range is reduced for later spawns to account for less free space
-    int spawn_limit = max((*MapAreaTiles < 1600 || *BaseCount >= 20 ? 5 : 7), 8 - iter/80);
+    int spawn_limit = max((*BaseCount >= 20 ? 4 : 5 + (*MapAreaTiles >= 1600 ? 2 : 0)), 8 - iter/80);
     int native_limit = (goodtiles.size() > 0 ? 3 : 2) + ((int)natives.size() < *MapAreaTiles/80);
 
     if (!sq || !sq->allow_spawn()) { // Select only tiles where bases can be built
@@ -1790,7 +1790,7 @@ static void apply_nutrient_bonus(int faction_id, int* x, int* y) {
         auto t = pick_random(places);
         bool found = false;
         for (auto& p : allpods) {
-            if (wrap(abs(p.x - t.x)) == 1 && abs(p.y - t.y) == 1) {
+            if (x_dist(p.x, t.x) == 1 && abs(p.y - t.y) == 1) {
                 found = true; break;
             }
         }
