@@ -88,14 +88,14 @@ int __cdecl text_open(const char* filename, const char* label) {
         if (!strchr(filename, '.')) {
             snprintf(Text.FileName, 80, "%s.txt", filename);
         } else {
-            snprintf(Text.FileName, 80, filename);
+            snprintf(Text.FileName, 80, "%s", filename);
         }
         text_close();
         Text.File = env_open(Text.FileName, "rt");
         if (!Text.File) {
             return true;
         }
-        snprintf(Text.FilePath, 256, FileFind->last_path);
+        snprintf(Text.FilePath, 256, "%s", FileFind->last_path);
     } else if (Text.File) {
         is_seeking = true;
     } else {
@@ -103,7 +103,7 @@ int __cdecl text_open(const char* filename, const char* label) {
         if (!Text.File) {
             return true;
         }
-        snprintf(Text.FilePath, 256, FileFind->last_path);
+        snprintf(Text.FilePath, 256, "%s", FileFind->last_path);
     }
     if (!label) {
         return false;
@@ -850,77 +850,114 @@ int __cdecl read_factions() {
         }
         strcpy_n(BonusName[i].key, 24, text_item());
     }
-    if (text_open(alpha_file(), conf.smac_only ? "FACTIONS" : "NEWFACTIONS")) {
+    faction_pool.clear();
+    if (text_open(alpha_file(), "FACTIONS")) {
         return true;
     }
     for (int i = 1; i < MaxPlayerNum; i++) {
         text_get();
-        strcpy_n(MFactions[i].filename, 24, text_item());
-        strcpy_n(MFactions[i].search_key, 24, text_item());
+        char* fn = text_item();
+        char* sk = text_item();
+        faction_pool.push_back({fn, sk});
+        if (conf.smac_only) {
+            strcpy_n(MFactions[i].filename, 24, fn);
+            strcpy_n(MFactions[i].search_key, 24, sk);
+        }
+    }
+    if (text_open(alpha_file(), "NEWFACTIONS")) {
+        return true;
+    }
+    for (int i = 1; i < MaxPlayerNum; i++) {
+        text_get();
+        char* fn = text_item();
+        char* sk = text_item();
+        faction_pool.push_back({fn, sk});
+        if (!conf.smac_only) {
+            strcpy_n(MFactions[i].filename, 24, fn);
+            strcpy_n(MFactions[i].search_key, 24, sk);
+        }
     }
     // Previously SMACX only: override any values parsed from alphax.txt #NEWFACTIONS if set in ini.
     // Original version checked for ExpansionEnabled but this is not
     // necessary because smac_only allows changing active faction lists.
     prefs_fac_load();
-    conf.faction_file_count = 14;
-    if (!text_open(alpha_file(), "CUSTOMFACTIONS")) { // get count of custom factions
+    if (!text_open(alpha_file(), "CUSTOMFACTIONS")) {
         text_get();
-        for (char* custom = text_item(); *custom; custom = text_item()) {
-            conf.faction_file_count++;
+        char* fn = text_item();
+        char* sk = text_item();
+        while (*fn && *sk) {
+            faction_pool.push_back({fn, sk});
             text_get();
+            fn = text_item();
+            sk = text_item();
         }
     }
+    conf.faction_file_count = faction_pool.size();
     debug("read_factions count: %d\n", conf.faction_file_count);
+    if (!faction_pool.size()) {
+        return true;
+    }
     for (int i = 1; i < MaxPlayerNum; i++) { // Skip MFactions[0] used for native units
         if (!strcmp(MFactions[i].filename, "JENN282")) {
-            int choice;
-            do {
-                int rand_val = 0;
-                for (int j = 0; j < 1000; j++) {
-                    rand_val = random(conf.faction_file_count);
-                    if ((1 << rand_val) & ~conf.skip_random_factions) {
-                        break;
-                    }
-                }
-                const char* label;
-                if (rand_val < 7) {
-                    label = "FACTIONS";
-                    choice = rand_val;
-                } else if (rand_val < 14) {
-                    label = "NEWFACTIONS";
-                    choice = rand_val - 7;
-                } else {
-                    label = "CUSTOMFACTIONS";
-                    choice = rand_val - 14;
-                }
-                if (text_open(alpha_file(), label)) {
-                    return true;
-                }
-                for (int j = choice; j >= 0; j--) {
-                    text_get();
-                }
-                // Original version copied filename twice?
-                // This is most likely redundant debug feature that was left in the game
-                strcpy_n(MFactions[i].filename, 24, text_item());
-                strcpy_n(MFactions[i].search_key, 24, text_item());
-                for (int k = 1; k < MaxPlayerNum; k++) {
-                    if (i != k && !strcmp(MFactions[i].filename, MFactions[k].filename)) {
-                        choice = -1;
-                        break;
-                    }
-                }
-                if (choice >= 0) {
-                    read_faction(&MFactions[i], 0);
-                    load_faction_art(i);
-                }
-            } while (choice < 0);
-        } else {
-            read_faction(&MFactions[i], 0);
-            load_faction_art(i);
+            size_t pick = pick_random_faction(i);
+            assert(pick < faction_pool.size());
+            // search_key is most likely redundant debug feature that was left in the game
+            strcpy_n(MFactions[i].filename, 24, faction_pool[pick].first.c_str());
+            strcpy_n(MFactions[i].search_key, 24, faction_pool[pick].second.c_str());
         }
+        read_faction(&MFactions[i], 0);
+        load_faction_art(i);
     }
     text_close(); // Make sure file handle is closed
     return false;
+}
+
+size_t pick_random_faction(int faction_id) {
+    uint32_t used = 0;
+    int num = 0;
+    for (int i = 1; i < MaxPlayerNum; i++) {
+        if (faction_id != i) {
+            if (!strcmp(MFactions[i].filename, "JENN282")) {
+                ++num;
+            } else {
+                for (size_t n = 0; n < faction_pool.size(); n++) {
+                    if (!strcmp(MFactions[i].filename, faction_pool[n].first.c_str())) {
+                        used |= (1 << n);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    size_t pick;
+    for (int i = 0; i < 1000; i++) {
+        pick = random(faction_pool.size());
+        if (!(conf.skip_random_factions & (1 << pick)) && !(used & (1 << pick))) {
+            bool valid = true;
+            for (auto& p : faction_pair) {
+                bool a = used & (1 << p.first);
+                bool b = used & (1 << p.second);
+                if (max(p.first, p.second) >= faction_pool.size()
+                || (conf.skip_random_factions & (1 << p.first))
+                || (conf.skip_random_factions & (1 << p.second))) {
+                    continue;
+                }
+                if (num == 0 && !a && !b && (pick == p.first || pick == p.second)) {
+                    valid = false; break;
+                }
+                if (a && !b) {
+                    pick = p.second; break;
+                }
+                if (!a && b) {
+                    pick = p.first; break;
+                }
+            }
+            if (valid) {
+                break;
+            }
+        }
+    }
+    return pick;
 }
 
 /*

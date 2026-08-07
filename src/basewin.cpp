@@ -449,8 +449,8 @@ int __thiscall BaseWin_gov_options(BaseWindow* This, int flag) {
     base_compute(1);
     if (*MultiplayerActive && !*ControlTurnC
     && worked_tiles != base->worked_tiles
-    && !NetDaemon_lock_base(NetState, *CurrentBaseID, 0, -1, -1)) {
-        NetDaemon_unlock_base(NetState, *CurrentBaseID);
+    && !NetDaemon_lock_base(NetState, base_id, 0, -1, -1)) {
+        NetDaemon_unlock_base(NetState, base_id);
     }
     if (base->faction_id != MapWin->cOwner && !(*GameState & STATE_OMNISCIENT_VIEW)) {
         return 1;

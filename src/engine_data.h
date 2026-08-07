@@ -22,8 +22,7 @@ struct GamePrefs {
     int32_t CurrentTurn;
     int32_t CurrentMissionYear;
     int32_t CurrentVehID;
-    int32_t dword_9A64E0;
-    int32_t dword_9A64E4;
+    int32_t GameTimeControl[2];
     uint8_t FactionStatus[4];
     int32_t FactionRankings[8];
     int32_t RankingFactionIDUnk1;

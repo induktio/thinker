@@ -6,6 +6,9 @@ Thinker command line options
     -native     Start game in fullscreen mode using the native desktop resolution.
     -screen     Start game in fullscreen mode using the resolution set in mod config.
     -windowed   Start game in borderless windowed mode using the resolution set in mod config.
+    <savefile>  Paths to .SAV savefiles can be entered in the command line and the main menu
+                will be skipped and the save is loaded directly. Paths containing spaces should be
+                entered in escaped quotes \"\" to be properly parsed.
 
 
 Thinker keyboard shortcuts

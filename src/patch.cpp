@@ -24,17 +24,6 @@ int __thiscall NetWin_random_get(void*, int low, int high) {
     return val;
 }
 
-int __cdecl config_game_rand() {
-    int val = 0; // Singleplayer random factions
-    for (int i = 0; i < 1000; i++) {
-        val = random(conf.faction_file_count);
-        if (!((1 << val) & conf.skip_random_factions)) {
-            break;
-        }
-    }
-    return val;
-}
-
 int __cdecl skip_action_destroy(int id) {
     veh_skip(id);
     *VehAttackFlags = 0;
@@ -544,6 +533,9 @@ bool patch_setup(Config* cf) {
     write_jump(0x586F30, (int)read_factions);
     write_jump(0x587240, (int)read_units);
     write_jump(0x5873C0, (int)read_rules);
+    write_jump(0x58F2F0, (int)game_init);
+    write_jump(0x58F430, (int)game_close);
+    write_jump(0x58F450, (int)game_reload);
     write_jump(0x590E90, (int)map_shutdown);
     write_jump(0x590ED0, (int)map_init);
     write_jump(0x591040, (int)map_wipe);
@@ -575,6 +567,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x59F120, (int)probe);
     write_jump(0x5AC060, (int)is_objective);
     write_jump(0x5ADE80, (int)replay_base);
+    write_jump(0x5B0A30, (int)scenario_setup);
     write_jump(0x5B4210, (int)social_calc);
     write_jump(0x5B44D0, (int)social_upkeep);
     write_jump(0x5B4550, (int)social_upheaval);
@@ -632,6 +625,7 @@ bool patch_setup(Config* cf) {
     write_call(0x5ABFE2, (int)mod_save_daemon); // auto_undo
     write_call(0x5ADC76, (int)mod_save_daemon); // show_replay
 
+    write_call(0x45FB00, (int)control_game); // WinMain
     write_call(0x52AC4A, (int)top_menu); // control_game
     write_call(0x58DBA5, (int)top_menu); // multiplayer_init
     write_call(0x58E768, (int)map_menu); // top_menu
@@ -1150,12 +1144,6 @@ bool patch_setup(Config* cf) {
         write_call(0x48B91F, (int)mod_calc_dim);
         write_call(0x48BA15, (int)mod_calc_dim);
     }
-    if (cf->skip_random_factions) {
-        memset((void*)0x58B63C, 0x90, 10); // config_game
-        short_jump(0x58B524); // config_game
-        write_call(0x58B632, (int)config_game_rand); // config_game
-        write_call(0x587066, (int)config_game_rand); // read_factions
-    }
     if (cf->autosave_interval > 0) {
         write_jump(0x5ABD20, (int)mod_auto_save);
     }
@@ -1459,10 +1447,6 @@ bool patch_setup(Config* cf) {
         write_offset(0x403BA8, MovlistFile);
         write_offset(0x4BEF8D, MovlistFile);
         write_offset(0x52AB68, OpeningFile);
-        // Enable custom faction selection during the game setup / config_game
-        memset((void*)0x58A5E1, 0x90, 6);
-        memset((void*)0x58B76F, 0x90, 2);
-        memset((void*)0x58B9F3, 0x90, 2);
     }
     if (cf->counter_espionage) {
         // Check for probe renew flag when choosing the menu entries
@@ -1485,14 +1469,6 @@ bool patch_setup(Config* cf) {
     }
     if (!cf->alien_guaranteed_techs) {
         short_jump(0x5B29F8); // setup_player
-    }
-    if (cf->alien_early_start) { // config_game > alien_start
-        const byte old_bytes[] = {0x75,0x1A};
-        const byte new_bytes[] = {0x90,0x90};
-        write_bytes(0x589081, old_bytes, new_bytes, sizeof(new_bytes));
-    }
-    if (cf->cult_early_start) { // config_game > alien_start
-        long_jump(0x589097);
     }
     if (cf->alien_early_start || cf->cult_early_start) { // crash_landing
         // Use default starting year instead of advancing by 5 turns
@@ -1640,6 +1616,14 @@ bool patch_setup(Config* cf) {
         const byte old_bytes[] = {0x46};
         const byte new_bytes[] = {0x90};
         write_bytes(0x4E7604, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+    if (cf->alien_early_start) { // config_game > alien_start
+        const byte old_bytes[] = {0x75,0x1A};
+        const byte new_bytes[] = {0x90,0x90};
+        write_bytes(0x589081, old_bytes, new_bytes, sizeof(new_bytes));
+    }
+    if (cf->cult_early_start) { // config_game > alien_start
+        long_jump(0x589097);
     }
     if (cf->faction_placement) {
         const byte asm_find_start[] = {

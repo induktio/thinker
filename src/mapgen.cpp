@@ -1349,14 +1349,12 @@ static void mod_world_fungus(FastNoiseLite& noise) {
 }
 
 void __cdecl mod_world_build() {
-    static uint32_t seed = random_state();
     if (!conf.new_world_builder) {
         ThinkerVars->map_random_value = 0;
         world_build();
         return;
     }
-    seed += pair_hash(seed, GetTickCount());
-    world_generate(seed);
+    world_generate(next_rand());
 }
 
 void console_world_generate(uint32_t seed) {

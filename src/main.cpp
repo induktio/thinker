@@ -7,6 +7,9 @@ Config conf;
 AIPlans plans[MaxPlayerNum];
 set_str_t movedlabels;
 map_str_t musiclabels;
+std::string startup_load_path = "";
+std::vector<std::pair<std::string,std::string>> faction_pool;
+std::vector<std::pair<size_t,size_t>> faction_pair;
 
 
 int option_handler(void* user, const char* section, const char* name, const char* value) {
@@ -368,9 +371,23 @@ int option_handler(void* user, const char* section, const char* name, const char
                 }
             }
         }
+    } else if (MATCH("faction_pair")) {
+        char *p, *s;
+        int k, v;
+        if ((p = strtok_r(buf, ",", &s)) != NULL) {
+            k = atoi(p);
+            if ((p = strtok_r(NULL, ",", &s)) != NULL) {
+                v = atoi(p);
+                if (k > 0 && v > 0) {
+                    debug("faction_pair %d %d\n", k-1, v-1);
+                    faction_pair.push_back({k-1, v-1});
+                }
+            }
+        }
     } else {
         return opt_handle_error(section, name);
     }
+    #undef MATCH
     return 1;
 }
 
@@ -400,6 +417,17 @@ int opt_list_parse(int32_t* dst, char* src, int num, int min_val, int max_val) {
     return 0;
 }
 
+static bool is_save_file(const std::string& path) {
+    if (path.length() < 4) {
+        return false;
+    }
+    std::string lower = path;
+    for (auto& c : lower) {
+        c = towlower(c);
+    }
+    return lower.find(".sav") != std::wstring::npos;
+}
+
 int cmd_parse(Config* cf) {
     int argc;
     LPWSTR* argv;
@@ -408,6 +436,11 @@ int cmd_parse(Config* cf) {
         return 0;
     }
     for (int i = 1; i < argc; i++) {
+        char buf[MAX_PATH] = {};
+        if (!WideCharToMultiByte(CP_ACP, 0, argv[i], -1, buf, sizeof(buf), NULL, NULL)) {
+            continue;
+        }
+        debug("cmd_parse %d %d %s\n", i, strlen(buf), buf);
         if (wcscmp(argv[i], L"-smac") == 0) {
             cf->smac_only = 1;
         } else if (wcscmp(argv[i], L"-native") == 0) {
@@ -416,6 +449,10 @@ int cmd_parse(Config* cf) {
             cf->video_mode = VM_Custom;
         } else if (wcscmp(argv[i], L"-windowed") == 0) {
             cf->video_mode = VM_Window;
+        } else if (strlen(buf)) {
+            if (is_save_file(buf) && FileExists(buf)) {
+                startup_load_path = buf;
+            }
         }
     }
     LocalFree(argv);
@@ -423,7 +460,8 @@ int cmd_parse(Config* cf) {
 }
 
 bool FileExists(const char* path) {
-    return GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES;
+    DWORD attrs = GetFileAttributesA(path);
+    return (attrs != INVALID_FILE_ATTRIBUTES) && !(attrs & FILE_ATTRIBUTE_DIRECTORY);
 }
 
 void exit_fail(int32_t addr) {
@@ -444,7 +482,6 @@ DLL_EXPORT DWORD ThinkerModule() {
 }
 
 DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LPVOID UNUSED(lpvReserved)) {
-    size_t seed;
     switch (fdwReason) {
         case DLL_PROCESS_ATTACH:
             if (DEBUG && !(debug_log = fopen("debug.txt", "w"))) {
@@ -470,10 +507,7 @@ DLL_EXPORT BOOL APIENTRY DllMain(HINSTANCE UNUSED(hinstDLL), DWORD fdwReason, LP
             }
             *EngineVersion = MOD_VERSION;
             *EngineDate = MOD_DATE;
-            seed = GetTickCount();
-            random_reseed(seed);
-            map_rand.reseed(seed ^ 0xffff);
-            debug("random_reseed %u\n", seed);
+            setup_random();
             flushlog();
             break;
 

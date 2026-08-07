@@ -99,8 +99,7 @@
 #endif
 #endif
 
-const bool DEF = true;
-const bool ATT = false;
+const int8_t NetVersion = 14; // Network multiplayer
 
 enum VideoMode {
     VM_Native = 0,
@@ -369,11 +368,17 @@ struct AIPlans {
 #include "test.h"
 #include "debug.h"
 
+const bool DEF = true;
+const bool ATT = false;
+
 extern FILE* debug_log;
 extern Config conf;
 extern AIPlans plans[MaxPlayerNum];
 extern set_str_t movedlabels;
 extern map_str_t musiclabels;
+extern std::string startup_load_path;
+extern std::vector<std::pair<std::string,std::string>> faction_pool;
+extern std::vector<std::pair<size_t,size_t>> faction_pair;
 
 DLL_EXPORT DWORD ThinkerModule();
 bool FileExists(const char* path);

@@ -4,9 +4,11 @@
 
 uint32_t game_rand_state();
 int32_t game_randv(int32_t value);
+void setup_random();
 void random_reseed(uint32_t value);
-uint32_t pair_hash(uint32_t a, uint32_t b);
 uint32_t random_state();
+uint32_t next_rand();
+uint32_t pair_hash(uint32_t a, uint32_t b);
 int32_t random(int32_t limit);
 int32_t random_get(int32_t low, int32_t high);
 

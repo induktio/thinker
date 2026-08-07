@@ -20,6 +20,7 @@ int prod_count(int item_id, int faction_id, int base_skip_id);
 bool is_human(int faction_id);
 bool is_alien(int faction_id);
 bool is_alive(int faction_id);
+void set_human(int faction_id, bool active);
 void set_alive(int faction_id, bool active);
 bool thinker_enabled(int faction_id);
 bool thinker_move_upkeep(int faction_id);

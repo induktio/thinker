@@ -127,6 +127,15 @@ bool is_alive(int faction_id) {
     return FactionStatus[1] & (1 << faction_id);
 }
 
+void set_human(int faction_id, bool active) {
+    assert(faction_id >= 0);
+    if (active) {
+        FactionStatus[0] |= (1 << faction_id);
+    } else {
+        FactionStatus[0] &= ~(1 << faction_id);
+    }
+}
+
 void set_alive(int faction_id, bool active) {
     assert(faction_id >= 0);
     if (active) {
