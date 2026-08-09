@@ -13,13 +13,6 @@ int* const dword_6FF6A4 = (int*)0x6FF6A4;
 int* const dword_6FF6A8 = (int*)0x6FF6A8;
 int* const dword_6FF6D4 = (int*)0x6FF6D4;
 int* const dword_6FF6F4 = (int*)0x6FF6F4;
-int* const dword_703DE8 = (int*)0x703DE8;
-int* const dword_703DEC = (int*)0x703DEC;
-int* const dword_703E0C = (int*)0x703E0C;
-int* const dword_7388D8 = (int*)0x7388D8;
-int* const dword_93A9AC = (int*)0x93A9AC;
-int* const dword_93A9B0 = (int*)0x93A9B0;
-int* const dword_93A9B4 = (int*)0x93A9B4;
 int* const dword_93A9B8 = (int*)0x93A9B8;
 int* const dword_93A9D8 = (int*)0x93A9D8;
 int* const dword_93F798 = (int*)0x93F798;
@@ -447,16 +440,16 @@ int __cdecl game_data(FILE* fp, int write_file) {
         return 1;
     }
     if (*GameMoreRules & MRULES_UNK_20) {
-        if (!file_feed(dword_7388D8, 0x2400u, 1u, fp)) {
+        if (!file_feed(DiploStateC, 0x2400u, 1u, fp)) {
             return 1;
         }
         if (!file_feed(DiploStateB, 0x100u, 1u, fp)) {
             return 1;
         }
-        if (!file_feed(dword_93A96C, 0x20u, 1u, fp)) {
+        if (!file_feed(FactionCombatWin, 0x20u, 1u, fp)) {
             return 1;
         }
-        if (!file_feed(dword_93A98C, 0x20u, 1u, fp)) {
+        if (!file_feed(FactionCombatLoss, 0x20u, 1u, fp)) {
             return 1;
         }
         char sbuf[StrBufLen];
@@ -541,9 +534,9 @@ int __cdecl game_data(FILE* fp, int write_file) {
         if (!file_feed(dword_6FF6A8, 4u, 1u, fp)) return 1;
         if (!file_feed(dword_6FF6D4, 0x20u, 1u, fp)) return 1;
         if (!file_feed(dword_6FF6F4, 0x20u, 1u, fp)) return 1;
-        if (!file_feed(dword_703DE8, 4u, 1u, fp)) return 1;
-        if (!file_feed(dword_703DEC, 0x20u, 1u, fp)) return 1;
-        if (!file_feed(dword_703E0C, 0x20u, 1u, fp)) return 1;
+        if (!file_feed(CouncilSessionPending, 4u, 1u, fp)) return 1;
+        if (!file_feed(CouncilProposal, 0x20u, 1u, fp)) return 1;
+        if (!file_feed(CouncilVoteState, 0x20u, 1u, fp)) return 1;
         if (!file_feed(dword_93A9AC, 4u, 1u, fp)) return 1;
         if (!file_feed(dword_93A9B0, 4u, 1u, fp)) return 1;
         if (!file_feed(dword_93A9B4, 4u, 1u, fp)) return 1;

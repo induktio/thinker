@@ -355,12 +355,12 @@ int find_project(int base_id, WItem& Wgov) {
     int projs = 0;
     int nukes = 0;
     int works = 0;
-    int diplo = 0;
     int unit_id = (gov & GOV_MAY_PROD_AIR_COMBAT ? find_missile(base_id) : -1);
     int nuke_limit = 0;
     int nuke_score = 0;
     int built_nukes = 0;
     int enemy_nukes = 0;
+    uint32_t status = 0;
     bool defense = 0;
 
     if (unit_id >= 0 && bases >= 8) {
@@ -376,22 +376,22 @@ int find_project(int base_id, WItem& Wgov) {
         }
         for (int i = 1; i < MaxPlayerNum; i++) {
             if (faction_id != i && is_alive(i) && !has_pact(faction_id, i)) {
-                diplo |= f->diplo_status[i];
+                status |= f->diplo_status[i];
                 if (4*faction_might(i) > faction_might(faction_id)
                 && has_tech(Facility[FAC_ORBITAL_DEFENSE_POD].preq_tech, i)) {
                     defense = true;
                 }
             }
         }
-        bool atrocity = !un_charter() || (diplo & DIPLO_MAJOR_ATROCITY_VICTIM);
+        bool atrocity = !un_charter() || (status & DIPLO_MAJOR_ATROCITY_VICTIM);
         nuke_score = (atrocity ? (defense ? 4 : 8) : (f->AI_fight > 0 ? 0 : -2))
             + 2*f->AI_power + 2*f->AI_fight
             + (f->player_flags & PFLAG_COMMIT_ATROCITIES_WANTONLY ? 2 : 0)
             + (plans[faction_id].defense_modifier > 2 ? 2 : 0)
             + clamp(enemy_nukes - f->satellites_ODP, -4, 4)
-            + (diplo & DIPLO_MAJOR_ATROCITY_VICTIM ? 4 : 0)
-            + (diplo & DIPLO_ATROCITY_VICTIM ? 4 : 0)
-            + (diplo & DIPLO_WANT_REVENGE ? 4 : 0)
+            + (status & DIPLO_MAJOR_ATROCITY_VICTIM ? 4 : 0)
+            + (status & DIPLO_ATROCITY_VICTIM ? 4 : 0)
+            + (status & DIPLO_WANT_REVENGE ? 4 : 0)
             + min(4, base->mineral_surplus / 20);
         if (nuke_score > 5) {
             nuke_limit = clamp(clamp((f->AI_fight > 0) + nuke_score/8 + bases/20, 1, 3)

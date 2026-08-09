@@ -2234,9 +2234,9 @@ bool allow_scout(int faction_id, MAP* sq) {
 }
 
 bool allow_probe(int faction1, int faction2, bool is_enhanced) {
-    uint32_t diplo = Factions[faction1].diplo_status[faction2];
+    uint32_t status = Factions[faction1].diplo_status[faction2];
     if (faction1 >= 0 && faction2 >= 0 && faction1 != faction2) {
-        if (!(diplo & DIPLO_COMMLINK)) {
+        if (!(status & DIPLO_COMMLINK)) {
             return true;
         }
         if (!is_enhanced && has_project(FAC_HUNTER_SEEKER_ALGORITHM, faction2)) {
@@ -2245,9 +2245,9 @@ bool allow_probe(int faction1, int faction2, bool is_enhanced) {
         if (at_war(faction1, faction2)) {
             return true;
         }
-        if (!(diplo & DIPLO_PACT)) {
+        if (!(status & DIPLO_PACT)) {
             int value = 0;
-            if (diplo & DIPLO_TREATY)
+            if (status & DIPLO_TREATY)
                 value -= (Factions[faction1].AI_fight < 0 ? 2 : 1);
             if (plans[faction1].mil_strength*2 < plans[faction2].mil_strength)
                 value--;
@@ -2735,10 +2735,10 @@ int nuclear_move(const int id) {
     }
     for (int i = 0; i < MaxPlayerNum; i++) {
         Faction* tgt = &Factions[i];
-        uint32_t diplo = plr->diplo_status[i];
+        uint32_t status = plr->diplo_status[i];
         if (faction_id != i && is_alive(i) && tgt->base_count && at_war(faction_id, i)
         && built_nukes > tgt->satellites_ODP - tgt->ODP_deployed
-        && (!is_human(faction_id) || !un_charter() || diplo & DIPLO_MAJOR_ATROCITY_VICTIM)) {
+        && (!is_human(faction_id) || !un_charter() || status & DIPLO_MAJOR_ATROCITY_VICTIM)) {
             int base_val = 0;
             for (BASE *base = Bases, *cnt = Bases + *BaseCount; base < cnt; ++base) {
                 base_val += (base->faction_id == i && base->faction_id_former == faction_id);
@@ -2755,9 +2755,9 @@ int nuclear_move(const int id) {
                 + (base_val > 0 || !tgt->satellites_ODP ? 0 : -4)
                 + clamp((tgt->pop_total - plr->pop_total)/32, -4, 4)
                 + clamp((tgt->base_count - plr->base_count)/8, -4, 4)
-                + (diplo & DIPLO_MAJOR_ATROCITY_VICTIM ? 12 : 0)
-                + (diplo & DIPLO_ATROCITY_VICTIM ? 8 : 0)
-                + (diplo & DIPLO_WANT_REVENGE ? 4 : 0)
+                + (status & DIPLO_MAJOR_ATROCITY_VICTIM ? 12 : 0)
+                + (status & DIPLO_ATROCITY_VICTIM ? 8 : 0)
+                + (status & DIPLO_WANT_REVENGE ? 4 : 0)
                 + (tgt->corner_market_active() ? 8 : 0);
             debug("nuclear_values %d %d %d score: %d\n", *CurrentTurn, faction_id, i, score);
             if (score > 20) {
@@ -2786,16 +2786,16 @@ int nuclear_move(const int id) {
             && !airbases.count({base->x, base->y})
             && min_range(airbases, base->x, base->y) <= max_range
             && !ally_near_tile(base->x, base->y, faction_id, id, radius)) {
-                uint32_t diplo = plr->diplo_status[base->faction_id];
+                uint32_t status = plr->diplo_status[base->faction_id];
                 bool economic = Factions[base->faction_id].corner_market_active();
                 int score = base->pop_size
                     + clamp(mapdata[{base->x, base->y}].enemy_near, 0, 60)
                     - clamp(map_range(veh, base) - max_dist, 0, 60)
                     + (faction_id == base->faction_id_former ? -16 : 0)
                     + (is_ocean(base) ? -16 : 0)
-                    + (diplo & DIPLO_MAJOR_ATROCITY_VICTIM ? 40 : 0)
-                    + (diplo & DIPLO_ATROCITY_VICTIM ? 20 : 0)
-                    + (diplo & DIPLO_WANT_REVENGE ? 20 : 0)
+                    + (status & DIPLO_MAJOR_ATROCITY_VICTIM ? 40 : 0)
+                    + (status & DIPLO_ATROCITY_VICTIM ? 20 : 0)
+                    + (status & DIPLO_WANT_REVENGE ? 20 : 0)
                     + (has_fac_built(FAC_HEADQUARTERS, i) ? (economic ? 200 : 16) : 0)
                     + (has_fac_built(FAC_FLECHETTE_DEFENSE_SYS, i) ? -16 : 0)
                     + (is_alien(base->faction_id)

@@ -1,10 +1,335 @@
 
 #include "gameturn.h"
 
+fp_1int sub_51E530 = (fp_1int)0x51E530;
+
+int* const dword_7AE778 = (int*)0x7AE778;
+int* const dword_7D392C = (int*)0x7D392C;
+int* const dword_78D7F8 = (int*)0x78D7F8;
+int* const dword_78D870 = (int*)0x78D870;
+int* const dword_7AD34C = (int*)0x7AD34C;
+int* const dword_93A940 = (int*)0x93A940;
+int* const dword_93A9B8 = (int*)0x93A9B8;
+int* const dword_93A9D8 = (int*)0x93A9D8;
+char* const unk_93AA04 = (char*)0x93AA04;
+char* const unk_93AA08 = (char*)0x93AA08;
 
 static bool territory_avail(int faction_id, int x, int y) {
     int owner = whose_territory(faction_id, x, y, 0, 0);
     return owner < 0 || owner == faction_id;
+}
+
+void __cdecl control_turn() {
+    int current_id = 0;
+    int load_iter = 0;
+    int skip_human_turn = 0;
+    RECT rc;
+    Popup cur_popup;
+    Popup_ctor(&cur_popup);
+    auto guard = cleanup_handler([&] { Popup_dtor(&cur_popup); });
+    if (!*CurrentTurn && !*ControlTurnMove && is_human(MapWin->cOwner) && !*PbemActive) {
+        crash_landing(MapWin->cOwner);
+    }
+    if (!*PbemActive) {
+        draw_map(1);
+    }
+    *dword_93A940 = 1;
+    if (*ControlTurnMove && !is_human(MapWin->cOwner)) {
+        Console_human_turn(MapWin);
+    }
+    bool run_upkeep = true;
+    while (1) {
+        debug("control_turn %d %d %d\n", *CurrentTurn, current_id, MapWin->cOwner);
+        if (run_upkeep) {
+            if (!*PbemActive) {
+                MessageWin_clear(MessageWin);
+            }
+            if (*ControlTurnMove) {
+                rankings(1);
+            } else {
+                *ControlTurnC = 1;
+                turn_upkeep();
+                if (end_of_game(1)) {
+                    return;
+                }
+            }
+            run_upkeep = false;
+        }
+        if (is_alive(current_id) && current_id >= *ControlTurnMove) {
+            *CurrentFaction = current_id;
+            if (is_human(current_id)
+            && (current_id != MapWin->cOwner || (*GameMoreRules & MRULES_UNK_20) || *PbemActive)) {
+                parse_says(0, unk_93AA04, -1, -1);
+                parse_says(1, get_title(current_id), -1, -1);
+                parse_says(2, get_name(current_id), -1, -1);
+                parse_says(3, get_noun(current_id), -1, -1);
+                parse_num(0, *CurrentMissionYear);
+                MapWin->cOwner = current_id;
+                if (dword_7AE778[*dword_7D392C] == 10) {
+                    BattleWin_stop_timer(BattleWin);
+                    SubInterface_release_iface_mode(BattleWin);
+                }
+                stop_timers();
+                BaseWin_exit(BaseWin);
+                AlphaMenu_hide(&MapWin->oMainMenu);
+                MultiWin_hide(MultiWin);
+                Win_hide((GraphicWin*)((char*)&MessageWin->listBox + *(int32_t*)(MessageWin->listBox.field_0 + 4)));
+                Win_hide(&MainInfc->stringBox);
+                WorldWin_hide_all(WorldWin);
+                memcpy(&rc, &MainInfc->field_CDC, sizeof(RECT));
+                Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D870);
+                rc.left += 3;
+                rc.bottom -= 3;
+                rc.top += 3;
+                rc.right -= 3;
+                Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D7F8);
+                memcpy(&rc, &MainInfc->field_CCC, sizeof(RECT));
+                Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D870);
+                rc.left += 3;
+                rc.bottom -= 3;
+                rc.top += 3;
+                rc.right -= 3;
+                Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D7F8);
+                memcpy(&rc, &MainInfc->field_CEC, sizeof(RECT));
+                Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D870);
+                rc.left += 3;
+                rc.bottom -= 3;
+                rc.top += 3;
+                rc.right -= 3;
+                Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D7F8);
+                memcpy(&rc, &MainInfc->field_CFC, sizeof(RECT));
+                Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D870);
+                rc.left += 3;
+                rc.bottom -= 3;
+                rc.top += 3;
+                rc.right -= 3;
+                Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D7F8);
+                memcpy(&rc, &MainInfc->field_D1C, sizeof(RECT));
+                Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D870);
+                rc.left += 3;
+                rc.right -= 3;
+                rc.top += 3;
+                rc.bottom -= 3;
+                Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D7F8);
+                memcpy(&rc, &MainInfc->field_D0C, sizeof(RECT));
+                Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D7F8);
+                GraphicWin_update_3(MainInfc, 0);
+                *dword_7AD34C = 1;
+                GraphicWin_fill(&MapWin->oWinBuffed, 0);
+                Win_show(&MapWin->oWinBuffed, 0);
+                do_all_draws();
+                StringBox_clear(&MainInfc->stringBox);
+                while (1) {
+                    bool popup_skip = false;
+                    while (1) {
+                        const char* label = Factions[current_id].unk_102 ? "SWITCHING2" : "SWITCHING";
+                        Popup_start(&cur_popup, PopupScriptFile, label, -1, 0, 0x800004, 0);
+                        if (BasePop_exec_3(&cur_popup, 0, 0) < 0) {
+                            popup_skip = true;
+                            break;
+                        }
+                        if (!cur_popup.field_3100) {
+                            break;
+                        }
+                        *GameMoreRules |= MRULES_UNK_40;
+                        if (!save_game(0)) {
+                            *ControlTurnA = 1;
+                            *ControlTurnB = 0;
+                            Win_hide((GraphicWin*)((char*)MapWin + *((int32_t*)MapWin->vtable + 1)));
+                            return;
+                        }
+                        *GameMoreRules &= ~MRULES_UNK_40;
+                        if (*ControlTurnA) {
+                            return;
+                        }
+                    }
+                    if (!popup_skip) {
+                        int chk = checksum_password(ParseStrBuffer[0].str);
+                        if (chk == Factions[current_id].unk_102) {
+                            break;
+                        }
+                        if (!Factions[current_id].unk_102) {
+                            if (!X_pop_ask("VERIFYPASSWORD", 80, unk_93AA08, 0, 0x800000)
+                            && chk == checksum_password(ParseStrBuffer[0].str)) {
+                                Factions[current_id].unk_102 = chk;
+                                break;
+                            }
+                        } else if (++load_iter >= 3) {
+                            *GameMoreRules |= MRULES_UNK_40;
+                            save_game(0);
+                            Win_hide((GraphicWin*)((char*)MapWin + *((int32_t*)MapWin->vtable + 1)));
+                            *ControlTurnA = 1;
+                            *ControlTurnB = 0;
+                            return;
+                        }
+                    }
+                    if (*ControlTurnA) {
+                        return;
+                    }
+                }
+                if (*ControlTurnA) {
+                    return;
+                }
+                int base_id = 0;
+                for (; base_id < *BaseCount; base_id++) {
+                    if (Bases[base_id].faction_id == MapWin->cOwner) {
+                        MapWin_set_center(MapWin, Bases[base_id].x, Bases[base_id].y, 1);
+                        Console_set_cursor(MapWin, Bases[base_id].x, Bases[base_id].y);
+                        break;
+                    }
+                }
+                if (base_id >= *BaseCount) {
+                    for (int veh_id = 0; veh_id < *VehCount; veh_id++) {
+                        if (Vehs[veh_id].faction_id == MapWin->cOwner) {
+                            MapWin_set_center(MapWin, Vehs[veh_id].x, Vehs[veh_id].y, 1);
+                            Console_set_cursor(MapWin, Vehs[veh_id].x, Vehs[veh_id].y);
+                            break;
+                        }
+                    }
+                }
+                *dword_7AD34C = 0;
+                Win_hide(&MapWin->oWinBuffed);
+                StatusWin_on_redraw(StatusWin);
+                GameDrawState[0] |= 4u;
+                WorldWin_show_all(WorldWin);
+                GraphicWin_redraw(WorldWin);
+                Win_show(&MainInfc->stringBox, 0);
+                MessageWin_clear(MessageWin);
+                if (FactionCombatWin[MapWin->cOwner] || FactionCombatLoss[MapWin->cOwner]) {
+                    parse_num(0, FactionCombatWin[MapWin->cOwner]);
+                    parse_num(1, FactionCombatLoss[MapWin->cOwner]);
+                    popp(ScriptFile, "WONLOST", 0, "bad_sm.pcx", 0);
+                }
+                if (sub_51E530(MapWin->cOwner)) {
+                    ButtonGroup_set(&MainInfc->buttonGroup[0], 1000, 1);
+                }
+                if (MainInfc->buttonGroup[0].field_84 == 1000) {
+                    Win_show((GraphicWin*)((char*)&MessageWin->listBox + *(int32_t*)(MessageWin->listBox.field_0 + 4)), 0);
+                }
+                Console_update_data(MapWin, 0);
+                start_timers();
+                do_all_draws();
+                int other_id = dword_93A9B8[MapWin->cOwner];
+                if (other_id) {
+                    parse_says(0, get_title(other_id), -1, -1);
+                    parse_says(1, get_name(other_id), -1, -1);
+                    parse_says(2, get_noun(other_id), -1, -1);
+                    parse_num(0, dword_93A9D8[MapWin->cOwner]);
+                    X_pop("HOTTAMPER2", 0);
+                    dword_93A9B8[MapWin->cOwner] = 0;
+                    dword_93A9D8[MapWin->cOwner] = 0;
+                }
+                while (Factions[MapWin->cOwner].earned_techs_saved > 0) {
+                    --Factions[MapWin->cOwner].earned_techs_saved;
+                    tech_advance(MapWin->cOwner);
+                }
+                for (int plr_id = 1; plr_id < MaxPlayerNum; ++plr_id) {
+                    DiploStateA[plr_id] = DiploStateB[MapWin->cOwner][plr_id];
+                    DiploStateB[MapWin->cOwner][plr_id] = 0;
+                    if (!(plr_id == MapWin->cOwner)) {
+                        if (is_human(plr_id)) {
+                            if (DiploStateA[plr_id]) {
+                                if (DiploStateC[MapWin->cOwner][plr_id][2] == 3) {
+                                    DiploStateC[MapWin->cOwner][plr_id][2] = 0;
+                                    parse_says(0, get_title(plr_id), -1, -1);
+                                    parse_says(1, get_name(plr_id), -1, -1);
+                                    parse_says(2, get_noun(plr_id), -1, -1);
+                                    X_pop("COMMCOMPLETE", 0);
+                                } else {
+                                    // DiploWin_exec(DiploWin, a1, a2);
+                                    diplo(MapWin->cOwner, plr_id);
+                                }
+                            }
+                        } else if (DiploStateA[plr_id]) {
+                            communicate(MapWin->cOwner, plr_id, 0);
+                        }
+                        DiploStateA[plr_id] = 0;
+                    }
+                }
+                if (*CouncilSessionPending) {
+                    council(MapWin->cOwner, 0, 0);
+                } else if (CouncilVoteState[MapWin->cOwner]) {
+                    parse_says(0, Proposal[CouncilProposal[MapWin->cOwner]].name, -1, -1);
+                    if (CouncilProposal[MapWin->cOwner] == PROP_ELECT_PLANETARY_GOVERNOR) {
+                        if (*GovernorFaction > 0) {
+                            parse_says(1, get_title(*GovernorFaction), -1, -1);
+                            parse_says(2, get_name(*GovernorFaction), -1, -1);
+                            parse_says(3, get_noun(*GovernorFaction), -1, -1);
+                        }
+                        if (CouncilVoteState[MapWin->cOwner] == 1) {
+                            popp(ScriptFile, "COUNCILHOTGOVWIN", 0, "council_sm.pcx", 0);
+                        } else if (*GovernorFaction > 0) {
+                            popp(ScriptFile, "COUNCILHOTGOVLOSE", 0, "council_sm.pcx", 0);
+                        } else {
+                            popp(ScriptFile, "COUNCILHOTGOVNONE", 0, "council_sm.pcx", 0);
+                        }
+                    } else if (CouncilVoteState[MapWin->cOwner] != 1) {
+                        if (CouncilVoteState[MapWin->cOwner] == -2) {
+                            popp(ScriptFile, "COUNCILHOTVETO", 0, "council_sm.pcx", 0);
+                        } else {
+                            popp(ScriptFile, "COUNCILHOTFAIL", 0, "council_sm.pcx", 0);
+                        }
+                    } else {
+                        popp(ScriptFile, "COUNCILHOTPASS", 0, "council_sm.pcx", 0);
+                    }
+                    clear_council_notify(MapWin->cOwner);
+                }
+            }
+            if (*ControlTurnA) {
+                return;
+            }
+            if (!*ControlTurnMove || (*PbemActive && (*GameMoreRules & MRULES_UNK_40))) {
+                *ControlTurnC = 1;
+                faction_upkeep(current_id);
+                if (end_of_game(0)) {
+                    return;
+                }
+            }
+            *ControlTurnC = 0;
+            *GameMoreRules &= ~MRULES_UNK_40;
+            bool restart = false;
+            if (is_human(current_id)) {
+                if (current_id == MapWin->cOwner || bit_count(FactionStatus[0]) > 1) {
+                    Console_human_turn(MapWin);
+                    if (*ControlTurnMove) {
+                        current_id = 0;
+                        restart = true;
+                    } else {
+                        skip_human_turn = 1;
+                    }
+                }
+            } else {
+                mod_enemy_turn(current_id);
+            }
+            if (!restart) {
+                *ControlTurnMove = 0;
+                if (*ControlTurnA || end_of_game(0)) {
+                    return;
+                }
+            }
+        }
+        if (++current_id >= 8) {
+            if (!skip_human_turn) {
+                Console_human_turn(MapWin);
+            }
+            if (*ControlTurnA) {
+                return;
+            }
+            skip_human_turn = 0;
+            current_id = 0;
+            run_upkeep = true;
+        }
+    }
+}
+
+void __cdecl clear_council_notify(int faction_id) {
+    CouncilProposal[faction_id] = 0;
+    CouncilVoteState[faction_id] = 0;
+}
+
+void __cdecl clear_council_notify_2() {
+    memset(CouncilProposal, 0, 0x20u);
+    memset(CouncilVoteState, 0, 0x20u);
 }
 
 void __cdecl random_events(int flag) {

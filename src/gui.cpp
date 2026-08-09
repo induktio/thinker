@@ -525,7 +525,7 @@ int __cdecl mod_blink_timer() {
             return TutWin_draw_arrow(TutWin);
         }
         PlanWin_blink(PlanWin);
-        StringBox_clip_ids(StringBox, 150);
+        StringBox_clip_ids(&MainInfc->stringBox, 150);
 
         if ((!MapWin->field_23BE8 && (!*MultiplayerActive || !(*GameState & STATE_UNK_2))) || *ControlTurnA) {
             MapWin->field_23BFC = 0;

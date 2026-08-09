@@ -2117,8 +2117,8 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
         goto END_BATTLE;
     } else {
         if (!atk_alive) {
-            dword_93A96C[faction_id_def]++;
-            dword_93A98C[faction_id_atk]++;
+            FactionCombatWin[faction_id_def]++;
+            FactionCombatLoss[faction_id_atk]++;
             if (plr_multi || plr_pbem) {
                 parse_says(0, veh_def->name(), -1, -1);
                 StrBuffer[0] = '\0';
@@ -2147,8 +2147,8 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
         }
         f_atk->diplo_unk_3[faction_id_def]++;
         f_atk->diplo_unk_4[faction_id_def]++;
-        dword_93A96C[faction_id_atk]++;
-        dword_93A98C[faction_id_def]++;
+        FactionCombatWin[faction_id_atk]++;
+        FactionCombatLoss[faction_id_def]++;
         if (plr_multi || plr_pbem) {
             parse_says(0, veh_def->name(), -1, -1);
             StrBuffer[0] = '\0';

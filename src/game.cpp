@@ -1,9 +1,6 @@
 
 #include "game.h"
 
-int* const dword_93A9B0 = (int*)0x93A9B0;
-int* const dword_93A9B4 = (int*)0x93A9B4;
-int* const dword_93A9AC = (int*)0x93A9AC;
 int* const dword_945818 = (int*)0x945818;
 int* const dword_945820 = (int*)0x945820;
 int* const dword_9B2074 = (int*)0x9B2074;

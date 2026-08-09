@@ -506,6 +506,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 72. Modify AI psych energy allocation for rewritten governor specialist priorities and fix inconsistent calculations in the original game during energy allocation.
 73. Remove original leftover debug code that activated the scenario editor mode when any savegame with specific filenames were loaded.
 74. Fix multiple significant data consistency issues or possible game crashes when loading or writing savegames. The game will do additional checks to reject any savegames that may contain corrupted data.
+75. Modify random faction selection to use custom rules with skip_faction and faction_pair options. Skipped factions always override pairing rules but otherwise the pairs are resolved in the order they are defined.
 
 
 Scient's patch

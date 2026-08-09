@@ -1814,7 +1814,7 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
     const bool plr_aquatic = m->is_aquatic();
     debug("setup_player %d %d %d %d %s\n", *CurrentTurn, faction_id, setup_id, is_probe, m->filename);
 
-    if (!conf.faction_placement) {
+    if (DEBUG && !conf.faction_placement) {
         return setup_values(faction_id, setup_id, is_probe);
     }
     // Modify the original version to check by filename if multiple similar factions are active.

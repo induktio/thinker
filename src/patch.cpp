@@ -432,6 +432,8 @@ bool patch_setup(Config* cf) {
     write_offset(0x64D947, (void*)mod_except_handler3);
 
     write_jump(0x421670, (int)has_fac);
+    write_jump(0x4243D0, (int)clear_council_notify);
+    write_jump(0x4243F0, (int)clear_council_notify_2);
     write_jump(0x4688E0, (int)MapWin_gen_overlays);
     write_jump(0x4A0260, (int)sat_attack);
     write_jump(0x4C9420, (int)terraform_cost);
