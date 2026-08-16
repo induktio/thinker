@@ -1493,7 +1493,7 @@ MOV_DEFEND:
         int unit_id;
         unit_id = Vehs[tgt_veh_id].unit_id;
         --tgt->units_active[unit_id];
-        if (unit_id > MaxProtoFactionNum) {
+        if (unit_id >= MaxProtoFactionNum) {
             int uid = mod_propose_proto(
                    veh_fc_id,
                    (VehChassis)Units[unit_id].chassis_id,
@@ -1623,7 +1623,7 @@ MOV_DEFEND:
                     if (dist <= (conf.probe_action_fix ? 0 : 1)
                     && (!dist || base_at(Vehs[i].x, Vehs[i].y) < 0)) {
                         --tgt->units_active[Vehs[i].unit_id];
-                        if (Vehs[i].unit_id > MaxProtoFactionNum) {
+                        if (Vehs[i].unit_id >= MaxProtoFactionNum) {
                             int uid = mod_propose_proto(
                                veh_fc_id,
                                (VehChassis)Units[Vehs[i].unit_id].chassis_id,

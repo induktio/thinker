@@ -1872,7 +1872,9 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
     int combat_value = 0;
     if (veh_atk->is_missile() || *MultiplayerActive) {
         damage_mod = 0;
-        boom(tx, ty, (veh_def->cur_hitpoints() ? 1 : 2));
+        if (render_battle) { // Fix: added visibility checks
+            boom(tx, ty, (veh_def->cur_hitpoints() ? 1 : 2));
+        }
     }
     int single_round = 0;
     if ((combat_type & CT_WEAPON_ONLY) && ((veh_atk->triad() == TRIAD_SEA) != (veh_def->triad() == TRIAD_SEA))) {

@@ -20,23 +20,6 @@ struct Win;
 struct Scroll;
 struct GraphicWin;
 
-struct ListNode {
-    void* vtable;
-    int tagged_id;
-    void* obj;
-    ListNode* next;
-    ListNode* prev;
-};
-
-struct ListRoot {
-    void* vtable;
-    int field_4;
-    ListNode* first;
-    ListNode* current;
-    int cur_count;
-    int last_index;
-};
-
 struct StringStructData {
     void* vtable;
     char* text;

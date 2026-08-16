@@ -2,16 +2,16 @@
 SMACX Thinker Mod
 =================
 
-Thinker is a remake of many game engine features for Alpha Centauri: Alien Crossfire.
-This mod improves the AI in single player while providing many gameplay enhancements.
+Thinker is a remake of game engine features for Alpha Centauri: Alien Crossfire.
 By patching the game to use an additional DLL, many new features can be developed in C++.
 
-* Vastly improved production/movement AI
-* Visual changes on map rendering and random map generation
-* More config options for many previously fixed settings in the game engine
-* Additional options for resolution settings and other user interface features
-* Improved automation features are also available for player factions
-* Mod also includes [Scient's patches](Details.md)
+* Visual changes to map rendering and random map generation
+* Additional game mechanics and more detailed config options for the game rules
+* Numerous previously fixed settings in the game engine can be adjusted from the config
+* More options for resolution settings, movie playback and other user interface features
+* Entirely rewritten production and movement AI with minor changes to diplomacy
+* Improved automation routines are also available for player factions
+* Includes [Scient's patches](Details.md)
 
 This mod is tested to work with the [GOG version](https://www.gog.com/game/sid_meiers_alpha_centauri) of Alpha Centauri.
 Note that official Alien Crossfire patch version 2.0 must be installed for the launcher to work with terranx.exe.

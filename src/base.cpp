@@ -293,43 +293,45 @@ void __cdecl mod_base_kill(int base_id) {
     }
 
     int tagged_id = base_id | 0x40000000;
-    ListRoot* lr = (ListRoot *)((int32_t)dword_7F6918 + *(int32_t*)(*dword_7F685C + 8));
-    if (lr->first) {
-        for (int list_pos = 0; list_pos < lr->cur_count; ++list_pos) {
-            ListNode* node = lr->current;
-            if (node->tagged_id == tagged_id) {
+    StringStruct* msg = (StringStruct*)((char*)&MessageWin->listBox.graphicWin.field_74
+        + *(int32_t*)(MessageWin->listBox.field_0 + 8));
+    if (msg->head) {
+        for (int list_pos = 0; list_pos < msg->count; ++list_pos) {
+            StringStructNode* node = msg->cursor;
+            if (node->id == tagged_id) {
                 node->next->prev = node->prev;
-                node->prev->next = node->next;
-                if (node == lr->first) {
-                    lr->first = node->next;
+                msg->cursor->prev->next = msg->cursor->next;
+                StringStructNode* removed = msg->cursor;
+                if (removed == msg->head) {
+                    msg->head = removed->next;
                 }
-                lr->current = node->next;
-                void* obj = node->obj;
-                ((void (__thiscall *)(ListRoot*, void*))((void**)lr->vtable)[1])(lr, obj);
-                if (obj) {
-                    void* adj = (char*)obj + ((int32_t*)((void**)obj)[0])[1];
+                msg->cursor = removed->next;
+                StringStructData* data = removed->data;
+                ((void (__thiscall*)(StringStruct*, StringStructData*))((int32_t*)msg->vtable)[1])(msg, data);
+                if (data) {
+                    void* adj = (char*)data + ((int32_t*)data->vtable)[1];
                     ((void (__thiscall *)(void*, int))(*(void***)adj)[0])(adj, 1);
                 }
-                node->obj = 0;
+                removed->data = nullptr;
                 {
-                    void* adj = (char*)node + ((int32_t*)((void**)node)[0])[1];
+                    void* adj = (char*)removed + ((int32_t*)removed->vtable)[1];
                     ((void (__thiscall *)(void*, int))(*(void***)adj)[0])(adj, 1);
                 }
-                --lr->cur_count;
+                --msg->count;
                 --list_pos;
             } else {
-                if (node->tagged_id > tagged_id) {
-                    --node->tagged_id;
+                if (node->id > tagged_id) {
+                    --node->id;
                 }
-                lr->current = lr->current->next;
+                msg->cursor = msg->cursor->next;
             }
         }
-        if (!lr->cur_count) {
-            lr->first = 0;
+        if (!msg->count) {
+            msg->head = nullptr;
         }
-        lr->last_index = lr->cur_count - 1;
+        msg->position = msg->count - 1;
     }
-    ListBox_update_changes((ListBox*)dword_7F685C);
+    ListBox_update_changes(&MessageWin->listBox);
 
     for (int i = 0; i <= SP_ID_Last - SP_ID_First; i++) {
         if (SecretProjects[i] == base_id) {
