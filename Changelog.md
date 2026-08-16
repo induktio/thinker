@@ -1,6 +1,33 @@
 
 # Thinker mod release changelog
 
+## Version 5.5 (2026-08-16)
+* Modify main menu screen to also display Change Options button for Thinker features.
+* Add option MovieExtension in Alpha Centauri.ini to choose custom file formats for external video players.
+* If movies with alternate file extensions are not found, the game always defaults to playing WVE files.
+* Add option energy_steal_rate to modify how many credits are taken by base captures or probe team actions.
+* Add option faction_pair to set which random factions must spawn at the same time or neither of them appears. Not supported during network multiplayer.
+* The game does not have fixed spawn pairing for Caretakers and Usurpers unless set in the config file.
+* Paths to SAV savefiles can be entered in the command line and the main menu will be skipped and the save is loaded directly.
+* Minor changes to faction spawn placement such as avoiding starts without sufficient landmasses nearby.
+* Minor updates to AI social engineering, psych energy allocation and land raising strategy.
+* AI has reduced expansion speed only at the two lowest difficulty levels when expansion_autoscale is enabled.
+* Change DontResetBeginnerPrefs=0 to only reset preferences once when the conditions are met.
+* When ignore_reactor_power is enabled and "Auto-prune obsolete units" is disabled from preferences, the game does not redesign any additional prototypes when new reactor techs are discovered.
+* Secret project descriptions are updated to reflect their actual effects in the original game. Minor updates to additional faction base names.
+* Remove original leftover debug code that activated the scenario editor mode when any savegame with specific filenames was loaded.
+* Fix map generator issue with rare_supply_pods that resulted in an unequal distribution of bonus resources on ocean tiles.
+* Fix edge case where governor might become stuck building colony pods when the population growth is zero.
+* Fix issue where AI might sometimes open supply pods creating fungus at their spawn location before settling the first base.
+* Fix AI sometimes raising land when this would not be possible without breaking diplomatic treaties.
+* Fix savegame issue that sometimes caused facility completion voice blurbs to play multiple times when they should occur only once.
+* Fix user interface issue where hurrying base production was not possible during the turn upkeep after hurry action in the previous turn.
+* Fix possible game crash related to rendering code that sometimes happened during combat inside the fog of war.
+* Fix inconsistent calculations in the original game during psych energy allocation.
+* Fix mineral convoys between bases potentially being able to benefit from mineral multiplier facilities in multiple bases.
+* Fix multiple significant data consistency issues or possible game crashes when loading or writing savegames.
+
+
 ## Version 5.4 (2026-04-29)
 * Add option game_event_popup to choose whether to keep multiple events as separate popups.
 * Add option skip_facility to prevent the governor from choosing various facilities for production.
