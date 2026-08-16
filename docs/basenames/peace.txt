@@ -4,19 +4,21 @@ U.N. Aid Center
 U.N. Aid Outpost
 U.N. Arbitration Court
 U.N. Assistance Bureau
+U.N. Census Bureau
+U.N. Civic Trust
 U.N. Coordination Base
 U.N. Crisis Agency
 U.N. Crisis Station
 U.N. Data Repository
 U.N. Defense Agency
 U.N. Dignity Plaza
-U.N. Diplomatic Embassy
+U.N. Diplomatic Corps
 U.N. Economic Council
 U.N. Educational Bureau
 U.N. Emergency Relief
+U.N. Envoy Station
 U.N. Equality Agency
 U.N. Equality Outpost
-U.N. Equilibrium Hub
 U.N. Financial Agency
 U.N. Freedom Base
 U.N. Freedom Enclave
@@ -29,15 +31,13 @@ U.N. Justice Citadel
 U.N. Justice Haven
 U.N. Liberty Center
 U.N. Liberty Haven
+U.N. Mediation Chamber
 U.N. Order Station
-U.N. Peace Citadel
-U.N. Peace Haven
+U.N. Outreach Mission
 U.N. Planetary Security
-U.N. Population Bureau
 U.N. Progress Agency
 U.N. Progress Plaza
 U.N. Prosperity Point
-U.N. Prosperity Station
 U.N. Prosperity Town
 U.N. Reconciliation
 U.N. Resilience Center
@@ -45,10 +45,10 @@ U.N. Rights Outpost
 U.N. Sanctuary Square
 U.N. Science Council
 U.N. Solidarity Center
-U.N. Solidarity Outpost
 U.N. Sovereignty Base
 U.N. Stability Base
 U.N. Trade Bureau
+U.N. Welfare Bureau
 #END
 
 #WATERBASES

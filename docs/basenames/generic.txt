@@ -31,6 +31,8 @@ Perimeter
 Plateau
 Platform
 Precinct
+Redoubt
+Reserve
 Station
 Terminus
 #END

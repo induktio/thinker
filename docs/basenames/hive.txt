@@ -1,17 +1,16 @@
 #BASES
-Collective Assembly
 Collective Bastion
 Collective Chamber
-Collective Enclave
 Collective Spire
-Commonalty Core
 Communal Complex
 Communal Hub
-Communal Stronghold
 Community Core
+Compliance Hall
 Cooperative Citadel
 Cooperative Spire
+Directive Station
 Discipline Enclave
+Discipline's Grasp
 Factory Pathways
 Factory Stronghold
 Fortress of Loyalty
@@ -20,7 +19,9 @@ Industrial Enclave
 Laborer's Enclave
 Laborer's Labyrinth
 Laborer's Outpost
+Loyalist Warren
 Loyalty Stronghold
+Mandate Hall
 Manufacturing Maze
 Mental Fortress
 People's Assembly
@@ -28,13 +29,15 @@ People's Bastion
 People's Unity
 Proletarian Gathering
 Proletarian Passage
+Regulated Commons
+Selfless Assembly
+Silent Multitude
 Social Citadel
 Social Enclave
 Social Spire
-Social Substructure
 Socialism Pathways
+Society Labyrinth
 Society Stronghold
-Society Synthesis
 The Commune
 The Comrade's Hold
 The Great Coalescence
@@ -42,34 +45,31 @@ The Industry Warren
 The Loyalist's Lair
 The Unifier's Den
 Unity Bastion
-Unity Halls
 Unity Outpost
-Willpower Bastion
 Worker's Citadel
 Worker's Nexus
 Worker's Outpost
-Yang Community
 #END
 
 #WATERBASES
 Aquatic Commune
 Aspiration Depths
-Communal Grid
+Communal Depths
 Deep Harbor
 Fellowship Enclave
 Laborer's Colony
+Loyalty Harbor
 Maritime Collective
 Nautical Assembly
-Observer Outpost
 Oceanic Hub
+Oceanic Nexus
+People's Undertow
 Port Assembly
 Port Progress
-Production Hub
 Sea Convergence
 Sea Unity
 Seabed Stronghold
-Society Labyrinth
-Society Matrix
+Submersion Hall
 The Deep Society
 Watery Hive
 #END

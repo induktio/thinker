@@ -1,5 +1,4 @@
 #BASES
-Apex Outpost
 Armory Base
 Barracks of Valor
 Bastion Keep
@@ -9,21 +8,25 @@ Combatant's Refuge
 Command Post
 Courageous Outpost
 Defender's Den
-Defenders' Den
-Eclipse Fortress
 Elite Stronghold
 Fighter's Folly
-Fortress Triumph
+Fort Ascendant
+Fort Ironclad
+Fort Reckoning
+Fort Resolve
+Fort Vigilance
 Freedom Hold
-Frontier Fortress
 Garrison Heights
-Guardian's Bastion
 Guardian's Redoubt
+Highground Camp
 Legacy Bastion
 Liberty Barracks
 Martial Keep
 Mercenary's Hold
 Military Compound
+Militia Outpost
+Overlook Station
+Peakside Redoubt
 Perimeter Station
 Phalanx Citadel
 Phantom Tower
@@ -32,22 +35,19 @@ Pinnacle Garrison
 Protector's Point
 Ranger Barracks
 Rebellion Bunker
+Recon Outpost
 Redoubt Plateau
 Rifleman Ridge
 Sentinel Camp
 Sentry Point
 Shield Barracks
 Shielded Citadel
-Soldier's Sanctuary
 Squadron Station
-Strategy Citadel
 Triumph Bastion
 Unbroken Line
 Valor Citadel
-Valor Fortress
 Vanguard Station
 Victory Outpost
-Vigilant Keep
 Warrior's Watch
 #END
 

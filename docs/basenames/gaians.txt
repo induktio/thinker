@@ -2,15 +2,17 @@
 Astral Blossom
 Aurora Arbor
 Aurora Grove
+Blooming Wilds
+Blossom Watch
+Canopy Haven
+Deepwood Refuge
 Dreamland Valley
-Earthsong Enclave
 Emerald Eden
 Emerald Heights
 Enchanted Everglade
 Eternal Earth
 Ethereal Expanse
 Fruitful Fields
-Galactic Grove
 Hallowed Hill
 Harmony Fields
 Harmony Hill
@@ -18,12 +20,12 @@ Haven Heights
 Heartland Haven
 Humming Hollow
 Leafy Retreat
-Luminous Lagoon
+Living Expanse
 Meadow of Memories
 Moonlit Meadows
 Moonshadow Glade
+Mossy Meadow
 Nature's Nook
-Nebula's Reach
 Nimbus Nook
 Nova Meadow
 Planet's Embrace
@@ -42,10 +44,8 @@ Solstice Haven
 Starfall Retreat
 Starflower Garden
 Starlight Glade
-Starlight Meadow
 Stellar Blossom
 Stellar Shade
-Tranquil Terrace
 Twilight Vale
 Verdant Vista
 Wildwood Way
@@ -53,15 +53,14 @@ Wildwood Way
 
 #WATERBASES
 Aquatic Delight
-Aquatic Oasis
 Azure Waters
 Botanical Bay
 Cascading Falls
+Coral Bloom
 Kelp Kingdom
 Lotus Bay
-Mossy Meadow
+Luminous Lagoon
 Mystic Tides
-Neptune's Nook
 Ocean's Harvest
 Reef's Refuge
 Riverbend Retreat
@@ -70,6 +69,7 @@ Seashell Shores
 Seaside Garden
 Serenity at Sea
 Shimmering Seabed
+Tidal Garden
 Waterfall Way
 Wavecrest Refuge
 #END

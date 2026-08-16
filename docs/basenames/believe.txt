@@ -1,7 +1,6 @@
 #BASES
-Ark of Ascension
-Ark of Unity
 Ascendant Grace
+Beacon of Faith
 Blessed Abode
 Blessed Valley
 Celestial Covenant
@@ -10,18 +9,17 @@ Cherub's Keep
 Cherubim Citadel
 City of Saints
 Covenant Crossing
+Disciple's Watch
 Divine Calling
-Divine Dispatch
 Divine Vision
 Eden's Embrace
 Eden's Gateway
-Eternal Beacon
 Eternal Kingdom
 Eternal Refuge
+Faith's Bastion
 Far Bethlehem
 Glorious Throne
 Graceful Haven
-Graceful Landing
 Great Exodus
 Great Resurrection
 Guardian's Grace
@@ -34,8 +32,8 @@ Messiah's Path
 New Promise
 New Sanctuary
 Noah's Promise
+Pilgrim's Path
 Providence Peak
-Purification Base
 Purity's Reign
 Redemption Refuge
 Righteous Glory
@@ -43,9 +41,11 @@ Risen Spirit
 Sacred Serenity
 Salvation Summit
 Sanctified Ground
-Serenity's Gate
+Scripture Hold
 The Divine Plan
+The Final Judgment
 The Holy Mountain
+The Sacred Flame
 The Second Coming
 Zion's Citadel
 Zion's Vanguard
