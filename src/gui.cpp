@@ -645,7 +645,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         BaseWin->oRender.iResWindowTab = value;
         GraphicWin_redraw(BaseWin);
 
-    } else if (msg == WM_KEYDOWN && wParam == 'H' && ctrl_key_down()
+    } else if (msg == WM_KEYDOWN && wParam == 'H' && ctrl_key_down() && !shift_key_down()
     && !*MultiplayerActive && current_window() == GW_Base && *CurrentBaseID >= 0
     && Bases[*CurrentBaseID].faction_id == MapWin->cOwner) {
         BASE* base = &Bases[*CurrentBaseID];
@@ -664,6 +664,31 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             }
         } else if (cost > 0 && mins > 0) {
             wave_it(8); // Cannot execute order
+        }
+
+    } else if (msg == WM_KEYDOWN && wParam == 'H' && ctrl_key_down() && shift_key_down()
+    && !*MultiplayerActive && current_window() == GW_Base && *CurrentBaseID >= 0
+    && Bases[*CurrentBaseID].faction_id == MapWin->cOwner) {
+        for (int i = 0; i < *BaseCount; ++i) {
+            BASE* base = &Bases[i];
+            if (base->faction_id == MapWin->cOwner) {
+                Faction* f = &Factions[base->faction_id];
+                int mins = max(0, mineral_cost(i, base->item()) - base->minerals_accumulated);
+                int cost = hurry_cost(i, base->item(), mins);
+                if (base->can_hurry_item() && cost > 0 && mins > 0) {
+                    if (max(0, f->energy_credits - f->hurry_cost_total) >= cost) {
+                        f->energy_credits -= cost;
+                        base->minerals_accumulated += mins;
+                        base->state_flags |= BSTATE_HURRY_PRODUCTION;
+                        GraphicWin_redraw(BaseWin);
+                        ok_callback();
+                    } else {
+                        wave_it(9); // Insufficient energy
+                    }
+                } else if (cost > 0 && mins > 0) {
+                    wave_it(8); // Cannot execute order
+                }
+            }
         }
 
     } else if (conf.smooth_scrolling && msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) {
