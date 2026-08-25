@@ -79,6 +79,7 @@ char* __cdecl get_pact_hood(int faction_id, int faction_id_2);
 char* __cdecl get_his_her(int faction_id, int tgl);
 char* __cdecl get_him_her(int faction_id, int tgl);
 char* __cdecl get_he_she(int faction_id, int tgl);
+void __cdecl compute_faction_modifiers(int faction_id);
 void __cdecl social_calc(CSocialCategory* category, CSocialEffect* effect,
 int faction_id, int UNUSED(toggle), int is_quick_calc);
 void __cdecl social_upkeep(int faction_id);

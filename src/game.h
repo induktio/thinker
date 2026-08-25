@@ -52,7 +52,8 @@ template<typename T, typename... Args>
 int net_show(T format, Args... vals) {
     char buf[StrBufLen];
     snprintf(buf, StrBufLen, format, vals...);
-    parse_says(0, buf, -1, -1);
+    parse_says(0, MOD_VERSION, -1, -1);
+    parse_says(1, buf, -1, -1);
     return NetMsg_pop(NetMsg, "GENERIC", 5000, 0, 0);
 }
 

@@ -3,6 +3,7 @@
 #include "main.h"
 
 void __cdecl control_turn();
+void __cdecl net_control_turn();
 void __cdecl clear_council_notify(int faction_id);
 void __cdecl clear_council_notify_2();
 void __cdecl random_events(int flag);

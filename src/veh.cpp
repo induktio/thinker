@@ -141,6 +141,22 @@ bool can_monolith(int unit_id) {
     return conf.repair_battle_ogre >= 10 || !is_battle_ogre(unit_id);
 }
 
+void __cdecl boom_veh(int x, int y, int flag, int veh_id) {
+    // Fix possible crash issue where boom function with specific flags might read
+    // undefined values when VehDrawAttackID/VehDrawDefendID is not set.
+    if (veh_id >= 0) {
+        *VehDrawAttackID = veh_id;
+        *VehDrawDefendID = veh_id;
+        boom(x, y, flag);
+        *VehDrawAttackID = -1;
+        *VehDrawDefendID = -1;
+    }
+}
+
+void __cdecl boom_veh_at(int x, int y, int flag) {
+    boom_veh(x, y, flag, veh_at(x, y));
+}
+
 int __cdecl veh_at(int x, int y) {
     MAP* sq = mapsq(x, y);
     if (sq && !sq->veh_in_tile()) {

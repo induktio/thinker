@@ -985,6 +985,8 @@ enum TextLabel {
     TL_Discover = 522,
     TL_Build = 523,
     TL_Conquer = 524,
+    TL_Template = 609,
+    TL_Untitled = 676,
     TL_Male = 738,
     TL_Female = 739,
     TL_CustomSize = 1089,

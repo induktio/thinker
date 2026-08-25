@@ -38,8 +38,8 @@ struct GamePrefs {
     int32_t ClimateValueB;
     int32_t ClimateValueC;
     int32_t ClimateFutureChange;
-    int32_t dword_9A67DC;
-    int32_t dword_9A67E0[8];
+    int32_t ScoreBonusPts;
+    int32_t ScorePopTotal[8];
     int32_t SunspotDuration;
     int32_t MountPlanetX;
     int32_t MountPlanetY;
@@ -65,8 +65,8 @@ struct LegacyGamePrefs {
     int32_t ClimateValueB;
     int32_t ClimateValueC;
     int32_t ClimateFutureChange;
-    int32_t dword_9A67DC;
-    uint8_t dword_9A67E0[32];
+    int32_t ScoreBonusPts;
+    int32_t ScorePopTotal[8];
     int32_t SunspotDuration;
     int32_t MountPlanetX;
     int32_t MountPlanetY;

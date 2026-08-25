@@ -131,6 +131,8 @@
 		<Unit filename="src/random.h" />
 		<Unit filename="src/savegame.cpp" />
 		<Unit filename="src/savegame.h" />
+		<Unit filename="src/score.cpp" />
+		<Unit filename="src/score.h" />
 		<Unit filename="src/strings.cpp" />
 		<Unit filename="src/strings.h" />
 		<Unit filename="src/tech.cpp" />

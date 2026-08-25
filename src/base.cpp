@@ -4509,34 +4509,6 @@ int __cdecl worm_mod(int base_id, int faction_id) {
 }
 
 /*
-Determine whether the base is considered an objective for scenario victory conditions.
-Return Value: Is base an objective? true/false
-*/
-int __cdecl is_objective(int base_id) {
-    if (base_id < 0 || base_id >= *BaseCount) {
-        assert(0);
-        return false;
-    }
-    if (*GameRules & RULES_SCN_VICT_ALL_BASE_COUNT_OBJ
-    || Bases[base_id].event_flags & BEVENT_OBJECTIVE) {
-        return true;
-    }
-    if (*GameRules & RULES_SCN_VICT_SP_COUNT_OBJ) {
-        for (int i = SP_ID_First; i <= SP_ID_Last; i++) {
-            if (project_base((FacilityId)i) == base_id) {
-                return true;
-            }
-        }
-    }
-    if (*GameState & STATE_SCN_VICT_BASE_FACIL_COUNT_OBJ
-    && *ScnVictFacilityObj >= 0 && *ScnVictFacilityObj <= 64
-    && has_fac_built((FacilityId)(*ScnVictFacilityObj), base_id)) {
-        return true;
-    }
-    return false;
-}
-
-/*
 Determine the base rank relative to other bases owned by the same faction.
 */
 int __cdecl own_base_rank(int base_id) {
@@ -4937,7 +4909,10 @@ int __cdecl redundant(FacilityId item_id, int faction_id) {
 Check if the base already has a particular facility built or if it's in the queue.
 */
 int __cdecl has_fac(FacilityId item_id, int base_id, int queue_count) {
-    assert(base_id >= 0 && base_id < *BaseCount);
+    if (base_id < 0 || base_id >= *BaseCount) { // Fix: added bounds checking
+        assert(0);
+        return false;
+    }
     if (item_id >= FAC_SKY_HYDRO_LAB) {
         return false;
     }
@@ -4945,10 +4920,10 @@ int __cdecl has_fac(FacilityId item_id, int base_id, int queue_count) {
     if (is_built || !queue_count) {
         return is_built;
     }
-    if (base_id < 0 || queue_count <= 0 || queue_count > 10) { // added bounds checking
+    if (queue_count <= 0) {
         return false;
     }
-    for (int i = 0; i < queue_count; i++) {
+    for (int i = 0; i < queue_count && i < 10; i++) {
         if (Bases[base_id].queue_items[i] == -item_id) {
             return true;
         }

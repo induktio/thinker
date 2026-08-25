@@ -3,16 +3,26 @@
 
 fp_1int sub_51E530 = (fp_1int)0x51E530;
 
-int* const dword_7AE778 = (int*)0x7AE778;
-int* const dword_7D392C = (int*)0x7D392C;
 int* const dword_78D7F8 = (int*)0x78D7F8;
 int* const dword_78D870 = (int*)0x78D870;
 int* const dword_7AD34C = (int*)0x7AD34C;
+int* const dword_7AE778 = (int*)0x7AE778;
+int* const dword_7D392C = (int*)0x7D392C;
 int* const dword_93A940 = (int*)0x93A940;
 int* const dword_93A9B8 = (int*)0x93A9B8;
 int* const dword_93A9D8 = (int*)0x93A9D8;
 char* const unk_93AA04 = (char*)0x93AA04;
 char* const unk_93AA08 = (char*)0x93AA08;
+int* const dword_93A950 = (int*)0x93A950;
+int* const dword_93A954 = (int*)0x93A954;
+int* const dword_93A960 = (int*)0x93A960;
+int* const dword_93E8C0 = (int*)0x93E8C0;
+int* const dword_93E8D4 = (int*)0x93E8D4;
+int* const dword_93E8E4 = (int*)0x93E8E4;
+int* const dword_93E8EC = (int*)0x93E8EC;
+int* const dword_93E8F8 = (int*)0x93E8F8;
+int* const dword_93E964 = (int*)0x93E964;
+int* const dword_93E968 = (int*)0x93E968;
 
 static bool territory_avail(int faction_id, int x, int y) {
     int owner = whose_territory(faction_id, x, y, 0, 0);
@@ -318,6 +328,170 @@ void __cdecl control_turn() {
             skip_human_turn = 0;
             current_id = 0;
             run_upkeep = true;
+        }
+    }
+}
+
+void __cdecl net_control_turn() {
+    draw_map(1);
+    game_srand(*MapRandomSeed);
+    *ControlTurnC = 1;
+    *dword_93A940 = 1;
+    if (prefs_get_2("Multi Debug", 0, 0) && X_pop("MULTIDEBUG", 0)) {
+        // Remove separate debug logging code when all output is redirected to debug.txt
+        *MultiDebugActive = 1;
+        log_set_state(1);
+    } else {
+        *MultiDebugActive = 0;
+        log_set_state(0);
+    }
+    do_checksums(1);
+    if (*GameMoreRules & MRULES_UNK_10) {
+        *dword_93A954 = 1;
+    }
+    while (1) {
+        log_say_2("(Clearing turn semaphore)", *dword_93E8EC, *dword_93E8F8, 0);
+        debug("net_control_turn %d %d\n", *CurrentTurn, MapWin->cOwner);
+        *dword_93E8EC = 0;
+        *dword_93E8F8 = 0;
+        *dword_93E8D4 = 1;
+        *dword_93E968 = 0;
+        *dword_93E964 = 0;
+        *dword_93A950 = 0;
+        MessageWin_clear(MessageWin);
+        if (!*ControlTurnMove) {
+            int faction_id = 1;
+            while (!(is_alive(faction_id) && is_human(faction_id))) {
+                ++faction_id;
+            }
+            *CurrentFaction = faction_id;
+            turn_upkeep();
+            net_upkeep();
+            *CurrentFaction = 0;
+            if (end_of_game(1)) {
+                NetDaemon_hang_up(NetState);
+                NetDaemon_cleanup(NetState);
+                *MultiplayerActive = 0;
+                return;
+            }
+        }
+        set_time_controls();
+        *dword_93A960 = GameTimeControl[1];
+        *GameState &= ~STATE_UNK_800;
+        *ControlTurnC = 0;
+        *dword_93E8E4 = 0;
+        if (*GameMoreRules & MRULES_UNK_10) {
+            if (*CurrentTurn == 1 || *ControlTurnMove) {
+                int px = -1;
+                int py = -1;
+                for (int base_id = 0; base_id < *BaseCount; base_id++) {
+                    if (Bases[base_id].faction_id == MapWin->cOwner) {
+                        px = Bases[base_id].x;
+                        py = Bases[base_id].y;
+                        break;
+                    }
+                }
+                for (int veh_id = 0; px < 0 && veh_id < *VehCount; veh_id++) {
+                    if (Vehs[veh_id].faction_id == MapWin->cOwner) {
+                        px = Vehs[veh_id].x;
+                        py = Vehs[veh_id].y;
+                        break;
+                    }
+                }
+                if (on_map(px, py)) {
+                    Console_set_view(MapWin, 0);
+                    MapWin_set_center(MapWin, px, py, 1);
+                    Console_set_cursor(MapWin, px, py);
+                }
+            }
+            if (*dword_93E8C0) {
+                if (*ControlTurnMove) {
+                    message_data(0x4309, 0, *CurrentFaction, 0, 0, 0);
+                } else {
+                    next_player_turn();
+                }
+            }
+        }
+        *ControlTurnMove = 0;
+        bool cont_loop = true;
+        while (cont_loop) {
+            if (*ControlTurnA) {
+                *GameState |= STATE_UNK_2;
+            } else if (*GameMoreRules & MRULES_UNK_10 && *CurrentFaction != MapWin->cOwner) {
+                Console_set_view(MapWin, 0);
+                MapWin->field_23BE4 = 0;
+                MapWin->field_23BE8 = 1;
+                Console_set_view(MapWin, 0);
+                MultiWin_draw(MultiWin, 0);
+                *dword_93E8EC |= 1 << (MapWin->cOwner);
+                while (!*ControlTurnA) {
+                    if (*dword_93A950 || *CurrentFaction == MapWin->cOwner) {
+                        break;
+                    }
+                    MapWin->field_23BE4 = 1;
+                    NetDaemon_net_tasks(NetState);
+                    if (*dword_93E8C0 && (*CurrentFaction <= 0
+                    || !is_human(*CurrentFaction) || !is_alive(*CurrentFaction))) {
+                        next_player_turn();
+                    }
+                }
+                MapWin->field_23BE4 = 0;
+                MapWin->field_23BE8 = 0;
+            } else if (*GameMoreRules & MRULES_UNK_10 || !(*GameState & STATE_UNK_800)) {
+                if (*GameMoreRules & MRULES_UNK_10) {
+                    *dword_93A960 = GameTimeControl[1];
+                    *GameState &= ~STATE_UNK_800;
+                    *dword_93A954 = 0;
+                    *dword_93E8EC &= ~(1 << (MapWin->cOwner));
+                }
+                Console_human_turn(MapWin);
+                if (*GameMoreRules & MRULES_UNK_10) {
+                    *dword_93A954 = 1;
+                    while (!*ControlTurnA) {
+                        if (!Lock_any_locks(LockState)) {
+                            break;
+                        }
+                        NetDaemon_net_tasks(NetState);
+                    }
+                    message_data(0x8301, 0, 0, 0, 0, 0);
+                    while (!*ControlTurnA) {
+                        if (*CurrentFaction != MapWin->cOwner) {
+                            break;
+                        }
+                        if (*dword_93A950) {
+                            break;
+                        }
+                        NetDaemon_net_tasks(NetState);
+                    }
+                    if (!*dword_93A950) {
+                        *GameState &= ~STATE_UNK_800;
+                    }
+                }
+            } else {
+                *GameState |= STATE_UNK_2;
+            }
+            if (*ControlTurnA) {
+                break;
+            }
+            if (*GameMoreRules & MRULES_UNK_10) {
+                cont_loop = (*dword_93A950 == 0);
+            } else {
+                net_end_of_turn();
+                if (*ControlTurnA) {
+                    break;
+                }
+                if (*GameMoreRules & MRULES_UNK_10) {
+                    cont_loop = (*dword_93A950 == 0);
+                } else {
+                    cont_loop = !(*GameState & STATE_UNK_2);
+                }
+            }
+        }
+        if (*GameMoreRules & MRULES_UNK_10) {
+            net_end_of_turn();
+        }
+        if (*ControlTurnA) {
+            break;
         }
     }
 }

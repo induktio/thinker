@@ -1171,6 +1171,17 @@ char* __cdecl get_he_she(int faction_id, int tgl) {
     return PlrBuf;
 }
 
+void __cdecl compute_faction_modifiers(int faction_id) {
+    MFaction* fac = &MFactions[faction_id];
+    auto initial = (CSocialEffect*)&Factions[faction_id].SE_economy_base;
+    memset(initial, 0, sizeof(CSocialEffect));
+    for (int i = 0; i < fac->faction_bonus_count; i++) {
+        if (fac->faction_bonus_id[i] == RULE_SOCIAL) {
+            initial->values[fac->faction_bonus_val1[i]] += fac->faction_bonus_val2[i];
+        }
+    }
+}
+
 /*
 Calculate the social engineering effect modifiers for the specified faction.
 */
@@ -1873,7 +1884,7 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
         plr->unk_37 = 0;
         for (int i = 0; i < 8; i++) {
             plr->saved_queue_size[i] = 0;
-            snprintf(&plr->saved_queue_name[i][0], 24, "%s %d", label_get(609), i+1); // Template
+            snprintf(&plr->saved_queue_name[i][0], 24, "%s %d", label_get(TL_Template), i+1);
         }
         memset(&plr->SE_Politics_pending, 0, 32u); // pending / current
         memset(&plr->SE_economy_pending, 0, 44u); // only pending

@@ -59,7 +59,6 @@ bool satellite_bonus(int base_id, int* nutrient, int* mineral, int* energy);
 int __cdecl morale_mod(int base_id, int faction_id, int triad);
 int __cdecl breed_mod(int base_id, int faction_id);
 int __cdecl worm_mod(int base_id, int faction_id);
-int __cdecl is_objective(int base_id);
 int __cdecl own_base_rank(int base_id);
 int __cdecl base_rank(int faction_id, int position);
 int __cdecl pick_specialist(BASE* base, int econ_val, int labs_val, int psych_val);

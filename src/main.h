@@ -350,6 +350,7 @@ struct AIPlans {
 #include "base.h"
 #include "basewin.h"
 #include "build.h"
+#include "score.h"
 #include "gui.h"
 #include "gui_dialog.h"
 #include "veh.h"

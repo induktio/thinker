@@ -24,12 +24,6 @@ int __thiscall NetWin_random_get(void*, int low, int high) {
     return val;
 }
 
-int __cdecl skip_action_destroy(int id) {
-    veh_skip(id);
-    *VehAttackFlags = 0;
-    return 0;
-}
-
 /*
 Change FORESTGROWS / KELPGROWS / PRODUCE popups into delayed notification items on the message log.
 */
@@ -567,9 +561,15 @@ bool patch_setup(Config* cf) {
     write_jump(0x59EE50, (int)corner_market);
     write_jump(0x59E950, (int)prefs_use);
     write_jump(0x59F120, (int)probe);
+    write_jump(0x5ABFF0, (int)get_rating);
     write_jump(0x5AC060, (int)is_objective);
+    write_jump(0x5AC110, (int)num_objectives);
+    write_jump(0x5AC5A0, (int)most_objectives);
+    write_jump(0x5AC690, (int)rankings);
+    write_jump(0x5ACBE0, (int)compute_score);
     write_jump(0x5ADE80, (int)replay_base);
     write_jump(0x5B0A30, (int)scenario_setup);
+    write_jump(0x5B0D70, (int)compute_faction_modifiers);
     write_jump(0x5B4210, (int)social_calc);
     write_jump(0x5B44D0, (int)social_upkeep);
     write_jump(0x5B4550, (int)social_upheaval);
@@ -677,6 +677,7 @@ bool patch_setup(Config* cf) {
     write_call(0x559E21, (int)map_draw_strcmp); // veh_draw
     write_call(0x55B5E1, (int)map_draw_strcmp); // base_draw
     write_call(0x5C0984, (int)veh_kill_lift); // veh_kill
+    write_call(0x529D3B, (int)boom_veh_at); // mash_planes
     write_call(0x51825B, (int)mod_design_new_veh); // Console::on_key_click
     write_call(0x51C12B, (int)mod_design_new_veh); // Console::iface_click
     write_call(0x43FE47, (int)DiploPop_spying); // DiploPop::draw_info
@@ -1190,14 +1191,6 @@ bool patch_setup(Config* cf) {
     }
 
     /*
-    Fix a bug that occurs after the player does an artillery attack on unoccupied
-    tile and then selects another unit to view combat odds and cancels the attack.
-    After this veh_attack_flags will not get properly cleared and the next bombardment
-    on an unoccupied tile always results in the destruction of the bombarding unit.
-    */
-    write_call(0x4CAA7C, (int)skip_action_destroy);
-
-    /*
     Fix issue where attacking other satellites doesn't work in
     Orbital Attack View when smac_only is activated.
     */
@@ -1208,7 +1201,7 @@ bool patch_setup(Config* cf) {
     }
 
     /*
-    Disable legacy upkeep code in the game engine that might cause AI formers
+    Disable legacy upkeep code in enemy_strategy that might cause AI formers
     to be reassigned to nearby bases that are owned by other factions.
     */
     {

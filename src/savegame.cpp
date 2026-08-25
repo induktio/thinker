@@ -4,8 +4,9 @@
 // Due to internal implementation differences, any FILE* pointers must
 // never be passed directly from modified to original functions or vice versa.
 
-const char* FileExtensionMap = "MP";
-const char* FileExtensionSave = "SAV";
+const char* FileExtMap = "MP";
+const char* FileExtScn = "SC";
+const char* FileExtSav = "SAV";
 
 int* const dword_6FF69C = (int*)0x6FF69C;
 int* const dword_6FF6A0 = (int*)0x6FF6A0;
@@ -17,8 +18,6 @@ int* const dword_93A9B8 = (int*)0x93A9B8;
 int* const dword_93A9D8 = (int*)0x93A9D8;
 int* const dword_93F798 = (int*)0x93F798;
 int* const dword_94B558 = (int*)0x94B558;
-int* const dword_9A67DC = (int*)0x9A67DC;
-int* const dword_9A67E0 = (int*)0x9A67E0;
 int* const dword_939E5C = (int*)0x939E5C;
 int* const dword_939E58 = (int*)0x939E58;
 int* const dword_93D4F8 = (int*)0x93D4F8;
@@ -170,10 +169,10 @@ int __cdecl game_data(FILE* fp, int write_file) {
         memcpy(LastSavePath, prefs.LastSavePath, 0x100u);
         *ClimateValueA = prefs.ClimateValueA;
         *ClimateValueB = prefs.ClimateValueB;
-        *dword_9A67DC = prefs.dword_9A67DC;
+        *ScoreBonusPts = prefs.ScoreBonusPts;
         *ClimateValueC = prefs.ClimateValueC;
         *ClimateFutureChange = prefs.ClimateFutureChange;
-        memcpy(dword_9A67E0, prefs.dword_9A67E0, 0x20u);
+        memcpy(ScorePopTotal, prefs.ScorePopTotal, 0x20u);
         memcpy(SunspotDuration, &prefs.SunspotDuration, 0x28u);
     }
     if (*SaveFileVersion < 4) {
@@ -668,7 +667,7 @@ void __cdecl map_wipe() {
 }
 
 int __cdecl map_init() {
-    snprintf(MapFilePath, StrBufLen, "maps\\%s.%s", label_get(676), FileExtensionMap);
+    snprintf(MapFilePath, StrBufLen, "maps\\%s.%s", label_get(TL_Untitled), FileExtMap);
     *MapHalfX = *MapAreaX / 2;
     *MapAreaTiles = *MapAreaY * (*MapAreaX / 2);
     *MapAreaSqRoot = quick_root(*MapAreaY * (*MapAreaX / 2));
@@ -853,7 +852,7 @@ int __cdecl mod_save_daemon(const char* filename) {
     if (strchr(filename, '.')) {
         snprintf(path, sizeof(path), "%s", filename);
     } else {
-        snprintf(path, sizeof(path), "%s.%s", filename, FileExtensionSave);
+        snprintf(path, sizeof(path), "%s.%s", filename, FileExtSav);
     }
     debug("save_daemon %s\n", path);
     FILE* file = env_open(path, "wb");
@@ -1002,7 +1001,7 @@ int __cdecl mod_save_map_daemon(const char* filename) {
     if (strchr(filename, '.')) {
         snprintf(path, sizeof(path), "%s", filename);
     } else {
-        snprintf(path, sizeof(path), "%s.%s", filename, FileExtensionMap);
+        snprintf(path, sizeof(path), "%s.%s", filename, FileExtMap);
     }
     FILE* fp = env_open(path, "wb");
     if (fp) {
@@ -1026,7 +1025,7 @@ int __cdecl mod_save_map_daemon(const char* filename) {
 int __cdecl mod_load_map_daemon(const char* filename) {
     int is_save = 0;
     char* ext = strrchr(filename, '.'); // Fix: select the last dot from the filename
-    if (ext && !_stricmp(ext + 1, FileExtensionSave)) {
+    if (ext && !_stricmp(ext + 1, FileExtSav)) {
         is_save = 1;
     }
     FILE* fp = env_open(filename, "rb");
