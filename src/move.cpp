@@ -2338,8 +2338,11 @@ bool can_airdrop(int veh_id, MAP* sq) {
 }
 
 bool allow_airdrop(int x, int y, int faction_id, bool combat, MAP* sq) {
-    if (!sq || is_ocean(sq) || faction_id < 0) {
+    if (!sq || faction_id < 0 || faction_id >= MaxPlayerNum) {
         assert(0);
+        return false;
+    }
+    if (is_ocean(sq)) {
         return false;
     }
     // Aerospace Complex or Air Superiority unit stationed inside base prevents all drops

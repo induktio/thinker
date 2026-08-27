@@ -145,8 +145,6 @@ void __cdecl boom_veh(int x, int y, int flag, int veh_id) {
     // Fix possible crash issue where boom function with specific flags might read
     // undefined values when VehDrawAttackID/VehDrawDefendID is not set.
     assert(veh_id >= 0 && veh_id < *VehCount);
-    assert(*VehDrawAttackID >= 0 && *VehDrawAttackID < *VehCount);
-    assert(*VehDrawDefendID >= 0 && *VehDrawDefendID < *VehCount);
     if (veh_id >= 0 && veh_id <= conf.max_veh_num) {
         *VehDrawAttackID = veh_id;
         *VehDrawDefendID = veh_id;
