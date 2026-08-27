@@ -3090,7 +3090,8 @@ void __cdecl mod_base_ecology() {
                 if (plr->clean_minerals_modifier < 2) {
                     interlude(3, 0, 1, 0);
                 }
-                boom(nx, ny, 128);
+                debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, nx, ny);
+                boom_tile(nx, ny, 128);
             }
             synch_bit(nx, ny, player_id);
             draw_tile(nx, ny, 2);

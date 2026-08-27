@@ -144,7 +144,10 @@ bool can_monolith(int unit_id) {
 void __cdecl boom_veh(int x, int y, int flag, int veh_id) {
     // Fix possible crash issue where boom function with specific flags might read
     // undefined values when VehDrawAttackID/VehDrawDefendID is not set.
-    if (veh_id >= 0) {
+    assert(veh_id >= 0 && veh_id < *VehCount);
+    assert(*VehDrawAttackID >= 0 && *VehDrawAttackID < *VehCount);
+    assert(*VehDrawDefendID >= 0 && *VehDrawDefendID < *VehCount);
+    if (veh_id >= 0 && veh_id <= conf.max_veh_num) {
         *VehDrawAttackID = veh_id;
         *VehDrawDefendID = veh_id;
         boom(x, y, flag);
@@ -155,6 +158,18 @@ void __cdecl boom_veh(int x, int y, int flag, int veh_id) {
 
 void __cdecl boom_veh_at(int x, int y, int flag) {
     boom_veh(x, y, flag, veh_at(x, y));
+}
+
+void __cdecl boom_tile(int x, int y, int flag) {
+    // Fix possible crash issue with boom function when there is no related veh_id.
+    // Exclude flag&3 since these are used for veh_id specific explosion effects.
+    if (!(flag & 3)) {
+        *VehDrawAttackID = conf.max_veh_num;
+        *VehDrawDefendID = conf.max_veh_num;
+        boom(x, y, flag);
+        *VehDrawAttackID = -1;
+        *VehDrawDefendID = -1;
+    }
 }
 
 int __cdecl veh_at(int x, int y) {

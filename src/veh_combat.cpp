@@ -1142,6 +1142,7 @@ void __cdecl planet_busting(int veh_id, int tx, int ty) {
         *dword_9B22E0 = -1; // skip displaying TERRAMINE / TERRAYOURS
         FX_play(Sounds, 59);
         *dword_90F7D4 = reactor_range;
+        debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, tx, ty);
         boom(tx, ty, 32);
 
         for (int i = 0; i < blast_range; i++) {
@@ -1170,12 +1171,15 @@ void __cdecl planet_busting(int veh_id, int tx, int ty) {
             tgt_base_faction_id = tgt_veh_faction_id;
         }
         draw_map(0);
+        debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, tx, ty);
         boom(tx, ty, 64);
         while ((*(int (__thiscall**)(int*))(*dword_74B5DC + 92))(dword_74B5DC)) {
             do_task();
         }
         FX_play(Sounds, 60);
+        debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, tx, ty);
         boom(tx, ty, 17);
+        debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, tx, ty);
         boom(tx, ty, 18);
         major_atrocity(faction_id, tgt_base_faction_id);
     }
@@ -1758,6 +1762,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                     flush_input();
                     if (!(veh_id_def >= 0 && damage_limit && veh_def->damage_taken == damage_limit
                     && veh_def->next_veh_id_stack >= 0)) {
+                        debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, tx, ty);
                         boom(tx, ty, 0);
                         combat_type = CT_CAN_ARTY;
                     }
@@ -1873,6 +1878,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
     if (veh_atk->is_missile() || *MultiplayerActive) {
         damage_mod = 0;
         if (render_battle) { // Fix: added visibility checks
+            debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, tx, ty);
             boom(tx, ty, (veh_def->cur_hitpoints() ? 1 : 2));
         }
     }
@@ -1893,6 +1899,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
             != (veh_atk->damage_taken - veh_atk_val) / (veh_atk_val * damage_mod)) {
                 combat_value = 1;
                 StatusWin_draw(StatusWin, veh_id_atk, veh_id_def, offense_out, defense_out, combat_type);
+                debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, x, y);
                 boom(x, y, 9);
                 if (veh_atk->cur_hitpoints() > 0) {
                     draw_tile(x, y, 2);
@@ -1909,6 +1916,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
             != (veh_def->damage_taken - veh_def_val) / (veh_def_val * damage_mod)) {
                 combat_value = 2;
                 StatusWin_draw(StatusWin, veh_id_atk, veh_id_def, offense_out, defense_out, combat_type);
+                debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, tx, ty);
                 boom(tx, ty, 1);
                 if (veh_def->cur_hitpoints() > 0) {
                     draw_tile(x, y, 2);
@@ -2027,31 +2035,41 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
         if (!def_has_moved && atk_alive) {
             if (single_round) {
                 if (combat_value != 1 && !*MultiplayerActive) { // Defender wins
+                    debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, x, y);
                     boom(x, y, ((atk_alive ? 1 : 2) | 8));
                 }
+                debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, tx, ty);
                 boom(tx, ty, ((def_alive ? 1 : 2) | 8));
             } else if (combat_value == 2) { // Attacker wins
                 if (*MultiplayerActive || !def_alive) {
+                    debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, tx, ty);
                     boom(tx, ty, ((def_alive ? 0 : 2) | 8));
                 }
             } else if (!*MultiplayerActive) {
+                debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, tx, ty);
                 boom(tx, ty, ((def_alive ? 1 : 2) | 8));
             } else {
+                debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, tx, ty);
                 boom(tx, ty, ((def_alive ? 0 : 2) | 8));
             }
         } else if (!def_has_moved) {
             if (single_round) {
                 if (combat_value != 2 && !*MultiplayerActive) { // Attacker wins
+                    debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, tx, ty);
                     boom(tx, ty, (def_alive ? 1 : 0));
                 }
+                debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, x, y);
                 boom(x, y, (atk_alive ? 1 : 2));
             } else if (combat_value == 1) { // Defender wins
                 if (*MultiplayerActive || !atk_alive) {
+                    debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, x, y);
                     boom(x, y, (atk_alive ? 0 : 2));
                 }
             } else if (!*MultiplayerActive) {
+                debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, x, y);
                 boom(x, y, (atk_alive ? 1 : 2));
             } else {
+                debug("boom %s %d %d %d\n", __FILE_NAME__, __LINE__, x, y);
                 boom(x, y, (atk_alive ? 0 : 2));
             }
         }

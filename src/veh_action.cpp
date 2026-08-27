@@ -623,6 +623,7 @@ void __cdecl action_destroy(int veh_id, int tgt_item, int tgt_x, int tgt_y) {
     } else {
         if (mapsq(tx, ty)->base_who() >= 0) {
             if (faction_id == player_id) {
+                debug("boom %s %d %d %d %d\n", __FILE_NAME__, __LINE__, tx, ty, veh_id);
                 boom_veh(tx, ty, 0x80, veh_id);
             }
             return;
@@ -643,9 +644,12 @@ void __cdecl action_destroy(int veh_id, int tgt_item, int tgt_x, int tgt_y) {
         }
         if (!skip_boom) {
             if (faction_id && faction_id != player_id) {
+                debug("boom %s %d %d %d %d\n", __FILE_NAME__, __LINE__, tx, ty, veh_id);
                 boom_veh(tx, ty, 0x80, veh_id);
+                debug("boom %s %d %d %d %d\n", __FILE_NAME__, __LINE__, veh->x, veh->y, veh_id);
                 boom_veh(veh->x, veh->y, 0x80, veh_id);
             }
+            debug("boom %s %d %d %d %d\n", __FILE_NAME__, __LINE__, tx, ty, veh_id);
             boom_veh(tx, ty, 0x80, veh_id);
         }
         int owner = whose_territory(faction_id, tx, ty, 0, 0);
@@ -1175,6 +1179,7 @@ void __cdecl action_destruct(int veh_id) {
     VEH* veh = &Vehs[veh_id];
     int vx = veh->x;
     int vy = veh->y;
+    debug("boom %s %d %d %d %d\n", __FILE_NAME__, __LINE__, vx, vy, veh_id);
     boom_veh(vx, vy, 0, veh_id);
     int weapon_val = weap_val(veh->unit_id, veh->faction_id);
     int blast_damage = clamp(weapon_val, 1, 20) * Units[veh->unit_id].reactor_id / 2;
@@ -3142,6 +3147,7 @@ MOV_UPKEEP:
                     } else {
                         Vehs[veh_id].state |= VSTATE_HAS_MOVED;
                         if (visual_tgl) {
+                            debug("boom %s %d %d %d %d\n", __FILE_NAME__, __LINE__, Vehs[veh_id].x, Vehs[veh_id].y, veh_id);
                             boom_veh(Vehs[veh_id].x, Vehs[veh_id].y, 0x80, veh_id);
                         }
                         if (val_range != 1 || Vehs[veh_id].chassis_type() != CHS_COPTER) {

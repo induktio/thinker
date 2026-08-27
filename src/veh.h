@@ -14,6 +14,7 @@ bool can_repair(int unit_id);
 bool can_monolith(int unit_id);
 void __cdecl boom_veh(int x, int y, int flag, int veh_id);
 void __cdecl boom_veh_at(int x, int y, int flag);
+void __cdecl boom_tile(int x, int y, int flag);
 
 int __cdecl veh_at(int x, int y);
 int __cdecl veh_who(int x, int y);
