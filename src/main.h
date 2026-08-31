@@ -346,6 +346,7 @@ struct AIPlans {
 #include "patch.h"
 #include "game.h"
 #include "gameturn.h"
+#include "gamewin.h"
 #include "faction.h"
 #include "base.h"
 #include "basewin.h"
@@ -382,6 +383,7 @@ extern std::vector<std::pair<std::string,std::string>> faction_pool;
 extern std::vector<std::pair<size_t,size_t>> faction_pair;
 
 DLL_EXPORT DWORD ThinkerModule();
+bool FolderExists(const char* path);
 bool FileExists(const char* path);
 void exit_fail(int32_t addr);
 void exit_fail();

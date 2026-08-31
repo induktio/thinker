@@ -3090,7 +3090,7 @@ void __cdecl mod_base_ecology() {
                 if (plr->clean_minerals_modifier < 2) {
                     interlude(3, 0, 1, 0);
                 }
-                boom(nx, ny, 128);
+                boom_tile(nx, ny, 0x80);
             }
             synch_bit(nx, ny, player_id);
             draw_tile(nx, ny, 2);

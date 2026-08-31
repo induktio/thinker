@@ -229,7 +229,7 @@ Sprite* const ImgMapSolar = (Sprite*)0x7991F8;
 Sprite* const ImgMapSoilEnr = (Sprite*)0x79A794;
 
 VEH ArrayVehs[MaxVehModNum+2] = {}; // note veh_fake placeholder
-VEH* const VehsMod = &ArrayVehs[0];
+VEH* const VehsMod = &ArrayVehs[1]; // includes extra start padding
 
 ThinkerData*    ThinkerVars      = (ThinkerData*)&MFactions[0].pad_2[0];
 MFaction*       MFactions        = (MFaction*      )0x946A50;
@@ -2780,6 +2780,16 @@ FFX_play FX_play = (FFX_play)0x446A00;
 FFX_play FX_stop = (FFX_play)0x446A90;
 FFX_play FX_fade = (FFX_play)0x446AD0;
 FFX_play FX_engine_pitch = (FFX_play)0x446B10;
+
+FSquareLock SquareLock_clear = (FSquareLock)0x58FD70;
+FSquareLock_unlock SquareLock_unlock = (FSquareLock_unlock)0x58FD90;
+FSquareLock_lock SquareLock_lock = (FSquareLock_lock)0x58FE80;
+
+FPlayerLock PlayerLock_clear = (FPlayerLock)0x58FF70;
+FPlayerLock PlayerLock_active = (FPlayerLock)0x58FFA0;
+FPlayerLock_unlock PlayerLock_unlock = (FPlayerLock_unlock)0x58FFC0;
+FPlayerLock_lock PlayerLock_lock = (FPlayerLock_lock)0x590000;
+FPlayerLock_add_lock PlayerLock_add_lock = (FPlayerLock_add_lock)0x5900A0;
 
 FLock Lock_clear = (FLock)0x5900D0;
 FLock Lock_reset_map = (FLock)0x590140;

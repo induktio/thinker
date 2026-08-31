@@ -20,8 +20,6 @@ int* const dword_93F798 = (int*)0x93F798;
 int* const dword_94B558 = (int*)0x94B558;
 int* const dword_939E5C = (int*)0x939E5C;
 int* const dword_939E58 = (int*)0x939E58;
-int* const dword_93D4F8 = (int*)0x93D4F8;
-void* const unk_93D4FC = (void*)0x93D4FC;
 void* const unk_93E978 = (void*)0x93E978;
 void* const unk_9B2178 = (void*)0x9B2178;
 void* const unk_9B208D = (void*)0x9B208D;
@@ -845,8 +843,8 @@ int __cdecl mod_save_daemon(const char* filename) {
     }
     if (*MultiplayerActive) {
         *GameState |= STATE_UNK_10000000;
-        *dword_93F798 = *dword_93D4F8;
-        memcpy(unk_93E978, unk_93D4FC, 0xCE0u);
+        *dword_93F798 = NetState->field_768;
+        memcpy(unk_93E978, &NetState->field_76C, 0xCE0u);
     }
     char path[StrBufLen];
     if (strchr(filename, '.')) {

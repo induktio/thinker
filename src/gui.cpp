@@ -1382,38 +1382,6 @@ void __thiscall ReportWin_close_handler(SubInterface* This)
 }
 
 /*
-Fix potential crash when a game is loaded after using Edit Map > Generate/Remove Fungus > No Fungus.
-Original version changed MapWin->cOwner variable for unknown reason which is skipped.
-*/
-void __thiscall Console_editor_fungus(Console* UNUSED(This))
-{
-    auto_undo();
-    int v1 = X_pop_6("FUNGOSITY", PopDialogBtnCancel, 0);
-    if (v1 >= 0) {
-        int v2 = 0;
-        if (!v1 || (v2 = X_pop_6("FUNGMOTIZE", PopDialogBtnCancel, 0)) > 0) {
-            MAP* sq = *MapTiles;
-            for (int i = 0; i < *MapAreaTiles; ++i, ++sq) {
-                sq->items &= ~BIT_FUNGUS;
-                for (int j = 1; j < 8; ++j) {
-                    sq->visible_items[j - 1] = sq->items;
-                }
-            }
-        }
-        if (v2 < 0) {
-            return;
-        }
-        if (v1 > 0) {
-            int v3 = *MapNativeLifeForms;
-            *MapNativeLifeForms = v1 - 1;
-            world_fungus();
-            *MapNativeLifeForms = v3;
-        }
-        draw_map(1);
-    }
-}
-
-/*
 Fix foreign base names being visible in unexplored tiles when issuing move to or patrol
 orders to the tiles. This version adds visibility checks for all base tiles.
 */

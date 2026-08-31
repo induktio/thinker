@@ -452,6 +452,8 @@ bool patch_setup(Config* cf) {
     write_jump(0x4CF380, (int)action_gate);
     write_jump(0x4CF480, (int)action_sat_attack);
     write_jump(0x4CF740, (int)action);
+    write_jump(0x4D8A70, (int)Console_automate);
+    write_jump(0x4E13E0, (int)Console_editor_fungus);
     write_jump(0x4E3EF0, (int)whose_territory);
     write_jump(0x4E4020, (int)best_specialist);
     write_jump(0x4E4350, (int)base_mark);
@@ -671,13 +673,20 @@ bool patch_setup(Config* cf) {
     write_call(0x579362, (int)mod_enemy_move); // enemy_veh
     write_call(0x40F45A, (int)mod_base_draw); // BaseWin::draw_farm
     write_call(0x4672A7, (int)mod_base_draw); // MapWin::draw_bases
+    write_call(0x559E21, (int)map_draw_strcmp); // veh_draw
+    write_call(0x55B5E1, (int)map_draw_strcmp); // base_draw
+    write_call(0x561948, (int)enemy_upgrade); // enemy_strategy
+    write_call(0x564879, (int)wipe_goals); // enemy_strategy
     write_call(0x4F2A4C, (int)base_production_popp); // #PRODUCE
     write_call(0x522544, (int)alien_fauna_pop2); // #KELPGROWS
     write_call(0x522555, (int)alien_fauna_pop2); // #FORESTGROWS
-    write_call(0x559E21, (int)map_draw_strcmp); // veh_draw
-    write_call(0x55B5E1, (int)map_draw_strcmp); // base_draw
     write_call(0x5C0984, (int)veh_kill_lift); // veh_kill
-    write_call(0x529D3B, (int)boom_veh_at); // mash_planes
+    write_call(0x57BC7A, (int)monolith); // goody_box
+    write_call(0x5991C8, (int)monolith); // order_veh
+    write_call(0x4CCFE0, (int)goody_box); // action_airdrop
+    write_call(0x5991E6, (int)goody_box); // order_veh
+    write_call(0x56D03E, (int)study_artifact); // enemy_move
+    write_call(0x599722, (int)study_artifact); // order_veh
     write_call(0x51825B, (int)mod_design_new_veh); // Console::on_key_click
     write_call(0x51C12B, (int)mod_design_new_veh); // Console::iface_click
     write_call(0x43FE47, (int)DiploPop_spying); // DiploPop::draw_info
@@ -713,12 +722,6 @@ bool patch_setup(Config* cf) {
     write_call(0x5C8866, (int)mod_world_shorelines); // world_build
     write_call(0x5A98C9, (int)mod_world_linearize_contours); // load_daemon
     write_call(0x5C8949, (int)mod_world_linearize_contours); // world_build
-    write_call(0x57BC7A, (int)mod_monolith); // goody_box
-    write_call(0x5991C8, (int)mod_monolith); // order_veh
-    write_call(0x4CCFE0, (int)mod_goody_box); // action_airdrop
-    write_call(0x5991E6, (int)mod_goody_box); // order_veh
-    write_call(0x56D03E, (int)mod_study_artifact); // enemy_move
-    write_call(0x599722, (int)mod_study_artifact); // order_veh
     write_call(0x403BD4, (int)mod_amovie_project); // amovie_project2
     write_call(0x4F2B4B, (int)mod_amovie_project); // base_production
     write_call(0x524D06, (int)mod_amovie_project); // end_of_game
@@ -727,8 +730,6 @@ bool patch_setup(Config* cf) {
     write_call(0x525407, (int)mod_amovie_project); // end_of_game
     write_call(0x52AB6D, (int)mod_amovie_project); // control_game
     write_call(0x5B3681, (int)mod_amovie_project); // eliminate_player
-    write_call(0x561948, (int)enemy_upgrade); // enemy_strategy
-    write_call(0x564879, (int)wipe_goals); // enemy_strategy
     write_call(0x445846, (int)load_music_strcmpi);
     write_call(0x445898, (int)load_music_strcmpi);
     write_call(0x4458EE, (int)load_music_strcmpi);
@@ -755,7 +756,6 @@ bool patch_setup(Config* cf) {
     write_call(0x48CDA4, (int)popb_action_staple);
     write_call(0x4936F4, (int)ProdPicker_calculate_itoa);
     write_call(0x4AED04, (int)SocialWin_social_ai);
-    write_call(0x51D1C2, (int)Console_editor_fungus);
     write_call(0x54814D, (int)mod_diplomacy_caption);
     write_call(0x54F7D7, (int)mod_energy_trade);
     write_call(0x54F77E, (int)mod_base_swap);

@@ -2207,7 +2207,7 @@ int artifact_move(const int id) {
     if (base_id >= 0 && Bases[base_id].faction_id == veh->faction_id
     && can_link_artifact(base_id)) {
         debug("artifact_link %2d %2d %s\n", veh->x, veh->y, Bases[base_id].name);
-        mod_study_artifact(id);
+        study_artifact(id);
         return VEH_SKIP;
     }
     if (!veh->at_target() && veh->iter_count < 2
@@ -2338,8 +2338,11 @@ bool can_airdrop(int veh_id, MAP* sq) {
 }
 
 bool allow_airdrop(int x, int y, int faction_id, bool combat, MAP* sq) {
-    if (!sq || is_ocean(sq) || faction_id < 0) {
+    if (!sq || faction_id < 0 || faction_id >= MaxPlayerNum) {
         assert(0);
+        return false;
+    }
+    if (is_ocean(sq)) {
         return false;
     }
     // Aerospace Complex or Air Superiority unit stationed inside base prevents all drops

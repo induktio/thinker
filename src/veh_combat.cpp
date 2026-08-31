@@ -1142,6 +1142,9 @@ void __cdecl planet_busting(int veh_id, int tx, int ty) {
         *dword_9B22E0 = -1; // skip displaying TERRAMINE / TERRAYOURS
         FX_play(Sounds, 59);
         *dword_90F7D4 = reactor_range;
+        // Fix: use placeholder veh_ids for effects rendering
+        *VehDrawAttackID = conf.max_veh_num;
+        *VehDrawDefendID = conf.max_veh_num;
         boom(tx, ty, 32);
 
         for (int i = 0; i < blast_range; i++) {
@@ -1178,6 +1181,8 @@ void __cdecl planet_busting(int veh_id, int tx, int ty) {
         boom(tx, ty, 17);
         boom(tx, ty, 18);
         major_atrocity(faction_id, tgt_base_faction_id);
+        *VehDrawAttackID = -1;
+        *VehDrawDefendID = -1;
     }
 }
 
@@ -1419,13 +1424,13 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
         }
         return value;
     }
-    if (!is_human(faction_id_atk)
-    || !(*VehAttackFlags & 1)
-    || veh_atk->is_probe()
-    || (veh_def->is_artifact() && base_id < 0)
-    || (*MultiplayerActive && intercept_state)) {
-        // nothing
-    } else if (break_treaty(faction_id_atk, faction_id_def, (DIPLO_COMMLINK|DIPLO_TREATY|DIPLO_PACT))) {
+    // Fix: original code used DIPLO_COMMLINK instead of DIPLO_TRUCE to break_treaty
+    if (is_human(faction_id_atk)
+    && (*VehAttackFlags & 1)
+    && !veh_atk->is_probe()
+    && !(veh_def->is_artifact() && base_id < 0)
+    && !(*MultiplayerActive && intercept_state)
+    && break_treaty(faction_id_atk, faction_id_def, (DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT))) {
         return 2;
     }
 

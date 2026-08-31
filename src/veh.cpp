@@ -144,7 +144,7 @@ bool can_monolith(int unit_id) {
 void __cdecl boom_veh(int x, int y, int flag, int veh_id) {
     // Fix possible crash issue where boom function with specific flags might read
     // undefined values when VehDrawAttackID/VehDrawDefendID is not set.
-    if (veh_id >= 0) {
+    if (veh_id >= 0 && veh_id < conf.max_veh_num) {
         *VehDrawAttackID = veh_id;
         *VehDrawDefendID = veh_id;
         boom(x, y, flag);
@@ -155,6 +155,18 @@ void __cdecl boom_veh(int x, int y, int flag, int veh_id) {
 
 void __cdecl boom_veh_at(int x, int y, int flag) {
     boom_veh(x, y, flag, veh_at(x, y));
+}
+
+void __cdecl boom_tile(int x, int y, int flag) {
+    // Fix possible crash issue with boom function when there is no related veh_id.
+    // Exclude flag&3 since these are used for veh_id specific explosion effects.
+    if (!(flag & 0x3)) {
+        *VehDrawAttackID = conf.max_veh_num;
+        *VehDrawDefendID = conf.max_veh_num;
+        boom(x, y, flag);
+        *VehDrawAttackID = -1;
+        *VehDrawDefendID = -1;
+    }
 }
 
 int __cdecl veh_at(int x, int y) {
@@ -1020,7 +1032,7 @@ int __cdecl want_monolith(int veh_id) {
         && mod_morale_veh(veh_id, true, 0) < MORALE_ELITE));
 }
 
-void __cdecl mod_monolith(int veh_id) {
+void __cdecl monolith(int veh_id) {
     VEH* veh = &Vehs[veh_id];
     MAP* sq = mapsq(veh->x, veh->y);
     const bool is_player = veh->faction_id == *CurrentPlayerFaction;
@@ -1158,7 +1170,7 @@ static int goody_rand(int value) {
     return (value > 1 ? game_rand() % value : 0);
 }
 
-int __cdecl mod_goody_box(int veh_id) {
+int __cdecl goody_box(int veh_id) {
     VEH* veh = &Vehs[veh_id];
     MAP* sq = mapsq(veh->x, veh->y);
     Faction* f = &Factions[veh->faction_id];
@@ -1490,7 +1502,7 @@ GOODY_START:
         bit_set(x, y, BIT_FUNGUS, 0);
         synch_bit(x, y, faction_id);
         draw_tiles(x, y, 2);
-        mod_monolith(veh_id);
+        monolith(veh_id);
         return 0;
     case 9:
         if (*GameMoreRules & MRULES_SCN_UNITY_PODS_NO_VEHICLES || TechOwners[TECH_Orbital]
@@ -1926,7 +1938,7 @@ GOODY_NEXT:
     }
 }
 
-int __cdecl mod_study_artifact(int veh_id) {
+int __cdecl study_artifact(int veh_id) {
     VEH* veh = &Vehs[veh_id];
     int x = veh->x;
     int y = veh->y;
@@ -2684,7 +2696,7 @@ void __cdecl veh_skip(int veh_id) {
         }
     } else if (veh->faction_id > 0) {
         if (want_monolith(veh_id) && bit_at(veh->x, veh->y) & BIT_MONOLITH) {
-            mod_monolith(veh_id);
+            monolith(veh_id);
         }
     }
     veh->moves_spent = moves;

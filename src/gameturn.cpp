@@ -13,14 +13,21 @@ int* const dword_93A9B8 = (int*)0x93A9B8;
 int* const dword_93A9D8 = (int*)0x93A9D8;
 char* const unk_93AA04 = (char*)0x93AA04;
 char* const unk_93AA08 = (char*)0x93AA08;
+// multiplayer related
+int* const dword_93A93C = (int*)0x93A93C;
 int* const dword_93A950 = (int*)0x93A950;
 int* const dword_93A954 = (int*)0x93A954;
 int* const dword_93A960 = (int*)0x93A960;
+int* const dword_93E8BC = (int*)0x93E8BC;
 int* const dword_93E8C0 = (int*)0x93E8C0;
 int* const dword_93E8D4 = (int*)0x93E8D4;
+int* const dword_93E8E0 = (int*)0x93E8E0;
 int* const dword_93E8E4 = (int*)0x93E8E4;
 int* const dword_93E8EC = (int*)0x93E8EC;
+int* const dword_93E8F0 = (int*)0x93E8F0;
 int* const dword_93E8F8 = (int*)0x93E8F8;
+int* const dword_93E8FC = (int*)0x93E8FC;
+int* const dword_93E90C = (int*)0x93E90C;
 int* const dword_93E964 = (int*)0x93E964;
 int* const dword_93E968 = (int*)0x93E968;
 
@@ -332,6 +339,159 @@ void __cdecl control_turn() {
     }
 }
 
+void __cdecl mash_planes() {
+    for (int veh_id = *VehCount - 1; veh_id >= 0; --veh_id) {
+        VEH* veh = &Vehs[veh_id];
+        UNIT* unit = &Units[veh->unit_id];
+        if (unit->triad() != TRIAD_AIR || unit->range() == 0
+        || veh_speed(veh_id, 0) - veh->moves_spent <= 0) {
+            continue;
+        }
+        MAP* sq = mapsq(veh->x, veh->y);
+        if (!sq || sq->base_who() >= 0) {
+            continue;
+        }
+        if ((sq->items & BIT_AIRBASE) || mod_stack_check(veh_id, 6, ABL_CARRIER, -1, -1)) {
+            continue;
+        }
+        bool visible = false;
+        if (veh->faction_id == MapWin->cOwner || veh->is_visible(MapWin->cOwner)) {
+            Console_focus(MapWin, veh->x, veh->y, veh->faction_id);
+            visible = true;
+        }
+        veh->state |= VSTATE_HAS_MOVED;
+        if (visible) {
+            boom_veh(veh->x, veh->y, 0x80, veh_id);
+        }
+        // Fix: adjust incorrect upper bounds checking
+        if (unit->range() != 1 || unit->chassis_id != CHS_COPTER) {
+            veh->damage_taken = veh->max_hitpoints();
+        } else {
+            veh->damage_taken += 3 * veh->reactor_type();
+        }
+        if (veh->cur_hitpoints() > 0) {
+            veh->movement_turns = 0;
+            draw_tile(veh->x, veh->y, 2);
+        } else {
+            kill(veh_id);
+        }
+    }
+}
+
+void __cdecl net_not_my_turn() {
+    MapWin->field_23BE4 = 0;
+    MapWin->field_23BE8 = 1;
+    Console_set_view(MapWin, 0);
+    MultiWin_draw(MultiWin, 0);
+    *dword_93E8EC |= 1 << (MapWin->cOwner);
+    while (!*ControlTurnA) {
+        if (*dword_93A950 || *CurrentFaction == MapWin->cOwner) {
+            break;
+        }
+        MapWin->field_23BE4 = 1;
+        NetDaemon_net_tasks(NetState);
+        if (*dword_93E8C0 && (*CurrentFaction <= 0
+        || !is_human(*CurrentFaction) || !is_alive(*CurrentFaction))) {
+            next_player_turn();
+        }
+    }
+    MapWin->field_23BE4 = 0;
+    MapWin->field_23BE8 = 0;
+}
+
+void __cdecl net_end_of_turn() {
+    int show_msg = 0;
+    if (*GameMoreRules & MRULES_UNK_10) {
+        if (*dword_93E8C0) {
+            message_data(0x4301, 0, 0, 0, 0, 0);
+        } else {
+            while (!*ControlTurnA) {
+                if (*dword_93A950) {
+                    break;
+                }
+                NetDaemon_net_tasks(NetState);
+            }
+        }
+    }
+    log_say_2("Entering 'end of turn' loop", *dword_93E8EC, *dword_93E8F8, *GameState & STATE_UNK_2);
+    FX_play(Sounds, 34);
+    *GameState |= STATE_UNK_2;
+    MapWin->field_23BE4 = 0;
+    Console_set_view(MapWin, 0);
+    if (!*dword_93E8C0) {
+        *dword_93E8EC |= 1 << (MapWin->cOwner);
+    }
+    *dword_93E8F8 |= 1 << (MapWin->cOwner);
+    MultiWin_draw(MultiWin, 0);
+    if (!(*GameMoreRules & MRULES_UNK_10)) {
+        message_data(0x8301, 0, 0, 0, 0, 0);
+        DWORD start = GetTickCount(); // replace timeGetTime()
+        while (((*dword_93E8EC & FactionStatus[0]) != FactionStatus[0]
+        || FactionStatus[0] & *dword_93E8E0
+        || (*dword_93E8C0 && (Lock_any_locks(LockState) || *dword_93E90C)))
+        && !*ControlTurnA && *GameState & STATE_UNK_2) {
+            if (!show_msg && GetTickCount() - start > 1000) {
+                NetMsg_pop(NetMsg, "FINISHINGTURN", 0, 0, 0);
+                show_msg = 1;
+            }
+            NetDaemon_net_tasks(NetState);
+        }
+        if (show_msg) {
+            NetMsg_close(NetMsg);
+        }
+        if ((*GameState & STATE_UNK_2) && !*dword_93E8C0) {
+            log_say_2("Ready to proceed", *dword_93E8EC, FactionStatus[0], 0);
+        }
+        if (*dword_93E8C0) {
+            if (!(*GameState & STATE_UNK_2)) {
+                return;
+            }
+            if (!*ControlTurnA) {
+                while (NetState->field_768 > 1) {
+                    int num = 0;
+                    for (int i = 1; i < NetState->field_768; i++) {
+                        if (PlayerLock_active(&LockState->plr_lock[i])
+                        && !(LockState->plr_lock[i].flags[0] & 1)) {
+                            ++num;
+                        }
+                    }
+                    if (!num) {
+                        break;
+                    }
+                    wait_task();
+                    NetDaemon_receive(NetState);
+                }
+                message_data(0x4301, 0, 0, 0, 0, 0);
+                NetDaemon_receive(NetState);
+            }
+        }
+        if (!(*GameState & STATE_UNK_2)) {
+            return;
+        }
+    }
+    log_say_2("--- Proceeding to next turn ---", 0, 0, 0);
+    *dword_93E8F0 = 0;
+    *dword_93E8FC = 0;
+    *dword_93A93C = 0;
+    *ControlTurnC = 1;
+    if (Win_is_visible(BaseWin)) {
+        BaseWin_exit(BaseWin);
+    }
+    go_reset();
+    while (NetDaemon_receive(NetState));
+    mash_planes();
+    do_checksums(0);
+    if ((*GamePreferences & PREF_BSC_AUTOSAVE_EACH_TURN)
+    && *MultiDebugActive && FolderExists("saves\\multi")) {
+        // replace debug savegame location
+        char buf[StrBufLen];
+        snprintf(buf, StrBufLen, "saves\\multi\\MP_%d_%d",
+            game_year(*CurrentTurn), MapWin->cOwner);
+        mod_save_daemon(buf);
+    }
+    ++(*dword_93E8BC); // DeleteList
+}
+
 void __cdecl net_control_turn() {
     draw_map(1);
     game_srand(*MapRandomSeed);
@@ -419,24 +579,7 @@ void __cdecl net_control_turn() {
                 *GameState |= STATE_UNK_2;
             } else if (*GameMoreRules & MRULES_UNK_10 && *CurrentFaction != MapWin->cOwner) {
                 Console_set_view(MapWin, 0);
-                MapWin->field_23BE4 = 0;
-                MapWin->field_23BE8 = 1;
-                Console_set_view(MapWin, 0);
-                MultiWin_draw(MultiWin, 0);
-                *dword_93E8EC |= 1 << (MapWin->cOwner);
-                while (!*ControlTurnA) {
-                    if (*dword_93A950 || *CurrentFaction == MapWin->cOwner) {
-                        break;
-                    }
-                    MapWin->field_23BE4 = 1;
-                    NetDaemon_net_tasks(NetState);
-                    if (*dword_93E8C0 && (*CurrentFaction <= 0
-                    || !is_human(*CurrentFaction) || !is_alive(*CurrentFaction))) {
-                        next_player_turn();
-                    }
-                }
-                MapWin->field_23BE4 = 0;
-                MapWin->field_23BE8 = 0;
+                net_not_my_turn();
             } else if (*GameMoreRules & MRULES_UNK_10 || !(*GameState & STATE_UNK_800)) {
                 if (*GameMoreRules & MRULES_UNK_10) {
                     *dword_93A960 = GameTimeControl[1];

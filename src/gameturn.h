@@ -3,6 +3,9 @@
 #include "main.h"
 
 void __cdecl control_turn();
+void __cdecl mash_planes();
+void __cdecl net_not_my_turn();
+void __cdecl net_end_of_turn();
 void __cdecl net_control_turn();
 void __cdecl clear_council_notify(int faction_id);
 void __cdecl clear_council_notify_2();

@@ -1118,7 +1118,7 @@ int __cdecl action_airdrop(int veh_id, int tx, int ty, int flags) {
     spot_all(veh_id, 1);
     Console_update_data(MapWin, 0);
     if (goody_val) {
-        mod_goody_box(veh_id);
+        goody_box(veh_id);
     }
     if (faction_id != player_id && !(*GameState & STATE_OMNISCIENT_VIEW)
     && is_visible && !MapWin->field_23BF0 && !shift_key_down() && !*MultiplayerActive) {
@@ -3144,8 +3144,8 @@ MOV_UPKEEP:
                         if (visual_tgl) {
                             boom_veh(Vehs[veh_id].x, Vehs[veh_id].y, 0x80, veh_id);
                         }
+                        // Fix: adjust incorrect upper bounds checking
                         if (val_range != 1 || Vehs[veh_id].chassis_type() != CHS_COPTER) {
-                            // Fix: adjust incorrect upper bounds checking
                             Vehs[veh_id].damage_taken = Vehs[veh_id].max_hitpoints();
                         } else {
                             Vehs[veh_id].damage_taken += 3 * Vehs[veh_id].reactor_type();
@@ -3175,10 +3175,10 @@ MOV_UPKEEP:
     if (tgt_sq->items & BIT_MONOLITH && veh_triad != TRIAD_AIR && !move_fight) {
         if (offset >= 0 || (Vehs[veh_id].offense_value()
         && (Vehs[veh_id].damage_taken || !(Vehs[veh_id].state & VSTATE_MONOLITH_UPGRADED)))) {
-            mod_monolith(veh_id);
+            monolith(veh_id);
         }
     }
-    if (goody_val && veh_triad != TRIAD_AIR && veh_fc_id && mod_goody_box(veh_id)) {
+    if (goody_val && veh_triad != TRIAD_AIR && veh_fc_id && goody_box(veh_id)) {
         goto MOV_END;
     }
     if (Vehs[veh_id].plan() == PLAN_ARTIFACT && offset < 8 && base_id < 0
@@ -3222,7 +3222,7 @@ MOV_UPKEEP:
     }
     if (Vehs[veh_id].plan() == PLAN_ARTIFACT && base_id >= 0 && Vehs[veh_id].movement_turns) {
         if (Vehs[veh_id].movement_turns == 1) {
-            if (mod_study_artifact(veh_id)) {
+            if (study_artifact(veh_id)) {
                 veh_id = -1;
                 goto MOV_END;
             }

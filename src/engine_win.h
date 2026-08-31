@@ -62,14 +62,14 @@ struct Heap {
     int free_size;
 };
 
-struct Spot {
+struct SpotNode {
     RECT rect;
     int type;
     int position;
 };
 
-struct SpotList {
-    Spot* spots;
+struct Spot {
+    SpotNode* spots;
     int max_count;
     int cur_count;
 };
@@ -111,63 +111,19 @@ struct NameNode {
     int field_8[150];
 };
 
+struct SquareLock {
+    int x;
+    int y;
+    uint32_t flags;
+};
+
+struct PlayerLock {
+    uint8_t flags[4];
+    SquareLock lock[2];
+};
+
 struct Lock {
-    int field_0;
-    int field_4;
-    int field_8;
-    int field_C;
-    int field_10;
-    int field_14;
-    int field_18;
-    int field_1C;
-    int field_20;
-    int field_24;
-    int field_28;
-    int field_2C;
-    int field_30;
-    int field_34;
-    int field_38;
-    int field_3C;
-    int field_40;
-    int field_44;
-    int field_48;
-    int field_4C;
-    int field_50;
-    int field_54;
-    int field_58;
-    int field_5C;
-    int field_60;
-    int field_64;
-    int field_68;
-    int field_6C;
-    int field_70;
-    int field_74;
-    int field_78;
-    int field_7C;
-    int field_80;
-    int field_84;
-    int field_88;
-    int field_8C;
-    int field_90;
-    int field_94;
-    int field_98;
-    int field_9C;
-    int field_A0;
-    int field_A4;
-    int field_A8;
-    int field_AC;
-    int field_B0;
-    int field_B4;
-    int field_B8;
-    int field_BC;
-    int field_C0;
-    int field_C4;
-    int field_C8;
-    int field_CC;
-    int field_D0;
-    int field_D4;
-    int field_D8;
-    int field_DC;
+    PlayerLock plr_lock[8];
     int field_E0;
     int field_E4;
     int field_E8;
@@ -990,7 +946,7 @@ struct Buffer {
     int dib[256];
     int lPitch;
     int iHyperlinkCount;
-    SpotList oHitBoxList;
+    Spot oHitBoxList;
     void* apHeapMem[20];
     int dword50C;
     int dword510;
@@ -1307,6 +1263,10 @@ struct FlatButton : BaseButton {
     int field_B48;
 };
 
+struct ImageButton : BaseButton {
+    int field_AB8;
+};
+
 struct Scroll : GraphicWin {
     int field_A14;
     int field_A18;
@@ -1468,7 +1428,7 @@ struct SpriteBox {
     int field_4;
     int field_8;
     int field_C;
-    SpotList spot;
+    Spot spot;
     int field_1C;
     int field_20;
     int field_24;
@@ -1507,7 +1467,7 @@ struct EditGroup {
     int field_4;
     int field_8;
     void* field_C;
-    SpotList spot;
+    Spot spot;
     int field_1C;
     int field_20;
     int field_24;
@@ -1745,7 +1705,7 @@ struct BasePop : GraphicWin {
     int field_308C;
     int field_3090;
     int field_3094;
-    SpotList spot;
+    Spot spot;
     int field_30A4;
     int field_30A8;
     int field_30AC;
@@ -1992,7 +1952,7 @@ struct MultiWindow : GraphicWin {
     FlatButton flatButton2;
     Font font1;
     Font font2;
-    SpotList spot;
+    Spot spot;
 };
 
 struct MainInterface : GraphicWin {
@@ -2260,7 +2220,7 @@ struct MainInterface : GraphicWin {
     Sprite sprites12[6];
     Sprite sprites13[2];
     Flic flics[3];
-    SpotList spot;
+    Spot spot;
     Time time1;
     Time time2;
 };
@@ -2417,56 +2377,13 @@ struct Menu {
     int field_A20;
     int iHitBoxTagClicked;
     int field_A28;
-    SpotList oHitBoxList;
+    Spot oHitBoxList;
     CMainMenuItem aMainMenuItems[15];
-};
-
-struct CClass3B {
-    GraphicWin oWinBuffed;
-    int field_A14;
-    int field_A18;
-    Time oTimer1;
-    int field_A44;
-    int field_A48;
-    Time oTimer2;
-    int field_A74;
-    int field_A78;
-    int field_A7C;
-    int field_A80;
-    int field_A84;
-    int field_A88;
-    int field_A8C;
-    int field_A90;
-    int field_A94;
-    int field_A98;
-    int field_A9C;
-    int field_AA0;
-    int field_AA4;
-    int field_AA8;
-    int field_AAC;
-    int field_AB0;
-    int field_AB4;
-    int field_AB8;
-};
-
-struct TTilePos {
-    char field_0;
-    char field_1;
-    char field_2;
-    char field_3;
-    char field_4;
-    char field_5;
-    char field_6;
-    char field_7;
-    char field_8;
-    char field_9;
-    char field_A;
-    char field_B;
 };
 
 struct Console {
     void* vtable;
-    TTilePos* paTilePos;
+    int field_4;
     int field_8;
     NameNode oUnknown[201]; // MapWin constructor
     int iZoomX2;
@@ -2529,7 +2446,7 @@ struct Console {
     int iFont3Height;
     int field_1EF4C;
     int field_1EF50;
-    CClass3B oaClass3B[4];
+    ImageButton oImageBtns[4];
     int drawOnlyCursor;
     int field_21A48;
     int field_21A4C;
@@ -2688,7 +2605,7 @@ struct StatusWin {
     int field_15D4;
     int fInOnClick;
     int field_15DC;
-    SpotList oHitBoxList;
+    Spot oHitBoxList;
 };
 
 struct RenderWindow : GraphicWin {
@@ -2782,7 +2699,7 @@ struct RenderWindow : GraphicWin {
     int iFont3Height;
     int field_1EF4C;
     int field_1EF50;
-    CClass3B oaClass3B[4];
+    ImageButton oImageBtns[4];
     int drawOnlyCursor;
     int field_21A48;
     int field_21A4C;
@@ -3396,7 +3313,46 @@ struct Net {
 };
 
 struct AlphaNet : Net {
-    int field_760[40];
+    int field_760;
+    int field_764;
+    int field_768;
+    int field_76C;
+    int field_770;
+    int field_774;
+    int field_778;
+    int field_77C;
+    int field_780;
+    int field_784;
+    int field_788;
+    int field_78C;
+    int field_790;
+    int field_794;
+    int field_798;
+    int field_79C;
+    int field_7A0;
+    int field_7A4;
+    int field_7A8;
+    int field_7AC;
+    int field_7B0;
+    int field_7B4;
+    int field_7B8;
+    int field_7BC;
+    int field_7C0;
+    int field_7C4;
+    int field_7C8;
+    int field_7CC;
+    int field_7D0;
+    int field_7D4;
+    int field_7D8;
+    int field_7DC;
+    int field_7E0;
+    int field_7E4;
+    int field_7E8;
+    int field_7EC;
+    int field_7F0;
+    int field_7F4;
+    int field_7F8;
+    int field_7FC;
     int field_800[256];
     int field_C00[256];
     int field_1000[256];
@@ -3445,15 +3401,14 @@ typedef Font CFont;
 typedef Sprite CSprite;
 typedef Texture CImage;
 typedef NameNode CMainArrayItem;
-typedef SpotList CHitBoxList;
-typedef Spot CHitBox;
+typedef Spot CHitBoxList;
+typedef SpotNode CHitBox;
 typedef Heap CMemAllocator;
 typedef Filemap CFile;
 typedef Strings CLabelAllocator;
 typedef Palette CPalette;
 
 // TODO: Unresolved names/classes to be renamed
-//CClass3B
 //CList
 //CListItem
 //CMenu
@@ -3467,9 +3422,11 @@ static_assert(sizeof(StringStructData) == 0x18, "");
 static_assert(sizeof(StringStructNode) == 0x1C, "");
 static_assert(sizeof(StringStruct) == 0x30, "");
 static_assert(sizeof(Heap) == 0x14, "");
-static_assert(sizeof(Spot) == 0x18, "");
-static_assert(sizeof(SpotList) == 0xC, "");
+static_assert(sizeof(SpotNode) == 0x18, "");
+static_assert(sizeof(Spot) == 0xC, "");
 static_assert(sizeof(NameNode) == 0x260, "");
+static_assert(sizeof(SquareLock) == 0xC, "");
+static_assert(sizeof(PlayerLock) == 0x1C, "");
 static_assert(sizeof(Lock) == 0xEC, "");
 static_assert(sizeof(Time) == 0x28, "");
 static_assert(sizeof(Font) == 0x28, "");
@@ -3486,6 +3443,7 @@ static_assert(sizeof(GraphicWin) == 0xA14, "");
 static_assert(sizeof(BaseButton) == 0xAB8, "");
 static_assert(sizeof(PushButton) == 0xB00, "");
 static_assert(sizeof(FlatButton) == 0xB4C, "");
+static_assert(sizeof(ImageButton) == 0xABC, "");
 static_assert(sizeof(Menu) == 0xB64, "");
 static_assert(sizeof(Scroll) == 0x214C, "");
 static_assert(sizeof(Dialog) == 0xF4, "");
@@ -3496,12 +3454,12 @@ static_assert(sizeof(EditGroup) == 0xB98, "");
 static_assert(sizeof(SetupWin) == 0x16A0, "");
 static_assert(sizeof(BasePop) == 0x3230, "");
 static_assert(sizeof(Popup) == 0x537C, "");
-static_assert(sizeof(PickWindow) == 0x12650, "");
 static_assert(sizeof(NetMessage) == 0x53A4, "");
 static_assert(sizeof(Flic) == 0xAE4, "");
 static_assert(sizeof(StringBox) == 0x2BA0, "");
 static_assert(sizeof(MessageWindow) == 0x3758, "");
 static_assert(sizeof(MultiWindow) == 0x28B8, "");
+static_assert(sizeof(PickWindow) == 0x12650, "");
 static_assert(sizeof(MainInterface) == 0x25090, "");
 static_assert(sizeof(ReportInfc) == 0x20304, "");
 static_assert(sizeof(Console) == 0x247A4, "");
@@ -3515,6 +3473,8 @@ static_assert(offsetof(BasePop, field_3100) == 0x3100, "");
 static_assert(offsetof(PickWindow, field_5DA0) == 0x5DA0, "");
 static_assert(offsetof(PickWindow, field_D638) == 0xD638, "");
 static_assert(offsetof(MainInterface, field_1EAC8) == 0x1EAC8, "");
+static_assert(offsetof(Console, field_1DDE4) == 0x1DDE4, "");
+static_assert(offsetof(Console, field_23BE0) == 0x23BE0, "");
 static_assert(offsetof(RenderWindow, field_1D000) == 0x1D000, "");
 static_assert(offsetof(RenderWindow, field_23000) == 0x23000, "");
 static_assert(offsetof(RenderWindow, oCanvas1) == offsetof(Console, oCanvas1), "");

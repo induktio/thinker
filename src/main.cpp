@@ -459,6 +459,11 @@ int cmd_parse(Config* cf) {
     return 1;
 }
 
+bool FolderExists(const char* path) {
+    DWORD attrs = GetFileAttributesA(path);
+    return (attrs != INVALID_FILE_ATTRIBUTES) && (attrs & FILE_ATTRIBUTE_DIRECTORY);
+}
+
 bool FileExists(const char* path) {
     DWORD attrs = GetFileAttributesA(path);
     return (attrs != INVALID_FILE_ATTRIBUTES) && !(attrs & FILE_ATTRIBUTE_DIRECTORY);
