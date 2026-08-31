@@ -311,12 +311,29 @@ bool do_scroll(double x, double y) {
     return fScrolled;
 }
 
+// On Wayland/XWayland, GetCursorPos FREEZES at the last position the pointer had over the
+// game's surface once the cursor moves onto another monitor or a native Wayland window:
+// Wayland has no API to query the global pointer position, so a client only learns where the
+// pointer is while it is over its own window. check_scroll() below relied on GetCursorPos
+// changing to detect the cursor leaving the edge zone; under Wayland that never happens, so
+// the loop spins forever and the game appears frozen (scrolling) while the real cursor moves
+// freely. s_pointer_in_window is the reliable signal -- driven by WM_MOUSELEAVE / WM_MOUSEMOVE
+// (armed via TrackMouseEvent in ModWinProc), which Wine still delivers correctly off-surface.
+static bool s_pointer_in_window = true;
+
 void check_scroll() {
     POINT p;
     if (CState.Scrolling || (!GetCursorPos(&p) && !(CState.ScrollDragging && CState.RightButtonDown))) {
         return;
     }
     CState.Scrolling = true;
+    // If the pointer has already left the game window, do not edge-scroll: GetCursorPos would
+    // return a stale on-edge position under Wayland and scroll the map forever. Drag-scroll
+    // (held right button) is exempt -- it is driven by button state and relative motion.
+    if (!s_pointer_in_window && !CState.RightButtonDown) {
+        CState.Scrolling = false;
+        return;
+    }
     int w = CState.ScreenSize.x;
     int h = CState.ScreenSize.y;
     static ULONGLONG ullDeactiveTimer = 0;
@@ -337,6 +354,8 @@ void check_scroll() {
     CState.ScrollOffsetY = MapWin->iMapPixelTop;
     ullNewTickCount = get_ms_count();
     ullOldTickCount = ullNewTickCount;
+    // Timestamp the start of this scrolling burst so the loop can bound itself (below).
+    ULONGLONG ullLoopStart = ullNewTickCount;
 //    debug("scroll_check %d %d %d\n", CState.Scrolling, (int)CState.ScrollDragPos.x, (int)CState.ScrollDragPos.y);
     do {
         double dTPS = -1;
@@ -396,6 +415,14 @@ void check_scroll() {
                 (int)p.x, (int)p.y, CState.ScrollOffsetX, CState.ScrollOffsetY, dx, dy, dTPS);
         }
 
+        // Bound this scrolling burst so it yields to the message pump, which is what processes
+        // WM_MOUSELEAVE and updates s_pointer_in_window. Without this, a frozen GetCursorPos
+        // (cursor left the window on Wayland) keeps fScrolled true and the loop never returns --
+        // the documented hang. mod_blink_timer re-drives check_scroll for continuous scrolling
+        // while the cursor is genuinely still held at the edge. Drag-scroll is exempt.
+        if (!CState.ScrollDragging && ullNewTickCount - ullLoopStart > 100) {
+            break;
+        }
     } while (fScrolled && (GetCursorPos(&p) || (CState.ScrollDragging && CState.RightButtonDown)));
 
     if (fScrolledAtAll) {
@@ -561,6 +588,18 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     static int delta_accum = 0;
     POINT p;
     MAP* sq;
+
+    // Track whether the OS pointer is inside the game window. WM_MOUSELEAVE (armed via
+    // TrackMouseEvent on each move) is the reliable "cursor left" signal under Wayland, where
+    // GetCursorPos cannot report it (see s_pointer_in_window above). This only sets the flag --
+    // it does not consume the message, so all handling below is unaffected.
+    if (msg == WM_MOUSEMOVE) {
+        s_pointer_in_window = true;
+        TRACKMOUSEEVENT tme = { sizeof(TRACKMOUSEEVENT), TME_LEAVE, hwnd, 0 };
+        TrackMouseEvent(&tme);
+    } else if (msg == WM_MOUSELEAVE) {
+        s_pointer_in_window = false;
+    }
 
     if (msg == WM_ACTIVATEAPP && conf.auto_minimise && !conf.reduced_mode) {
         if (!LOWORD(wParam)) {
