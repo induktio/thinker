@@ -46,7 +46,7 @@ const char* alpha_file() {
     return conf.smac_only ? ModAlphaFile : AlphaFile;
 }
 
-static void __cdecl set_language(int value) {
+void __cdecl set_language(int value) {
     *GameLanguage = value;
 }
 

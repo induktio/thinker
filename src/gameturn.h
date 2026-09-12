@@ -3,10 +3,14 @@
 #include "main.h"
 
 void __cdecl control_turn();
+int __cdecl net_upkeep_phase(int value);
+void __cdecl net_upkeep();
 void __cdecl mash_planes();
 void __cdecl net_not_my_turn();
 void __cdecl net_end_of_turn();
 void __cdecl net_control_turn();
+int __cdecl next_player_turn();
+int __cdecl not_my_turn();
 void __cdecl clear_council_notify(int faction_id);
 void __cdecl clear_council_notify_2();
 void __cdecl random_events(int flag);

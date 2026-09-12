@@ -636,13 +636,13 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
     } else if (msg == WM_KEYDOWN && (wParam == VK_LEFT || wParam == VK_RIGHT)
     && ctrl_key_down() && current_window() == GW_Base) {
-        int32_t value = BaseWin->oRender.iResWindowTab;
+        int32_t value = BaseWin->iResWindowTab;
         if (wParam == VK_LEFT) {
             value = (value + 1) % 3;
         } else {
             value = (value + 2) % 3;
         }
-        BaseWin->oRender.iResWindowTab = value;
+        BaseWin->iResWindowTab = value;
         GraphicWin_redraw(BaseWin);
 
     } else if (msg == WM_KEYDOWN && wParam == 'H' && ctrl_key_down()

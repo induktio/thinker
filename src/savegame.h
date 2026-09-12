@@ -12,7 +12,7 @@ enum SaveLoadStatus {
 };
 
 int __cdecl game_data(FILE* fp, int write_file);
-int __cdecl game_io(Console* state, FILE* fp);
+int __cdecl game_io(MapWindow* state, FILE* fp);
 int __cdecl encrypt_write(void* src_ptr, size_t len, size_t cnt, FILE* fp);
 int __cdecl encrypt_read(void* dst_ptr, size_t len, size_t cnt, FILE* fp);
 void __cdecl map_shutdown();

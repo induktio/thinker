@@ -163,11 +163,6 @@ struct DefaultPref {
     int32_t top_menu;
 };
 
-struct Label {
-    char** labels;
-    uint32_t label_count;
-};
-
 struct Landmark {
     int32_t x;
     int32_t y;
@@ -916,6 +911,38 @@ struct CWorldbuilder {
     int32_t islands;
 };
 
+struct GameChecksum {
+    union {
+        struct {
+            uint32_t game;
+            uint32_t leaders;
+            uint32_t map_all;
+            uint32_t vehs;
+            uint32_t bases;
+            uint32_t map_section[16];
+        };
+        uint32_t values[21];
+    };
+};
+
+struct FullChecksum : GameChecksum {
+    uint32_t rules;
+    uint32_t projects;
+    uint32_t tech;
+    uint32_t faction[7];
+    uint32_t map_climate;
+    uint32_t map_region;
+    uint32_t map_bit;
+    uint32_t map_contour;
+    uint32_t map_owner;
+    uint32_t map_bitwho;
+    uint32_t params;
+    uint32_t faction_vehs[8];
+    uint32_t bases2;
+};
+
+static_assert(sizeof(GameChecksum) == 0x54, "");
+static_assert(sizeof(FullChecksum) == 0xBC, "");
 
 #pragma GCC diagnostic pop
 #pragma pack(pop)

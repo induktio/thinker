@@ -1,5 +1,6 @@
 
 #include "game.h"
+#include <direct.h>
 
 int* const dword_945818 = (int*)0x945818;
 int* const dword_945820 = (int*)0x945820;
@@ -11,7 +12,13 @@ char* const unk_945E7C = (char*)0x945E7C;
 char* const unk_945834 = (char*)0x945834;
 char* const unk_9B2078 = (char*)0x9B2078;
 GUID* const unk_689218 = (GUID*)0x689218;
-Popup* const ThumbPopup = (Popup*)0x9403E0;
+// multiplayer related
+int8_t* const NetConfigValue = (int8_t*)0x90E8E0;
+int* const NetConfigRules = (int*)0x90E8EC;
+int* const NetConfigState = (int*)0x90E8F0;
+int* const NetConfigMRules = (int*)0x90E8F4;
+void* const unk_6F107C = (void*)0x6F107C;
+int* const dword_90DE8C = (int*)0x90DE8C;
 
 const uint32_t GameRulesOptions[][2] = {
     {0x1, RULES_VICTORY_TRANSCENDENCE},
@@ -91,8 +98,37 @@ bool valid_triad(int triad) {
 }
 
 char* label_get(size_t index) {
-    assert(index < TextLabels->label_count);
+    assert(index < (size_t)TextLabels->label_count);
     return (TextLabels->labels)[index];
+}
+
+int __cdecl labels_init() {
+    labels_shutdown();
+    if (text_open("labels", "labels")) {
+        return 1;
+    }
+    text_get();
+    TextLabels->label_count = text_item_number();
+    TextLabels->labels = (char**)mem_get(4 * TextLabels->label_count);
+    if (!TextLabels->labels) {
+        return 1;
+    }
+    int num = 0;
+    while (num < TextLabels->label_count) {
+        // replace function text_string with Strings_put(TextTable, text_get())
+        TextLabels->labels[++num - 1] = Strings_put(TextTable, text_get());
+    }
+    text_close();
+    debug("labels_init %d\n", num);
+    return 0;
+}
+
+void __cdecl labels_shutdown() {
+    if (TextLabels->labels) {
+        mem_free(TextLabels->labels);
+        TextLabels->labels = nullptr;
+    }
+    TextLabels->label_count = 0;
 }
 
 void __cdecl clear() {
@@ -278,11 +314,11 @@ void __cdecl control_game() {
         system_close();
     };
     if (!system_init() && !game_init(0, 1)) {
-        *ControlTurnB = 0;
         *GameHalted = 1;
         *ControlTurnA = 0;
+        *ControlTurnB = 0;
         *MultiplayerActive = 0;
-        int start_lobby = Net_check_for_lobby(NetState, GameCmdLine, unk_689218, 3, 9);
+        int start_lobby = Net_check_for_lobby(NetState, GameCmdLine, unk_689218, 3, NetVersion);
         if (!start_lobby) {
             // Remove legacy startup code that checks whether a complete installation has been performed
             // This also skips FILEFIND_NOCD label from being displayed by filefind_init
@@ -297,6 +333,12 @@ void __cdecl control_game() {
         }
         if (!shift_key_down()) {
             FX_init(Sounds);
+        }
+        if (!conf.minimal_popups && TextLabels->label_count < TextLabelNum) {
+            // Display warning if parsed labels.txt count is below the number used
+            // by the game to avoid crashes when accessing values out of bounds
+            parse_says(0, "labels.txt", -1, -1);
+            popp("SCRIPT", "LOADERROR", 0, 0, 0);
         }
         flushlog();
         while (true) {
@@ -859,6 +901,284 @@ int __cdecl top_menu(int flag) {
     }
 }
 
+int __cdecl desktop_init(int flag) {
+    load_music(MapWin->cOwner);
+    InfoWin_init(InfoWin);
+    WorldWin_init(WorldWin, flag);
+    StatusWin_init(StatusWin);
+    mapwin_system_init(flag);
+    MultiWin_init(MultiWin);
+    BaseWin_init(BaseWin);
+    DesignWin_init(DesignWin);
+    DiploPop_init(DiploPop);
+    ReportIf_init(ReportIf);
+    PrefWin_init(PrefWin);
+    MapWin->field_23D80 = 10;
+    int px = *(int*)((char*)&MapWin->oUnknown[1].field_258 + *((DWORD*)MapWin->vtable + 1));
+    int py = *(int*)((char*)&MapWin->oUnknown[1].field_25C + *((DWORD*)MapWin->vtable + 1));
+    MapWin->field_23D80 = MapWin->oMainMenu.rRect2.right - MapWin->oMainMenu.rRect2.left + 10;
+    MapWin->field_23D84 = px - 10;
+    if (*MultiplayerActive) {
+        MapWin->field_23D84 = MultiWin->rRect2.left - MultiWin->rRect2.right + px - 10;
+    }
+    MapWin->field_23D88 = 10;
+    MapWin->field_23D8C = -10 - py;
+    if (*CurrentTurn) {
+        draw_map(1);
+    }
+    Win_show(MainInfc, 0);
+    Win_show((GraphicWin *)((char*)MapWin + *((DWORD*)MapWin->vtable + 1)), 0);
+    if (*PbemActive) {
+        GraphicWin_fill(&MapWin->oWinBuffed, 0);
+        Win_show(&MapWin->oWinBuffed, 0);
+    }
+    do_all_non_input();
+    close_opening();
+    do_all_non_input();
+    return 0;
+}
+
+void __cdecl desktop_close() {
+    DesignWin_close(DesignWin);
+    BaseWin_close(BaseWin);
+    mapwin_system_shutdown();
+    StatusWin_close(StatusWin);
+    GraphicWin_close(WorldWin);
+    GraphicWin_close(MultiWin);
+    Win_hide(MainInfc);
+}
+
+int __cdecl system_init() {
+    _mkdir("saves");
+    _mkdir("saves\\auto");
+    _mkdir("maps");
+    _mkdir("scenarios");
+    *GameHalted = 1;
+    log_set_state(0);
+    set_language(prefs_get_2("Language", 0, 0));
+    textcolor_init();
+    Strings_init(TextTable, 0xC320u);
+    if (labels_init()) {
+        return 1;
+    }
+    snprintf(StrBuffer, StrBufLen, "%s", label_get(TL_Cancel));
+    if (*GameLanguage != 2) {
+        CharUpperA(StrBuffer);
+    }
+    BasePop_set_def_cancel_text(StrBuffer);
+    snprintf(StrBuffer, StrBufLen, "%s", label_get(TL_OK));
+    CharUpperA(StrBuffer);
+    BasePop_set_def_ok_text(StrBuffer);
+    load_fixed_sprites();
+    config_popups();
+    for (int i = 1; i < 8; ++i) {
+        MapWinAlt* win = (MapWinAlt*)mem_get(0x22480u); // replace operator_new
+        if (win) {
+            win = (MapWinAlt*)MapWin_ctor(win, 1);
+        }
+        MapWinPtr[i] = win;
+    }
+    MapWinPtr[0] = MapWin;
+    MapWin->iWhatToDrawFlags &= ~(MAPWIN_DRAW_BASE_NAMES|MAPWIN_DRAW_BASE_TILES|MAPWIN_DRAW_UNITS);
+    MainInterface_init(MainInfc, 0);
+    BattleWin_init(BattleWin);
+    Console_init(MapWin, 0);
+    void* ptr = (MapWin ? (char*)MapWin + *((DWORD*)MapWin->vtable + 1) : nullptr);
+    MultiDebug_init(MultiDebugWin, NetState, ptr, unk_6F107C);
+    MessageWin_init(MessageWin);
+    Datalink_init(DatalinkWin);
+    bung_momma();
+    return 0;
+}
+
+void __cdecl system_close() {
+    release_sound();
+    close_opening();
+    DesignWin_close(DesignWin);
+    MultiDebug_close(MultiDebugWin);
+    Console_close(MapWin);
+    Path_shutdown(Paths);
+    map_shutdown();
+    for (int i = 1; i < 8; ++i) {
+        MapWindow* win = MapWinPtr[i];
+        if (win) {
+            (**(void (__thiscall***)(int, int))((char*)&win->vtable + *((DWORD*)win->vtable + 1)))
+                ((int)win + *((DWORD*)win->vtable + 1), 1);
+            MapWinPtr[i] = nullptr;
+        }
+    }
+}
+
+int __cdecl multiplayer_init(int flag) {
+    int value;
+    auto cleanup_close = [](int val) {
+        log_set_state(0);
+        NetDaemon_cleanup(NetState);
+        *MultiplayerActive = 0;
+        return val;
+    };
+    *MultiplayerActive = 1;
+    log_set_state(0);
+    NetWin_config_players(NetWin);
+    if (flag) {
+        NetState->field_48 = 0xDC;
+        NetState->field_4C = 0x100DC;
+        NetState->field_D8 |= 1u;
+    } else if (NetDaemon_init(NetState, 0)) {
+        return cleanup_close(1);
+    }
+    if (*PbemActive) {
+        *MultiplayerActive = 0;
+        value = top_menu(1);
+        if (value) {
+            *PbemActive = 0;
+        }
+        return value;
+    }
+    NetState->dword_93E8D8 = 0;
+    if (*ControlTurnA || NetWin_exec(NetWin) < 1) {
+        return cleanup_close(1);
+    }
+    *GameRules = *NetConfigRules;
+    *DiffLevel = NetConfigValue[2];
+    *GameState |= *NetConfigState & (STATE_RAND_FAC_LEADER_SOCIAL_AGENDA|STATE_RAND_FAC_LEADER_PERSONALITIES);
+    if (*NetConfigMRules & MRULES_UNK_10) {
+        *GameMoreRules |= MRULES_UNK_10;
+    } else {
+        *GameMoreRules &= ~MRULES_UNK_10;
+    }
+    if (NetState->dword_93E8C0) {
+        FactionStatus[0] = 0;
+        for (int i = 1, cnt = NetState->field_768; i <= cnt; ++i) {
+            FactionStatus[0] |= (1 << ((uint8_t)NetState->plr_list[i][9]));
+        }
+        if (!*NetSetupType) {
+            if (text_open(AlphaFile, "WORLDSIZE")) {
+                *MapSizePlanet = 2;
+                *MapAreaX = 40;
+                *MapAreaY = 80;
+            } else {
+                text_get();
+                int entry_count = min(32, text_item_number());
+                int mx[32] = {};
+                int my[32] = {};
+                for (int i = 0; i < entry_count; i++) {
+                    text_get();
+                    text_item();
+                    mx[i] = text_item_number();
+                    my[i] = text_item_number();
+                }
+                int val;
+                if (NetConfigValue[6] == -1) {
+                    val = game_rand() % 5;
+                } else {
+                    val = NetConfigValue[6];
+                }
+                *MapSizePlanet = val;
+                *MapAreaX = 2 * mx[val];
+                *MapAreaY = my[val];
+            }
+            map_init();
+            Path_init(Paths);
+            *GameDrawState |= 8u;
+            // Fix: rewrite values setup for MapOceanCoverage/MapLandCoverage
+            if (NetConfigValue[7] < 0 || NetConfigValue[7] > 2) {
+                *MapOceanCoverage = 2 - clamp((game_rand() % 7 + 1) / 2, 0, 2);
+            } else {
+                *MapOceanCoverage = NetConfigValue[7];
+            }
+            *MapLandCoverage = 2 - *MapOceanCoverage;
+            *MapPlanetaryOrbit = 1;
+            *MapErosiveForces = NetConfigValue[8];
+            *MapCloudCover = NetConfigValue[10];
+            *MapNativeLifeForms = NetConfigValue[9];
+            mod_world_build();
+        }
+        if (*NetSetupType != 3 && *NetSetupType != 2) {
+            *VehCount = 0;
+            setup_game(0);
+        }
+    }
+    if (NetState->field_768 >= 1) {
+        int32_t* ptr = dword_90DE8C;
+        for (int i = 1, cnt = NetState->field_768; i <= cnt; ++i) {
+            int fc_id = (uint8_t)NetState->plr_list[i][9];
+            Factions[fc_id].unk_102 = *ptr;
+            ptr += 95;
+        }
+    }
+    *GameState |= *NetConfigState & (STATE_RAND_FAC_LEADER_SOCIAL_AGENDA|STATE_RAND_FAC_LEADER_PERSONALITIES);
+    if (*NetConfigMRules & MRULES_UNK_10) {
+        *GameMoreRules |= MRULES_UNK_10;
+    } else {
+        *GameMoreRules &= ~MRULES_UNK_10;
+    }
+    GameTimeControl[0] = (uint8_t)NetConfigValue[3];
+    MapWin->cOwner = AlphaNet_pid_2_who(NetState, NetState->field_760);
+    if (*NetSetupType == 3) {
+        *GameState |= STATE_IS_SCENARIO;
+        if (NetDaemon_send_files(NetState)) {
+            pop_close();
+            return cleanup_close(1);
+        }
+        if (NetState->dword_93E8C0) {
+            scenario_setup();
+        }
+    } else {
+        *GameState &= ~STATE_IS_SCENARIO;
+    }
+    log_reset();
+    if (NetState->dword_93E8C0) {
+        FactionStatus[0] = 0;
+        for (int i = 1, cnt = NetState->field_768; i <= cnt; ++i) {
+            FactionStatus[0] |= (1 << ((uint8_t)NetState->plr_list[i][9]));
+        }
+        NetDaemon_send_rules(NetState);
+        NetDaemon_send_game(NetState);
+    } else {
+        memcpy(AltNatural, ElevDetail, 44u);
+        while (NetState->dword_93E8D8 < 8) {
+            if (*ControlTurnA) {
+                break;
+            }
+            NetDaemon_receive(NetState);
+            do_all_tasks();
+        }
+    }
+    if (*NetSetupType == 3) {
+        desktop_close();
+        stop_timers();
+        labels_shutdown();
+        Strings_shutdown(TextTable);
+        if (!game_init(1, 0)) {
+            desktop_init(1);
+            *GameHalted = 0;
+        }
+    }
+    Lock_clear(LockState);
+    if (!*ControlTurnMove) {
+        planetfall(MapWin->cOwner);
+    }
+    if (*NetSetupType == 3) {
+        parse_says(1, get_title(MapWin->cOwner), -1, -1);
+        parse_says(2, get_name(MapWin->cOwner), -1, -1);
+        parse_says(3, get_noun(MapWin->cOwner), -1, -1);
+        snprintf(StrBuffer, StrBufLen, "%s ", label_get(TL_MissionYear));
+        say_year(StrBuffer);
+        parse_says(4, StrBuffer, -1, -1);
+        parse_num(0, *ObjectiveReqVictory);
+        parse_num(1, *ObjectivesSuddenDeathVictory);
+        parse_num(2, num_objectives(MapWin->cOwner, *GameRules & RULES_VICTORY_COOPERATIVE));
+        parse_num(3, *EndingMissionYear);
+        X_pop_2("SCENARIO", "INTRO", 0);
+    }
+    value = *ControlTurnA;
+    if (!value) {
+        return value;
+    }
+    return cleanup_close(value);
+}
+
 int __cdecl game_init(int tgl_text, int tgl_rules) {
     *GameHalted = 1;
     size_t seed = next_rand();
@@ -894,12 +1214,7 @@ int __cdecl game_init(int tgl_text, int tgl_rules) {
 
 int __cdecl game_reload(int tgl_init, int tgl_rules) {
     if (tgl_init) {
-        DesignWin_close(DesignWin);
-        mapwin_system_shutdown();
-        StatusWin_close(StatusWin);
-        GraphicWin_close(WorldWin);
-        GraphicWin_close(MultiWin);
-        Win_hide(MainWin);
+        desktop_close();
     }
     stop_timers();
     labels_shutdown();

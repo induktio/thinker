@@ -507,6 +507,9 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 73. Remove original leftover debug code that activated the scenario editor mode when any savegame with specific filenames were loaded.
 74. Fix multiple significant data consistency issues or possible game crashes when loading or writing savegames. The game will do additional checks to reject any savegames that may contain corrupted data.
 75. Modify random faction selection to use custom rules with skip_faction and faction_pair options. Skipped factions always override pairing rules but otherwise the pairs are resolved in the order they are defined.
+76. Fix inconsistent calculations with faction rankings when Security Nexus counters do not match the actual units present on the map.
+77. Fix possible mistake in rankings calculations that caused any non-PB, non-PSI combat unit not to count towards the rating unless the weapon value is equal to the current maximum across all factions.
+78. Game warns at startup when parsed labels.txt has fewer lines than the required count to avoid possible game crashes.
 
 
 Scient's patch

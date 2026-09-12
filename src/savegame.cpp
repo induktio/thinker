@@ -8,24 +8,14 @@ const char* FileExtMap = "MP";
 const char* FileExtScn = "SC";
 const char* FileExtSav = "SAV";
 
-int* const dword_6FF69C = (int*)0x6FF69C;
-int* const dword_6FF6A0 = (int*)0x6FF6A0;
-int* const dword_6FF6A4 = (int*)0x6FF6A4;
-int* const dword_6FF6A8 = (int*)0x6FF6A8;
-int* const dword_6FF6D4 = (int*)0x6FF6D4;
-int* const dword_6FF6F4 = (int*)0x6FF6F4;
-int* const dword_93A9B8 = (int*)0x93A9B8;
-int* const dword_93A9D8 = (int*)0x93A9D8;
 int* const dword_93F798 = (int*)0x93F798;
 int* const dword_94B558 = (int*)0x94B558;
 int* const dword_939E5C = (int*)0x939E5C;
 int* const dword_939E58 = (int*)0x939E58;
-void* const unk_93E978 = (void*)0x93E978;
 void* const unk_9B2178 = (void*)0x9B2178;
 void* const unk_9B208D = (void*)0x9B208D;
 char* const unk_945D80 = (char*)0x945D80;
 char* const unk_9B2078 = (char*)0x9B2078;
-Console* const UnkWin_8EB48C = (Console*)0x8EB48C;
 StringStruct* const DiploTextTable = (StringStruct*)0x93A7B8; // [8]
 StringStruct (*const DiploMessageTable)[8] = (StringStruct (*)[8])0x737CD8; // [8][8]
 
@@ -181,7 +171,7 @@ int __cdecl game_data(FILE* fp, int write_file) {
             if (!file_feed(GamePreferences, 0x398u, 1u, fp)) {
                 return 1;
             }
-            if (!file_feed(unk_93E978, 0xCE0u, 1u, fp)) {
+            if (!file_feed(DiploPlrList, 0xCE0u, 1u, fp)) {
                 return 1;
             }
             if (!file_feed(dword_93F798, 4u, 1u, fp)) {
@@ -433,7 +423,7 @@ int __cdecl game_data(FILE* fp, int write_file) {
             return 1;
         }
     }
-    if (game_io(UnkWin_8EB48C, fp)) {
+    if (game_io(&WorldWin->oMapWin, fp)) {
         return 1;
     }
     if (*GameMoreRules & MRULES_UNK_20) {
@@ -525,12 +515,12 @@ int __cdecl game_data(FILE* fp, int write_file) {
                 }
             }
         }
-        if (!file_feed(dword_6FF69C, 4u, 1u, fp)) return 1;
-        if (!file_feed(dword_6FF6A0, 4u, 1u, fp)) return 1;
-        if (!file_feed(dword_6FF6A4, 4u, 1u, fp)) return 1;
-        if (!file_feed(dword_6FF6A8, 4u, 1u, fp)) return 1;
-        if (!file_feed(dword_6FF6D4, 0x20u, 1u, fp)) return 1;
-        if (!file_feed(dword_6FF6F4, 0x20u, 1u, fp)) return 1;
+        if (!file_feed(&CouncilWin->field_A1C, 4u, 1u, fp)) return 1;
+        if (!file_feed(&CouncilWin->field_A20, 4u, 1u, fp)) return 1;
+        if (!file_feed(&CouncilWin->field_A24, 4u, 1u, fp)) return 1;
+        if (!file_feed(&CouncilWin->field_A28, 4u, 1u, fp)) return 1;
+        if (!file_feed(&CouncilWin->field_A54, 0x20u, 1u, fp)) return 1;
+        if (!file_feed(&CouncilWin->field_A74, 0x20u, 1u, fp)) return 1;
         if (!file_feed(CouncilSessionPending, 4u, 1u, fp)) return 1;
         if (!file_feed(CouncilProposal, 0x20u, 1u, fp)) return 1;
         if (!file_feed(CouncilVoteState, 0x20u, 1u, fp)) return 1;
@@ -566,7 +556,7 @@ int __cdecl game_data(FILE* fp, int write_file) {
     return 0;
 }
 
-int __cdecl game_io(Console* state, FILE* fp) {
+int __cdecl game_io(MapWindow* state, FILE* fp) {
     if (!file_feed(&state->iDrawToggleB, 4u, 1u, fp)) return 1;
     if (!file_feed(&state->iDrawToggleA, 4u, 1u, fp)) return 1;
     if (!file_feed(&state->iWhatToDrawFlags, 4u, 1u, fp)) return 1;
@@ -844,7 +834,8 @@ int __cdecl mod_save_daemon(const char* filename) {
     if (*MultiplayerActive) {
         *GameState |= STATE_UNK_10000000;
         *dword_93F798 = NetState->field_768;
-        memcpy(unk_93E978, &NetState->field_76C, 0xCE0u);
+        static_assert(sizeof(NetState->plr_list) == 0xCE0u, "");
+        memcpy(DiploPlrList, &NetState->plr_list, 0xCE0u);
     }
     char path[StrBufLen];
     if (strchr(filename, '.')) {
@@ -900,7 +891,7 @@ int __cdecl mod_load_daemon(const char* filename, int flag) {
         return SAVE_LOAD_OLD;
     }
     for (int i = 2; i < 8; ++i) {
-        Console* win = MapWinPtr[i];
+        MapWindow* win = MapWinPtr[i];
         if (win && win->iDrawToggleA) {
             win->iDrawToggleA = 0;
             MapWin_close(win);
@@ -921,7 +912,7 @@ int __cdecl mod_load_daemon(const char* filename, int flag) {
     }
     if (!*MultiplayerActive) {
         for (int i = 2; i < 8; ++i) {
-            Console* ptr = MapWinPtr[i];
+            MapWindow* ptr = MapWinPtr[i];
             if (ptr) {
                 ptr->iDrawToggleA = 0;
             }
@@ -1043,7 +1034,7 @@ int __cdecl mod_load_map_daemon(const char* filename) {
             int min_ver = is_save ? 0x56 : 0x5;
             if (version >= min_ver) {
                 for (int i = 1; i < 8; ++i) {
-                    Console* win = MapWinPtr[i];
+                    MapWindow* win = MapWinPtr[i];
                     if (win && win->iDrawToggleA) {
                         win->iDrawToggleA = 0;
                         MapWin_close(win);

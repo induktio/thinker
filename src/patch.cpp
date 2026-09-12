@@ -24,29 +24,6 @@ int __thiscall NetWin_random_get(void*, int low, int high) {
     return val;
 }
 
-/*
-Change FORESTGROWS / KELPGROWS / PRODUCE popups into delayed notification items on the message log.
-*/
-int __cdecl alien_fauna_pop2(const char* label, const char* imagefile, int a3) {
-    if (conf.game_event_popup) {
-        return POP2(label, imagefile, a3);
-    }
-    return NetMsg_pop(NetMsg, label, 5000, 0, imagefile);
-}
-
-int __cdecl base_production_popp(const char* textfile, const char* label, int a3, const char* imagefile, fp_none fn) {
-    int item_id = (*CurrentBase ? (*CurrentBase)->item() : 0);
-    if (!conf.game_event_popup
-    && (item_id == -FAC_SKY_HYDRO_LAB
-    || item_id == -FAC_ORBITAL_POWER_TRANS
-    || item_id == -FAC_NESSUS_MINING_STATION
-    || item_id == -FAC_ORBITAL_DEFENSE_POD
-    || item_id == -FAC_GEOSYNC_SURVEY_POD)) {
-        return NetMsg_pop(NetMsg, label, 5000, 0, imagefile);
-    }
-    return popp(textfile, label, a3, imagefile, fn);
-}
-
 int __cdecl MapWin_gen_terrain_nearby_fungus(int x, int y) {
     MAP* sq;
     int k = 0;
@@ -483,9 +460,11 @@ bool patch_setup(Config* cf) {
     write_jump(0x527290, (int)faction_upkeep);
     write_jump(0x52AD30, (int)council_votes);
     write_jump(0x52AE20, (int)eligible);
+    write_jump(0x52DC70, (int)not_my_turn);
     write_jump(0x5391C0, (int)net_treaty_on);
     write_jump(0x539230, (int)net_treaty_off);
     write_jump(0x5392A0, (int)net_set_treaty);
+    write_jump(0x539310, (int)net_agenda_on);
     write_jump(0x539380, (int)net_agenda_off);
     write_jump(0x5393F0, (int)net_set_agenda);
     write_jump(0x539460, (int)net_energy);
@@ -559,9 +538,9 @@ bool patch_setup(Config* cf) {
     write_jump(0x59E510, (int)prefs_put);
     write_jump(0x59E530, (int)prefs_put_2);
     write_jump(0x59E5D0, (int)prefs_save);
+    write_jump(0x59E950, (int)prefs_use);
     write_jump(0x59E980, (int)vulnerable);
     write_jump(0x59EE50, (int)corner_market);
-    write_jump(0x59E950, (int)prefs_use);
     write_jump(0x59F120, (int)probe);
     write_jump(0x5ABFF0, (int)get_rating);
     write_jump(0x5AC060, (int)is_objective);
@@ -603,6 +582,8 @@ bool patch_setup(Config* cf) {
     write_jump(0x5C2380, (int)world_raise_alt);
     write_jump(0x5C23E0, (int)world_lower_alt);
     write_jump(0x5C5A30, (int)world_climate);
+    write_jump(0x6169D0, (int)labels_shutdown);
+    write_jump(0x616A00, (int)labels_init);
     write_jump(0x626250, (int)log_say);
     write_jump(0x6262F0, (int)log_say_2);
     write_jump(0x626350, (int)log_say_hex);
@@ -677,9 +658,6 @@ bool patch_setup(Config* cf) {
     write_call(0x55B5E1, (int)map_draw_strcmp); // base_draw
     write_call(0x561948, (int)enemy_upgrade); // enemy_strategy
     write_call(0x564879, (int)wipe_goals); // enemy_strategy
-    write_call(0x4F2A4C, (int)base_production_popp); // #PRODUCE
-    write_call(0x522544, (int)alien_fauna_pop2); // #KELPGROWS
-    write_call(0x522555, (int)alien_fauna_pop2); // #FORESTGROWS
     write_call(0x5C0984, (int)veh_kill_lift); // veh_kill
     write_call(0x57BC7A, (int)monolith); // goody_box
     write_call(0x5991C8, (int)monolith); // order_veh
@@ -722,7 +700,7 @@ bool patch_setup(Config* cf) {
     write_call(0x5C8866, (int)mod_world_shorelines); // world_build
     write_call(0x5A98C9, (int)mod_world_linearize_contours); // load_daemon
     write_call(0x5C8949, (int)mod_world_linearize_contours); // world_build
-    write_call(0x403BD4, (int)mod_amovie_project); // amovie_project2
+    write_call(0x403BD4, (int)mod_amovie_project); // amovie_project
     write_call(0x4F2B4B, (int)mod_amovie_project); // base_production
     write_call(0x524D06, (int)mod_amovie_project); // end_of_game
     write_call(0x524D28, (int)mod_amovie_project); // end_of_game

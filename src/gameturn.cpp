@@ -8,28 +8,12 @@ int* const dword_78D870 = (int*)0x78D870;
 int* const dword_7AD34C = (int*)0x7AD34C;
 int* const dword_7AE778 = (int*)0x7AE778;
 int* const dword_7D392C = (int*)0x7D392C;
-int* const dword_93A940 = (int*)0x93A940;
-int* const dword_93A9B8 = (int*)0x93A9B8;
-int* const dword_93A9D8 = (int*)0x93A9D8;
 char* const unk_93AA04 = (char*)0x93AA04;
 char* const unk_93AA08 = (char*)0x93AA08;
 // multiplayer related
-int* const dword_93A93C = (int*)0x93A93C;
-int* const dword_93A950 = (int*)0x93A950;
-int* const dword_93A954 = (int*)0x93A954;
-int* const dword_93A960 = (int*)0x93A960;
-int* const dword_93E8BC = (int*)0x93E8BC;
-int* const dword_93E8C0 = (int*)0x93E8C0;
-int* const dword_93E8D4 = (int*)0x93E8D4;
-int* const dword_93E8E0 = (int*)0x93E8E0;
-int* const dword_93E8E4 = (int*)0x93E8E4;
-int* const dword_93E8EC = (int*)0x93E8EC;
-int* const dword_93E8F0 = (int*)0x93E8F0;
-int* const dword_93E8F8 = (int*)0x93E8F8;
-int* const dword_93E8FC = (int*)0x93E8FC;
-int* const dword_93E90C = (int*)0x93E90C;
-int* const dword_93E964 = (int*)0x93E964;
-int* const dword_93E968 = (int*)0x93E968;
+int* const dword_93F670 = (int*)0x93F670;
+int* const dword_93F674 = (int*)0x93F674;
+
 
 static bool territory_avail(int faction_id, int x, int y) {
     int owner = whose_territory(faction_id, x, y, 0, 0);
@@ -339,6 +323,302 @@ void __cdecl control_turn() {
     }
 }
 
+int __cdecl net_upkeep_phase(int value) {
+    NetState->dword_93E8FC |= (1 << MapWin->cOwner);
+    MultiWin_draw(MultiWin, 0);
+    log_say_2("Upkeep Phase", value, *CurrentTurn, NetState->dword_93E8F0);
+    message_data(0x2303, 0, value, *CurrentTurn, 0, 0);
+    DWORD prev = GetTickCount(); // replace timeGetTime
+    bool skip = value >= 4;
+    while ((NetState->dword_93E8F0 & FactionStatus[0]) != FactionStatus[0]) {
+        if (*ControlTurnA) {
+            return 1;
+        }
+        if (GetTickCount() - prev > 1000) {
+            if (!skip) {
+                parse_num(0, NetState->dword_93E8F0);
+                parse_num(1, FactionStatus[0]);
+                snprintf(StrBuffer, StrBufLen, "UPKEEP%d", value);
+                NetMsg_pop(NetMsg, StrBuffer, 0, 1, 0);
+                skip = 1;
+            }
+            prev = GetTickCount();
+        }
+        NetDaemon_net_tasks(NetState);
+    }
+    if (*ControlTurnA) {
+        return 1;
+    }
+    if (NetState->dword_93E8C0) {
+        log_say_2("Server sending upkeep message", value, 0, 0);
+        message_data(0x4303, 0, value, *CurrentTurn, 0, 0);
+        NetState->dword_93E8F0 = 0;
+        if (FactionStatus[0]) {
+            do {
+                NetDaemon_receive(NetState);
+            } while ((NetState->dword_93E8F0 & FactionStatus[0]) != FactionStatus[0]);
+        }
+    } else {
+        log_say_2("Client falling out of upkeep loop", value, 0, 0);
+    }
+    NetMsg_close(NetMsg);
+    NetState->dword_93E8FC = 0;
+    NetState->dword_93E8F0 = 0;
+    return *ControlTurnA;
+}
+
+void __cdecl net_upkeep() {
+    *dword_7492CC = 0;
+    GraphicWin_close(DiploWin);
+    *dword_93A968 = 0;
+    *NetUpkeepCount = 0;
+    *NetUpkeepState = 1;
+    NetState->dword_93E8F4 = 0;
+    *dword_93F674 = 0;
+    *dword_93F670 = 0;
+    for (int i = 0; i < *BaseCount; i++) {
+        Bases[i].state_flags &= ~(BSTATE_NET_LOCKED|BSTATE_UNK_10);
+        if (Bases[i].faction_id == MapWin->cOwner) {
+            synch_radius(i);
+        }
+    }
+    for (int i = 0; i < *VehCount; i++) {
+        veh_promote(i);
+    }
+    if (net_upkeep_phase(*NetUpkeepCount)) {
+        return;
+    }
+    ++(*NetUpkeepCount);
+    for (int i = 0; i < MaxPlayerNum; i++) {
+        int fc_id = (*CurrentTurn + i) % 8;
+        if (is_alive(fc_id)) {
+            faction_upkeep(fc_id);
+        }
+    }
+    if (net_upkeep_phase(*NetUpkeepCount)) {
+        return;
+    }
+    ++(*NetUpkeepCount);
+    message_data(0x2305, 0, NetState->dword_93E964, 0, 0, 0);
+    if (!NetState->dword_93E8F4) {
+        log_say_2("Skipping upkeep synch", *NetUpkeepCount, 0, 0);
+    } else {
+        for (int i = 0; i < *BaseCount; i++) {
+            if (Bases[i].faction_id == MapWin->cOwner && Bases[i].state_flags & (BSTATE_NET_LOCKED|BSTATE_UNK_10)) {
+                synch_base(i);
+                while (NetDaemon_receive(NetState));
+                do_all_tasks();
+            }
+        }
+        for (int i = 0; i < MaxPlayerNum; i++) {
+            if (i == MapWin->cOwner) {
+                synch_leader(i);
+            }
+        }
+        if (!NetState->dword_93E8F4) {
+            log_say_2("Skipping upkeep synch", *NetUpkeepCount, 0, 0);
+        } else {
+            while (NetDaemon_receive(NetState));
+            do_all_tasks();
+            if (net_upkeep_phase(*NetUpkeepCount)) {
+                return;
+            }
+        }
+    }
+    int synch_flag = 0;
+    *NetUpkeepState = 2;
+    ++(*NetUpkeepCount);
+    for (int fc_id = 1; fc_id < MaxPlayerNum; fc_id++) {
+        Faction* plr = &Factions[fc_id];
+        if (is_alive(fc_id)) {
+            while (plr->earned_techs_saved) {
+                log_say("Upkeep Advance", MFactions[fc_id].name_leader, fc_id, plr->earned_techs_saved, 0);
+                --plr->earned_techs_saved;
+                tech_advance(fc_id);
+                if (is_human(fc_id)) {
+                    synch_flag |= (fc_id == MapWin->cOwner) + 1;
+                }
+            }
+            if (plr->tech_accumulated) {
+                if (plr->tech_research_id < 0) {
+                    log_say_2("Set Research", fc_id, 0, 0);
+                    plr->tech_research_id = tech_selection(fc_id);
+                    if (is_human(fc_id)) {
+                        synch_flag |= (fc_id == MapWin->cOwner) + 1;
+                    }
+                }
+            }
+            if (plr->player_flags & PFLAG_MULTI_TECH_ACHIEVED) {
+                consider_designs(fc_id);
+            }
+            plr->player_flags &= ~PFLAG_MULTI_TECH_ACHIEVED;
+        }
+    }
+    if (synch_flag) {
+        if (net_upkeep_phase(*NetUpkeepCount)) {
+            return;
+        }
+    } else {
+        log_say_2("Skipping upkeep synch", *NetUpkeepCount, 0, 0);
+    }
+    *NetUpkeepState = 0;
+    ++(*NetUpkeepCount);
+    if (synch_flag & 2 && *GameRules & RULES_BLIND_RESEARCH) {
+        Console_set_ai(MapWin, MapWin->cOwner);
+    }
+    NetMsg_pop(NetMsg, "UPKEEP4", 0, 1, 0);
+    synch_flag = 0;
+    *dword_90EA3C = 0;
+    for (int uid = MaxProtoFactionNum; uid < MaxProtoNum; uid++) {
+        int fc_id = uid / MaxProtoFactionNum;
+        UNIT* unit = &Units[uid];
+        if (unit->unit_flags & UNIT_ACTIVE && unit->unit_flags & UNIT_UNK_100) {
+            if (!(unit->obsolete_factions & (1 << fc_id))) {
+                synch_flag = 1;
+                unit->unit_flags &= ~UNIT_UNK_100;
+                if (fc_id == MapWin->cOwner) {
+                    if (*GameMorePreferences & MPREF_BSC_AUTO_PRUNE_OBS_VEH) {
+                        upgrade_prototypes(MapWin->cOwner, uid);
+                    }
+                }
+            }
+        }
+    }
+    if (*CouncilNetA <= 0 && !synch_flag) {
+        log_say_2("Skipping upkeep synch", *NetUpkeepCount, 0, 0);
+    } else {
+        if (*CouncilNetA > 0) {
+            if (NetState->dword_93E8C0) {
+                message_data(0x2600, 0, *CouncilNetA, *CouncilNetB, *CouncilNetC, 0);
+                *ControlWaitLoop = 1;
+                do {
+                    if (*ControlTurnA) {
+                        break;
+                    }
+                    wait_loop();
+                } while (*ControlWaitLoop);
+            }
+            *CouncilNetA = -1;
+            *CouncilNetB = -1;
+            *CouncilNetC = -1;
+        }
+        if (net_upkeep_phase(*NetUpkeepCount)) {
+            return;
+        }
+    }
+    ++(*NetUpkeepCount);
+    NetMsg_pop(NetMsg, "UPKEEP5", 0, 1, 0);
+    for (int fc_id = 0; fc_id < MaxPlayerNum; fc_id++) {
+        if (is_alive(fc_id) && !is_human(fc_id)) {
+            log_say_2("Enemy turn ", fc_id, 0, 0);
+            mod_enemy_turn(fc_id);
+        }
+    }
+    if (net_upkeep_phase(*NetUpkeepCount)) {
+        return;
+    }
+    ++(*NetUpkeepCount);
+    NetMsg_pop(NetMsg, "UPKEEP6", 0, 1, 0);
+    DeleteList->cur_type_id = 0;
+    for (int i = 0; i < 24; i++) {
+        DeletionList_clear(DeleteList, i);
+    }
+    do_checksums(4);
+    if (*GamePreferences & PREF_BSC_AUTOSAVE_EACH_TURN) {
+        if (*MultiDebugActive) {
+            // replace debug savegame location
+            snprintf(StrBuffer, StrBufLen, "saves\\multi\\AC_%d_%d",
+                game_year(*CurrentTurn), MapWin->cOwner);
+            log_say("Writing save file", StrBuffer, 0, 0, 0);
+            mod_save_daemon(StrBuffer);
+        } else {
+            auto_save();
+        }
+    }
+    message_big_data(0x2307, 0, MasterChecksum, 21);
+    if (net_upkeep_phase(*NetUpkeepCount)) {
+        return;
+    }
+    NetState->dword_93E8D8 = -1;
+    ++(*NetUpkeepCount);
+    synch_flag = 0;
+    int msg_type[21] = {};
+    for (int fc_id = 1; fc_id < MaxPlayerNum; fc_id++) {
+        if (!is_alive(fc_id) || !is_human(fc_id) || fc_id == MapWin->cOwner) {
+            continue;
+        }
+        GameChecksum* mst = MasterChecksum;
+        GameChecksum* chk = &RemoteChecksum[fc_id];
+        for (int n = 0; n < 21; n++) {
+            if (mst->values[n] != chk->values[n]) {
+                if (!synch_flag) {
+                    NetMsg_pop(NetMsg, "UPKEEP7", 0, 1, 0);
+                }
+                synch_flag = 1;
+                if (!msg_type[n]) {
+                    msg_type[n] = 1;
+                    if (NetState->dword_93E8C0) {
+                        switch (n) {
+                        case 0:
+                            log_say_2("Failed GAME checksum - resynch", fc_id, mst->game, chk->game);
+                            NetDaemon_synch(NetState, 0, 0, 0, 0, 0, 1u, 0x2101);
+                            while (NetDaemon_receive(NetState));
+                            NetDaemon_synch(NetState, 36, 0, 0, 0, 0, 1u, 0x2101);
+                            while (NetDaemon_receive(NetState));
+                            break;
+                        case 1:
+                            log_say_2("Failed LEADERS checksum - resynch", fc_id, mst->leaders, chk->leaders);
+                            for (int i = 0; i < 8; i++) {
+                                NetDaemon_synch(NetState, 6, i, 0, 0, 0, 1u, 0x2101);
+                                while (NetDaemon_receive(NetState));
+                                NetDaemon_synch(NetState, 7, i, 0, 0, 0, 1u, 0x2101);
+                                while (NetDaemon_receive(NetState));
+                                NetDaemon_synch(NetState, 15, i * MaxProtoFactionNum, 64, 0, 0, 1u, 0x2101);
+                                while (NetDaemon_receive(NetState));
+                            }
+                            break;
+                        case 2:
+                            log_say_2("Failed MAP checksum - resynch", fc_id, mst->map_all, chk->map_all);
+                            NetDaemon_synch(NetState, 4098, 0, 0, 0, 0, 1u, 0x2101);
+                            while (NetDaemon_receive(NetState));
+                            NetDaemon_synch(NetState, 5, 0, 0, 0, 0, 1u, 0x2101);
+                            while (NetDaemon_receive(NetState));
+                            break;
+                        case 3:
+                            log_say_2("Failed VEHICLES checksum - resynch", fc_id, mst->vehs, chk->vehs);
+                            NetDaemon_synch(NetState, 37, 0, 0, 0, 0, 1u, 0x2101);
+                            while (NetDaemon_receive(NetState));
+                            NetDaemon_synch(NetState, 18, 0, 0, 0, 0, 1u, 0x2101);
+                            while (NetDaemon_receive(NetState));
+                            break;
+                        case 4:
+                            log_say_2("Failed BASES checksum - resynch", fc_id, mst->bases, chk->bases);
+                            NetDaemon_synch(NetState, 38, 0, 0, 0, 0, 1u, 0x2101);
+                            while (NetDaemon_receive(NetState));
+                            NetDaemon_synch(NetState, 20, 0, 0, 0, 0, 1u, 0x2101);
+                            while (NetDaemon_receive(NetState));
+                            break;
+                        default:
+                            log_say_2("Failed MAP section chcksum - resynch", fc_id, mst->values[n], chk->values[n]);
+                            NetDaemon_synch(NetState, 48, n - 5, 0, 0, 0, 1u, 0x2101);
+                            while (NetDaemon_receive(NetState));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    NetMsg_close(NetMsg);
+    *dword_93F674 = 0;
+    *dword_93F670 = 0;
+    if (synch_flag) {
+        net_upkeep_phase(*NetUpkeepCount);
+    } else {
+        log_say_2("Skipping upkeep phase", *NetUpkeepCount, 0, 0);
+    }
+}
+
 void __cdecl mash_planes() {
     for (int veh_id = *VehCount - 1; veh_id >= 0; --veh_id) {
         VEH* veh = &Vehs[veh_id];
@@ -383,14 +663,14 @@ void __cdecl net_not_my_turn() {
     MapWin->field_23BE8 = 1;
     Console_set_view(MapWin, 0);
     MultiWin_draw(MultiWin, 0);
-    *dword_93E8EC |= 1 << (MapWin->cOwner);
+    NetState->dword_93E8EC |= 1 << (MapWin->cOwner);
     while (!*ControlTurnA) {
         if (*dword_93A950 || *CurrentFaction == MapWin->cOwner) {
             break;
         }
         MapWin->field_23BE4 = 1;
         NetDaemon_net_tasks(NetState);
-        if (*dword_93E8C0 && (*CurrentFaction <= 0
+        if (NetState->dword_93E8C0 && (*CurrentFaction <= 0
         || !is_human(*CurrentFaction) || !is_alive(*CurrentFaction))) {
             next_player_turn();
         }
@@ -402,7 +682,7 @@ void __cdecl net_not_my_turn() {
 void __cdecl net_end_of_turn() {
     int show_msg = 0;
     if (*GameMoreRules & MRULES_UNK_10) {
-        if (*dword_93E8C0) {
+        if (NetState->dword_93E8C0) {
             message_data(0x4301, 0, 0, 0, 0, 0);
         } else {
             while (!*ControlTurnA) {
@@ -413,22 +693,22 @@ void __cdecl net_end_of_turn() {
             }
         }
     }
-    log_say_2("Entering 'end of turn' loop", *dword_93E8EC, *dword_93E8F8, *GameState & STATE_UNK_2);
+    log_say_2("Entering 'end of turn' loop", NetState->dword_93E8EC, NetState->dword_93E8F8, *GameState & STATE_UNK_2);
     FX_play(Sounds, 34);
     *GameState |= STATE_UNK_2;
     MapWin->field_23BE4 = 0;
     Console_set_view(MapWin, 0);
-    if (!*dword_93E8C0) {
-        *dword_93E8EC |= 1 << (MapWin->cOwner);
+    if (!NetState->dword_93E8C0) {
+        NetState->dword_93E8EC |= 1 << (MapWin->cOwner);
     }
-    *dword_93E8F8 |= 1 << (MapWin->cOwner);
+    NetState->dword_93E8F8 |= 1 << (MapWin->cOwner);
     MultiWin_draw(MultiWin, 0);
     if (!(*GameMoreRules & MRULES_UNK_10)) {
         message_data(0x8301, 0, 0, 0, 0, 0);
-        DWORD start = GetTickCount(); // replace timeGetTime()
-        while (((*dword_93E8EC & FactionStatus[0]) != FactionStatus[0]
-        || FactionStatus[0] & *dword_93E8E0
-        || (*dword_93E8C0 && (Lock_any_locks(LockState) || *dword_93E90C)))
+        DWORD start = GetTickCount(); // replace timeGetTime
+        while (((NetState->dword_93E8EC & FactionStatus[0]) != FactionStatus[0]
+        || FactionStatus[0] & NetState->dword_93E8E0
+        || (NetState->dword_93E8C0 && (Lock_any_locks(LockState) || NetState->dword_93E90C)))
         && !*ControlTurnA && *GameState & STATE_UNK_2) {
             if (!show_msg && GetTickCount() - start > 1000) {
                 NetMsg_pop(NetMsg, "FINISHINGTURN", 0, 0, 0);
@@ -439,10 +719,10 @@ void __cdecl net_end_of_turn() {
         if (show_msg) {
             NetMsg_close(NetMsg);
         }
-        if ((*GameState & STATE_UNK_2) && !*dword_93E8C0) {
-            log_say_2("Ready to proceed", *dword_93E8EC, FactionStatus[0], 0);
+        if ((*GameState & STATE_UNK_2) && !NetState->dword_93E8C0) {
+            log_say_2("Ready to proceed", NetState->dword_93E8EC, FactionStatus[0], 0);
         }
-        if (*dword_93E8C0) {
+        if (NetState->dword_93E8C0) {
             if (!(*GameState & STATE_UNK_2)) {
                 return;
             }
@@ -470,9 +750,9 @@ void __cdecl net_end_of_turn() {
         }
     }
     log_say_2("--- Proceeding to next turn ---", 0, 0, 0);
-    *dword_93E8F0 = 0;
-    *dword_93E8FC = 0;
-    *dword_93A93C = 0;
+    NetState->dword_93E8F0 = 0;
+    NetState->dword_93E8FC = 0;
+    *NetUpkeepCount = 0;
     *ControlTurnC = 1;
     if (Win_is_visible(BaseWin)) {
         BaseWin_exit(BaseWin);
@@ -489,7 +769,7 @@ void __cdecl net_end_of_turn() {
             game_year(*CurrentTurn), MapWin->cOwner);
         mod_save_daemon(buf);
     }
-    ++(*dword_93E8BC); // DeleteList
+    ++NetState->deletelist.cur_type_id;
 }
 
 void __cdecl net_control_turn() {
@@ -510,13 +790,13 @@ void __cdecl net_control_turn() {
         *dword_93A954 = 1;
     }
     while (1) {
-        log_say_2("(Clearing turn semaphore)", *dword_93E8EC, *dword_93E8F8, 0);
+        log_say_2("(Clearing turn semaphore)", NetState->dword_93E8EC, NetState->dword_93E8F8, 0);
         debug("net_control_turn %d %d\n", *CurrentTurn, MapWin->cOwner);
-        *dword_93E8EC = 0;
-        *dword_93E8F8 = 0;
-        *dword_93E8D4 = 1;
-        *dword_93E968 = 0;
-        *dword_93E964 = 0;
+        NetState->dword_93E8EC = 0;
+        NetState->dword_93E8F8 = 0;
+        NetState->dword_93E8D4 = 1;
+        NetState->dword_93E968 = 0;
+        NetState->dword_93E964 = 0;
         *dword_93A950 = 0;
         MessageWin_clear(MessageWin);
         if (!*ControlTurnMove) {
@@ -539,7 +819,7 @@ void __cdecl net_control_turn() {
         *dword_93A960 = GameTimeControl[1];
         *GameState &= ~STATE_UNK_800;
         *ControlTurnC = 0;
-        *dword_93E8E4 = 0;
+        NetState->dword_93E8E4 = 0;
         if (*GameMoreRules & MRULES_UNK_10) {
             if (*CurrentTurn == 1 || *ControlTurnMove) {
                 int px = -1;
@@ -564,7 +844,7 @@ void __cdecl net_control_turn() {
                     Console_set_cursor(MapWin, px, py);
                 }
             }
-            if (*dword_93E8C0) {
+            if (NetState->dword_93E8C0) {
                 if (*ControlTurnMove) {
                     message_data(0x4309, 0, *CurrentFaction, 0, 0, 0);
                 } else {
@@ -585,7 +865,7 @@ void __cdecl net_control_turn() {
                     *dword_93A960 = GameTimeControl[1];
                     *GameState &= ~STATE_UNK_800;
                     *dword_93A954 = 0;
-                    *dword_93E8EC &= ~(1 << (MapWin->cOwner));
+                    NetState->dword_93E8EC &= ~(1 << (MapWin->cOwner));
                 }
                 Console_human_turn(MapWin);
                 if (*GameMoreRules & MRULES_UNK_10) {
@@ -637,6 +917,30 @@ void __cdecl net_control_turn() {
             break;
         }
     }
+}
+
+int __cdecl next_player_turn() {
+    if (!(*GameMoreRules & MRULES_UNK_10) || !NetState->dword_93E8C0) {
+        return 0;
+    }
+    for (int fc_id = *CurrentFaction + 1; fc_id < MaxPlayerNum; ++fc_id) {
+        if (is_alive(fc_id) && is_human(fc_id)) {
+            message_data(0x4309, 0, fc_id, 0, 0, 0);
+            return 0;
+        }
+    }
+    *dword_93A950 = 1;
+    return 1;
+}
+
+int __cdecl not_my_turn() {
+    if (!*MultiplayerActive) {
+        return 0;
+    }
+    if (*GameMoreRules & MRULES_UNK_10) {
+        return *CurrentFaction != MapWin->cOwner;
+    }
+    return 0;
 }
 
 void __cdecl clear_council_notify(int faction_id) {

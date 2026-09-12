@@ -217,7 +217,7 @@ int __cdecl BaseWin_hurry_ask_number(const char* label, int value, fp_none fn) {
 Fix issue where hurry production flag will not be set after
 completely hurrying the current production "Spend $NUM0 energy credits."
 */
-void __thiscall BaseWin_hurry_unlock_base(AlphaNet* This, int base_id) {
+void __thiscall BaseWin_hurry_unlock_base(NetDaemon* This, int base_id) {
     if (base_id >= 0) {
         Bases[base_id].state_flags |= BSTATE_HURRY_PRODUCTION;
     }
@@ -225,7 +225,7 @@ void __thiscall BaseWin_hurry_unlock_base(AlphaNet* This, int base_id) {
 }
 
 void __thiscall BaseWin_draw_support(BaseWindow* This) {
-    RECT& rc = This->oRender.rResWindow;
+    RECT& rc = This->rResWindow;
     Buffer_set_clip(&This->oCanvas, &rc);
     GraphicWin_fill_2(This, &rc, 0);
 
@@ -268,7 +268,7 @@ void __thiscall BaseWin_draw_misc_eco_damage(Buffer* This, char* buf, int x, int
 void __thiscall BaseWin_draw_farm_set_font(Buffer* This, Font* a2, Font* a3, Font* a4, Font* a5) {
     char buf[StrBufLen] = {};
     // Base resource window coordinates including button row
-    RECT* rc = &BaseWin->oRender.rResWindow;
+    RECT* rc = &BaseWin->rResWindow;
     int x1 = rc->left;
     int y1 = rc->top;
     int x2 = rc->right;
@@ -430,7 +430,7 @@ void __cdecl popb_action_staple(int base_id) {
 }
 
 int __thiscall BaseWin_click_staple(BaseWindow* This) {
-    int base_id = This->oRender.base_id;
+    int base_id = This->cur_base_id;
     if (can_staple(base_id)) {
         return BaseWin_nerve_staple(This);
     }
@@ -439,7 +439,7 @@ int __thiscall BaseWin_click_staple(BaseWindow* This) {
 
 int __thiscall BaseWin_gov_options(BaseWindow* This, int flag) {
     int base_id = *CurrentBaseID;
-    if (base_id < 0 || base_id != This->oRender.base_id) {
+    if (base_id < 0 || base_id != This->cur_base_id) {
         assert(0);
         return 1;
     }
@@ -494,7 +494,7 @@ int __thiscall BaseWin_gov_options(BaseWindow* This, int flag) {
         }
         NetDaemon_unlock_base(NetState, base_id);
         GraphicWin_redraw(BaseWin);
-        GraphicWin_redraw(MainWin);
+        GraphicWin_redraw(MainInfc);
         return 0;
     } else {
         NetDaemon_unlock_base(NetState, base_id);

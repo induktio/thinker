@@ -71,6 +71,7 @@ const int UniversalTranslatorTechs = 2;
 const int StrBufLen = 256;
 const int LineBufLen = 128;
 const int MaxEnemyRange = 50;
+const int TextLabelNum = 1131;
 
 const int SP_Unbuilt = -1;
 const int SP_Destroyed = -2;
@@ -936,7 +937,7 @@ enum VictoryType {
     VIC_ALIEN_LOSS = 18,
 };
 
-enum MapwinState {
+enum MapWinState {
     MAPWIN_DRAW_TRANSLUCENT = 0x1, // render translucent sprites, farm/forest/kelp excl. fungus
     MAPWIN_UNK_2 = 0x2,
     MAPWIN_DRAW_SITES = 0x4, // debug overlay
@@ -952,6 +953,7 @@ enum MapwinState {
     MAPWIN_UNK_4000 = 0x4000, // zeros in almost every tile
     MAPWIN_DRAW_BORDERS = 0x10000,
     MAPWIN_DRAW_CURSOR_COMPASS = 0x20000,
+    MAPWIN_UNK_40000 = 0x40000,
     MAPWIN_DRAW_DIPLO_STATE = 0x100000, // show faction treaty status matrix in window corner
     MAPWIN_SUPPORT_VIEW = 0x200000,
     MAPWIN_UNK_400000 = 0x400000, // MapWin_draw_base_dest

@@ -9,7 +9,7 @@ void BaseWin_support_zoom(bool zoom_in);
 int __thiscall BaseWin_hurry_popup_start(
     Popup* This, const char* filename, const char* label, int a4, char* a5, int a6, GraphicWin* a7);
 int __cdecl BaseWin_hurry_ask_number(const char* label, int value, fp_none fn);
-void __thiscall BaseWin_hurry_unlock_base(AlphaNet* This, int base_id);
+void __thiscall BaseWin_hurry_unlock_base(NetDaemon* This, int base_id);
 void __thiscall BaseWin_draw_support(BaseWindow* This);
 void __thiscall BaseWin_draw_misc_eco_damage(Buffer* This, char* buf, int x, int y, int len);
 void __thiscall BaseWin_draw_farm_set_font(Buffer* This, Font* a2, Font* a3, Font* a4, Font* a5);

@@ -6,6 +6,7 @@ void __cdecl net_game_close();
 void __cdecl net_treaty_on(int a1, int a2, int a3, int wait_diplo);
 void __cdecl net_treaty_off(int a1, int a2, int a3, int wait_diplo);
 void __cdecl net_set_treaty(int a1, int a2, int a3, int a4, int wait_diplo);
+void __cdecl net_agenda_on(int a1, int a2, int a3, int wait_diplo);
 void __cdecl net_agenda_off(int a1, int a2, int a3, int wait_diplo);
 void __cdecl net_set_agenda(int a1, int a2, int a3, int a4, int wait_diplo);
 void __cdecl net_energy(int faction_id_1, int energy_val_1, int faction_id_2, int energy_val_2, int wait_diplo);

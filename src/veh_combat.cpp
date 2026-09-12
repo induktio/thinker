@@ -2390,7 +2390,7 @@ END_BATTLE:
         StatusWin_redraw(StatusWin);
         if (render_base) {
             BaseWin_focus(BaseWin);
-            GraphicWin_redraw(MainWin);
+            GraphicWin_redraw(MainInfc);
             do_all_draws();
         }
         if (*GameMorePreferences & MPREF_ADV_PAUSE_AFTER_BATTLES) {
