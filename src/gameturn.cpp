@@ -5,9 +5,6 @@ fp_1int sub_51E530 = (fp_1int)0x51E530;
 
 int* const dword_78D7F8 = (int*)0x78D7F8;
 int* const dword_78D870 = (int*)0x78D870;
-int* const dword_7AD34C = (int*)0x7AD34C;
-int* const dword_7AE778 = (int*)0x7AE778;
-int* const dword_7D392C = (int*)0x7D392C;
 char* const unk_93AA04 = (char*)0x93AA04;
 char* const unk_93AA08 = (char*)0x93AA08;
 // multiplayer related
@@ -66,7 +63,7 @@ void __cdecl control_turn() {
                 parse_says(3, get_noun(current_id), -1, -1);
                 parse_num(0, *CurrentMissionYear);
                 MapWin->cOwner = current_id;
-                if (dword_7AE778[*dword_7D392C] == 10) {
+                if (InfcList[*InfcUsed] == 10) {
                     BattleWin_stop_timer(BattleWin);
                     SubInterface_release_iface_mode(BattleWin);
                 }
@@ -74,50 +71,50 @@ void __cdecl control_turn() {
                 BaseWin_exit(BaseWin);
                 AlphaMenu_hide(&MapWin->oMainMenu);
                 MultiWin_hide(MultiWin);
-                Win_hide((GraphicWin*)((char*)&MessageWin->listBox + *(int32_t*)(MessageWin->listBox.field_0 + 4)));
+                Win_hide((GraphicWin*)((char*)&MessageWin->listBox + *((DWORD*)MessageWin->listBox.vtable + 1)));
                 Win_hide(&MainInfc->stringBox);
                 WorldWin_hide_all(WorldWin);
-                memcpy(&rc, &MainInfc->field_CDC, sizeof(RECT));
+                memcpy(&rc, &MainInfc->rcLeftPanel, sizeof(RECT));
                 Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D870);
                 rc.left += 3;
                 rc.bottom -= 3;
                 rc.top += 3;
                 rc.right -= 3;
                 Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D7F8);
-                memcpy(&rc, &MainInfc->field_CCC, sizeof(RECT));
+                memcpy(&rc, &MainInfc->rcLeftPanelTop, sizeof(RECT));
                 Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D870);
                 rc.left += 3;
                 rc.bottom -= 3;
                 rc.top += 3;
                 rc.right -= 3;
                 Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D7F8);
-                memcpy(&rc, &MainInfc->field_CEC, sizeof(RECT));
+                memcpy(&rc, &MainInfc->rcBaseArea, sizeof(RECT));
                 Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D870);
                 rc.left += 3;
                 rc.bottom -= 3;
                 rc.top += 3;
                 rc.right -= 3;
                 Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D7F8);
-                memcpy(&rc, &MainInfc->field_CFC, sizeof(RECT));
+                memcpy(&rc, &MainInfc->rcTurnIcon, sizeof(RECT));
                 Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D870);
                 rc.left += 3;
                 rc.bottom -= 3;
                 rc.top += 3;
                 rc.right -= 3;
                 Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D7F8);
-                memcpy(&rc, &MainInfc->field_D1C, sizeof(RECT));
+                memcpy(&rc, &MainInfc->rcCenterInner, sizeof(RECT));
                 Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D870);
                 rc.left += 3;
                 rc.right -= 3;
                 rc.top += 3;
                 rc.bottom -= 3;
                 Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D7F8);
-                memcpy(&rc, &MainInfc->field_D0C, sizeof(RECT));
+                memcpy(&rc, &MainInfc->rcSensor, sizeof(RECT));
                 Buffer_box_sprite(&MainInfc->oCanvas, &rc, dword_78D7F8);
                 GraphicWin_update_3(MainInfc, 0);
-                *dword_7AD34C = 1;
-                GraphicWin_fill(&MapWin->oWinBuffed, 0);
-                Win_show(&MapWin->oWinBuffed, 0);
+                InfoWin->skip_timer_proc = 1;
+                GraphicWin_fill(&MapWin->oWinBuf, 0);
+                Win_show(&MapWin->oWinBuf, 0);
                 do_all_draws();
                 StringBox_clear(&MainInfc->stringBox);
                 while (1) {
@@ -188,8 +185,8 @@ void __cdecl control_turn() {
                         }
                     }
                 }
-                *dword_7AD34C = 0;
-                Win_hide(&MapWin->oWinBuffed);
+                InfoWin->skip_timer_proc = 0;
+                Win_hide(&MapWin->oWinBuf);
                 StatusWin_on_redraw(StatusWin);
                 GameDrawState[0] |= 4u;
                 WorldWin_show_all(WorldWin);
@@ -204,8 +201,8 @@ void __cdecl control_turn() {
                 if (sub_51E530(MapWin->cOwner)) {
                     ButtonGroup_set(&MainInfc->buttonGroup[0], 1000, 1);
                 }
-                if (MainInfc->buttonGroup[0].field_84 == 1000) {
-                    Win_show((GraphicWin*)((char*)&MessageWin->listBox + *(int32_t*)(MessageWin->listBox.field_0 + 4)), 0);
+                if (MainInfc->buttonGroup[0].select_button_id == 1000) {
+                    Win_show((GraphicWin*)((char*)&MessageWin->listBox + *((DWORD*)MessageWin->listBox.vtable + 1)), 0);
                 }
                 Console_update_data(MapWin, 0);
                 start_timers();

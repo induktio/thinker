@@ -8,6 +8,7 @@ const int RegionBounds = 63;
 
 const int MaxDiffNum = 6;
 const int MaxPlayerNum = 8;
+const int MaxDefPlrNum = 7;
 const int MaxGoalsNum = 75;
 const int MaxSitesNum = 25;
 const int MaxBaseNum = 512;
@@ -965,6 +966,33 @@ enum MapWinState {
     MAPWIN_UNK_20000000 = 0x20000000,
     MAPWIN_UNK_40000000 = 0x40000000,
     MAPWIN_DRAW_SOLID_BORDERS = 0x80000000, // faction borders solid color terrain view
+};
+
+enum WinState {
+    WIN_ST_VISIBLE = 0x1,
+    WIN_ST_HAS_NONCLIENT = 0x2,
+    WIN_ST_INIT_DONE = 0x4,
+    WIN_ST_DISABLE_INPUT = 0x8,
+};
+
+enum DialogType {
+    DIALOG_TYPE_CHECKBOX = 1,
+    DIALOG_TYPE_LISTBOX = 2,
+    DIALOG_TYPE_EDITGROUP = 4,
+    DIALOG_TYPE_SPRITEBOX = 8,
+    DIALOG_TYPE_RADIOBUTTON = 16,
+};
+
+enum ReportViewMode {
+    REPORT_INTEL = 0,
+    REPORT_NONE = 1,
+    REPORT_LABS = 2,
+    REPORT_ENERGY = 3,
+    REPORT_OPS = 4,
+    REPORT_PROJECTS = 5,
+    REPORT_SAT = 6,
+    REPORT_SECURITY = 7,
+    REPORT_SCORE = 8,
 };
 
 enum TextLabel {

@@ -1096,7 +1096,7 @@ int __cdecl action_airdrop(int veh_id, int tx, int ty, int flags) {
     for (int v = veh_top(veh_id); v >= 0; v = Vehs[v].next_veh_id_stack) {
         if (v != veh_id) { veh_skip(v); }
     }
-    if (veh_id == MapWin->iUnit && MapWin->fUnitNotViewMode) {
+    if (veh_id == MapWin->VehID && MapWin->InVehMode) {
         Console_cursor_next(MapWin, tx, ty);
     }
     stack_put(veh_id, tx, ty);
@@ -1776,7 +1776,7 @@ void __cdecl action_gate(int veh_id, int base_id) {
         draw_tile(Bases[src_base_id].x, Bases[src_base_id].y, 2);
     }
     draw_tile(tgt->x, tgt->y, 2);
-    if (veh_id == MapWin->iUnit) {
+    if (veh_id == MapWin->VehID) {
         Console_focus(MapWin, veh->x, veh->y, veh->faction_id);
     }
 }
@@ -1891,7 +1891,7 @@ int __cdecl order_veh(int veh_id, int offset, int flag) {
                 int w = 0, h = 0;
                 if (!Buffer_get_pcx_dimensions("art_dis_sm.pcx", &w, &h)
                 && !Sprite_init(&cur_popup.sprite, "art_dis_sm.pcx", w, h)) {
-                    cur_popup.field_2144 = &cur_popup.sprite;
+                    cur_popup.sprite_icon = &cur_popup.sprite;
                 }
                 parse_num(0, Bases[base_id].minerals_accumulated);
                 int item_id = Bases[base_id].queue_items[0];
@@ -3065,7 +3065,7 @@ MOV_NAVAL:
                             && Vehs[cur_id].order == ORDER_SENTRY_BOARD
                             && veh_speed(cur_id, 0) - Vehs[cur_id].moves_spent > 0) {
                                 Vehs[cur_id].order = ORDER_NONE;
-                                MapWin->iUnit = cur_id;
+                                MapWin->VehID = cur_id;
                             }
                         }
                     }
@@ -3200,7 +3200,7 @@ MOV_UPKEEP:
                             draw_tile(tgt_x, tgt_y, 2);
                             owner_set(tgt_x, tgt_y, Vehs[veh_id].faction_id);
                             if (veh_fc_id == MapWin->cOwner) {
-                                MapWin->iUnit = -1;
+                                MapWin->VehID = -1;
                                 *PluralDefault = MFactions[iter_fc_id].is_noun_plural;
                                 *GenderDefault = MFactions[iter_fc_id].noun_gender;
                                 parse_says(0, MFactions[iter_fc_id].noun_faction, -1, -1);
@@ -3248,7 +3248,7 @@ MOV_UPKEEP:
                 if (Vehs[cur_id].moves_spent <= veh_speed(cur_id, 0)) { // might evaluate always true
                     stack_veh(cur_id, 0);
                     if (Vehs[veh_id].waypoint_x[0] == cur_id) {
-                        MapWin->iUnit = cur_id;
+                        MapWin->VehID = cur_id;
                         Vehs[cur_id].order = ORDER_NONE;
                         break;
                     }

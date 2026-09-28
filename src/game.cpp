@@ -381,18 +381,18 @@ void __cdecl control_game() {
             }
             start_lobby = 0;
             if (*PbemActive) {
-                GraphicWin_fill(&MapWin->oWinBuffed, 0);
-                Win_show(&MapWin->oWinBuffed, 0);
+                GraphicWin_fill(&MapWin->oWinBuf, 0);
+                Win_show(&MapWin->oWinBuf, 0);
             } else {
-                GraphicWin_fill(&MapWin->oWinBuffed, 9);
-                Win_hide(&MapWin->oWinBuffed);
+                GraphicWin_fill(&MapWin->oWinBuf, 9);
+                Win_hide(&MapWin->oWinBuf);
             }
             if (desktop_init(*ControlTurnMove == 0)) {
                 break;
             }
             *GameHalted = 0;
-            MapWinPtr[0]->iWhatToDrawFlags |= (MAPWIN_DRAW_BASE_NAMES|MAPWIN_DRAW_BASE_TILES|MAPWIN_DRAW_UNITS);
-            MapWin->field_23BE0 = -1;
+            MapWinPtr[0]->DrawFlags |= (MAPWIN_DRAW_BASE_NAMES|MAPWIN_DRAW_BASE_TILES|MAPWIN_DRAW_UNITS);
+            MapWin->ReadyVehID = -1;
             if (*MultiplayerActive) {
                 net_control_turn();
             } else {
@@ -425,16 +425,14 @@ int __cdecl custom_planet(int use_images, int use_defaults) {
         Popup_dtor(&cur_popup);
     });
     if (use_images) {
-        cur_setup.field_A1C = &cur_preview[0];
-        cur_setup.field_A20 = &cur_preview[1];
-        cur_setup.field_A24 = &cur_preview[2];
+        cur_setup.preview_buffers[0] = &cur_preview[0];
+        cur_setup.preview_buffers[1] = &cur_preview[1];
+        cur_setup.preview_buffers[2] = &cur_preview[2];
     }
     memset(MapOceanCoverage, 0, 0x18u);
     // Loads the 3 preview thumbnails "S<ocean>L<life>C<cloud>.PCX", changing only
     // the dimension named by label and holding the other two at their selected values.
     auto load_previews = [&](char label) {
-        int32_t* px = &cur_setup.field_A28;
-        int32_t* py = &cur_setup.field_A34;
         for (int i = 0; i < 3; ++i) {
             int ocean = (label == 'S') ? i + 1 : clamp(*MapOceanCoverage + 1, 1, 3);
             int life  = (label == 'L') ? i + 1 : clamp(*MapNativeLifeForms + 1, 1, 3);
@@ -443,11 +441,11 @@ int __cdecl custom_planet(int use_images, int use_defaults) {
             snprintf(filename, sizeof(filename), "S%dL%dC%d.PCX", ocean, life, cloud);
             Buffer_load_pcx(&cur_preview[i], filename, 0, 10, 236);
             if (*ScreenWidth == 800) {
-                px[i] = 449;
-                py[i] = -168;
+                cur_setup.preview_x[i] = 449;
+                cur_setup.preview_y[i] = -168;
             } else {
-                px[i] = *ScreenWidth - cur_preview[0].stBitMapInfo.bmiHeader.biWidth;
-                py[i] = 0;
+                cur_setup.preview_x[i] = *ScreenWidth - cur_preview[0].bmiHeader.biWidth;
+                cur_setup.preview_y[i] = 0;
             }
         }
     };
@@ -480,12 +478,12 @@ int __cdecl custom_planet(int use_images, int use_defaults) {
                     Buffer_load_pcx(&cur_preview[0], *ScreenWidth == 800 ? "moon1_800.pcx" : "MOON1.PCX", 0, 10, 236);
                     Buffer_load_pcx(&cur_preview[1], *ScreenWidth == 800 ? "moon2_800.pcx" : "MOON2.PCX", 0, 10, 236);
                     Buffer_load_pcx(&cur_preview[2], *ScreenWidth == 800 ? "moon3_800.pcx" : "MOON3.PCX", 0, 10, 236);
-                    cur_setup.field_A28 = 0;
-                    cur_setup.field_A2C = 0;
-                    cur_setup.field_A30 = 0;
-                    cur_setup.field_A34 = 0;
-                    cur_setup.field_A38 = 0;
-                    cur_setup.field_A3C = 0;
+                    cur_setup.preview_x[0] = 0;
+                    cur_setup.preview_x[1] = 0;
+                    cur_setup.preview_x[2] = 0;
+                    cur_setup.preview_y[0] = 0;
+                    cur_setup.preview_y[1] = 0;
+                    cur_setup.preview_y[2] = 0;
                     break;
                 case 5:
                     load_previews('C');
@@ -498,7 +496,7 @@ int __cdecl custom_planet(int use_images, int use_defaults) {
             }
         }
         Popup_start(&cur_popup, PopupScriptFile, StrBuffer, -1, 0, 0x40, 0);
-        cur_popup.field_A44 = *pref_val;
+        cur_popup.active_id = *pref_val;
         int result = use_images
             ? SetupWin_do_menu_2(&cur_setup, &cur_popup, 1, 0)
             : BasePop_exec_3(&cur_popup, 0, 0);
@@ -513,9 +511,9 @@ int __cdecl custom_planet(int use_images, int use_defaults) {
         }
     }
     if (use_images) {
-        cur_setup.field_A1C = nullptr;
-        cur_setup.field_A20 = nullptr;
-        cur_setup.field_A24 = nullptr;
+        cur_setup.preview_buffers[0] = nullptr;
+        cur_setup.preview_buffers[1] = nullptr;
+        cur_setup.preview_buffers[2] = nullptr;
     }
     *MapLandCoverage = 2 - *MapOceanCoverage;
     prefs_save(0);
@@ -552,7 +550,7 @@ int __cdecl size_of_planet(int setup_mode) {
         snprintf(StrBuffer, StrBufLen, "%s", label_get(TL_CustomSize));
         Dialogs_item(&cur_popup.dialogs, StrBuffer, 99);
         int selection = AlphaIniPrefs->custom_world[0];
-        cur_popup.field_A44 = selection;
+        cur_popup.active_id = selection;
 
         if (setup_mode == 1) {
             *MapSizePlanet = selection;
@@ -628,7 +626,7 @@ int __cdecl map_menu(int flag) {
     while (true) {
         *dword_945820 = 0;
         Popup_start(&cur_popup, PopupScriptFile, "MAPMENU", -1, 0, 0, 0);
-        cur_popup.field_A44 = DefaultPrefs->map_type;
+        cur_popup.active_id = DefaultPrefs->map_type;
         int choice = DefaultPrefs->map_type;
         if (!flag) {
             choice = SetupWin_do_menu_2(&cur_setup, &cur_popup, 1, 0);
@@ -760,7 +758,7 @@ int __cdecl top_menu(int flag) {
         Popup_start(&cur_popup, flag ? PopupScriptFile : "modmenu",
             flag ? "HOTSEAT" : "TOPMENU", -1, 0, 0, 0);
         if (!flag) {
-            cur_popup.field_A44 = DefaultPrefs->top_menu;
+            cur_popup.active_id = DefaultPrefs->top_menu;
         }
         int menu_choice = SetupWin_do_menu_2(&cur_setup, &cur_popup, 1, 0);
         debug("menu_choice %d\n", menu_choice);
@@ -914,12 +912,14 @@ int __cdecl desktop_init(int flag) {
     ReportIf_init(ReportIf);
     PrefWin_init(PrefWin);
     MapWin->field_23D80 = 10;
-    int px = *(int*)((char*)&MapWin->oUnknown[1].field_258 + *((DWORD*)MapWin->vtable + 1));
-    int py = *(int*)((char*)&MapWin->oUnknown[1].field_25C + *((DWORD*)MapWin->vtable + 1));
-    MapWin->field_23D80 = MapWin->oMainMenu.rRect2.right - MapWin->oMainMenu.rRect2.left + 10;
+    GraphicWin* mainwin = (GraphicWin*)((char*)MapWin + *((DWORD*)MapWin->vtable + 1));
+    assert(mainwin == &MapWin->oMainWin);
+    int px = mainwin->oCanvas.bmiHeader.biWidth;
+    int py = mainwin->oCanvas.bmiHeader.biHeight;
+    MapWin->field_23D80 = MapWin->oMainMenu.winrect2.right - MapWin->oMainMenu.winrect2.left + 10;
     MapWin->field_23D84 = px - 10;
     if (*MultiplayerActive) {
-        MapWin->field_23D84 = MultiWin->rRect2.left - MultiWin->rRect2.right + px - 10;
+        MapWin->field_23D84 = MultiWin->winrect2.left - MultiWin->winrect2.right + px - 10;
     }
     MapWin->field_23D88 = 10;
     MapWin->field_23D8C = -10 - py;
@@ -927,10 +927,10 @@ int __cdecl desktop_init(int flag) {
         draw_map(1);
     }
     Win_show(MainInfc, 0);
-    Win_show((GraphicWin *)((char*)MapWin + *((DWORD*)MapWin->vtable + 1)), 0);
+    Win_show(mainwin, 0);
     if (*PbemActive) {
-        GraphicWin_fill(&MapWin->oWinBuffed, 0);
-        Win_show(&MapWin->oWinBuffed, 0);
+        GraphicWin_fill(&MapWin->oWinBuf, 0);
+        Win_show(&MapWin->oWinBuf, 0);
     }
     do_all_non_input();
     close_opening();
@@ -979,7 +979,7 @@ int __cdecl system_init() {
         MapWinPtr[i] = win;
     }
     MapWinPtr[0] = MapWin;
-    MapWin->iWhatToDrawFlags &= ~(MAPWIN_DRAW_BASE_NAMES|MAPWIN_DRAW_BASE_TILES|MAPWIN_DRAW_UNITS);
+    MapWin->DrawFlags &= ~(MAPWIN_DRAW_BASE_NAMES|MAPWIN_DRAW_BASE_TILES|MAPWIN_DRAW_UNITS);
     MainInterface_init(MainInfc, 0);
     BattleWin_init(BattleWin);
     Console_init(MapWin, 0);
@@ -1412,7 +1412,7 @@ CONF_DIFF:
                 Dialogs_item(&cur_popup.dialogs, StrBuffer, i);
             }
             int choice;
-            cur_popup.field_A44 = DefaultPrefs->difficulty;
+            cur_popup.active_id = DefaultPrefs->difficulty;
             choice = SetupWin_do_menu_2(&cur_setup, &cur_popup, 1, 0);
             if (choice < 0) {
                 return 1;
@@ -1429,7 +1429,7 @@ CONF_RULES:
             Win_hide(&cur_setup);
             Win_show(&cur_setup, 0);
             Popup_start(&cur_popup, PopupScriptFile, "USERULES", -1, 0, 0x40, 0);
-            cur_popup.field_A44 = AlphaIniPrefs->customize;
+            cur_popup.active_id = AlphaIniPrefs->customize;
             int value = SetupWin_do_menu_2(&cur_setup, &cur_popup, 1, 0);
             if (value < 0) {
                 break;
@@ -1552,7 +1552,7 @@ CONF_SEAT:
 CONF_FINAL:
         if (*MultiplayerActive) {
             time_controls_dialog(&cur_popup);
-            cur_popup.field_A44 = AlphaIniPrefs->time_controls;
+            cur_popup.active_id = AlphaIniPrefs->time_controls;
             int value = BasePop_exec_3(&cur_popup, 0, 0);
             if (value < 0) {
                 if (!(*GameRules & RULES_SCN_FORCE_PLAYER_PLAY_CURRENT_FACT)) {
@@ -1649,16 +1649,13 @@ CONF_LOOP:
                     ListBox_item(&PickWin->listBox, StrBuffer, i);
                 }
             }
-            int32_t ptr = *(int32_t*)((char*)PickWin->listBox.field_0 + 8);
-            ListBox_attach(&PickWin->listBox.dialog, PickWin,
-                *(int32_t*)((char*)&PickWin->listBox.field_24 + ptr),
-                *(int32_t*)((char*)&PickWin->listBox.field_28 + ptr),
-                0x80020);
+            Dialog* dlg = (Dialog*)((char*)&PickWin->listBox + *((DWORD*)PickWin->listBox.vtable + 2));
+            assert(dlg == &PickWin->listBox.dialog);
+            ListBox_attach(&PickWin->listBox.dialog, PickWin, dlg->ptWindow.x, dlg->ptWindow.y, 0x80020);
             DefaultPrefs->faction_id = clamp(DefaultPrefs->faction_id, 1, 7);
             ListBox_set_selected_id(&PickWin->listBox, DefaultPrefs->faction_id);
-            PickWin->field_5DB4 = Dialog_get_selected_id(
-                (Dialog *)((char*)PickWin->listBox.field_0 + ptr));
-            PickWin->listBox.field_3C = (int32_t)thumb_routine;
+            PickWin->list_select_id = Dialog_get_selected_id(dlg);
+            PickWin->listBox.cb_select_item = thumb_routine;
             thumb_routine(DefaultPrefs->faction_id);
             int choice = PickWin_show_window(PickWin);
             if (choice < 0) {
@@ -1681,19 +1678,19 @@ CONF_LOOP:
             } else {
                 plr_id = choice;
                 bool name_popup = false;
-                if (PickWin->field_5DA4 == 261) {
-                    plr_id = random(7) + 1;
+                if (PickWin->pick_button_id == 261) {
+                    plr_id = random(MaxDefPlrNum) + 1;
                     Popup_close(ThumbPopup);
                     GraphicWin_close(PickWin);
                     name_popup = true;
-                } else if (PickWin->field_5DA4 != 263) {
+                } else if (PickWin->pick_button_id != 263) {
                     if (*GameMorePreferences & MPREF_AV_VOLUME_VOICE_TOGGLE) {
                         snprintf(StrBuffer, StrBufLen, "voices\\%s.mp3", MFactions[plr_id].filename);
                         Wave_unload(WaveState);
                         Wave_load(WaveState, StrBuffer);
                         Wave_play_2(WaveState);
                     }
-                    if (!PickWin->field_5DA4) {
+                    if (!PickWin->pick_button_id) {
                         name_popup = true;
                     } else if (!strcmp(MFactions[plr_id].filename, "JENN282")) {
                         goto CONF_LOOP;
@@ -1715,7 +1712,7 @@ CONF_LOOP:
                         StrBuffer[0] = 0;
                         strcat(StrBuffer, "NAME");
                         int value;
-                        if (PickWin->field_5DA4 == 261) {
+                        if (PickWin->pick_button_id == 261) {
                             strcat(StrBuffer, "3");
                             value = X_pop_ask(StrBuffer, 23, unk_945834, 0, 0);
                         } else {
@@ -1736,7 +1733,7 @@ CONF_LOOP:
                         if (!*DialogToggle) {
                             goto CONF_PICK;
                         }
-                        if (PickWin->field_5DA4 != 261) {
+                        if (PickWin->pick_button_id != 261) {
                             update_custom_names(plr_id, 1);
                             Popup_close(ThumbPopup);
                             GraphicWin_close(PickWin);
@@ -1761,8 +1758,8 @@ CONF_LOOP:
                 Dialogs_item(&cur_popup.dialogs, StrBuffer, i);
             }
         }
-        cur_popup.field_A44 = (flag & 2 ? MapWin->cOwner : DefaultPrefs->faction_id);
-        cur_popup.dialogs.listBox[15] = (int32_t)thumb_routine;
+        cur_popup.active_id = (flag & 2 ? MapWin->cOwner : DefaultPrefs->faction_id);
+        cur_popup.dialogs.listBox.cb_select_item = thumb_routine;
         thumb_routine(flag & 2 ? MapWin->cOwner : DefaultPrefs->faction_id);
         int choice = BasePop_exec_3(&cur_popup, 0, 0);
         if (choice < 0) {
@@ -1869,8 +1866,8 @@ void __cdecl setup_game(int flag) {
     *GameState &= (STATE_RAND_FAC_LEADER_SOCIAL_AGENDA | STATE_RAND_FAC_LEADER_PERSONALITIES);
     cs->dword_9A64AC = 0;
     cs->dword_9A64B0 = 0;
-    *TutWinMapState = 0;
-    cs->dword_9A64B8 = 0;
+    cs->TutWinMapState[0] = 0;
+    cs->TutWinMapState[1] = 0;
     cs->dword_9A64BC = 0;
     *CurrentTurn = 0;
     FactionStatus[1] = 0xFF;

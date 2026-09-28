@@ -200,19 +200,6 @@ struct Goal {
     int32_t base_id;
 };
 
-struct Monument {
-    int32_t data1[205];
-    int32_t data2[8][14];
-};
-
-struct ReplayEvent {
-    int8_t event;
-    int8_t faction_id;
-    int16_t turn;
-    int16_t x;
-    int16_t y;
-};
-
 struct MFaction {
     int32_t is_leader_female;
     char filename[24];
@@ -911,6 +898,73 @@ struct CWorldbuilder {
     int32_t islands;
 };
 
+enum MonumentEventId {
+    MON_COLONY_FOUNDED = 0,
+    MON_TECH_DISCOVERED = 1,
+    MON_SECRETS_OF_TECH = 2,
+    MON_PROTOTYPE_BUILT = 3,
+    MON_FACILITY_BUILT = 4,
+    MON_SECRET_PROJECT = 5,
+    MON_ENEMY_DESTROYED = 6,
+    MON_CONQUER_BASE = 7,
+    MON_NAVAL_UNIT_BUILT = 8,
+    MON_AIR_UNIT_BUILT = 9,
+    MON_NATIVE_LIFE_BRED = 10,
+    MON_FIRST_IN_SPACE = 11,
+    MON_BUILT_PRESERVE = 12,
+    MON_WINNING_UNIFY = 13,
+    MON_WINNING_TRANS = 14,
+    MON_KILLED_FACTION_1 = 15,
+    MON_KILLED_FACTION_2 = 16,
+    MON_KILLED_FACTION_3 = 17,
+    MON_KILLED_FACTION_4 = 18,
+    MON_KILLED_FACTION_5 = 19,
+    MON_KILLED_FACTION_6 = 20,
+};
+
+struct MonumentEvent {
+    int32_t year;
+    int32_t param1;
+    int32_t param2;
+    int32_t faction_id;
+    int32_t achieved;
+    int32_t prev_count;
+    int32_t field_18;
+    int32_t field_1C;
+    int32_t field_20;
+    int32_t field_24;
+    int32_t field_28;
+    int32_t field_2C;
+    int32_t field_30;
+    int32_t field_34;
+};
+
+struct Monument {
+    MonumentEvent events[21];
+    int32_t latest_event_id;
+    int32_t field_49C;
+    int32_t field_4A0;
+    int32_t field_4A4;
+    int32_t field_4A8;
+    char base_name[24];
+    char facility_name[24];
+    char enemy_base_name[24];
+};
+
+enum ReplayEventId {
+    REPLAY_INIT = 0,
+    REPLAY_CAPTURE = 1,
+    REPLAY_KILL = 2,
+};
+
+struct ReplayEvent {
+    int8_t event;
+    int8_t faction_id;
+    int16_t turn;
+    int16_t x;
+    int16_t y;
+};
+
 struct GameChecksum {
     union {
         struct {
@@ -941,6 +995,38 @@ struct FullChecksum : GameChecksum {
     uint32_t bases2;
 };
 
+static_assert(sizeof(CAbility) == 0x1C, "");
+static_assert(sizeof(CArmor) == 0x10, "");
+static_assert(sizeof(CBonusName) == 0x18, "");
+static_assert(sizeof(CChassis) == 0x90, "");
+static_assert(sizeof(CCitizen) == 0x1C, "");
+static_assert(sizeof(CCombatMode) == 0x10, "");
+static_assert(sizeof(CEnergy) == 0x8, "");
+static_assert(sizeof(CFacility) == 0x30, "");
+static_assert(sizeof(CMight) == 0x8, "");
+static_assert(sizeof(CMorale) == 0x8, "");
+static_assert(sizeof(CNatural) == 0x8, "");
+static_assert(sizeof(COrder) == 0xC, "");
+static_assert(sizeof(CProposal) == 0xC, "");
+static_assert(sizeof(CReactor) == 0xC, "");
+static_assert(sizeof(CResourceInfo) == 0x90, "");
+static_assert(sizeof(CResourceName) == 0x8, "");
+static_assert(sizeof(CRules) == 0x134, "");
+static_assert(sizeof(CSocialCategory) == 0x10, "");
+static_assert(sizeof(CSocialEffect) == 0x2C, "");
+static_assert(sizeof(CSocialField) == 0xD4, "");
+static_assert(sizeof(CSocialParam) == 0x68, "");
+static_assert(sizeof(CTech) == 0x2C, "");
+static_assert(sizeof(CTerraform) == 0x20, "");
+static_assert(sizeof(CTimeControl) == 0x20, "");
+static_assert(sizeof(CWeapon) == 0x10, "");
+static_assert(sizeof(CWorldbuilder) == 0x7C, "");
+static_assert(sizeof(Path) == 0x2C, "");
+static_assert(sizeof(Goal) == 0x10, "");
+static_assert(sizeof(Landmark) == 0x28, "");
+static_assert(sizeof(Continent) == 0x1C, "");
+static_assert(sizeof(Monument) == 0x4F4, "");
+static_assert(sizeof(ReplayEvent) == 0x8, "");
 static_assert(sizeof(GameChecksum) == 0x54, "");
 static_assert(sizeof(FullChecksum) == 0xBC, "");
 

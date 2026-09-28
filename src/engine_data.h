@@ -11,8 +11,7 @@ struct GamePrefs {
     int32_t GameInterludeState[2];
     int32_t dword_9A64AC;
     int32_t dword_9A64B0;
-    int32_t TutWinMapState;
-    int32_t dword_9A64B8;
+    int32_t TutWinMapState[2];
     int32_t dword_9A64BC;
     int32_t GameState;
     int32_t DiffLevel;

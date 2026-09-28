@@ -323,7 +323,7 @@ void __cdecl treaty_on(int faction_id_1, int faction_id_2, uint32_t status) {
     plr1->diplo_status[faction_id_2] |= status;
     plr2->diplo_status[faction_id_1] |= status;
     if (is_player && status & (DIPLO_VENDETTA|DIPLO_COMMLINK|DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT)) {
-        if (*dword_7FE06C) {
+        if (MultiWin->is_visible) {
             GraphicWin_redraw(MultiWin);
         }
     }
@@ -2383,11 +2383,11 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
             plr->unk_27 = 3 * plr->tech_ranking / 4;
         }
         if (faction_id == *CurrentPlayerFaction) {
-            MapWin->iTileX = x;
-            MapWin->iTileY = y;
+            MapWin->TileX = x;
+            MapWin->TileY = y;
             for (int i = 0; i < 32; i++) {
-                MapWin->aiCursorPositionsX[i] = x;
-                MapWin->aiCursorPositionsY[i] = y;
+                MapWin->CursorListX[i] = x;
+                MapWin->CursorListY[i] = y;
             }
         }
         return 1; // Valid spawn, return value non-zero

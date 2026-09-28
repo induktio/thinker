@@ -293,8 +293,8 @@ void __cdecl mod_base_kill(int base_id) {
     }
 
     int tagged_id = base_id | 0x40000000;
-    StringStruct* msg = (StringStruct*)((char*)&MessageWin->listBox.graphicWin.field_74
-        + *(int32_t*)(MessageWin->listBox.field_0 + 8));
+    Dialog* dlg = (Dialog*)((char*)&MessageWin->listBox + *((DWORD*)MessageWin->listBox.vtable + 2));
+    StringStruct* msg = &dlg->strings;
     if (msg->head) {
         for (int list_pos = 0; list_pos < msg->count; ++list_pos) {
             StringStructNode* node = msg->cursor;
@@ -3849,7 +3849,7 @@ int __cdecl mod_base_production() {
                 int w = 0, h = 0;
                 if (!Buffer_get_pcx_dimensions("secproj_sm.pcx", &w, &h)
                 && !Sprite_init(&cur_popup.sprite, "secproj_sm.pcx", w, h)) {
-                    cur_popup.field_2144 = &cur_popup.sprite;
+                    cur_popup.sprite_icon = &cur_popup.sprite;
                 }
                 BasePop_exec_3(&cur_popup, 0, 0);
             }

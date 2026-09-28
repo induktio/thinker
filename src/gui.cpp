@@ -1,7 +1,7 @@
 
 #include "gui.h"
 
-const int32_t MainWinHandle = (int32_t)(&MapWin->oMainWin.field_4); // 0x939444
+const void* MainWinHandle = &MapWin->oMainWin; // 0x939444
 
 char label_pop_size[StrBufLen] = "Pop: %d / %d / %d / %d";
 char label_pop_boom[StrBufLen] = "Population Boom";
@@ -42,13 +42,12 @@ typedef int(__stdcall *START_F)(HINSTANCE, HINSTANCE, LPSTR, int);
 typedef int(__thiscall *CCANVAS_CREATE_F)(Buffer* This);
 typedef int(__stdcall *WNDPROC_F)(HWND, int, WPARAM, LPARAM);
 typedef int(__thiscall *CMAIN_ZOOMPROCESSING_F)(Console* This);
-typedef int(__stdcall *PROC_ZOOM_KEY_F)(int iZoomType, int iZero);
+typedef int(__thiscall *PROC_ZOOM_KEY_F)(Console* This, int iZoomType, int iZero);
 typedef int(__thiscall *CMAIN_TILETOPT_F)(Console* This, int iTileX, int iTileY, long* piX, long* piY);
 typedef int(__thiscall *CMAIN_MOVEMAP_F)(Console* This, int iXPos, int iYPos, int a4);
 typedef int(__thiscall *CMAIN_REDRAWMAP_F)(Console* This, int a2);
 typedef int(__thiscall *CMAIN_DRAWMAP_F)(Console* This, int iOwner, int fUnitsOnly);
 typedef int(__thiscall *CMAIN_PTTOTILE_F)(Console* This, POINT p, long* piTileX, long* piTileY);
-typedef int(__thiscall *CINFOWIN_DRAWTILEINFO_F)(CInfoWin* This);
 typedef int(__cdecl *PAINTHANDLER_F)(RECT *prRect, int a2);
 typedef int(__cdecl *PAINTMAIN_F)(RECT *pRect);
 typedef int(__thiscall *CSPRITE_FROMCANVASRECTTRANS_F)(Sprite* This, Buffer *poCanvas,
@@ -95,8 +94,8 @@ CMAIN_MOVEMAP_F                pfncMoveMap =                    (CMAIN_MOVEMAP_F
 CMAIN_REDRAWMAP_F              pfncRedrawMap =                  (CMAIN_REDRAWMAP_F             )0x46A550;
 CMAIN_DRAWMAP_F                pfncDrawMap =                    (CMAIN_DRAWMAP_F               )0x469CA0;
 CMAIN_PTTOTILE_F               pfncPtToTile =                   (CMAIN_PTTOTILE_F              )0x463040;
-CInfoWin*                      pInfoWin =                       (CInfoWin*                     )0x8C5568;
-CINFOWIN_DRAWTILEINFO_F        pfncDrawTileInfo =               (CINFOWIN_DRAWTILEINFO_F       )0x4B8890; // Fixed
+StatusWindow*                  pInfoWin =                       (StatusWindow*                 )0x8C5568;
+FStatusWin                     pfncDrawTileInfo =               (FStatusWin                    )0x4B8890;
 Console**                      ppMain =                         (Console**                     )0x7D3C3C;
 PAINTHANDLER_F                 pfncPaintHandler =               (PAINTHANDLER_F                )0x5F7320;
 PAINTMAIN_F                    pfncPaintMain =                  (PAINTMAIN_F                   )0x5EFD20;
@@ -155,9 +154,8 @@ bool win_has_focus() {
 }
 
 int __thiscall Win_is_visible(Win* This) {
-    bool value = (This->iSomeFlag & WIN_VISIBLE)
-        && (!This->poParent || Win_is_visible(This->poParent));
-    return value;
+    return (This->winstate & WIN_ST_VISIBLE)
+        && (!This->parent || Win_is_visible(This->parent));
 }
 
 /*
@@ -168,10 +166,10 @@ covered by checking Win_get_key_window condition.
 */
 static GameWinState current_window() {
     if (!*GameHalted) {
-        int state = Win_get_key_window();
+        void* state = (void*)Win_get_key_window();
         if (state == MainWinHandle) {
             return Win_is_visible(BaseWin) ? GW_Base : GW_World;
-        } else if (state == (int)DesignWin) {
+        } else if (state == DesignWin) {
             return GW_Design;
         }
     }
@@ -181,16 +179,14 @@ static GameWinState current_window() {
 void mouse_over_tile(POINT* p) {
     static POINT ptLastTile = {0, 0};
     POINT ptTile;
-
     if (CState.MouseOverTileInfo
-    && !MapWin->fUnitNotViewMode
+    && !MapWin->InVehMode
     && p->x >= 0 && p->x < CState.ScreenSize.x
     && p->y >= 0 && p->y < (CState.ScreenSize.y - ConsoleHeight)
     && MapWin_pixel_to_tile(MapWin, p->x, p->y, &ptTile.x, &ptTile.y) == 0
     && memcmp(&ptTile, &ptLastTile, sizeof(POINT)) != 0) {
-
-        pInfoWin->iTileX = ptTile.x;
-        pInfoWin->iTileY = ptTile.y;
+        StatusWin->tile_x = ptTile.x;
+        StatusWin->tile_y = ptTile.y;
         StatusWin_on_redraw(StatusWin);
         memcpy(&ptLastTile, &ptTile, sizeof(POINT));
     }
@@ -225,21 +221,21 @@ bool do_scroll(double x, double y) {
     int my = *MapAreaY;
     int i;
     int d;
-    if (x && MapWin->iMapTilesEvenX + MapWin->iMapTilesOddX < mx) {
-        if (x < 0 && (!map_is_flat() || MapWin->iMapTileLeft > 0)) {
+    if (x && MapWin->TileDistEvenX + MapWin->TileDistOddX < mx) {
+        if (x < 0 && (!map_is_flat() || MapWin->MapTileLeft > 0)) {
             i = (int)CState.ScrollOffsetX;
             CState.ScrollOffsetX -= x;
             fScrolled = fScrolled || (i != (int)CState.ScrollOffsetX);
-            while (CState.ScrollOffsetX >= MapWin->iPixelsPerTileX) {
-                CState.ScrollOffsetX -= MapWin->iPixelsPerTileX;
-                MapWin->iTileX -= 2;
-                if (MapWin->iTileX < 0) {
+            while (CState.ScrollOffsetX >= MapWin->PixelsPerTileX) {
+                CState.ScrollOffsetX -= MapWin->PixelsPerTileX;
+                MapWin->TileX -= 2;
+                if (MapWin->TileX < 0) {
                     if (map_is_flat()) {
-                        MapWin->iTileX = 0;
-                        MapWin->iTileY &= ~1;
+                        MapWin->TileX = 0;
+                        MapWin->TileY &= ~1;
                         CState.ScrollOffsetX = 0;
                     } else {
-                        MapWin->iTileX += mx;
+                        MapWin->TileX += mx;
                     }
                 }
             }
@@ -248,20 +244,20 @@ bool do_scroll(double x, double y) {
             CState.ScrollOffsetX = 0;
         }
         if (x > 0 && (!map_is_flat()
-        || MapWin->iMapTileLeft + MapWin->iMapTilesEvenX + MapWin->iMapTilesOddX <= mx)) {
+        || MapWin->MapTileLeft + MapWin->TileDistEvenX + MapWin->TileDistOddX <= mx)) {
             i = (int)CState.ScrollOffsetX;
             CState.ScrollOffsetX -= x;
             fScrolled = fScrolled || (i != (int)CState.ScrollOffsetX);
-            while (CState.ScrollOffsetX <= -MapWin->iPixelsPerTileX) {
-                CState.ScrollOffsetX += MapWin->iPixelsPerTileX;
-                MapWin->iTileX += 2;
-                if (MapWin->iTileX > mx) {
+            while (CState.ScrollOffsetX <= -MapWin->PixelsPerTileX) {
+                CState.ScrollOffsetX += MapWin->PixelsPerTileX;
+                MapWin->TileX += 2;
+                if (MapWin->TileX > mx) {
                     if (map_is_flat()) {
-                        MapWin->iTileX = mx;
-                        MapWin->iTileY &= ~1;
+                        MapWin->TileX = mx;
+                        MapWin->TileY &= ~1;
                         CState.ScrollOffsetX = 0;
                     } else {
-                        MapWin->iTileX -= mx;
+                        MapWin->TileX -= mx;
                     }
                 }
             }
@@ -270,35 +266,35 @@ bool do_scroll(double x, double y) {
             CState.ScrollOffsetX = 0;
         }
     }
-    if (y && MapWin->iMapTilesEvenY + MapWin->iMapTilesOddY < my) {
-        int iMinTileY = MapWin->iMapTilesOddY - 2;
-        int iMaxTileY = my + 4 - MapWin->iMapTilesOddY;
-        while (MapWin->iTileY < iMinTileY) {
-            MapWin->iTileY += 2;
+    if (y && MapWin->TileDistEvenY + MapWin->TileDistOddY < my) {
+        int MinTileY = MapWin->TileDistOddY - 2;
+        int MaxTileY = my + 4 - MapWin->TileDistOddY;
+        while (MapWin->TileY < MinTileY) {
+            MapWin->TileY += 2;
         }
-        while (MapWin->iTileY > iMaxTileY) {
-            MapWin->iTileY -= 2;
+        while (MapWin->TileY > MaxTileY) {
+            MapWin->TileY -= 2;
         }
-        d = (MapWin->iTileY - iMinTileY) * MapWin->iPixelsPerHalfTileY - (int)CState.ScrollOffsetY;
+        d = (MapWin->TileY - MinTileY) * MapWin->PixelsPerHalfTileY - (int)CState.ScrollOffsetY;
         if (y < 0 && d > 0 ) {
             if (y < -d) { y = -d; }
             i = (int)CState.ScrollOffsetY;
             CState.ScrollOffsetY -= y;
             fScrolled = fScrolled || (i != (int)CState.ScrollOffsetY);
-            while (CState.ScrollOffsetY >= MapWin->iPixelsPerTileY && MapWin->iTileY - 2 >= iMinTileY) {
-                CState.ScrollOffsetY -= MapWin->iPixelsPerTileY;
-                MapWin->iTileY -= 2;
+            while (CState.ScrollOffsetY >= MapWin->PixelsPerTileY && MapWin->TileY - 2 >= MinTileY) {
+                CState.ScrollOffsetY -= MapWin->PixelsPerTileY;
+                MapWin->TileY -= 2;
             }
         }
-        d = (iMaxTileY - MapWin->iTileY + 1) * MapWin->iPixelsPerHalfTileY + (int)CState.ScrollOffsetY;
+        d = (MaxTileY - MapWin->TileY + 1) * MapWin->PixelsPerHalfTileY + (int)CState.ScrollOffsetY;
         if (y > 0 && d > 0) {
             if (y > d) { y = d; }
             i = (int)CState.ScrollOffsetY;
             CState.ScrollOffsetY -= y;
             fScrolled = fScrolled || (i != (int)CState.ScrollOffsetY);
-            while (CState.ScrollOffsetY <= -MapWin->iPixelsPerTileY && MapWin->iTileY + 2 <= iMaxTileY) {
-                CState.ScrollOffsetY += MapWin->iPixelsPerTileY;
-                MapWin->iTileY += 2;
+            while (CState.ScrollOffsetY <= -MapWin->PixelsPerTileY && MapWin->TileY + 2 <= MaxTileY) {
+                CState.ScrollOffsetY += MapWin->PixelsPerTileY;
+                MapWin->TileY += 2;
             }
         }
     }
@@ -325,7 +321,7 @@ void check_scroll() {
     BOOL fScrolled;
     BOOL fScrolledAtAll = false;
     BOOL fLeftButtonDown = (GetAsyncKeyState(VK_LBUTTON) < 0);
-    int iScrollArea = conf.scroll_area * CState.ScreenSize.x / 1024;
+    int ScrollArea = conf.scroll_area * CState.ScreenSize.x / 1024;
 
     if (CState.RightButtonDown && GetAsyncKeyState(VK_RBUTTON) < 0) {
         if (hypot((double)(p.x-CState.ScrollDragPos.x), (double)(p.y-CState.ScrollDragPos.y)) > 2.5) {
@@ -333,8 +329,8 @@ void check_scroll() {
             SetCursor(LoadCursor(0, IDC_HAND));
         }
     }
-    CState.ScrollOffsetX = MapWin->iMapPixelLeft;
-    CState.ScrollOffsetY = MapWin->iMapPixelTop;
+    CState.ScrollOffsetX = MapWin->MapPixelLeft;
+    CState.ScrollOffsetY = MapWin->MapPixelTop;
     ullNewTickCount = get_ms_count();
     ullOldTickCount = ullNewTickCount;
 //    debug("scroll_check %d %d %d\n", CState.Scrolling, (int)CState.ScrollDragPos.x, (int)CState.ScrollDragPos.y);
@@ -352,30 +348,30 @@ void check_scroll() {
         } else if (ullNewTickCount - ullDeactiveTimer > 100 && !CState.ScrollDragging) {
             double dMin = (double)CState.ScrollMin;
             double dMax = (double)CState.ScrollMax;
-            double dArea = (double)iScrollArea;
-            if (p.x <= iScrollArea && p.x >= 0) {
+            double dArea = (double)ScrollArea;
+            if (p.x <= ScrollArea && p.x >= 0) {
                 fScrolled = true;
                 dTPS = dMin + (dArea - (double)p.x) / dArea * (dMax - dMin);
-                dx = (double)(ullNewTickCount - ullOldTickCount) * dTPS * (double)MapWin->iPixelsPerTileX / -1000.0;
+                dx = (double)(ullNewTickCount - ullOldTickCount) * dTPS * (double)MapWin->PixelsPerTileX / -1000.0;
 
-            } else if ((w - p.x) <= iScrollArea && w >= p.x) {
+            } else if ((w - p.x) <= ScrollArea && w >= p.x) {
                 fScrolled = true;
                 dTPS = dMin + (dArea - (double)(w - p.x)) / dArea * (dMax - dMin);
-                dx = (double)(ullNewTickCount - ullOldTickCount) * dTPS * (double)MapWin->iPixelsPerTileX / 1000.0;
+                dx = (double)(ullNewTickCount - ullOldTickCount) * dTPS * (double)MapWin->PixelsPerTileX / 1000.0;
             }
-            if (p.y <= iScrollArea && p.y >= 0) {
+            if (p.y <= ScrollArea && p.y >= 0) {
                 fScrolled = true;
                 dTPS = dMin + (dArea - (double)p.y) / dArea * (dMax - dMin);
-                dy = (double)(ullNewTickCount - ullOldTickCount) * dTPS * (double)MapWin->iPixelsPerTileY / -1000.0;
+                dy = (double)(ullNewTickCount - ullOldTickCount) * dTPS * (double)MapWin->PixelsPerTileY / -1000.0;
 
-            } else if (h - p.y <= iScrollArea && h >= p.y &&
+            } else if (h - p.y <= ScrollArea && h >= p.y &&
             // These extra conditions will stop movement when the mouse is over the bottom middle console.
             (p.x <= (CState.ScreenSize.x - ConsoleWidth) / 2 ||
              p.x >= (CState.ScreenSize.x - ConsoleWidth) / 2 + ConsoleWidth ||
              h - p.y <= 8 * CState.ScreenSize.y / 768)) {
                 fScrolled = true;
                 dTPS = dMin + (dArea - (double)(h - p.y)) / dArea * (dMax - dMin);
-                dy = (double)(ullNewTickCount - ullOldTickCount) * dTPS * (double)MapWin->iPixelsPerTileY / 1000.0;
+                dy = (double)(ullNewTickCount - ullOldTickCount) * dTPS * (double)MapWin->PixelsPerTileY / 1000.0;
             }
         }
         if (fScrolled) {
@@ -399,14 +395,14 @@ void check_scroll() {
     } while (fScrolled && (GetCursorPos(&p) || (CState.ScrollDragging && CState.RightButtonDown)));
 
     if (fScrolledAtAll) {
-        MapWin->drawOnlyCursor = 1;
-        MapWin_set_center(MapWin, MapWin->iTileX, MapWin->iTileY, 1);
-        MapWin->drawOnlyCursor = 0;
+        MapWin->DrawOnlyCursor = 1;
+        MapWin_set_center(MapWin, MapWin->TileX, MapWin->TileY, 1);
+        MapWin->DrawOnlyCursor = 0;
         for (int i = 1; i < 8; i++) {
-            if (ppMain[i] && ppMain[i]->iDrawToggleA &&
-            (!fLeftButtonDown || ppMain[i]->field_1DD80) &&
-            ppMain[i]->iMapTilesOddX + ppMain[i]->iMapTilesEvenX < *MapAreaX) {
-                MapWin_set_center(ppMain[i], MapWin->iTileX, MapWin->iTileY, 1);
+            if (MapWinPtr[i] && MapWinPtr[i]->DrawToggleA
+            && (!fLeftButtonDown || MapWinPtr[i]->field_1DD80)
+            && MapWinPtr[i]->TileDistOddX + MapWinPtr[i]->TileDistEvenX < *MapAreaX) {
+                MapWin_set_center(MapWinPtr[i], MapWin->TileX, MapWin->TileY, 1);
             }
         }
         if (CState.ScrollDragging) {
@@ -418,58 +414,57 @@ void check_scroll() {
     flushlog();
 }
 
-int __thiscall mod_gen_map(Console* This, int iOwner, int fUnitsOnly) {
-
+int __thiscall mod_gen_map(Console* This, int faction_id, int units_only) {
     if (This == MapWin) {
         // Save these values to restore them later
-        int iMapPixelLeft = This->iMapPixelLeft;
-        int iMapPixelTop = This->iMapPixelTop;
-        int iMapTileLeft = This->iMapTileLeft;
-        int iMapTileTop = This->iMapTileTop;
-        int iMapTilesOddX = This->iMapTilesOddX;
-        int iMapTilesOddY = This->iMapTilesOddY;
-        int iMapTilesEvenX = This->iMapTilesEvenX;
-        int iMapTilesEvenY = This->iMapTilesEvenY;
+        int MapPixelLeft = This->MapPixelLeft;
+        int MapPixelTop = This->MapPixelTop;
+        int MapTileLeft = This->MapTileLeft;
+        int MapTileTop = This->MapTileTop;
+        int TileDistOddX = This->TileDistOddX;
+        int TileDistOddY = This->TileDistOddY;
+        int TileDistEvenX = This->TileDistEvenX;
+        int TileDistEvenY = This->TileDistEvenY;
         // These are just aliased to save typing and are not modified
         int mx = *MapAreaX;
         int my = *MapAreaY;
 
-        if (iMapTilesOddX + iMapTilesEvenX < mx && !map_is_flat()) {
-            if (iMapPixelLeft > 0) {
-                This->iMapPixelLeft -= This->iPixelsPerTileX;
-                This->iMapTileLeft -= 2;
-                This->iMapTilesEvenX++;
-                This->iMapTilesOddX++;
-                if (This->iMapTileLeft < 0)
-                    This->iMapTileLeft += mx;
-            } else if (iMapPixelLeft < 0 ) {
-                This->iMapTilesEvenX++;
-                This->iMapTilesOddX++;
+        if (TileDistOddX + TileDistEvenX < mx && !map_is_flat()) {
+            if (MapPixelLeft > 0) {
+                This->MapPixelLeft -= This->PixelsPerTileX;
+                This->MapTileLeft -= 2;
+                This->TileDistEvenX++;
+                This->TileDistOddX++;
+                if (This->MapTileLeft < 0)
+                    This->MapTileLeft += mx;
+            } else if (MapPixelLeft < 0 ) {
+                This->TileDistEvenX++;
+                This->TileDistOddX++;
             }
         }
-        if (iMapTilesOddY + iMapTilesEvenY < my) {
-            if (iMapPixelTop > 0) {
-                This->iMapPixelTop -= This->iPixelsPerTileY;
-                This->iMapTileTop -= 2;
-                This->iMapTilesEvenY++;
-                This->iMapTilesOddY++;
-            } else if (iMapPixelTop < 0) {
-                This->iMapTilesEvenY++;
-                This->iMapTilesOddY++;
+        if (TileDistOddY + TileDistEvenY < my) {
+            if (MapPixelTop > 0) {
+                This->MapPixelTop -= This->PixelsPerTileY;
+                This->MapTileTop -= 2;
+                This->TileDistEvenY++;
+                This->TileDistOddY++;
+            } else if (MapPixelTop < 0) {
+                This->TileDistEvenY++;
+                This->TileDistOddY++;
             }
         }
-        MapWin_gen_map(This, iOwner, fUnitsOnly);
+        MapWin_gen_map(This, faction_id, units_only);
         // Restore This's original values
-        This->iMapPixelLeft = iMapPixelLeft;
-        This->iMapPixelTop = iMapPixelTop;
-        This->iMapTileLeft = iMapTileLeft;
-        This->iMapTileTop = iMapTileTop;
-        This->iMapTilesOddX = iMapTilesOddX;
-        This->iMapTilesOddY = iMapTilesOddY;
-        This->iMapTilesEvenX = iMapTilesEvenX;
-        This->iMapTilesEvenY = iMapTilesEvenY;
+        This->MapPixelLeft = MapPixelLeft;
+        This->MapPixelTop = MapPixelTop;
+        This->MapTileLeft = MapTileLeft;
+        This->MapTileTop = MapTileTop;
+        This->TileDistOddX = TileDistOddX;
+        This->TileDistOddY = TileDistOddY;
+        This->TileDistEvenX = TileDistEvenX;
+        This->TileDistEvenY = TileDistEvenY;
     } else {
-        MapWin_gen_map(This, iOwner, fUnitsOnly);
+        MapWin_gen_map(This, faction_id, units_only);
     }
     return 0;
 }
@@ -480,13 +475,13 @@ int __thiscall mod_calc_dim(Console* This) {
     POINT ptNewCenter;
     POINT ptNewTile;
     POINT ptScale;
-    int iOldZoom;
+    int zoom;
     int dx, dy;
     bool fx, fy;
     if (This == MapWin) {
-        iOldZoom = This->iLastZoomFactor;
-        ptNewTile.x = This->iTileX;
-        ptNewTile.y = This->iTileY;
+        zoom = This->LastZoomFactor;
+        ptNewTile.x = This->TileX;
+        ptNewTile.y = This->TileY;
         fx = (ptNewTile.x == ptOldTile.x);
         fy = (ptNewTile.y == ptOldTile.y);
         memcpy(&ptOldTile, &ptNewTile, sizeof(POINT));
@@ -494,20 +489,20 @@ int __thiscall mod_calc_dim(Console* This) {
         MapWin_calculate_dimensions(This);
 
         if (CState.Scrolling) {
-            This->iMapPixelLeft = (int)CState.ScrollOffsetX;
-            This->iMapPixelTop = (int)CState.ScrollOffsetY;
-        } else if (iOldZoom != -9999) {
-            ptScale.x = This->iPixelsPerTileX;
-            ptScale.y = This->iPixelsPerTileY;
+            This->MapPixelLeft = (int)CState.ScrollOffsetX;
+            This->MapPixelTop = (int)CState.ScrollOffsetY;
+        } else if (zoom != -9999) {
+            ptScale.x = This->PixelsPerTileX;
+            ptScale.y = This->PixelsPerTileY;
             MapWin_tile_to_pixel(This, ptNewTile.x, ptNewTile.y, &ptNewCenter.x, &ptNewCenter.y);
             dx = ptOldCenter.x - ptNewCenter.x;
             dy = ptOldCenter.y - ptNewCenter.y;
-            if (!This->iMapPixelLeft && fx && dx > -ptScale.x * 2 && dx < ptScale.x * 2) {
-                This->iMapPixelLeft = dx;
+            if (!This->MapPixelLeft && fx && dx > -ptScale.x * 2 && dx < ptScale.x * 2) {
+                This->MapPixelLeft = dx;
             }
-            if (!This->iMapPixelTop && fy && dy > -ptScale.y * 2 && dy < ptScale.y * 2
-            && (dy + *ScreenHeight) / ptScale.y < (*MapAreaY - This->iMapTileTop) / 2) {
-                This->iMapPixelTop = dy;
+            if (!This->MapPixelTop && fy && dy > -ptScale.y * 2 && dy < ptScale.y * 2
+            && (dy + *ScreenHeight) / ptScale.y < (*MapAreaY - This->MapTileTop) / 2) {
+                This->MapPixelTop = dy;
             }
         }
     } else {
@@ -609,7 +604,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         if (state == GW_World) {
             int zoom_type = (zoom_in ? 515 : 516);
             for (int i = 0; i < wheel_delta; i++) {
-                if (MapWin->iZoomFactor > -8 || zoom_in) {
+                if (MapWin->ZoomFactor > -8 || zoom_in) {
                     Console_zoom(MapWin, zoom_type, 0);
                 }
             }
@@ -636,13 +631,13 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
     } else if (msg == WM_KEYDOWN && (wParam == VK_LEFT || wParam == VK_RIGHT)
     && ctrl_key_down() && current_window() == GW_Base) {
-        int32_t value = BaseWin->iResWindowTab;
+        int32_t value = BaseWin->res_window_tab;
         if (wParam == VK_LEFT) {
             value = (value + 1) % 3;
         } else {
             value = (value + 2) % 3;
         }
-        BaseWin->iResWindowTab = value;
+        BaseWin->res_window_tab = value;
         GraphicWin_redraw(BaseWin);
 
     } else if (msg == WM_KEYDOWN && wParam == 'H' && ctrl_key_down()
@@ -762,56 +757,56 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
 
     } else if (debug_cmd && wParam == 'c' && alt_key_down() && is_editor
-    && (sq = mapsq(MapWin->iTileX, MapWin->iTileY)) && sq->lm_items()) {
-        uint32_t prev_state = MapWin->iWhatToDrawFlags;
-        MapWin->iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
+    && (sq = mapsq(MapWin->TileX, MapWin->TileY)) && sq->lm_items()) {
+        uint32_t prev_state = MapWin->DrawFlags;
+        MapWin->DrawFlags |= MAPWIN_DRAW_GOALS;
         refresh_overlay(code_at);
         int value = pop_ask_number_4("modmenu", "MAPGEN", sq->code_at(), 0);
         if (!value) { // OK button pressed
-            code_set(MapWin->iTileX, MapWin->iTileY, ParseNumTable[0]);
+            code_set(MapWin->TileX, MapWin->TileY, ParseNumTable[0]);
         }
         refresh_overlay(clear_overlay);
-        MapWin->iWhatToDrawFlags = prev_state;
+        MapWin->DrawFlags = prev_state;
         draw_map(1);
 
     } else if (debug_cmd && wParam == 'y' && alt_key_down()) {
         static int draw_diplo = 0;
         draw_diplo = !draw_diplo;
         if (draw_diplo) {
-            MapWin->iWhatToDrawFlags |= MAPWIN_DRAW_DIPLO_STATE;
+            MapWin->DrawFlags |= MAPWIN_DRAW_DIPLO_STATE;
             *GameState |= STATE_DEBUG_MODE;
         } else {
-            MapWin->iWhatToDrawFlags &= ~MAPWIN_DRAW_DIPLO_STATE;
+            MapWin->DrawFlags &= ~MAPWIN_DRAW_DIPLO_STATE;
         }
         MapWin_draw_map(MapWin, 0);
         InvalidateRect(hwnd, NULL, false);
 
     } else if (debug_cmd && wParam == 'v' && alt_key_down()) {
-        MapWin->iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
+        MapWin->DrawFlags |= MAPWIN_DRAW_GOALS;
         refresh_overlay(clear_overlay);
         static int ts_type = 0;
         int i = 0;
         TileSearch ts;
         ts_type = (ts_type+1) % (MaxTileSearchType+1);
-        ts.init(MapWin->iTileX, MapWin->iTileY, ts_type, 0);
+        ts.init(MapWin->TileX, MapWin->TileY, ts_type, 0);
         while (ts.get_next() != NULL) {
             mapdata[{ts.rx, ts.ry}].overlay = ++i;
         }
-        mapdata[{MapWin->iTileX, MapWin->iTileY}].overlay = -ts_type;
+        mapdata[{MapWin->TileX, MapWin->TileY}].overlay = -ts_type;
         MapWin_draw_map(MapWin, 0);
         InvalidateRect(hwnd, NULL, false);
 
     } else if (debug_cmd && wParam == 'f' && alt_key_down()
-    && (sq = mapsq(MapWin->iTileX, MapWin->iTileY)) && sq->is_owned()) {
-        MapWin->iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
+    && (sq = mapsq(MapWin->TileX, MapWin->TileY)) && sq->is_owned()) {
+        MapWin->DrawFlags |= MAPWIN_DRAW_GOALS;
         move_upkeep(sq->owner, UM_Visual);
         MapWin_draw_map(MapWin, 0);
         InvalidateRect(hwnd, NULL, false);
 
     } else if (debug_cmd && wParam == 'x' && alt_key_down()) {
-        MapWin->iWhatToDrawFlags |= MAPWIN_DRAW_GOALS;
+        MapWin->DrawFlags |= MAPWIN_DRAW_GOALS;
         static int px = 0, py = 0;
-        int x = MapWin->iTileX, y = MapWin->iTileY;
+        int x = MapWin->TileX, y = MapWin->TileY;
         int unit_id = is_ocean(mapsq(x, y)) ? BSC_UNITY_FOIL : BSC_UNITY_ROVER;
         show_path_cost(px, py, x, y, unit_id, MapWin->cOwner);
         px=x;
@@ -820,7 +815,7 @@ LRESULT WINAPI ModWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         InvalidateRect(hwnd, NULL, false);
 
     } else if (debug_cmd && wParam == 'z' && alt_key_down()) {
-        int x = MapWin->iTileX, y = MapWin->iTileY;
+        int x = MapWin->TileX, y = MapWin->TileY;
         int base_id;
         if ((base_id = base_at(x, y)) >= 0) {
             print_base(base_id);
@@ -949,13 +944,13 @@ Render custom debug overlays with original and additional goals.
 */
 void __thiscall MapWin_gen_overlays(Console* This, int x, int y)
 {
-    Buffer* Canvas = (Buffer*)&This->oMainWin.oCanvas.poOwner;
+    Buffer* Canvas = &This->oMainWin.oCanvas;
     RECT rt;
-    if (*GameState & STATE_OMNISCIENT_VIEW && This->iWhatToDrawFlags & MAPWIN_DRAW_GOALS)
+    if (*GameState & STATE_OMNISCIENT_VIEW && This->DrawFlags & MAPWIN_DRAW_GOALS)
     {
         MapWin_tile_to_pixel(This, x, y, &rt.left, &rt.top);
-        rt.right = rt.left + This->iPixelsPerTileX;
-        rt.bottom = rt.top + This->iPixelsPerHalfTileY;
+        rt.right = rt.left + This->PixelsPerTileX;
+        rt.bottom = rt.top + This->PixelsPerHalfTileY;
 
         char buf[20] = {};
         bool found = false;
@@ -1282,7 +1277,7 @@ int __thiscall window_scale_load_pcx(Buffer* This, char* filename, Palette* a3, 
         Buffer_ctor(&image);
         value = Buffer_load_pcx(&image, filename, a3, a4, a5);
         Buffer_resize(This, conf.window_width, conf.window_height);
-        Buffer_copy_3(&image, This, 0, 0, image.stRect->right, image.stRect->bottom,
+        Buffer_copy_3(&image, This, 0, 0, image.clipRect.right, image.clipRect.bottom,
             0, 0, conf.window_width, conf.window_height);
         Buffer_dtor(&image);
     } else {
@@ -1356,7 +1351,7 @@ int __thiscall mod_MapWin_focus(Console* This, int x, int y)
 {
     // Return value is non-zero when the map is recentered offscreen
     if (MapWin_focus(This, x, y)) {
-        This->drawOnlyCursor = 0;
+        This->DrawOnlyCursor = 0;
         draw_map(1);
     }
     return 0;
@@ -1366,7 +1361,7 @@ void __thiscall mod_MapWin_set_center(Console* This, int x, int y, int flag)
 {
     // Make sure the whole screen is refreshed when clicking on map tiles
     if (!in_box(x, y, RenderTileBounds)) {
-        This->drawOnlyCursor = 0;
+        This->DrawOnlyCursor = 0;
     }
     return MapWin_set_center(This, x, y, flag);
 }
@@ -1488,13 +1483,13 @@ Modify Unit Workshop command to open prototype for the currently selected unit.
 Normally unit_id can be set when ASKSEEDESIGN popup is opened from tech_achieved.
 */
 int __cdecl mod_design_new_veh(int faction_id, int unit_id) {
-    if (unit_id < 0 && MapWin->iUnit >= 0) {
-        VEH* veh = &Vehs[MapWin->iUnit];
+    if (unit_id < 0 && MapWin->VehID >= 0) {
+        VEH* veh = &Vehs[MapWin->VehID];
         if (((veh->unit_id < MaxProtoFactionNum
         && has_tech(Units[veh->unit_id].preq_tech, faction_id))
         || veh->unit_id / MaxProtoFactionNum == faction_id)
         && Units[veh->unit_id].icon_offset < 0
-        && veh->x == MapWin->iTileX && veh->y == MapWin->iTileY) {
+        && veh->x == MapWin->TileX && veh->y == MapWin->TileY) {
             return DesignWin_exec(DesignWin, faction_id, veh->unit_id);
         }
     }

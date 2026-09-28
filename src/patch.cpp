@@ -510,6 +510,8 @@ bool patch_setup(Config* cf) {
     write_jump(0x586F30, (int)read_factions);
     write_jump(0x587240, (int)read_units);
     write_jump(0x5873C0, (int)read_rules);
+    write_jump(0x58EE60, (int)desktop_init);
+    write_jump(0x58EFF0, (int)desktop_close);
     write_jump(0x58F2F0, (int)game_init);
     write_jump(0x58F430, (int)game_close);
     write_jump(0x58F450, (int)game_reload);

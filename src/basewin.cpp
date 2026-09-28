@@ -27,10 +27,8 @@ void __cdecl action_staple(int base_id) {
             popp(ScriptFile, "NERVESTAPLEDONE", 0, image, 0);
         } else {
             parse_says(0, base->name, -1, -1);
-            *PluralDefault = 0;
-            *GenderDefault = MFactions[base->faction_id].is_leader_female;
-            parse_says(1, MFactions[base->faction_id].title_leader, -1, -1);
-            parse_says(2, MFactions[base->faction_id].name_leader, -1, -1);
+            parse_says(1, get_title(base->faction_id), -1, -1);
+            parse_says(2, get_name(base->faction_id), -1, -1);
             NetMsg_pop(NetMsg, "NERVESTAPLETHEM", 5000, 0, 0);
         }
     }
@@ -41,28 +39,18 @@ void __cdecl action_staple(int base_id) {
 }
 
 void __cdecl action_sat_attack(int faction_id, int faction_id_tgt, int target_id, int base_id) {
-    int* const dword_7AE778 = (int*)0x7AE778;
-    int* const dword_7D392C = (int*)0x7D392C;
     const int player_id = *CurrentPlayerFaction;
     assert(target_id >= 0 && target_id <= 4);
     if (!(Factions[faction_id].diplo_status[faction_id_tgt] & DIPLO_PACT)) {
         double_cross(faction_id, faction_id_tgt, -1);
     }
     if (faction_id == player_id || faction_id_tgt == player_id) {
-        *PluralDefault = 0;
-        *GenderDefault = MFactions[faction_id].is_leader_female;
-        parse_says(0, MFactions[faction_id].title_leader, -1, -1);
-        parse_says(1, MFactions[faction_id].name_leader, -1, -1);
-        *PluralDefault = MFactions[faction_id].is_noun_plural;
-        *GenderDefault = MFactions[faction_id].noun_gender;
-        parse_says(2, MFactions[faction_id].noun_faction, -1, -1);
-        *PluralDefault = 0;
-        *GenderDefault = MFactions[faction_id_tgt].is_leader_female;
-        parse_says(3, MFactions[faction_id_tgt].title_leader, -1, -1);
-        parse_says(4, MFactions[faction_id_tgt].name_leader, -1, -1);
-        *PluralDefault = MFactions[faction_id_tgt].is_noun_plural;
-        *GenderDefault = MFactions[faction_id_tgt].noun_gender;
-        parse_says(5, MFactions[faction_id_tgt].noun_faction, -1, -1);
+        parse_says(0, get_title(faction_id), -1, -1);
+        parse_says(1, get_name(faction_id), -1, -1);
+        parse_says(2, get_noun(faction_id), -1, -1);
+        parse_says(3, get_title(faction_id_tgt), -1, -1);
+        parse_says(4, get_name(faction_id_tgt), -1, -1);
+        parse_says(5, get_noun(faction_id_tgt), -1, -1);
         if (target_id >= 0 && target_id < 4) {
             parse_says(6, Facility[FAC_SKY_HYDRO_LAB + target_id].name, -1, -1);
         } else {
@@ -92,7 +80,7 @@ void __cdecl action_sat_attack(int faction_id, int faction_id_tgt, int target_id
             popp(ScriptFile, "THEYKILLEDIT", 0, "satbat_sm.pcx", 0);
         }
     }
-    if (ReportIf->field_8 == 6 && dword_7AE778[*dword_7D392C] == 5) {
+    if (ReportIf->view_mode == 6 && InfcList[*InfcUsed] == 5) {
         ReportIf_on_redraw(ReportIf);
     }
 }
@@ -155,7 +143,7 @@ void __cdecl sat_attack(int faction_id, int faction_id_tgt, int target_id) {
             Popup_start(&cur_popup, PopupScriptFile, "WHICHGSP", -1, 0, 64, 0);
             if (!Buffer_get_pcx_dimensions("satbat_sm.pcx", &w, &h)
             && !Sprite_init(&cur_popup.sprite, "satbat_sm.pcx", w, h)) {
-                cur_popup.field_2144 = &cur_popup.sprite;
+                cur_popup.sprite_icon = &cur_popup.sprite;
             }
             for (int i = 0; i < *BaseCount; i++) {
                 BASE* base = &Bases[i];
@@ -225,23 +213,23 @@ void __thiscall BaseWin_hurry_unlock_base(NetDaemon* This, int base_id) {
 }
 
 void __thiscall BaseWin_draw_support(BaseWindow* This) {
-    RECT& rc = This->rResWindow;
+    RECT& rc = This->rcResWindow;
     Buffer_set_clip(&This->oCanvas, &rc);
     GraphicWin_fill_2(This, &rc, 0);
 
-    MapWin_init_2((Console*)&This->oRender, 2, 0);
-    This->oRender.iZoomFactor = base_zoom_factor;
-    This->oRender.iWhatToDrawFlags = MAPWIN_SUPPORT_VIEW|MAPWIN_DRAW_BONUS_RES|\
+    MapWin_init_2(&This->oRender, 2, 0);
+    This->oRender.ZoomFactor = base_zoom_factor;
+    This->oRender.DrawFlags = MAPWIN_SUPPORT_VIEW|MAPWIN_DRAW_BONUS_RES|\
         MAPWIN_DRAW_RIVERS|MAPWIN_DRAW_IMPROVEMENTS|MAPWIN_DRAW_TRANSLUCENT;
 
-    This->oRender.iTileX = (*CurrentBase)->x;
-    This->oRender.iTileY = (*CurrentBase)->y;
+    This->oRender.TileX = (*CurrentBase)->x;
+    This->oRender.TileY = (*CurrentBase)->y;
     GraphicWin_redraw(&This->oRender.oBufWin);
 
     Buffer_copy_4(&This->oRender.oBufWin.oCanvas, &This->oCanvas,
         0, 0, rc.left + 11, rc.top + 31, rc.right, rc.bottom);
     GraphicWin_soft_update_3(This, &rc);
-    Buffer_set_clip(&This->oCanvas, &This->oCanvas.stRect[0]);
+    Buffer_set_clip(&This->oCanvas, &This->oCanvas.clipRect);
 }
 
 void __thiscall BaseWin_draw_misc_eco_damage(Buffer* This, char* buf, int x, int y, int len) {
@@ -268,11 +256,11 @@ void __thiscall BaseWin_draw_misc_eco_damage(Buffer* This, char* buf, int x, int
 void __thiscall BaseWin_draw_farm_set_font(Buffer* This, Font* a2, Font* a3, Font* a4, Font* a5) {
     char buf[StrBufLen] = {};
     // Base resource window coordinates including button row
-    RECT* rc = &BaseWin->rResWindow;
-    int x1 = rc->left;
-    int y1 = rc->top;
-    int x2 = rc->right;
-    int y2 = rc->bottom;
+    RECT& rc = BaseWin->rcResWindow;
+    int x1 = rc.left;
+    int y1 = rc.top;
+    int x2 = rc.right;
+    int y2 = rc.bottom;
     int N = 0;
     int M = 0;
     int E = 0;
@@ -389,7 +377,7 @@ void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, 
         }
         // Game engine uses this way to determine the population label width
         int w = Font_width(*MapLabelFont, (base->pop_size >= 10 ? "88" : "8")) + 5;
-        int h = (*MapLabelFont)->iHeight + 4;
+        int h = (*MapLabelFont)->height + 4;
 
         for (int i = 1; i <= width; i++) {
             RECT rr = {x-i, y-i, x+w+i, y+h+i};

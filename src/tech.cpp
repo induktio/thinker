@@ -887,7 +887,7 @@ void __cdecl tech_achieved(int faction_id, int tech_id, int faction_id_2, int is
             StrBuffer[0] = 0;
             strcat(StrBuffer, "WEGETSHARETECH");
         }
-        cur_popup.field_2144 = (cur_popup.dialogs.spriteBox[13] == 0 ? TechIcons[tech_id] : 0);
+        cur_popup.sprite_icon = (cur_popup.dialogs.spriteBox.strings.count == 0 ? TechIcons[tech_id] : 0);
         SpriteBox_sprite((SpriteBox*)&cur_popup.dialogs.spriteBox, TechIcons[tech_id], 0, tech_id);
         cur_popup.field_3104 = 1;
         cur_popup.field_3108 = 2;
@@ -901,7 +901,7 @@ void __cdecl tech_achieved(int faction_id, int tech_id, int faction_id_2, int is
                 parse_says(0, Tech[tech_id].name, -1, -1);
                 NetMsg_pop(NetMsg, "TECHOBTAINED", 5000, 0, 0);
             } else {
-                NewTechWin_exec(NetTechWin, tech_id, faction_id_2);
+                NewTechWin_exec(NewTechWin, tech_id, faction_id_2);
             }
         } else if (!*MultiplayerActive) {
             BasePop_exec_3(&cur_popup, 0, 0);

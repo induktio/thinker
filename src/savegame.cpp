@@ -389,6 +389,7 @@ int __cdecl game_data(FILE* fp, int write_file) {
     if (*SaveFileVersion < 7) {
         clear_monuments();
     } else {
+        static_assert(sizeof(Monument) * 8 == 0x27A0u, "");
         if (!file_feed(Monuments, 0x27A0u, 1u, fp)) {
             return 1;
         }
@@ -400,16 +401,16 @@ int __cdecl game_data(FILE* fp, int write_file) {
             return 1;
         }
     }
-    if (!file_feed(&MapWin->fUnitNotViewMode, 4u, 1u, fp)) {
+    if (!file_feed(&MapWin->InVehMode, 4u, 1u, fp)) {
         return 1;
     }
-    if (!file_feed(&MapWin->iUnit, 4u, 1u, fp)) {
+    if (!file_feed(&MapWin->VehID, 4u, 1u, fp)) {
         return 1;
     }
-    if (!file_feed(&MapWin->aiCursorPositionsX[MapWin->iCursorPositionCurrent], 4u, 1u, fp)) {
+    if (!file_feed(&MapWin->CursorListX[MapWin->CursorListIndex], 4u, 1u, fp)) {
         return 1;
     }
-    if (!file_feed(&MapWin->aiCursorPositionsY[MapWin->iCursorPositionCurrent], 4u, 1u, fp)) {
+    if (!file_feed(&MapWin->CursorListY[MapWin->CursorListIndex], 4u, 1u, fp)) {
         return 1;
     }
     if (*SaveFileWrite) {
@@ -515,12 +516,12 @@ int __cdecl game_data(FILE* fp, int write_file) {
                 }
             }
         }
-        if (!file_feed(&CouncilWin->field_A1C, 4u, 1u, fp)) return 1;
-        if (!file_feed(&CouncilWin->field_A20, 4u, 1u, fp)) return 1;
-        if (!file_feed(&CouncilWin->field_A24, 4u, 1u, fp)) return 1;
-        if (!file_feed(&CouncilWin->field_A28, 4u, 1u, fp)) return 1;
-        if (!file_feed(&CouncilWin->field_A54, 0x20u, 1u, fp)) return 1;
-        if (!file_feed(&CouncilWin->field_A74, 0x20u, 1u, fp)) return 1;
+        if (!file_feed(&CouncWin->proposal_type, 4u, 1u, fp)) return 1;
+        if (!file_feed(&CouncWin->candidate_faction_id, 4u, 1u, fp)) return 1;
+        if (!file_feed(&CouncWin->proposal_outcome, 4u, 1u, fp)) return 1;
+        if (!file_feed(&CouncWin->prev_gov_faction_id, 4u, 1u, fp)) return 1;
+        if (!file_feed(&CouncWin->faction_vote, 0x20u, 1u, fp)) return 1;
+        if (!file_feed(&CouncWin->faction_vote_count, 0x20u, 1u, fp)) return 1;
         if (!file_feed(CouncilSessionPending, 4u, 1u, fp)) return 1;
         if (!file_feed(CouncilProposal, 0x20u, 1u, fp)) return 1;
         if (!file_feed(CouncilVoteState, 0x20u, 1u, fp)) return 1;
@@ -548,7 +549,7 @@ int __cdecl game_data(FILE* fp, int write_file) {
         if (val1 != *dword_939E5C || val2 != *dword_939E58) {
             for (int i = 1; i < 8; ++i) {
                 if (MapWinPtr[i]) {
-                    MapWinPtr[i]->iDrawToggleA = 0;
+                    MapWinPtr[i]->DrawToggleA = 0;
                 }
             }
         }
@@ -557,12 +558,12 @@ int __cdecl game_data(FILE* fp, int write_file) {
 }
 
 int __cdecl game_io(MapWindow* state, FILE* fp) {
-    if (!file_feed(&state->iDrawToggleB, 4u, 1u, fp)) return 1;
-    if (!file_feed(&state->iDrawToggleA, 4u, 1u, fp)) return 1;
-    if (!file_feed(&state->iWhatToDrawFlags, 4u, 1u, fp)) return 1;
-    if (!file_feed(&state->iZoomFactor, 4u, 1u, fp)) return 1;
-    if (!file_feed(&state->iTileX, 4u, 1u, fp)) return 1;
-    return file_feed(&state->iTileY, 4u, 1u, fp) == 0;
+    if (!file_feed(&state->DrawToggleB, 4u, 1u, fp)) return 1;
+    if (!file_feed(&state->DrawToggleA, 4u, 1u, fp)) return 1;
+    if (!file_feed(&state->DrawFlags, 4u, 1u, fp)) return 1;
+    if (!file_feed(&state->ZoomFactor, 4u, 1u, fp)) return 1;
+    if (!file_feed(&state->TileX, 4u, 1u, fp)) return 1;
+    return file_feed(&state->TileY, 4u, 1u, fp) == 0;
 }
 
 int __cdecl encrypt_write(void* src_ptr, size_t len, size_t cnt, FILE* fp) {
@@ -892,8 +893,8 @@ int __cdecl mod_load_daemon(const char* filename, int flag) {
     }
     for (int i = 2; i < 8; ++i) {
         MapWindow* win = MapWinPtr[i];
-        if (win && win->iDrawToggleA) {
-            win->iDrawToggleA = 0;
+        if (win && win->DrawToggleA) {
+            win->DrawToggleA = 0;
             MapWin_close(win);
         }
     }
@@ -914,7 +915,7 @@ int __cdecl mod_load_daemon(const char* filename, int flag) {
         for (int i = 2; i < 8; ++i) {
             MapWindow* ptr = MapWinPtr[i];
             if (ptr) {
-                ptr->iDrawToggleA = 0;
+                ptr->DrawToggleA = 0;
             }
         }
     }
@@ -959,11 +960,11 @@ int __cdecl mod_load_daemon(const char* filename, int flag) {
     // if (*GameRules & RULES_IRONMAN) {
     //     remove(filename);
     // }
-    int cursor_x = MapWin->aiCursorPositionsX[MapWin->iCursorPositionCurrent];
-    int cursor_y = MapWin->aiCursorPositionsY[MapWin->iCursorPositionCurrent];
+    int cursor_x = MapWin->CursorListX[MapWin->CursorListIndex];
+    int cursor_y = MapWin->CursorListY[MapWin->CursorListIndex];
     for (int i = 0; i < 32; ++i) {
-        MapWin->aiCursorPositionsX[i] = cursor_x;
-        MapWin->aiCursorPositionsY[i] = cursor_y;
+        MapWin->CursorListX[i] = cursor_x;
+        MapWin->CursorListY[i] = cursor_y;
     }
     rebuild_vehicle_bits();
     rebuild_base_bits();
@@ -1035,8 +1036,8 @@ int __cdecl mod_load_map_daemon(const char* filename) {
             if (version >= min_ver) {
                 for (int i = 1; i < 8; ++i) {
                     MapWindow* win = MapWinPtr[i];
-                    if (win && win->iDrawToggleA) {
-                        win->iDrawToggleA = 0;
+                    if (win && win->DrawToggleA) {
+                        win->DrawToggleA = 0;
                         MapWin_close(win);
                     }
                 }
@@ -1045,8 +1046,8 @@ int __cdecl mod_load_map_daemon(const char* filename) {
                 if (!map_data(fp, 0, is_save)) {
                     *BaseCount = 0;
                     *VehCount = 0;
-                    MapWin->fUnitNotViewMode = 0;
-                    MapWin->iUnit = -1;
+                    MapWin->InVehMode = 0;
+                    MapWin->VehID = -1;
                     for (int i = 0; i < *MapAreaTiles; ++i) {
                         MAP* sq = &(*MapTiles)[i];
                         sq->visibility = 0;

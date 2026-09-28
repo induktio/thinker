@@ -59,7 +59,7 @@ void __cdecl world_climate() {
     }
     if (!*GameHalted) {
         for (int i = 0; i < 8; i++) {
-            if (MapWinPtr[i]->iDrawToggleA) {
+            if (MapWinPtr[i]->DrawToggleA) {
                 MapWin_clear_terrain(MapWinPtr[i]);
             }
         }
@@ -1361,8 +1361,8 @@ void console_world_generate(uint32_t seed) {
     if (*GameState & STATE_SCENARIO_EDITOR && *GameState & STATE_OMNISCIENT_VIEW) {
         *VehCount = 0;
         *BaseCount = 0;
-        MapWin->fUnitNotViewMode = 0;
-        MapWin->iUnit = -1;
+        MapWin->InVehMode = 0;
+        MapWin->VehID = -1;
         *GameState |= STATE_UNK_4;
         *GameState &= ~STATE_OMNISCIENT_VIEW;
         world_generate(seed);

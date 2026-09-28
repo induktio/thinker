@@ -740,18 +740,18 @@ void __cdecl veh_kill(int veh_id) {
         if (*ptr == veh_id) { *ptr = -1; }
         else if (*ptr > veh_id) { --(*ptr); }
     };
-    update_veh_ref(&MapWin->iUnit);
-    update_veh_ref(&MapWin->field_23BE0);
-    update_veh_ref(dword_8C6B2C); // StatusWin
-    update_veh_ref(dword_8C6B34); // StatusWin
+    update_veh_ref(&MapWin->VehID);
+    update_veh_ref(&MapWin->ReadyVehID);
+    update_veh_ref(&StatusWin->pending_veh_id);
+    update_veh_ref(&StatusWin->active_veh_id);
 
     if (*CurrentVehID && *CurrentVehID >= veh_id) {
         --(*CurrentVehID);
     }
     if (*MultiplayerActive
     && *dword_93E908
-    && *dword_93E908 != &MapWin->iUnit
-    && *dword_93E908 != &MapWin->field_23BE0
+    && *dword_93E908 != &MapWin->VehID
+    && *dword_93E908 != &MapWin->ReadyVehID
     && *dword_93E908 != CurrentVehID
     && **dword_93E908 >= veh_id) {
         --(**dword_93E908);

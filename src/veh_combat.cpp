@@ -1621,7 +1621,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
             SubInterface_set_iface_mode(BattleWin);
             BattleWin_clear(BattleWin);
             StatusWin_draw(StatusWin, veh_id_atk, veh_id_def, offense_out, defense_out, 0);
-            *dword_8C6B3C = 1;
+            StatusWin->iface_state = 1;
             parse_gen_name(faction_id_atk, 0, 1);
             BattleWin_stop_timer(BattleWin);
             if (!popp(ScriptFile, "BADIDEA", 0, "hasty_sm.pcx", 0)) {
@@ -1640,7 +1640,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
             SubInterface_set_iface_mode(BattleWin);
             BattleWin_clear(BattleWin);
             StatusWin_draw(StatusWin, veh_id_atk, veh_id_def, offense_out, defense_out, 0);
-            *dword_8C6B3C = 1;
+            StatusWin->iface_state = 1;
             parse_gen_name(faction_id_atk, 0, 1);
 
             StrBuffer[0] = '\0';
@@ -1759,7 +1759,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                     SubInterface_set_iface_mode(BattleWin);
                     BattleWin_clear(BattleWin);
                     StatusWin_draw(StatusWin, veh_id_atk, veh_id_def, offense_out, defense_out, 1);
-                    *dword_8C6B3C = 1;
+                    StatusWin->iface_state = 1;
                     flush_input();
                     if (!(veh_id_def >= 0 && damage_limit && veh_def->damage_taken == damage_limit
                     && veh_def->next_veh_id_stack >= 0)) {
@@ -1820,7 +1820,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
         add_goal(faction_id_def, AI_GOAL_PREV_DEFEND, 2, tx, ty, -1);
     }
     if (render_battle) {
-        if (*MultiplayerActive && *dword_6E8150) {
+        if (*MultiplayerActive && BaseWin->zoom_active) {
             render_base = 1;
         }
         veh_atk->visibility |= (1 << faction_id_def);
@@ -1834,7 +1834,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
         SubInterface_set_iface_mode(BattleWin);
         BattleWin_clear(BattleWin);
         StatusWin_draw(StatusWin, veh_id_atk, veh_id_def, offense_out, defense_out, combat_type);
-        *dword_8C6B3C = 1;
+        StatusWin->iface_state = 1;
         flush_input();
         if (!shift_key_down() && !(combat_type & CT_CAN_ARTY)) {
             veh_scoot(veh_id_atk, x, y, offset, 1);

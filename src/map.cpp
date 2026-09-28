@@ -141,7 +141,7 @@ int clear_overlay(int UNUSED(x), int UNUSED(y)) {
 }
 
 void refresh_overlay(std::function<int(int, int)> tile_value) {
-    if (*GameState & STATE_OMNISCIENT_VIEW && MapWin->iWhatToDrawFlags & MAPWIN_DRAW_GOALS) {
+    if (*GameState & STATE_OMNISCIENT_VIEW && MapWin->DrawFlags & MAPWIN_DRAW_GOALS) {
         for (int y = 0; y < *MapAreaY; y++) {
             for (int x = y&1; x < *MapAreaX; x+=2) {
                 mapdata[{x, y}].overlay = tile_value(x, y);

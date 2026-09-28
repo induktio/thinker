@@ -2,10 +2,6 @@
 
 #include "main.h"
 
-enum WinFlag {
-    WIN_VISIBLE = 1,
-};
-
 enum GameWinState {GW_None, GW_World, GW_Base, GW_Design};
 
 const uint32_t WM_WINDOWED = (WM_USER + 3);
@@ -69,7 +65,7 @@ int show_mod_menu();
 int __cdecl mod_blink_timer();
 void __cdecl mod_turn_timer();
 int __thiscall mod_calc_dim(Console* This);
-int __thiscall mod_gen_map(Console* This, int iOwner, int fUnitsOnly);
+int __thiscall mod_gen_map(Console* This, int faction_id, int units_only);
 void __thiscall MapWin_gen_overlays(Console* This, int x, int y);
 int __thiscall SetupWin_buffer_draw(Buffer* src, Buffer* dst, int a3, int a4, int a5, int a6, int a7);
 int __thiscall SetupWin_buffer_copy(

@@ -462,7 +462,7 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
                         net_tech(faction2, *diplo_entry_id, faction1, 0);
                         *diplo_entry_id = *diplo_tech_id2;
                     }
-                    *dword_7AD330 = 0;
+                    InfoWin->override_state = 0;
                     *diplo_tech_id2 = -1;
                     net_energy(faction1, cost_value, faction2, -cost_value, 1); // NetDaemon_await_diplo
                     return 1;

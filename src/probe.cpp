@@ -5,7 +5,7 @@
 static void popup_init_image(Popup* popup, const char* image, int* bx, int* by) {
     if (!Buffer_get_pcx_dimensions(image, bx, by)) {
         if (!Sprite_init(&popup->sprite, image, *bx, *by)) {
-            popup->field_2144 = &popup->sprite;
+            popup->sprite_icon = &popup->sprite;
         }
     }
 }
@@ -25,9 +25,9 @@ static int find_probe_base(int veh_id, int veh_fc_id) {
 
 std::vector<int> captured_leaders(int faction_id) {
     std::vector<int> values;
-    for (int i = 0; i < MaxPlayerNum - 1; i++) {
-        if (Monuments[faction_id].data2[i][9]) {
-            int plr_id = Monuments[faction_id].data2[i][7];
+    for (int i = 0; i < 6; i++) {
+        if (Monuments[faction_id].events[15 + i].achieved) {
+            int plr_id = Monuments[faction_id].events[15 + i].param2;
             if (plr_id >= 0 && plr_id < MaxPlayerNum
             && plr_id != faction_id && !is_alive(plr_id)) {
                 values.push_back({plr_id});
@@ -40,10 +40,10 @@ std::vector<int> captured_leaders(int faction_id) {
 }
 
 void reset_captured_leader(int faction_id, int capture_id) {
-    for (int i = 0; i < MaxPlayerNum - 1; i++) {
-        if (Monuments[faction_id].data2[i][7] == capture_id
-        && Monuments[faction_id].data2[i][9]) {
-            Monuments[faction_id].data2[i][9] = 0;
+    for (int i = 0; i < 6; i++) {
+        if (Monuments[faction_id].events[15 + i].param2 == capture_id
+        && Monuments[faction_id].events[15 + i].achieved) {
+            Monuments[faction_id].events[15 + i].achieved = 0;
         }
     }
 }
@@ -1418,7 +1418,7 @@ MOV_DEFEND:
                         }
                     }
                 }
-                *dword_7AD330 = 0;
+                InfoWin->override_state = 0;
                 Console_update_data(MapWin, 0);
                 plr->diplo_friction[capture_id] = 0;
                 net_treaty_off(capture_id, veh_fc_id, DIPLO_WANT_REVENGE, 1);
