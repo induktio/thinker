@@ -234,10 +234,10 @@ Custom,   20, 3, 3, 8,  20, 10,  2,
 ; id       = shortcode; this code is used when assigning
 ;            the tech as a prerequisite.
 ;
-; ai-power    = 1 or 0 (interest in power)
-; ai-tech     = 1 or 0 (interest in knowledge)
-; ai-wealth   = 1 or 0 (interest in wealth)
-; ai-growth   = 1 or 0 (interest in population growth)
+; ai-power    = Priority for interest in power
+; ai-tech     = Priority for interest in knowledge
+; ai-wealth   = Priority for interest in wealth
+; ai-growth   = Priority for interest in population growth
 ;
 ; preq(n)  = Prerequisite technology
 ;            a) shortcode of tech
@@ -349,7 +349,7 @@ Transcendent Thought,       TranT,   0, 2, 0, 0, Thresh,  ConSing, 000000000
 ;
 ; Chassis
 ;
-; Names..., Speed, Triad, Range, Cargo, Cost, Preq, ...Large names
+; Names..., Speed, Triad, Range, Missile, Cargo, Cost, Preq, ...Large names
 ;
 ; Names...= First two names used for offensive units.
 ;           Second two names used for defensive units.
@@ -379,7 +379,7 @@ Missile,M1,   Missile,M1,    Missile,M1,     Missile,M1,  16, 2, 1, 1, 0,12, Orb
 ;
 ; Reactors
 ;
-; Name, power, preq
+; Name, Name2, Power, Preq
 ;
 #REACTORS
 Fission Plant,        Fission,     1, None,
@@ -390,7 +390,7 @@ Singularity Engine,   Singularity, 4, SingMec,
 ;
 ; Weapons & non-combat packages
 ;
-; Name, Name2, Offense, Mode, Cost, Preq
+; Name, Name2, Offense, Mode, Cost, Icon, Preq
 ;
 ; Name    = Full name
 ; Name2   = Short name
@@ -463,7 +463,7 @@ Resonance 8 Armor,   8-Res,       8, 1, 11, SentRes,
 ;
 ; Special Unit Abilities
 ;
-; Name, Cost, Preq, Abbrev, Desc
+; Name, Cost, Preq, Abbrev, Flags, Desc
 ;
 ; Name   = Name of ability
 ; Cost   = Cost factor of ability
@@ -565,12 +565,12 @@ Missile,    Missile-, Miss., M
 ;
 ; Basic Units - Units predesigned for all players
 ;
-; Name, Chassis, Weapon, Armor, Plan, Cost, Carry, Preq, Icon, Abil
+; Name, Chassis, Weapon, Armor, Plan, Cost, Carry, Preq, Icon, Abil, Reac
 ;
 ; Name    = Name of unit
-; Chassis = Chassis type   (index to CHASSIS list, above)
-; Weapon  = Weapon/package (index to WEAPONS list, above)
-; Armor   = Armor          (index to ARMOR   list, above)
+; Chassis = Chassis type   (first name from CHASSIS list, above)
+; Weapon  = Weapon/package (short name from WEAPONS list, above)
+; Armor   = Armor          (short name from DEFENSES list, above)
 ;
 ; Plan    = Unit "plan" for AI purposes:
 ;          -1  = Auto Calculate
@@ -594,7 +594,7 @@ Missile,    Missile-, Miss., M
 ; Preq    = Technology prerequisite (see TECHNOLOGY, above)
 ; Icon    = Special icon, if any
 ; Abil    = Special ability flags
-; Reac    = Reactor level 1–4
+; Reac    = Reactor level 1-4
 ;
 #UNITS
 26
@@ -636,11 +636,11 @@ Drop Colony Pod,        Infantry, Colony Pod,   Scout,      8, 0, 0, MindMac, -1
 ; Preq  = Technology prerequisite (see TECHNOLOGY)
 ; Free  = Technology for free facility at new bases
 ; Effect= Brief description of effect
-; ai-fight    = Corresponds with AI 'aggressiveness' setting of -1, 0, or 1
-; ai-power    = 1 or 0 (interest in power)
-; ai-tech     = 1 or 0 (interest in knowledge)
-; ai-wealth   = 1 or 0 (interest in wealth)
-; ai-growth   = 1 or 0 (interest in population growth)
+; ai-fight    = Priority for aggressiveness
+; ai-power    = Priority for interest in power
+; ai-tech     = Priority for interest in knowledge
+; ai-wealth   = Priority for interest in wealth
+; ai-growth   = Priority for interest in population growth
 ;
 #FACILITIES
 Headquarters,                  5, 0, None,    Disable,  Efficiency
@@ -1081,8 +1081,7 @@ Peacekeeper
 ;                 125% of normal cost, so 100 costs 125).
 ;   UNIT        = Extra free unit at start; param is
 ;                 index from units list (e.g. 0 equals
-;                 Colonists, 1 Terraformers, 2 Scout
-;                 Crawler)
+;                 Colony Pod, 1 Formers, 2 Scout Patrol)
 ;   TECHCOST    = Modifier % for tech research rate.
 ;                 (e.g. 125 means each discovery costs
 ;                 125% the usual number of research
@@ -1097,7 +1096,7 @@ Peacekeeper
 ;                 social area ("ROBUST, EFFIC" halves minus efficiency
 ;                 effects in social model).
 ;   IMMUNITY    = Immunity from minus effects in the named social
-;                 area. ("IMMUNITY, ENERGY" prevents minus energy
+;                 area. ("IMMUNITY, ECONOMY" prevents minus economy
 ;                 effects in social model).
 ;   IMPUNITY    = Impunity :-) from minus effects from a particular
 ;                 social setting. "IMPUNITY, Police State" prevents

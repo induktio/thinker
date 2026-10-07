@@ -240,7 +240,7 @@ $LINK<Perimeter Defense=100004>, $LINK<Naval Yard=100028> or $LINK<Aerospace Com
 ^
 Does not apply against $LINK<Psi Attacks=15>.
 
-#; Recreation Dome
+#; Recreation Commons
 #HELPFAC6
 Reduces number of $LINK<Drones=36> in base by two.
 
@@ -280,7 +280,7 @@ $LINK<PSYCH=38> output of base by 50%.
 ^
 Requires $LINK<Recreation Commons=100006>.
 
-#; Paradise Dome
+#; Paradise Garden
 #HELPFAC12
 Two extra $LINK<Talents=37> at this base.
 

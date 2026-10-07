@@ -54,7 +54,7 @@
 0,       ; Kampf % -> Angriff aus größerer Höhe
 0,       ; Kampf-Malus % -> Angriff aus niedriger Höhe
 25,      ; Kampf % -> Mobile Einheit in offenem Gelände
-0,       ; Kampf % -> Verteidung gegen mobile Einheit in rauhem Gelände
+0,       ; Kampf % -> Verteidigung gegen mobile Einheit in rauhem Gelände
 25,      ; Kampf % -> Infanterie gegen Basis
 50,      ; Kampf-Malus % -> Angriff nach Luftlandeaktion
 25,      ; Kampf % -> Bonus f. fanatischen Angriff
@@ -146,7 +146,7 @@ Monolith,           Disable, Monolith,            Disable,  8,  Monolith plaz., 
 ; Felds addiert.
 ;
 ; "Verbessertes Land" bezieht sich auf Farmen, Minen, Solarkollektoren
-; "Verbessertes Meer" bezieht sich auf Entsalzung, Plattformen, Kraftwerke
+; "Verbessertes Meer" bezieht sich auf Tangfarmen, Abbauplattformen, Gezeitenkraftwerke
 ;
 #RESOURCEINFO
 Ozean-Feld,          1, 0, 0, 0,
@@ -201,7 +201,7 @@ Kleiner Planet|(32x64),       32, 64
 Standard Planet|(40x80),      40, 80
 Grosser Planet|(50x100),      50, 100
 Riesiger Planet|(64x128),     64, 128
-Sehr Riesig Planet|(80x160),  80, 160
+Kolossaler Planet|(80x160),   80, 160
 
 ;
 ; ZEITREGELUNG (Multiplayer)
@@ -227,25 +227,25 @@ Individuell, 20, 3, 3, 8,  20, 10,  2,
 ;
 ; TECHNOLOGIEENTWICKLUNG
 ;
-; Name, ID, KI-Mil, KI-Tech, KI-Infra, KI-Kolonisieren, Voraus.(1), Voraus.(2), ; Flaggen
+; Name, ID, KI-Mil, KI-Tech, KI-Infra, KI-Kolonie, Voraus.(1), Voraus.(2), Flaggen
 ;
 ; Name      = Name der Technologie
 ;
-; ID        = 3-Buchstaben-Code; dieser Code wird verwendet,
-;            wenn die Technologie als Vorbedingung bestimmt wird.
+; ID        = Kurzcode; dieser Code wird verwendet,
+;             wenn die Technologie als Voraussetzung bestimmt wird.
 ;
-; Stärke    = militärischer Wert
-; Tech      = technischer Fortschrittswert
-; Wohlstand = Infrastruktur-Wert
-; Wachstum  = Kolonisationswert
+; KI-Mil     = Gewichtung für Interesse an Macht
+; KI-Tech    = Gewichtung für Interesse an Wissen
+; KI-Infra   = Gewichtung für Interesse an Wohlstand
+; KI-Kolonie = Gewichtung für Interesse an Bevölkerungswachstum
 ;
 ; Voraus.(n)= Technologie-Voraussetzung
-;            a) 3-Buchstaben-Code der Technologie
-;            b) "nil" stellt keine Voraussetzungen
-;            c) "no" sperrt dies im Spiel
+;            a) Kurzcode der Technologie
+;            b) "None" erlaubt die Technologie ohne Voraussetzung
+;            c) "Disable" sperrt die Technologie vollständig im Spiel
 ;
 ; Flaggen   = Spezielle Technologie-Flaggen
-;            000000001 = "Geheimnisse": Erstentdecker erthält Techn. gratis
+;            000000001 = "Geheimnisse": Erstentdecker erhält Techn. gratis
 ;            000000010 = Verbessert Erfolg der Sondierteams
 ;            000000100 = Steigert Handelseinkommen
 ;            000001000 = Zeigt Karte an
@@ -334,7 +334,7 @@ Centauri-Genetik,           CentGen, 0, 2, 0, 5, CentMed, Viral,   010000000
 Intelligente Ökonometrie,   SentEco, 1, 1, 3, 4, PlaEcon, DigSent, 000000100
 Retroviren- Technik,        Viral,   4, 2, 0, 2, BioEng,  MilAlg,  000110000
 Orbital- Raumflug,          Orbital, 0, 4, 3, 3, DocAir,  Algor,   000000000
-Vorfahren- Psycholgie,      PrPsych, 0, 2, 3, 4, None,    None,    000000000
+Vorfahren- Psychologie,     PrPsych, 0, 2, 3, 4, None,    None,    000000000
 Feld- Modulation,           FldMod,  4, 2, 0, 2, PrPsych, Ecology, 000000000
 Adaptive Doktrin,           AdapDoc, 5, 2, 0, 0, Poly,    DocFlex, 000000000
 Adaptive Ökonomie,          AdapEco, 0, 1, 5, 2, PrPsych, IndEcon, 000000000
@@ -349,7 +349,7 @@ Transzendentes Denken,      TranT,   0, 2, 0, 0, Thresh,  ConSing, 000000000
 ;
 ; Fahrzeuge
 ;
-; Namen..., Tempo, Bewegung, Reichw., Fracht, Preis, Voraus., ...Lange Namen
+; Namen..., Tempo, Bewegung, Reichw., Rakete, Fracht, Preis, Voraus., ...Lange Namen
 ;
 ; Namen...= Erste zwei Namen für Offensiv-Einheiten.
 ;           Zweite zwei Namen für Defensiv-Einheiten.
@@ -363,7 +363,7 @@ Transzendentes Denken,      TranT,   0, 2, 0, 0, Thresh,  ConSing, 000000000
 ; Rakete     = Fahrzeug ist eine "Rakete" (nach Angriff zerstört)
 ; Fracht     = Anzahl d. Einheiten transportiert (mal Reaktorzahl)
 ; Preis      = Kostenfaktor des Fahrzeugtyps (normalerweise gleich Tempo)
-; Voraus.    = Erforderliche Technologie (siehe TECHNOLOGIE)
+; Voraus.    = Erforderliche Technologie (siehe TECHNOLOGY)
 ;
 #CHASSIS
 Infanterie,F1,     Truppe,F1,       Wachen,F2,         Garnison,F1,    1, 0, 0, 0, 1, 1, None,     Stosstruppen,F2,      Elite-Garde,F1,
@@ -379,7 +379,7 @@ Raketen,F2,        Raketen,F2,      Raketen,F2,        Raketen,F2,     16,2, 1, 
 ;
 ; Reaktoren
 ;
-; Name, Energie, Voraussetzung
+; Name, Name2, Energie, Voraus.
 ;
 #REACTORS
 Atomreaktor,            Atom-,         1, None,
@@ -390,7 +390,7 @@ Singul.-Maschine,       Singularitäts-, 4, SingMec,
 ;
 ; Waffen und Zivil-Einheiten
 ;
-; Name, Name2, Offensive, Modus, Preis, Voraus.
+; Name, Name2, Offensive, Modus, Preis, Symbol, Voraus.
 ;
 ; Name      = Voller Name
 ; Name2     = Kurzbezeichnung
@@ -402,7 +402,7 @@ Singul.-Maschine,       Singularitäts-, 4, SingMec,
 ;             12=Artefakt
 ; Preis     = Kostenfaktor der Waffe oder des Geräts
 ; Symbol    = Spezielles Einheitssymbol (nur wenn Fahrzeug Infanterie ist)
-; Voraus.   = Technologie-Voraussetzung (siehe TECHNOLOGIE)
+; Voraus.   = Technologie-Voraussetzung (siehe TECHNOLOGY)
 ;
 #WEAPONS
 Handfeuerw.,            Geschütz,      1,  0,  1,  -1, None,
@@ -463,7 +463,7 @@ Resonanz 8- Panzer,        8-Res,              8, 1, 11, SentRes,
 ;
 ; Fähigkeiten von Sondereinheiten
 ;
-; Name, Preis, Voraus., Abk., Beschreibung
+; Name, Preis, Voraus., Abk., Flaggen, Beschreibung
 ;
 ; Name   = Name der Fähigkeit
 ; Preis  = Kostenfaktor der Fähigkeit
@@ -480,7 +480,7 @@ Resonanz 8- Panzer,        8-Res,              8, 1, 11, SentRes,
 ;          -5 = Steigt mit Waffen+Panzerungswert
 ;          -6 = Steigt mit Waffen+Geschwindigkeitswert
 ;          -7 = Steigt mit Panzerung+Geschwindigkeitswert
-; Voraus. = Technologie-Voraussetzung (siehe TECHNOLOGIE)
+; Voraus. = Technologie-Voraussetzung (siehe TECHNOLOGY)
 ; Abk.    = Abkürzung, die bei Einheitennamen gebraucht wird
 ; Beschr. = Beschreibung der Fähigkeit (kurz halten!)
 ;
@@ -564,12 +564,12 @@ Rakete,      Rakete-,  Rak.,  R
 ;
 ; Grundeinheiten - Für alle Spieler vorgefertigte Einheiten
 ;
-; Name, Fahrzeug, Waffe, Panzer, Plan, Preis, Kapazität, Voraussetzung, Symbol, ; Fähigk.
+; Name, Fahrzeug, Waffe, Panzer, Plan, Preis, Kapazität, Voraussetzung, Symbol, Fähigk., Reak.
 ;
 ; Name      = Name der Einheit
-; Fahrzeug  = Fahrzeugtyp   (verbunden mit Liste CHASSIS, siehe oben)
-; Waffe     = Waffe/Gerät (verbunden mit Liste WEAPONs, siehe oben)
-; Panzerung = Panzerung   (verbunden mit Liste ARMOR, siehe oben)
+; Fahrzeug  = Fahrzeugtyp (verbunden mit Liste CHASSIS, siehe oben)
+; Waffe     = Waffe/Gerät (verbunden mit Liste WEAPONS, siehe oben)
+; Panzerung = Panzerung   (verbunden mit Liste DEFENSES, siehe oben)
 ;
 ; Plan      = Einheits-"Plan" für die KI:
 ;             -1  = Autom. Berechnung
@@ -596,48 +596,50 @@ Rakete,      Rakete-,  Rak.,  R
 ; Reak.     = Reaktor-Level 1-4
 ;
 #UNITS
-23
+26
 Koloniekapsel,           Infanterie,     Koloniekapsel, Scout,  8,  0,  0, None,    -1, 00000000000000000000000000
 Former,                  Infanterie,     Former,        Scout,  9,  0,  0, Ecology, -1, 00000000000000000000000000
 Scout-Patrouille,        Infanterie,     Geschütz,      Scout,  3,  0,  0, None,    -1, 00000000000000000000000000
 Transp.-Tragflügelb.,    Tragflügelboot, Transport,     Scout,  7,  0,  0, DocFlex, -1, 00000000000000000000000000
 See-Former,              Tragflügelboot, Former,        Scout,  9,  0,  0, Disable, -1, 00000000000000000000000000
-Transportraupe,          Infanterie,     Nachschub,     Scout,  10, 0,  0, IndAuto, -1, 00000000000000000000000000
+Nachschubraupe,          Infanterie,     Nachschub,     Scout,  10, 0,  0, IndAuto, -1, 00000000000000000000000000
 Sondierteam,             Speeder,        Sondierteam,   Scout,  11, 0,  0, PlaNets, -1, 00000000000000000000000000
 Ausserird. Artefakt,     Infanterie,     Artefakt,      Scout,  12, 10, 0, Disable, 2,  00000000000000000000000000
 Psycho-Viren,            Infanterie,     PSI,           PSI,    1,  5,  0, CentEmp, 3,  00000000000000000000000000
 Insel der Tiefe,         Tragflügelboot, PSI,           PSI,    7,  8,  4, CentMed, -1, 00000000000000000000000000
-Heuschr. v. Chiron,      Grav-Schiff,    PSI,           PSI,    4,  10, 0, CentGen, -1, 00000000000000000000000000
+Heuschr. v. Chiron,      Grav-Schiff,    PSI,           PSI,    4,  10, 0, CentGen, -1, 00000000000000000000100000
 Unity-Rover,             Speeder,        Geschütz,      Scout,  3,  0,  0, Disable, -1, 00000000000000000000000000
-Unity-Aufkl.hubschr.,    Kopter,         Geschütz,      Scout,  4,  0,  0, Disable, -1, 00000000000000000000000000
-Unity-Tragflügelb.,      Tragflügelboot, Transport,     Scout,  7,  0,  0, Disable, -1, 10000000000000000000000000
+Unity-Aufkl.hubschr.,    Kopter,         Geschütz,      Scout,  4,  0,  0, Disable, -1, 00000000000000000000100000
+Unity-Tragflügelb.,      Tragflügelboot, Transport,     Scout,  7,  0,  0, Disable, -1, 00100000000000000000000000
 Seeschleichen,           Tragflügelboot, PSI,           PSI,    6,  6,  0, CentPsi, 4,  00000000000000000001000000
 Sporenwerfer,            Infanterie,     PSI,           PSI,    0,  5,  0, Bioadap, 5,  00000000001000000000000000
-SchlachtogerMK1,         Infanterie,     R-Laser,       3-Res,  0,  10, 0, Disable, 6,  00010000000000000000000000
-SchlachtogerMK2,         Infanterie,     R-Bolzen,      8-Res,  0,  15, 0, Disable, 6,  10010000000000000000000000
-SchlachtogerMK3,         Speeder,        Reihen,        Stasis, 0,  20, 0, Disable, 6,  10010000000000000000000000
+Schlachtoger MK1,        Infanterie,     R-Laser,       3-Res,  0,  10, 0, Disable, 6,  00010000000000000000000000
+Schlachtoger MK2,        Infanterie,     R-Bolzen,      8-Res,  0,  15, 0, Disable, 6,  10010000000000000000000000
+Schlachtoger MK3,        Speeder,        Reihen,        Stasis, 0,  20, 0, Disable, 6,  10010000000000000000000000
 Fungus-Turm,             Infanterie,     PSI,           PSI,    3,  0,  0, Disable, 1,  00000000000000000000000000
 Unity-Abbaulaser,        Infanterie,     Laser,         Scout,  0,  0,  0, Disable, -1, 00000000000000000000000000
 See-Fluchtkapsel,        Tragflügelboot, Koloniekapsel, Scout,  8,  0,  0, Disable, -1, 00000000000000000000000000
-Unity-Kampfhubschrauber, Tragflügelboot, Geschütz,      Scout,  -1, 0,  0, Disable, -1, 00000000000000000000000000
+Unity-Kampfboot,         Tragflügelboot, Geschütz,      Scout,  -1, 0,  0, Disable, -1, 00000000000000000000000000
+Trance-Infanterie,       Infanterie,     Geschütz,      Scout,  3,  0,  0, Brain,   -1, 00000001000000000000000000
+Polizei-Garnison,        Infanterie,     Geschütz,      Scout,  2,  0,  0, Integ,   -1, 00010000000000000000000000
+Abwurf-Koloniekapsel,    Infanterie,     Koloniekapsel, Scout,  8,  0,  0, MindMac, -1, 00000000000000000000010000
 
 ;
 ; Basis-Einrichtungen
 ;
-; Name, Preis, Wartung, Voraus., Gratis, Effekt, (nur für SPs) KI-Kampf, KI-Mil, KI-Tech, KI-Infra, KI-Kolonisierung
+; Name, Preis, Wartung, Voraus., Gratis, Effekt, (nur für SPs) KI-Kampf, KI-Mil, KI-Tech, KI-Infra, KI-Kolonie
 ;
-; Name     = Name der Einrichtung
-; Preis    = Baukosten in Mineralien (x Mineralienfaktor in RULES)
-; Wartung  = Wartungskosten in Energie pro Runde
-; Voraus.  = Technologische Voraussetzungen (siehe TECHNOLOGY)
-; Gratis   = Disable
-; Effekt   = Kurzbeschreibung des Effekts
-; KI-Kampf = Entspricht den Einstellungen -1, 0 oder 1 für 'Agressivität' der KI
-; KI-Mil   = Militärwert 1 oder 0 (Interesse an Macht)
-; KI-Tech  = Wert für Wissensvorsprung 1 oder 0 (Interesse an Wissen)
-; KI-Infra = Infrastrukturwert 1 oder 0 (Interesse an Bauen)
-; KI-Kolonisierung = Kolonisierungswert 1 oder 0 (Interesse an Entdecken)
-;
+; Name         = Name der Einrichtung
+; Preis        = Baukosten in Mineralien (x Mineralienfaktor in RULES)
+; Wartung      = Wartungskosten in Energie pro Runde
+; Voraus.      = Technologische Voraussetzung (siehe TECHNOLOGY)
+; Gratis       = Technologie für kostenlose Einrichtung bei neuen Basen
+; Effekt       = Kurzbeschreibung des Effekts
+; KI-Kampf     = Gewichtung für Aggressivität
+; KI-Mil       = Gewichtung für Interesse an Macht
+; KI-Tech      = Gewichtung für Interesse an Wissen
+; KI-Infra     = Gewichtung für Interesse an Wohlstand
+; KI-Kolonie   = Gewichtung für Interesse an Bevölkerungswachstum
 ;
 #FACILITIES
 Hauptquartier,                  5,   0, None,    Disable, Effizienz
@@ -655,12 +657,12 @@ Paradiesgarten,                 12,  4, SentEco, Disable, +2 Talente
 Baumfarm,                       12,  3, EnvEcon, Disable, Ökon./Psycho/Wald
 Hybrider Wald,                  24,  4, PlaEcon, Disable, Ökon./Psycho/Wald
 Fusionslabor,                   12,  3, Fusion,  Disable, Ökon. und Labor-Bonus
-Quantenlabor,                   24,  4, QuanMac, Disable, Ökon. und Labor-Bonus
+Quantenlabor,                   24,  4, Quantum, Disable, Ökon. und Labor-Bonus
 Forsch.hospital,                12,  3, Gene,    Disable, Labor und Psycho-Bonus
 Nanohospital,                   24,  4, HomoSup, Disable, Labor und Psycho-Bonus
 Roboterfabrik,                  20,  4, IndRob,  Disable, Mineralien-Bonus
 Nanoreplikator,                 32,  6, NanEdit, Disable, Mineralien-Bonus
-Quanten- Konverter,             20,  5, Quantum, Disable, Mineralien-Bonus
+Quanten- Konverter,             20,  5, QuanMac, Disable, Mineralien-Bonus
 Genarbeiter- Fabrik,            10,  2, Viral,   Disable, Mineralien; mehr Drohnen
 Strafsphäre,                    10,  2, MilAlg,  Disable, keine Drohnen/-50% Tech
 Wohnkomplex,                    8,   2, IndAuto, Disable, Bevölkerungsgrenze steigt
@@ -677,7 +679,7 @@ Geheimdienst- Zentrum,          10,  2, Algor,   Disable, Stärkere Sondierteams
 Bruthöhle,                      8,   2, CentGen, Disable, Polizei/Moral
 Wasserfarm,                     8,   1, PrPsych, Disable, See-Nahrung
 Unterw.- Hauptleitung,          12,  4, PlaEcon, Disable, See-Mineralien
-THERMOKL. MESSWANDLER,          8,   0, AdapEco, Disable, See-Energie
+Thermokl. Messwandler,          8,   0, AdapEco, Disable, See-Energie
 Flechette- Abwehrsys.,          12,  2, NewMiss, Disable, Raketenabwehr
 Unterraum- Generator,           60,  5, SingMec, Disable, Außerirdischer Sieg
 Geosynchr. Überw.kapsel,        16,  4, NewMiss, Disable, Erhöhter Sicht-/Sensorbonus
@@ -710,7 +712,7 @@ Orbitaler Energietransmitter,   12,  0, Space,   Disable, +1 Energie ALLE BASEN
 Orbitale Abwehrstation,         12,  0, HAL9000, Disable, Raketenabwehr
 Energie speichern,               0,  0, None,    Disable, Mineralien in Energie
 Das Human- Genom-Projekt,       20,  0, Biogen,  Disable, +1 Talent jede Basis,                         -1, 0, 1, 1, 2,
-Das Kommando- Netzwerk,         20,  0, DocLoy,  Disable, Kommandonetzwerk auf jeder Basis,              1, 2, 0, 0, 0,
+Das Kommando- Netzwerk,         20,  0, DocLoy,  Disable, Kommandozentrale auf jeder Basis,              1, 2, 0, 0, 0,
 Das Wetterparadigma,            20,  0, Ecology, Disable, Terraformrate +50%,                            0, 0, 0, 2, 2,
 Die Handelsbörse,               20,  0, Indust,  Disable, +1 Energie je Feld,                           -1, 0, 0, 1, 0,
 Die Gilde der Empathen,         20,  0, CentEmp, Disable, Kommlink für jede Gruppierung,                -2, 0, 0, 1, 2,
@@ -720,7 +722,7 @@ Das Planeten- Verkehrssyst.,    30,  0, IndAuto, Disable, Neue Basen ab Größe 3,
 Die Xenoempathie- Kuppel,       30,  0, CentMed, Disable, Fungus-Bewegungsbonus,                         0, 1, 0, 0, 2,
 Der Neural- Verstärker,         30,  0, Neural,  Disable, PSI-Abwehr +50%,                               0, 2, 0, 0, 1,
 Das Meeres- Kontr.zentrum,      30,  0, DocInit, Disable, Seebewegung +2; Marinestützpunkte,             1, 2, 0, 0, 0,
-Die Planeten- Datalinks,        30,  0, Cyber,   Disable, Jede Technologie, die 3 anderen bekannt ist,   0, 0, 1, 0, 1,
+Die Planeten- Datalinks,        30,  0, Cyber,   Disable, Jede bei 3 anderen bekannte Technologie,       0, 0, 1, 0, 1,
 Das Synchrotron,                30,  0, E=Mc2,   Disable, Labors +100% auf dieser Basis,                 0, 0, 2, 0, 0,
 Die asketischen Tugenden,       30,  0, PlaEcon, Disable, Bevölkerungsgrenze gelockert; +1 POLICE,       0, 0, 0, 1, 2,
 Das Langlebigkeits- Serum,      30,  0, BioEng,  Disable, Weniger Drohnen oder mehr Profit,              0, 0, 0, 2, 1,
@@ -731,14 +733,14 @@ Die Universaltheorie,           40,  0, Unified, Disable, Labors +100% auf diese
 Der Traum- Manipulator,         40,  0, WillPow, Disable, PSI-Angriff +50%,                              0, 2, 0, 0, 1,
 Der Übersetzungs- Computer,     40,  0, HomoSup, Disable, Zwei Gratis-Tech.,                             0, 0, 2, 0, 0,
 Das Rückgrat des Netzwerks,     40,  0, DigSent, Disable, +1 Labor pro Handel/Netzknoten,                0, 0, 2, 0, 0,
-Die Nanofabrik,                 40,  0, IndRob,  Disable, Reparatureinheiten, geringe Aufrüstungskosten, 1, 2, 0, 0, 0,
+Die Nanofabrik,                 40,  0, IndRob,  Disable, Reparatureinheiten; geringe Aufrüstungskosten, 1, 2, 0, 0, 0,
 Die lebende Raffinerie,         40,  0, Space,   Disable, +2 UNTERSTÜTZUNG (sozial),                     0, 1, 0, 1, 1,
 Die Klon-Behälter,              50,  0, BioMac,  Disable, Bevölkerungswachstum auf allen Basen,          0, 1, 1, 1, 2,
 Die integrierte Kolonie,        50,  0, HAL9000, Disable, Wartung halbiert; Extra Polizei,               0, 1, 0, 2, 0,
 Klinische Unsterblichkeit,      50,  0, NanEdit, Disable, Extra Talent auf jeder Basis,                  0, 0, 1, 1, 1,
 Der Raumlift,                   50,  0, Solids,  Disable, Energie +100%/Orbitalkosten halbiert,          0, 0, 2, 2, 0,
 Das Singularitätsgerät,         60,  0, ConSing, Disable, Quantenkonverter auf jeder Basis,              0, 1, 1, 1, 0,
-Der Materie- Transmitter,       60,  0, Matter,  Disable, +2 Mineralien auf jeder Basis,                 0, 1, 1, 1, 0,
+Der Materie- Transmitter,       60,  0, Matter,  Disable, +50% Mineralien auf jeder Basis,               0, 1, 1, 1, 0,
 Die Telepathie-Matrix,          60,  0, Eudaim,  Disable, Keine Drohnen-Aufstände mehr; +2 PROBE,        0, 1, 1, 1, 1,
 Die Stimme des Planeten,        60,  0, Thresh,  Disable, Beginnt Aufstieg zur Transzendenz,            -2, 0, 2, 1, 2,
 Der Aufstieg zur Transzendenz,  200, 0, Thresh,  Disable, Ende der eindimensional intelligenten Ära,     0, 0, 2, 2, 2,
@@ -910,7 +912,7 @@ Gedankenkon.,      WillPow, ++POLICE,   ++MORALE,  ++PROBE,   ---SUPPORT
  0, Unterstützt 2 Einheiten pro Basis kostenlos
  1, Unterstützt 3 Einheiten pro Basis kostenlos
  2, Unterstützt 4 Einheiten pro Basis kostenlos!
- 3, Unterstützt 4 Einheiten oder bis zu einer Basis kostenlos!!
+ 3, Unterstützt 4 Einheiten oder bis zur Basisgröße kostenlos!!
 
 #SOCTALENT
 -1, Zusätzliche Drohnen auf jeder Basis
@@ -929,9 +931,9 @@ Gedankenkon.,      WillPow, ++POLICE,   ++MORALE,  ++PROBE,   ---SUPPORT
  4, +3 Moral!!
 
 #SOCPOLICE
--5, Zwei zusätzliche Drohnen für jeder Militär-Einheit außerhalb ihres Territoriums
--4, Zusätzliche Drohne für jeder Militär-Einheit außerhalb ihres Territoriums
--3, Zusätzliche Drohne, falls sich mehr als eine Miltär-Einheit außerhalb ihres Territoriums befindet
+-5, Zwei zusätzliche Drohnen für jede Militär-Einheit außerhalb ihres Territoriums
+-4, Zusätzliche Drohne für jede Militär-Einheit außerhalb ihres Territoriums
+-3, Zusätzliche Drohne, falls sich mehr als eine Militär-Einheit außerhalb ihres Territoriums befindet
 -2, Militär-Einheiten können nicht als Polizei eingesetzt werden. Kein Nervschneiden.
 -1, Eine Polizei-Einheit erlaubt. Kein Nervschneiden.
  0, Eine Militär-Einheit kann als Polizei eingesetzt werden
@@ -949,7 +951,7 @@ Gedankenkon.,      WillPow, ++POLICE,   ++MORALE,  ++PROBE,   ---SUPPORT
  3, +30% Wachstumsrate
  4, +40% Wachstumsrate
  5, +50% Wachstumsrate!
- 6, BEVÖLKERUNSGEXPLOSION!!
+ 6, BEVÖLKERUNGSEXPLOSION!!
 
 #SOCPLANET
 -3, Massive Umweltzerstörung; -3 Fungusproduktion
@@ -1019,7 +1021,7 @@ Transzendent,
 ;
 ; Formale Anrede, Beschreibung, Hauptwort, Maskulin/Feminin, Singular/Plural,
 ; Name, Geschlecht, KI-Kampf, KI-Macht, KI-Tech, KI-Wohlstand, KI-Wachstum
-;    Title, Charaktereigenschaft, Adjektive
+;    Titel, Charaktereigenschaft, Adjektive
 ;    SONDERREGELN, Parameter, ...
 ;    GESELLSCHAFTSPRIORITÄTEN, Einstellungen, Ergebnis
 ;
@@ -1031,7 +1033,7 @@ Transzendent,
 ;                       im Plural (Gaianer) auftritt
 ; Name                = Name des Vorgabe-Anführers
 ; Geschlecht          = M (Männlich) oder F (Weiblich) - Geschlecht des
-:                       Anführers/der Anführerin
+;                       Anführers/der Anführerin
 ; KI-Kampf     = -1,0,1 (Bereitschaft zur Erreichung der Ziele Gewalt
 ;                        einzusetzen)
 ; KI-Macht     = 1 oder 0 (Interesse an Macht)
@@ -1043,6 +1045,8 @@ Transzendent,
 ; Charak.eigensch. = Adjektive, die den Anführer/die Anführerin beschreiben
 ;
 ; Adjektive      = Name der Gruppierung als Adjektiv (z.B. gaianisch)
+;                  ÜBERSETZERHINWEIS: Für die deutsche Version sollten
+;                  hier alle sechs Formen angegeben werden.
 ;
 ;
 ; SONDERREGELN   = Regeln, Parameter
@@ -1062,12 +1066,12 @@ Transzendent,
 ;                 "4" ist z.B. eine Abwehrzone). Versuchen Sie
 ;                 NICHT auf diesem Weg Satelliten oder
 ;                 Geheimprojekte zu vergeben.
-;   RESEARCH    = Kostenlose Forschunspunkte pro Basis pro Runde.
+;   RESEARCH    = Kostenlose Forschungspunkte pro Basis pro Runde.
 ;   DRONE       = Zusatz-Drohne auf der Basis (pro "Param"-
 ;                 Bürger, abgerundet)
 ;   TALENT      = Zusatz-Talent auf der Basis (pro "Param"-
 ;                 Bürger, aufgerundet)
-;   ENERGY      = Kostenlose Energiereservem bei Spielbeginn
+;   ENERGY      = Kostenlose Energiereserven bei Spielbeginn
 ;   INTEREST    = Zins für Energiereserven.
 ;                 Nicht-Null = konstanter prozentualer Wert pro Runde
 ;                 (einschließlich negativem Wert)
@@ -1080,15 +1084,16 @@ Transzendent,
 ;                 "Beschleun." beim Bau (125 bedeutet z.B. 125% der
 ;                 normalen Kosten; 100 kosten also 125).
 ;   UNIT        = Zusätzliche kostenlose Einheit bei Spielbeginn;
-;                 Die Paramenter entsprechen der Einheitenliste
-;                 (z.B. 0 = Kolonisten, 1 = Terraformer,
-;                 2 = Scout-Raupe)
+;                 Die Parameter entsprechen der Einheitenliste
+;                 (z.B. 0 = Koloniekapsel, 1 = Former,
+;                 2 = Scout-Patrouille)
 ;   TECHCOST    = Faktor in % für Technologien-Forschungsrate
 ;                 (125 bedeutet z.B. daß jede Entdeckung 125%
 ;                 der normalen Anzahl an Forschungspunkten
 ;                 kostet).
-;   SHARETECH   = Sie erwerben jede Technologie, die der Anzahl
-;                 der anderen Spielern bekannt sind
+;   SHARETECH   = Sie erwerben jede Technologie, die # anderen Spielern
+;                 bekannt ist. Diese Fähigkeit wird nur angewendet, wenn
+;                 eine andere Gruppierung eine Technologie entdeckt.
 ;   TERRAFORM   = Halbiert die Kosten für Terraform Auf/Ab
 ;   SOCIAL      = Benennt einen Faktor in der entsprechenden
 ;                 Gesellschaftseffekt-Kategorie
@@ -1098,8 +1103,8 @@ Transzendent,
 ;                 Gesellschaftsgebieten ("ROBUST, EFFIC" halbiert den
 ;                 Minuswert für die Effizienz in Gesellschaftsmodellen).
 ;   IMMUNITY    = Immunität von Minuswerten im entsprechenden Gesellschafts-
-;                 gebiet. ("IMMUNITY, ENERGY" hebt Minuswerte für
-;                 Energie in Gesellschaftsmodellen auf).
+;                 gebiet. ("IMMUNITY, ECONOMY" hebt Minuswerte für
+;                 Wirtschaft in Gesellschaftsmodellen auf).
 ;   IMPUNITY    = Straffreiheit :-) von Minuswerten von bestimmten
 ;                 gesellsch. Einstellungen. "IMPUNITY, Polizeistaat"
 ;                 unterbindet alle Minuswerte von "Polizeistaat"-Einstellungen.
@@ -1125,15 +1130,16 @@ Transzendent,
 ;   PROBECOST   = Prozentwert der Standardkosten für Aktionen von Sondierteams (Vorgabewert ist 100)
 ;   DEFENSE     = Prozent-Faktor für Verteidigungskämpfe (Vorgabewert ist 100)
 ;   OFFENSE     = Prozent-Faktor für Angriffskämpfe (Vorgabewert ist 100)
-;   TECHSHARE   = In Zusammenhang mit SHARETECH erfordert es, daß man die anderen Gruppierungen
-;                                  ausspioniert (über Sondierteams, die Gilde der Empathen, den Gouverneur oder einen
-;                                  Pakt). Parameter wird ignoriert.
-;   TECHSTEAL = Gruppierung stiehlt eine Technologie, wenn sie eine Basis einnimmt. Parameter wird ignoriert.
+;   TECHSHARE   = Sie erwerben jede Technologie, die # anderen Gruppierungen
+;                 bekannt ist, welche Sie derzeit ausspionieren (durch Sondierteam,
+;                 Gilde der Empathen, Gouverneur oder Pakt). Diese Fähigkeit wird nur
+;                 angewendet, wenn eine andere Gruppierung eine Technologie entdeckt.
+;   TECHSTEAL   = Gruppierung stiehlt eine Technologie, wenn sie eine Basis einnimmt. Parameter wird ignoriert.
 ;
 ; GESELLSCHAFTS-PRIORITÄTEN:
 ;   Diese Eingaben, die von der obenstehenden politischen Tabelle aufgerufen
 ;   werden, (siehe #SOCIO), müssen von der Schreibweise her mit den Angaben für
-;   SOCIO exakt übereinstimmen. Sie bestimmen die gesellschaftlichen Prioriäten
+;   SOCIO exakt übereinstimmen. Sie bestimmen die gesellschaftlichen Prioritäten
 ;   der Anführer.
 ;
 
@@ -1243,7 +1249,7 @@ BERÜCHTIGT
 unübertroffen, GROSSARTIG
 stark,         gewaltig
 furchtbar,     furchtbar
-ausreichend,   ansehlich
+ausreichend,   ansehnlich
 schwächlich,   klein
 schwach,       schwach
 erbärmlich,      erbärmlich
@@ -1254,9 +1260,9 @@ Vereint Euch unter mir als Oberbefehlshaber,  MindMac,  Diplomatischer Sieg; Spi
 Fusionskern der Unity retten,         Orbital, +500 Energieeinheiten pro Gruppierung
 Globales Handelsabkommen,             PlaEcon, Handelsertrag verdoppelt
 Globales Handelsabkommen kündigen,    PlaEcon, Handelsertrag halbiert
-Solarschirm starten,                  Space,   Globale Abkühlung, Meeresspiegel sinkt
-Solarschirm vergrößern,               Space,   Globale Abkühlung, Meeresspiegel sinkt
-Eiskappen schmelzen,                  EcoEng2, Globale Erwärmung, Meeresspiegel steigt
+Solarschirm starten,                  Space,   Globale Abkühlung; Meeresspiegel sinkt
+Solarschirm vergrößern,               Space,   Globale Abkühlung; Meeresspiegel sinkt
+Eiskappen schmelzen,                  EcoEng2, Globale Erwärmung; Meeresspiegel steigt
 UN-Charta kündigen,                   MilAlg,  Verbot von Greueltaten aufgehoben
 UN-Charta wieder in Kraft setzen,     MilAlg,  Verbot von Greueltaten in Kraft
 ...,                                  Disable, ...

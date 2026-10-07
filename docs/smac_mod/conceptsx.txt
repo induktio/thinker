@@ -380,7 +380,7 @@ turn in which the unit is attacked or bombarded.
 ^
 Units can also conduct "field repair" (i.e. not at a base), but this
 process is much slower and is only effective if the unit has sustained
-more than 10% damage.
+more than 20% damage.
 
 #CONCEPT23
 You may use the Design Workshop screen to create new unit types.
@@ -567,8 +567,8 @@ conduct {Bombardment} by selecting the Long Range Fire option from
 the Action menu.
 ^
 Bombardment has the advantage of potentially damaging every enemy unit
-in a particular square and the disadvantage that land units can never
-be reduced below 50% damage by bombardment.
+in a particular square and the disadvantage that units in a base or
+a bunker can never be reduced below 50% health by bombardment.
 ^
 If bombardment is attempted against a square containing an enemy
 naval or artillery unit, the bombardment is cancelled and an

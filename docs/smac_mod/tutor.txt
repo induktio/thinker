@@ -356,7 +356,7 @@ green {Talents}. Poor social conditions and overcrowding will
 turn them into red {Drones}. Whenever your base has more
 drones than talents, there will be a {Drone Riot}. To correct
 this problem, build a psych-related base facility such as a
-{Recreation Dome}, convert some citizens into {Doctors}, or increase
+{Recreation Commons}, convert some citizens into {Doctors}, or increase
 your energy allocation to {Psych}.
 
 #TOUR1STAPLE
@@ -868,7 +868,7 @@ an excellent long-term solution to drone problems.
 
 #DRONETOUR5
 #xs 400
-Creating {Doctors} (or later, {Telepaths} and {Transcendi}) is
+Creating {Doctors} (or later, {Empathi} and {Transcendi}) is
 another, albeit short-term solution to the problem. Doctors, by
 increasing your {Psych} output, will create more Talents to balance
 the Drones. To change a citizen into a Doctor, click on him here
@@ -1294,7 +1294,7 @@ Complexes can quickly repair sea and air units.
 #caption Operations Director
 Now that our researchers have discovered $TECH0, our Formers
 can plant forests ('Shift+F' action key) in any square that is not arid
-or rocky. Forest squares produce two nutrients, one mineral, and one
+or rocky. Forest squares produce one nutrient, two minerals, and one
 energy, so they are ideal for areas which are too hot or too cold
 for other uses.
 
