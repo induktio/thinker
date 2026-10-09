@@ -151,7 +151,7 @@ int option_handler(void* user, const char* section, const char* name, const char
     } else if (MATCH("base_psych")) {
         cf->base_psych = atoi(value);
     } else if (MATCH("nerve_staple_turns")) {
-        cf->nerve_staple_turns = clamp(atoi(value), 0, 1000);
+        cf->nerve_staple_turns = clamp(atoi(value), 0, 255);
     } else if (MATCH("nerve_staple_mod")) {
         cf->nerve_staple_mod = atoi(value);
     } else if (MATCH("delay_drone_riots")) {

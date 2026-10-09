@@ -10,8 +10,6 @@ const char* FileExtSav = "SAV";
 
 int* const dword_93F798 = (int*)0x93F798;
 int* const dword_94B558 = (int*)0x94B558;
-int* const dword_939E5C = (int*)0x939E5C;
-int* const dword_939E58 = (int*)0x939E58;
 void* const unk_9B2178 = (void*)0x9B2178;
 void* const unk_9B208D = (void*)0x9B208D;
 char* const unk_945D80 = (char*)0x945D80;
@@ -532,21 +530,21 @@ int __cdecl game_data(FILE* fp, int write_file) {
         if (!file_feed(dword_93A9D8, 0x20u, 1u, fp)) return 1;
     }
     if (write_file) {
-        if (!fwrite(dword_939E5C, 4u, 1u, fp)) {
+        if (!fwrite(CanvasWidth, 4u, 1u, fp)) {
             return 1;
         }
-        if (!fwrite(dword_939E58, 4u, 1u, fp)) {
+        if (!fwrite(CanvasHeight, 4u, 1u, fp)) {
             return 1;
         }
     } else {
-        int val1 = 0, val2 = 0;
-        if (!fread(&val1, 4u, 1u, fp)) {
+        int px = 0, py = 0;
+        if (!fread(&px, 4u, 1u, fp)) {
             return 1;
         }
-        if (!fread(&val2, 4u, 1u, fp)) {
+        if (!fread(&py, 4u, 1u, fp)) {
             return 1;
         }
-        if (val1 != *dword_939E5C || val2 != *dword_939E58) {
+        if (px != *CanvasWidth || py != *CanvasHeight) {
             for (int i = 1; i < 8; ++i) {
                 if (MapWinPtr[i]) {
                     MapWinPtr[i]->DrawToggleA = 0;
@@ -922,7 +920,7 @@ int __cdecl mod_load_daemon(const char* filename, int flag) {
     *ComputeBaseID = -1;
     Path_init(Paths);
     if (flag) {
-        mod_world_linearize_contours();
+        world_linearize_contours();
     }
     memcpy(AltNatural, ElevDetail, sizeof(ElevDetail));
     for (int fc = 1; fc < MaxPlayerNum; ++fc) {

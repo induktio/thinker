@@ -347,16 +347,18 @@ int __cdecl action_terraform(int veh_id, int item_id, int toggle) {
     if (item_id == FORMER_RAISE_LAND || item_id == FORMER_LOWER_LAND || item_id == FORMER_CONDENSER) {
         if (*dword_9B22E0 >= 0) {
             parse_says(0, Bases[*dword_9B22E0].name, -1, -1);
-            parse_says(1, MFactions[faction_id].adj_name_faction, -1, -1);
+            parse_says(1, get_adjective(faction_id), -1, -1);
             if (faction_id == player_id) {
                 NetMsg_pop(NetMsg, "TERRAMINE", 5000, 0, 0);
             } else if (base_find_2(x, y, player_id) >= 0 && *BaseFindDist < 6) {
                 NetMsg_pop(NetMsg, "TERRAYOURS", 5000, 0, 0);
             }
         }
-        if (MapBaseIdClosestSubmergedVeh[player_id] >= 0) {
-            parse_says(0, Bases[MapBaseIdClosestSubmergedVeh[faction_id]].name, -1, -1);
-            parse_says(1, MFactions[faction_id].adj_name_faction, -1, -1);
+        // Fix: use only the current faction for MapBaseIdClosestSubmergedVeh
+        int near_base_id = MapBaseIdClosestSubmergedVeh[player_id];
+        if (near_base_id >= 0 && item_id != FORMER_CONDENSER) {
+            parse_says(0, Bases[near_base_id].name, -1, -1);
+            parse_says(1, get_adjective(faction_id), -1, -1);
             if (faction_id == player_id) {
                 NetMsg_pop(NetMsg, "DROWNMINE", 5000, 0, 0);
             } else {
@@ -747,11 +749,9 @@ void __cdecl action_destroy(int veh_id, int tgt_item, int tgt_x, int tgt_y) {
                 add_goal(owner, AI_GOAL_ATTACK, 5, veh->x, veh->y, -1);
                 if (owner == player_id) {
                     int base_id = base_find_3(tx, ty, -1, -1, -1, player_id);
-                    *GenderDefault = MFactions[faction_id].noun_gender;
-                    *PluralDefault = MFactions[faction_id].is_noun_plural;
-                    parse_says(0, MFactions[faction_id].noun_faction, -1, -1);
+                    parse_says(0, get_noun(faction_id), -1, -1);
                     parse_says(1, base_id >= 0 ? Bases[base_id].name : "", -1, -1);
-                    parse_says(3, MFactions[faction_id].adj_name_faction, -1, -1);
+                    parse_says(3, get_adjective(faction_id), -1, -1);
                     const char* msg = is_bombard ? "HAVEDESTROYED1" : "HAVEDESTROYED";
                     NetMsg_pop(NetMsg, msg, 5000, 0, 0);
                 }
@@ -1066,13 +1066,10 @@ int __cdecl action_airdrop(int veh_id, int tx, int ty, int flags) {
         return 0;
     }
     if (is_visible && faction_id != player_id) {
-        int base_id = base_find_3(tx, ty, -1, -1, -1, 1);
-        if (base_id >= 0) {
-            parse_says(0, Bases[base_id].name, -1, -1);
-        }
-        *GenderDefault = MFactions[faction_id].noun_gender;
-        *PluralDefault = MFactions[faction_id].is_noun_plural;
-        parse_says(1, MFactions[faction_id].noun_faction, -1, -1);
+        // Fix: check for bases visible to player_id instead of unrelated faction slot
+        int base_id = base_find_3(tx, ty, -1, -1, -1, player_id);
+        parse_says(0, base_id >= 0 ? Bases[base_id].name : "", -1, -1);
+        parse_says(1, get_noun(faction_id), -1, -1);
         if (drop_range(faction_id) >= Rules->max_airdrop_rng_wo_orbital_insert) {
             popp(ScriptFile, "MADEORBITAL", 0, image_drop, 0);
         } else {
@@ -1213,20 +1210,19 @@ void __cdecl action_oblit(int veh_id, int base_id) {
     BASE* base = &Bases[base_id];
     int faction_id = veh->faction_id;
     int faction_id_fmr = base->faction_id_former;
-    parse_num(0, 10 * base->pop_size);
-    parse_says(0, base->name, -1, -1);
-    *PluralDefault = 0;
-    *GenderDefault = MFactions[player_id].is_leader_female;
-    parse_says(1, MFactions[player_id].title_leader, -1, -1);
-    parse_says(2, MFactions[faction_id_fmr].adj_name_faction, -1, -1);
-    *PluralDefault = 0;
-    *GenderDefault = MFactions[faction_id].is_leader_female;
-    parse_says(3, MFactions[faction_id].title_leader, -1, -1);
-    parse_says(4, MFactions[faction_id].name_leader, -1, -1);
-
+    int pop_num = 10 * base->pop_size;
+    char name[StrBufLen];
+    snprintf(name, StrBufLen, "%s", base->name);
     bool is_visible = (base->faction_id == player_id) || (base->visibility & (1 << player_id));
     mod_base_kill(base_id);
     draw_map(1);
+    // Fix: base obliterate popup sometimes did not display the proper base name
+    parse_num(0, pop_num);
+    parse_says(0, name, -1, -1);
+    parse_says(1, get_title(player_id), -1, -1);
+    parse_says(2, get_adjective(faction_id_fmr), -1, -1);
+    parse_says(3, get_title(faction_id), -1, -1);
+    parse_says(4, get_name(faction_id), -1, -1);
 
     if (faction_id == player_id) {
         popp(ScriptFile, "OBLITTED", 0, "baseobl_sm.pcx", 0);
@@ -1360,10 +1356,10 @@ int  __cdecl shoot_it(int faction_id_atk, int faction_id_def, int tx, int ty, in
         parse_num(0, plr_def->satellites_ODP);
         parse_num(1, remaining_odp);
         if (faction_id_def == player_id) {
-            parse_says(1, MFactions[faction_id_atk].adj_name_faction, -1, -1);
+            parse_says(1, get_adjective(faction_id_atk), -1, -1);
             popp(ScriptFile, label_we_shot, 0, "space_sm.pcx", 0);
         } else if (faction_id_atk == player_id) {
-            parse_says(1, MFactions[faction_id_def].adj_name_faction, -1, -1);
+            parse_says(1, get_adjective(faction_id_def), -1, -1);
             popp(ScriptFile, label_they_shot, 0, "space_sm.pcx", 0);
         }
     };
@@ -1379,10 +1375,10 @@ int  __cdecl shoot_it(int faction_id_atk, int faction_id_def, int tx, int ty, in
                 if (game_rand() % 100 < MissileDefendChance) {
                     parse_says(0, Bases[base_id].name, -1, -1);
                     if (faction_id_def == player_id) {
-                        parse_says(1, MFactions[faction_id_atk].adj_name_faction, -1, -1);
+                        parse_says(1, get_adjective(faction_id_atk), -1, -1);
                         popp(ScriptFile, flag ? "FWESHOTIT2" : "TWESHOTIT2", 0, "space_sm.pcx", 0);
                     } else if (faction_id_atk == player_id) {
-                        parse_says(1, MFactions[Bases[base_id].faction_id].adj_name_faction, -1, -1);
+                        parse_says(1, get_adjective(Bases[base_id].faction_id), -1, -1);
                         popp(ScriptFile, flag ? "FTHEYSHOTIT2" : "TTHEYSHOTIT2", 0, "space_sm.pcx", 0);
                     }
                     return 1;
@@ -1395,9 +1391,7 @@ int  __cdecl shoot_it(int faction_id_atk, int faction_id_def, int tx, int ty, in
             if (faction_id_def == player_id) {
                 popp(ScriptFile, flag ? "FWEMUSTSAC" : "TWEMUSTSAC", 0, "space_sm.pcx", 0);
             } else if (faction_id_atk == player_id) {
-                *GenderDefault = MFactions[faction_id_def].noun_gender;
-                *PluralDefault = MFactions[faction_id_def].is_noun_plural;
-                parse_says(0, MFactions[faction_id_def].noun_faction, -1, -1);
+                parse_says(0, get_noun(faction_id_def), -1, -1);
                 popp(ScriptFile, "THEYMUSTSAC", 0, "space_sm.pcx", 0);
             }
             plr_def->satellites_ODP--;
@@ -1412,7 +1406,7 @@ int  __cdecl shoot_it(int faction_id_atk, int faction_id_def, int tx, int ty, in
                 parse_num(0, plr_def->satellites_ODP);
                 int base_id = base_find(tx, ty);
                 parse_says(0, base_id >= 0 ? Bases[base_id].name : "", -1, -1);
-                parse_says(1, MFactions[faction_id_atk].adj_name_faction, -1, -1);
+                parse_says(1, get_adjective(faction_id_atk), -1, -1);
                 int value = popp(ScriptFile, flag ? "FUNGALSAC" : "TECTONICSAC", 0, "space_sm.pcx", 0);
                 if (!value) {
                     plr_def->satellites_ODP--;
@@ -1425,10 +1419,10 @@ int  __cdecl shoot_it(int faction_id_atk, int faction_id_def, int tx, int ty, in
                 } else {
                     if (has_flechette) {
                         if (faction_id_def == player_id) {
-                            parse_says(1, MFactions[faction_id_atk].adj_name_faction, -1, -1);
+                            parse_says(1, get_adjective(faction_id_atk), -1, -1);
                             popp(ScriptFile, "WEFAILEDFLECHETTE", 0, "space_sm.pcx", 0);
                         } else if (faction_id_atk == player_id) {
-                            parse_says(1, MFactions[faction_id_def].adj_name_faction, -1, -1);
+                            parse_says(1, get_adjective(faction_id_def), -1, -1);
                             popp(ScriptFile, "THEYFAILEDFLECHETTE", 0, "space_sm.pcx", 0);
                         }
                     }
@@ -1439,10 +1433,10 @@ int  __cdecl shoot_it(int faction_id_atk, int faction_id_def, int tx, int ty, in
     }
     if (has_flechette) {
         if (faction_id_def == player_id) {
-            parse_says(1, MFactions[faction_id_atk].adj_name_faction, -1, -1);
+            parse_says(1, get_adjective(faction_id_atk), -1, -1);
             popp(ScriptFile, "WEFAILEDFLECHETTE", 0, "space_sm.pcx", 0);
         } else if (faction_id_atk == player_id) {
-            parse_says(1, MFactions[faction_id_def].adj_name_faction, -1, -1);
+            parse_says(1, get_adjective(faction_id_def), -1, -1);
             popp(ScriptFile, "THEYFAILEDFLECHETTE", 0, "space_sm.pcx", 0);
         }
     }
@@ -1475,13 +1469,9 @@ void  __cdecl action_tectonic(int veh_id, int tx, int ty) {
     }
     kill(veh_id);
     if (faction_id_atk != player_id && tgt_base_id >= 0) {
-        *GenderDefault = MFactions[faction_id_atk].is_leader_female;
-        *PluralDefault = 0;
-        parse_says(0, MFactions[faction_id_atk].title_leader, -1, -1);
-        parse_says(1, MFactions[faction_id_atk].name_leader, -1, -1);
-        *GenderDefault = MFactions[faction_id_atk].noun_gender;
-        *PluralDefault = MFactions[faction_id_atk].is_noun_plural;
-        parse_says(2, MFactions[faction_id_atk].noun_faction, -1, -1);
+        parse_says(0, get_title(faction_id_atk), -1, -1);
+        parse_says(1, get_name(faction_id_atk), -1, -1);
+        parse_says(2, get_noun(faction_id_atk), -1, -1);
         parse_says(3, Bases[tgt_base_id].name, -1, -1);
         popp(ScriptFile, "TECTONICMISSILE", 0, "tectonic_sm.pcx", 0);
     }
@@ -1520,13 +1510,9 @@ void  __cdecl action_tectonic(int veh_id, int tx, int ty) {
         draw_map(1);
         if (is_visible) {
             parse_says(0, Bases[tgt_base_id].name, -1, -1);
-            *GenderDefault = MFactions[faction_id_atk].is_leader_female;
-            *PluralDefault = 0;
-            parse_says(1, MFactions[faction_id_atk].title_leader, -1, -1);
-            parse_says(2, MFactions[faction_id_atk].name_leader, -1, -1);
-            *GenderDefault = MFactions[faction_id_atk].noun_gender;
-            *PluralDefault = MFactions[faction_id_atk].is_noun_plural;
-            parse_says(3, MFactions[faction_id_atk].noun_faction, -1, -1);
+            parse_says(1, get_title(faction_id_atk), -1, -1);
+            parse_says(2, get_name(faction_id_atk), -1, -1);
+            parse_says(3, get_noun(faction_id_atk), -1, -1);
             popp(ScriptFile, "TECMOFIED", 0, "tectonic_sm.pcx", 0);
         }
         TectonicDetonationCount[faction_id_atk]++;
@@ -1544,13 +1530,9 @@ void  __cdecl action_fungal(int veh_id, int tx, int ty) {
     kill(veh_id);
 
     if (faction_id_atk != player_id && tgt_base_id >= 0) {
-        *GenderDefault = MFactions[faction_id_atk].is_leader_female;
-        *PluralDefault = 0;
-        parse_says(0, MFactions[faction_id_atk].title_leader, -1, -1);
-        parse_says(1, MFactions[faction_id_atk].name_leader, -1, -1);
-        *GenderDefault = MFactions[faction_id_atk].noun_gender;
-        *PluralDefault = MFactions[faction_id_atk].is_noun_plural;
-        parse_says(2, MFactions[faction_id_atk].noun_faction, -1, -1);
+        parse_says(0, get_title(faction_id_atk), -1, -1);
+        parse_says(1, get_name(faction_id_atk), -1, -1);
+        parse_says(2, get_noun(faction_id_atk), -1, -1);
         parse_says(3, Bases[tgt_base_id].name, -1, -1);
         popp(ScriptFile, "FUNGALMISSILE", 0, "fungpayld_sm.pcx", 0);
     }
@@ -1634,13 +1616,9 @@ void  __cdecl action_fungal(int veh_id, int tx, int ty) {
 
         if (is_visible) {
             parse_says(0, Bases[tgt_base_id].name, -1, -1);
-            *PluralDefault = 0;
-            *GenderDefault = MFactions[faction_id_atk].is_leader_female;
-            parse_says(1, MFactions[faction_id_atk].title_leader, -1, -1);
-            parse_says(2, MFactions[faction_id_atk].name_leader, -1, -1);
-            *GenderDefault = MFactions[faction_id_atk].noun_gender;
-            *PluralDefault = MFactions[faction_id_atk].is_noun_plural;
-            parse_says(3, MFactions[faction_id_atk].noun_faction, -1, -1);
+            parse_says(1, get_title(faction_id_atk), -1, -1);
+            parse_says(2, get_name(faction_id_atk), -1, -1);
+            parse_says(3, get_noun(faction_id_atk), -1, -1);
             popp(ScriptFile, "FUNGMOTIZED", 0, "fungpayld_sm.pcx", 0);
         }
     }
@@ -1731,13 +1709,9 @@ void __cdecl action_give(int veh_id, int faction_id_tgt) {
     draw_radius(vx, vy, 3, 2);
     if (faction_id_tgt == player_id) {
         parse_says(0, Units[veh->unit_id].name, -1, -1);
-        *PluralDefault = 0;
-        *GenderDefault = MFactions[faction_id].is_leader_female;
-        parse_says(1, MFactions[faction_id].title_leader, -1, -1);
-        parse_says(2, MFactions[faction_id].name_leader, -1, -1);
-        *PluralDefault = MFactions[faction_id].is_noun_plural;
-        *GenderDefault = MFactions[faction_id].noun_gender;
-        parse_says(3, MFactions[faction_id].noun_faction, -1, -1);
+        parse_says(1, get_title(faction_id), -1, -1);
+        parse_says(2, get_name(faction_id), -1, -1);
+        parse_says(3, get_noun(faction_id), -1, -1);
         Console_focus(MapWin, vx, vy, faction_id);
         int near_id = base_find(vx, vy);
         if (near_id >= 0) {
@@ -1752,9 +1726,7 @@ void __cdecl action_give(int veh_id, int faction_id_tgt) {
             }
         }
     } else if (faction_id == player_id) {
-        *PluralDefault = MFactions[faction_id_tgt].is_noun_plural;
-        *GenderDefault = MFactions[faction_id_tgt].noun_gender;
-        parse_says(3, MFactions[faction_id_tgt].noun_faction, -1, -1);
+        parse_says(3, get_noun(faction_id_tgt), -1, -1);
         if (faction_id_tgt) {
             NetMsg_pop(NetMsg, "GAVEUNIT", 5000, 0, 0);
         } else {
@@ -2008,7 +1980,7 @@ int __cdecl order_veh(int veh_id, int offset, int flag) {
                     if (!move_delay && veh_fc_id == MapWin->cOwner) {
                         if (base_id < 0) {
                             if (mod_stack_check(stack_veh_id, 2, PLAN_PROBE, tgt_fc_id, -1)) {
-                                parse_says(0, MFactions[tgt_fc_id].adj_name_faction, -1, -1);
+                                parse_says(0, get_adjective(tgt_fc_id), -1, -1);
                                 if (X_pop("PROBEPACTTEAM", 0)) {
                                     Vehs[veh_id].flags |= VFLAG_PROBE_PACT_OPERATIONS;
                                 } else {
@@ -2017,7 +1989,7 @@ int __cdecl order_veh(int veh_id, int offset, int flag) {
                             }
                         } else {
                             parse_says(0, Bases[base_id].name, -1, -1);
-                            parse_says(1, MFactions[tgt_fc_id].adj_name_faction, -1, -1);
+                            parse_says(1, get_adjective(tgt_fc_id), -1, -1);
                             if (X_pop("PROBEPACT", 0)) {
                                 Vehs[veh_id].flags |= VFLAG_PROBE_PACT_OPERATIONS;
                             } else {
@@ -2244,7 +2216,7 @@ int __cdecl order_veh(int veh_id, int offset, int flag) {
                 bit_set(tgt_x, tgt_y, BIT_SUPPLY_REMOVE, 1);
                 if (veh_fc_id == MapWin->cOwner) {
                     FX_play(Sounds, 13);
-                    parse_says(0, MFactions[tgt_fc_id].adj_name_faction, -1, -1);
+                    parse_says(0, get_adjective(tgt_fc_id), -1, -1);
                     parse_says(1, Vehs[stack_veh_id].name(), -1, -1);
                     NetMsg_pop(NetMsg, tgt_at_sea ? "ISLESPOTTED" : "WORMSSPOTTED", 5000, 0, 0);
                 }
@@ -2270,7 +2242,7 @@ MOV_SPOT:
             draw_tile(tgt_x, tgt_y, 2);
             if (veh_fc_id == MapWin->cOwner) {
                 FX_play(Sounds, 13);
-                parse_says(0, MFactions[tgt_fc_id].adj_name_faction, -1, -1);
+                parse_says(0, get_adjective(tgt_fc_id), -1, -1);
                 parse_says(1, Vehs[stack_veh_id].name(), -1, -1);
                 NetMsg_pop(NetMsg, tgt_fc_id ? "SPOTTED" : "SPOTTED0", 5000, 0, 0);
             }
@@ -2285,7 +2257,7 @@ MOV_SPOT:
                 spot_stack(stack_veh_id, veh_fc_id);
                 draw_tile(tgt_x, tgt_y, 2);
                 FX_play(Sounds, 13);
-                parse_says(0, MFactions[tgt_fc_id].adj_name_faction, -1, -1);
+                parse_says(0, get_adjective(tgt_fc_id), -1, -1);
                 parse_says(1, Vehs[stack_veh_id].name(), -1, -1);
                 NetMsg_pop(NetMsg, tgt_fc_id ? "SPOTTED" : "SPOTTED0", 5000, 0, 0);
                 goto MOV_END;
@@ -2345,11 +2317,9 @@ MOV_SPOT:
                 int near_base_id = base_find(tgt_x, tgt_y);
                 if (near_base_id < 0 || Bases[near_base_id].faction_id != veh_fc_id) {
                     if (veh_fc_id == MapWin->cOwner) {
-                        parse_says(0, MFactions[tgt_fc_id].adj_name_faction, -1, -1);
+                        parse_says(0, get_adjective(tgt_fc_id), -1, -1);
                         parse_says(1, Vehs[stack_veh_id].name(), -1, -1);
-                        *PluralDefault = 0;
-                        *GenderDefault = MFactions[veh_fc_id].is_leader_female;
-                        parse_says(2, MFactions[veh_fc_id].title_leader, -1, -1);
+                        parse_says(2, get_title(veh_fc_id), -1, -1);
                         int choice;
                         if (!MFactions[tgt_fc_id].is_alien()) {
                             choice = popp(ScriptFile, "ENEMYPROBE2", 0, "capture_sm.pcx", 0);
@@ -2361,11 +2331,9 @@ MOV_SPOT:
                         }
                     }
                 } else {
-                    parse_says(0, MFactions[tgt_fc_id].adj_name_faction, -1, -1);
+                    parse_says(0, get_adjective(tgt_fc_id), -1, -1);
                     parse_says(1, Vehs[stack_veh_id].name(), -1, -1);
-                    *PluralDefault = 0;
-                    *GenderDefault = MFactions[veh_fc_id].is_leader_female;
-                    parse_says(2, MFactions[veh_fc_id].title_leader, -1, -1);
+                    parse_says(2, get_title(veh_fc_id), -1, -1);
                     int choice;
                     if (!is_human(veh_fc_id)) {
                         choice = 1;
@@ -2398,16 +2366,12 @@ MOV_SPOT:
                         }
                         draw_tile(tgt_x, tgt_y, 2);
                         if (tgt_fc_id == MapWin->cOwner) {
-                            parse_says(0, MFactions[veh_fc_id].adj_name_faction, -1, -1);
-                            *PluralDefault = 0;
-                            *GenderDefault = MFactions[tgt_fc_id].is_leader_female;
-                            parse_says(1, MFactions[tgt_fc_id].title_leader, -1, -1);
+                            parse_says(0, get_adjective(veh_fc_id), -1, -1);
+                            parse_says(1, get_title(tgt_fc_id), -1, -1);
                             NetMsg_pop(NetMsg, "GOTMYPROBE", 5000, 0, 0);
                         } else if (veh_fc_id == MapWin->cOwner) {
-                            parse_says(0, MFactions[tgt_fc_id].adj_name_faction, -1, -1);
-                            *PluralDefault = 0;
-                            *GenderDefault = MFactions[veh_fc_id].is_leader_female;
-                            parse_says(1, MFactions[veh_fc_id].title_leader, -1, -1);
+                            parse_says(0, get_adjective(tgt_fc_id), -1, -1);
+                            parse_says(1, get_title(veh_fc_id), -1, -1);
                             NetMsg_pop(NetMsg, "GOTYOURPROBE", 5000, 0, 0);
                         }
                         goto MOV_END;
@@ -2767,13 +2731,9 @@ MOV_NAVAL:
         if (tgt_fc_id != veh_fc_id && !(Factions[veh_fc_id].diplo_status[tgt_fc_id] & DIPLO_PACT)) {
             if (Factions[tgt_fc_id].diplo_status[veh_fc_id] & (DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT)
             && tgt_fc_id == MapWin->cOwner) {
-                *PluralDefault = 0;
-                *GenderDefault = MFactions[veh_fc_id].is_leader_female;
-                parse_says(0, MFactions[veh_fc_id].title_leader, -1, -1);
-                parse_says(1, MFactions[veh_fc_id].name_leader, -1, -1);
-                *PluralDefault = MFactions[veh_fc_id].is_noun_plural;
-                *GenderDefault = MFactions[veh_fc_id].noun_gender;
-                parse_says(2, MFactions[veh_fc_id].noun_faction, -1, -1);
+                parse_says(0, get_title(veh_fc_id), -1, -1);
+                parse_says(1, get_name(veh_fc_id), -1, -1);
+                parse_says(2, get_noun(veh_fc_id), -1, -1);
                 NetMsg_pop(NetMsg, "SURPRISE", 5000, 0, 0);
             }
             if (veh_fc_id == MapWin->cOwner) {
@@ -3019,7 +2979,7 @@ MOV_NAVAL:
             if (find_count) {
                 Vehs[veh_id].moves_spent += find_count * Rules->move_rate_roads;
                 if (veh_fc_id == MapWin->cOwner) {
-                    parse_says(0, MFactions[find_fc_id].adj_name_faction, -1, -1);
+                    parse_says(0, get_adjective(find_fc_id), -1, -1);
                     NetMsg_pop(NetMsg, "GIBRALTAR", 5000, 0, 0);
                 }
             }
@@ -3201,15 +3161,11 @@ MOV_UPKEEP:
                             owner_set(tgt_x, tgt_y, Vehs[veh_id].faction_id);
                             if (veh_fc_id == MapWin->cOwner) {
                                 MapWin->VehID = -1;
-                                *PluralDefault = MFactions[iter_fc_id].is_noun_plural;
-                                *GenderDefault = MFactions[iter_fc_id].noun_gender;
-                                parse_says(0, MFactions[iter_fc_id].noun_faction, -1, -1);
+                                parse_says(0, get_noun(iter_fc_id), -1, -1);
                                 popp(ScriptFile, "TOOKARTIFACT", 0, "artstolen_sm.pcx", 0);
                             } else if (Vehs[iter_id].faction_id == MapWin->cOwner) {
                                 parse_says(0, Vehs[iter_id].name(), -1, -1);
-                                *PluralDefault = MFactions[veh_fc_id].is_noun_plural;
-                                *GenderDefault = MFactions[veh_fc_id].noun_gender;
-                                parse_says(1, MFactions[veh_fc_id].noun_faction, -1, -1);
+                                parse_says(1, get_noun(veh_fc_id), -1, -1);
                                 popp(ScriptFile, "TAKENARTIFACT", 0, "artstolen_sm.pcx", 0);
                             }
                             veh_fc_id = Vehs[veh_id].faction_id;

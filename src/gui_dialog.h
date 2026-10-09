@@ -41,8 +41,6 @@ enum DiploCounter {
     DiploCounterGiveBase = 8, // turn over one of my bases
 };
 
-void parse_gen_name(int faction_id, size_t title_value, size_t name_value);
-void parse_noun_name(int faction_id, size_t title_value, size_t name_value);
 int __cdecl X_pop(const char* label, fp_none fn);
 int __cdecl X_pop_2(const char* filename, const char* label, fp_none fn);
 int __cdecl X_pop_6(const char* label, int a2, fp_none fn);

@@ -797,7 +797,7 @@ void __cdecl kill(int veh_id) {
     }
 }
 
-int battle_kill(int veh_id, int* num_killed, int* num_relics, int* num_credits, int veh_id_atk, int faction_id_atk) {
+int __cdecl battle_kill(int veh_id, int* num_killed, int* num_relics, int* num_credits, int veh_id_atk, int faction_id_atk) {
     VEH* veh = &Vehs[veh_id];
     const int faction_id = veh->faction_id;
     const int unit_id = veh->unit_id;
@@ -845,16 +845,12 @@ int battle_kill(int veh_id, int* num_killed, int* num_relics, int* num_credits, 
         if (base_id >= 0) {
             Bases[base_id].state_flags |= BSTATE_ASSISTANT_KILLER_HOME;
             Factions[atk_faction_id].player_flags |= PFLAG_UNK_1000;
-            *PluralDefault = 0;
-            *GenderDefault = MFactions[atk_faction_id].is_leader_female;
-            parse_says(6, MFactions[atk_faction_id].name_leader, -1, -1);
-            *PluralDefault = MFactions[atk_faction_id].is_noun_plural;
-            *GenderDefault = MFactions[atk_faction_id].noun_gender;
-            parse_says(7, MFactions[atk_faction_id].noun_faction, -1, -1);
+            parse_says(6, get_name(atk_faction_id), -1, -1);
+            parse_says(7, get_noun(atk_faction_id), -1, -1);
             interlude(6, Bases[base_id].name, 1, 0);
         }
     }
-    if (!veh->faction_id && Vehs[veh_id_atk].faction_id && num_credits) {
+    if (!veh->faction_id && veh_id_atk >= 0 && Vehs[veh_id_atk].faction_id && num_credits) {
         *num_credits += battle_kill_credits(veh_id);
     }
     if (num_killed) {
@@ -864,7 +860,7 @@ int battle_kill(int veh_id, int* num_killed, int* num_relics, int* num_credits, 
     return 1;
 }
 
-void battle_kill_stack(int veh_id, int* num_killed, int* num_relics, int* num_credits, int veh_id_atk, int faction_id_atk) {
+void __cdecl battle_kill_stack(int veh_id, int* num_killed, int* num_relics, int* num_credits, int veh_id_atk, int faction_id_atk) {
     if (veh_id < 0) {
         return;
     }
@@ -1585,16 +1581,11 @@ GOODY_START:
         if (!goody_rand(4)
         && !(rnd_id = goody_rand(7) + 1, rnd_id == faction_id || f->diplo_status[rnd_id] & DIPLO_COMMLINK)) {
             if (is_human(faction_id) && is_alive(rnd_id) && !is_human(rnd_id) && !is_alien(rnd_id)) {
-                MFaction* m = &MFactions[rnd_id];
                 treaty_on(faction_id, rnd_id, DIPLO_COMMLINK);
                 if (is_player) {
-                    *GenderDefault = m->is_leader_female;
-                    *PluralDefault = 0;
-                    parse_says(0, m->title_leader, -1, -1);
-                    parse_says(1, m->name_leader, -1, -1);
-                    *GenderDefault = m->noun_gender;
-                    *PluralDefault = m->is_noun_plural;
-                    parse_says(2, m->noun_faction, -1, -1);
+                    parse_says(0, get_title(rnd_id), -1, -1);
+                    parse_says(1, get_name(rnd_id), -1, -1);
+                    parse_says(2, get_noun(rnd_id), -1, -1);
                     NetMsg_pop(NetMsg, "GOODYCOMM", is_sea ? 5000 : -5000, 0, "supply_sm.pcx");
                 }
                 return 0;

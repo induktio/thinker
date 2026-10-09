@@ -329,26 +329,28 @@ void __thiscall BaseWin_draw_energy_set_text_color(Buffer* This, int a2, int a3,
 }
 
 void __cdecl BaseWin_draw_psych_strcat(char* buffer, char* source) {
-    BASE* base = &Bases[*CurrentBaseID];
+    size_t prev = strnlen(buffer, StrBufLen);
+    size_t len = StrBufLen - prev;
     if (conf.render_base_info && *CurrentBaseID >= 0) {
+        BASE* base = &Bases[*CurrentBaseID];
         if (base->nerve_staple_turns_left > 0
         || has_fac_built(FAC_PUNISHMENT_SPHERE, *CurrentBaseID)) {
-            if (!strcmp(source, label_get(971))) { // Stapled Base
-                strncat(buffer, label_get(322), StrBufLen); // Unmodified
+            if (!strcmp(source, label_get(TL_StapledBase))) {
+                snprintf(buffer + prev, len, "%s", label_get(TL_Unmodified));
                 return;
             }
-            if (!strcmp(source, label_get(327))) { // Secret Projects
-                strncat(buffer, label_get(971), StrBufLen); // Stapled Base
+            if (!strcmp(source, label_get(TL_SecretProjects))) {
+                snprintf(buffer + prev, len, "%s", label_get(TL_StapledBase));
                 return;
             }
         }
         int turns = base->assimilation_turns_left;
-        if (turns > 0 && !strcmp(source, label_get(970))) { // Captured Base
-            snprintf(buffer, StrBufLen, label_captured_base, turns);
+        if (turns > 0 && !strcmp(source, label_get(TL_CapturedBase))) {
+            snprintf(buffer + prev, len, label_captured_base, turns);
             return;
         }
     }
-    strncat(buffer, source, StrBufLen);
+    snprintf(buffer + prev, len, "%s", source);
 }
 
 void __cdecl mod_base_draw(Buffer* buffer, int base_id, int x, int y, int zoom, int opts) {

@@ -582,7 +582,7 @@ bool use_nerve_gas(int faction_id_atk, int faction_id_def) {
     Faction* f_def = &Factions[faction_id_def];
     int value = 0;
     if (*GameRules & RULES_INTENSE_RIVALRY && (f_def->ranking > f_atk->ranking
-    || f_def->diplo_unk_4[faction_id_atk] > f_atk->diplo_unk_4[faction_id_def])) {
+    || f_def->diplo_combat_count[faction_id_atk] > f_atk->diplo_combat_count[faction_id_def])) {
         value = 3 * (f_atk->AI_fight + 1);
     }
     if ((f_atk->diplo_status[faction_id_def] & DIPLO_ATROCITY_VICTIM)
@@ -1080,14 +1080,9 @@ void __cdecl planet_busting(int veh_id, int tx, int ty) {
     int shoot_value = 0;
 
     if (faction_id != player_id && base_id >= 0) {
-        MFaction& m = MFactions[faction_id];
-        *PluralDefault = 0;
-        *GenderDefault = m.is_leader_female;
-        parse_says(0, m.title_leader, -1, -1);
-        parse_says(1, m.name_leader, -1, -1);
-        *PluralDefault = m.is_noun_plural;
-        *GenderDefault = m.noun_gender;
-        parse_says(2, m.noun_faction, -1, -1);
+        parse_says(0, get_title(faction_id), -1, -1);
+        parse_says(1, get_name(faction_id), -1, -1);
+        parse_says(2, get_noun(faction_id), -1, -1);
         parse_says(3, Bases[base_id].name, -1, -1);
         int dist = map_range(Bases[base_id].x, Bases[base_id].y, tx, ty);
         const char* img = (dist > reactor_range) ? "astp_sm.pcx" : "baseobl_sm.pcx";
@@ -1245,7 +1240,7 @@ int __cdecl interceptor(int faction_id_def, int faction_id_atk, int tx, int ty) 
     }
     VEH* veh = &Vehs[veh_id_def];
     if (faction_id_def == MapWin->cOwner || faction_id_atk == MapWin->cOwner) {
-        parse_says(0, &MFactions[faction_id_def].adj_name_faction[0], -1, -1);
+        parse_says(0, get_adjective(faction_id_def), -1, -1);
         *VehLiftX = veh->x;
         *VehLiftY = veh->y;
         int base_id = base_find(veh->x, veh->y);
@@ -1375,10 +1370,10 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
     bool combat_defend = veh_def->is_combat_unit();
     bool psi_combat = (veh_atk->offense_value() < 0 || veh_def->defense_value() < 0);
     int base_id = base_at(tx, ty);
-    Faction* f_atk = &Factions[faction_id_atk];
-    Faction* f_def = &Factions[faction_id_def];
-    MFaction* m_atk = &MFactions[faction_id_atk];
-    MFaction* m_def = &MFactions[faction_id_def];
+    Faction* const f_atk = &Factions[faction_id_atk];
+    Faction* const f_def = &Factions[faction_id_def];
+    MFaction* const m_atk = &MFactions[faction_id_atk];
+    MFaction* const m_def = &MFactions[faction_id_def];
 
     if (can_arty(veh_atk->unit_id, true) && can_arty(veh_def->unit_id, true)) {
         if (veh_atk->triad() != TRIAD_LAND) {
@@ -1507,13 +1502,9 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
         || ((def_status & DIPLO_COMMLINK || atk_status & DIPLO_UNK_800)
         && !(def_status & DIPLO_VENDETTA)))) {
             if (faction_id_def == player_id || *PbemActive) {
-                *PluralDefault = 0;
-                *GenderDefault = m_atk->is_leader_female;
-                parse_says(0, m_atk->title_leader, -1, -1);
-                parse_says(1, m_atk->name_leader, -1, -1);
-                *PluralDefault = m_atk->is_noun_plural;
-                *GenderDefault = m_atk->noun_gender;
-                parse_says(2, m_atk->noun_faction, -1, -1);
+                parse_says(0, get_title(faction_id_atk), -1, -1);
+                parse_says(1, get_name(faction_id_atk), -1, -1);
+                parse_says(2, get_noun(faction_id_atk), -1, -1);
             }
             if (faction_id_def == player_id) {
                 NetMsg_pop(NetMsg, "SURPRISE", -5000, 0, 0);
@@ -1622,7 +1613,8 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
             BattleWin_clear(BattleWin);
             StatusWin_draw(StatusWin, veh_id_atk, veh_id_def, offense_out, defense_out, 0);
             StatusWin->iface_state = 1;
-            parse_gen_name(faction_id_atk, 0, 1);
+            parse_says(0, get_title(faction_id_atk), -1, -1);
+            parse_says(1, get_name(faction_id_atk), -1, -1);
             BattleWin_stop_timer(BattleWin);
             if (!popp(ScriptFile, "BADIDEA", 0, "hasty_sm.pcx", 0)) {
                 BattleWin_pulse_timer(BattleWin);
@@ -1641,7 +1633,8 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
             BattleWin_clear(BattleWin);
             StatusWin_draw(StatusWin, veh_id_atk, veh_id_def, offense_out, defense_out, 0);
             StatusWin->iface_state = 1;
-            parse_gen_name(faction_id_atk, 0, 1);
+            parse_says(0, get_title(faction_id_atk), -1, -1);
+            parse_says(1, get_name(faction_id_atk), -1, -1);
 
             StrBuffer[0] = '\0';
             snprintf(StrBuffer, StrBufLen, "%d.%d", offense_out >> 8, (10 * (offense_out & 0xFF)) >> 8);
@@ -1691,16 +1684,15 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
     bool plr_multi = (*MultiplayerActive && faction_id_def == player_id);
     bool plr_pbem = (*PbemActive && is_human(faction_id_def));
     int render_base = 0;
-    int render_tile = 1;
     int render_battle = 0;
     if (faction_id_atk == player_id || faction_id_def == player_id || (*GameState & STATE_OMNISCIENT_VIEW)) {
         render_battle = 1;
     }
-    if (faction_id_atk != player_id || (veh_atk->is_invisible_lurker() && !veh_atk->is_visible(player_id))) {
-        if (faction_id_def != player_id || (veh_def->is_invisible_lurker() && !veh_def->is_visible(player_id))) {
-            render_tile = 0;
-        }
-    }
+    bool atk_visible = (faction_id_atk == player_id && !veh_atk->is_invisible_lurker())
+        || veh_atk->is_visible(player_id);
+    bool def_visible = (faction_id_def == player_id && !veh_def->is_invisible_lurker())
+        || veh_def->is_visible(player_id);
+    int render_tile = (atk_visible || def_visible);
     if (Factions[player_id].diplo_status[faction_id_atk] & DIPLO_PACT) {
         if(*GamePreferences & PREF_BSC_DONT_QUICK_MOVE_ALLY_VEH) {
             render_battle |= render_tile;
@@ -1805,8 +1797,8 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                 stack_veh(iter_veh_id, 2);
                 stack_kill(iter_veh_id);
                 iter_veh_id = stack_fix(veh_at(tx, ty));
-                f_atk->diplo_unk_3[faction_id_def]++;
-                f_atk->diplo_unk_4[faction_id_def]++;
+                f_atk->diplo_combat_total[faction_id_def]++;
+                f_atk->diplo_combat_count[faction_id_def]++;
             }
         }
         draw_tile_fixup(tx, ty, 1, 2);
@@ -1926,16 +1918,16 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
             if (detach_value && veh_def->cur_hitpoints() > 0) {
                 detach_value -= veh_def_val;
                 if (detach_value <= 0 && combat_rand(100) < 50) {
-                    int capture_id = -1;
+                    const int capture_id = veh_def->faction_id;
                     if (veh_id_def >= 0) {
                         int iter_veh_id = veh_top(veh_id_def);
                         int iter_base_id = base_find(tx, ty);
                         while (iter_veh_id >= 0) {
                             VEH* veh = &Vehs[iter_veh_id];
-                            capture_id = veh->faction_id;
                             parse_says(0, veh->name(), -1, -1);
                             veh->faction_id = veh_atk->faction_id;
-                            if (Bases[iter_base_id].faction_id != veh_atk->faction_id
+                            if (iter_base_id < 0
+                            || Bases[iter_base_id].faction_id != veh_atk->faction_id
                             || Bases[iter_base_id].pop_size < 3) {
                                 veh->home_base_id = -1;
                             } else {
@@ -1944,7 +1936,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                             debug("battle_fight detach %s -> %s\n", veh_atk->name(), veh->name());
                             veh_skip(iter_veh_id);
                             iter_veh_id = veh->next_veh_id_stack;
-                        };
+                        }
                     }
                     bit_set(tx, ty, BIT_SUPPLY_REMOVE, 1);
                     owner_set(tx, ty, veh_atk->faction_id);
@@ -1954,11 +1946,11 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                         draw_tile(tx, ty, 2);
                     }
                     if (veh_atk->faction_id == player_id) {
-                        parse_says(1, MFactions[capture_id].adj_name_faction, -1, -1);
+                        parse_says(1, get_adjective(capture_id), -1, -1);
                         popp(ScriptFile, "WEMARINEDETACH", 0, "navun_sm.pcx", 0);
                     }
                     else if (capture_id == player_id) {
-                        parse_says(1, MFactions[veh_atk->faction_id].adj_name_faction, -1, -1);
+                        parse_says(1, get_adjective(veh_atk->faction_id), -1, -1);
                         popp(ScriptFile, "THEYMARINEDETACH", 0, "navun_sm.pcx", 0);
                     }
                     marine_detach = 1;
@@ -2136,7 +2128,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                 StrBuffer[0] = '\0';
                 say_stats_3(StrBuffer, veh_atk->unit_id);
                 parse_says(4, StrBuffer, -1, -1);
-                int tgt_base_id = base_find_3(tx, ty, -1, -1, -1, player_id);
+                int tgt_base_id = base_find_3(tx, ty, -1, -1, -1, faction_id_def);
                 if (tgt_base_id >= 0) {
                     parse_says(5, Bases[tgt_base_id].name, -1, -1);
                 }
@@ -2148,12 +2140,12 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
             }
             stack_veh(veh_id_atk, 1);
             battle_kill_stack(veh_id_atk, &num_killed, &num_relics, &credits_income, -1, faction_id_def);
-            f_def->diplo_unk_3[faction_id_atk]++;
-            f_def->diplo_unk_4[faction_id_atk]++;
+            f_def->diplo_combat_total[faction_id_atk]++;
+            f_def->diplo_combat_count[faction_id_atk]++;
             goto END_UPKEEP;
         }
-        f_atk->diplo_unk_3[faction_id_def]++;
-        f_atk->diplo_unk_4[faction_id_def]++;
+        f_atk->diplo_combat_total[faction_id_def]++;
+        f_atk->diplo_combat_count[faction_id_def]++;
         FactionCombatWin[faction_id_atk]++;
         FactionCombatLoss[faction_id_def]++;
         if (plr_multi || plr_pbem) {
@@ -2226,15 +2218,13 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                 VEH* veh = &Vehs[iter_veh_id];
                 int next_veh_id = veh->next_veh_id_stack;
                 if (veh->cur_hitpoints() <= 0 || !veh->faction_id) {
-                    battle_kill(iter_veh_id, &num_killed, &num_relics, &credits_income, veh_id_atk, faction_id_atk);
-                    if (iter_veh_id == veh_id_def) {
-                        veh_id_def = -1;
-                    }
-                    if (iter_veh_id < veh_id_def) {
-                        veh_id_def--;
-                    }
-                    if (iter_veh_id < next_veh_id) {
-                        next_veh_id--;
+                    if (battle_kill(iter_veh_id, &num_killed, &num_relics, &credits_income, veh_id_atk, faction_id_atk)) {
+                        if (veh_id_atk > iter_veh_id) {
+                            veh_id_atk--;
+                        }
+                        if (next_veh_id > iter_veh_id) {
+                            next_veh_id--;
+                        }
                     }
                 }
                 iter_veh_id = next_veh_id;
@@ -2263,19 +2253,24 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
         && veh_who(tx, ty) < 0
         && (f_def->diff_level || !is_human(faction_id_def))) {
             base->pop_size--;
-            nerve_gas = 0;
-        }
-        if (nerve_gas) {
-            base->pop_size -= (base->pop_size + 1) / 2;
-            if (base->pop_size < 1 && is_objective(base_id)) {
-                base->pop_size = 1;
+            if (base->pop_size > 0) {
+                base->factions_pop_size_intel[faction_id_atk] = base->pop_size;
+            } else {
+                nerve_gas = 0;
             }
         }
         if (base->pop_size > 0) {
-            base->factions_pop_size_intel[faction_id_atk] = base->pop_size;
             if (!is_human(faction_id_def)) {
                 mod_base_reset(base_id, 0);
             }
+            if (nerve_gas) {
+                base->pop_size -= (base->pop_size + 1) / 2;
+                if (is_objective(base_id) && base->pop_size < 1) {
+                    base->pop_size = 1;
+                }
+            }
+        }
+        if (base->pop_size > 0) {
             if (nerve_gas) {
                 spot_base(base_id, faction_id_atk);
             }
@@ -2364,7 +2359,7 @@ END_BATTLE:
                 if (has_treaty(faction_id_atk, faction_id_def, DIPLO_VENDETTA)) {
                     snprintf(StrBuffer, StrBufLen, "THEIRBOOTY%d", clamp(num_relics, 1, 2));
                 } else { // Alien artifact captured
-                    parse_says(0, parse_set(faction_id_atk), -1, -1);
+                    parse_says(0, get_noun(faction_id_atk), -1, -1);
                     snprintf(StrBuffer, StrBufLen, "THEIRBOOTY3");
                 }
                 net_pop(StrBuffer, 0);
@@ -2406,17 +2401,17 @@ END_BATTLE:
     switch (treaty_report) {
     case 1:
         parse_says(0, m_atk->adj_name_faction, -1, -1);
-        parse_says(1, parse_set(faction_id_def), -1, -1);
+        parse_says(1, get_noun(faction_id_def), -1, -1);
         NetMsg_pop_2("VENDETTAREPORT", 0);
         break;
     case 2:
         parse_says(0, m_atk->adj_name_faction, -1, -1);
-        parse_says(1, parse_set(faction_id_def), -1, -1);
+        parse_says(1, get_noun(faction_id_def), -1, -1);
         NetMsg_pop_2("PACTATTACKED", 0);
         break;
     case 3:
-        parse_says(0, parse_set(faction_id_atk), -1, -1);
-        parse_says(1, parse_set(faction_id_def), -1, -1);
+        parse_says(0, get_noun(faction_id_atk), -1, -1);
+        parse_says(1, get_noun(faction_id_def), -1, -1);
         NetMsg_pop_2("PACTATTACKING", 0);
         break;
     }
@@ -2437,19 +2432,12 @@ END_BATTLE:
         // Fix: removed moves_spent increase after veh_skip is already called
         veh->flags &= ~VFLAG_FULL_MOVE_SKIPPED;
     }
-    // Fix: immediate return after veh is removed, adjust return value based on fuel status
+    // Fix: immediate return after veh is removed
     if (veh->is_missile()) {
         kill(*CurrentVehID);
         return 0;
     }
-    if (is_human(faction_id_atk)
-    || base_id < 0
-    || veh_who(tx, ty) >= 0
-    || veh->triad() != TRIAD_AIR
-    || veh_range == 0) {
-        return 1;
-    }
-    return (veh->movement_turns + 1 < veh_range);
+    return 1;
 }
 
 

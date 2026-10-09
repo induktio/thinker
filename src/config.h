@@ -7,6 +7,7 @@ extern const char* ScriptFile;
 extern const char* BlurbsxFile;
 extern const char* OpeningFile;
 extern const char* MovlistFile;
+extern const char* ExpMovlistFile;
 extern const char* TutorFile;
 extern const char* PopupScriptFile;
 extern const char* MovlistTxtFile;

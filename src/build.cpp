@@ -1,6 +1,12 @@
 
 #include "build.h"
 
+enum UnitScoreFlag {
+    SC_None = 0,
+    SC_Defend = 1,
+    SC_EvalCount = 2,
+};
+
 static const int GOV_NONE = MaxProtoNum;
 
 static bool skip_facility(BASE* base, int item_id) {
@@ -12,7 +18,7 @@ static bool check_retool(BASE* base) {
     return base->plr_owner()
         && Factions[base->faction_id].diff_level > DIFF_SPECIALIST
         && Rules->retool_penalty_prod_change
-        && Rules->retool_exemption != RETOOL_ALWAYS_FREE
+        && Rules->retool_strictness != RETOOL_ALWAYS_FREE
         && !(base->state_flags & BSTATE_PRODUCTION_DONE)
         && base->minerals_accumulated > Rules->retool_exemption;
 }
@@ -133,6 +139,11 @@ int __cdecl mod_base_hurry() {
             return 1;
         }
         return 0;
+    }
+    if (!is_project && t < 0 && turns > 1 && cost < credits/16
+    && (!player_gov || b->governor_flags & GOV_MAY_PROD_FACILITIES)
+    && credits >= clamp(80*f->base_count, 2000, 5000) && credits / 256 > random(64)) {
+        return hurry_item(base_id, mins, cost);
     }
     if (t < 0 && (turns > 1 || b->drone_riots_active()) && cost < credits/8) {
         if ((t == -FAC_RECREATION_COMMONS || t == -FAC_PUNISHMENT_SPHERE
@@ -502,10 +513,11 @@ bool unit_is_better(int unit_id1, int unit_id2) {
     return value;
 }
 
-int unit_score(BASE* base, int unit_id, int psi_score, int psi_atk, int psi_def, bool defend) {
+int unit_score(BASE* const base, int unit_id, int psi_score, int psi_atk, int psi_def, int flags) {
     assert(unit_id >= 0 && unit_id < MaxProtoNum);
     Faction* f = &Factions[base->faction_id];
     AIPlans* p = &plans[base->faction_id];
+    bool defend = flags & SC_Defend;
     const int specials[][2] = {
         {ABL_AAA, 4},
         {ABL_AIR_SUPERIORITY, 2},
@@ -577,7 +589,7 @@ int unit_score(BASE* base, int unit_id, int psi_score, int psi_atk, int psi_def,
         v += 16;
     }
     if (unit_id == base->production_id_last
-    && Rules->retool_exemption >= RETOOL_FREE_PROJECT && check_retool(base)) {
+    && Rules->retool_strictness >= RETOOL_FREE_PROJECT && check_retool(base)) {
         v += 200;
     }
     if (proto_extra_cost(unit_id) > 0) {
@@ -598,8 +610,29 @@ int unit_score(BASE* base, int unit_id, int psi_score, int psi_atk, int psi_def,
     int turns = (max(0, u->cost*10 - base->minerals_accumulated) + mins - 1) / mins;
     int score = v - turns*turns/10 - turns * (u->is_colony() ? 6 : 3)
         * (max(2, 8 - *CurrentTurn/16) + max(0, 2 - base->mineral_surplus/4));
-    debug("unit_score %3d psi: %d cost: %d turns: %d score: %d %s\n",
-        unit_id, psi_score, u->cost, turns, score, u->name);
+    int cnt_num = 0;
+    int cnt_cur = 0;
+    int cnt_val = 0;
+    if (flags & SC_EvalCount) {
+        for (int i = *VehCount - 1; i >= 0; --i) {
+            if (Vehs[i].faction_id == base->faction_id) {
+                cnt_num++;
+                cnt_cur += (Vehs[i].unit_id == unit_id);
+            }
+        }
+        for (int i = *BaseCount - 1; i >= 0; --i) {
+            BASE* b = &Bases[i];
+            if (b->faction_id == base->faction_id && b != base && b->item() >= 0) {
+                cnt_num++;
+                cnt_cur += (b->item() == unit_id);
+            }
+        }
+        cnt_val = clamp(4 * cnt_num, 0, 256)
+            * max(0, min(cnt_cur - 4 - cnt_num / (defend ? 4 : 8), cnt_num/2)) / max(1, cnt_num);
+        score -= cnt_val;
+    }
+    debug("unit_score %3d psi: %d cost: %d turns: %d count: %d score: %d %s\n",
+        unit_id, psi_score, u->cost, turns, cnt_val, score, u->name);
     return score;
 }
 
@@ -658,13 +691,13 @@ int find_proto(int base_id, TriadFlag triad, VehWeaponMode mode, bool defend) {
             }
         }
     }
+    int flags = (defend ? SC_Defend : 0) | (combat ? SC_EvalCount : 0);
     for (int id : choices) {
-        int val = unit_score(base, id, psi_score, psi_atk, psi_def, defend);
+        int val = unit_score(base, id, psi_score, psi_atk, psi_def, flags);
         if (best_id < 0 || unit_is_better(best_id, id) || random(128) > 64 + best_val - val) {
             best_id = id;
             best_val = val;
         }
-
     }
     return best_id;
 }
@@ -782,7 +815,9 @@ int select_combat(int base_id, bool sea_base, bool build_ships) {
             }
         }
     }
-    return find_proto(base_id, TRFLAG_LAND, WMODE_COMBAT, (sea_base || !random(5) ? DEF : ATT));
+    bool defend = (gov & GOV_MAY_PROD_LAND_DEFENSE)
+        && (sea_base || !(gov & GOV_MAY_PROD_LAND_COMBAT) || !random(5));
+    return find_proto(base_id, TRFLAG_LAND, WMODE_COMBAT, defend);
 }
 
 static void push_item(score_max_queue_t& builds, int base_id, int item_id, int retool, int score, int modifier) {

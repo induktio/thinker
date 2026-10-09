@@ -101,8 +101,8 @@ struct LegacyFactionV10 {
     int32_t diplo_gifts[8];
     int32_t diplo_wrongs[8];
     int32_t diplo_betrayed[8];
-    int32_t diplo_unk_3[8];
-    int32_t diplo_unk_4[8];
+    int32_t diplo_combat_total[8];
+    int32_t diplo_combat_count[8];
     int32_t traded_maps;
     int32_t base_governor_adv;
     int32_t atrocities;

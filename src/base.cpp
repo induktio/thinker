@@ -74,7 +74,7 @@ static void find_relocate_base(int faction_id) {
             }
             draw_tile(b->x, b->y, 2);
             parse_says(1, Bases[best_id].name, -1, -1);
-            parse_says(2, parse_set(faction_id), -1, -1);
+            parse_says(2, get_noun(faction_id), -1, -1);
             NetMsg_pop(NetMsg, "ESCAPED", 5000, 0, 0);
         }
     }
@@ -241,8 +241,8 @@ void __cdecl mod_base_kill(int base_id) {
                 if (faction_id == *CurrentPlayerFaction) {
                     popp(ScriptFile, "CORNERFOILED", 0, "econwin_sm.pcx", 0);
                 } else {
-                    parse_says(0, MFactions[faction_id].adj_name_faction, -1, -1);
-                    popp(ScriptFile, "CORNERTHEMFOIL", 0, "econwin_sm.pcx", 0);
+                    parse_says(0, get_adjective(faction_id), -1, -1);
+                    popp(ScriptFile, "CORNERTHEMFOILED", 0, "econwin_sm.pcx", 0);
                 }
             }
         }
@@ -418,8 +418,8 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
     debug("capture_base %2d %2d %d %d %d %d\n",
         base->x, base->y, base_id, faction_id, faction_id_atk, is_probe);
 
-    plr_atk->diplo_unk_4[faction_id] += 2 * base->pop_size;
-    plr_atk->diplo_unk_3[faction_id] += 2 * base->pop_size;
+    plr_atk->diplo_combat_count[faction_id] += 2 * base->pop_size;
+    plr_atk->diplo_combat_total[faction_id] += 2 * base->pop_size;
     strcpy_n(&old_name[0], 25, base->name);
     treaty_off(faction_id_atk, faction_id, DIPLO_UNK_40);
     if (is_human(faction_id_atk) || is_human(faction_id)) {
@@ -447,18 +447,14 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
                     }
                 }
                 if (other_base >= 0) {
-                    parse_says(0, MFactions[faction_id].adj_name_faction, -1, -1);
+                    parse_says(0, get_adjective(faction_id), -1, -1);
                     // Fix: this used previously incorrect negative facility_id
                     parse_says(1, Facility[item_id].name, -1, -1);
                     popp(ScriptFile, "SURVIVEPROJECT", 0, "secproj_sm.pcx", 0);
                 } else {
-                    *GenderDefault = MFactions[faction_id].is_leader_female;
-                    *PluralDefault = 0;
-                    parse_says(0, MFactions[faction_id].title_leader, -1, -1);
-                    parse_says(1, MFactions[faction_id].name_leader, -1, -1);
-                    *GenderDefault = MFactions[faction_id].noun_gender;
-                    *PluralDefault = MFactions[faction_id].is_noun_plural;
-                    parse_says(2, MFactions[faction_id].noun_faction, -1, -1);
+                    parse_says(0, get_title(faction_id), -1, -1);
+                    parse_says(1, get_name(faction_id), -1, -1);
+                    parse_says(2, get_noun(faction_id), -1, -1);
                     parse_says(3, Facility[item_id].name, -1, -1);
                     popp(ScriptFile, "HALTPROJECT", 0, "secproj_sm.pcx", 0);
                     uint32_t fac_idx, fac_bit;
@@ -525,9 +521,7 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
                             NetMsg_pop(NetMsg, "ESCAPED2", 5000, 0, 0);
                         }
                     } else {
-                        *PluralDefault = MFactions[faction_id].is_noun_plural;
-                        *GenderDefault = MFactions[faction_id].noun_gender;
-                        parse_says(2, MFactions[faction_id].noun_faction, -1, -1);
+                        parse_says(2, get_noun(faction_id), -1, -1);
                         NetMsg_pop(NetMsg, "ESCAPED", 5000, 0, 0);
                     }
                     if (!is_human(faction_id)) {
@@ -547,7 +541,7 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
                 if (faction_id == player_id) {
                     popp(ScriptFile, "CORNERFOILED", 0, "econwin_sm.pcx", 0);
                 } else {
-                    parse_says(0, MFactions[faction_id].adj_name_faction, -1, -1);
+                    parse_says(0, get_adjective(faction_id), -1, -1);
                     popp(ScriptFile, "CORNERTHEMFOILED", 0, "econwin_sm.pcx", 0);
                 }
             }
@@ -708,13 +702,9 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
     *GameDrawState |= 2u;
     GraphicWin_redraw(WorldWin);
 
-    *GenderDefault = MFactions[faction_id_atk].noun_gender;
-    *PluralDefault = MFactions[faction_id_atk].is_noun_plural;
-    parse_says(0, MFactions[faction_id_atk].noun_faction, -1, -1);
+    parse_says(0, get_noun(faction_id_atk), -1, -1);
     parse_says(1, old_name, -1, -1);
-    *GenderDefault = MFactions[faction_id].noun_gender;
-    *PluralDefault = MFactions[faction_id].is_noun_plural;
-    parse_says(2, MFactions[faction_id].noun_faction, -1, -1);
+    parse_says(2, get_noun(faction_id), -1, -1);
     parse_num(0, energy_taken);
     char event_label[256];
     event_label[0] = '\0';
@@ -753,9 +743,7 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
     if (base_id >= 0 && alien_fight) {
         if (base->pop_size > 1) {
             int pop_left = base->pop_size / 2;
-            *GenderDefault = MFactions[faction_id_atk].noun_gender;
-            *PluralDefault = MFactions[faction_id_atk].is_noun_plural;
-            parse_says(0, MFactions[faction_id_atk].noun_faction, -1, -1);
+            parse_says(0, get_noun(faction_id_atk), -1, -1);
             parse_says(1, old_name, -1, -1);
             parse_num(0, pop_left);
             base->pop_size = 1;
@@ -858,7 +846,7 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
     && !(*GamePreferences & PREF_AV_INTERLUDES_DISABLED) && !*MultiplayerActive) {
         parse_says(5, base->name, -1, -1);
         parse_says(6, MFactions[player_id].assistant_city, -1, -1);
-        parse_says(7, MFactions[faction_id].adj_name_faction, -1, -1);
+        parse_says(7, get_adjective(faction_id), -1, -1);
         int best_pop = 0;
         int best_id = -1;
         for (int i = 0; i < *BaseCount; i++) {
@@ -880,7 +868,7 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
         const char* dir_label;
         int def_base_id = base_find_2(base_x, base_y, faction_id);
         if (def_base_id < 0) {
-            dir_label = label_get(403); // North
+            dir_label = label_get(TL_North);
         } else {
             BASE* b = &Bases[def_base_id];
             int dx = b->x - base_x;
@@ -893,9 +881,9 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
             }
             if (3 * dx / 2 < dy) {
                 if (base_y <= b->y) {
-                    dir_label = label_get(405); // South
+                    dir_label = label_get(TL_South);
                 } else {
-                    dir_label = label_get(403); // North
+                    dir_label = label_get(TL_North);
                 }
             } else {
                 int wx = base_x - b->x;
@@ -906,9 +894,9 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
                     wx += *MapAreaX;
                 }
                 if (wx > 0) {
-                    dir_label = label_get(406); // West
+                    dir_label = label_get(TL_West);
                 } else {
-                    dir_label = label_get(404); // East
+                    dir_label = label_get(TL_East);
                 }
             }
         }
@@ -1097,13 +1085,9 @@ void __cdecl mod_base_change(int base_id, int item_id) {
                 if (*SunspotDuration > 0 && abs(item_id) != FAC_VOICE_OF_PLANET) {
                     return;
                 }
-                *PluralDefault = 0;
-                *GenderDefault = MFactions[faction_id].is_leader_female;
-                parse_says(0, MFactions[faction_id].title_leader, -1, -1);
-                parse_says(1, MFactions[faction_id].name_leader, -1, -1);
-                *PluralDefault = MFactions[faction_id].is_noun_plural;
-                *GenderDefault = MFactions[faction_id].noun_gender;
-                parse_says(2, MFactions[faction_id].noun_faction, -1, -1);
+                parse_says(0, get_title(faction_id), -1, -1);
+                parse_says(1, get_name(faction_id), -1, -1);
+                parse_says(2, get_noun(faction_id), -1, -1);
                 parse_says(3, Facility[abs(item_id)].name, -1, -1);
                 if (Factions[player_id].diplo_status[faction_id] & DIPLO_PACT) {
                     wave_it(36);
@@ -1125,11 +1109,9 @@ void __cdecl mod_base_change(int base_id, int item_id) {
                 }
             }
             if (*SunspotDuration <= 0) {
-                parse_says(0, MFactions[faction_id].adj_name_faction, -1, -1);
+                parse_says(0, get_adjective(faction_id), -1, -1);
                 parse_says(1, Facility[abs(old_item)].name, -1, -1);
-                *PluralDefault = MFactions[faction_id].is_noun_plural;
-                *GenderDefault = MFactions[faction_id].noun_gender;
-                parse_says(2, MFactions[faction_id].noun_faction, -1, -1);
+                parse_says(2, get_noun(faction_id), -1, -1);
                 parse_says(3, Facility[abs(item_id)].name, -1, -1);
                 popp(ScriptFile, "CHANGEPROJECT", 0, "secproj_sm.pcx", 0);
                 plr->secret_project_intel[bm_word] |= bm_val;
@@ -3223,9 +3205,7 @@ void __cdecl mod_base_ecology() {
             if (faction_id == player_id) {
                 popp(ScriptFile, "TRIGGERWARMING", 0, "searis_sm.pcx", 0);
             } else {
-                *GenderDefault = MFactions[faction_id].noun_gender;
-                *PluralDefault = MFactions[faction_id].is_noun_plural;
-                parse_says(0, MFactions[faction_id].noun_faction, -1, -1);
+                parse_says(0, get_noun(faction_id), -1, -1);
                 popp(ScriptFile, "TRIGGERWARMING2", 0, "searis_sm.pcx", 0);
             }
             return;
@@ -3254,10 +3234,8 @@ void __cdecl mod_base_ecology() {
             world_climate();
             draw_map(1);
             clock_wait(1000);
-            *PluralDefault = 0;
-            *GenderDefault = MFactions[player_id].is_leader_female;
-            parse_says(0, MFactions[player_id].title_leader, -1, -1);
-            parse_says(1, MFactions[player_id].name_leader, -1, -1);
+            parse_says(0, get_title(player_id), -1, -1);
+            parse_says(1, get_name(player_id), -1, -1);
             if (is_known(vx, vy, player_id)) {
                 popp(ScriptFile, "VOLCANO", 0, "volc_sm.pcx", 0);
             }
@@ -3592,9 +3570,7 @@ int __cdecl mod_base_production() {
                     } else {
                         BASE* b = &Bases[SecretProjects[item_id]];
                         parse_says(2, b->name, -1, -1);
-                        *PluralDefault = MFactions[b->faction_id].is_noun_plural;
-                        *GenderDefault = MFactions[b->faction_id].noun_gender;
-                        parse_says(3, MFactions[b->faction_id].noun_faction, -1, -1);
+                        parse_says(3, get_noun(b->faction_id), -1, -1);
                         if (b->faction_id == faction_id) {
                             strcat(StrBuffer, "1");
                         } else {
@@ -3716,7 +3692,7 @@ int __cdecl mod_base_production() {
 
     if (faction_id == player_id || facility_id >= FAC_SUBSPACE_GENERATOR) {
         parse_says(1, Facility[facility_id].name, -1, -1);
-        parse_says(2, MFactions[faction_id].adj_name_faction, -1, -1);
+        parse_says(2, get_adjective(faction_id), -1, -1);
         if (faction_id == player_id) {
             uint32_t ann_byte, ann_bit;
             if (facility_id == FAC_SUBSPACE_GENERATOR) {
@@ -3812,13 +3788,9 @@ int __cdecl mod_base_production() {
                     parse_num(2, Rules->subspace_gen_req);
                     parse_num(3, Rules->base_size_subspace_gen);
                     parse_says(0, base->name, -1, -1);
-                    *GenderDefault = MFactions[faction_id].is_leader_female;
-                    *PluralDefault = 0;
-                    parse_says(1, MFactions[faction_id].title_leader, -1, -1);
-                    parse_says(2, MFactions[faction_id].name_leader, -1, -1);
-                    *GenderDefault = MFactions[faction_id].noun_gender;
-                    *PluralDefault = MFactions[faction_id].is_noun_plural;
-                    parse_says(3, MFactions[faction_id].noun_faction, -1, -1);
+                    parse_says(1, get_title(faction_id), -1, -1);
+                    parse_says(2, get_name(faction_id), -1, -1);
+                    parse_says(3, get_noun(faction_id), -1, -1);
                     popp(ScriptFile, "GENERATOR", 0, "subgen_sm.pcx", 0);
                 }
             } else {
@@ -3888,7 +3860,7 @@ int __cdecl mod_base_production() {
             help_project(item_id);
         } else if (item_id + SP_ID_First == FAC_ASCENT_TO_TRANSCENDENCE
         && (*GamePreferences & PREF_AV_SECRET_PROJECT_MOVIES) && !*MultiplayerActive) {
-            amovie_project_2("theyTranscend");
+            mod_amovie_project("theyTranscend");
         }
         if (item_id + SP_ID_First == FAC_VOICE_OF_PLANET) {
             uint32_t fungus_remove = TerraformRules[FORMER_PLANT_FUNGUS][1];
@@ -3938,9 +3910,7 @@ int __cdecl mod_base_production() {
                 }
             }
             interlude(13, 0, 1, 0);
-            *PluralDefault = 0;
-            *GenderDefault = MFactions[faction_id].is_leader_female;
-            parse_says(5, MFactions[faction_id].name_leader, -1, -1);
+            parse_says(5, get_name(faction_id), -1, -1);
             CharUpperA(ParseStrBuffer[5].str);
             interlude(14, 0, 0, 0);
         }
@@ -3962,9 +3932,7 @@ int __cdecl mod_base_production() {
                 *GameVictoryType = VIC_TRANSCEND_PLR;
             } else {
                 *GameVictoryType = VIC_TRANSCEND_LOSS;
-                *PluralDefault = 0;
-                *GenderDefault = MFactions[faction_id].is_leader_female;
-                parse_says(5, MFactions[faction_id].name_leader, -1, -1);
+                parse_says(5, get_name(faction_id), -1, -1);
                 parse_num(2, game_year(*CurrentTurn + 100));
                 parse_num(3, (*CurrentTurn + 100) / 100);
                 if (!plr_alien) {
@@ -4146,7 +4114,7 @@ int __cdecl mod_base_upkeep(int base_id) {
             && !Console_focus(MapWin, base->x, base->y, MapWin->cOwner)) {
                 draw_tiles(base->x, base->y, 2);
             }
-            parse_says(0, parse_set(base->faction_id), -1, -1);
+            parse_says(0, get_noun(base->faction_id), -1, -1);
             parse_says(1, base->name, -1, -1);
             mod_name_base(base->faction_id, base->name, 1, is_ocean(base));
             parse_says(2, base->name, -1, -1);

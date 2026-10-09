@@ -406,6 +406,8 @@ bool patch_setup(Config* cf) {
     write_jump(0x4243D0, (int)clear_council_notify);
     write_jump(0x4243F0, (int)clear_council_notify_2);
     write_jump(0x4688E0, (int)MapWin_gen_overlays);
+    write_jump(0x476A50, (int)monument);
+    write_jump(0x476B30, (int)clear_monuments);
     write_jump(0x4A0260, (int)sat_attack);
     write_jump(0x4C9420, (int)terraform_cost);
     write_jump(0x4C96E0, (int)action_build);
@@ -692,16 +694,18 @@ bool patch_setup(Config* cf) {
     write_call(0x46B705, (int)world_lower_alt); // MapWin::editor
     write_call(0x4CA13A, (int)world_lower_alt); // action_terraform
     write_call(0x500EFD, (int)world_lower_alt); // planet_busting
-    write_call(0x4E0F85, (int)mod_world_polar_caps); // Console::editor_polar
-    write_call(0x5C8861, (int)mod_world_polar_caps); // world_build
-    write_call(0x4E14BA, (int)mod_world_rocky); // Console::editor_rockiness
-    write_call(0x5C8959, (int)mod_world_rocky); // world_build
-    write_call(0x5C888D, (int)mod_world_temperature); // world_build
-    write_call(0x5C8892, (int)mod_world_riverbeds); // world_build
-    write_call(0x5C2D05, (int)mod_world_shorelines); // world_erosion
-    write_call(0x5C8866, (int)mod_world_shorelines); // world_build
-    write_call(0x5A98C9, (int)mod_world_linearize_contours); // load_daemon
-    write_call(0x5C8949, (int)mod_world_linearize_contours); // world_build
+    write_call(0x4E0F85, (int)world_polar_caps); // Console::editor_polar
+    write_call(0x5C8861, (int)world_polar_caps); // world_build
+    write_call(0x4E14BA, (int)world_rocky); // Console::editor_rockiness
+    write_call(0x5C8959, (int)world_rocky); // world_build
+    write_call(0x5C888D, (int)world_temperature); // world_build
+    write_call(0x5C8892, (int)world_riverbeds); // world_build
+    write_call(0x5C2D05, (int)world_shorelines); // world_erosion
+    write_call(0x5C8866, (int)world_shorelines); // world_build
+    write_call(0x5A98C9, (int)world_linearize_contours); // load_daemon
+    write_call(0x5C8949, (int)world_linearize_contours); // world_build
+    write_call(0x4F2B20, (int)amovie_project); // base_production
+    write_call(0x51602D, (int)amovie_project); // Console::show_movies
     write_call(0x403BD4, (int)mod_amovie_project); // amovie_project
     write_call(0x4F2B4B, (int)mod_amovie_project); // base_production
     write_call(0x524D06, (int)mod_amovie_project); // end_of_game

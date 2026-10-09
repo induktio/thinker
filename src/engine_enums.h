@@ -333,7 +333,7 @@ enum TechCategory {
     TCAT_POWER = 3,
 };
 
-enum GameState {
+enum GameStateFlag {
     STATE_GAME_DONE = 0x1,
     STATE_UNK_2 = 0x2,
     STATE_UNK_4 = 0x4,
@@ -368,7 +368,7 @@ enum GameState {
     STATE_SCN_VICT_CREDITS_COUNT_OBJ = 0x80000000,
 };
 
-enum GameRules {
+enum GameRulesFlag {
     RULES_DO_OR_DIE = 0x1,
     RULES_VICTORY_CONQUEST = 0x2,
     RULES_VICTORY_ECONOMIC = 0x4,
@@ -403,7 +403,7 @@ enum GameRules {
     RULES_SCN_NO_BUILDING_SP = 0x80000000,
 };
 
-enum GameMoreRules {
+enum GameMoreRulesFlag {
     MRULES_SCN_UNITY_PODS_NO_VEHICLES = 0x1,
     MRULES_SCN_UNITY_PODS_NO_TECH = 0x2,
     MRULES_NO_PLANETARY_COUNCIL = 0x4,
@@ -414,7 +414,7 @@ enum GameMoreRules {
     MRULES_UNK_80 = 0x80,
 };
 
-enum GameWarnings {
+enum GameWarningsFlag {
     WARN_STOP_NEW_FAC_BUILT = 0x1,
     WARN_STOP_NON_COMBAT_VEH_BUILT = 0x2,
     WARN_STOP_PROTOTYPE_COMPLETE = 0x4,
@@ -435,7 +435,7 @@ enum GameWarnings {
     WARN_STOP_RANDOM_EVENT = 0x20000,
 };
 
-enum GamePreferences {
+enum GamePreferencesFlag {
     PREF_BSC_PAUSE_END_TURN = 0x1,
     PREF_BSC_AUTOSAVE_EACH_TURN = 0x2,
     PREF_BSC_DONT_QUICK_MOVE_ENEMY_VEH = 0x4, // flag set when unchecked
@@ -472,7 +472,7 @@ enum GamePreferences {
     PREF_AUTO_WAKE_VEH_TRANS_REACH_LAND = 0x80000000,
 };
 
-enum GameMorePreferences {
+enum GameMorePreferencesFlag {
     MPREF_MAP_SHOW_FOG_WAR = 0x1,
     //
     MPREF_ADV_ZOOM_BASE_NO_RECENTER_MAP = 0x4,
@@ -997,6 +997,9 @@ enum ReportViewMode {
 
 enum TextLabel {
     TL_MissionYear = 0,
+    TL_At = 8,
+    TL_NONE = 25,
+    TL_Near = 62,
     TL_OK = 101,
     TL_Cancel = 102,
     TL_Novice = 113,
@@ -1005,20 +1008,46 @@ enum TextLabel {
     TL_Formal = 175,
     TL_Noun = 176,
     TL_Adjective = 177,
+    TL_Prototype = 185,
+    TL_Him = 199,
+    TL_Her = 200,
+    TL_PactBrother = 201,
+    TL_PactSister = 202,
+    TL_PactBrothers = 203,
+    TL_PactSisters = 204,
+    TL_PactOfBrotherhood = 205,
+    TL_PactOfSisterhood = 206,
+    TL_His = 207,
+    TL_Her2 = 208,
+    TL_He = 209,
+    TL_She = 210,
+    TL_DataLinks = 215,
     TL_Alien = 244,
     TL_Aliens = 245,
+    TL_WorldMap = 306,
+    TL_NotAvailable = 310,
+    TL_Unmodified = 322,
+    TL_SecretProjects = 327,
+    TL_North = 403,
+    TL_East = 404,
+    TL_South = 405,
+    TL_West = 406,
     TL_Governor = 457,
     TL_Title = 483,
     TL_Description = 484,
     TL_Gender = 485,
+    TL_CommFrequency = 487,
     TL_Explore = 521,
     TL_Discover = 522,
     TL_Build = 523,
     TL_Conquer = 524,
     TL_Template = 609,
+    TL_TechTypeLetter = 629,
     TL_Untitled = 676,
     TL_Male = 738,
     TL_Female = 739,
+    TL_CapturedBase = 970,
+    TL_StapledBase = 971,
     TL_CustomSize = 1089,
     TL_Horizontal = 1090,
     TL_Vertical = 1091,

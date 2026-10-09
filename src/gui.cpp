@@ -844,6 +844,18 @@ int __cdecl mod_Win_init_class(const char* lpWindowName)
     return value;
 }
 
+void __cdecl amovie_project(int movie_id)
+{
+    if (!text_open(conf.smac_only ? MovlistFile : ExpMovlistFile, "PROJECTS")) {
+        text_get();
+        while (movie_id > 0) {
+            text_get();
+            --movie_id;
+        }
+        mod_amovie_project(text_item());
+    }
+}
+
 void __cdecl mod_amovie_project(const char* name)
 {
     if (!strlen(name) || !conf.video_player) {
@@ -1394,7 +1406,7 @@ void __cdecl say_loc(char* dest, int x, int y, int a4, int a5, int a6)
         base_id = base_find_3(x, y, -1, -1, -1, MapWin->cOwner);
         if (base_id >= 0) {
             a6 = 0;
-            prefix = label_get(62); // near
+            prefix = label_get(TL_Near);
             prefix_space = " ";
         }
     }
@@ -1402,7 +1414,7 @@ void __cdecl say_loc(char* dest, int x, int y, int a4, int a5, int a6)
     const char* trail_space = "";
     if (base_id >= 0) {
         if (a6) {
-            prefix = label_get(8); // at
+            prefix = label_get(TL_At);
             prefix_space = " ";
         }
         base_name = Bases[base_id].name;

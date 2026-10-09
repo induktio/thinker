@@ -136,7 +136,7 @@ struct MAP {
     }
 };
 
-struct FileFindPath {
+struct Filefind {
     char cd_path[256];
     char alt_path[256];
     char last_path[256];
@@ -294,14 +294,14 @@ struct Faction {
     int32_t diplo_gifts[8]; // Gifts and bribes we have given to this faction
     int32_t diplo_wrongs[8]; // Number of times we double crossed this faction
     int32_t diplo_betrayed[8]; // Number of times double crossed by this faction
-    int32_t diplo_unk_3[8]; // ? combat related
-    int32_t diplo_unk_4[8]; // ? combat related
+    int32_t diplo_combat_total[8]; // score for all battles/base captures ever against this faction
+    int32_t diplo_combat_count[8]; // score in the current conflict, reset each time vendetta is declared
     int32_t traded_maps; // bitfield of other factions that have traded maps with faction
     int32_t base_governor_adv; // default advanced Governor settings
     int32_t atrocities; // count committed by faction
     int32_t major_atrocities; // count committed by faction
-    int32_t mind_control_total; // ? probe: mind control base (+4) / subvert unit (+1) total
-    int32_t diplo_mind_control[8]; // ? probe: mind control base (+4) / subvert unit (+1) per faction
+    int32_t mind_control_total; // probe: mind control base (+4) / subvert unit (+1) total
+    int32_t diplo_mind_control[8]; // probe: mind control base (+4) / subvert unit (+1) per faction
     int32_t diplo_stolen_techs[8]; // probe: successfully procured research data (tech/map) per faction
     int32_t energy_credits;
     int32_t hurry_cost_total; // Net MP: Total paid energy to hurry production (current turn)

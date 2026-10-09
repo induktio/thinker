@@ -135,28 +135,19 @@ void __cdecl clear() {
     StrBuffer[0] = '\0';
 }
 
-char* __cdecl says(const char* buf) {
+void __cdecl says(const char* buf) {
     size_t len = strnlen(StrBuffer, StrBufLen);
     snprintf(StrBuffer + len, StrBufLen - len, "%s", buf);
-    return StrBuffer;
 }
 
-char* __cdecl say_num(int value) {
+void __cdecl say_num(int value) {
     size_t len = strnlen(StrBuffer, StrBufLen);
     snprintf(StrBuffer + len, StrBufLen - len, "%d", value);
-    return StrBuffer;
 }
 
-char* __cdecl say_year(char* buf) {
+void __cdecl say_year(char* buf) {
     size_t len = strnlen(buf, StrBufLen);
     snprintf(buf + len, StrBufLen - len, "%d", *CurrentTurn + *StartingMissionYear);
-    return buf;
-}
-
-char* __cdecl parse_set(int faction_id) {
-    *GenderDefault = MFactions[faction_id].noun_gender;
-    *PluralDefault = MFactions[faction_id].is_noun_plural;
-    return MFactions[faction_id].noun_faction;
 }
 
 int __cdecl parse_num(size_t index, int value) {
@@ -2050,12 +2041,10 @@ int __cdecl generators(int faction_id, int* pop_size_req) {
     for (int i = 0; i < *BaseCount; i++) {
         BASE* base = &Bases[i];
         if (base->faction_id == faction_id && base->has_fac_built(FAC_SUBSPACE_GENERATOR)) {
-            if (base->pop_size < Rules->base_size_subspace_gen) {
-                if (pop_size_req) {
-                    ++(*pop_size_req);
-                }
-            } else {
+            if (base->pop_size >= Rules->base_size_subspace_gen) {
                 ++completed;
+            } else if (pop_size_req) {
+                ++(*pop_size_req);
             }
         }
     }
@@ -2302,9 +2291,7 @@ int __cdecl end_of_game(int flag) {
 
     case VIC_ALIEN_LOSS:
         if (!MFactions[player_id].is_alien()) {
-            *GenderDefault = MFactions[victor_id].noun_gender;
-            *PluralDefault = MFactions[victor_id].is_noun_plural;
-            interlude(29, MFactions[victor_id].noun_faction, 1, 0);
+            interlude(29, get_noun(victor_id), 1, 0);
         }
         setup_parser(victor_id);
         popp(ScriptFile, "ENDBEACONLOSE", 0, "beaconlose_sm.pcx", 0);

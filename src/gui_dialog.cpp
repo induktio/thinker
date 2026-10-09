@@ -2,22 +2,6 @@
 #include "gui_dialog.h"
 
 
-void parse_gen_name(int faction_id, size_t title_value, size_t name_value)
-{
-    *PluralDefault = 0;
-    *GenderDefault = MFactions[faction_id].is_leader_female;
-    parse_says(title_value, MFactions[faction_id].title_leader, -1, -1);
-    parse_says(name_value, MFactions[faction_id].name_leader, -1, -1);
-}
-
-void parse_noun_name(int faction_id, size_t title_value, size_t name_value)
-{
-    *PluralDefault = 0;
-    *GenderDefault = MFactions[faction_id].noun_gender;
-    parse_says(title_value, MFactions[faction_id].title_leader, -1, -1);
-    parse_says(name_value, MFactions[faction_id].name_leader, -1, -1);
-}
-
 int __cdecl X_pop(const char* label, fp_none fn)
 {
     if (!conf.warn_on_former_replace && !strcmp(label, "MIMIMI")) {
@@ -66,7 +50,7 @@ int __cdecl DiploPop_spying(int faction_id)
 {
     return has_treaty(MapWin->cOwner, faction_id, DIPLO_PACT|DIPLO_HAVE_INFILTRATOR)
         || has_project(FAC_EMPATH_GUILD, MapWin->cOwner)
-        || (MapWin->cOwner == *GovernorFaction && !is_alien(faction_id));
+        || (MapWin->cOwner == *GovernorFaction && !MFactions[faction_id].is_alien());
 }
 
 /*
@@ -83,11 +67,10 @@ static int diplo_relation(int faction1, int faction2)
 
 int __cdecl mod_threaten(int faction1, int faction2)
 {
-    MFaction& m_plr = MFactions[faction1];
     Faction& f_plr = Factions[faction1];
     Faction& f_cmp = Factions[faction2];
 
-    if (!*MultiplayerActive && !diplo_value_93FA70
+    if (!*MultiplayerActive && !*diplo_value_93FA70
     && has_pact(faction2, faction1)
     && !has_treaty(faction2, faction1, DIPLO_HAVE_SURRENDERED)
     && (*diplo_current_proposal_id == DiploProposalTechTrade
@@ -104,10 +87,8 @@ int __cdecl mod_threaten(int faction1, int faction2)
         if (score > random(64)) {
             f_cmp.diplo_patience[faction1] = 4 - (friction + 3) / 8;
             cause_friction(faction2, faction1, 2);
-            *GenderDefault = m_plr.noun_gender;
-            *PluralDefault = 0;
-            parse_says(0, m_plr.title_leader, -1, -1);
-            parse_says(1, m_plr.name_leader, -1, -1);
+            parse_says(0, get_title(faction1), -1, -1);
+            parse_says(1, get_name(faction1), -1, -1);
             parse_says(2, (const char*)get_pact(faction1), -1, -1);
             X_dialog("ENDPACT", faction2);
             pact_ends(faction1, faction2);
@@ -224,7 +205,8 @@ int __cdecl mod_base_swap(int faction1, int faction2)
     }
     if (*diplo_counter_proposal_id == DiploCounterThreaten) {
         cause_friction(faction2, faction1, 2);
-        parse_gen_name(faction1, 0, 1);
+        parse_says(0, get_title(faction1), -1, -1);
+        parse_says(1, get_name(faction1), -1, -1);
         X_dialog("BASENOCEDE", faction2);
         return 0;
     }
@@ -290,7 +272,8 @@ int __cdecl mod_base_swap(int faction1, int faction2)
     if (*diplo_counter_proposal_id == DiploCounterResearchData) {
         // skipped
     }
-    parse_gen_name(faction1, 0, 1);
+    parse_says(0, get_title(faction1), -1, -1);
+    parse_says(1, get_name(faction1), -1, -1);
     X_dialog("modmenu", "REJECTIDEA", faction2);
     return 0;
 }
@@ -370,7 +353,8 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
         flushlog();
 
         if (f_plr.sanction_turns > 0 || score < -15) {
-            parse_gen_name(faction1, 0, 1);
+            parse_says(0, get_title(faction1), -1, -1);
+            parse_says(1, get_name(faction1), -1, -1);
             X_dialog("modmenu", "REJECTIDEA", faction2);
             return 0;
         }
@@ -385,7 +369,8 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
         ParseNumTable[0] = amount;
         ParseNumTable[1] = payment;
         ParseNumTable[2] = turns;
-        parse_gen_name(faction1, 0, 1);
+        parse_says(0, get_title(faction1), -1, -1);
+        parse_says(1, get_name(faction1), -1, -1);
 
         int value = X_dialog(random(2) ? "ENERGYLOAN1" : "ENERGYLOAN2", faction2);
         if (value == 1) {
@@ -399,7 +384,8 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
     if ((prop_counter != DiploCounterNameAPrice || *diplo_entry_id >= 0)
     && (prop_counter == DiploCounterResearchData || prop_counter == DiploCounterNameAPrice)) {
         bool difficult = f_cmp.AI_fight > 0 && f_cmp.AI_power > 0;
-        parse_gen_name(faction1, 0, 1);
+        parse_says(0, get_title(faction1), -1, -1);
+        parse_says(1, get_name(faction1), -1, -1);
         // Replace faction label reference on Believers with more generic code
         if (*diplo_entry_id >= 0 && (!difficult || f_cmp.SE_research_base > -2)) {
             int tech_value = tech_alt_val(*diplo_entry_id, faction2, 0);

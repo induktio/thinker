@@ -6,6 +6,7 @@ const char* ScriptFile = "SCRIPT";
 const char* BlurbsxFile = "BLURBSX";
 const char* OpeningFile = "OPENING";
 const char* MovlistFile = "MOVLIST";
+const char* ExpMovlistFile = "MOVLISTX";
 const char* TutorFile = "TUTOR";
 const char* PopupScriptFile = "SCRIPT.txt";
 const char* MovlistTxtFile = "movlist.txt";
@@ -95,7 +96,7 @@ int __cdecl text_open(const char* filename, const char* label) {
         if (!Text.File) {
             return true;
         }
-        snprintf(Text.FilePath, 256, "%s", FileFind->last_path);
+        snprintf(Text.FilePath, 256, "%s", FilefindState->last_path);
     } else if (Text.File) {
         is_seeking = true;
     } else {
@@ -103,7 +104,7 @@ int __cdecl text_open(const char* filename, const char* label) {
         if (!Text.File) {
             return true;
         }
-        snprintf(Text.FilePath, 256, "%s", FileFind->last_path);
+        snprintf(Text.FilePath, 256, "%s", FilefindState->last_path);
     }
     if (!label) {
         return false;
@@ -1402,14 +1403,14 @@ int __cdecl read_rules(int tgl_all_rules) {
     for (int i = 0, j = 17; i < MaxTerrainNum; i++) {
         // Excludes: Fungus Removal, Aquifer, Raise Land, Lower Land, Level Terrain
         if (Terraform[i].bit) {
-            BaseButton_set_bubble_text(&FlatButtons[j], Terraform[i].name); // 17-31
+            BaseButton_set_bubble_text(&MainInfc->flatButton[j], Terraform[i].name); // 17-31
             j++;
         }
     }
-    BaseButton_set_bubble_text(&FlatButtons[32], Natural[2].name_short); // LM_JUNGLE
-    BaseButton_set_bubble_text(&FlatButtons[33], Natural[6].name_short); // LM_DUNES
-    BaseButton_set_bubble_text(&FlatButtons[34], Natural[3].name_short); // LM_URANIUM
-    BaseButton_set_bubble_text(&FlatButtons[35], Natural[10].name_short); // LM_GEOTHERMAL
+    BaseButton_set_bubble_text(&MainInfc->flatButton[32], Natural[2].name_short); // LM_JUNGLE
+    BaseButton_set_bubble_text(&MainInfc->flatButton[33], Natural[6].name_short); // LM_DUNES
+    BaseButton_set_bubble_text(&MainInfc->flatButton[34], Natural[3].name_short); // LM_URANIUM
+    BaseButton_set_bubble_text(&MainInfc->flatButton[35], Natural[10].name_short); // LM_GEOTHERMAL
     text_close(); // Make sure file handle is closed
     return false;
 }

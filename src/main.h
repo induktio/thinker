@@ -361,6 +361,7 @@ struct AIPlans {
 #include "net.h"
 #include "map.h"
 #include "mapgen.h"
+#include "monument.h"
 #include "probe.h"
 #include "path.h"
 #include "plan.h"

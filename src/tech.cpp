@@ -23,15 +23,15 @@ void __cdecl say_tech(char* output, int tech_id, int incl_category) {
     char* buf = output + prev;
     size_t len = StrBufLen - prev;
     if (tech_id < -1) {
-        snprintf(buf, len, "%s", label_get(310)); // Not Available
+        snprintf(buf, len, "%s", label_get(TL_NotAvailable));
     } else if (tech_id < 0) {
-        snprintf(buf, len, "%s", label_get(25)); // NONE
+        snprintf(buf, len, "%s", label_get(TL_NONE));
     } else if (tech_id == 9999) {
-        snprintf(buf, len, "%s", label_get(306)); // World Map
+        snprintf(buf, len, "%s", label_get(TL_WorldMap));
     } else if (tech_id < MaxTechnologyNum) {
         if (incl_category) {
             snprintf(buf, len, "%s (%s%d)", Tech[tech_id].name,
-                label_get(629 + tech_category(tech_id)), // 'E#', 'D#', 'B#', 'C#'
+                label_get(TL_TechTypeLetter + tech_category(tech_id)), // 'E', 'D', 'B', 'C'
                 tech_level(tech_id, 0));
         } else {
             snprintf(buf, len, "%s", Tech[tech_id].name);
@@ -39,14 +39,14 @@ void __cdecl say_tech(char* output, int tech_id, int incl_category) {
     } else if (tech_id < 97) {
         int faction_id = tech_id - MaxTechnologyNum;
         if (*GameLanguage) {
-            snprintf(buf, len, "%s (%s)", label_get(487), // Comm Frequency
-                parse_set(faction_id));
+            snprintf(buf, len, "%s (%s)",
+                label_get(TL_CommFrequency), get_noun(faction_id));
         } else {
             snprintf(buf, len, "%s %s",
-                MFactions[faction_id].adj_name_faction, label_get(487)); // Comm Frequency
+                MFactions[faction_id].adj_name_faction, label_get(TL_CommFrequency));
         }
     } else {
-        snprintf(buf, len, "%s %s", Units[tech_id - 97].name, label_get(185)); // Prototype
+        snprintf(buf, len, "%s %s", Units[tech_id - 97].name, label_get(TL_Prototype));
     }
 }
 
@@ -855,7 +855,7 @@ void __cdecl tech_achieved(int faction_id, int tech_id, int faction_id_2, int is
                 if (faction_id_2 == -1) {
                     parse_says(2, Facility[FAC_PLANETARY_DATALINKS].name, -1, -1);
                 } else {
-                    parse_says(2, label_get(215), -1, -1); // Data Links
+                    parse_says(2, label_get(TL_DataLinks), -1, -1);
                 }
             }
         } else {

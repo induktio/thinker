@@ -48,12 +48,12 @@ instead of the global state since changing it would not be necessary.
 */
 void __cdecl world_climate() {
     debug("world_climate_start\n");
-    mod_world_shorelines();
-    mod_world_temperature();
-    mod_world_rivers();
-    mod_world_rainfall();
+    world_shorelines();
+    world_temperature();
+    world_rivers();
+    world_rainfall();
     Path_continents(Paths);
-    mod_world_analysis();
+    world_analysis();
     if (!*WorldSkipTerritory) {
         reset_territory();
     }
@@ -69,7 +69,7 @@ void __cdecl world_climate() {
     debug("world_climate_done\n");
 }
 
-void __cdecl mod_world_temperature() {
+void __cdecl world_temperature() {
     GameRandom loc_rnd;
     loc_rnd.reseed(*MapRandomSeed + 17);
     int solar_scale = *MapAreaY / WorldBuilder->solar_energy;
@@ -121,7 +121,7 @@ void __cdecl mod_world_temperature() {
     }
 }
 
-void __cdecl mod_world_rivers() {
+void __cdecl world_rivers() {
     GameRandom loc_rnd;
     const int n_tiles = *MapAreaTiles;
     int river_count = 0;
@@ -301,7 +301,7 @@ void __cdecl mod_world_rivers() {
     }
 }
 
-void __cdecl mod_world_rainfall() {
+void __cdecl world_rainfall() {
     const int player_id = *CurrentPlayerFaction;
     const int n_tiles = *MapAreaTiles;
     *dword_9B22E0 = -1;
@@ -546,7 +546,7 @@ void __cdecl mod_world_rainfall() {
     }
 }
 
-void __cdecl mod_world_analysis() {
+void __cdecl world_analysis() {
     for (int i = 0; i < MaxRegionNum; i++) {
         Continents[i].open_terrain = 0;
     }
@@ -604,7 +604,7 @@ void __cdecl mod_world_analysis() {
     }
 }
 
-void __cdecl mod_world_rocky() {
+void __cdecl world_rocky() {
     for (int y = 0; y < *MapAreaY; y++) {
         for (int x = y & 1; x < *MapAreaX; x += 2) {
             MAP* sq = mapsq(x, y);
@@ -640,7 +640,7 @@ void __cdecl mod_world_rocky() {
     }
 }
 
-void __cdecl mod_world_riverbeds() {
+void __cdecl world_riverbeds() {
     for (int i = 0; i < *MapAreaTiles; i++) {
         (*MapTiles)[i].items &= ~BIT_RIVER_SRC;
     }
@@ -682,7 +682,7 @@ void __cdecl mod_world_riverbeds() {
     }
 }
 
-void __cdecl mod_world_shorelines() {
+void __cdecl world_shorelines() {
     for (int y = 0; y < *MapAreaY; y++) {
         for (int x = y & 1; x < *MapAreaX; x += 2) {
             int alt = alt_natural(x, y);
@@ -710,7 +710,7 @@ void __cdecl mod_world_shorelines() {
     }
 }
 
-void __cdecl mod_world_polar_caps() {
+void __cdecl world_polar_caps() {
     int yd = *MapAreaY / 2 * 2;
     for (int x = 0; x < *MapAreaX; x += 2) {
         world_alt_put_detail(x, 0);
@@ -725,7 +725,7 @@ void __cdecl mod_world_polar_caps() {
     }
 }
 
-void __cdecl mod_world_linearize_contours() {
+void __cdecl world_linearize_contours() {
     for (int y = 0; y < *MapAreaY; y++) {
         for (int x = y & 1; x < *MapAreaX; x += 2) {
             int alt = alt_natural(x, y);
@@ -1483,10 +1483,10 @@ void world_generate(uint32_t seed) {
     *MapNativeLifeForms, *MapCloudCover, conf.world_sea_levels[*MapOceanCoverage], level_mod);
 
     if (conf.world_polar_caps) {
-        mod_world_polar_caps();
+        world_polar_caps();
     }
-    mod_world_linearize_contours();
-    mod_world_shorelines();
+    world_linearize_contours();
+    world_shorelines();
     Path_continents(Paths);
     Points bridges;
 
@@ -1524,8 +1524,8 @@ void world_generate(uint32_t seed) {
         world_alt_set(p.x, p.y, ALT_OCEAN, 1);
         world_alt_set(p.x, p.y, ALT_OCEAN_SHELF, 1);
     }
-    mod_world_temperature();
-    mod_world_riverbeds();
+    world_temperature();
+    world_riverbeds();
     mod_world_fungus(noise);
     Path_continents(Paths);
 
@@ -1612,7 +1612,7 @@ void world_generate(uint32_t seed) {
     *WorldAddTemperature = 0;
     *WorldSkipTerritory = 0; // If this flag is false, reset_territory is run in world_climate
     world_climate(); // Run Path::continents
-    mod_world_rocky();
+    world_rocky();
 
     if (!*GameHalted) {
         MapWin_clear_terrain(MapWin);

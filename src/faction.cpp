@@ -305,8 +305,8 @@ void __cdecl treaty_on(int faction_id_1, int faction_id_2, uint32_t status) {
     }
     if (status & DIPLO_VENDETTA) {
         if (plr1->diplo_status[faction_id_2] & (DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT)) {
-            plr1->diplo_unk_4[faction_id_2] = 0;
-            plr2->diplo_unk_4[faction_id_1] = 0;
+            plr1->diplo_combat_count[faction_id_2] = 0;
+            plr2->diplo_combat_count[faction_id_1] = 0;
         }
         status |= (DIPLO_UNK_80000000|DIPLO_UNK_100|DIPLO_COMMLINK);
         plr1->diplo_status[faction_id_2] &= ~DiploExcludeFight;
@@ -359,7 +359,7 @@ void __cdecl set_treaty(int faction_id_1, int faction_id_2, uint32_t status, boo
                 probe_renew_set(faction_id_1, faction_id_2, turns);
                 if (faction_id_1 == MapWin->cOwner) {
                     ParseNumTable[0] = turns;
-                    parse_says(0, parse_set(faction_id_2), -1, -1);
+                    parse_says(0, get_noun(faction_id_2), -1, -1);
                     NetMsg_pop(NetMsg, "SPYRENEW", 5000, 0, 0);
                 }
             }
@@ -439,10 +439,8 @@ void __cdecl atrocity(int faction_id, int faction_id_tgt, int skip_init_check, i
                             }
                             if (toggle) {
                                 if (faction_id == *CurrentPlayerFaction) {
-                                    *PluralDefault = 0;
-                                    *GenderDefault = m_plr->is_leader_female;
-                                    parse_says(0, m_plr->title_leader, -1, -1);
-                                    parse_says(1, m_plr->name_leader, -1, -1);
+                                    parse_says(0, get_title(faction_id), -1, -1);
+                                    parse_says(1, get_name(faction_id), -1, -1);
                                     diplomacy_caption(faction_id, i);
                                     X_pops("ATROCIOUSITY", FactionPortraits[i], 0);
                                 }
@@ -469,14 +467,10 @@ void __cdecl atrocity(int faction_id, int faction_id_tgt, int skip_init_check, i
                 if (is_human(faction_id) && !is_human(faction_id_tgt) && !prev_victim && plr->atrocities >= 5) {
                     Factions[faction_id_tgt].player_flags |= PFLAG_COMMIT_ATROCITIES_WANTONLY;
                 }
-                *PluralDefault = 0;
-                *GenderDefault = m_plr->is_leader_female;
-                parse_says(0, m_plr->title_leader, -1, -1);
-                parse_says(1, m_plr->name_leader, -1, -1);
-                *PluralDefault = 0;
-                *GenderDefault = MFactions[faction_id_tgt].is_leader_female;
-                parse_says(2, MFactions[faction_id_tgt].title_leader, -1, -1);
-                parse_says(3, MFactions[faction_id_tgt].name_leader, -1, -1);
+                parse_says(0, get_title(faction_id), -1, -1);
+                parse_says(1, get_name(faction_id), -1, -1);
+                parse_says(2, get_title(faction_id_tgt), -1, -1);
+                parse_says(3, get_name(faction_id_tgt), -1, -1);
                 parse_num(0, turns);
                 if (!m_plr->is_alien()) {
                     if (faction_id == *CurrentPlayerFaction) {
@@ -496,7 +490,6 @@ void __cdecl atrocity(int faction_id, int faction_id_tgt, int skip_init_check, i
 }
 
 void __cdecl major_atrocity(int faction_id, int faction_id_tgt) {
-    MFaction* m = &MFactions[faction_id];
     Faction* plr = &Factions[faction_id];
     if (faction_id_tgt >= 0) {
         set_treaty(faction_id_tgt, faction_id, DIPLO_MAJOR_ATROCITY_VICTIM|DIPLO_ATROCITY_VICTIM|DIPLO_WANT_REVENGE, 1);
@@ -519,20 +512,12 @@ void __cdecl major_atrocity(int faction_id, int faction_id_tgt) {
                     Factions[i].diplo_status[faction_id] |= DIPLO_UNK_40;
                     Factions[i].diplo_merc[faction_id] = 50;
                     plr->diplo_spoke[i] = *CurrentTurn;
-                    *PluralDefault = 0;
-                    *GenderDefault = MFactions[i].is_leader_female;
-                    parse_says(0, MFactions[i].title_leader, -1, -1);
-                    parse_says(1, MFactions[i].name_leader, -1, -1);
-                    *PluralDefault = MFactions[i].is_noun_plural;
-                    *GenderDefault = MFactions[i].noun_gender;
-                    parse_says(2, MFactions[i].noun_faction, -1, -1);
-                    *PluralDefault = 0;
-                    *GenderDefault = m->is_leader_female;
-                    parse_says(3, m->title_leader, -1, -1);
-                    parse_says(4, m->name_leader, -1, -1);
-                    *PluralDefault = m->is_noun_plural;
-                    *GenderDefault = m->noun_gender;
-                    parse_says(5, m->noun_faction, -1, -1);
+                    parse_says(0, get_title(i), -1, -1);
+                    parse_says(1, get_name(i), -1, -1);
+                    parse_says(2, get_noun(i), -1, -1);
+                    parse_says(3, get_title(faction_id), -1, -1);
+                    parse_says(4, get_name(faction_id), -1, -1);
+                    parse_says(5, get_noun(faction_id), -1, -1);
                     snprintf(StrBuffer, StrBufLen, "MAJORATROCITY%d", faction_id != *CurrentPlayerFaction);
                     popp(ScriptFile, StrBuffer, 0, "council_sm.pcx", 0);
                 }
@@ -569,28 +554,17 @@ int __cdecl break_treaty(int faction_id, int faction_id_tgt, uint32_t status) {
 
 void __cdecl intervention(int faction_id_def, int faction_id_atk) {
     for (int i = 1; i < MaxPlayerNum; i++) {
-        MFaction* m = &MFactions[i];
         Faction* plr = &Factions[i];
         if (i != faction_id_def && i != faction_id_atk && is_alive(i)
         && plr->diplo_status[faction_id_def] & DIPLO_PACT
         && !(plr->diplo_status[faction_id_atk] & (DIPLO_VENDETTA|DIPLO_PACT))) {
-            *PluralDefault = m->is_noun_plural;
-            *GenderDefault = m->noun_gender;
-            parse_says(0, m->noun_faction, -1, -1);
-            *PluralDefault = MFactions[faction_id_def].is_noun_plural;
-            *GenderDefault = MFactions[faction_id_def].noun_gender;
-            parse_says(1, MFactions[faction_id_def].noun_faction, -1, -1);
-            *PluralDefault = 0;
-            *GenderDefault = m->is_leader_female;
-            parse_says(2, m->title_leader, -1, -1);
-            parse_says(3, m->name_leader, -1, -1);
-            *PluralDefault = 0;
-            *GenderDefault = MFactions[faction_id_atk].is_leader_female;
-            parse_says(4, MFactions[faction_id_atk].title_leader, -1, -1);
-            parse_says(5, MFactions[faction_id_atk].name_leader, -1, -1);
-            *PluralDefault = MFactions[faction_id_atk].is_noun_plural;
-            *GenderDefault = MFactions[faction_id_atk].noun_gender;
-            parse_says(6, MFactions[faction_id_atk].noun_faction, -1, -1);
+            parse_says(0, get_noun(i), -1, -1);
+            parse_says(1, get_noun(faction_id_def), -1, -1);
+            parse_says(2, get_title(i), -1, -1);
+            parse_says(3, get_name(i), -1, -1);
+            parse_says(4, get_title(faction_id_atk), -1, -1);
+            parse_says(5, get_name(faction_id_atk), -1, -1);
+            parse_says(6, get_noun(faction_id_atk), -1, -1);
             if (is_human(faction_id_atk) || is_human(faction_id_def)) {
                 if (is_human(faction_id_atk)) {
                     Factions[faction_id_atk].diplo_spoke[i] = *CurrentTurn;
@@ -608,38 +582,24 @@ void __cdecl intervention(int faction_id_def, int faction_id_atk) {
 }
 
 void __cdecl double_cross(int faction_id_atk, int faction_id_def, int faction_id_other) {
-    MFaction* m_atk = &MFactions[faction_id_atk];
     Faction* plr_atk = &Factions[faction_id_atk];
     Faction* plr_def = &Factions[faction_id_def];
 
     if (*MultiplayerActive) {
         if (faction_id_def != *CurrentPlayerFaction || faction_id_other <= 0) {
             if (faction_id_def == *CurrentPlayerFaction && is_human(faction_id_atk)) {
-                *PluralDefault = 0;
-                *GenderDefault = m_atk->is_leader_female;
-                parse_says(0, m_atk->title_leader, -1, -1);
-                parse_says(1, m_atk->name_leader, -1, -1);
-                *PluralDefault = m_atk->is_noun_plural;
-                *GenderDefault = m_atk->noun_gender;
-                parse_says(2, m_atk->noun_faction, -1, -1);
+                parse_says(0, get_title(faction_id_atk), -1, -1);
+                parse_says(1, get_name(faction_id_atk), -1, -1);
+                parse_says(2, get_noun(faction_id_atk), -1, -1);
                 NetMsg_pop(NetMsg, "VENDETTAWARNING", 5000, 0, 0);
             }
         } else {
-            MFaction* m_other = &MFactions[faction_id_other];
-            *PluralDefault = 0;
-            *GenderDefault = m_other->is_leader_female;
-            parse_says(0, m_other->title_leader, -1, -1);
-            parse_says(1, m_other->name_leader, -1, -1);
-            *PluralDefault = m_other->is_noun_plural;
-            *GenderDefault = m_other->noun_gender;
-            parse_says(2, m_other->noun_faction, -1, -1);
-            *PluralDefault = 0;
-            *GenderDefault = m_atk->is_leader_female;
-            parse_says(3, m_atk->title_leader, -1, -1);
-            parse_says(4, m_atk->name_leader, -1, -1);
-            *PluralDefault = m_atk->is_noun_plural;
-            *GenderDefault = m_atk->noun_gender;
-            parse_says(5, m_atk->noun_faction, -1, -1);
+            parse_says(0, get_title(faction_id_other), -1, -1);
+            parse_says(1, get_name(faction_id_other), -1, -1);
+            parse_says(2, get_noun(faction_id_other), -1, -1);
+            parse_says(3, get_title(faction_id_atk), -1, -1);
+            parse_says(4, get_name(faction_id_atk), -1, -1);
+            parse_says(5, get_noun(faction_id_atk), -1, -1);
             NetMsg_pop(NetMsg, "INCITED", 5000, 0, 0);
         }
     }
@@ -763,10 +723,7 @@ int __cdecl steal_tech(int faction_id, int faction_id_tgt, int is_steal) {
         message_data(0x244C, 0, faction_id, tech_id, faction_id_tgt, 0);
     } else {
         if (faction_id_tgt == *CurrentPlayerFaction && tech_id != 9999) {
-            MFaction* m = &MFactions[faction_id];
-            *PluralDefault = m->is_noun_plural;
-            *GenderDefault = m->noun_gender;
-            parse_says(0, m->noun_faction, -1, -1);
+            parse_says(0, get_noun(faction_id), -1, -1);
             StrBuffer[0] = '\0';
             say_tech(StrBuffer, tech_id, 0);
             parse_says(1, StrBuffer, -1, -1);
@@ -1110,15 +1067,15 @@ char* __cdecl get_pact(int faction_id) {
     *PluralDefault = 0;
     *GenderDefault = MFactions[faction_id].is_leader_female;
     if (MFactions[faction_id].is_leader_female) {
-        return label_get(202); // Pact Sister
+        return label_get(TL_PactSister);
     }
-    return label_get(201); // Pact Brother
+    return label_get(TL_PactBrother);
 }
 
 char* __cdecl get_pacts(int faction_id) {
     *PluralDefault = 1;
     *GenderDefault = MFactions[faction_id].is_leader_female;
-    return label_get(MFactions[faction_id].is_leader_female ? 204 : 203);
+    return label_get(MFactions[faction_id].is_leader_female ? TL_PactSisters : TL_PactBrothers);
 }
 
 char* __cdecl get_pacts_2(int faction_id, int faction_id_2) {
@@ -1126,21 +1083,21 @@ char* __cdecl get_pacts_2(int faction_id, int faction_id_2) {
     int is_female_2 = MFactions[faction_id_2].is_leader_female;
     *PluralDefault = 1;
     *GenderDefault = is_female_1 && is_female_2;
-    return label_get(is_female_1 && is_female_2 ? 204 : 203);
+    return label_get(is_female_1 && is_female_2 ? TL_PactSisters : TL_PactBrothers);
 }
 
 char* __cdecl get_pact_hood(int faction_id, int faction_id_2) {
     *PluralDefault = 0;
     *GenderDefault = 0;
     if (MFactions[faction_id].is_leader_female && MFactions[faction_id_2].is_leader_female) {
-        return label_get(206); // Pact of Sisterhood
+        return label_get(TL_PactOfSisterhood);
     }
-    return label_get(205); // Pact of Brotherhood
+    return label_get(TL_PactOfBrotherhood);
 }
 
 char* __cdecl get_his_her(int faction_id, int tgl) {
     snprintf(PlrBuf, StrBufLen, "%s",
-        MFactions[faction_id].is_leader_female ? label_get(208) : label_get(207));
+        MFactions[faction_id].is_leader_female ? label_get(TL_Her2) : label_get(TL_His));
     if (tgl == 1) {
         PlrBuf[0] = toupper((unsigned char)PlrBuf[0]);
     } else if (tgl != 0) {
@@ -1151,7 +1108,7 @@ char* __cdecl get_his_her(int faction_id, int tgl) {
 
 char* __cdecl get_him_her(int faction_id, int tgl) {
     snprintf(PlrBuf, StrBufLen, "%s",
-        MFactions[faction_id].is_leader_female ? label_get(200) : label_get(199));
+        MFactions[faction_id].is_leader_female ? label_get(TL_Her) : label_get(TL_Him));
     if (tgl == 1) {
         PlrBuf[0] = toupper((unsigned char)PlrBuf[0]);
     } else if (tgl != 0) {
@@ -1162,7 +1119,7 @@ char* __cdecl get_him_her(int faction_id, int tgl) {
 
 char* __cdecl get_he_she(int faction_id, int tgl) {
     snprintf(PlrBuf, StrBufLen, "%s",
-        MFactions[faction_id].is_leader_female ? label_get(210) : label_get(209));
+        MFactions[faction_id].is_leader_female ? label_get(TL_She) : label_get(TL_He));
     if (tgl == 1) {
         PlrBuf[0] = toupper((unsigned char)PlrBuf[0]);
     } else if (tgl != 0) {
@@ -1965,8 +1922,8 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
             plr->diplo_gifts[i] = 0;
             plr->diplo_wrongs[i] = 0;
             plr->diplo_betrayed[i] = 0;
-            plr->diplo_unk_3[i] = 0;
-            plr->diplo_unk_4[i] = 0;
+            plr->diplo_combat_total[i] = 0;
+            plr->diplo_combat_count[i] = 0;
         }
         plr->loan_balance[i] = 0;
         plr->loan_payment[i] = 0;
@@ -2079,9 +2036,7 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
             }
             if (is_player) {
                 int k = (setup_id < 0 ? 0 : setup_id);
-                *GenderDefault = MFactions[k].noun_gender;
-                *PluralDefault = MFactions[k].is_noun_plural;
-                parse_says(0, &MFactions[k].noun_faction[0], -1, -1);
+                parse_says(0, get_noun(k), -1, -1);
                 if (*MultiplayerActive) {
                     net_game_close();
                     *ControlTurnA = 1;
@@ -2426,16 +2381,10 @@ int __cdecl mod_eliminate_player(int faction_id, int setup_id) {
             setup_id = 0;
         }
         draw_map(1);
-        *GenderDefault = m->noun_gender;
-        *PluralDefault = m->is_noun_plural;
-        parse_says(0, m->noun_faction, -1, -1);
-        *GenderDefault = MFactions[setup_id].noun_gender;
-        *PluralDefault = MFactions[setup_id].is_noun_plural;
-        parse_says(1, MFactions[setup_id].noun_faction, -1, -1);
-        *GenderDefault = m->is_leader_female;
-        *PluralDefault = 0;
-        parse_says(2, m->title_leader, -1, -1);
-        parse_says(3, m->name_leader, -1, -1);
+        parse_says(0, get_noun(faction_id), -1, -1);
+        parse_says(1, get_noun(setup_id), -1, -1);
+        parse_says(2, get_title(faction_id), -1, -1);
+        parse_says(3, get_name(faction_id), -1, -1);
         parse_says(4, get_his_her(faction_id, 0), -1, -1);
         char name[StrBufLen] = {};
         char file[StrBufLen] = {};
@@ -2478,7 +2427,7 @@ int __cdecl mod_eliminate_player(int faction_id, int setup_id) {
                 }
                 draw_tiles(x, y, 2);
                 MapWin_set_center(MapWin, x, y, 1);
-                parse_says(6, m->adj_name_faction, -1, -1);
+                parse_says(6, get_adjective(faction_id), -1, -1);
                 if (!plr_alien) {
                     popp(ScriptFile, "TRACKED", 0, "escpod_sm.pcx", 0);
                 } else {
