@@ -1,4 +1,3 @@
-
 import idc
 import idaapi
 import idautils
@@ -9,7 +8,7 @@ def clean_name(addr):
         name = idaapi.demangle_name(raw_name, idaapi.get_inf_structure().demnames)
         return name.split('(')[0].split(' ')[-1]
     except:
-        return GetFunctionName(addr)
+        return idc.get_func_name(addr)
 
 num = 0
 ptr = 0x952828  # Vehs array base
@@ -41,7 +40,7 @@ for seg in idautils.Segments():
                         assert(len(offset) == 1)
                         assert(offset[0] > 0 and offset[0] <= ilen - 4)
                         addr = head + offset[0]
-                        disp = Dword(addr) - ptr
+                        disp = idc.get_wide_dword(addr) - ptr
                         print('{0x%X, 0x%02X}, // %s' % (addr, disp, name))
                         num += 1
                         break # Skip repeated lines
