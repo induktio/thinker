@@ -19,7 +19,7 @@ bool has_wmode(int faction_id, VehWeaponMode mode) {
     }
     for (int i = 0; i < MaxProtoFactionNum; i++) {
         UNIT* u = &Units[i];
-        if (mod_veh_avail(i, faction_id, -1) && u->weapon_mode() == mode) {
+        if (veh_avail(i, faction_id, -1) && u->weapon_mode() == mode) {
             return true;
         }
     }
@@ -35,7 +35,7 @@ bool has_aircraft(int faction_id) {
     }
     for (int i = 0; i < MaxProtoFactionNum; i++) {
         UNIT* u = &Units[i];
-        if (mod_veh_avail(i, faction_id, -1) && u->triad() == TRIAD_AIR && !u->is_missile()) {
+        if (veh_avail(i, faction_id, -1) && u->triad() == TRIAD_AIR && !u->is_missile()) {
             return true;
         }
     }
@@ -51,7 +51,7 @@ bool has_ships(int faction_id) {
     }
     for (int i = 0; i < MaxProtoFactionNum; i++) {
         UNIT* u = &Units[i];
-        if (mod_veh_avail(i, faction_id, -1) && u->triad() == TRIAD_SEA) {
+        if (veh_avail(i, faction_id, -1) && u->triad() == TRIAD_SEA) {
             return true;
         }
     }
@@ -2297,7 +2297,7 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
             int spawn_val_c = -1;
             for (int unit_id = 0; unit_id < MaxProtoNum; unit_id++) {
                 UNIT* u = &Units[unit_id];
-                if (mod_veh_avail(unit_id, faction_id, -1) && u->offense_value() != 0) {
+                if (veh_avail(unit_id, faction_id, -1) && u->offense_value() != 0) {
                     if ((plr_aquatic && u->triad() == TRIAD_SEA) || (!plr_aquatic && u->triad() == TRIAD_LAND)) {
                         int v1 = 8 * armor_val(unit_id, faction_id) - weap_val(unit_id, faction_id);
                         if (v1 > spawn_val_a) {

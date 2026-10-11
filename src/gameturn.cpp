@@ -628,7 +628,7 @@ void __cdecl mash_planes() {
         if (!sq || sq->base_who() >= 0) {
             continue;
         }
-        if ((sq->items & BIT_AIRBASE) || mod_stack_check(veh_id, 6, ABL_CARRIER, -1, -1)) {
+        if ((sq->items & BIT_AIRBASE) || stack_check(veh_id, 6, ABL_CARRIER, -1, -1)) {
             continue;
         }
         bool visible = false;
@@ -2033,7 +2033,7 @@ void __cdecl turn_upkeep() {
         if (veh->triad() == TRIAD_AIR && veh->range() && veh_speed(veh_id, 0) - veh->moves_spent > 0) {
             MAP* sq = mapsq(veh->x, veh->y);
             if (sq && sq->base_who() < 0 && !(sq->items & BIT_AIRBASE)
-            && !mod_stack_check(veh_id, 6, ABL_CARRIER, -1, -1)) {
+            && !stack_check(veh_id, 6, ABL_CARRIER, -1, -1)) {
                 // Fix bug here that prevented the turn from advancing
                 // while any needlejet in flight has moves left.
                 if (veh->movement_turns < veh->range() - 1) {

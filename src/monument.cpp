@@ -23,7 +23,7 @@ void __cdecl monument(int is_new_event) {
         if (achieved_count) {
             if (!MonuWin_init(MonuWin)) {
                 MonuWin->is_detail_open = is_new_event != 0;
-                (*FWin_set_modal((DWORD*)MonuWin->vtable + 57))(MonuWin, 0, 0, 0);
+                CallFunc<57, FWin_set_modal>(MonuWin, 0, nullptr, nullptr);
                 GraphicWin_close(MonuWin);
                 do_all_draws();
             }

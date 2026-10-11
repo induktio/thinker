@@ -123,9 +123,9 @@ int __cdecl mod_mind_control(int base_id, int faction_id, int is_corner_market) 
         dist /= 2;
     }
     int veh_id = stack_fix(veh_at(base->x, base->y));
-    int cost = ((mod_stack_check(veh_id, 2, PLAN_COMBAT, -1, -1)
-        + mod_stack_check(veh_id, 2, PLAN_OFFENSE, -1, -1))
-        * (mod_stack_check(veh_id, 6, ABL_POLY_ENCRYPTION, -1, -1) + 1)
+    int cost = ((stack_check(veh_id, 2, PLAN_COMBAT, -1, -1)
+        + stack_check(veh_id, 2, PLAN_OFFENSE, -1, -1))
+        * (stack_check(veh_id, 6, ABL_POLY_ENCRYPTION, -1, -1) + 1)
         + Factions[faction_id].mind_control_total / 4 + base->pop_size)
         * ((Factions[base->faction_id].corner_market_cost
         + Factions[base->faction_id].energy_credits + 1200) / (dist + 4));
@@ -636,7 +636,7 @@ MOV_START:
                 FacilityId facility_id = (FacilityId)((rnd_val + i) % Fac_All_ID_Last + 1);
                 if (facility_id == FAC_HEADQUARTERS) {
                     int cur_id = veh_at(Bases[tgt_base_id].x, Bases[tgt_base_id].y);
-                    if (mod_stack_check(cur_id, 2, 5, -1, -1)) {
+                    if (stack_check(cur_id, 2, 5, -1, -1)) {
                         sabotage_id = 98;
                         goto MOV_SABOTAGE;
                     }
@@ -683,7 +683,7 @@ MOV_START:
             }
             return 0;
         case PRB_MIND_CONTROL_UNIT:
-            if (mod_stack_check(tgt_veh_id, 1, -1, -1, -1) > 1) {
+            if (stack_check(tgt_veh_id, 1, -1, -1, -1) > 1) {
                 return 0;
             }
             if (Vehs[tgt_veh_id].triad() == TRIAD_AIR
@@ -990,7 +990,7 @@ MOV_CHECK:
             if (on_map(px, py) && !is_ocean(mapsq(px, py))
             && (cur_id = stack_fix(veh_at(px, py))) >= 0
             && Vehs[cur_id].faction_id == veh_fc_id
-            && mod_stack_check(cur_id, 4, veh_fc_id, -1, -1)) {
+            && stack_check(cur_id, 4, veh_fc_id, -1, -1)) {
                 activate = 1;
                 action_id = PRB_ACTIVATE_SABOTAGE_VIRUS;
                 break;
@@ -1057,7 +1057,7 @@ MOV_CHECK:
 MOV_SABOTAGE:
     if (!(is_human(veh_fc_id))) {
         if (mod_morale_veh(veh_id, 1, 0) >= 5) {
-            if (mod_stack_check(veh_at(Bases[tgt_base_id].x, Bases[tgt_base_id].y), 2, 5, -1, -1)) {
+            if (stack_check(veh_at(Bases[tgt_base_id].x, Bases[tgt_base_id].y), 2, 5, -1, -1)) {
                 sabotage_id = 98;
                 prb_diff = 1;
             } else {
@@ -1093,8 +1093,8 @@ MOV_SABOTAGE:
     } else {
         Popup_start(&cur_popup, PopupScriptFile, "VIRUS", -1, 0, 0, 0);
         int cur_id = veh_at(Bases[tgt_base_id].x, Bases[tgt_base_id].y);
-        if (mod_stack_check(cur_id, 2, 5, -1, -1)) {
-            Dialogs_item(&cur_popup.dialogs, label_get(1028), 98); // Planet Buster Silos
+        if (stack_check(cur_id, 2, 5, -1, -1)) {
+            Dialogs_item(&cur_popup.dialogs, label_get(TL_PlanetBusterSilos), 98);
         }
         for (int i = 1; i < 70; i++) {
             if (i != FAC_HEADQUARTERS && i <= Fac_ID_Last
@@ -1104,7 +1104,7 @@ MOV_SABOTAGE:
                 }
             }
         }
-        snprintf(StrBuffer, StrBufLen, "%s (%s)", name_buf, label_get(249)); // Production
+        snprintf(StrBuffer, StrBufLen, "%s (%s)", name_buf, label_get(TL_Production));
         Dialogs_item(&cur_popup.dialogs, StrBuffer, 0);
         parse_it(ScriptFile, "ABORTSTRING");
         Dialogs_item(&cur_popup.dialogs, StrBuffer, 99);
@@ -1387,7 +1387,7 @@ MOV_DEFEND:
             for (auto plr_id : choices) {
                 snprintf(StrBuffer, StrBufLen,
                     "%s %s %s %s", get_title(plr_id), get_name(plr_id),
-                    label_get(180), get_noun(plr_id)); // of the
+                    label_get(TL_OfThe), get_noun(plr_id));
                 BasePop_item(&cur_popup, StrBuffer, plr_id);
             }
             capture_id = BasePop_exec_2(&cur_popup);

@@ -147,6 +147,34 @@ CleanupHandler<F> cleanup_handler(F&& f) {
     return CleanupHandler<F>(std::forward<F>(f));
 }
 
+template <typename Fn>
+struct ThisCallType {
+    static const bool Valid = false;
+    static const size_t ArgCount = 0;
+    typedef void ReturnType;
+    typedef void ThisType;
+};
+
+template <typename Ret, typename This, typename... Args>
+struct ThisCallType<Ret(__thiscall *)(This*, Args...)> {
+    static const bool Valid = true;
+    static const size_t ArgCount = sizeof...(Args);
+    typedef Ret ReturnType;
+    typedef This ThisType;
+};
+
+template <size_t Index, typename Fn, typename Obj, typename... Args>
+typename ThisCallType<Fn>::ReturnType CallFunc(Obj* obj, Args&&... args) {
+    typedef ThisCallType<Fn> Defs;
+    typedef typename Defs::ThisType ThisType;
+    static_assert(Defs::Valid, "incorrect thiscall function pointer");
+    static_assert(sizeof...(Args) == Defs::ArgCount, "incorrect argument count");
+    static_assert(std::is_convertible<Obj*, ThisType*>::value, "object is not convertible to class type");
+    ThisType* self = obj;
+    Fn fn = (Fn)((void**)self->vtable)[Index];
+    return fn(self, std::forward<Args>(args)...);
+}
+
 inline TriadFlag operator| (TriadFlag a, TriadFlag b) { return (TriadFlag)((uint32_t)a | (uint32_t)b); }
 inline TriadFlag& operator|= (TriadFlag& a, TriadFlag b) { a = a | b; return a; }
 inline VehAblFlag operator| (VehAblFlag a, VehAblFlag b) { return (VehAblFlag)((uint32_t)a | (uint32_t)b); }
@@ -1669,7 +1697,7 @@ extern fp_none base_support;
 extern fp_none base_nutrient;
 extern fp_none base_minerals;
 extern Fblack_market black_market;
-extern Fpsych_check psych_check;
+//extern Fpsych_check psych_check;
 extern fp_none base_psych;
 //extern Fbase_rank base_rank;
 extern fp_none base_energy;
@@ -2216,10 +2244,10 @@ extern Fsocial_set social_set;
 extern Fsocial_ai social_ai;
 extern Fsocial_select social_select;
 //extern Fsort sort;
-extern Fspot_base spot_base;
-extern Fspot_stack spot_stack;
-extern Funspot_stack unspot_stack;
-extern Fspot_loc spot_loc;
+//extern Fspot_base spot_base;
+//extern Fspot_stack spot_stack;
+//extern Funspot_stack unspot_stack;
+//extern Fspot_loc spot_loc;
 extern Fwant_to_wake want_to_wake;
 extern Fwake_stack wake_stack;
 extern Fspot_all spot_all;
@@ -2229,15 +2257,15 @@ extern Fspot_all spot_all;
 //extern Fstack_fix stack_fix;
 //extern Fstack_veh stack_veh;
 //extern Fstack_kill stack_kill;
-extern Fstack_check stack_check;
+//extern Fstack_check stack_check;
 //extern Fsay_tech_2 say_tech_2;
 extern Ftech_name_2 tech_name_2;
 //extern Fhas_tech has_tech;
 extern Ftech_recurse tech_recurse;
 //extern Ftech_category tech_category;
 //extern Fredundant redundant;
-extern Ffacility_avail facility_avail;
-extern Fveh_avail veh_avail;
+//extern Ffacility_avail facility_avail;
+//extern Fveh_avail veh_avail;
 //extern Fterrain_avail terrain_avail;
 //extern Ftech_avail tech_avail;
 extern Ftech_secret tech_secret;
@@ -2259,7 +2287,7 @@ extern Ftech_rate tech_rate;
 //extern Ftech_research tech_research;
 extern Ftech_pick tech_pick;
 //extern FX_text_open X_text_open;
-extern Fdo_unity_crash do_unity_crash;
+//extern Fdo_unity_crash do_unity_crash;
 //extern Fis_sensor is_sensor;
 //extern Fhas_temple has_temple;
 //extern Fhas_abil has_abil;
@@ -5771,12 +5799,12 @@ extern FWave_set_zpos Wave_set_zpos;
 extern FWave Wave_is_3d;
 extern FWave_scalar_dtor Wave_scalar_dtor;
 
-typedef int(__thiscall *FFX_init)(Wave* This);
-typedef int(__thiscall *FFX_play2)(Wave* This, int a2, int a3, int a4);
+typedef void(__thiscall *FFX_init)(Wave* This);
+typedef void(__thiscall *FFX_play_loc)(Wave* This, int a2, int a3, int a4);
 typedef void(__thiscall *FFX_play)(Wave* This, int a2);
 
 extern FFX_init FX_init;
-extern FFX_play2 FX_play2;
+extern FFX_play_loc FX_play_loc; // renamed, previously overloaded FX_play
 extern FFX_play FX_play;
 extern FFX_play FX_stop;
 extern FFX_play FX_fade;

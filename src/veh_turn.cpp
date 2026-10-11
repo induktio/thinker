@@ -17,7 +17,7 @@ void __cdecl mod_enemy_turn(int faction_id) {
                 break;
             case 1:
                 if (veh->plan() != PLAN_DEFENSE
-                && (veh->plan() != PLAN_NAVAL_TRANSPORT || !mod_stack_check(veh_id, 3, 0, -1, -1))) {
+                && (veh->plan() != PLAN_NAVAL_TRANSPORT || !stack_check(veh_id, 3, 0, -1, -1))) {
                     continue;
                 }
                 break;
@@ -165,7 +165,7 @@ int __cdecl mod_enemy_move(int veh_id) {
         int triad = veh->triad();
         if (plr_unit && veh->is_patrol_order()) {
             if (veh->need_refuel() && (sq->is_airbase()
-            || mod_stack_check(veh_id, 6, ABL_CARRIER, -1, -1))) {
+            || stack_check(veh_id, 6, ABL_CARRIER, -1, -1))) {
                 veh->apply_refuel();
                 return mod_veh_skip(veh_id);
             }
@@ -283,7 +283,7 @@ int __cdecl mod_alien_move(int veh_id) {
     }
     veh->movement_turns++;
 
-    if (veh_cargo(veh_id) && mod_stack_check(veh_id, 3, 0, -1, -1)) {
+    if (veh_cargo(veh_id) && stack_check(veh_id, 3, 0, -1, -1)) {
         // Any transport carrying land units
         if (veh->movement_turns > 24) {
             kill(veh_id);
@@ -389,10 +389,10 @@ int __cdecl mod_alien_move(int veh_id) {
                 if (sq->anything_at() >= 0) {
                     int cur = stack_fix(veh_at(nx, ny));
                     if (cur >= 0) {
-                        score = 8 * (mod_stack_check(cur, 6, ABL_ARTILLERY, -1, -1)
-                            + mod_stack_check(cur, 2, 6, -1, -1));
+                        score = 8 * (stack_check(cur, 6, ABL_ARTILLERY, -1, -1)
+                            + stack_check(cur, 2, 6, -1, -1));
                         if (!mod_zoc_veh(veh_x, veh_y, 0) || i < 9) {
-                            score += mod_stack_check(cur, 4, -1, -1, -1);
+                            score += stack_check(cur, 4, -1, -1, -1);
                         }
                         if (map_range(veh_x, veh_y, nx, ny) > Rules->artillery_max_rng && score > 1) {
                             score = 1;
@@ -420,7 +420,7 @@ int __cdecl mod_alien_move(int veh_id) {
             }
         }
         if (best_offset < 0) {
-            if (mod_stack_check(veh_id, 15, -1, -1, -1) <= 1) {
+            if (stack_check(veh_id, 15, -1, -1, -1) <= 1) {
                 if (veh_sq->items & BIT_CANAL_COAST) {
                     move_offset = -1;
                 }
@@ -548,7 +548,7 @@ int __cdecl mod_alien_move(int veh_id) {
         }
     }
     if (best_move_score < 99) {
-        if (veh_cargo(veh_id) && !mod_stack_check(veh_id, 3, 0, -1, -1)) {
+        if (veh_cargo(veh_id) && !stack_check(veh_id, 3, 0, -1, -1)) {
             kill(veh_id);
             return 1;
         }

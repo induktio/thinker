@@ -1269,8 +1269,8 @@ int __cdecl base_queue(int base_id) {
         }
         base->queue_size--;
         queue_prod_id = base->queue_items[0];
-        if ((queue_prod_id >= 0) ? mod_veh_avail(queue_prod_id, base->faction_id, base_id)
-        : mod_facility_avail((FacilityId)-queue_prod_id, base->faction_id, base_id, 0)) {
+        if ((queue_prod_id >= 0) ? veh_avail(queue_prod_id, base->faction_id, base_id)
+        : facility_avail((FacilityId)-queue_prod_id, base->faction_id, base_id, 0)) {
             if (queue_prod_id <= -SP_ID_First) {
                 wave_it(36); // CPU project initiated
             }
@@ -2415,7 +2415,7 @@ void __cdecl mod_base_psych(int base_id, int SE_talent, int SE_police) {
     int capture_drones = 0;
     int facility_value = 0;
     int content_pop, base_limit;
-    mod_psych_check(faction_id, &content_pop, &base_limit);
+    psych_check(faction_id, &content_pop, &base_limit);
     drone_value = max(0, base->pop_size - content_pop);
 
     if (base_limit) {
@@ -4184,7 +4184,7 @@ int __cdecl base_psych_content_pop() {
 /*
 Calculate the base count threshold for possible bureaucracy notifications in Console::new_base.
 */
-void __cdecl mod_psych_check(int faction_id, int32_t* content_pop, int32_t* base_limit) {
+void __cdecl psych_check(int faction_id, int32_t* content_pop, int32_t* base_limit) {
     size_t diff_level = *DiffLevel;
     if (faction_id >= 0 && faction_id < MaxPlayerNum && diff_level < MaxDiffNum) {
         *content_pop = (is_human(faction_id) ?
@@ -4547,7 +4547,7 @@ int __cdecl best_specialist() {
 Determine if the faction can build a specific facility or Secret Project in the specified base.
 Checks are included to prevent SMACX specific facilities from being built in SMAC mode.
 */
-int __cdecl mod_facility_avail(FacilityId item_id, int faction_id, int base_id, int queue_count) {
+int __cdecl facility_avail(FacilityId item_id, int faction_id, int base_id, int queue_count) {
     // initial checks
     if (!item_id || (item_id == FAC_SKUNKWORKS && *DiffLevel <= DIFF_SPECIALIST)
     || (item_id >= SP_ID_First && *GameRules & RULES_SCN_NO_BUILDING_SP)) {
@@ -4649,7 +4649,7 @@ bool can_build(int base_id, int item_id) {
 
     // First check strict facility availability by the original games rules
     // Then check various other usefulness conditions to avoid unnecessary builds
-    if (!mod_facility_avail((FacilityId)item_id, faction_id, base_id, 0)) {
+    if (!facility_avail((FacilityId)item_id, faction_id, base_id, 0)) {
         return false;
     }
     if (item_id == FAC_STOCKPILE_ENERGY) {

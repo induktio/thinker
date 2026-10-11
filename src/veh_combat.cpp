@@ -16,11 +16,11 @@ static int combat_rand(int value) {
 }
 
 static int stack_kill_check(int veh_id) {
-    return mod_stack_check(veh_id, 1, -1, -1, -1)
-        - mod_stack_check(veh_id, 2, PLAN_COLONY, -1, -1)
-        - mod_stack_check(veh_id, 2, PLAN_SUPPLY, -1, -1)
-        - mod_stack_check(veh_id, 2, PLAN_PROBE, -1, -1)
-        - mod_stack_check(veh_id, 2, PLAN_ARTIFACT, -1, -1);
+    return stack_check(veh_id, 1, -1, -1, -1)
+        - stack_check(veh_id, 2, PLAN_COLONY, -1, -1)
+        - stack_check(veh_id, 2, PLAN_SUPPLY, -1, -1)
+        - stack_check(veh_id, 2, PLAN_PROBE, -1, -1)
+        - stack_check(veh_id, 2, PLAN_ARTIFACT, -1, -1);
 }
 
 static void combat_odds_fix(VEH* veh_atk, VEH* veh_def, int* attack_odds, int* defend_odds) {
@@ -490,7 +490,7 @@ static int __cdecl find_defender(int veh_id_def, int veh_id_atk, int combat_type
         && !veh->is_missile() && !veh_atk->is_missile()
         && (has_abil(veh->unit_id, ABL_AIR_SUPERIORITY)
         || (has_abil(veh_atk->unit_id, ABL_AIR_SUPERIORITY)
-        && base_id < 0 && !is_airbase && !mod_stack_check(veh_id, 6, ABL_CARRIER, -1, -1)))) {
+        && base_id < 0 && !is_airbase && !stack_check(veh_id, 6, ABL_CARRIER, -1, -1)))) {
             score += 0x80000;
         } else if (combat_type) {
             if (can_arty(veh->unit_id, true)) {
@@ -498,8 +498,8 @@ static int __cdecl find_defender(int veh_id_def, int veh_id_atk, int combat_type
             }
         } else if (veh->state & VSTATE_DESIGNATE_DEFENDER
         && (base_id >= 0 || is_airbase
-        || mod_stack_check(veh_id, 6, ABL_CARRIER, -1, -1)
-        || !mod_stack_check(veh_id, 3, TRIAD_AIR, -1, -1))) {
+        || stack_check(veh_id, 6, ABL_CARRIER, -1, -1)
+        || !stack_check(veh_id, 3, TRIAD_AIR, -1, -1))) {
             score += 0x80000;
         }
         // Replace old score method to avoid overflow issues with larger veh_ids
@@ -1224,7 +1224,7 @@ int __cdecl interceptor(int faction_id_def, int faction_id_atk, int tx, int ty) 
         && has_abil(veh->unit_id, ABL_AIR_SUPERIORITY)
         && map_range(veh->x, veh->y, tx, ty) <= conf.intercept_max_range
         && (sq = mapsq(veh->x, veh->y))) {
-            if (sq->is_airbase() || mod_stack_check(i, 6, ABL_CARRIER, -1, -1)) {
+            if (sq->is_airbase() || stack_check(i, 6, ABL_CARRIER, -1, -1)) {
                 // Modified priority for highest HP * Attack, then distance, then newer units
                 int score = 2 * veh->cur_hitpoints() * max(1, veh->eval_offense() + 1)
                     - map_range(veh->x, veh->y, tx, ty);
@@ -1342,14 +1342,14 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
         combat_type = CT_CAN_ARTY;
     } else if (can_arty(veh_atk->unit_id, true) && veh_atk->triad() == TRIAD_SEA && !is_ocean(sq_def)) {
         if (sq_def->is_base()
-        || mod_stack_check(veh_id_def, 3, 2, -1, -1) < mod_stack_check(veh_id_def, 1, -1, -1, -1)) {
+        || stack_check(veh_id_def, 3, 2, -1, -1) < stack_check(veh_id_def, 1, -1, -1, -1)) {
             combat_type = CT_CAN_ARTY;
         }
     }
     if (veh_id_def >= 0
     && veh_atk->triad() == TRIAD_AIR
     && !veh_atk->is_missile()
-    && !mod_stack_check(veh_id_def, 6, ABL_AIR_SUPERIORITY, -1, -1)
+    && !stack_check(veh_id_def, 6, ABL_AIR_SUPERIORITY, -1, -1)
     && option && *VehAttackFlags & 2) {
         intercept_state = interceptor(Vehs[veh_id_def].faction_id, faction_id_atk, tx, ty);
     }
@@ -1845,7 +1845,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
             && veh_def->order != ORDER_HOLD
             && base_id < 0
             && !(sq_def->items & (BIT_AIRBASE|BIT_BUNKER))
-            && mod_stack_check(veh_id_def, 1, -1, -1, -1) == 1) {
+            && stack_check(veh_id_def, 1, -1, -1, -1) == 1) {
                 retreat_value = (veh_def->cur_hitpoints() + 1) / 2;
             }
         }
@@ -2175,7 +2175,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
         || veh_atk->triad() == TRIAD_AIR
         || veh_atk->is_probe()
         || veh_def->plan() == PLAN_NAVAL_SUPERIORITY
-        || (!is_ocean(sq_def) && mod_stack_check(veh_id_def, 2, PLAN_COLONY, -1, -1))) {
+        || (!is_ocean(sq_def) && stack_check(veh_id_def, 2, PLAN_COLONY, -1, -1))) {
             if (!veh_def->is_artifact()) {
                 if (!faction_id_atk
                 || ((!veh_cargo(veh_id_def) || base_id >= 0 || veh_atk->is_probe())

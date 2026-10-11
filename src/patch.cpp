@@ -559,6 +559,10 @@ bool patch_setup(Config* cf) {
     write_jump(0x5B44D0, (int)social_upkeep);
     write_jump(0x5B4550, (int)social_upheaval);
     write_jump(0x5B4730, (int)society_avail);
+    write_jump(0x5B57D0, (int)spot_base);
+    write_jump(0x5B58E0, (int)spot_stack);
+    write_jump(0x5B5A70, (int)unspot_stack);
+    write_jump(0x5B5AD0, (int)spot_loc);
     write_jump(0x5B8EE0, (int)stack_veh);
     write_jump(0x5B9510, (int)stack_kill);
     write_jump(0x5B9C40, (int)say_tech);
@@ -809,8 +813,12 @@ bool patch_setup(Config* cf) {
     write_call(0x5BE5E1, (int)mod_tech_selection); // tech_advance
     write_call(0x5BE690, (int)mod_tech_selection); // tech_advance
     write_call(0x5BEB5D, (int)mod_tech_selection); // tech_research
-    write_call(0x4B497C, (int)mod_say_orders); // say_orders2
-    write_call(0x4B5C27, (int)mod_say_orders); // StatusWin::draw_active
+    write_call(0x41B8BF, (int)facility_avail); // BaseWin::base_editor_fac
+    write_call(0x41CC07, (int)facility_avail); // BaseWin::base_editor
+    write_call(0x49357A, (int)facility_avail); // ProdPicker::calculate
+    write_call(0x4F077E, (int)facility_avail); // base_queue
+    write_call(0x4FD920, (int)facility_avail); // base_build
+    write_call(0x4FF2D4, (int)facility_avail); // base_build
     write_call(0x4F7B82, (int)mod_base_research); // base_upkeep
     write_call(0x4CCF13, (int)mod_capture_base); // action_airdrop
     write_call(0x598778, (int)mod_capture_base); // order_veh
@@ -858,12 +866,6 @@ bool patch_setup(Config* cf) {
     write_call(0x50DA9D, (int)mod_bases_reset); // capture_base
     write_call(0x5634BD, (int)mod_bases_reset); // enemy_strategy
     write_call(0x5BE62C, (int)mod_bases_reset); // tech_advance
-    write_call(0x41B8BF, (int)mod_facility_avail); // BaseWin::base_editor_fac
-    write_call(0x41CC07, (int)mod_facility_avail); // BaseWin::base_editor
-    write_call(0x49357A, (int)mod_facility_avail); // ProdPicker::calculate
-    write_call(0x4F077E, (int)mod_facility_avail); // base_queue
-    write_call(0x4FD920, (int)mod_facility_avail); // base_build
-    write_call(0x4FF2D4, (int)mod_facility_avail); // base_build
     write_call(0x4FD672, (int)mod_base_lose_minerals); // base_build
     write_call(0x4FEF55, (int)mod_base_lose_minerals); // base_build
     write_call(0x4FF909, (int)mod_base_lose_minerals); // base_build
@@ -955,6 +957,8 @@ bool patch_setup(Config* cf) {
     write_call(0x59C105, (int)mod_hex_cost); // Path::move
 
     // Prototypes and combat game mechanics
+    write_call(0x4B497C, (int)mod_say_orders); // say_orders2
+    write_call(0x4B5C27, (int)mod_say_orders); // StatusWin::draw_active
     write_call(0x4B43D0, (int)mod_say_morale2); // say_morale
     write_call(0x4B51BE, (int)mod_say_morale2); // StatusWin::draw_active
     write_call(0x50211F, (int)mod_get_basic_offense); // battle_compute
@@ -973,16 +977,16 @@ bool patch_setup(Config* cf) {
     write_call(0x567234, (int)mod_battle_fight); // alien_move
     write_call(0x436796, (int)transport_val); // DesignWin::draw_unit_preview
     write_call(0x5A5F3D, (int)transport_val); // make_proto
-    write_call(0x4930F8, (int)mod_veh_avail); // ProdPicker::calculate
-    write_call(0x4DED97, (int)mod_veh_avail); // Console::editor_veh
-    write_call(0x4E4AE4, (int)mod_veh_avail); // base_first
-    write_call(0x4F0769, (int)mod_veh_avail); // base_queue
-    write_call(0x4FA04C, (int)mod_veh_avail); // base_build
-    write_call(0x4FFD37, (int)mod_veh_avail); // base_build
-    write_call(0x4FFF5D, (int)mod_veh_avail); // base_build
-    write_call(0x560DDF, (int)mod_veh_avail); // enemy_capabilities
-    write_call(0x560E86, (int)mod_veh_avail); // enemy_capabilities
-    write_call(0x5B30E1, (int)mod_veh_avail); // setup_player
+    write_call(0x4930F8, (int)veh_avail); // ProdPicker::calculate
+    write_call(0x4DED97, (int)veh_avail); // Console::editor_veh
+    write_call(0x4E4AE4, (int)veh_avail); // base_first
+    write_call(0x4F0769, (int)veh_avail); // base_queue
+    write_call(0x4FA04C, (int)veh_avail); // base_build
+    write_call(0x4FFD37, (int)veh_avail); // base_build
+    write_call(0x4FFF5D, (int)veh_avail); // base_build
+    write_call(0x560DDF, (int)veh_avail); // enemy_capabilities
+    write_call(0x560E86, (int)veh_avail); // enemy_capabilities
+    write_call(0x5B30E1, (int)veh_avail); // setup_player
     write_call(0x4CEF64, (int)mod_propose_proto); // action_give
     write_call(0x4F59B2, (int)mod_propose_proto); // drone_riot
     write_call(0x58188D, (int)mod_propose_proto); // consider_designs
@@ -1393,7 +1397,7 @@ bool patch_setup(Config* cf) {
         };
         write_bytes(0x4EA56D, old_bytes, new_bytes, sizeof(new_bytes));
         write_call(0x4EA56D, (int)base_psych_content_pop);
-        write_call(0x4CFEA4, (int)mod_psych_check);
+        write_call(0x4CFEA4, (int)psych_check);
     }
 
     /*

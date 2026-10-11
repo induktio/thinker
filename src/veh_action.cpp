@@ -658,7 +658,7 @@ void __cdecl action_destroy(int veh_id, int tgt_item, int tgt_x, int tgt_y) {
                 if (on_map(px, py) && map_range(veh->x, veh->y, px, py) <= 2) {
                     int stack_id = stack_fix(veh_at(px, py));
                     if (stack_id >= 0) {
-                        if (mod_stack_check(stack_id, 15, owner, -1, -1)) {
+                        if (stack_check(stack_id, 15, owner, -1, -1)) {
                             mod_battle_fight(veh_id, i, 1, 1, 0);
                             return;
                         }
@@ -995,7 +995,7 @@ int __cdecl action_airdrop(int veh_id, int tx, int ty, int flags) {
                 int base_id = base_at(px, py);
                 if (base_id >= 0) {
                     if (has_facility(FAC_AEROSPACE_COMPLEX, base_id)
-                    || mod_stack_check(veh_at(px, py), 2, PLAN_AIR_SUPERIORITY, -1, -1)) {
+                    || stack_check(veh_at(px, py), 2, PLAN_AIR_SUPERIORITY, -1, -1)) {
                         if ((*VehAttackFlags & 1) && faction_id == player_id) {
                             parse_says(0, Bases[base_id].name, -1, -1);
                             NetMsg_pop(NetMsg, "AIRDEFENSES", -5000, 0,
@@ -1450,7 +1450,7 @@ void  __cdecl action_tectonic(int veh_id, int tx, int ty) {
     const int range = TableRange[reactor_id];
     const int tgt_base_id = base_find(tx, ty);
     int is_visible = 0;
-    FX_play2(Sounds, 83, Vehs[veh_id].x, Vehs[veh_id].y);
+    FX_play_loc(Sounds, 83, Vehs[veh_id].x, Vehs[veh_id].y);
 
     if (faction_id_atk != player_id) {
         if (!(Factions[player_id].player_flags & PFLAG_MAP_REVEALED)) {
@@ -1526,7 +1526,7 @@ void  __cdecl action_fungal(int veh_id, int tx, int ty) {
     const int unit_id = Vehs[veh_id].unit_id;
     const int tgt_base_id = base_find(tx, ty);
     int is_visible = 0;
-    FX_play2(Sounds, 84, Vehs[veh_id].x, Vehs[veh_id].y);
+    FX_play_loc(Sounds, 84, Vehs[veh_id].x, Vehs[veh_id].y);
     kill(veh_id);
 
     if (faction_id_atk != player_id && tgt_base_id >= 0) {
@@ -1979,7 +1979,7 @@ int __cdecl order_veh(int veh_id, int offset, int flag) {
                 if (Factions[veh_fc_id].diplo_status[tgt_fc_id] & DIPLO_PACT) {
                     if (!move_delay && veh_fc_id == MapWin->cOwner) {
                         if (base_id < 0) {
-                            if (mod_stack_check(stack_veh_id, 2, PLAN_PROBE, tgt_fc_id, -1)) {
+                            if (stack_check(stack_veh_id, 2, PLAN_PROBE, tgt_fc_id, -1)) {
                                 parse_says(0, get_adjective(tgt_fc_id), -1, -1);
                                 if (X_pop("PROBEPACTTEAM", 0)) {
                                     Vehs[veh_id].flags |= VFLAG_PROBE_PACT_OPERATIONS;
@@ -2002,7 +2002,7 @@ int __cdecl order_veh(int veh_id, int offset, int flag) {
             if (check) {
                 if (base_id < 0) {
                     if (!(Factions[veh_fc_id].diplo_status[tgt_fc_id] & DIPLO_PACT)
-                    && (stack_veh_id < 0 || !mod_stack_check(stack_veh_id, 2, PLAN_PROBE, -1, -1))) {
+                    && (stack_veh_id < 0 || !stack_check(stack_veh_id, 2, PLAN_PROBE, -1, -1))) {
                         move_probe = 1;
                         if (probe(veh_id, -1, stack_veh_id, 1) && *MultiplayerActive
                         && !*ControlTurnC && *VehAttackFlags & 1 && !(*VehAttackFlags & 2)) {
@@ -2017,7 +2017,7 @@ int __cdecl order_veh(int veh_id, int offset, int flag) {
                             tgt_fc_id = Vehs[stack_veh_id].faction_id;
                         }
                     }
-                } else if ((stack_veh_id < 0 || !mod_stack_check(stack_veh_id, 2, PLAN_PROBE, -1, -1))
+                } else if ((stack_veh_id < 0 || !stack_check(stack_veh_id, 2, PLAN_PROBE, -1, -1))
                 && (is_human(veh_fc_id) || !(Factions[veh_fc_id].diplo_status[tgt_fc_id] & DIPLO_PACT)
                 || (Vehs[veh_id].waypoint_x[0] == Bases[base_id].x && Vehs[veh_id].waypoint_y[0] == Bases[base_id].y))) {
                     if (tgt_fc_id == MapWin->cOwner) {
@@ -2042,21 +2042,21 @@ int __cdecl order_veh(int veh_id, int offset, int flag) {
         }
         if (veh_triad == TRIAD_LAND && tgt_at_sea) {
             if (veh_fc_id == tgt_fc_id || Factions[veh_fc_id].diplo_status[tgt_fc_id] & DIPLO_PACT) {
-                if (mod_stack_check(stack_veh_id, 8, veh_fc_id, -1, -1) <= 0) {
+                if (stack_check(stack_veh_id, 8, veh_fc_id, -1, -1) <= 0) {
                     if (base_id < 0
                     || (!has_abil(Vehs[veh_id].unit_id, ABL_AMPHIBIOUS)
-                    && !mod_stack_check(stack_veh_id, 2, 7, -1, -1)
-                    && !mod_stack_check(veh_id, 2, 7, -1, -1))) {
+                    && !stack_check(stack_veh_id, 2, 7, -1, -1)
+                    && !stack_check(veh_id, 2, 7, -1, -1))) {
                         if (base_id >= 0
-                        && !mod_stack_check(stack_veh_id, 2, 7, -1, -1)
-                        && !mod_stack_check(veh_id, 2, 7, -1, -1)) {
+                        && !stack_check(stack_veh_id, 2, 7, -1, -1)
+                        && !stack_check(veh_id, 2, 7, -1, -1)) {
                             if (veh_fc_id == MapWin->cOwner && *VehAttackFlags & 1) {
                                 parse_says(0, Ability[abil_index(8)].name, -1, -1);
                                 NetMsg_pop(NetMsg, "AMPHIBBASE2", 5000, 0, 0);
                             }
                             goto MOV_END;
                         }
-                        int stack_val = mod_stack_check(stack_veh_id, 2, 7, -1, -1);
+                        int stack_val = stack_check(stack_veh_id, 2, 7, -1, -1);
                         if (stack_val && veh_fc_id == MapWin->cOwner && *VehAttackFlags & 1) {
                             if (stack_val <= 1) {
                                 NetMsg_pop(NetMsg, "FULLTRANSPORT", 5000, 0, 0);
@@ -2081,8 +2081,8 @@ int __cdecl order_veh(int veh_id, int offset, int flag) {
             } else {
                 if (stack_veh_id < 0
                 || !has_abil(Vehs[veh_id].unit_id, ABL_AIR_SUPERIORITY)
-                || !mod_stack_check(stack_veh_id, 18, -1, -1, -1)
-                || mod_stack_check(stack_veh_id, 6, ABL_CARRIER, -1, -1)) {
+                || !stack_check(stack_veh_id, 18, -1, -1, -1)
+                || stack_check(stack_veh_id, 6, ABL_CARRIER, -1, -1)) {
                     goto MOV_END;
                 }
                 goto MOV_SPOT;
@@ -2264,8 +2264,8 @@ MOV_SPOT:
             }
         }
         if (base_id < 0 && !(mapsq(tgt_x, tgt_y)->items & BIT_AIRBASE)
-        && mod_stack_check(stack_veh_id, 18, -1, -1, -1)
-        && !mod_stack_check(stack_veh_id, 6, 128, -1, -1)
+        && stack_check(stack_veh_id, 18, -1, -1, -1)
+        && !stack_check(stack_veh_id, 6, 128, -1, -1)
         && !has_abil(Vehs[veh_id].unit_id, ABL_AIR_SUPERIORITY)) {
             if (veh_fc_id == MapWin->cOwner && *VehAttackFlags & 1) {
                 parse_says(0, Ability[abil_index(32)].name, -1, -1);
@@ -2301,7 +2301,7 @@ MOV_SPOT:
                 goto MOV_END;
             }
         }
-        if (Vehs[veh_id].weapon_mode() != WMODE_PROBE || !mod_stack_check(stack_veh_id, 2, 11, -1, -1)) {
+        if (Vehs[veh_id].weapon_mode() != WMODE_PROBE || !stack_check(stack_veh_id, 2, 11, -1, -1)) {
             if (!Vehs[veh_id].offense_value()) {
                 if (*VehAttackFlags & 1 && veh_fc_id == MapWin->cOwner) {
                     FX_play(Sounds, 51);
@@ -2310,7 +2310,7 @@ MOV_SPOT:
                 goto MOV_END;
             }
             if (Vehs[stack_veh_id].plan() == PLAN_PROBE
-            && mod_stack_check(stack_veh_id, 1, -1, -1, -1) >= 1
+            && stack_check(stack_veh_id, 1, -1, -1, -1) >= 1
             && !*MultiplayerActive
             && (Factions[veh_fc_id].diplo_status[tgt_fc_id] & (DIPLO_TRUCE|DIPLO_TREATY))
             && !(Factions[veh_fc_id].diplo_status[tgt_fc_id] & DIPLO_PACT)) {
@@ -2513,7 +2513,7 @@ MOV_NAVAL:
             // from a sea base without there being a transport in land tile.
             if (veh_triad == TRIAD_LAND && !has_abil(Vehs[veh_id].unit_id, ABL_AMPHIBIOUS)) {
                 veh_sq = mapsq(veh_x, veh_y);
-                if (veh_sq->base_who() >= 0 && !mod_stack_check(veh_id, 2, PLAN_NAVAL_TRANSPORT, -1, -1)) {
+                if (veh_sq->base_who() >= 0 && !stack_check(veh_id, 2, PLAN_NAVAL_TRANSPORT, -1, -1)) {
                     if (veh_fc_id == MapWin->cOwner && *VehAttackFlags & 1) {
                         parse_says(0, Ability[abil_index(8)].name, -1, -1);
                         NetMsg_pop(NetMsg, "AMPHIBBASE2", 5000, 0, 0);
@@ -2529,7 +2529,7 @@ MOV_NAVAL:
                 goto MOV_END;
             }
             // Fix 39. [BUG] #DISEMBARKFAIL wasn't being displayed due to incorrect logic check.
-            if (!mod_stack_check(veh_id, 2, PLAN_NAVAL_TRANSPORT, -1, -1)) {
+            if (!stack_check(veh_id, 2, PLAN_NAVAL_TRANSPORT, -1, -1)) {
                 goto MOV_END;
             }
             Vehs[veh_id].order = ORDER_NONE;
@@ -3142,7 +3142,7 @@ MOV_UPKEEP:
         goto MOV_END;
     }
     if (Vehs[veh_id].plan() == PLAN_ARTIFACT && offset < 8 && base_id < 0
-    && mod_stack_check(veh_id, 1, -1, -1, -1) == 1) {
+    && stack_check(veh_id, 1, -1, -1, -1) == 1) {
         for (int i = 0; i < 8; i++) {
             int px = wrap(tgt_x + BaseOffsetX[i]);
             int py = tgt_y + BaseOffsetY[i];
@@ -3154,7 +3154,7 @@ MOV_UPKEEP:
                 int iter_fc_id = Vehs[iter_id].faction_id;
                 if (iter_fc_id && iter_fc_id != veh_fc_id) {
                     if (!(Factions[veh_fc_id].diplo_status[iter_fc_id] & DIPLO_PACT)) {
-                        if (mod_stack_check(iter_id, 1, -1, -1, -1) > mod_stack_check(iter_id, 2, 12, -1, -1)) {
+                        if (stack_check(iter_id, 1, -1, -1, -1) > stack_check(iter_id, 2, 12, -1, -1)) {
                             Vehs[veh_id].faction_id = Vehs[iter_id].faction_id;
                             Vehs[veh_id].order = ORDER_NONE;
                             draw_tile(tgt_x, tgt_y, 2);

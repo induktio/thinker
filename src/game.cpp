@@ -1299,7 +1299,7 @@ void __cdecl scenario_setup() {
             if (!retry) {
                 int owner_id = veh_at(x, y);
                 if (owner_id < 0 || (Vehs[owner_id].faction_id == veh->faction_id
-                && iter >= 500 * (mod_stack_check(owner_id, 1, -1, -1, -1) + 10))) {
+                && iter >= 500 * (stack_check(owner_id, 1, -1, -1, -1) + 10))) {
                     int min_dist = 9999;
                     for (int i = 0; i < *VehCount; ++i) {
                         if (i != veh_id) {

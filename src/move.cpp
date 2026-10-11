@@ -2351,7 +2351,7 @@ bool allow_airdrop(int x, int y, int faction_id, bool combat, MAP* sq) {
         if (at_war(faction_id, base->faction_id)
         && map_range(base->x, base->y, x, y) <= AerospaceDefenseRange
         && (has_facility(FAC_AEROSPACE_COMPLEX, i)
-        || mod_stack_check(veh_at(base->x, base->y), 2, PLAN_AIR_SUPERIORITY, -1, -1))) {
+        || stack_check(veh_at(base->x, base->y), 2, PLAN_AIR_SUPERIORITY, -1, -1))) {
             return false;
         }
     }
@@ -2977,7 +2977,7 @@ int combat_move(const int id) {
         && Bases[veh->home_base_id].faction_id == faction_id
         && Bases[veh->home_base_id].pop_size > 2;
     const bool look_first = !aircraft && !Factions[faction_id].base_count
-        && mod_stack_check(id, 2, PLAN_COLONY, -1, -1);
+        && stack_check(id, 2, PLAN_COLONY, -1, -1);
     auto skip_patrol = [&](TileSearch& ts) -> bool {
         return look_first && ts.dist <= 2 && veh->iter_count < 4 && goody_at(ts.rx, ts.ry);
     };

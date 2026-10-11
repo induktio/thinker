@@ -346,7 +346,7 @@ int find_missile(int base_id) {
     for (int unit_id = 0; unit_id < MaxProtoNum; unit_id++) {
         UNIT* u = &Units[unit_id];
         if ((unit_id < MaxProtoFactionNum || unit_id / MaxProtoFactionNum == faction_id)
-        && mod_veh_avail(unit_id, faction_id, -1) && u->is_planet_buster()) {
+        && veh_avail(unit_id, faction_id, -1) && u->is_planet_buster()) {
             int val = unit_score(base, unit_id, 0, 1, 1, 0);
             if (val > best_val) {
                 best_id = unit_id;
@@ -667,7 +667,7 @@ int find_proto(int base_id, TriadFlag triad, VehWeaponMode mode, bool defend) {
     for (int id = 0; id < MaxProtoNum; id++) {
         UNIT* u = &Units[id];
         if ((id < MaxProtoFactionNum || id / MaxProtoFactionNum == faction_id)
-        && mod_veh_avail(id, faction_id, base_id) && !u->is_planet_buster()) {
+        && veh_avail(id, faction_id, base_id) && !u->is_planet_buster()) {
             psi_atk = max(psi_atk, proto_offense(id));
             psi_def = max(psi_def, proto_defense(id));
             if ((1 << u->triad()) & triad) {
@@ -822,7 +822,7 @@ int select_combat(int base_id, bool sea_base, bool build_ships) {
 
 static void push_item(score_max_queue_t& builds, int base_id, int item_id, int retool, int score, int modifier) {
     BASE* base = &Bases[base_id];
-    assert(item_id < 0 ? can_build(base_id, -item_id) : mod_veh_avail(item_id, base->faction_id, base_id));
+    assert(item_id < 0 ? can_build(base_id, -item_id) : veh_avail(item_id, base->faction_id, base_id));
     if (item_id >= 0) {
         score -= 2*Units[item_id].cost;
     } else if (item_id >= -FAC_ORBITAL_DEFENSE_POD) {
@@ -1203,7 +1203,7 @@ int select_build(int base_id) {
         if (t == FAC_RECREATION_COMMONS || t == FAC_HOLOGRAM_THEATRE
         || t == FAC_RESEARCH_HOSPITAL || t == FAC_PARADISE_GARDEN) {
             if (!base_limit) {
-                mod_psych_check(faction_id, &content_pop, &base_limit);
+                psych_check(faction_id, &content_pop, &base_limit);
             }
             if (!base->drone_total && !base->specialist_total && (base->talent_total > 0
             || (base->pop_size <= content_pop && f->base_count <= 2*base_limit))) {

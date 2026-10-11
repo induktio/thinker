@@ -789,7 +789,7 @@ void __cdecl kill(int veh_id) {
     if (!*VehBattleState && on_map(x, y)) {
         int alt_id = veh_at(x, y);
         if (faction_id != player_id
-        || (mod_stack_check(alt_id, 1, faction_id, -1, -1) && !deep_radar)) {
+        || (stack_check(alt_id, 1, faction_id, -1, -1) && !deep_radar)) {
             draw_tile(x, y, 2);
         } else {
             draw_radius(x, y, 2, 2);
@@ -811,7 +811,7 @@ int __cdecl battle_kill(int veh_id, int* num_killed, int* num_relics, int* num_c
     && !Vehs[veh_id_atk].is_missile()) {
         MAP* sq = mapsq(Vehs[veh_id_atk].x, Vehs[veh_id_atk].y);
         if (!is_ocean(sq)
-        || mod_stack_check(veh_id_atk, 8, -1, -1, -1) > 0
+        || stack_check(veh_id_atk, 8, -1, -1, -1) > 0
         || veh->flags & VFLAG_IS_OBJECTIVE) {
             int atk_faction_id = Vehs[veh_id_atk].faction_id;
             veh_lift(veh_id);
@@ -1162,6 +1162,64 @@ void __cdecl monolith(int veh_id) {
     }
 }
 
+int __cdecl do_unity_crash(int x, int y, int faction_id) {
+    MAP* sq = mapsq(x, y);
+    if (!sq || (sq->landmarks & (LM_DISABLE|LM_UNITY)) != LM_UNITY) {
+        return 0;
+    }
+    int code = sq->code_at();
+    switch (code) {
+    case 0:
+    case 8: {
+        int unit_id = (code == 0 ? BSC_UNITY_MINING_LASER : BSC_UNITY_SCOUT_CHOPPER);
+        const char* label = (code == 0 ? "UNITYMINER" : "UNITYCHOPPER");
+        if (faction_id == MapWin->cOwner) {
+            FX_play(Sounds, 22);
+            NetMsg_pop(NetMsg, label, -5000, 0, "unitfound_sm.pcx");
+            FX_fade(Sounds, 22);
+        }
+        int veh_id = veh_init(unit_id, faction_id, x, y);
+        if (veh_id >= 0) { // Fix: check return value
+            Vehs[veh_id].morale = MORALE_DISCIPLINED;
+        }
+        return 1;
+    }
+    case 10: {
+        int credits = (*CurrentTurn >= 50 ? 300 : 150);
+        Factions[faction_id].energy_credits += credits;
+        parse_num(0, credits);
+        InfoWin_on_redraw(InfoWin);
+        if (faction_id == MapWin->cOwner) {
+            FX_play(Sounds, 22);
+            NetMsg_pop(NetMsg, "UNITYENGINE", -5000, 0, "foundeng_sm.pcx");
+            FX_fade(Sounds, 22);
+        }
+        return 1;
+    }
+    case 19: {
+        for (int i = 0; i < *BaseCount; i++) {
+            MFaction* fac = &MFactions[Bases[i].faction_id];
+            if (has_fac_built(FAC_HEADQUARTERS, i) && !fac->is_alien()) {
+                if (_stricmp(fac->filename, "FUNGBOY") != 0) {
+                    spot_loc(Bases[i].x, Bases[i].y, faction_id);
+                }
+            }
+        }
+        if (faction_id == MapWin->cOwner) {
+            draw_map(1);
+            *GameDrawState |= 4;
+            GraphicWin_redraw(WorldWin);
+            FX_play(Sounds, 22);
+            NetMsg_pop(NetMsg, "UNITYRADAR", -5000, 0, "foundradar_sm.pcx");
+            FX_fade(Sounds, 22);
+        }
+        return 1;
+    }
+    default:
+        return 0;
+    }
+}
+
 static int goody_rand(int value) {
     return (value > 1 ? game_rand() % value : 0);
 }
@@ -1424,7 +1482,7 @@ GOODY_START:
                     event_value = 5;
                     goto GOODY_START;
                 }
-                if (!is_sea || mod_stack_check(veh_id, 8, -1, -1, -1) > 0) {
+                if (!is_sea || stack_check(veh_id, 8, -1, -1, -1) > 0) {
                     if (*MultiplayerActive && !(*GameState & STATE_SCN_VICT_ALL_ARTIFACTS_OBJ_UNIT)) {
                         for (int i = 1; i < MaxPlayerNum; i++) {
                             if (i != faction_id && is_human(i) && f->goody_artifact > Factions[i].goody_artifact) {
@@ -1502,7 +1560,7 @@ GOODY_START:
         return 0;
     case 9:
         if (*GameMoreRules & MRULES_SCN_UNITY_PODS_NO_VEHICLES || TechOwners[TECH_Orbital]
-        || (is_sea && mod_stack_check(veh_id, 8, -1, -1, -1) <= 0)) {
+        || (is_sea && stack_check(veh_id, 8, -1, -1, -1) <= 0)) {
             goto GOODY_NEXT;
         }
         int alt_unit_id;
@@ -1907,15 +1965,19 @@ GOODY_NEXT:
                 int bonus_val = bonus_at(x, y);
                 site_radius(x, y);
                 if (is_player && bonus_val) {
+                    TextLabel label = TL_Bonus;
                     if (bonus_val == RES_NUTRIENT) {
                         wave_it(40);
+                        label = TL_Nutrient;
                     } else if (bonus_val == RES_MINERAL) {
                         wave_it(42);
+                        label = TL_Minerals;
                     } else if (bonus_val == RES_ENERGY) {
                         ambience(210);
                         wave_it(41);
+                        label = TL_Energy;
                     }
-                    parse_says(0, label_get(91 + bonus_val), -1, -1);
+                    parse_says(0, label_get(label), -1, -1);
                     NetMsg_pop(NetMsg, "GOODYRESOURCE", 5000, 0, "supply_sm.pcx");
                 }
                 draw_tile(x, y, 2);
@@ -2475,7 +2537,7 @@ void __cdecl full_upgrade(int faction_id, int new_unit_id, int old_unit_id) {
 Check to see whether provided faction and base can build a specific prototype.
 Includes checks to prevent SMACX specific units from being built in SMAC mode.
 */
-int __cdecl mod_veh_avail(int unit_id, int faction_id, int base_id) {
+int __cdecl veh_avail(int unit_id, int faction_id, int base_id) {
     assert(unit_id >= 0 && unit_id < MaxProtoNum);
     assert(faction_id >= 0 && faction_id < MaxPlayerNum);
 
@@ -2520,7 +2582,8 @@ int __cdecl mod_veh_avail(int unit_id, int faction_id, int base_id) {
 /*
 Various unit stack related calculations based on type parameter (0-19) and conditions.
 */
-int __cdecl mod_stack_check(int veh_id, int type, int cond1, int cond2, int cond3) {
+int __cdecl stack_check(int veh_id, int type, int cond1, int cond2, int cond3) {
+    assert(type >= 0 && type <= 19);
     int value = 0;
     for (int i = veh_top(veh_id); i >= 0; i = Vehs[i].next_veh_id_stack) {
         switch (type) {
@@ -2535,8 +2598,7 @@ int __cdecl mod_stack_check(int veh_id, int type, int cond1, int cond2, int cond
             }
             break;
         case 2:
-            if ((cond2 < 0 || Vehs[i].faction_id == cond2)
-            && Vehs[i].plan() == cond1) {
+            if ((cond2 < 0 || Vehs[i].faction_id == cond2) && (uint8_t)Vehs[i].plan() == cond1) {
                 value++;
             }
             break;
@@ -2577,7 +2639,7 @@ int __cdecl mod_stack_check(int veh_id, int type, int cond1, int cond2, int cond
             }
             break;
         case 9:
-            if ((cond2 < 0 || Vehs[i].faction_id == cond2) && Vehs[i].order == cond1) {
+            if ((cond2 < 0 || Vehs[i].faction_id == cond2) && (int8_t)Vehs[i].order == cond1) {
                 value++;
             }
             break;
@@ -2625,7 +2687,7 @@ int __cdecl mod_stack_check(int veh_id, int type, int cond1, int cond2, int cond
             break;
         case 17:
             if ((cond2 < 0 || Vehs[i].faction_id == cond2)
-            && Units[Vehs[i].unit_id].group_id == cond1) {
+            && (uint8_t)Units[Vehs[i].unit_id].group_id == cond1) {
                 value++;
             }
             break;
@@ -2644,7 +2706,6 @@ int __cdecl mod_stack_check(int veh_id, int type, int cond1, int cond2, int cond
             break;
         }
     }
-    assert(value == stack_check(veh_id, type, cond1, cond2, cond3));
     return value;
 }
 
@@ -3143,6 +3204,72 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
     }
     strcpy_n(name, MaxProtoNameLen, buf);
     return 0;
+}
+
+void __cdecl spot_base(int base_id, int faction_id) {
+    BASE* base = &Bases[base_id];
+    base->visibility |= 1 << faction_id;
+    base->factions_pop_size_intel[faction_id] = base->pop_size;
+    int x = base->x;
+    int y = base->y;
+    MAP* sq = mapsq(x, y);
+    if (sq) {
+        if (faction_id == MapWin->cOwner && !sq->is_visible(faction_id)
+        && !(*GameState & STATE_OMNISCIENT_VIEW) && !map_is_known(faction_id)) {
+            sq->landmarks |= LM_UNK_400000;
+            *GameDrawState |= 1;
+        }
+        sq->visibility |= 1 << faction_id;
+        synch_bit(x, y, faction_id);
+    }
+}
+
+void __cdecl spot_stack(int veh_id, int faction_id) {
+    if (veh_id >= 0) {
+        int x = Vehs[veh_id].x;
+        int y = Vehs[veh_id].y;
+        MAP* sq = mapsq(x, y);
+        if (sq) {
+            if (faction_id == MapWin->cOwner && !sq->is_visible(faction_id)
+            && !(*GameState & STATE_OMNISCIENT_VIEW) && !map_is_known(faction_id)) {
+                sq->landmarks |= LM_UNK_400000;
+                *GameDrawState |= 1;
+            }
+            sq->visibility |= 1 << faction_id;
+            synch_bit(x, y, faction_id);
+        }
+    }
+    for (int i = veh_top(veh_id); i >= 0; i = Vehs[i].next_veh_id_stack) {
+        Vehs[i].visibility |= 1 << faction_id;
+        if (faction_id) {
+            Vehs[i].flags &= ~(VFLAG_INVISIBLE|VFLAG_LURKER);
+        }
+    }
+}
+
+void __cdecl unspot_stack(int veh_id) {
+    for (int i = veh_top(veh_id); i >= 0; i = Vehs[i].next_veh_id_stack) {
+        Vehs[i].visibility = 0;
+    }
+}
+
+void __cdecl spot_loc(int x, int y, int faction_id) {
+    MAP* sq = mapsq(x, y);
+    if (sq) {
+        if (faction_id == MapWin->cOwner && !sq->is_visible(faction_id)
+        && !(*GameState & STATE_OMNISCIENT_VIEW) && !map_is_known(faction_id)) {
+            sq->landmarks |= LM_UNK_400000;
+            *GameDrawState |= 1;
+        }
+        sq->visibility |= 1 << faction_id;
+        synch_bit(x, y, faction_id);
+    }
+    int base_id = base_at(x, y);
+    if (base_id < 0) {
+        spot_stack(veh_at(x, y), faction_id);
+    } else {
+        spot_base(base_id, faction_id);
+    }
 }
 
 VehArmor best_armor(int faction_id, int max_cost) {

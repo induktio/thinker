@@ -39,7 +39,7 @@ void __cdecl mod_base_ecology();
 int __cdecl mod_base_production();
 int __cdecl mod_base_upkeep(int base_id);
 int __cdecl base_psych_content_pop();
-void __cdecl mod_psych_check(int faction_id, int32_t* content_pop, int32_t* base_limit);
+void __cdecl psych_check(int faction_id, int32_t* content_pop, int32_t* base_limit);
 
 char* prod_name(int item_id);
 int mineral_cost(int base_id, int item_id);
@@ -63,7 +63,7 @@ int __cdecl own_base_rank(int base_id);
 int __cdecl base_rank(int faction_id, int position);
 int __cdecl pick_specialist(BASE* base, int econ_val, int labs_val, int psych_val);
 int __cdecl best_specialist();
-int __cdecl mod_facility_avail(FacilityId item_id, int faction_id, int base_id, int queue_count);
+int __cdecl facility_avail(FacilityId item_id, int faction_id, int base_id, int queue_count);
 bool can_build(int base_id, int item_id);
 bool can_build_unit(int base_id, int unit_id);
 bool can_staple(int base_id);

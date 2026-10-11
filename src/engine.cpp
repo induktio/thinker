@@ -3314,7 +3314,7 @@ FWave Wave_is_3d = (FWave)0x4C7250;
 FWave_scalar_dtor Wave_scalar_dtor = (FWave_scalar_dtor)0x4C9300;
 
 FFX_init FX_init = (FFX_init)0x445CD0;
-FFX_play2 FX_play2 = (FFX_play2)0x446960;
+FFX_play_loc FX_play_loc = (FFX_play_loc)0x446960;
 FFX_play FX_play = (FFX_play)0x446A00;
 FFX_play FX_stop = (FFX_play)0x446A90;
 FFX_play FX_fade = (FFX_play)0x446AD0;
