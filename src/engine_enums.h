@@ -673,6 +673,7 @@ enum PlayerFlags {
     PFLAG_UNK_100 = 0x100, // setup_player
     PFLAG_MAP_REVEALED = 0x200,
     PFLAG_GENETIC_PLAGUE_INTRO = 0x400, // +1 to defense against after 1st time faction experiences
+    PFLAG_UNK_800 = 0x800, // enemy_strategy
     PFLAG_UNK_1000 = 0x1000, // setup_player
     PFLAG_UNK_2000 = 0x2000, // turn_upkeep
     PFLAG_UNK_4000 = 0x4000,
@@ -790,6 +791,7 @@ enum MapLandmark {
     LM_NEXUS = 0x2000,
     LM_UNITY = 0x4000,
     LM_FOSSIL = 0x8000,
+    LM_UNK_200000 = 0x200000,
     LM_UNK_400000 = 0x400000, // set_dirty()
     LM_UNK_800000 = 0x800000,
     LM_DISABLE = 0x80000000, // most landmark effects skipped
@@ -858,6 +860,24 @@ enum AIGoal {
     AI_GOAL_NAVAL_SCOUT = 204,
     AI_GOAL_NAVAL_PICK = 205,
     Thinker_Goal_ID_First = AI_GOAL_RAISE_LAND,
+};
+
+enum RegionFlag {
+    REGION_UNK_1 = 0x1,
+    REGION_UNK_2 = 0x2,
+    REGION_UNK_4 = 0x4,
+    REGION_UNK_8 = 0x8,
+    REGION_UNK_10 = 0x10,
+    REGION_UNK_20 = 0x20,
+    REGION_UNK_40 = 0x40,
+    REGION_UNK_80 = 0x80,
+    REGION_UNK_100 = 0x100,
+    REGION_UNK_200 = 0x200,
+    REGION_UNK_400 = 0x400,
+    REGION_UNK_800 = 0x800,
+    REGION_UNK_1000 = 0x1000,
+    REGION_UNK_2000 = 0x2000,
+    REGION_UNK_4000 = 0x4000,
 };
 
 enum SocialEffect {

@@ -107,10 +107,11 @@ class TileSearch {
     MAP* get_next();
 };
 
-int __cdecl mod_zoc_any(int x, int y, int faction_id);
-int __cdecl mod_zoc_veh(int x, int y, int faction_id);
-int __cdecl mod_zoc_sea(int x, int y, int faction_id);
-int __cdecl mod_zoc_move(int x, int y, int faction_id);
+int __cdecl zoc_any(int x, int y, int faction_id);
+int __cdecl zoc_veh(int x, int y, int faction_id);
+int __cdecl zoc_sea(int x, int y, int faction_id);
+int __cdecl zoc_move(int x, int y, int faction_id);
+int __cdecl contiguous(int faction_id_1, int faction_id_2, int region, int flag);
 int path_get_next(int x1, int y1, int x2, int y2, int unit_id, int faction_id);
 int show_path_cost(int x1, int y1, int x2, int y2, int unit_id, int faction_id);
 int path_cost(int x1, int y1, int x2, int y2, int unit_id, int faction_id, int max_cost);

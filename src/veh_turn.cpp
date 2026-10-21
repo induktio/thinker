@@ -106,7 +106,7 @@ int __cdecl mod_enemy_veh(int veh_id) {
     do_all_non_input();
     bool skip = veh->moves_spent && veh->order == ORDER_MOVE_TO
         && veh->plan() != PLAN_NAVAL_TRANSPORT && !(veh->state & VSTATE_EXPLORE)
-        && !mod_zoc_any(veh->x, veh->y, veh->faction_id);
+        && !zoc_any(veh->x, veh->y, veh->faction_id);
 
     if (!skip && mod_enemy_move(veh_id) != VEH_SYNC) {
         return VEH_SKIP;
@@ -272,7 +272,7 @@ int __cdecl mod_alien_move(int veh_id) {
     int move_offset = -1;
 
     if (base_id < 0) {
-        if (!mod_zoc_any(veh_x, veh_y, 0)) {
+        if (!zoc_any(veh_x, veh_y, 0)) {
             kill(veh_id);
             return 1;
         }
@@ -358,7 +358,7 @@ int __cdecl mod_alien_move(int veh_id) {
         return 0;
     }
     if ((*BaseFindDist >= 8 || veh_sq->region != base_region)
-    && !mod_zoc_any(veh_x, veh_y, 0)
+    && !zoc_any(veh_x, veh_y, 0)
     && veh->movement_turns > (veh->triad() != TRIAD_LAND ? 16 : 6)
     && !(((uint8_t)veh_id + (uint8_t)*CurrentTurn) & 7)) {
         kill(veh_id);
@@ -391,7 +391,7 @@ int __cdecl mod_alien_move(int veh_id) {
                     if (cur >= 0) {
                         score = 8 * (stack_check(cur, 6, ABL_ARTILLERY, -1, -1)
                             + stack_check(cur, 2, 6, -1, -1));
-                        if (!mod_zoc_veh(veh_x, veh_y, 0) || i < 9) {
+                        if (!zoc_veh(veh_x, veh_y, 0) || i < 9) {
                             score += stack_check(cur, 4, -1, -1, -1);
                         }
                         if (map_range(veh_x, veh_y, nx, ny) > Rules->artillery_max_rng && score > 1) {

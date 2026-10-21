@@ -2093,8 +2093,8 @@ int __cdecl order_veh(int veh_id, int offset, int flag) {
             && Vehs[veh_id].plan() != PLAN_PROBE
             && !(Units[Vehs[veh_id].unit_id].ability_flags & ABL_CLOAKED)
             && stack_veh_id < 0
-            && mod_zoc_move(veh_x, veh_y, veh_fc_id)
-            && mod_zoc_move(tgt_x, tgt_y, veh_fc_id)) {
+            && zoc_move(veh_x, veh_y, veh_fc_id)
+            && zoc_move(tgt_x, tgt_y, veh_fc_id)) {
                 if (veh_fc_id != MapWin->cOwner || move_delay || !(*VehAttackFlags & 1)) {
                     goto MOV_END;
                 }
@@ -3071,7 +3071,7 @@ MOV_UPKEEP:
                 fuel_check = true;
             } else if (moves > 0) {
                 fuel_check = (clamp(moves, 0, 999) > Rules->move_rate_roads)
-                    || mod_zoc_veh(tgt_x, tgt_y, veh_fc_id);
+                    || zoc_veh(tgt_x, tgt_y, veh_fc_id);
             }
         }
         if (fuel_check) {
@@ -3220,7 +3220,7 @@ MOV_UPKEEP:
     && is_ocean(mapsq(tgt_x, tgt_y))
     && base_id < 0) {
         if (veh_speed(veh_id, 0) - Vehs[veh_id].moves_spent <= 0) {
-            if (mod_zoc_any(Vehs[veh_id].x, Vehs[veh_id].y, veh_fc_id)
+            if (zoc_any(Vehs[veh_id].x, Vehs[veh_id].y, veh_fc_id)
             || (!thinker_move_upkeep(veh_fc_id)
             && (Vehs[veh_id].visibility & FactionStatus[0] || Vehs[veh_id].status_icon == 'u'))) {
                 for (int cur_id = veh_top(veh_id); cur_id >= 0; cur_id = Vehs[cur_id].next_veh_id_stack) {
@@ -3275,7 +3275,7 @@ MOV_END:
                     if (Vehs[veh_id].state & VSTATE_UNK_8
                     && Vehs[veh_id].x == tgt_x
                     && Vehs[veh_id].y == tgt_y
-                    && !mod_zoc_veh(tgt_x, tgt_y, veh_fc_id)) {
+                    && !zoc_veh(tgt_x, tgt_y, veh_fc_id)) {
                         Vehs[veh_id].state &= ~VSTATE_UNK_8;
                     }
                 }

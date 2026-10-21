@@ -1885,7 +1885,7 @@ void __cdecl alien_fauna() {
                 if (psq && !is_ocean(psq)
                 && !psq->is_known(veh_owner_id)
                 && psq->anything_at() < 0
-                && !mod_zoc_any(px, py, 0)) {
+                && !zoc_any(px, py, 0)) {
                     int veh_id;
                     if (game_rand() % 5 || !*ExpansionEnabled || !conf.spawn_spore_launchers) {
                         veh_id = veh_init(BSC_MIND_WORMS, 0, px, py);

@@ -168,6 +168,8 @@ struct Config {
     int expansion_limit = 100;
     int expansion_autoscale = 0;
     int limit_project_start = 0;
+    int rival_friction_bias = 0;
+    int rival_defiance_bias = 0;
     int max_satellites = 20;
     int new_world_builder = 1;
     int world_sea_levels[3] = {46,58,70};
@@ -348,6 +350,8 @@ struct AIPlans {
 #include "gameturn.h"
 #include "gamewin.h"
 #include "faction.h"
+#include "faction_diplo.h"
+#include "faction_event.h"
 #include "base.h"
 #include "basewin.h"
 #include "build.h"

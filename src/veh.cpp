@@ -284,6 +284,7 @@ int __cdecl stack_fix(int veh_id) {
         return veh_id;
     }
     for (int i = 0; i < *VehCount; i++) {
+        // Fix: only promote and sort stacks in the same tile
         if (Vehs[veh_id].x == Vehs[i].x && Vehs[veh_id].y == Vehs[i].y) {
             veh_promote(i);
             stack_sort(veh_id);
@@ -762,7 +763,6 @@ void __cdecl veh_kill(int veh_id) {
 
 void __cdecl kill(int veh_id) {
     VEH* veh = &Vehs[veh_id];
-    const int player_id = *CurrentPlayerFaction;
     const int x = veh->x;
     const int y = veh->y;
     const int unit_id = veh->unit_id;
@@ -770,7 +770,7 @@ void __cdecl kill(int veh_id) {
     const int home_base_id = veh->home_base_id;
     const int deep_radar = has_abil(unit_id, ABL_DEEP_RADAR);
 
-    if (!veh_cargo(veh_id)) { // remove redundant reference on Spore Launchers
+    if (!veh_cargo(veh_id)) { // remove redundant Spore Launcher reference
         veh_kill(veh_id);
     } else if (!on_map(x, y)) {
         if (x == -2) {
@@ -788,7 +788,7 @@ void __cdecl kill(int veh_id) {
     BaseWin_check_base(BaseWin, home_base_id);
     if (!*VehBattleState && on_map(x, y)) {
         int alt_id = veh_at(x, y);
-        if (faction_id != player_id
+        if (faction_id != MapWin->cOwner
         || (stack_check(alt_id, 1, faction_id, -1, -1) && !deep_radar)) {
             draw_tile(x, y, 2);
         } else {
@@ -986,14 +986,8 @@ int __cdecl veh_speed(int veh_id, int skip_morale) {
     }
     if (veh->damage_taken && triad != TRIAD_AIR) {
         int moves = speed_val / Rules->move_rate_roads;
-        int reactor_val;
-        if (u->plan == PLAN_ARTIFACT) {
-            reactor_val = 1;
-            speed_val = 1;
-        } else {
-            reactor_val = clamp((int)u->reactor_id, 1, 100) * 10;
-            speed_val = clamp(reactor_val, 1, 99);
-        }
+        int reactor_val = veh->max_hitpoints();
+        speed_val = clamp(reactor_val, 1, 99);
         speed_val = (moves * clamp(reactor_val - veh->damage_taken, 0, 9999)
             + speed_val - 1) / speed_val;
         speed_val = clamp(speed_val, (triad == TRIAD_SEA) ? 2 : 1, 999) * Rules->move_rate_roads;
@@ -1403,7 +1397,7 @@ GOODY_START:
             }
             MAP* bsq = mapsq(tx, ty);
             if (is_ocean(bsq) == is_sea && bsq->region == sq->region) {
-                if (bsq->anything_at() < 0 && !mod_zoc_any(tx, ty, faction_id)) {
+                if (bsq->anything_at() < 0 && !zoc_any(tx, ty, faction_id)) {
                     if (!(f->player_flags & PFLAG_MAP_REVEALED) && !bsq->is_visible(faction_id)) {
                         int dist = map_range(x, y, tx, ty);
                         if (dist > 4 && dist <= max_dist) {
@@ -2284,6 +2278,7 @@ whether there is an associated 1st time prototype cost (true) or just the base (
 Note that has_proto_cost is treated as int32_t variable in the game engine.
 */
 int __cdecl mod_veh_cost(int unit_id, int base_id, int32_t* has_proto_cost) {
+    assert(unit_id >= 0 && unit_id < MaxProtoNum);
     int cost = Units[unit_id].cost;
     if (base_id >= 0 && unit_id < MaxProtoFactionNum // Fix: added base_id bounds check
     && (Units[unit_id].offense_value() < 0 || unit_id == BSC_SPORE_LAUNCHER)
@@ -3269,6 +3264,533 @@ void __cdecl spot_loc(int x, int y, int faction_id) {
         spot_stack(veh_at(x, y), faction_id);
     } else {
         spot_base(base_id, faction_id);
+    }
+}
+
+int __cdecl want_to_wake(int faction_id, int veh_id, int veh_id2) {
+    int triad = Vehs[veh_id].triad();
+    if (triad == TRIAD_AIR && Vehs[veh_id].movement_turns && Vehs[veh_id].order == ORDER_MOVE_TO) {
+        MAP* sq = mapsq(Vehs[veh_id].waypoint_x[0], Vehs[veh_id].waypoint_y[0]);
+        if (sq && sq->is_base()) {
+            int owner = sq->veh_owner();
+            int veh_faction = Vehs[veh_id].faction_id;
+            if (owner == veh_faction || (Factions[veh_faction].diplo_status[owner] & DIPLO_PACT)) {
+                return 0;
+            }
+        }
+    }
+    uint32_t status = Factions[Vehs[veh_id].faction_id].diplo_status[faction_id];
+    int value;
+    if (*MultiplayerActive) {
+        value = !(status & DIPLO_PACT);
+    } else {
+        int prefs = *GamePreferences;
+        if (status & DIPLO_PACT) {
+            value = prefs & PREF_AUTO_END_MOVE_SPOT_VEH_PACT;
+        } else if (status & DIPLO_TREATY) {
+            value = prefs & PREF_AUTO_END_MOVE_SPOT_VEH_TREATY;
+        } else if (status & DIPLO_TRUCE) {
+            value = prefs & PREF_AUTO_END_MOVE_SPOT_VEH_TRUCE;
+        } else {
+            value = prefs & PREF_AUTO_END_MOVE_SPOT_VEH_WAR;
+        }
+        if (!(prefs & PREF_AUTO_DONT_END_MOVE_DIFF_TRIAD)) {
+            return value;
+        }
+    }
+    if (veh_id >= 0 && veh_id2 >= 0) {
+        int other_triad = Vehs[veh_id2].triad();
+        if (triad != other_triad
+        && ((Vehs[veh_id].state & (VSTATE_UNK_1000000 | VSTATE_ON_ALERT)) != (VSTATE_UNK_1000000 | VSTATE_ON_ALERT)
+        || other_triad == TRIAD_LAND)) {
+            return 0;
+        }
+    }
+    return value;
+}
+
+void __cdecl wake_stack(int veh_id) {
+    for (int i = veh_top(veh_id); i >= 0; i = Vehs[i].next_veh_id_stack) {
+        if (Vehs[i].order == ORDER_SENTRY_BOARD) {
+            MAP* sq = mapsq(Vehs[i].x, Vehs[i].y);
+            if (Vehs[i].triad() != TRIAD_LAND
+            || (!is_ocean(sq)
+            && (Vehs[i].waypoint_x[0] < 0
+            || Vehs[Vehs[i].waypoint_x[0]].triad() != TRIAD_AIR
+            || sq->is_airbase()))) {
+                Vehs[i].order = ORDER_NONE;
+                Vehs[i].state &= ~VSTATE_EXPLORE;
+            }
+        }
+    }
+}
+
+void __cdecl spot_all(int veh_id, int flag) {
+    if (!*MultiplayerActive) {
+        flag = 1;
+    }
+    VEH* const veh = &Vehs[veh_id];
+    const int veh_x = veh->x;
+    const int veh_y = veh->y;
+    const int triad = veh->triad();
+    MAP* const veh_sq = mapsq(veh_x, veh_y);
+    if (!veh_sq) {
+        assert(0);
+        return;
+    }
+    int nexus_count = 0;
+    int has_tower = 0;
+    int has_native = 0;
+    int stealth = 0;
+    if (has_abil(veh->unit_id, ABL_DEEP_PRESSURE_HULL)
+    || has_abil(veh->unit_id, ABL_CLOAKED)
+    || (veh->flags & VFLAG_INVISIBLE)) {
+        stealth = 1;
+    } else if (veh_sq->is_fungus() && veh->unit_id != BSC_FUNGAL_TOWER) {
+        stealth = 2;
+    }
+    const int faction_id = veh->faction_id;
+    const int faction_bit = 1 << faction_id;
+    const bool radar = has_abil(veh->unit_id, ABL_DEEP_RADAR)
+        || (is_sensor(veh_x, veh_y) && whose_territory(faction_id, veh_x, veh_y, 0, 0) == faction_id);
+    const bool on_ocean = is_ocean(veh_sq);
+    Faction* const plr = &Factions[faction_id];
+    const int visible_end = radar ? 25 : 9;
+    const int scan_end = radar ? 49 : 25;
+    int encounter_mask = 0;
+    int draw_range = 0;
+
+    auto clear_alert = [](VEH* v) {
+        if ((v->state & (VSTATE_UNK_2000000|VSTATE_ON_ALERT)) == (VSTATE_UNK_2000000|VSTATE_ON_ALERT)
+        && v->patrol_current_point < v->waypoint_count) {
+            v->state &= ~(VSTATE_UNK_2000000|VSTATE_ON_ALERT);
+        }
+        if ((v->state & (VSTATE_UNK_1000000|VSTATE_ON_ALERT)) == (VSTATE_UNK_1000000|VSTATE_ON_ALERT)) {
+            v->state &= ~(VSTATE_UNK_1000000|VSTATE_ON_ALERT);
+        }
+        v->state &= ~VSTATE_EXPLORE;
+        if (v->order == ORDER_MOVE_TO) {
+            v->order = ORDER_NONE;
+        }
+    };
+    auto spot_sensor = [&](int x, int y, MAP* sq) {
+        if (!is_sensor(x, y)) {
+            return;
+        }
+        int owner = sq->owner;
+        if (owner <= 0 || owner == faction_id || stealth == 1 || sq->base_who() >= 0) {
+            return;
+        }
+        spot_stack(veh_id, owner);
+        if ((plr->diplo_status[owner] & (DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT)) || !flag) {
+            return;
+        }
+        if (triad != TRIAD_LAND) {
+            add_goal(owner, AI_GOAL_UNK_1, 2, x, y, -1);
+        } else {
+            add_goal(owner, AI_GOAL_ATTACK, 2, x, y, -1);
+            add_goal(owner, AI_GOAL_DEFEND, 1, x, y, -1);
+        }
+    };
+    auto check_nearby = [&](int x, int y, MAP* sq) -> bool {
+        // Fix: added tile_owner bounds checking and radar related early return
+        for (int n = 0; n < 25; n++) {
+            int nx = wrap(x + TableOffsetX[n]);
+            int ny = y + TableOffsetY[n];
+            if (!on_map(nx, ny)) {
+                continue;
+            }
+            MAP* nsq = mapsq(nx, ny);
+            if (n < 9) {
+                int tile_owner = nsq->anything_at();
+                if (tile_owner == faction_id) {
+                    return true;
+                }
+                if (tile_owner >= 0 && (plr->diplo_status[tile_owner] & DIPLO_PACT)) {
+                    for (int k = veh_at(nx, ny); k >= 0; k = Vehs[k].next_veh_id_stack) {
+                        if (Vehs[k].faction_id == faction_id) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            if (is_sensor(nx, ny)) {
+                if (nsq->owner == faction_id) {
+                    return true;
+                }
+                int base_id = base_find(veh_x, veh_y);
+                if (base_id >= 0) {
+                    int dx = x_dist(veh_x, Bases[base_id].x);
+                    int dy = abs(veh_y - Bases[base_id].y);
+                    if ((dx == 0 || dx == 2) && (dy == 0 || dy == 2)) {
+                        if (has_fac_built(FAC_GEOSYNC_SURVEY_POD, base_id)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            if (nsq->base_who() == faction_id) {
+                return true;
+            }
+            int veh_owner = nsq->veh_who();
+            if (veh_owner == faction_id
+            || (veh_owner >= 0 && (Factions[veh_owner].diplo_status[faction_id] & DIPLO_PACT))) {
+                for (int k = veh_top(veh_at(nx, ny)); k >= 0; k = Vehs[k].next_veh_id_stack) {
+                    if (Vehs[k].faction_id == faction_id
+                    && has_abil(Vehs[k].unit_id, ABL_DEEP_RADAR)) {
+                        int other_triad = Vehs[k].triad();
+                        if (other_triad == TRIAD_AIR
+                        || is_ocean(sq) == (other_triad == TRIAD_SEA)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    };
+    if (!faction_id) {
+        veh->visibility &= veh_sq->visibility;
+    }
+    if ((*GameMorePreferences & MPREF_MAP_SHOW_FOG_WAR)
+    && faction_id == MapWin->cOwner && !(*GameState & STATE_OMNISCIENT_VIEW)) {
+        for (int i = 0; i < scan_end; i++) {
+            int x = wrap(veh_x + TableOffsetX[i]);
+            int y = veh_y + TableOffsetY[i];
+            if (!on_map(x, y)) {
+                continue;
+            }
+            MAP* sq = mapsq(x, y);
+            bool visible = true;
+            if (i >= visible_end) {
+                if (sq->landmarks & LM_UNK_200000) {
+                    continue;
+                }
+                visible = check_nearby(x, y, sq);
+            }
+            if (((sq->landmarks & LM_UNK_200000) != 0) == visible) {
+                int draw_level = i < 9 ? 1 : (i < 25 ? 2 : 3);
+                draw_range = max(draw_range, draw_level);
+            }
+        }
+    }
+    for (int i = 0; i < visible_end; i++) {
+        int x = wrap(veh_x + TableOffsetX[i]);
+        int y = veh_y + TableOffsetY[i];
+        if (!on_map(x, y)) {
+            continue;
+        }
+        MAP* sq = mapsq(x, y);
+        if ((sq->landmarks & (LM_DISABLE|LM_NEXUS)) == LM_NEXUS) {
+            nexus_count++;
+        }
+        if (i < 9 || triad == TRIAD_AIR || is_ocean(sq) == (triad == TRIAD_SEA)) {
+            if (faction_id == MapWin->cOwner && !(*GameState & STATE_OMNISCIENT_VIEW)
+            && !map_is_known(faction_id)) {
+                if (!sq->is_visible(faction_id)) {
+                    sq->landmarks |= LM_UNK_400000;
+                    *GameDrawState |= 1;
+                }
+                if (((sq->items ^ sq->visible_items[faction_id - 1]) & ~(BIT_BASE_IN_TILE|BIT_VEH_IN_TILE))
+                || !sq->is_visible(faction_id)) {
+                    draw_range = max(draw_range, i >= 9 ? 3 : 2);
+                }
+            }
+            if (faction_id) {
+                sq->visible_items[faction_id - 1] = sq->items;
+            }
+            sq->visibility |= faction_bit;
+        }
+    }
+    for (int i = visible_end; i < scan_end; i++) {
+        int x = wrap(veh_x + TableOffsetX[i]);
+        int y = veh_y + TableOffsetY[i];
+        if (!on_map(x, y)) {
+            continue;
+        }
+        MAP* sq = mapsq(x, y);
+        if (sq->is_visible(faction_id)) {
+            continue;
+        }
+        int unseen = 0;
+        for (int j = 0; j < 8; j++) {
+            int dx = BaseOffsetX[j];
+            int dy = BaseOffsetY[j];
+            int nx = wrap(x + dx);
+            int ny = y + dy;
+            if (on_map(nx, ny) && !mapsq(nx, ny)->is_visible(faction_id)) {
+                unseen++;
+                if (!dx || !dy) {
+                    unseen++;
+                }
+            }
+        }
+        if (unseen < ((radar || is_ocean(sq)) ? 6 : 4)) {
+            if (faction_id == MapWin->cOwner && !(*GameState & STATE_OMNISCIENT_VIEW)
+            && !map_is_known(faction_id)) {
+                sq->landmarks |= LM_UNK_400000;
+                *GameDrawState |= 1;
+            }
+            if (faction_id) {
+                sq->visible_items[faction_id - 1] = sq->items;
+            }
+            sq->visibility |= faction_bit;
+            int base_id = base_at(x, y);
+            if (base_id >= 0) {
+                spot_base(base_id, faction_id);
+            }
+            draw_range = max(draw_range, radar + 2);
+        }
+    }
+    for (int i = veh_top(veh_id); i >= 0; i = Vehs[i].next_veh_id_stack) {
+        if (Vehs[i].faction_id != faction_id) {
+            spot_stack(i, Vehs[i].faction_id);
+        }
+    }
+    for (int i = 0; i < 9; i++) {
+        int x = wrap(veh_x + TableOffsetX[i]);
+        int y = veh_y + TableOffsetY[i];
+        if (!on_map(x, y)) {
+            continue;
+        }
+        MAP* sq = mapsq(x, y);
+        spot_sensor(x, y, sq);
+        if (!i) {
+            continue;
+        }
+        int base_id = base_at(x, y);
+        if (base_id >= 0) {
+            int base_faction = Bases[base_id].faction_id;
+            if (faction_id != base_faction) {
+                if (triad != TRIAD_AIR || !veh->range()) {
+                    if (!(on_ocean || stealth) || !(plr->diplo_status[base_faction] & DIPLO_COMMLINK)) {
+                        encounter_mask |= 1 << base_faction;
+                    }
+                }
+                if (faction_id == MapWin->cOwner && !(*GameState & STATE_OMNISCIENT_VIEW)) {
+                    if (Bases[base_id].visibility & faction_bit) {
+                        if (Bases[base_id].factions_pop_size_intel[faction_id] != Bases[base_id].pop_size) {
+                            draw_range = max(draw_range, 1);
+                        }
+                    } else {
+                        draw_range = max(draw_range, 2);
+                    }
+                }
+                spot_base(base_id, faction_id);
+                if (!stealth || !(plr->diplo_status[base_faction] & DIPLO_COMMLINK)) {
+                    spot_stack(veh_id, base_faction);
+                }
+                if (triad == TRIAD_LAND
+                && !(Factions[base_faction].diplo_status[faction_id] & (DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT))
+                && flag) {
+                    add_goal(base_faction, AI_GOAL_ATTACK, 2, x, y, -1);
+                    add_goal(base_faction, AI_GOAL_DEFEND, 1, x, y, -1);
+                }
+            }
+        }
+        bool target_ocean = is_ocean(sq);
+        if (has_abil(veh->unit_id, ABL_DEEP_PRESSURE_HULL) && !target_ocean) {
+            continue;
+        }
+        int other_veh_id = stack_fix(veh_at(x, y));
+        if (other_veh_id < 0) {
+            continue;
+        }
+        VEH* other = &Vehs[other_veh_id];
+        int other_faction = other->faction_id;
+        if (other_faction == faction_id) {
+            continue;
+        }
+        bool skip_contact = stealth && !has_abil(other->unit_id, ABL_DEEP_RADAR)
+            && (plr->diplo_status[other_faction] & DIPLO_COMMLINK);
+        if (!skip_contact) {
+            if (base_id < 0) {
+                spot_stack(veh_id, other_faction);
+            }
+            if (!(plr->diplo_status[other_faction] & DIPLO_PACT) && flag) {
+                wake_stack(other_veh_id);
+                bool wake_other;
+                if (is_human(other_faction)) {
+                    wake_other = on_ocean == target_ocean
+                        && want_to_wake(faction_id, other_veh_id, veh_id);
+                } else {
+                    wake_other = !(plr->diplo_status[other_faction] & (DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT))
+                        && (target_ocean || !on_ocean);
+                }
+                if (wake_other) {
+                    clear_alert(other);
+                }
+            }
+        }
+        if ((!has_abil(other->unit_id, ABL_DEEP_PRESSURE_HULL)
+        && !has_abil(other->unit_id, ABL_CLOAKED)
+        && !(other->flags & VFLAG_INVISIBLE)
+        && (!mapsq(other->x, other->y)->is_fungus() || other->unit_id == BSC_FUNGAL_TOWER))
+        || radar
+        || stack_check(other_veh_id, 1, -1, -1, -1) != 1
+        || !(plr->diplo_status[other->faction_id] & DIPLO_COMMLINK)) {
+            if (base_id < 0) {
+                if (faction_id == MapWin->cOwner && !(*GameState & STATE_OMNISCIENT_VIEW)
+                && !other->is_visible(faction_id) && draw_range <= 1) {
+                    draw_range = 1;
+                }
+                spot_stack(other_veh_id, faction_id);
+            }
+            bool wake_own;
+            if (is_human(faction_id)) {
+                wake_own = (on_ocean == target_ocean || triad == TRIAD_AIR)
+                    && want_to_wake(other_faction, veh_id, other_veh_id);
+            } else {
+                wake_own = !(plr->diplo_status[other_faction] & (DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT))
+                    && (on_ocean || !target_ocean || triad == TRIAD_AIR);
+            }
+            if (wake_own) {
+                clear_alert(veh);
+            }
+            if (target_ocean && other_faction
+            && !(plr->diplo_status[other_faction] & (DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT))) {
+                add_goal(faction_id, AI_GOAL_UNK_1,
+                    has_abil(other->unit_id, ABL_DEEP_PRESSURE_HULL|ABL_CLOAKED) ? 3 : 2, x, y, -1);
+            }
+            if (!(plr->diplo_status[other_faction] & (DIPLO_TRUCE|DIPLO_TREATY|DIPLO_PACT))) {
+                add_goal(faction_id, AI_GOAL_ATTACK, faction_id ? 3 : 1, x, y, -1);
+            }
+            if (veh->plan() >= PLAN_COLONY
+            && !(plr->diplo_status[other_faction] & DIPLO_PACT)) {
+                if (whose_territory(other_faction, x, y, 0, 0) == other_faction
+                && other->plan() >= PLAN_COLONY) {
+                    add_goal(other_faction, AI_GOAL_DEFEND, 2, x, y, -1);
+                    add_goal(other_faction, AI_GOAL_ATTACK, 1, x, y, -1);
+                    add_goal(other_faction, AI_GOAL_SCOUT, 1, x, y, -1);
+                }
+            }
+            if (triad != TRIAD_AIR || !veh->range()) {
+                if ((other->triad() != TRIAD_AIR || !other->range())
+                && (on_ocean == target_ocean || (base_id >= 0 && !on_ocean)
+                || !(plr->diplo_status[other_faction] & DIPLO_COMMLINK))) {
+                    if (other->unit_id == BSC_FUNGAL_TOWER) {
+                        has_tower = 1;
+                    } else if (other->is_native_unit()) { // remove redundant Spore Launcher reference
+                        has_native = 1;
+                    }
+                    encounter_mask |= 1 << other_faction;
+                }
+            }
+        }
+    }
+    for (int i = 9; i < 25; i++) {
+        int x = wrap(veh_x + TableOffsetX[i]);
+        int y = veh_y + TableOffsetY[i];
+        if (!on_map(x, y)) {
+            continue;
+        }
+        MAP* sq = mapsq(x, y);
+        spot_sensor(x, y, sq);
+        int tile_owner = sq->anything_at();
+        if (tile_owner < 0 || tile_owner == faction_id) { // Fix: added bounds checking
+            continue;
+        }
+        int other_veh_id = stack_fix(veh_at(x, y));
+        int base_id = base_at(x, y);
+        if (radar && (triad == TRIAD_AIR || is_ocean(sq) == (triad == TRIAD_SEA))) {
+            if (base_id >= 0) {
+                if (faction_id == MapWin->cOwner && !(*GameState & STATE_OMNISCIENT_VIEW)) {
+                    if (Bases[base_id].visibility & faction_bit) {
+                        if (Bases[base_id].factions_pop_size_intel[faction_id] != Bases[base_id].pop_size) {
+                            draw_range = max(draw_range, 2);
+                        }
+                    } else {
+                        draw_range = max(draw_range, 3);
+                    }
+                }
+                spot_base(base_id, faction_id);
+            }
+            if (other_veh_id >= 0 && base_id < 0) {
+                VEH* other = &Vehs[other_veh_id];
+                if (!has_abil(other->unit_id, ABL_DEEP_PRESSURE_HULL)
+                && !has_abil(other->unit_id, ABL_CLOAKED)
+                && !(other->flags & VFLAG_INVISIBLE)
+                && (!mapsq(other->x, other->y)->is_fungus() || other->unit_id == BSC_FUNGAL_TOWER)) {
+                    // Fix: original checked visibility of the spotting unit instead of the spotted one
+                    if (faction_id == MapWin->cOwner && !(*GameState & STATE_OMNISCIENT_VIEW)
+                    && !other->is_visible(faction_id) && draw_range <= 2) {
+                        draw_range = 2;
+                    }
+                    spot_stack(other_veh_id, faction_id);
+                    if (is_ocean(sq) && tile_owner
+                    && !(plr->diplo_status[tile_owner] & DIPLO_TREATY)) {
+                        add_goal(faction_id, AI_GOAL_UNK_1, 2, x, y, -1);
+                    }
+                }
+            }
+        }
+        if (other_veh_id >= 0 && !stealth) {
+            VEH* other = &Vehs[other_veh_id];
+            if (has_abil(other->unit_id, ABL_DEEP_RADAR)) {
+                int other_triad = other->triad();
+                if (other_triad == TRIAD_AIR || on_ocean == (other_triad == TRIAD_SEA)) {
+                    if (!(plr->diplo_status[tile_owner] & DIPLO_PACT) && flag) {
+                        wake_stack(other_veh_id);
+                    }
+                    if (veh_sq->base_who() < 0) {
+                        spot_stack(veh_id, tile_owner);
+                    }
+                    if (!is_ocean(sq) && tile_owner
+                    && !(Factions[tile_owner].diplo_status[faction_id] & DIPLO_TREATY)) {
+                        add_goal(tile_owner, AI_GOAL_UNK_1, 2, veh_x, veh_y, -1);
+                    }
+                }
+            }
+        }
+        if (base_id < 0) {
+            continue;
+        }
+        if (!(Factions[tile_owner].player_flags & PFLAG_MAP_REVEALED)
+        && !veh_sq->is_visible(tile_owner)) {
+            continue;
+        }
+        if (stealth) {
+            continue;
+        }
+        if (on_ocean != is_ocean(sq) || veh_sq->region == sq->region) {
+            spot_stack(veh_id, tile_owner);
+            if (triad == TRIAD_LAND && veh_sq->region == sq->region) {
+                if (x == Factions[tile_owner].target_x && y == Factions[tile_owner].target_y) {
+                    Factions[tile_owner].target_y = -1;
+                    Factions[tile_owner].target_x = -1;
+                    for (int k = veh_at(x, y); k >= 0; k = Vehs[k].next_veh_id_stack) {
+                        if (Vehs[k].state & VSTATE_UNK_40000) {
+                            Vehs[k].state |= VSTATE_UNK_40000|VSTATE_UNK_20000;
+                        }
+                    }
+                }
+            }
+            if (veh->plan() == PLAN_PROBE
+            && !(plr->diplo_status[tile_owner] & DIPLO_PACT)) {
+                add_goal(tile_owner, AI_GOAL_ATTACK, 2, veh_x, veh_y, -1);
+                add_goal(tile_owner, AI_GOAL_DEFEND, 1, veh_x, veh_y, -1);
+                add_goal(tile_owner, AI_GOAL_SCOUT, 1, veh_x, veh_y, -1);
+            }
+        }
+    }
+    if (*CurrentTurn) {
+        draw_radius(veh_x, veh_y, faction_id != MapWin->cOwner ? 0 : draw_range, 2);
+        if (faction_id == MapWin->cOwner && draw_range) {
+            GraphicWin_redraw(WorldWin);
+        }
+        if (nexus_count > 8 && faction_id == MapWin->cOwner && MFactions[faction_id].is_alien()) {
+            interlude(41, 0, 1, 0);
+        }
+        if (encounter_mask & 1) {
+            encounter(faction_id, 0, veh_x, veh_y, has_tower, has_native);
+        }
+        if (faction_id && flag) {
+            for (int i = 1; i < MaxPlayerNum; i++) {
+                if (i != faction_id && (encounter_mask & (1 << i))) {
+                    encounter(faction_id, i, veh_x, veh_y, 0, 0);
+                }
+            }
+        }
     }
 }
 

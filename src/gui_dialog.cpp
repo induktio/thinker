@@ -70,11 +70,11 @@ int __cdecl mod_threaten(int faction1, int faction2)
     Faction& f_plr = Factions[faction1];
     Faction& f_cmp = Factions[faction2];
 
-    if (!*MultiplayerActive && !*diplo_value_93FA70
+    if (!*MultiplayerActive && !*DiploCanBetray
     && has_pact(faction2, faction1)
     && !has_treaty(faction2, faction1, DIPLO_HAVE_SURRENDERED)
-    && (*diplo_current_proposal_id == DiploProposalTechTrade
-    || *diplo_current_proposal_id == DiploProposalNeedEnergy)) {
+    && (*DiploCurrentProposal == DiploProposalTechTrade
+    || *DiploCurrentProposal == DiploProposalNeedEnergy)) {
 
         int friction = clamp(*DiploFriction, 0, 20);
         int score = 2*(*DiffLevel + friction)
@@ -89,7 +89,7 @@ int __cdecl mod_threaten(int faction1, int faction2)
             cause_friction(faction2, faction1, 2);
             parse_says(0, get_title(faction1), -1, -1);
             parse_says(1, get_name(faction1), -1, -1);
-            parse_says(2, (const char*)get_pact(faction1), -1, -1);
+            parse_says(2, get_pact(faction1), -1, -1);
             X_dialog("ENDPACT", faction2);
             pact_ends(faction1, faction2);
             return 0;
@@ -192,7 +192,7 @@ int __cdecl mod_base_swap(int faction1, int faction2)
     bool surrender = has_treaty(faction2, faction1, DIPLO_PACT)
         && has_treaty(faction2, faction1, DIPLO_HAVE_SURRENDERED);
 
-    if (*MultiplayerActive || *PbemActive || *diplo_ask_base_swap_id < 0 || is_human(faction2)) {
+    if (*MultiplayerActive || *PbemActive || *DiploAskBaseSwapID < 0 || is_human(faction2)) {
         if (surrender) {
             return base_swap(faction1, faction2);
         }
@@ -203,24 +203,24 @@ int __cdecl mod_base_swap(int faction1, int faction2)
         X_dialog("NEVERBASESWAP", faction2);
         return 0;
     }
-    if (*diplo_counter_proposal_id == DiploCounterThreaten) {
+    if (*DiploCounterProposal == DiploCounterThreaten) {
         cause_friction(faction2, faction1, 2);
         parse_says(0, get_title(faction1), -1, -1);
         parse_says(1, get_name(faction1), -1, -1);
         X_dialog("BASENOCEDE", faction2);
         return 0;
     }
-    int cost_ask = base_trade_value(*diplo_ask_base_swap_id, faction1, faction2);
-    parse_says(0, Bases[*diplo_ask_base_swap_id].name, -1, -1);
+    int cost_ask = base_trade_value(*DiploAskBaseSwapID, faction1, faction2);
+    parse_says(0, Bases[*DiploAskBaseSwapID].name, -1, -1);
     ParseNumTable[0] = cost_ask;
 
     if (cost_ask < 1 || f_cmp.base_count == 1
-    || has_fac_built(FAC_HEADQUARTERS, *diplo_ask_base_swap_id)) {
+    || has_fac_built(FAC_HEADQUARTERS, *DiploAskBaseSwapID)) {
         X_dialog("NOBASESWAP2", faction2);
         return 0;
     }
-    if (*diplo_counter_proposal_id == DiploCounterEnergyPayment
-    || *diplo_counter_proposal_id == DiploCounterNameAPrice) {
+    if (*DiploCounterProposal == DiploCounterEnergyPayment
+    || *DiploCounterProposal == DiploCounterNameAPrice) {
         if (cost_ask > 5000 + clamp(*CurrentTurn, 0, 500)*40) {
             X_dialog("NOBASESWAP2", faction2);
             return 0;
@@ -237,15 +237,15 @@ int __cdecl mod_base_swap(int faction1, int faction2)
             return 0;
         }
         // net_energy also calls Console_update_data and StatusWin_redraw
-        net_cede_base(*diplo_ask_base_swap_id, faction1, 1);
+        net_cede_base(*DiploAskBaseSwapID, faction1, 1);
         net_energy(faction1, -cost_ask, faction2, cost_ask, 1);
         draw_map(1);
         return 0;
     }
-    if (*diplo_counter_proposal_id == DiploCounterGiveBase && *diplo_bid_base_swap_id >= 0) {
-        int cost_bid = base_trade_value(*diplo_bid_base_swap_id, faction1, faction2);
-        parse_says(0, Bases[*diplo_ask_base_swap_id].name, -1, -1);
-        parse_says(1, Bases[*diplo_bid_base_swap_id].name, -1, -1);
+    if (*DiploCounterProposal == DiploCounterGiveBase && *DiploBidBaseSwapID >= 0) {
+        int cost_bid = base_trade_value(*DiploBidBaseSwapID, faction1, faction2);
+        parse_says(0, Bases[*DiploAskBaseSwapID].name, -1, -1);
+        parse_says(1, Bases[*DiploBidBaseSwapID].name, -1, -1);
 
         if (cost_bid < 1 && !surrender) {
             X_dialog("NOBASESWAP2", faction2);
@@ -260,16 +260,16 @@ int __cdecl mod_base_swap(int faction1, int faction2)
             return 0;
         }
         X_dialog("YESBASESWAP", faction2);
-        net_cede_base(*diplo_ask_base_swap_id, faction1, 1);
-        net_cede_base(*diplo_bid_base_swap_id, faction2, 1);
+        net_cede_base(*DiploAskBaseSwapID, faction1, 1);
+        net_cede_base(*DiploBidBaseSwapID, faction2, 1);
         StatusWin_redraw(StatusWin);
         draw_map(1);
         return 0;
     }
-    if (*diplo_counter_proposal_id == DiploCounterFriendship) {
+    if (*DiploCounterProposal == DiploCounterFriendship) {
         // skipped
     }
-    if (*diplo_counter_proposal_id == DiploCounterResearchData) {
+    if (*DiploCounterProposal == DiploCounterResearchData) {
         // skipped
     }
     parse_says(0, get_title(faction1), -1, -1);
@@ -284,11 +284,11 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
     Faction& f_cmp = Factions[faction2];
     bool is_pact = has_treaty(faction1, faction2, DIPLO_PACT);
     bool is_treaty = has_treaty(faction1, faction2, DIPLO_TREATY);
-    int prop_counter = *diplo_counter_proposal_id;
-    *diplo_second_faction = faction2;
-    tech_analysis(faction1, faction2); // diplo_entry_id
+    int prop_counter = *DiploCounterProposal;
+    *DiploSecondFaction = faction2;
+    tech_analysis(faction1, faction2);
 
-    if (*diplo_current_proposal_id != DiploProposalNeedEnergy) {
+    if (*DiploCurrentProposal != DiploProposalNeedEnergy) {
         assert(0);
         return 0;
     }
@@ -304,7 +304,7 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
             || f_cmp.tech_ranking <= f_plr.tech_ranking
             || f_cmp.diplo_patience[faction1] >= 2) {
                 // Nothing
-            } else if (*diplo_entry_id < 0 || prop_counter == DiploCounterFriendship) {
+            } else if (*DiploTradeWantTech1 < 0 || prop_counter == DiploCounterFriendship) {
                 net_energy(faction1, value, faction2, -value, 1);
                 f_cmp.diplo_patience[faction1] += 2;
                 parse_num(0, value);
@@ -381,15 +381,15 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
         return 0;
     }
 
-    if ((prop_counter != DiploCounterNameAPrice || *diplo_entry_id >= 0)
+    if ((prop_counter != DiploCounterNameAPrice || *DiploTradeWantTech1 >= 0)
     && (prop_counter == DiploCounterResearchData || prop_counter == DiploCounterNameAPrice)) {
         bool difficult = f_cmp.AI_fight > 0 && f_cmp.AI_power > 0;
         parse_says(0, get_title(faction1), -1, -1);
         parse_says(1, get_name(faction1), -1, -1);
         // Replace faction label reference on Believers with more generic code
-        if (*diplo_entry_id >= 0 && (!difficult || f_cmp.SE_research_base > -2)) {
-            int tech_value = tech_alt_val(*diplo_entry_id, faction2, 0);
-            int alt_tech_value = (*diplo_tech_id2 < 0 ? 0 : tech_alt_val(*diplo_tech_id2, faction2, 0));
+        if (*DiploTradeWantTech1 >= 0 && (!difficult || f_cmp.SE_research_base > -2)) {
+            int tech_value = tech_alt_val(*DiploTradeWantTech1, faction2, 0);
+            int alt_tech_value = (*DiploTradeWantTech2 < 0 ? 0 : tech_alt_val(*DiploTradeWantTech2, faction2, 0));
             int cost_limit = min(f_cmp.energy_credits/4,
                 f_cmp.energy_credits/16 + f_cmp.base_count*5 + *CurrentTurn);
             int cost_value = tech_value
@@ -415,16 +415,16 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
             }
             while (true) {
                 StrBuffer[0] = '\0';
-                say_tech(StrBuffer, *diplo_entry_id, 1);
+                say_tech(StrBuffer, *DiploTradeWantTech1, 1);
                 parse_says(0, StrBuffer, -1, -1);
-                if (*diplo_tech_id2 >= 0) {
+                if (*DiploTradeWantTech2 >= 0) {
                     StrBuffer[0] = '\0';
-                    say_tech(StrBuffer, *diplo_tech_id2, 1);
+                    say_tech(StrBuffer, *DiploTradeWantTech2, 1);
                     parse_says(1, StrBuffer, -1, -1);
                 }
                 parse_num(0, cost_value);
                 int value;
-                if (*diplo_tech_id2 < 0) {
+                if (*DiploTradeWantTech2 < 0) {
                     value = X_dialog(random(2) ? "ENERGYTECH0" : "ENERGYTECH1", faction2);
                 } else {
                     value = X_dialog("ENERGYTECH2", faction2);
@@ -432,8 +432,8 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
                 if (!value) { // "Sorry, not interested."
                     break;
                 }
-                if (value == 3 || (value == 2 && *diplo_tech_id2 < 0)) { // Consult Datalinks.
-                    help_topic(14, *diplo_entry_id);
+                if (value == 3 || (value == 2 && *DiploTradeWantTech2 < 0)) { // Consult Datalinks.
+                    help_topic(14, *DiploTradeWantTech1);
                 } else {
                     if (value == 2) { // "No, but I will sell you $TECH1 for the same price."
                         // Replace faction label references on Hive/University with more generic code
@@ -443,13 +443,13 @@ int __cdecl mod_energy_trade(int faction1, int faction2)
                             return 0;
                         }
                         X_dialog("SELLSECOND", faction2);
-                        net_tech(faction2, *diplo_tech_id2, faction1, 0);
+                        net_tech(faction2, *DiploTradeWantTech2, faction1, 0);
                     } else { // Transmit information on $TECH0.
-                        net_tech(faction2, *diplo_entry_id, faction1, 0);
-                        *diplo_entry_id = *diplo_tech_id2;
+                        net_tech(faction2, *DiploTradeWantTech1, faction1, 0);
+                        *DiploTradeWantTech1 = *DiploTradeWantTech2;
                     }
                     InfoWin->override_state = 0;
-                    *diplo_tech_id2 = -1;
+                    *DiploTradeWantTech2 = -1;
                     net_energy(faction1, cost_value, faction2, -cost_value, 1); // NetDaemon_await_diplo
                     return 1;
                 }
@@ -473,7 +473,7 @@ int __cdecl mod_buy_tech(int faction1, int faction2, int counter_id, int high_pr
     && (counter_id == DiploCounterEnergyPayment
     || counter_id == DiploCounterNameAPrice
     || counter_id == DiploCounterResearchData)) {
-        if (*diplo_tech_id1 < 0) {
+        if (*DiploTradeOfferTech1 < 0) {
             return 0; // "no technical data in which you would be interested"
         }
         if (f_plr.sanction_turns > 0 || f_cmp.diplo_betrayed[faction1]
@@ -481,7 +481,7 @@ int __cdecl mod_buy_tech(int faction1, int faction2, int counter_id, int high_pr
             X_dialog(random(2) ? "REJTECHLATER0" : "REJTECHLATER1", faction2);
             return 1; // skip additional dialog replies
         }
-        int value = (tech_alt_val(*diplo_tech_id1, faction2, 0) + 50)
+        int value = (tech_alt_val(*DiploTradeOfferTech1, faction2, 0) + 50)
             * clamp(*DiffLevel + 3, 4, 8)
             * clamp(32 + clamp(*DiploFriction, 0, 20)
             + 4*diplo_relation(faction1, faction2)
@@ -500,14 +500,14 @@ int __cdecl mod_buy_tech(int faction1, int faction2, int counter_id, int high_pr
         if (high_price) {
             value = value * 5 / 4;
         }
-        if (f_plr.tech_cost > 50 && f_plr.tech_research_id == *diplo_tech_id1) {
+        if (f_plr.tech_cost > 50 && f_plr.tech_research_id == *DiploTradeOfferTech1) {
             value = (int)(value * (1.0 - clamp(
                 1.0 * f_plr.tech_accumulated / f_plr.tech_cost, 0.0, 0.7)));
         }
         value = clamp((value / 25) * 25, 25, 10000);
 
         StrBuffer[0] = '\0';
-        say_tech(StrBuffer, *diplo_tech_id1, 1);
+        say_tech(StrBuffer, *DiploTradeOfferTech1, 1);
         parse_says(0, StrBuffer, -1, -1);
         ParseNumTable[0] = value;
 
@@ -521,7 +521,7 @@ int __cdecl mod_buy_tech(int faction1, int faction2, int counter_id, int high_pr
         }
         if (X_dialog(random(2) ? "BUYTECH0" : "BUYTECH1", faction2) == 1) {
             net_energy(faction1, -value, faction2, value, 1);
-            net_tech(faction1, *diplo_tech_id1, faction2, 1);
+            net_tech(faction1, *DiploTradeOfferTech1, faction2, 1);
         }
         return 1;
     }

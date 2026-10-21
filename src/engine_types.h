@@ -273,14 +273,14 @@ struct MFaction {
 };
 
 struct Faction {
-    int32_t player_flags;
+    uint32_t player_flags;
     int32_t ranking; // 0 (lowest) to 7 (highest)
     int32_t diff_level; // 3 for AIs, equal to diff_level setting for humans
     int32_t base_name_offset; // Keep track which base names have been used
     int32_t base_sea_name_offset; // Keep track which sea base names have been used
     int32_t last_base_turn; // Turn for last built, captured or acquired (drone riot) base
-    int32_t diplo_status[8]; // Contains all formal treaties
-    int32_t diplo_agenda[8];
+    uint32_t diplo_status[8];
+    uint32_t diplo_agenda[8];
     int32_t diplo_friction[8];
     int32_t diplo_spoke[8]; // Turn for the last player-to-AI communication; -1 for never
     int32_t diplo_merc[8]; // Possibly higher values indicate willingness for deal-making
@@ -473,7 +473,7 @@ struct Faction {
     int32_t unk_101;
     int32_t unk_102;
     int32_t unk_103;
-    int32_t player_flags_ext;
+    uint32_t player_flags_ext;
     int32_t unk_105;
     int32_t unk_106;
     int32_t unk_107;

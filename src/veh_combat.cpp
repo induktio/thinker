@@ -1967,7 +1967,7 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                     int val1 = 0, val2 = 0;
                     for (auto& m : iterate_tiles(tx, ty, 1, 9)) {
                         if ((triad == TRIAD_AIR || (is_ocean(m.sq) == (triad == TRIAD_SEA)))
-                        && !mod_zoc_move(m.x, m.y, faction_id_def) && !goody_at(m.x, m.y)) {
+                        && !zoc_move(m.x, m.y, faction_id_def) && !goody_at(m.x, m.y)) {
                             int index = m.i - 1; // TableOffset -> BaseOffset
                             if (!m.sq->is_fungus()
                             || has_project(FAC_PHOLUS_MUTAGEN, faction_id_def)

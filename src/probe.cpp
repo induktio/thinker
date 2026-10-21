@@ -1849,7 +1849,7 @@ MOV_UPKEEP:
     if (has_treaty(veh_fc_id, tgt_fc_id, DIPLO_PACT)) {
         if (action_id == PRB_PROCURE_RESEARCH_DATA) {
             if (tgt->tech_ranking > plr->tech_ranking
-            && plr->ranking < 6 && !*diplo_value_93FA3C) {
+            && plr->ranking < 6 && !*DiploGreatSatan) {
                 cause_friction(tgt_fc_id, veh_fc_id, game_randv(4));
                 if (veh_fc_id == MapWin->cOwner) {
                     clear();
@@ -1882,15 +1882,15 @@ MOV_UPKEEP:
     bool friction = false;
     if (!has_treaty(tgt_fc_id, veh_fc_id, DIPLO_WANT_REVENGE) && action_id < PRB_MIND_CONTROL_CITY) {
         if ((action_id == PRB_PROCURE_RESEARCH_DATA || action_id == PRB_ASSASSINATE_PROMINENT_RESEARCHERS)
-        && tgt->tech_ranking > plr->tech_ranking && plr->ranking < 6 && !*diplo_value_93FA3C) {
+        && tgt->tech_ranking > plr->tech_ranking && plr->ranking < 6 && !*DiploGreatSatan) {
             if (game_randv(8)) {
                 friction = true;
             }
         }
         if (!friction && (action_id == PRB_ACTIVATE_SABOTAGE_VIRUS || action_id == PRB_INCITE_DRONE_RIOTS)) {
-            if (*diplo_value_93FA98 && !*diplo_value_93FA3C) {
+            if (*DiploFearScale && !*DiploGreatSatan) {
                 friction = true;
-            } else if (tgt->ranking > plr->ranking && !*diplo_value_93FA88 && game_randv(8)) {
+            } else if (tgt->ranking > plr->ranking && !*DiploTributeDemand && game_randv(8)) {
                 friction = true;
             }
         }

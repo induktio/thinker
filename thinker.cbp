@@ -92,6 +92,10 @@
 		<Unit filename="src/engine_win.h" />
 		<Unit filename="src/faction.cpp" />
 		<Unit filename="src/faction.h" />
+		<Unit filename="src/faction_diplo.cpp" />
+		<Unit filename="src/faction_diplo.h" />
+		<Unit filename="src/faction_event.cpp" />
+		<Unit filename="src/faction_event.h" />
 		<Unit filename="src/game.cpp" />
 		<Unit filename="src/game.h" />
 		<Unit filename="src/gameturn.cpp" />

@@ -943,7 +943,7 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
         int last_spoke = *CurrentTurn - Factions[faction_id_atk].diplo_spoke[faction_id];
         if (!*MultiplayerActive && at_war(faction_id_atk, faction_id)
         && is_human(faction_id_atk) && !is_human(faction_id)
-        && last_spoke < 10 && !*diplo_value_93FA98 && !*diplo_value_93FA24) {
+        && last_spoke < 10 && !*DiploFearScale && !*DiploCanSurrender) {
             int lost_bases = 0;
             for (int i = 0; i < *BaseCount; i++) {
                 BASE* b = &Bases[i];
@@ -3212,8 +3212,8 @@ void __cdecl mod_base_ecology() {
         }
     }
     if (plr->clean_minerals_modifier >= 10 && !(*GameState & STATE_VOLCANO_ERUPTED)) {
-        int vx = (*MapAreaX > 1) ? game_rand() % *MapAreaX : 0;
-        int vy = (*MapAreaY > 1) ? game_rand() % *MapAreaY : 0;
+        int vx = game_randv(*MapAreaX);
+        int vy = game_randv(*MapAreaY);
         vx = vx - (vx & 1) + (vy & 1);
         MAP* sq = mapsq(vx, vy);
         assert(sq);
@@ -3282,26 +3282,26 @@ int __cdecl mod_base_production() {
             mod_base_reset(*CurrentBaseID, 0);
         }
     }
-    int queue_id = base->queue_items[0];
-    if (queue_id == -FAC_STOCKPILE_ENERGY) {
-        // no other production should have occurred at this point
-        plr->energy_credits += stockpile_energy(*CurrentBaseID);
-        return 0;
-    }
-    int item_id = base->queue_items[0];
-    int is_prototype;
-    int is_satellite;
+    int project_id; // SecretProjects entry, -1 for facilities and satellites
+    bool is_satellite;
     int facility_cost;
     FacilityId facility_id;
 
     while (true) {
+        const int queue_id = base->queue_items[0];
+        if (queue_id == -FAC_STOCKPILE_ENERGY) {
+            // no other production should have occurred at this point
+            plr->energy_credits += stockpile_energy(*CurrentBaseID);
+            return 0;
+        }
         if (queue_id >= 0) {
-            int mineral_cost = mod_veh_cost(item_id, *CurrentBaseID, 0)
+            const int unit_id = queue_id;
+            const int unit_cost = mod_veh_cost(unit_id, *CurrentBaseID, 0)
                 * mod_cost_factor(faction_id, RSC_MINERAL, -1);
-            if (base->minerals_accumulated < mineral_cost) {
+            if (base->minerals_accumulated < unit_cost) {
                 return 0;
             }
-            if (Units[item_id].plan == PLAN_COLONY && base->pop_size == 1 && plr->diff_level > 1) {
+            if (Units[unit_id].plan == PLAN_COLONY && base->pop_size == 1 && plr->diff_level > 1) {
                 if (!is_human(faction_id)) {
                     if (*DiffLevel > 3) {
                         base->nutrients_accumulated += *DiffLevel - 2;
@@ -3315,7 +3315,7 @@ int __cdecl mod_base_production() {
                     return 0;
                 }
                 parse_says(0, base->name, -1, -1);
-                parse_says(1, Units[item_id].name, -1, -1);
+                parse_says(1, Units[unit_id].name, -1, -1);
                 const char* label;
                 if (base->nutrient_surplus > 0) {
                     int nut_cost = clamp(((base->pop_size + 1)
@@ -3346,18 +3346,20 @@ int __cdecl mod_base_production() {
                     return 0;
                 }
             }
-            if (item_id < MaxProtoFactionNum) {
-                is_prototype = 0;
+            bool is_prototype;
+            if (unit_id < MaxProtoFactionNum) {
+                is_prototype = false;
             } else {
-                is_prototype = !(Units[item_id].unit_flags & UNIT_PROTOTYPED);
-                Units[item_id].unit_flags |= UNIT_PROTOTYPED;
+                is_prototype = !(Units[unit_id].unit_flags & UNIT_PROTOTYPED);
+                Units[unit_id].unit_flags |= UNIT_PROTOTYPED;
                 if (is_prototype) {
-                    prune_protos(faction_id, item_id, 0);
-                    set_base(*CurrentBaseID);
+                    const int base_id = *CurrentBaseID;
+                    prune_protos(faction_id, unit_id, 0);
+                    set_base(base_id);
                     base_compute(0);
                 }
             }
-            base->minerals_accumulated -= mineral_cost;
+            base->minerals_accumulated -= unit_cost;
             int cap = min(Rules->retool_exemption, base->mineral_surplus);
             if (base->minerals_accumulated > cap && is_human(faction_id)) {
                 base->minerals_accumulated = max(0, cap);
@@ -3366,12 +3368,12 @@ int __cdecl mod_base_production() {
             if (*dword_90EA40) {
                 return 0;
             }
-            int veh_id = veh_init(item_id, faction_id, base->x, base->y);
+            int veh_id = veh_init(unit_id, faction_id, base->x, base->y);
             if (veh_id < 0) {
                 return 0;
             }
             VEH* veh = &Vehs[veh_id];
-            if (Units[item_id].plan == PLAN_COLONY) {
+            if (Units[unit_id].plan == PLAN_COLONY) {
                 if ((base->state_flags & BSTATE_UNK_2000000)
                 || !plr->AI_power || plr->base_count > 8) {
                     base->state_flags |= BSTATE_UNK_1000000;
@@ -3385,14 +3387,16 @@ int __cdecl mod_base_production() {
                     veh->order_auto_type = ORDERA_TERRA_AUTO_FULL;
                 }
             }
-            if (item_id == BSC_MIND_WORMS) {
+            if (unit_id == BSC_MIND_WORMS) {
                 if (faction_id == player_id && !(*GameInterludeState & 0x10)) {
                     interlude(4, base->name, 1, 0);
                     veh->state |= VSTATE_ASSISTANT_WORM;
                 }
             }
+            // remove redundant Spore Launcher check
+            const bool is_native = veh->is_native_unit();
             int morale_val;
-            if (!veh->is_native_unit()) {
+            if (!is_native) {
                 morale_val = morale_mod(*CurrentBaseID, faction_id, veh->triad());
                 if (veh->weapon_type() == WPN_PROBE_TEAM) {
                     if (has_fac_built(FAC_COVERT_OPS_CENTER, *CurrentBaseID)) {
@@ -3402,7 +3406,7 @@ int __cdecl mod_base_production() {
                         ++morale_val;
                     }
                 }
-                if (has_abil(item_id, ABL_TRAINED)) {
+                if (has_abil(unit_id, ABL_TRAINED)) {
                     ++morale_val;
                 }
                 if (is_prototype) {
@@ -3416,7 +3420,7 @@ int __cdecl mod_base_production() {
             if (faction_id == player_id) {
                 veh->flags |= VFLAG_UNK_1000;
             }
-            if (Units[item_id].plan == PLAN_COLONY) {
+            if (Units[unit_id].plan == PLAN_COLONY) {
                 if (base->nutrients_accumulated < 0) {
                     base->nutrients_accumulated = 0;
                 }
@@ -3434,30 +3438,29 @@ int __cdecl mod_base_production() {
             }
             base->state_flags |= BSTATE_PRODUCTION_DONE;
             base->state_flags &= ~BSTATE_UNK_80000000;
-            // remove redundant spore launcher check
-            bool is_native = item_id < MaxProtoFactionNum && Units[item_id].offense_value() < 0;
-            int triad = Units[item_id].triad();
+            int triad = Units[unit_id].triad();
             if (!is_human(faction_id)) {
                 mod_base_reset(*CurrentBaseID, 0);
             } else {
                 bool has_queue = base_queue(*CurrentBaseID);
                 uint32_t warn_flags;
-                parse_says(1, Units[item_id].name, -1, -1);
+                parse_says(1, Units[unit_id].name, -1, -1);
                 if ((!has_queue && !gov_manage_production())
                 || (is_prototype && *GameWarnings & WARN_STOP_PROTOTYPE_COMPLETE)
                 || *GameWarnings & WARN_STOP_BUILT_VIA_GOV_QUEUE) {
                     if (is_prototype && *GameWarnings & WARN_STOP_PROTOTYPE_COMPLETE) {
-                        parse_num(0, mineral_cost);
+                        parse_num(0, mod_veh_cost(unit_id, *CurrentBaseID, 0)
+                            * mod_cost_factor(faction_id, RSC_MINERAL, -1));
                         StrBuffer[0] = 0;
                         strcat(StrBuffer, "PRODUCEPROTO");
-                        warn_flags = 4;
+                        warn_flags = WARN_STOP_PROTOTYPE_COMPLETE;
                     } else {
                         StrBuffer[0] = 0;
                         strcat(StrBuffer, "PRODUCE");
-                        if (Units[item_id].plan >= PLAN_COLONY) {
-                            warn_flags = 2;
+                        if (Units[unit_id].plan >= PLAN_COLONY) {
+                            warn_flags = WARN_STOP_NON_COMBAT_VEH_BUILT;
                         } else {
-                            warn_flags = 1024;
+                            warn_flags = WARN_STOP_COMBAT_VEH_BUILT;
                         }
                     }
                 } else {
@@ -3494,7 +3497,7 @@ int __cdecl mod_base_production() {
                     if (triad == TRIAD_AIR) {
                         image = "chiron_sm.pcx";
                     } else if (triad == TRIAD_SEA) {
-                        if (item_id == BSC_SEALURK) {
+                        if (unit_id == BSC_SEALURK) {
                             image = "sealrk_sm.pcx";
                         } else {
                             image = "isle_sm.pcx";
@@ -3511,19 +3514,18 @@ int __cdecl mod_base_production() {
             if (is_prototype) {
                 mon_prototype_built(faction_id);
                 if (*MultiplayerActive && is_human(faction_id)) {
-                    Units[item_id].unit_flags |= UNIT_UNK_100;
+                    Units[unit_id].unit_flags |= UNIT_UNK_100;
                 } else {
                     *dword_90EA3C = 0;
                     if (!is_human(faction_id) || *GameMorePreferences & MPREF_BSC_AUTO_PRUNE_OBS_VEH) {
-                        for (int i = 0; i < MaxProtoNum; i++) {
-                            UNIT* u = &Units[i];
-                            if (i / MaxProtoFactionNum == 0
-                            || i / MaxProtoFactionNum == faction_id) {
-                                if ((u->unit_flags & UNIT_ACTIVE)
-                                && (u->unit_flags & UNIT_PROTOTYPED)
-                                && (u->unit_flags & UNIT_UNK_100)) {
-                                    upgrade_prototypes(faction_id, i);
-                                }
+                        for (int i = 0; i < 2 * MaxProtoFactionNum; i++) {
+                            int uid = (i < MaxProtoFactionNum
+                                ? i : faction_id * MaxProtoFactionNum + i % MaxProtoFactionNum);
+                            UNIT* u = &Units[uid];
+                            if ((u->unit_flags & UNIT_ACTIVE)
+                            && (u->unit_flags & UNIT_PROTOTYPED)
+                            && (u->unit_flags & UNIT_UNK_100)) {
+                                upgrade_prototypes(faction_id, uid);
                             }
                         }
                     }
@@ -3533,7 +3535,7 @@ int __cdecl mod_base_production() {
                 mon_native_life_bred(faction_id);
                 return 0;
             }
-            if (triad == TRIAD_SEA && Units[item_id].offense_value() != 0) {
+            if (triad == TRIAD_SEA && Units[unit_id].offense_value() != 0) {
                 mon_naval_unit_built(faction_id);
             }
             if (triad == TRIAD_AIR) {
@@ -3545,30 +3547,30 @@ int __cdecl mod_base_production() {
         facility_id = (FacilityId)(-queue_id);
         assert(facility_id > 0 && facility_id <= FAC_EMPTY_SP_64);
         if (facility_id < SP_ID_First) {
-            item_id = -1;
+            project_id = -1;
         } else {
-            item_id = facility_id - SP_ID_First;
+            project_id = facility_id - SP_ID_First;
         }
         is_satellite = (facility_id >= FAC_SKY_HYDRO_LAB && facility_id <= FAC_ORBITAL_DEFENSE_POD);
         facility_cost = Facility[facility_id].cost * mod_cost_factor(faction_id, RSC_MINERAL, -1);
         if (base->minerals_accumulated >= facility_cost && facility_id == FAC_ASCENT_TO_TRANSCENDENCE) {
             if (!voice_of_planet()) {
-                popb("ASCENTNOTYET", 4096, -1, "asctran_sm.pcx", 0);
+                popb("ASCENTNOTYET", WARN_STOP_DELAY_IN_TRANSCEND, -1, "asctran_sm.pcx", 0);
                 return 0;
             }
         }
-        if (item_id >= 0) {
-            if (SecretProjects[item_id] != SP_Unbuilt) {
+        if (project_id >= 0) {
+            if (SecretProjects[project_id] != SP_Unbuilt) {
                 if (!is_human(faction_id) || gov_manage_production()) {
                     mod_base_reset(*CurrentBaseID, 0);
                 } else {
                     parse_says(1, Facility[facility_id].name, -1, -1);
                     StrBuffer[0] = 0;
                     strcat(StrBuffer, "ALREADYPROJECT");
-                    if (SecretProjects[item_id] < 0) {
+                    if (SecretProjects[project_id] < 0) {
                         strcat(StrBuffer, "0");
                     } else {
-                        BASE* b = &Bases[SecretProjects[item_id]];
+                        BASE* b = &Bases[SecretProjects[project_id]];
                         parse_says(2, b->name, -1, -1);
                         parse_says(3, get_noun(b->faction_id), -1, -1);
                         if (b->faction_id == faction_id) {
@@ -3577,7 +3579,7 @@ int __cdecl mod_base_production() {
                             strcat(StrBuffer, "2");
                         }
                     }
-                    popb(StrBuffer, 512, -1, "secproj_sm.pcx", 0);
+                    popb(StrBuffer, WARN_STOP_BUILD_OUT_OF_DATE, -1, "secproj_sm.pcx", 0);
                 }
                 return 0;
             }
@@ -3592,17 +3594,11 @@ int __cdecl mod_base_production() {
             } else {
                 parse_says(1, Facility[facility_id].name, -1, -1);
                 if (!plr_alien) {
-                    popb("ALREADYFACILITY", 512, -1, "facblt_sm.pcx", 0);
+                    popb("ALREADYFACILITY", WARN_STOP_BUILD_OUT_OF_DATE, -1, "facblt_sm.pcx", 0);
                 } else {
-                    popb("ALREADYFACILITY", 512, -1, "alfacblt_sm.pcx", 0);
+                    popb("ALREADYFACILITY", WARN_STOP_BUILD_OUT_OF_DATE, -1, "alfacblt_sm.pcx", 0);
                 }
             }
-            return 0;
-        }
-        queue_id = base->queue_items[0];
-        if (queue_id == -FAC_STOCKPILE_ENERGY) {
-            // no other production should have occurred at this point
-            plr->energy_credits += stockpile_energy(*CurrentBaseID);
             return 0;
         }
     } // while (true)
@@ -3610,11 +3606,7 @@ int __cdecl mod_base_production() {
     if (base->minerals_accumulated < facility_cost) {
         return 0;
     }
-    if (facility_id <= 0) {
-        assert(0);
-        return 0;
-    }
-    if (item_id >= 0 && !is_human(faction_id)) {
+    if (project_id >= 0 && !is_human(faction_id)) {
         for (int i = 0; i < *BaseCount; i++) {
             if (is_human(Bases[i].faction_id)
             && Bases[i].queue_items[0] == base->queue_items[0]) {
@@ -3643,7 +3635,7 @@ int __cdecl mod_base_production() {
             }
         }
     }
-    if (item_id < 0) {
+    if (project_id < 0) {
         if (is_satellite) {
             if (facility_id == FAC_SKY_HYDRO_LAB) { plr->satellites_nutrient++; }
             else if (facility_id == FAC_NESSUS_MINING_STATION) { plr->satellites_mineral++; }
@@ -3673,8 +3665,8 @@ int __cdecl mod_base_production() {
             set_fac(facility_id, *CurrentBaseID, 1);
         }
     } else {
-        assert(item_id <= SP_ID_Last - SP_ID_First);
-        SecretProjects[item_id] = *CurrentBaseID;
+        assert(project_id <= SP_ID_Last - SP_ID_First);
+        SecretProjects[project_id] = *CurrentBaseID;
     }
     if (facility_id == FAC_NETWORK_NODE) {
         base->state_flags &= ~(BSTATE_ARTIFACT_ALREADY_LINKED|BSTATE_ARTIFACT_LINKED);
@@ -3714,11 +3706,11 @@ int __cdecl mod_base_production() {
                 BasePop_set_width(&cur_popup, 500);
                 if (*GameWarnings & WARN_STOP_NEW_FAC_BUILT) {
                     StrBuffer[0] = 0;
-                    if (item_id < 0) {
+                    if (project_id < 0) {
                         snprintf(StrBuffer, StrBufLen, "FAC%d", facility_id);
                         plr->facility_announced[ann_byte] |= ann_bit;
                     } else {
-                        snprintf(StrBuffer, StrBufLen, "PROJECT%d", item_id);
+                        snprintf(StrBuffer, StrBufLen, "PROJECT%d", project_id);
                     }
                     Popup_start(&cur_popup, "BLURBS", StrBuffer, -1, 0, 128, 0);
                     BasePop_string(&cur_popup, "^");
@@ -3743,9 +3735,9 @@ int __cdecl mod_base_production() {
                     strcat(StrBuffer, "G");
                 }
                 if (!plr_alien) {
-                    popb(StrBuffer, 1, -1, "facblt_sm.pcx", 0);
+                    popb(StrBuffer, WARN_STOP_NEW_FAC_BUILT, -1, "facblt_sm.pcx", 0);
                 } else {
-                    popb(StrBuffer, 1, -1, "alfacblt_sm.pcx", 0);
+                    popb(StrBuffer, WARN_STOP_NEW_FAC_BUILT, -1, "alfacblt_sm.pcx", 0);
                 }
                 if (*GameMorePreferences & MPREF_AV_VOLUME_VOICE_TOGGLE
                 && *GameMorePreferences & MPREF_AV_VOICEOVER_STOP_CLOSE_POPUP) {
@@ -3770,13 +3762,14 @@ int __cdecl mod_base_production() {
                     icon = "secproj_sm.pcx";
                 }
                 if (cur_queue || gov_manage_production()) {
-                    warn_flag = (*GameWarnings & WARN_STOP_BUILT_VIA_GOV_QUEUE) ? 1 : 0;
+                    warn_flag = (*GameWarnings & WARN_STOP_BUILT_VIA_GOV_QUEUE)
+                        ? WARN_STOP_NEW_FAC_BUILT : 0;
                 } else {
-                    warn_flag = 1;
+                    warn_flag = WARN_STOP_NEW_FAC_BUILT;
                 }
                 popb(StrBuffer, warn_flag, -1, icon, 0);
             }
-        } else if (item_id < 0) {
+        } else if (project_id < 0) {
             if (facility_id == FAC_SUBSPACE_GENERATOR) {
                 if (full_game_turn()) {
                     if (!MFactions[player_id].is_alien()) {
@@ -3809,7 +3802,7 @@ int __cdecl mod_base_production() {
             parse_says(0, base->name, -1, -1);
             BasePop_init(&cur_popup, 0, 0);
             BasePop_set_width(&cur_popup, 600);
-            snprintf(StrBuffer, StrBufLen, "PROJECT%d", item_id);
+            snprintf(StrBuffer, StrBufLen, "PROJECT%d", project_id);
             Popup_start(&cur_popup, "BLURBS", StrBuffer, -1, 0, 128, 0);
             if (*ScreenWidth != 800) {
                 BasePop_string(&cur_popup, "^");
@@ -3849,20 +3842,20 @@ int __cdecl mod_base_production() {
         }
         plr->player_flags &= ~PFLAG_UNK_4000;
     }
-    if (item_id >= 0) {
-        if (item_id + SP_ID_First == FAC_VOICE_OF_PLANET) {
+    if (project_id >= 0) {
+        if (facility_id == FAC_VOICE_OF_PLANET) {
             interlude(12, 0, 1, 0);
         }
         if (faction_id == player_id) {
             if ((*GamePreferences & PREF_AV_SECRET_PROJECT_MOVIES) && !*MultiplayerActive) {
-                amovie_project(item_id);
+                amovie_project(project_id);
             }
-            help_project(item_id);
-        } else if (item_id + SP_ID_First == FAC_ASCENT_TO_TRANSCENDENCE
+            help_project(project_id);
+        } else if (facility_id == FAC_ASCENT_TO_TRANSCENDENCE
         && (*GamePreferences & PREF_AV_SECRET_PROJECT_MOVIES) && !*MultiplayerActive) {
             mod_amovie_project("theyTranscend");
         }
-        if (item_id + SP_ID_First == FAC_VOICE_OF_PLANET) {
+        if (facility_id == FAC_VOICE_OF_PLANET) {
             uint32_t fungus_remove = TerraformRules[FORMER_PLANT_FUNGUS][1];
             bool found[MaxPlayerNum] = {};
             for (int i = 0; i < MaxPlayerNum; i++) {
@@ -3874,9 +3867,9 @@ int __cdecl mod_base_production() {
                 && !found[b->faction_id] && !is_ocean(b)) {
                     found[b->faction_id] = true;
                     for (int iter = 0; iter < 1000; iter++) {
-                        int idx = game_rand() % 288;
-                        int tx = wrap(b->x + TableOffsetX[idx]);
-                        int ty = b->y + TableOffsetY[idx];
+                        int n = game_rand() % 288 + 1;
+                        int tx = wrap(b->x + TableOffsetX[n]);
+                        int ty = b->y + TableOffsetY[n];
                         MAP* sq = mapsq(tx, ty);
                         if (!sq || sq->base_who() >= 0
                         || whose_territory(b->faction_id, tx, ty, 0, 0) != b->faction_id) {
@@ -3898,8 +3891,8 @@ int __cdecl mod_base_production() {
                 }
             }
             for (int n = *MapAreaTiles / 10; n > 0; n--) {
-                int tx = (*MapAreaX > 1) ? (game_rand() % *MapAreaX) : 0;
-                int ty = (*MapAreaY > 1) ? (game_rand() % *MapAreaY) : 0;
+                int tx = game_randv(*MapAreaX);
+                int ty = game_randv(*MapAreaY);
                 tx = tx - (tx & 1) + (ty & 1);
                 MAP* sq = mapsq(tx, ty);
                 if (sq && sq->base_who() < 0) {
@@ -3915,8 +3908,8 @@ int __cdecl mod_base_production() {
             interlude(14, 0, 0, 0);
         }
 
-        mon_secret_project(faction_id, item_id);
-        switch (item_id + SP_ID_First) {
+        mon_secret_project(faction_id, project_id);
+        switch (facility_id) {
         case FAC_ASCENT_TO_TRANSCENDENCE:
             mon_winning_trans(faction_id, -1);
             if (*GameRules & RULES_VICTORY_COOPERATIVE) {
@@ -3959,6 +3952,7 @@ int __cdecl mod_base_production() {
                 }
             }
             break;
+        default: break;
         }
     }
     if (!is_human(faction_id) || (gov_manage_production() && !cur_queue)) {
@@ -3969,11 +3963,12 @@ int __cdecl mod_base_production() {
         base->queue_items[0] = -FAC_STOCKPILE_ENERGY;
         draw_radius(base->x, base->y, 2, 2);
     }
-    if (item_id < 0) {
+    if (project_id < 0) {
         return 0;
     }
+    const int base_id = *CurrentBaseID;
     for (int i = 0; i < *BaseCount; i++) {
-        if (i == *CurrentBaseID || Bases[i].queue_items[0] != -facility_id) {
+        if (i == base_id || Bases[i].queue_items[0] != -facility_id) {
             continue;
         }
         if (is_human(Bases[i].faction_id)
@@ -3984,7 +3979,7 @@ int __cdecl mod_base_production() {
         int best_id = -1;
         int best_score = Bases[i].minerals_accumulated + 10 * Bases[i].mineral_surplus;
         for (int c = 0; c < *BaseCount; c++) {
-            if (c != i && c != *CurrentBaseID
+            if (c != i && c != base_id
             && Bases[c].faction_id == Bases[i].faction_id
             && Bases[c].queue_items[0] != -facility_id
             && Bases[c].queue_items[0] <= -SP_ID_First) {
@@ -4002,7 +3997,7 @@ int __cdecl mod_base_production() {
             mod_base_reset(i, 0);
         }
     }
-    set_base(*CurrentBaseID);
+    set_base(base_id);
     base_compute(0);
     return 0;
 }

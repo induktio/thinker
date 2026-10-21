@@ -12,6 +12,7 @@ char* const unk_945E7C = (char*)0x945E7C;
 char* const unk_945834 = (char*)0x945834;
 char* const unk_9B2078 = (char*)0x9B2078;
 GUID* const unk_689218 = (GUID*)0x689218;
+Sprite* const MenuIconSprites = (Sprite*)0x75AE20;
 // multiplayer related
 int8_t* const NetConfigValue = (int8_t*)0x90E8E0;
 int* const NetConfigRules = (int*)0x90E8EC;
@@ -1197,9 +1198,9 @@ int __cdecl game_init(int tgl_text, int tgl_rules) {
         return 1;
     }
     start_timers();
-    dword_9B7B00[0] = 0x75AE4C;
-    dword_9B7B00[1] = 0x75AE78;
-    dword_9B7B00[3] = 0x75AE20;
+    dword_9B7B00[0] = (int)&MenuIconSprites[1];
+    dword_9B7B00[1] = (int)&MenuIconSprites[2];
+    dword_9B7B00[3] = (int)&MenuIconSprites[0];
     return 0;
 }
 

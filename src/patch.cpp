@@ -60,10 +60,10 @@ This is called from enemy_strategy to upgrade or remove units marked with obsole
 Returning non-zero makes the function skip all additional actions on veh_id.
 */
 int __thiscall enemy_upgrade(Console* This, int veh_id) {
-    if (conf.factions_enabled >= Vehs[veh_id].faction_id) {
-        return 1;
+    if (conf.factions_enabled < Vehs[veh_id].faction_id) {
+        Console_upgrade(This, veh_id);
     }
-    return Console_upgrade(This, veh_id);
+    return 1;
 }
 
 /*
@@ -493,9 +493,16 @@ bool patch_setup(Config* cf) {
     write_jump(0x55BB30, (int)set_treaty);
     write_jump(0x55BBA0, (int)set_agenda);
     write_jump(0x55BC00, (int)spying);
+    write_jump(0x55D430, (int)enemies_trade_tech);
+    write_jump(0x55D760, (int)enemies_treaty);
+    write_jump(0x55E370, (int)encounter);
+    write_jump(0x55EB80, (int)territory);
     write_jump(0x55EEE0, (int)atrocity);
     write_jump(0x55F450, (int)major_atrocity);
     write_jump(0x55F770, (int)break_treaty);
+    write_jump(0x55F930, (int)enemy_diplomacy);
+    write_jump(0x560DD0, (int)enemy_capabilities);
+    write_jump(0x561080, (int)enemy_strategy);
     write_jump(0x579A30, (int)add_goal);
     write_jump(0x579B70, (int)add_site);
     write_jump(0x579E00, (int)clear_goals);
@@ -563,6 +570,11 @@ bool patch_setup(Config* cf) {
     write_jump(0x5B58E0, (int)spot_stack);
     write_jump(0x5B5A70, (int)unspot_stack);
     write_jump(0x5B5AD0, (int)spot_loc);
+    write_jump(0x5B6260, (int)spot_all);
+    write_jump(0x5B8AF0, (int)stack_put);
+    write_jump(0x5B8B60, (int)stack_sort);
+    write_jump(0x5B8C90, (int)stack_sort_2);
+    write_jump(0x5B8E10, (int)stack_fix);
     write_jump(0x5B8EE0, (int)stack_veh);
     write_jump(0x5B9510, (int)stack_kill);
     write_jump(0x5B9C40, (int)say_tech);
@@ -904,6 +916,24 @@ bool patch_setup(Config* cf) {
     write_call(0x562D19, (int)mod_wants_to_attack); // enemy_strategy
     write_call(0x5BCC70, (int)mod_wants_to_attack); // tech_val
     write_call(0x5BCC85, (int)mod_wants_to_attack); // tech_val
+    write_call(0x427F4A, (int)diplomacy_check); // CouncWin::init
+    write_call(0x43F2F4, (int)diplomacy_check); // DiploPop::start
+    write_call(0x4A2589, (int)diplomacy_check); // ReportWin::draw_intel
+    write_call(0x4A26CE, (int)diplomacy_check); // ReportWin::draw_intel
+    write_call(0x53CB7D, (int)diplomacy_check); // pact_of_brotherhood
+    write_call(0x53CEAF, (int)diplomacy_check); // make_treaty
+    write_call(0x53D1D1, (int)diplomacy_check); // pledge_truce
+    write_call(0x53DF3C, (int)diplomacy_check); // wants_to_speak
+    write_call(0x53E073, (int)diplomacy_check); // wants_to_speak
+    write_call(0x53E6ED, (int)diplomacy_check); // renounce_pact
+    write_call(0x53EB94, (int)diplomacy_check); // buy_council_vote
+    write_call(0x550191, (int)diplomacy_check); // communicate
+    write_call(0x55863A, (int)diplomacy_check); // communicate
+    write_call(0x55FE22, (int)diplomacy_check); // enemy_diplomacy
+    write_call(0x560188, (int)diplomacy_check); // enemy_diplomacy
+    write_call(0x5755D3, (int)diplomacy_check); // enemy_move
+    write_call(0x5A3E3A, (int)diplomacy_check); // probe
+    write_call(0x5A5519, (int)diplomacy_check); // probe
 
     write_call(0x465DD6, (int)mod_crop_yield); // MapWin::gen_terrain_poly
     write_call(0x4B6C44, (int)mod_crop_yield); // StatusWin::draw_status

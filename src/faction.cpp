@@ -832,7 +832,7 @@ int __cdecl great_satan(int faction_id, int is_aggressive) {
             factor = 4;
             diff_factor = DIFF_TRANSCEND;
         } else if (Factions[faction_id].diff_level >= DIFF_LIBRARIAN
-            || *GameRules & RULES_VICTORY_CONQUEST || *ObjectiveReqVictory <= 1000) {
+        || *GameRules & RULES_VICTORY_CONQUEST || *ObjectiveReqVictory <= 1000) {
             factor = 2;
             diff_factor = DIFF_LIBRARIAN;
         } else {

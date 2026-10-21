@@ -83,7 +83,7 @@ Traverse current search path and check for zones of control.
 bool TileSearch::has_zoc(int plr_id) {
     bool prev_zoc = false;
     for (int p = current, i = 0; p >= 0 && i <= PathLimit; ++i) {
-        if (mod_zoc_any(paths[p].x, paths[p].y, plr_id)) {
+        if (zoc_any(paths[p].x, paths[p].y, plr_id)) {
             if (prev_zoc) return true;
             prev_zoc = true;
         } else {
@@ -166,7 +166,7 @@ MAP* TileSearch::get_next() {
 If zone of control exists on the tile, these functions return faction id + 1.
 Otherwise return value is 0 (however seems to be treated as boolean).
 */
-int __cdecl mod_zoc_any(int x, int y, int faction_id) {
+int __cdecl zoc_any(int x, int y, int faction_id) {
     for (const auto& p : NearbyTiles) {
         int x2 = wrap(x + p[0]);
         int y2 = y + p[1];
@@ -181,7 +181,7 @@ int __cdecl mod_zoc_any(int x, int y, int faction_id) {
     return 0;
 }
 
-int __cdecl mod_zoc_veh(int x, int y, int faction_id) {
+int __cdecl zoc_veh(int x, int y, int faction_id) {
     int value = 0;
     for (const auto& p : NearbyTiles) {
         int x2 = wrap(x + p[0]);
@@ -200,7 +200,7 @@ int __cdecl mod_zoc_veh(int x, int y, int faction_id) {
     return value;
 }
 
-int __cdecl mod_zoc_sea(int x, int y, int faction_id) {
+int __cdecl zoc_sea(int x, int y, int faction_id) {
     bool sea_tile = is_ocean(mapsq(x, y));
     for (const auto& p : NearbyTiles) {
         int x2 = wrap(x + p[0]);
@@ -223,10 +223,46 @@ int __cdecl mod_zoc_sea(int x, int y, int faction_id) {
     return 0;
 }
 
-int __cdecl mod_zoc_move(int x, int y, int faction_id) {
+int __cdecl zoc_move(int x, int y, int faction_id) {
     MAP* sq = mapsq(x, y);
     if (sq && !sq->is_base()) {
-        return mod_zoc_sea(x, y, faction_id);
+        return zoc_sea(x, y, faction_id);
+    }
+    return 0;
+}
+
+int __cdecl contiguous(int faction_id_1, int faction_id_2, int region, int flag) {
+    if (region && (!Factions[faction_id_1].region_total_bases[region]
+    || !Factions[faction_id_2].region_total_bases[region])) {
+        return 0;
+    }
+    for (int i = 0; i < *MapAreaTiles; i++) {
+        (*MapTiles)[i].unk_1 = 0;
+    }
+    for (int i = 0; i < *BaseCount; i++) {
+        if (Bases[i].faction_id != faction_id_1) {
+            continue;
+        }
+        MAP* sq1 = mapsq(Bases[i].x, Bases[i].y);
+        int base_region = sq1->region;
+        if ((region && base_region != region) || sq1->unk_1) {
+            continue;
+        }
+        Path_territory(Paths, Bases[i].x, Bases[i].y, base_region, faction_id_1);
+        for (int j = 0; j < *BaseCount; j++) {
+            if (Bases[j].faction_id != faction_id_2) {
+                continue;
+            }
+            MAP* sq2 = mapsq(Bases[j].x, Bases[j].y);
+            if (sq2->region != base_region || sq2->unk_1) {
+                continue;
+            }
+            Path_territory(Paths, Bases[j].x, Bases[j].y, base_region, faction_id_2);
+            if (Path_find(Paths, Bases[i].x, Bases[i].y, Bases[j].x, Bases[j].y,
+            faction_id_1, faction_id_2, (flag ? 0xC00 : 0) | 0x201, -1) >= 0) {
+                return 1;
+            }
+        }
     }
     return 0;
 }
