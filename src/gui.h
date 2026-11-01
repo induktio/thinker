@@ -77,8 +77,8 @@ int __thiscall Credits_GraphicWin_init(
     GraphicWin* This, int a2, int a3, int a4, int a5, char* a6, int a7, Win* a8, Menu* a9, BorderSizing* a10);
 void __cdecl ReportWin_draw_ops_strcat(char* dst, char* src);
 void __thiscall ReportWin_draw_ops_color(Buffer* This, int UNUSED(a2), int a3, int a4, int a5);
-int __thiscall mod_MapWin_focus(Console* This, int x, int y);
-void __thiscall mod_MapWin_set_center(Console* This, int x, int y, int flag);
+int __thiscall mod_MapWin_focus(MapWindow* This, int x, int y);
+void __thiscall mod_MapWin_set_center(MapWindow* This, int x, int y, int flag);
 void __thiscall ReportWin_close_handler(SubInterface* This);
 void __cdecl say_loc(char* dest, int x, int y, int a4, int a5, int a6);
 void __cdecl mod_diplomacy_caption(int faction1, int faction2);

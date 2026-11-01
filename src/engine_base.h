@@ -15,9 +15,9 @@ enum BaseState {
     BSTATE_FACILITY_SCRAPPED = 0x200, // Only one facility can be scrapped/recycled per turn
     BSTATE_ARTIFACT_LINKED = 0x400, // Alien Artifact linked to Network Node
     BSTATE_ARTIFACT_ALREADY_LINKED = 0x800, // Only show already linked alert once
-    BSTATE_UNK_1000 = 0x1000,
-    BSTATE_UNK_2000 = 0x2000,
-    BSTATE_UNK_4000 = 0x4000,
+    BSTATE_UNK_1000 = 0x1000, // base_terraform
+    BSTATE_UNK_2000 = 0x2000, // base_terraform
+    BSTATE_UNK_4000 = 0x4000, // base_terraform
     BSTATE_UNK_8000 = 0x8000,
     BSTATE_RENAME_BASE = 0x10000, // set in capture_base, this base can be renamed in base_upkeep
     BSTATE_GENETIC_PLAGUE_INTRO = 0x20000,
@@ -153,9 +153,9 @@ struct BASE {
     char name[25];
     int16_t unk_x; // base_terraform
     int16_t unk_y; // base_terraform
-    int32_t state_flags;
-    int32_t event_flags;
-    int32_t governor_flags;
+    uint32_t state_flags;
+    uint32_t event_flags;
+    uint32_t governor_flags;
     int32_t nutrients_accumulated;
     int32_t minerals_accumulated;
     int32_t production_id_last;

@@ -365,7 +365,7 @@ int __cdecl net_upkeep_phase(int value) {
 }
 
 void __cdecl net_upkeep() {
-    *dword_7492CC = 0;
+    *DiploWinCommlink = 0;
     GraphicWin_close(DiploWin);
     *dword_93A968 = 0;
     *NetUpkeepCount = 0;
@@ -1761,7 +1761,7 @@ void __cdecl alien_fauna() {
                             || (*BaseFindDist > 3 && whose_territory(player_id, tx, ty, 0, 0) != player_id)) {
                                 draw_tiles(tx, ty, 2);
                             } else {
-                                if (!MapWin_focus(MapWinPtr[0], tx, ty)) {
+                                if (!mod_MapWin_focus(MapWinPtr[0], tx, ty)) {
                                     draw_tiles(tx, ty, 2);
                                 }
                                 parse_says(0, Bases[base_id].name, -1, -1);
@@ -1974,7 +1974,7 @@ void __cdecl alien_fauna() {
             }
         }
         if (show_popup) {
-            if (!MapWin_focus(MapWinPtr[0], base->x, base->y)) {
+            if (!mod_MapWin_focus(MapWinPtr[0], base->x, base->y)) {
                 draw_tiles(base->x, base->y, 2);
             }
             parse_says(0, base->name, -1, -1);

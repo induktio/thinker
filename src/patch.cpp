@@ -57,7 +57,7 @@ void mod_say_orders(char* buf, int veh_id) {
 
 /*
 This is called from enemy_strategy to upgrade or remove units marked with obsolete_factions flag.
-Returning non-zero makes the function skip all additional actions on veh_id.
+Returning non-zero makes the function skip any possible disband actions on veh_id.
 */
 int __thiscall enemy_upgrade(Console* This, int veh_id) {
     if (conf.factions_enabled < Vehs[veh_id].faction_id) {
@@ -69,16 +69,14 @@ int __thiscall enemy_upgrade(Console* This, int veh_id) {
 /*
 Draw Hive faction labels with a more visible high contrast text color.
 */
-int __cdecl map_draw_strcmp(const char* s1, const char* UNUSED(s2))
-{
+int __cdecl map_draw_strcmp(const char* s1, const char* UNUSED(s2)) {
     return strcmp(s1, "SPARTANS") && (!conf.render_base_info || strcmp(s1, "HIVE"));
 }
 
 /*
 Patch the game engine to use significantly less CPU time by modifying the idle loop.
 */
-BOOL WINAPI ModPeekMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg)
-{
+BOOL WINAPI ModPeekMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg) {
     int* const PeekMsgStatus = (int*)0x9B7B9C;
     static bool wait_next = false;
     int wait_time = (wait_next && (*TopMenuWin != 0 || *PeekMsgStatus == 0) ? 4 : 0);
@@ -463,6 +461,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x52AD30, (int)council_votes);
     write_jump(0x52AE20, (int)eligible);
     write_jump(0x52DC70, (int)not_my_turn);
+    write_jump(0x539160, (int)auto_contact);
     write_jump(0x5391C0, (int)net_treaty_on);
     write_jump(0x539230, (int)net_treaty_off);
     write_jump(0x5392A0, (int)net_set_treaty);
@@ -476,6 +475,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x539660, (int)net_pact_ends);
     write_jump(0x539740, (int)net_cede_base);
     write_jump(0x5397B0, (int)net_double_cross);
+    write_jump(0x5399A0, (int)diplomacy_caption);
     write_jump(0x539B70, (int)great_beelzebub);
     write_jump(0x539C00, (int)great_satan);
     write_jump(0x539D40, (int)aah_ooga);
@@ -486,6 +486,14 @@ bool patch_setup(Config* cf) {
     write_jump(0x53A100, (int)reputation);
     write_jump(0x53A150, (int)get_patience);
     write_jump(0x53A1C0, (int)energy_value);
+    write_jump(0x53A4A0, (int)scan_prototypes);
+    write_jump(0x53C650, (int)pact_ends);
+    write_jump(0x53CAF0, (int)pact_of_brotherhood);
+    write_jump(0x53CE10, (int)make_treaty);
+    write_jump(0x53D160, (int)pledge_truce);
+    write_jump(0x53D360, (int)introduce);
+    write_jump(0x53DCE0, (int)wants_to_speak);
+    write_jump(0x53E470, (int)diplomacy_ends);
     write_jump(0x55B760, (int)treaty_off);
     write_jump(0x55B820, (int)agenda_off);
     write_jump(0x55B870, (int)treaty_on);
@@ -763,9 +771,9 @@ bool patch_setup(Config* cf) {
     write_call(0x542425, (int)mod_buy_tech);
     write_call(0x5425CF, (int)mod_buy_tech);
     write_call(0x543843, (int)mod_buy_tech);
-    write_call(0x54F4E2, (int)mod_threaten);
-    write_call(0x54F532, (int)mod_threaten);
-    write_call(0x54F702, (int)mod_threaten);
+    write_call(0x54F4E2, (int)threaten);
+    write_call(0x54F532, (int)threaten);
+    write_call(0x54F702, (int)threaten);
     write_call(0x4868B2, (int)tech_avail); // PickTech::pick
     write_call(0x4DFC41, (int)tech_avail); // Console::editor_tech
     write_call(0x558246, (int)tech_avail); // communicate
@@ -934,6 +942,12 @@ bool patch_setup(Config* cf) {
     write_call(0x5755D3, (int)diplomacy_check); // enemy_move
     write_call(0x5A3E3A, (int)diplomacy_check); // probe
     write_call(0x5A5519, (int)diplomacy_check); // probe
+    write_call(0x51F2A3, (int)communicate); // wait_loop
+    write_call(0x527FE4, (int)communicate); // control_turn
+    write_call(0x558F59, (int)communicate); // commlink_attempt
+    write_call(0x55C717, (int)communicate); // comm_check
+    write_call(0x55FDBD, (int)communicate); // enemy_diplomacy
+    write_call(0x5603E7, (int)communicate); // enemy_diplomacy
 
     write_call(0x465DD6, (int)mod_crop_yield); // MapWin::gen_terrain_poly
     write_call(0x4B6C44, (int)mod_crop_yield); // StatusWin::draw_status

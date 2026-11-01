@@ -1144,7 +1144,7 @@ int show_mod_config()
         | (conf.auto_minimise ? AutoMinimise : 0);
 
     // Return value is equal to choices bitfield if OK pressed, -1 otherwise.
-    int value = X_pop_9("modmenu", "OPTIONS", -1, 0, PopDialogCheckbox|PopDialogBtnCancel, 0);
+    int value = X_pop_9("modmenu", "OPTIONS", -1, 0, POPUP_CHECKBOX|POPUP_BTN_CANCEL, 0);
     if (value < 0) {
         return 0;
     }
@@ -1359,7 +1359,7 @@ void __thiscall ReportWin_draw_ops_color(Buffer* This, int UNUSED(a2), int a3, i
     Buffer_set_text_color(This, color, a3, a4, a5);
 }
 
-int __thiscall mod_MapWin_focus(Console* This, int x, int y)
+int __thiscall mod_MapWin_focus(MapWindow* This, int x, int y)
 {
     // Return value is non-zero when the map is recentered offscreen
     if (MapWin_focus(This, x, y)) {
@@ -1369,7 +1369,7 @@ int __thiscall mod_MapWin_focus(Console* This, int x, int y)
     return 0;
 }
 
-void __thiscall mod_MapWin_set_center(Console* This, int x, int y, int flag)
+void __thiscall mod_MapWin_set_center(MapWindow* This, int x, int y, int flag)
 {
     // Make sure the whole screen is refreshed when clicking on map tiles
     if (!in_box(x, y, RenderTileBounds)) {

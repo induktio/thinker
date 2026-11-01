@@ -14,6 +14,7 @@ void __cdecl net_loan(int faction_id_1, int faction_id_2, int loan_total, int lo
 void __cdecl net_maps(int a1, int a2, int wait_diplo);
 void __cdecl net_tech(int a1, int a2, int a3, int wait_diplo);
 void __cdecl net_pact_ends(int a1, int a2, int wait_diplo);
+void __cdecl net_withdrawal(int a1, int a2, int wait_diplo);
 void __cdecl net_cede_base(int a1, int a2, int wait_diplo);
 void __cdecl net_double_cross(int a1, int a2, int a3, int wait_diplo);
 int __cdecl net_action_build(size_t veh_id, char* name);

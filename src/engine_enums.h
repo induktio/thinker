@@ -83,6 +83,8 @@ const int Fac_ID_Last = 64; // facilities that can be built on the base
 const int Fac_All_ID_Last = 69; // includes satellites and stockpile energy
 const int Tech_ID_First = 0;
 const int Tech_ID_Last = 88;
+const int Tech_ID_Commlink = 89;
+const int Tech_ID_Units = 97;
 
 enum FacilityId {
     FAC_HEADQUARTERS = 1,
@@ -664,6 +666,16 @@ enum DiploAgenda {
     AGENDA_UNK_8000 = 0x8000,
 };
 
+enum DiploStateFlag {
+    DST_UNK_1 = 0x1,
+    DST_UNK_2 = 0x2,
+    DST_UNK_4 = 0x4,
+    DST_UNK_8 = 0x8,
+    DST_UNK_10 = 0x10,
+    DST_UNK_20 = 0x20,
+    DST_UNK_40 = 0x40,
+};
+
 enum PlayerFlags {
     PFLAG_MULTI_TECH_ACHIEVED = 0x2, // tech_achieved during network multiplayer
     PFLAG_UNK_4 = 0x4, // study_artifact
@@ -1003,6 +1015,16 @@ enum DialogType {
     DIALOG_TYPE_RADIOBUTTON = 16,
 };
 
+enum PopupFlag {
+    POPUP_CHECKBOX = 0x1,
+    POPUP_LIST_CHOICE = 0x2,
+    POPUP_TEXT_INPUT = 0x4,
+    POPUP_BTN_CANCEL = 0x40,
+    POPUP_LARGE_WIN = 0x80,
+    POPUP_SMALL_WIN = 0x400,
+    POPUP_UNK_100000 = 0x100000,
+};
+
 enum ReportViewMode {
     REPORT_INTEL = 0,
     REPORT_NONE = 1,
@@ -1050,6 +1072,8 @@ enum TextLabel {
     TL_Alien = 244,
     TL_Aliens = 245,
     TL_Production = 249,
+    TL_A = 276,
+    TL_An = 277,
     TL_WorldMap = 306,
     TL_NotAvailable = 310,
     TL_Unmodified = 322,
@@ -1063,6 +1087,7 @@ enum TextLabel {
     TL_Description = 484,
     TL_Gender = 485,
     TL_CommFrequency = 487,
+    TL_Submissive = 488,
     TL_Explore = 521,
     TL_Discover = 522,
     TL_Build = 523,

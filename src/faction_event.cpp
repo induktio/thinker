@@ -1,9 +1,6 @@
 
 #include "faction_event.h"
 
-int* const dword_68D43C = (int*)0x68D43C;
-int* const dword_68D440 = (int*)0x68D440;
-
 
 static bool player_spying(int player_id, int faction_id_1, int faction_id_2) {
     Faction& plr = Factions[player_id];
@@ -12,6 +9,16 @@ static bool player_spying(int player_id, int faction_id_1, int faction_id_2) {
         || (player_id == *GovernorFaction && !MFactions[faction_id_1].is_alien())
         || (plr.diplo_status[faction_id_2] & DIPLO_HAVE_INFILTRATOR)
         || (player_id == *GovernorFaction && !MFactions[faction_id_2].is_alien());
+}
+
+/*
+Pact status counts as infiltration on diplomacy window for displaying the energy reserves.
+In the original game energy reserves are always displayed on faction profile if pact is active.
+*/
+int __cdecl DiploPop_spying(int faction_id) {
+    return has_treaty(MapWin->cOwner, faction_id, DIPLO_PACT|DIPLO_HAVE_INFILTRATOR)
+        || has_project(FAC_EMPATH_GUILD, MapWin->cOwner)
+        || (MapWin->cOwner == *GovernorFaction && !MFactions[faction_id].is_alien());
 }
 
 void __cdecl pact_attacks(int faction_id_1, int faction_id_2) {
@@ -351,9 +358,9 @@ void __cdecl comm_check(int faction_id_1, int faction_id_2) {
                 NetMsg_pop(NetMsg, "NETMET", 5000, 0, 0);
             }
         } else {
-            DiploStateA[faction_id_2] |= 1;
+            DiploStateA[faction_id_2] |= DST_UNK_1;
             if (!has_commlink) {
-                DiploStateA[faction_id_2] |= 2;
+                DiploStateA[faction_id_2] |= DST_UNK_2;
                 net_treaty_on(faction_id_1, faction_id_2, DIPLO_UNK_10000|DIPLO_TRUCE, 0);
             }
         }
@@ -373,9 +380,9 @@ void __cdecl comm_check(int faction_id_1, int faction_id_2) {
         communicate(faction_id_1, faction_id_2, 0);
         return;
     }
-    DiploStateB[faction_id_1][faction_id_2] |= 1;
+    DiploStateB[faction_id_1][faction_id_2] |= DST_UNK_1;
     if (!has_commlink) {
-        DiploStateB[faction_id_1][faction_id_2] |= 2;
+        DiploStateB[faction_id_1][faction_id_2] |= DST_UNK_2;
         treaty_on(faction_id_1, faction_id_2, DIPLO_UNK_10000|DIPLO_TRUCE);
     }
 }
@@ -460,12 +467,12 @@ void __cdecl encounter(int faction_id_1, int faction_id_2, int x, int y, int fun
         }
     }
     if (*SunspotDuration <= 0) {
-        *dword_68D43C = x;
-        *dword_68D440 = y;
+        *EncounterLocX = x;
+        *EncounterLocY = y;
         comm_check(faction_id_1, faction_id_2);
         comm_check(faction_id_2, faction_id_1);
-        *dword_68D440 = -1;
-        *dword_68D43C = -1;
+        *EncounterLocX = -1;
+        *EncounterLocY = -1;
 
         bool had_commlink = Factions[faction_id_1].diplo_status[faction_id_2] & DIPLO_COMMLINK;
         auto show_meet_tutorial = [&](int self_id, int other_id) {
@@ -540,10 +547,9 @@ int __cdecl territory(int faction_id_1, int faction_id_2, int flags, int* out_ba
     if (!(flags & 2) && (status & DIPLO_UNK_200)) {
         return 0;
     }
-    const int want_revenge = status & DIPLO_WANT_REVENGE;
     int skip_region[MaxRegionNum] = {}; // includes all land/ocean regions
     for (int i = 0; i < MaxRegionLandNum; i++) {
-        if (!want_revenge && Factions[faction_id_2].integrity_blemishes < 5) {
+        if (!(status & DIPLO_WANT_REVENGE) && Factions[faction_id_2].integrity_blemishes < 5) {
             for (int j = 1; j < MaxPlayerNum; j++) {
                 if (j != faction_id_1
                 && j != faction_id_2
@@ -711,8 +717,8 @@ void __cdecl enemy_diplomacy(int faction_id) {
             if (j < 8 && !(plr.diplo_status[i] & DIPLO_PACT) && reputation(i, faction_id) < 5
             && ((*CurrentTurn - Factions[i].diplo_spoke[faction_id] > 8 && (*CurrentTurn & 0xF) == 2 * faction_id)
             || (plr.diplo_status[i] & DIPLO_WANT_TO_TALK))) {
-                DiploStateA[faction_id] |= 0x41;
-                DiploStateB[i][faction_id] |= 0x41;
+                DiploStateA[faction_id] |= DST_UNK_40|DST_UNK_1;
+                DiploStateB[i][faction_id] |= DST_UNK_40|DST_UNK_1;
                 if (!*MultiplayerActive && !*PbemActive) {
                     communicate(i, faction_id, 0);
                     treaty_on(i, faction_id, DIPLO_UNK_80000000 | DIPLO_UNK_8000000 | DIPLO_COMMLINK);
@@ -726,8 +732,8 @@ void __cdecl enemy_diplomacy(int faction_id) {
                     communicate(i, faction_id, 0);
                     treaty_on(i, faction_id, DIPLO_UNK_80000000 | DIPLO_UNK_8000000 | DIPLO_COMMLINK);
                 } else {
-                    DiploStateA[faction_id] |= 1;
-                    DiploStateB[i][faction_id] |= 1;
+                    DiploStateA[faction_id] |= DST_UNK_1;
+                    DiploStateB[i][faction_id] |= DST_UNK_1;
                 }
             }
         }
@@ -759,38 +765,37 @@ void __cdecl enemy_diplomacy(int faction_id) {
                     uint32_t agenda = plr.diplo_agenda[i];
                     if (plr.diplo_status[i] & DIPLO_TREATY) {
                         if (territory_result >= 5) {
-                            DiploStateA[faction_id] |= 4;
-                            DiploStateB[i][faction_id] |= 4;
+                            DiploStateA[faction_id] |= DST_UNK_4;
+                            DiploStateB[i][faction_id] |= DST_UNK_4;
                         } else if (((faction_id + *CurrentTurn) & 3) == 0) {
-                            DiploStateA[faction_id] |= 32;
-                            DiploStateB[i][faction_id] |= 32;
+                            DiploStateA[faction_id] |= DST_UNK_20;
+                            DiploStateB[i][faction_id] |= DST_UNK_20;
                         }
                     } else if ((agenda & AGENDA_UNK_800) || ((agenda & AGENDA_UNK_400) && territory_aux)) {
-                        DiploStateA[faction_id] |= 24;
-                        DiploStateB[i][faction_id] |= 24;
+                        DiploStateA[faction_id] |= DST_UNK_10|DST_UNK_8;
+                        DiploStateB[i][faction_id] |= DST_UNK_10|DST_UNK_8;
                     } else {
-                        uint32_t want_revenge = plr.diplo_status[i] & DIPLO_WANT_REVENGE;
                         bool escalate = false;
-                        if (!want_revenge || territory_aux) {
+                        if (!(plr.diplo_status[i] & DIPLO_WANT_REVENGE) || territory_aux) {
                             if (((faction_id + *CurrentTurn) & 3) == 0) {
-                                DiploStateA[faction_id] |= 8;
-                                DiploStateB[i][faction_id] |= 8;
+                                DiploStateA[faction_id] |= DST_UNK_8;
+                                DiploStateB[i][faction_id] |= DST_UNK_8;
                                 escalate = game_random(0, territory_aux + Factions[i].integrity_blemishes
                                     + territory_result + 4 * (territory_aux + Factions[i].integrity_blemishes)
-                                    + (want_revenge ? 5 : 0)) > 10;
+                                    + (plr.diplo_status[i] & DIPLO_WANT_REVENGE ? 5 : 0)) > 10;
                             }
                         } else {
-                            DiploStateA[faction_id] |= 8;
-                            DiploStateB[i][faction_id] |= 8;
+                            DiploStateA[faction_id] |= DST_UNK_8;
+                            DiploStateB[i][faction_id] |= DST_UNK_8;
                             escalate = game_random(0, territory_result
                                 + 4 * (Factions[i].integrity_blemishes + 1)
                                 + Factions[i].integrity_blemishes + 1) > 10;
                         }
                         if (escalate) {
                             if (i == MapWin->cOwner) {
-                                DiploStateA[faction_id] |= 0x10;
+                                DiploStateA[faction_id] |= DST_UNK_10;
                             }
-                            DiploStateB[i][faction_id] |= 0x10;
+                            DiploStateB[i][faction_id] |= DST_UNK_10;
                         }
                     }
                     if (DiploStateA[faction_id] && !*MultiplayerActive && !*PbemActive) {
@@ -1094,6 +1099,12 @@ void __cdecl enemy_strategy(int faction_id) {
         BASE& base = Bases[base_id];
         int x = base.x;
         int y = base.y;
+        MAP* sq = mapsq(x, y);
+        if (!sq) {
+            assert(0);
+            continue;
+        }
+        int region = sq->region;
         if (base.faction_id == faction_id) {
             base.state_flags &= ~(BSTATE_UNK_4000000|BSTATE_UNK_8000000);
             if (base.ai_plan_status) {
@@ -1106,12 +1117,12 @@ void __cdecl enemy_strategy(int faction_id) {
             && !stack_check(stack_id, 2, PLAN_RECON, faction_id, -1)) {
                 add_goal(faction_id, AI_GOAL_DEFEND, 4, x, y, -1);
             }
-            for (int i = 0; i <= base.queue_size; i++) {
+            assert(base.queue_size < 10);
+            for (int i = 0; i <= base.queue_size && i < 10; i++) {
                 if (base.queue_items[i] >= 0) {
                     plr.units_queue[base.queue_items[i]]++;
                 }
             }
-            int region = mapsq(x, y)->region;
             plr.region_total_bases[region]++;
             if (is_coast(x, y, 0)) {
                 plr.region_flags[region] |= REGION_UNK_80;
@@ -1129,7 +1140,6 @@ void __cdecl enemy_strategy(int faction_id) {
             continue;
         }
         int priority = 1;
-        MAP* sq = mapsq(x, y);
         if (sq->veh_who() < 0) {
             priority = 2;
             add_goal(faction_id, AI_GOAL_DEFEND, 2, x, y, -1);
@@ -1138,7 +1148,7 @@ void __cdecl enemy_strategy(int faction_id) {
         if (base.faction_id_former == faction_id) {
             priority++;
         }
-        if (plr.region_total_bases[sq->region]) {
+        if (plr.region_total_bases[region]) {
             priority++;
         }
         if (!has_fac_built(FAC_PERIMETER_DEFENSE, base_id)) {
@@ -1707,7 +1717,7 @@ void __cdecl enemy_strategy(int faction_id) {
                         int tile_y = ay * 5;
                         for (int ax = ay & 1; ax < *MapAbstractX; ax += 2) {
                             int tile_x = ax * 5;
-                            if ((uint8_t)abstract_at(ax, ay) != region) {
+                            if (abstract_at(ax, ay) != region) {
                                 continue;
                             }
                             int cell_score = 0;
@@ -1729,7 +1739,7 @@ void __cdecl enemy_strategy(int faction_id) {
                                 if (nx < 0 || nx >= *MapAbstractX || ny < 0 || ny >= *MapAbstractY) {
                                     continue;
                                 }
-                                int neighbor = (uint8_t)abstract_at(nx, ny);
+                                uint8_t neighbor = abstract_at(nx, ny);
                                 if (neighbor == region) {
                                     cell_score--;
                                     continue;
@@ -1831,7 +1841,7 @@ void __cdecl enemy_strategy(int faction_id) {
                 int attack_base = plr.base_id_attack_target;
                 if (attack_base >= 0
                 && (plr.diplo_status[Bases[attack_base].faction_id] & (DIPLO_UNK_800|DIPLO_VENDETTA))
-                && mapsq(Bases[attack_base].x, Bases[attack_base].y)->region == best_region) {
+                && region_at(Bases[attack_base].x, Bases[attack_base].y) == best_region) {
                     dist = vector_dist(base.x, base.y, Bases[attack_base].x, Bases[attack_base].y);
                     *BaseFindDist = dist;
                 } else if (base_find_3(base.x, base.y, rival_id, best_region, -1, -1) >= 0) {
@@ -1862,7 +1872,7 @@ void __cdecl enemy_strategy(int faction_id) {
                     && (uint8_t)Units[unit_id].plan <= PLAN_DEFENSE
                     && Units[unit_id].triad() == TRIAD_LAND
                     && !has_abil(unit_id, ABL_DROP_POD)
-                    && mapsq(veh.x, veh.y)->region == best_region
+                    && region_at(veh.x, veh.y) == best_region
                     && (veh.order == ORDER_NONE || veh.order == ORDER_MOVE_TO)) {
                         base_find_2(veh.x, veh.y, rival_id);
                         if (*BaseFindDist > vector_dist(veh.x, veh.y, plr.target_x, plr.target_y)) {
@@ -1963,25 +1973,12 @@ void __cdecl enemy_strategy(int faction_id) {
                 }
             }
             int triad = veh.triad();
-            if (triad != TRIAD_AIR) {
-                bool on_water = is_ocean(veh_sq);
-                bool sea_unit = triad == TRIAD_SEA;
-                if (on_water != sea_unit) {
-                    if (veh_base_who < 0) {
-                        continue;
-                    }
-                    for (int i = 0; i < 8; i++) {
-                        int nx = wrap(veh_x + BaseOffsetX[i]);
-                        int ny = veh_y + BaseOffsetY[i];
-                        MAP* nsq = mapsq(nx, ny);
-                        // Fix: restore region adjustment that was always skipped because original compared
-                        // on_water == sea_unit when it should check is_ocean(nsq) == sea_unit
-                        if (nsq && is_ocean(nsq) == sea_unit) {
-                            region = nsq->region;
-                            break;
-                        }
-                    }
+            if (triad != TRIAD_AIR && is_ocean(veh_sq) != (triad == TRIAD_SEA)) {
+                if (veh_base_who < 0) {
+                    continue;
                 }
+                // Fix: remove unused region change code when land/sea units are located at
+                // sea/land tiles because the original compared contradictory statements.
             }
             if (plan == PLAN_COMBAT) {
                 uint8_t region_plan = plr.region_base_plan[region];
@@ -2056,9 +2053,8 @@ void __cdecl enemy_strategy(int faction_id) {
                     continue;
                 }
                 int unit_id = veh.unit_id;
-                int goal_triad = Units[unit_id].triad();
-                if (goal_triad == TRIAD_AIR
-                || is_ocean(goal_sq) != (goal_triad == TRIAD_SEA)
+                if (triad == TRIAD_AIR
+                || is_ocean(goal_sq) != (triad == TRIAD_SEA)
                 || Units[unit_id].group_id == 21) {
                     continue;
                 }

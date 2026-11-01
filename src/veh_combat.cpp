@@ -1117,6 +1117,8 @@ void __cdecl planet_busting(int veh_id, int tx, int ty) {
             }
         }
     }
+    // Fix 34. [BUG] Fixed logic in PB code to prevent ODP/Flechette defenses being called a 2nd time
+    // (with a chance for defenses to fail) even after PB had already been shot down.
     if (!shoot_value) {
         int owner_id = whose_territory(faction_id, tx, ty, 0, 0);
         if (owner_id >= 0 && owner_id != faction_id && !found[owner_id]) {

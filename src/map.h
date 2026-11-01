@@ -52,6 +52,8 @@ void __cdecl site_set(int x, int y, uint8_t site);
 void __cdecl region_set(int x, int y, uint8_t region);
 int __cdecl region_at(int x, int y);
 int __cdecl base_at(int x, int y);
+uint8_t __cdecl abstract_at(int x, int y);
+void __cdecl abstract_set(int x, int y, uint8_t region);
 int __cdecl alt_at(int x, int y);
 int __cdecl alt_detail_at(int x, int y);
 void __cdecl alt_put_detail(int x, int y, uint8_t detail);

@@ -1,6 +1,10 @@
 
 #include "random.h"
 
+static inline uint32_t rotl(const uint32_t x, int k) {
+    return (x << k) | (x >> (32 - k));
+}
+
 uint32_t game_rand_state() {
     fp_none getptd = (fp_none)0x6491C3;
     return ((uint32_t*)getptd())[5];
@@ -24,10 +28,6 @@ uint32_t pair_hash(uint32_t a, uint32_t b) {
 GameRandom map_rand;
 static uint32_t random_seed = 0;
 static uint32_t nx = 0, ny = 0;
-
-static inline uint32_t rotl(const uint32_t x, int k) {
-	return (x << k) | (x >> (32 - k));
-}
 
 uint32_t next_rand() {
     if (!nx && !ny) {

@@ -96,6 +96,8 @@
 		<Unit filename="src/faction_diplo.h" />
 		<Unit filename="src/faction_event.cpp" />
 		<Unit filename="src/faction_event.h" />
+		<Unit filename="src/faction_talk.cpp" />
+		<Unit filename="src/faction_talk.h" />
 		<Unit filename="src/game.cpp" />
 		<Unit filename="src/game.h" />
 		<Unit filename="src/gameturn.cpp" />

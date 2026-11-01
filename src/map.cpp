@@ -289,6 +289,19 @@ int __cdecl base_at(int x, int y) {
     return -1;
 }
 
+uint8_t __cdecl abstract_at(int x, int y) {
+    if (x >= 0 && y >= 0 && x < *MapAbstractX && y < *MapAbstractY) {
+        return (*MapAbstract)[(x >> 1) + y * (*MapAbstractX >> 1)];
+    }
+    return 0;
+}
+
+void __cdecl abstract_set(int x, int y, uint8_t region) {
+    if (x >= 0 && y >= 0 && x < *MapAbstractX && y < *MapAbstractY) {
+        (*MapAbstract)[(x >> 1) + y * (*MapAbstractX >> 1)] = region;
+    }
+}
+
 int __cdecl alt_at(int x, int y) {
     MAP* sq = mapsq(x, y);
     if (sq) {

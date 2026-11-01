@@ -63,10 +63,10 @@ Original version changed MapWin->cOwner variable for unknown reason which is ski
 */
 void __thiscall Console_editor_fungus(Console*) {
     auto_undo();
-    int v1 = X_pop_6("FUNGOSITY", PopDialogBtnCancel, 0);
+    int v1 = X_pop_6("FUNGOSITY", POPUP_BTN_CANCEL, 0);
     if (v1 >= 0) {
         int v2 = 0;
-        if (!v1 || (v2 = X_pop_6("FUNGMOTIZE", PopDialogBtnCancel, 0)) > 0) {
+        if (!v1 || (v2 = X_pop_6("FUNGMOTIZE", POPUP_BTN_CANCEL, 0)) > 0) {
             MAP* sq = *MapTiles;
             for (int i = 0; i < *MapAreaTiles; ++i, ++sq) {
                 sq->items &= ~BIT_FUNGUS;

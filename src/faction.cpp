@@ -104,6 +104,16 @@ int prod_count(int item_id, int faction_id, int base_skip_id) {
 }
 
 /*
+Higher values indicate more hostile relations (broken treaties or similar).
+*/
+int diplo_relation(int faction_id, int faction_id_2) {
+    return clamp(Factions[faction_id].integrity_blemishes
+        + Factions[faction_id_2].diplo_betrayed[faction_id]
+        - Factions[faction_id].diplo_gifts[faction_id_2]
+        + clamp(Factions[faction_id].eliminated_count - 1, 0, 4), -10, 10);
+}
+
+/*
 Determine if the specified faction is controlled by a human player or computer AI.
 */
 bool is_human(int faction_id) {
@@ -946,7 +956,7 @@ void __cdecl cause_friction(int faction_id, int faction_id_with, int friction) {
     Faction* f = &Factions[faction_id];
     f->diplo_friction[faction_id_with] = clamp(f->diplo_friction[faction_id_with] + friction, 0, 20);
     if (*DiploFrictionFactionID == faction_id && *DiploFrictionFactionIDWith == faction_id_with) {
-        *DiploFriction = clamp(*DiploFriction + friction, 0, 20); // Fix: add variable bounding
+        *DiploFriction += friction;
     }
 }
 
@@ -976,7 +986,10 @@ int __cdecl get_mood(int friction) {
     if (friction <= 17) {
         return MOOD_QUARRELSOME;
     }
-    return (friction > 19) + MOOD_BELLIGERENT; // or MOOD_SEETHING if condition is true
+    if (friction <= 19) {
+        return MOOD_BELLIGERENT;
+    }
+    return MOOD_SEETHING;
 }
 
 /*
@@ -1017,6 +1030,85 @@ int __cdecl energy_value(int loan_principal) {
         goodwill += ((weight >= 0) ? ((energy > weight) ? weight : energy) : 0) / divisor++;
     }
     return (goodwill + 4) / 5;
+}
+
+void __cdecl say_special(char* dest, const char* text, int faction_id) {
+    char input[StrBufLen];
+    char output[StrBufLen];
+    const char* gender = "";
+    int is_leader_female = MFactions[faction_id].is_leader_female;
+
+    if (is_leader_female == 0) {
+        gender = "M";
+    } else if (is_leader_female == 1) {
+        gender = "F";
+    } else if (is_leader_female == 2) {
+        gender = "N";
+    }
+    snprintf(input, StrBufLen, "$<%s1:%s>", gender, text);
+    parse_string(input, output);
+    size_t len = strnlen(dest, StrBufLen);
+    snprintf(&dest[len], StrBufLen - len, "%s", output);
+}
+
+void __cdecl say_fac_special(char* dest, const char* text, int faction_id) {
+    char input[StrBufLen];
+    char output[StrBufLen];
+    const char* gender = "";
+    const char* plural = "";
+    int noun_gender = MFactions[faction_id].noun_gender;
+    int is_noun_plural = MFactions[faction_id].is_noun_plural;
+
+    if (noun_gender == 0) {
+        gender = "M";
+    } else if (noun_gender == 1) {
+        gender = "F";
+    } else if (noun_gender == 2) {
+        gender = "N";
+    }
+    if (is_noun_plural == 0) {
+        plural = "1";
+    } else if (is_noun_plural == 1) {
+        plural = "2";
+    }
+    snprintf(input, StrBufLen, "$<%s%s:%s>", gender, plural, text);
+    parse_string(input, output);
+    size_t len = strnlen(dest, StrBufLen);
+    snprintf(&dest[len], StrBufLen - len, "%s", output);
+}
+
+char* __cdecl get_phrase(int faction_id, int index) {
+    MFaction* fac = &MFactions[faction_id];
+    if (text_open(fac->filename, fac->search_key)
+    && text_open(fac->filename, fac->filename)) {
+        parse_says(0, fac->search_key, -1, -1);
+        parse_says(1, fac->filename, -1, -1);
+        X_pop("PLAYERFILE", 0);
+        return label_get(TL_NONE);
+    }
+    for (int i = 0; i < index + 9; i++) {
+        text_get();
+    }
+    return text_buf_ptr();
+}
+
+char* __cdecl get_noun_phrase(int faction_id, int index) {
+    MFaction* fac = &MFactions[faction_id];
+    if (text_open(fac->filename, fac->search_key)
+    && text_open(fac->filename, fac->filename)) {
+        parse_says(0, fac->search_key, -1, -1);
+        parse_says(1, fac->filename, -1, -1);
+        X_pop("PLAYERFILE", 0);
+        return label_get(TL_NONE);
+    }
+    for (int i = 0; i < index + 9; i++) {
+        text_get();
+    }
+    char noun[StrBufLen];
+    snprintf(noun, StrBufLen, "%s", text_item());
+    noun_item(GenderDefault, PluralDefault);
+    snprintf(text_buf_ptr(), StrBufLen, "%s", noun);
+    return text_buf_ptr();
 }
 
 char* __cdecl get_adjective(int faction_id) {

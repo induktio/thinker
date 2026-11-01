@@ -510,6 +510,12 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 76. Fix inconsistent calculations with faction rankings when Security Nexus counters do not match the actual units present on the map.
 77. Fix possible mistake in rankings calculations that caused any non-PB, non-PSI combat unit not to count towards the rating unless the weapon value is equal to the current maximum across all factions.
 78. Game warns at startup when parsed labels.txt has fewer lines than the required count to avoid possible game crashes.
+79. Fix base obliterate, airdrop/orbital insertion and units drowning popup sometimes not displaying the proper base name.
+80. Fix missing dialog for PROTOPACT that was previously never displayed. This updated dialog option only transfers the mentioned prototype to the player faction.
+81. Fix issue where diplomacy dialog sometimes mixed up INTRODUCEENEMY and INTRODUCEENEMYALIEN labels.
+82. Fix unimplemented dialog checks and remove VENDETTA5X reference for CYBORG faction filename.
+83. Fix issues with AI planet buster dialog when URGENTCOMM "Switching to main viewscreen" message does not open the diplomacy window and PLANETBUSTER0 message appears every time.
+84. Fix game not recentering base swap proposal dialog minimap when another base is selected from the list.
 
 
 Scient's patch

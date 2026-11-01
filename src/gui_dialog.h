@@ -2,19 +2,6 @@
 
 #include "main.h"
 
-enum PopDialog {
-    PopDialogCheckbox = 0x1, // Multiple choices
-    PopDialogListChoice = 0x2, // Only one choice
-    PopDialogTextInput = 0x4,
-    PopDialogBtnCancel = 0x40,
-    PopDialogLargeWindow = 0x80, // Large square window placed on top left
-    PopDialogSmallWindow = 0x400, // Narrow window
-    PopDialogUnk1000 = 0x1000,
-    PopDialogUnk10000 = 0x10000, // Removes portrait and ok buttons?
-    PopDialogUnk40000 = 0x40000, // Removes ok buttons?
-    PopDialogUnk100000 = 0x100000,
-};
-
 enum DiploProposal {
     DiploProposalMakeGift = 1,
     DiploProposalMakePact = 2,
@@ -38,19 +25,16 @@ enum DiploCounter {
     DiploCounterResearchData = 4, // valuable research data
     DiploCounterEnergyPayment = 5, // modest sum of energy credits
     DiploCounterLoanPayment = 6, // schedule of loan payments
+    DiploCounterMakeGift = 7, // grant all research data
     DiploCounterGiveBase = 8, // turn over one of my bases
 };
 
+int __thiscall Popup_load_icon(Popup* This, Sprite* a2, int a3, char* a4);
 int __cdecl X_pop(const char* label, fp_none fn);
 int __cdecl X_pop_2(const char* filename, const char* label, fp_none fn);
 int __cdecl X_pop_6(const char* label, int a2, fp_none fn);
 int __cdecl X_pops(const char* label, Sprite* a2, fp_none fn);
 int __cdecl X_pops_11(const char* label, int a2, Sprite* a3, fp_none fn);
-int __cdecl X_dialog(const char* label, int faction2);
-int __cdecl X_dialog(const char* filename, const char* label, int faction2);
-int __cdecl DiploPop_spying(int faction_id);
-int __cdecl mod_threaten(int faction1, int faction2);
-int __cdecl mod_base_swap(int faction1, int faction2);
-int __cdecl mod_energy_trade(int faction1, int faction2);
-int __cdecl mod_buy_tech(int faction1, int faction2, int counter_id, int high_price, int proposal_id);
+int __cdecl X_dialog(const char* label, int faction_id);
+int __cdecl X_dialog_alt(const char* filename, const char* label, int faction_id);
 

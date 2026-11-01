@@ -149,6 +149,18 @@ void __cdecl net_pact_ends(int a1, int a2, int wait_diplo) {
     }
 }
 
+void __cdecl net_withdrawal(int a1, int a2, int wait_diplo) {
+    debug_ver("net_withdrawal %d %d\n", a1, a2);
+    if (*MultiplayerActive) {
+        message_data(0x244A, 0, a1, a2, 0, 0);
+        if (wait_diplo) {
+            NetDaemon_await_diplo(NetState, 0x44A);
+        }
+    } else {
+        do_withdrawal(a1, a2);
+    }
+}
+
 void __cdecl net_cede_base(int a1, int a2, int wait_diplo) {
     debug_ver("net_cede_base %d %d\n", a1, a2);
     if (*MultiplayerActive) {

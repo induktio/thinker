@@ -2,6 +2,7 @@
 
 #include "main.h"
 
+int __cdecl DiploPop_spying(int faction_id);
 void __cdecl pact_attacks(int faction_id_1, int faction_id_2);
 void __cdecl pact_unpact(int faction_id_1, int faction_id_2);
 void __cdecl pact_truce(int faction_id_1, int faction_id_2);

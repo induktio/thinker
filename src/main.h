@@ -352,6 +352,7 @@ struct AIPlans {
 #include "faction.h"
 #include "faction_diplo.h"
 #include "faction_event.h"
+#include "faction_talk.h"
 #include "base.h"
 #include "basewin.h"
 #include "build.h"
