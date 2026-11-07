@@ -874,11 +874,11 @@ void __cdecl tech_achieved(int faction_id, int tech_id, int faction_id_2, int is
             snprintf(StrBuffer, StrBufLen, "TECH%d", tech_id);
             BasePop_init(&cur_popup, 0, 0);
             BasePop_set_width(&cur_popup, 500);
-            Popup_start(&cur_popup, BlurbsxFile, StrBuffer, -1, 0, 128, 0);
+            Popup_start(&cur_popup, BlurbsxFile, StrBuffer, -1, 0, POPUP_PRE_INIT, 0);
             BasePop_string(&cur_popup, "^");
             BasePop_string(&cur_popup, "^------");
             BasePop_string(&cur_popup, "^");
-            pop_flag = 128;
+            pop_flag = POPUP_PRE_INIT;
         }
         StrBuffer[0] = 0;
         if (faction_id == MapWin->cOwner) {

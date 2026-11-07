@@ -832,6 +832,9 @@ int __cdecl battle_kill(int veh_id, int* num_killed, int* num_relics, int* num_c
     if (veh->flags & VFLAG_IS_OBJECTIVE && faction_id_atk >= 0) {
         ++Factions[faction_id_atk].unk_101;
     }
+    // Fix 46. [BUG] Interlude 6 would sometimes be triggered by native life forms causing issues
+    // with variables and not making sense, this interlude (and it's follow up #7) are designed
+    // for another specific faction. Add check to skip if faction killing unit is alien.
     if ((veh->state & VSTATE_ASSISTANT_WORM)
     && veh_id_atk >= 0
     && Vehs[veh_id_atk].faction_id
@@ -3117,10 +3120,10 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
         if (combat) {
             if (!garrison) {
                 if (triad == TRIAD_LAND && wpn_v == 1) {
-                    strncat(buf, label_get(146), MaxProtoNameLen); // Scout
+                    strncat(buf, label_get(TL_Scout), MaxProtoNameLen);
                     strncat(buf, " ", 2);
                 } else if (triad == TRIAD_LAND && wpn_v == 2 && !psi_wpn && spd_v > 1) {
-                    strncat(buf, label_get(182), MaxProtoNameLen); // Recon
+                    strncat(buf, label_get(TL_Recon), MaxProtoNameLen);
                     strncat(buf, " ", 2);
                 } else if (triad == TRIAD_LAND || wpn_v != 1 || arm_v == 1) {
                     parse_wpn_name(buf, wpn, i > 0);
@@ -3154,17 +3157,17 @@ VehChassis chs, VehWeapon wpn, VehArmor arm, VehAblFlag abls, VehReactor rec) {
             }
             if (arty) {
                 if ((wpn_v + arm_v) & 4) {
-                    strncat(buf, label_get(543), MaxProtoNameLen); // Artillery
+                    strncat(buf, label_get(TL_Artillery), MaxProtoNameLen);
                 } else {
-                    strncat(buf, label_get(544), MaxProtoNameLen); // Battery
+                    strncat(buf, label_get(TL_Battery), MaxProtoNameLen);
                 }
                 strncat(buf, " ", 2);
             }
             if (marine) {
                 if ((wpn_v + arm_v) & 4) {
-                    strncat(buf, label_get(614), MaxProtoNameLen); // Marines
+                    strncat(buf, label_get(TL_Marines), MaxProtoNameLen);
                 } else {
-                    strncat(buf, label_get(615), MaxProtoNameLen); // Invaders
+                    strncat(buf, label_get(TL_Invaders), MaxProtoNameLen);
                 }
                 strncat(buf, " ", 2);
             }

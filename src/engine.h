@@ -519,6 +519,10 @@ extern int* const SkipTechScreenA;
 extern int* const SkipTechScreenB;
 extern int* const NetUpkeepState;
 extern int* const NetSetupType;
+extern int8_t* const NetConfigValue;
+extern int* const NetConfigRules;
+extern int* const NetConfigState;
+extern int* const NetConfigMRules;
 extern int* const WorldAddTemperature;
 extern int* const WorldSkipTerritory;
 extern int* const GameDrawState;
@@ -557,6 +561,8 @@ extern Sprite* const ImgMapMine;
 extern Sprite* const ImgMapFarm;
 extern Sprite* const ImgMapSolar;
 extern Sprite* const ImgMapSoilEnr;
+extern Sprite* const MenuAltBtnIcons;
+extern Sprite** const MenuIconPtr;
 
 const int MaxVehModNum = 8192;
 extern VEH ArrayVehs[MaxVehModNum+2];
@@ -3778,7 +3784,7 @@ extern FMainMenu MainMenu_menu_init;
 extern FMainMenu_check MainMenu_check;
 
 typedef int(__thiscall *FPopMenu)(PopMenu* This);
-typedef int(__thiscall *FPopMenu_scalar_dtor)(void* This, uint32_t flags);
+typedef void*(__thiscall *FPopMenu_scalar_dtor)(void* This, uint32_t flags);
 typedef int(__thiscall *FPopMenu_exec)(PopMenu* This, int a2, int a3, int (__cdecl *a4)());
 
 extern FPopMenu PopMenu_dtor;
@@ -3787,7 +3793,7 @@ extern FPopMenu_exec PopMenu_exec;
 extern FPopMenu PopMenu_init;
 
 typedef int(__thiscall *FScroll)(Scroll* This);
-typedef int(__thiscall *FScroll_scalar_dtor)(void* This, uint32_t flags);
+typedef void*(__thiscall *FScroll_scalar_dtor)(void* This, uint32_t flags);
 typedef void(__thiscall *FScroll_operator_delete)(void* a1, uint32_t a2);
 typedef int(__thiscall *FScroll_init)(Scroll* This, int a2, int a3, int a4, int a5, Win* a6, int a7, int a8);
 typedef int(__thiscall *FScroll_init_2)(Scroll* This, RECT* a2, Win* a3, int a4, int a5);
@@ -3881,7 +3887,7 @@ typedef void(__thiscall *FBaseButton_on_dialog_focus)(BaseButton* This, int a2);
 typedef void(__cdecl *FBaseButton_timer_callback_daemon)(int a1, int a2);
 typedef void(__thiscall *FBaseButton_timer_callback)(BaseButton* This, int a2);
 typedef void(__thiscall *FBaseButton_set)(BaseButton* This, int a2);
-typedef int(__thiscall *FBaseButton_scalar_dtor)(BaseButton* This, uint32_t a2);
+typedef void*(__thiscall *FBaseButton_scalar_dtor)(BaseButton* This, uint32_t flags);
 typedef void(__thiscall *FBaseButton_operator_delete)(void* a1, uint32_t a2);
 
 extern FBaseButton BaseButton_hide;
@@ -4034,7 +4040,7 @@ extern FStringBox_on_scrolled StringBox_on_scrolled;
 extern FStringBox_on_scrolling StringBox_on_scrolling;
 
 typedef int(__thiscall *FEditBox)(EditBox* This);
-typedef int(__thiscall *FEditBox_scalar_dtor)(void* This, uint32_t flags);
+typedef void*(__thiscall *FEditBox_scalar_dtor)(void* This, uint32_t flags);
 typedef void(__thiscall *FEditBox_operator_delete)(void* a1, uint32_t a2);
 typedef int(__thiscall *FEditBox_init)(EditBox* This, int a2, int a3, int a4, int a5, Win* a6, int a7);
 typedef int(__thiscall *FEditBox_UNK1)(EditBox* This, Font* a2, int a3, int a4, int a5, Win* a6);
@@ -4199,7 +4205,7 @@ typedef int(__thiscall *FSpriteBox_init_4)(SpriteBox* This, Heap* a2);
 typedef int(__thiscall *FSpriteBox_init_5)(SpriteBox* This, int a2, int a3, int a4, int a5, Heap* a6);
 typedef int(__thiscall *FSpriteBox_init_6)(SpriteBox* This, RECT* a2, Heap* a3);
 typedef int(__thiscall *FSpriteBox_attach)(Dialog* This, GraphicWin* a2, int a3, int a4, int a5);
-typedef int(__thiscall *FSpriteBox_sprite)(SpriteBox* This, Sprite* a2, char* a3, int a4);
+typedef int(__thiscall *FSpriteBox_sprite)(SpriteBox* This, Sprite* a2, void* a3, int a4);
 typedef void(__thiscall *FSpriteBox_draw_item)(SpriteBox* This, int a2);
 typedef void(__thiscall *FSpriteBox_on_mouse_move)(SpriteBox* This, int a2, int a3);
 typedef void(__thiscall *FSpriteBox_on_mouse_leave)(SpriteBox* This, int a2, int a3);
@@ -4290,7 +4296,7 @@ typedef void(__thiscall *FDialog_set_dialog_text_color2)(Dialog* This, int a2, i
 typedef void(__thiscall *FDialog_set_dialog_text_color3)(Dialog* This, int a2, int a3, int a4, int a5);
 typedef int(__cdecl *FDialog_set_def_dialog_font)(Font* a1, Font* a2, Font* a3);
 typedef void(__cdecl *FDialog_set_def_dialog_text_color)(int a1, int a2, int a3, int a4, int a5);
-typedef void*(__thiscall *FDialog_scalar_dtor)(Dialog* This, uint32_t a2);
+typedef void*(__thiscall *FDialog_scalar_dtor)(Dialog* This, uint32_t flags);
 typedef int(__thiscall *FDialogs_item)(Dialogs* This, const char* text, int position);
 
 extern FDialog Dialog_ctor;
@@ -4369,7 +4375,7 @@ typedef void(__thiscall *FMainInterface_on_iface_selected)(MainInterface* This, 
 typedef int(__thiscall *FMainInterface_on_iface_button_pressed)(MainInterface* This, int a2);
 typedef void(__thiscall *FMainInterface_on_iface_button_clicked)(MainInterface* This, int a2);
 typedef void(__thiscall *FMainInterface_set_alert)(MainInterface* This, int a2);
-typedef int(__thiscall *FMainInterface_scalar_dtor)(void* This, uint32_t flags);
+typedef void*(__thiscall *FMainInterface_scalar_dtor)(void* This, uint32_t flags);
 typedef void(__thiscall *FMainInterface_operator_delete)(void* a1, uint32_t a2);
 
 extern FMainInterface_init MainInterface_init;
@@ -4803,8 +4809,8 @@ typedef void(__thiscall *FBaseWin_check_loc)(BaseWindow* This, int a2, int a3, i
 typedef void(__thiscall *FBaseWin_check_veh)(BaseWindow* This, int a2);
 typedef void(__thiscall *FBaseWin_zoom)(BaseWindow* This, int base_id, int a3);
 typedef void(__thiscall *FBaseWin_soft_zoom)(BaseWindow* This, int base_id);
-typedef void(__cdecl *FBaseWin_timer_callback)(BaseWindow* This, int, int);
-typedef void(__thiscall *FBaseWin_on_key_click)(BaseWindow* This, int a2, int a3);
+typedef void(__cdecl *FBaseWin_timer_callback)(BaseWindow* This, int a2, int a3);
+typedef int(__thiscall *FBaseWin_on_key_click)(BaseWindow* This, int a2, int a3);
 typedef void(__thiscall *FBaseWin_on_left_click)(BaseWindow* This, int x, int y);
 typedef void(__thiscall *FBaseWin_on_right_click)(BaseWindow* This, int x, int y);
 typedef void(__thiscall *FBaseWin_on_left_double_click)(BaseWindow* This, int x, int y);
@@ -5220,7 +5226,7 @@ typedef void(__thiscall *FDesignWin_on_iface_group_clicked)(DesignWindow* This, 
 typedef void(__thiscall *FDesignWin_center_stack)(DesignWindow* This, int a2, int a3);
 typedef void(__thiscall *FDesignWin_setup_veh)(DesignWindow* This, int unit_id, int a3);
 typedef int(__thiscall *FDesignWin_exec)(DesignWindow* This, int faction_id, int unit_id);
-typedef int(__thiscall *FDesignWin_scalar_dtor)(DesignWindow* This, uint32_t flags);
+typedef void*(__thiscall *FDesignWin_scalar_dtor)(DesignWindow* This, uint32_t flags);
 typedef void(__thiscall *FDesignWin_operator_delete)(void* a1, uint32_t a2);
 
 extern FDesignWin DesignWin_ctor;
@@ -5587,7 +5593,7 @@ typedef void(__cdecl *FNetMsg_timer_daemon)(int a1);
 typedef void(__thiscall *FNetMsg_on_button_clicked)(NetMessage* This, int a2);
 typedef int(__thiscall *FNetMsg_pop)(NetMessage* This, const char* label, int delay, int a4, const char* filename);
 typedef DWORD(__thiscall *FNetMsg_ctor)(NetMessage* This, int a2, int a3, int a4);
-typedef int(__thiscall *FNetMsg_scalar_dtor)(NetMessage* This, uint32_t a2);
+typedef void*(__thiscall *FNetMsg_scalar_dtor)(NetMessage* This, uint32_t flags);
 typedef void(__thiscall *FNetMsg_operator_delete)(void* a1, uint32_t a2);
 typedef int(__cdecl *FNetMsg_pop_2)(const char* label, const char* filename);
 
@@ -5719,7 +5725,6 @@ extern FPickTech_operator_delete PickTech_operator_delete;
 
 typedef int(__thiscall *FPickWin)(PickWindow* This);
 typedef void(__thiscall *FPickWin_init)(PickWindow* This, void(__cdecl *a2)(int), int a3, int a4);
-typedef int(__thiscall *FPickWin_on_redraw)(PickWindow* This);
 typedef void(__thiscall *FPickWin_on_button_passover)(PickWindow* This, int a2, int a3);
 typedef void(__thiscall *FPickWin_on_group_clicked)(PickWindow* This, int a2, int a3, int a4);
 typedef void(__thiscall *FPickWin_on_button_clicked)(PickWindow* This, int a2);
@@ -5729,7 +5734,7 @@ typedef void*(__thiscall *FPickWin_scalar_dtor)(PickWindow* This, uint32_t flags
 typedef void(__thiscall *FPickWin_operator_delete)(void* a1, uint32_t a2);
 
 extern FPickWin_init PickWin_init;
-extern FPickWin_on_redraw PickWin_on_redraw;
+extern FPickWin PickWin_on_redraw;
 extern FPickWin PickWin_close;
 extern FPickWin_on_button_passover PickWin_on_button_passover;
 extern FPickWin_on_group_clicked PickWin_on_group_clicked;
@@ -5928,7 +5933,7 @@ typedef void(__thiscall *FReportWin_labs_line)(ReportWindow* This, int a2, int a
 typedef void(__thiscall *FReportWin_on_selected)(ReportWindow* This, int a2, int a3);
 typedef void(__thiscall *FReportWin_start_attack)(ReportWindow* This, int a2, int a3, int a4, int a5);
 typedef void(__thiscall *FReportWin_show)(ReportWindow* This, int a2);
-typedef void*(__thiscall *FReportWin_scalar_dtor)(ReportWindow* This, uint32_t a2);
+typedef void*(__thiscall *FReportWin_scalar_dtor)(ReportWindow* This, uint32_t flags);
 typedef void(__thiscall *FReportWin_operator_delete)(void* a1, uint32_t a2);
 
 extern FReportWin ReportWin_init;
@@ -6069,7 +6074,7 @@ typedef void(__thiscall *FSetupWin_on_left_click)(SetupWin* This, int x, int y);
 typedef int(__thiscall *FSetupWin_on_mouse_move)(SetupWin* This, int x, int y);
 typedef int(__thiscall *FSetupWin_on_key_click)(SetupWin* This, int a2, int a3);
 typedef int(__thiscall *FSetupWin_draw_item)(SetupWin* This, int position, int a3);
-typedef void*(__thiscall *FSetupWin_scalar_dtor)(SetupWin* This, uint32_t a2);
+typedef void*(__thiscall *FSetupWin_scalar_dtor)(SetupWin* This, uint32_t flags);
 typedef void(__thiscall *FSetupWin_operator_delete)(void* a1, uint32_t a2);
 
 extern FSetupWin SetupWin_ctor;
@@ -6096,8 +6101,8 @@ typedef void(__thiscall *FSocialWin_draw_social)(SocialWindow* This, int soc_cat
 typedef int(__thiscall *FSocialWin_immune)(SocialWindow* This, int a2, int a3, int a4);
 typedef int(__thiscall *FSocialWin_on_button_text_draw)(SocialWindow* This, GraphicWin* a2, char* a3, int a4);
 typedef void(__thiscall *FSocialWin_on_left_click)(SocialWindow* This, int a2, int a3);
-typedef void(__thiscall *FSocialWin_bubble_me_elmo2)(SocialWindow* This, LPCSTR a2, int a3, int a4);
-typedef void(__thiscall *FSocialWin_bubble_me_elmo2_2)(SocialWindow* This, char* a2, int a3, int a4);
+typedef void(__thiscall *FSocialWin_bubble_me_elmo2)(SocialWindow* This, const char* a2, int a3, int a4);
+typedef void(__thiscall *FSocialWin_bubble_me_elmo2_2)(SocialWindow* This, const char* a2, int a3, int a4);
 typedef void(__thiscall *FSocialWin_on_right_click)(SocialWindow* This, int a2, int a3);
 typedef void(__thiscall *FSocialWin_on_group_clicked)(SocialWindow* This, int a2, int a3);
 typedef void(__thiscall *FSocialWin_on_button_passover)(SocialWindow* This, int a2, int a3);
@@ -6227,7 +6232,7 @@ typedef void(__cdecl *FTutWin_veh_draw)(Sprite* a1, TutWindow* a2, int veh_id, i
 typedef void(__cdecl *FTutWin_base_draw)(Sprite* a1, TutWindow* a2, int a3, int a4, int a5);
 typedef int(__thiscall *FTutWin_tut_win)(TutWindow* This, GraphicWin* a2, const char* label, int a4, int a5, Sprite* a6, int a7, int a8, int a9);
 typedef int(__thiscall *FTutWin_tut_map)(TutWindow* This, const char* label, int x, int y, int a5, Sprite* a6, int a7, int x2, int y2);
-typedef int(__thiscall *FTutWin_scalar_dtor)(TutWindow* This, uint32_t a2);
+typedef void*(__thiscall *FTutWin_scalar_dtor)(TutWindow* This, uint32_t flags);
 typedef void(__thiscall *FTutWin_operator_delete)(void* a1, uint32_t a2);
 
 extern FTutWin TutWin_ctor;
@@ -6271,11 +6276,10 @@ typedef void(__thiscall *FWorldWin_follow_center)(WorldWindow* This, int x, int 
 typedef void(__thiscall *FWorldWin_UNK2)(WorldWindow* This, int a2);
 typedef int(__thiscall *FWorldWin_pixel_to_tile)(WorldWindow* This, int a2, int a3, int* a4, int* a5);
 typedef int(__thiscall *FWorldWin_tile_to_pixel)(WorldWindow* This, int a2, int a3, int* a4, int* a5);
-typedef int(__thiscall *FWorldWin_clear_terrain)(WorldWindow* This);
 typedef void(__thiscall *FWorldWin_set_center)(WorldWindow* This, int a2, int a3);
 typedef void(__thiscall *FWorldWin_focus)(WorldWindow* This, int a2, int a3);
 typedef void(__thiscall *FWorldWin_init)(WorldWindow* This, int a2);
-typedef int(__thiscall *FWorldWin_scalar_dtor)(WorldWindow* This, uint32_t a2);
+typedef void*(__thiscall *FWorldWin_scalar_dtor)(WorldWindow* This, uint32_t flags);
 typedef void(__thiscall *FWorldWin_operator_delete)(void* a1, uint32_t a2);
 
 extern FWorldWin WorldWin_set_detail_map;
@@ -6293,7 +6297,7 @@ extern FWorldWin WorldWin_on_redraw;
 extern FWorldWin_UNK2 WorldWin_UNK2;
 extern FWorldWin_pixel_to_tile WorldWin_pixel_to_tile;
 extern FWorldWin_tile_to_pixel WorldWin_tile_to_pixel;
-extern FWorldWin_clear_terrain WorldWin_clear_terrain;
+extern FWorldWin WorldWin_clear_terrain;
 extern FWorldWin_set_center WorldWin_set_center;
 extern FWorldWin_focus WorldWin_focus;
 extern FWorldWin WorldWin_draw_box;
@@ -6333,7 +6337,7 @@ typedef int(__thiscall *FWave_set_position3d)(Wave* This, float a2, float a3, fl
 typedef int(__thiscall *FWave_set_xpos)(Wave* This, float a2);
 typedef int(__thiscall *FWave_set_ypos)(Wave* This, float a2);
 typedef int(__thiscall *FWave_set_zpos)(Wave* This, float a2);
-typedef void*(__thiscall *FWave_scalar_dtor)(Wave* This, uint32_t a2);
+typedef void*(__thiscall *FWave_scalar_dtor)(Wave* This, uint32_t flags);
 
 extern FWave Wave_ctor;
 extern FWave Wave_dtor;

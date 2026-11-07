@@ -5,19 +5,13 @@
 int* const dword_945818 = (int*)0x945818;
 int* const dword_945820 = (int*)0x945820;
 int* const dword_9B2074 = (int*)0x9B2074;
-int* const dword_9B7B00 = (int*)0x9B7B00;
 char* const unk_93AA0C = (char*)0x93AA0C;
 char* const unk_945E78 = (char*)0x945E78;
 char* const unk_945E7C = (char*)0x945E7C;
 char* const unk_945834 = (char*)0x945834;
 char* const unk_9B2078 = (char*)0x9B2078;
 GUID* const unk_689218 = (GUID*)0x689218;
-Sprite* const MenuIconSprites = (Sprite*)0x75AE20;
 // multiplayer related
-int8_t* const NetConfigValue = (int8_t*)0x90E8E0;
-int* const NetConfigRules = (int*)0x90E8EC;
-int* const NetConfigState = (int*)0x90E8F0;
-int* const NetConfigMRules = (int*)0x90E8F4;
 void* const unk_6F107C = (void*)0x6F107C;
 int* const dword_90DE8C = (int*)0x90DE8C;
 
@@ -187,12 +181,15 @@ int __cdecl in_box(int x, int y, RECT* rc) {
         && y >= rc->top && y < rc->bottom;
 }
 
-/*
-Calculate the offset and bitmask for the specified input.
-*/
 void __cdecl bitmask(uint32_t input, uint32_t* offset, uint32_t* mask) {
     *offset = input / 8;
     *mask = 1 << (input & 7);
+}
+
+void parse_tech(size_t index, int tech_id, int incl_category) {
+    clear();
+    say_tech(StrBuffer, tech_id, incl_category);
+    parse_says(index, StrBuffer, -1, -1);
 }
 
 void show_rules_menu() {
@@ -487,7 +484,7 @@ int __cdecl custom_planet(int use_images, int use_defaults) {
                     break;
             }
         }
-        Popup_start(&cur_popup, PopupScriptFile, StrBuffer, -1, 0, 0x40, 0);
+        Popup_start(&cur_popup, PopupScriptFile, StrBuffer, -1, 0, POPUP_BTN_CANCEL, 0);
         cur_popup.active_id = *pref_val;
         int result = use_images
             ? SetupWin_do_menu_2(&cur_setup, &cur_popup, 1, 0)
@@ -522,7 +519,8 @@ int __cdecl size_of_planet(int setup_mode) {
         SetupWin_dtor(&cur_setup);
         Popup_dtor(&cur_popup);
     });
-    Popup_start(&cur_popup, PopupScriptFile, "WORLDSIZE", -1, 0, setup_mode != 2 ? 0x40 : 0, 0);
+    Popup_start(&cur_popup, PopupScriptFile, "WORLDSIZE", -1, 0,
+        setup_mode != 2 ? POPUP_BTN_CANCEL : 0, 0);
     *dword_945820 = 1;
     int width, height;
 
@@ -565,7 +563,7 @@ int __cdecl size_of_planet(int setup_mode) {
             width = widths[selection];
             *MapAreaY = heights[selection];
         } else {
-            Popup_start(&cur_popup, PopupScriptFile, "CUSTOMMAP", -1, 0, 0x44, 0);
+            Popup_start(&cur_popup, PopupScriptFile, "CUSTOMMAP", -1, 0, POPUP_BTN_CANCEL|POPUP_TEXTBOX, 0);
             int custom_x  = prefs_get_2("Custom Map X", 40, 0);
             int custom_y = prefs_get_2("Custom Map Y", 80, 0);
             EditGroup* editgrp = (EditGroup*)(&cur_popup.dialogs.editGroup);
@@ -1198,9 +1196,9 @@ int __cdecl game_init(int tgl_text, int tgl_rules) {
         return 1;
     }
     start_timers();
-    dword_9B7B00[0] = (int)&MenuIconSprites[1];
-    dword_9B7B00[1] = (int)&MenuIconSprites[2];
-    dword_9B7B00[3] = (int)&MenuIconSprites[0];
+    MenuIconPtr[0] = &MenuAltBtnIcons[1];
+    MenuIconPtr[1] = &MenuAltBtnIcons[2];
+    MenuIconPtr[3] = &MenuAltBtnIcons[0];
     return 0;
 }
 
@@ -1351,7 +1349,7 @@ int __cdecl config_game(int flag) {
         MFaction* fac = &MFactions[faction_id];
         char buf[StrBufLen];
         while (1) {
-            Popup_start(&cur_popup, PopupScriptFile, "CUSTOMNAMES", -1, 0, 0x44, 0);
+            Popup_start(&cur_popup, PopupScriptFile, "CUSTOMNAMES", -1, 0, POPUP_BTN_CANCEL|POPUP_TEXTBOX, 0);
             snprintf(buf, StrBufLen, "%s", fac->is_leader_female ? label_get(TL_Female) : label_get(TL_Male));
             EditGroup* grp = (EditGroup*)&cur_popup.dialogs.editGroup;
             EditGroup_edit(grp, label_get(TL_Name), fac->name_leader, 23);
@@ -1392,7 +1390,7 @@ CONF_DIFF:
         Win_hide(&cur_setup);
         Win_show(&cur_setup, 0);
         if (!(*GameRules & RULES_SCN_FORCE_CURRENT_DIFF_LEVEL)) {
-            Popup_start(&cur_popup, PopupScriptFile, "DIFFICULTY", -1, 0, 0x40, 0);
+            Popup_start(&cur_popup, PopupScriptFile, "DIFFICULTY", -1, 0, POPUP_BTN_CANCEL, 0);
             for (int i = 0; i < MaxDiffNum; ++i) {
                 if (i == 0) {
                     snprintf(StrBuffer, StrBufLen, "%s (%s)", Difficulty[i], label_get(TL_Novice));
@@ -1420,7 +1418,7 @@ CONF_RULES:
             }
             Win_hide(&cur_setup);
             Win_show(&cur_setup, 0);
-            Popup_start(&cur_popup, PopupScriptFile, "USERULES", -1, 0, 0x40, 0);
+            Popup_start(&cur_popup, PopupScriptFile, "USERULES", -1, 0, POPUP_BTN_CANCEL, 0);
             cur_popup.active_id = AlphaIniPrefs->customize;
             int value = SetupWin_do_menu_2(&cur_setup, &cur_popup, 1, 0);
             if (value < 0) {
@@ -1595,7 +1593,7 @@ CONF_MULTI:
         goto CONF_FINAL;
     } else {
         human_plrs |= 1 << plr_id;
-        Popup_start(&cur_popup, PopupScriptFile, "HOTSEATADD0", -1, 0, 0x40, 0);
+        Popup_start(&cur_popup, PopupScriptFile, "HOTSEATADD0", -1, 0, POPUP_BTN_CANCEL, 0);
         for (int i = 1; i < MaxPlayerNum; ++i) {
             if ((1 << i) & human_plrs) {
                 if (X_text_open(ScriptFile, "MULTISTRING")) {
@@ -1610,7 +1608,7 @@ CONF_MULTI:
                 BasePop_string(&cur_popup, StrBuffer);
             }
         }
-        Popup_start(&cur_popup, PopupScriptFile, "HOTSEATADD1", -1, 0, 0x80, 0);
+        Popup_start(&cur_popup, PopupScriptFile, "HOTSEATADD1", -1, 0, POPUP_PRE_INIT, 0);
         int value = BasePop_exec_3(&cur_popup, 0, 0);
         if (!value) {
             goto CONF_SEAT;
@@ -1743,7 +1741,7 @@ CONF_LOOP:
             }
             continue; // restart while loop
         }
-        Popup_start(&cur_popup, PopupScriptFile, "FACTIONX", -1, 0, 0x40, 0);
+        Popup_start(&cur_popup, PopupScriptFile, "FACTIONX", -1, 0, POPUP_BTN_CANCEL, 0);
         for (int i = 1; i < MaxPlayerNum; ++i) {
             if (flag != 2 || is_alive(i)) {
                 snprintf(StrBuffer, StrBufLen, "%s|(%s)", MFactions[i].formal_name_faction, MFactions[i].desc_name_faction);

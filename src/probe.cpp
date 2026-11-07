@@ -2,14 +2,6 @@
 #include "probe.h"
 
 
-static void popup_init_image(Popup* popup, const char* image, int* bx, int* by) {
-    if (!Buffer_get_pcx_dimensions(image, bx, by)) {
-        if (!Sprite_init(&popup->sprite, image, *bx, *by)) {
-            popup->sprite_icon = &popup->sprite;
-        }
-    }
-}
-
 static int find_probe_base(int veh_id, int veh_fc_id) {
     int reg = region_at(Vehs[veh_id].x, Vehs[veh_id].y);
     int sea = is_ocean(mapsq(Vehs[veh_id].x, Vehs[veh_id].y));
@@ -211,6 +203,11 @@ int __cdecl mod_success_rates(size_t index, int morale, int diff_modifier, int b
     return success_rate;
 }
 
+static bool keep_spying(int faction_id, int faction_id_tgt) {
+    return has_project(FAC_EMPATH_GUILD, faction_id)
+        || (faction_id == *GovernorFaction && !MFactions[faction_id_tgt].is_alien());
+}
+
 void __cdecl probe_renew_set(int faction_id, int faction_id_tgt, int turns) {
     if (faction_id >= 0 && faction_id < MaxPlayerNum
     && faction_id_tgt >= 0 && faction_id_tgt < MaxPlayerNum) {
@@ -247,73 +244,70 @@ int probe_roll_value(int faction_id) {
         + clamp(Factions[faction_id].SE_police, -3, 3);
 }
 
-int probe_active_turns(int faction1, int faction2) {
-    int value = clamp(15 + probe_roll_value(faction1) - probe_roll_value(faction2), 5, 50);
+int probe_active_turns(int faction_id, int faction_id_2) {
+    int value = clamp(15 + probe_roll_value(faction_id) - probe_roll_value(faction_id_2), 5, 50);
     value = value * (4 + (*MapAreaTiles >= 4000) + (*MapAreaTiles >= 8000)) / 4;
     value = value * (4 + (*DiffLevel < DIFF_TRANSCEND) + (*DiffLevel < DIFF_THINKER)) / 4;
     return clamp(value, 5, 50);
 }
 
-int probe_upkeep(int faction1) {
-    if (!faction1 || !is_alive(faction1) || !conf.counter_espionage) {
+int probe_upkeep(int faction_id) {
+    if (!faction_id || !is_alive(faction_id) || !conf.counter_espionage) {
         return 0;
     }
-    /*
-    Do not expire infiltration while the faction is the governor or has the Empath Guild.
-    Status can be renewed once per turn and sets the flag on thinker_probe_renew.
-    */
-    for (int faction2 = 1; faction2 < MaxPlayerNum; faction2++) {
-        if (faction1 != faction2 && is_alive(faction2)
-        && faction2 != *GovernorFaction && !has_project(FAC_EMPATH_GUILD, faction2)) {
-            if (has_treaty(faction2, faction1, DIPLO_HAVE_INFILTRATOR)) {
-                if (!MFactions[faction2].thinker_probe_end_turn[faction1]) {
-                    MFactions[faction2].thinker_probe_end_turn[faction1] =
-                        *CurrentTurn + probe_active_turns(faction2, faction1);
+    // Do not expire infiltration while the spying faction is the governor or has the Empath Guild.
+    // Governor is only checked for non-alien opponents. Infiltration status can be renewed once per turn.
+    for (int faction_id_2 = 1; faction_id_2 < MaxPlayerNum; faction_id_2++) {
+        if (faction_id != faction_id_2 && is_alive(faction_id_2)
+        && !keep_spying(faction_id_2, faction_id)) {
+            if (has_treaty(faction_id_2, faction_id, DIPLO_HAVE_INFILTRATOR)) {
+                if (!MFactions[faction_id_2].thinker_probe_end_turn[faction_id]) {
+                    MFactions[faction_id_2].thinker_probe_end_turn[faction_id] =
+                        *CurrentTurn + probe_active_turns(faction_id_2, faction_id);
                 }
-                if (MFactions[faction2].thinker_probe_end_turn[faction1] <= *CurrentTurn) {
-                    net_set_treaty(faction2, faction1, DIPLO_HAVE_INFILTRATOR, 0, 0);
-                    MFactions[faction2].thinker_probe_lost |= (1 << faction1);
-                    if (faction1 == MapWin->cOwner) {
-                        parse_says(0, MFactions[faction2].adj_name_faction, -1, -1);
+                if (MFactions[faction_id_2].thinker_probe_end_turn[faction_id] <= *CurrentTurn) {
+                    net_set_treaty(faction_id_2, faction_id, DIPLO_HAVE_INFILTRATOR, 0, 0);
+                    MFactions[faction_id_2].thinker_probe_lost |= (1 << faction_id);
+                    if (faction_id == MapWin->cOwner) {
+                        parse_says(0, MFactions[faction_id_2].adj_name_faction, -1, -1);
                         popp("modmenu", "SPYFOUND", 0, "infil_sm.pcx", 0);
                     }
                 }
             }
         }
     }
-    for (int faction2 = 1; faction2 < MaxPlayerNum; faction2++) {
-        if (faction1 != faction2 && is_alive(faction2)) {
+    for (int faction_id_2 = 1; faction_id_2 < MaxPlayerNum; faction_id_2++) {
+        if (faction_id != faction_id_2 && is_alive(faction_id_2)) {
             debug("probe_upkeep %d %d %d spying: %d ends: %d\n",
-                *CurrentTurn, faction1, faction2,
-                has_treaty(faction1, faction2, DIPLO_HAVE_INFILTRATOR),
-                MFactions[faction1].thinker_probe_end_turn[faction2]
+                *CurrentTurn, faction_id, faction_id_2,
+                has_treaty(faction_id, faction_id_2, DIPLO_HAVE_INFILTRATOR),
+                MFactions[faction_id].thinker_probe_end_turn[faction_id_2]
             );
-            if (faction1 != *GovernorFaction && !has_project(FAC_EMPATH_GUILD, faction1)) {
-                probe_renew_set(faction1, faction2, 0);
+            if (!keep_spying(faction_id, faction_id_2)) {
+                probe_renew_set(faction_id, faction_id_2, 0);
             }
-            if (faction1 == MapWin->cOwner && MFactions[faction1].thinker_probe_lost & (1 << faction2)) {
-                parse_says(0, MFactions[faction2].noun_faction, -1, -1);
+            if (faction_id == MapWin->cOwner && MFactions[faction_id].thinker_probe_lost & (1 << faction_id_2)) {
+                parse_says(0, MFactions[faction_id_2].noun_faction, -1, -1);
                 popp("modmenu", "SPYLOST", 0, "capture_sm.pcx", 0);
             }
         }
     }
-    MFactions[faction1].thinker_probe_lost = 0;
+    MFactions[faction_id].thinker_probe_lost = 0;
     return 0;
 }
 
 int __thiscall probe_popup_start(Popup* This, int veh_id, int base_id, int a4, char* a5, int a6, GraphicWin* a7) {
     if (base_id >= 0 && base_id < *BaseCount) {
-        int faction1 = Vehs[veh_id].faction_id;
-        int faction2 = Bases[base_id].faction_id;
-        int turns = MFactions[faction1].thinker_probe_end_turn[faction2] - *CurrentTurn;
-        bool always_active = faction1 == *GovernorFaction || has_project(FAC_EMPATH_GUILD, faction1);
+        int faction_id = Vehs[veh_id].faction_id;
+        int faction_id_2 = Bases[base_id].faction_id;
+        int turns = MFactions[faction_id].thinker_probe_end_turn[faction_id_2] - *CurrentTurn;
 
-        if (!always_active) {
-            if (has_treaty(faction1, faction2, DIPLO_HAVE_INFILTRATOR) && turns > 0) {
+        if (!keep_spying(faction_id, faction_id_2)) {
+            if (has_treaty(faction_id, faction_id_2, DIPLO_HAVE_INFILTRATOR) && turns > 0) {
                 ParseNumTable[0] =  turns;
                 return Popup_start(This, "modmenu", "PROBE", a4, a5, a6, a7);
             }
-            probe_renew_set(faction1, faction2, 0);
+            probe_renew_set(faction_id, faction_id_2, 0);
         }
     }
     return Popup_start(This, ScriptFile, "PROBE", a4, a5, a6, a7);
@@ -441,11 +435,11 @@ int __cdecl probe(int veh_id, int tgt_base_id, int tgt_veh_id, int toggle) {
         bool tgt_hq = has_fac_built(FAC_HEADQUARTERS, tgt_base_id);
         parse_says(1, MFactions[tgt_fc_id].adj_name_faction, -1, -1);
         if (conf.counter_espionage) {
-            probe_popup_start(&cur_popup, veh_id, tgt_base_id, -1, 0, 64, 0);
+            probe_popup_start(&cur_popup, veh_id, tgt_base_id, -1, 0, POPUP_BTN_CANCEL, 0);
         } else {
-            Popup_start(&cur_popup, PopupScriptFile, "PROBE", -1, 0, 64, 0);
+            Popup_start(&cur_popup, PopupScriptFile, "PROBE", -1, 0, POPUP_BTN_CANCEL, 0);
         }
-        popup_init_image(&cur_popup, infil_img, &bx, &by);
+        Popup_init_icon(&cur_popup, infil_img, &bx, &by);
         if (X_text_open(ScriptFile, "PROBEMENU")) {
             return 0;
         }
@@ -827,7 +821,7 @@ MOV_START:
                     mod_success_rates(2, mod_morale_veh(veh_id, 1, 0), 1, -1);
                     Popup_start(&cur_popup, PopupScriptFile, "SUBVERT", -1, 0, 0, 0);
                     if (plr->energy_credits >= veh_mc_cost) {
-                        Popup_start(&cur_popup, PopupScriptFile, "SUBVERTMENU", -1, 0, 128, 0);
+                        Popup_start(&cur_popup, PopupScriptFile, "SUBVERTMENU", -1, 0, POPUP_PRE_INIT, 0);
                     }
                     choice = BasePop_exec_3(&cur_popup, 0, 0);
                     if (!choice) {
@@ -926,7 +920,7 @@ MOV_START:
                 }
                 wave_it(32);
                 Popup_start(&cur_popup, PopupScriptFile, "THOUGHTCONTROL", -1, 0, 0, 0);
-                Popup_start(&cur_popup, PopupScriptFile, "THOUGHTMENU", -1, 0, 128, 0);
+                Popup_start(&cur_popup, PopupScriptFile, "THOUGHTMENU", -1, 0, POPUP_PRE_INIT, 0);
                 choice = BasePop_exec_3(&cur_popup, 0, 0);
                 if (choice <= 0) {
                     return 0;
@@ -1382,8 +1376,8 @@ MOV_DEFEND:
         } else {
             auto choices = captured_leaders(tgt_fc_id);
             parse_says(1, get_adjective(tgt_fc_id), -1, -1);
-            Popup_start_3(&cur_popup, "FREEWHO", 64);
-            popup_init_image(&cur_popup, infil_img, &bx, &by);
+            Popup_start_3(&cur_popup, "FREEWHO", POPUP_BTN_CANCEL);
+            Popup_init_icon(&cur_popup, infil_img, &bx, &by);
             for (auto plr_id : choices) {
                 snprintf(StrBuffer, StrBufLen,
                     "%s %s %s %s", get_title(plr_id), get_name(plr_id),
@@ -1766,12 +1760,12 @@ MOV_UPKEEP:
                     snprintf(StrBuffer, StrBufLen, "BUSTED%d", prb_alt_action);
                     Popup_start_4(&cur_popup, StrBuffer);
                     if (!plr_alien) {
-                        popup_init_image(&cur_popup, "capture_sm.pcx", &bx, &by);
+                        Popup_init_icon(&cur_popup, "capture_sm.pcx", &bx, &by);
                     } else {
-                        popup_init_image(&cur_popup, "al_cap_sm.pcx", &bx, &by);
+                        Popup_init_icon(&cur_popup, "al_cap_sm.pcx", &bx, &by);
                     }
                 }
-                Popup_start_3(&cur_popup, "NETEXCUSE", prb_alt_action != 0 ? 0x80 : 0);
+                Popup_start_3(&cur_popup, "NETEXCUSE", prb_alt_action != 0 ? POPUP_PRE_INIT : 0);
                 BasePop_exec_2(&cur_popup);
             }
             if (veh_fc_id == MapWin->cOwner) {
@@ -1787,12 +1781,12 @@ MOV_UPKEEP:
                     snprintf(StrBuffer, StrBufLen, "BUSTED%d", prb_alt_action);
                     Popup_start_4(&cur_popup, StrBuffer);
                     if (!plr_alien) {
-                        popup_init_image(&cur_popup, "capture_sm.pcx", &bx, &by);
+                        Popup_init_icon(&cur_popup, "capture_sm.pcx", &bx, &by);
                     } else {
-                        popup_init_image(&cur_popup, "al_cap_sm.pcx", &bx, &by);
+                        Popup_init_icon(&cur_popup, "al_cap_sm.pcx", &bx, &by);
                     }
                 }
-                Popup_start_3(&cur_popup, "PACTEXCUSE", prb_alt_action != 0 ? 0x80 : 0);
+                Popup_start_3(&cur_popup, "PACTEXCUSE", prb_alt_action != 0 ? POPUP_PRE_INIT : 0);
                 if (BasePop_exec_2(&cur_popup)) {
                     pact_ends(veh_fc_id, tgt_fc_id);
                     tgt->diplo_spoke[veh_fc_id] = *CurrentTurn;
@@ -1803,12 +1797,12 @@ MOV_UPKEEP:
                     snprintf(StrBuffer, StrBufLen, "BUSTED%d", prb_alt_action);
                     Popup_start_4(&cur_popup, StrBuffer);
                     if (!plr_alien) {
-                        popup_init_image(&cur_popup, "capture_sm.pcx", &bx, &by);
+                        Popup_init_icon(&cur_popup, "capture_sm.pcx", &bx, &by);
                     } else {
-                        popup_init_image(&cur_popup, "al_cap_sm.pcx", &bx, &by);
+                        Popup_init_icon(&cur_popup, "al_cap_sm.pcx", &bx, &by);
                     }
                 }
-                Popup_start_3(&cur_popup, "EXCUSE", prb_alt_action != 0 ? 0x80 : 0);
+                Popup_start_3(&cur_popup, "EXCUSE", prb_alt_action != 0 ? POPUP_PRE_INIT : 0);
                 if (BasePop_exec_2(&cur_popup)) {
                     if (action_id >= PRB_MIND_CONTROL_CITY) {
                         double_cross(veh_fc_id, tgt_fc_id, -1);

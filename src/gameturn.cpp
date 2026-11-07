@@ -121,7 +121,7 @@ void __cdecl control_turn() {
                     bool popup_skip = false;
                     while (1) {
                         const char* label = Factions[current_id].unk_102 ? "SWITCHING2" : "SWITCHING";
-                        Popup_start(&cur_popup, PopupScriptFile, label, -1, 0, 0x800004, 0);
+                        Popup_start(&cur_popup, PopupScriptFile, label, -1, 0, POPUP_UNK_800000|POPUP_TEXTBOX, 0);
                         if (BasePop_exec_3(&cur_popup, 0, 0) < 0) {
                             popup_skip = true;
                             break;
@@ -989,6 +989,9 @@ void __cdecl random_events(int flag) {
                 }
             }
         }
+        // Fix 40. [BUG] Changing start date for Perihelion event to be 2160 from 2190. This is to
+        // be consistent with info about Planet and cycle from readme regarding 80 year cycles
+        // (20 years near, 60 years far).
         if (*GameState & STATE_PERIHELION_ACTIVE && !((game_year(*CurrentTurn) - 2180) % 80)) {
             *GameState &= ~STATE_PERIHELION_ACTIVE;
             POP2("PERIHELIONENDS", "stars_sm.pcx", -1);
@@ -1225,6 +1228,8 @@ void __cdecl random_events(int flag) {
                             if (!shift_key_down() && !*MultiplayerActive) {
                                 clock_wait(100);
                             }
+                            // Fix 31. [BUG/MOD] Fixed NEWRESOURCE and PETERSOUT events to display
+                            // the correct corresponding image to match resource type.
                             POP2("PETERSOUT", resource_icon(value, ocean, 0), -1);
                         }
                     }
@@ -1252,6 +1257,8 @@ void __cdecl random_events(int flag) {
                             }
                         }
                         parse_says(1, ResName[value - 1].name_plural, -1, -1);
+                        // Fix 31. [BUG/MOD] Fixed NEWRESOURCE and PETERSOUT events to display
+                        // the correct corresponding image to match resource type.
                         POP2("NEWRESOURCE", resource_icon(value, ocean, 1), -1);
                     }
                 }
@@ -2038,6 +2045,7 @@ void __cdecl turn_upkeep() {
                 // while any needlejet in flight has moves left.
                 if (veh->movement_turns < veh->range() - 1) {
                     ++veh->movement_turns;
+                    continue;
                 }
                 veh->state |= VSTATE_HAS_MOVED;
                 int dmg_val;
@@ -2336,6 +2344,9 @@ void __cdecl repair_phase(int faction_id) {
         }
         bool repair_abl = false;
         if (triad == TRIAD_LAND) {
+            // Fix 6. [BUG][SMAX] Transport unit's special ability "Repair Bay" is rendered useless
+            // due to an incorrect check that would only give the healing bonus to ground transports.
+            // Now, it will give bonus to all ground units except ground transports.
             if ((!veh_cargo(veh_id) && veh->order == ORDER_SENTRY_BOARD) || is_ocean(sq)) {
                 int iter_id = veh_top(veh_id);
                 while (iter_id >= 0) {

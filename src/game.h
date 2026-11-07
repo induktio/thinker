@@ -27,7 +27,7 @@ int __cdecl parse_says(size_t index, const char* src, int gender, int plural);
 int __cdecl game_year(int turn);
 int __cdecl in_box(int x, int y, RECT* rc);
 void __cdecl bitmask(uint32_t input, uint32_t* offset, uint32_t* mask);
-
+void parse_tech(size_t index, int tech_id, int incl_category);
 void show_rules_menu();
 void init_world_config();
 void init_save_game(int faction_id);

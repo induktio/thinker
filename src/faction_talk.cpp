@@ -270,10 +270,10 @@ void __cdecl pact_ends(int faction_id, int faction_id_2) {
     parse_num(0, num);
     parse_says(2, get_pact_hood(faction_id, faction_id_2), -1, -1);
     Popup_start(&cur_popup, PopupScriptFile, "ENDPACT1", -1, 0,
-        *MultiplayerActive ? 0 : POPUP_UNK_100000, 0);
+        *MultiplayerActive ? 0 : POPUP_EXTERNAL, 0);
     if (num) {
         Popup_start(&cur_popup, PopupScriptFile, "ENDPACT2", -1, 0,
-            (*MultiplayerActive ? 0 : POPUP_UNK_100000)|POPUP_LARGE_WIN, 0);
+            (*MultiplayerActive ? 0 : POPUP_EXTERNAL)|POPUP_PRE_INIT, 0);
     }
     BasePop_exec_3(&cur_popup, 0, 0);
 }
@@ -932,6 +932,9 @@ void __cdecl threaten(int faction_id, int faction_id_2) {
 int __cdecl suggest_plan(int faction_id, int faction_id_2) {
     Faction& plr = Factions[faction_id];
     Faction& cmp = Factions[faction_id_2];
+    // Fix 52. [BUG] Fixed an issue where diplomacy dialog could be incorrectly displayed
+    // due to DiploSecondFaction value being set incorrectly. This is best exhibited where
+    // Progenitors switch into "Human" dialog syntax.
     int best_score = 9999;
     int best_base_id = -1;
     for (int base_id = 0; base_id < *BaseCount; base_id++) {
@@ -1048,7 +1051,7 @@ void __cdecl battle_plans(int faction_id, int faction_id_2) {
         parse_says(0, get_title(faction_id), -1, -1);
         parse_says(1, get_name(faction_id), -1, -1);
         Popup_start(&cur_popup, PopupScriptFile, "BATTLEPLAN", -1, 0,
-            POPUP_UNK_100000|POPUP_BTN_CANCEL|POPUP_LIST_CHOICE, 0);
+            POPUP_EXTERNAL|POPUP_BTN_CANCEL|POPUP_LISTBOX, 0);
         Popup_load_icon(&cur_popup, FactionPortraits[faction_id_2], faction_id_2, 0);
         int item_count = 0;
         for (int i = 0; i < *BaseCount; i++) {
@@ -1126,7 +1129,7 @@ void __cdecl call_off_vendetta(int faction_id, int faction_id_2) {
     auto guard = cleanup_handler([&] { Popup_dtor(&cur_popup); });
     *DiploSecondFaction = faction_id_2;
     Popup_start(&cur_popup, PopupScriptFile, "CALLOFF", -1, 0,
-        POPUP_UNK_100000|POPUP_BTN_CANCEL|POPUP_LIST_CHOICE, 0);
+        POPUP_EXTERNAL|POPUP_BTN_CANCEL|POPUP_LISTBOX, 0);
     Popup_load_icon(&cur_popup, FactionPortraits[faction_id_2], faction_id_2, 0);
     int item_count = 0;
     for (int i = 1; i < MaxPlayerNum; i++) {
@@ -1161,21 +1164,21 @@ void __cdecl call_off_vendetta(int faction_id, int faction_id_2) {
     parse_says(3, get_noun(chosen_id), -1, -1);
     if ((cmp.diplo_status[chosen_id] & DIPLO_WANT_REVENGE)
     || (Factions[chosen_id].major_atrocities && !cmp.major_atrocities)) {
-        X_pops_11("TOTHEDEATH", POPUP_UNK_100000, FactionPortraits[faction_id_2], 0);
+        X_pops_11("TOTHEDEATH", POPUP_EXTERNAL, FactionPortraits[faction_id_2], 0);
         return;
     }
     if ((cmp.diplo_status[chosen_id] & DIPLO_UNK_40)
     && !(cmp.diplo_status[faction_id] & DIPLO_UNK_80)) {
-        X_pops_11("NOPEHIRED", POPUP_UNK_100000, FactionPortraits[faction_id_2], 0);
+        X_pops_11("NOPEHIRED", POPUP_EXTERNAL, FactionPortraits[faction_id_2], 0);
         return;
     }
     net_set_treaty(faction_id_2, chosen_id, DIPLO_UNK_4000000, 1, 0);
     net_set_treaty(faction_id_2, chosen_id, DIPLO_UNK_40, 0, 0);
     if (mod_wants_to_attack(chosen_id, faction_id_2, 0)) {
-        X_pops_11("THEIRFAULT", POPUP_UNK_100000, FactionPortraits[faction_id_2], 0);
+        X_pops_11("THEIRFAULT", POPUP_EXTERNAL, FactionPortraits[faction_id_2], 0);
         return;
     }
-    X_pops_11("CALLEDOFF", POPUP_UNK_100000, FactionPortraits[faction_id_2], 0);
+    X_pops_11("CALLEDOFF", POPUP_EXTERNAL, FactionPortraits[faction_id_2], 0);
     if (*MultiplayerActive) {
         log_say_2("Sending TREATY ON", faction_id_2, chosen_id, DIPLO_TREATY);
         message_data(0x2441, 0, faction_id_2, chosen_id, DIPLO_TREATY, 0);

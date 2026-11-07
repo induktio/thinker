@@ -503,7 +503,7 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
                     best_base_id = i;
                 }
             }
-            if (best_base_id > 0) {
+            if (conf.base_capture_fix ? best_base_id >= 0 : best_base_id > 0) {
                 parse_num(0, 1000); // Fix: added correct number
                 parse_says(0, old_name, -1, -1);
                 parse_says(1, Bases[best_base_id].name, -1, -1);
@@ -1454,6 +1454,9 @@ int __cdecl mod_base_making(int item_id, int base_id) {
     }
     int retool = Rules->retool_strictness;
     int faction_id = Bases[base_id].faction_id;
+    // Fix 49. [BUG][MOD] Factions with the FREEPROTO flag (Spartans) will gain free retooling in their
+    // bases as long as the production switch is within the same category (unit to unit, base facility
+    // to base facility) and they've discovered the necessary tech ("Advanced Subatomic Theory").
     if ((has_fac_built(FAC_SKUNKWORKS, base_id)
     || (MFactions[faction_id].rule_flags & RFLAG_FREEPROTO
     && has_tech(Facility[FAC_SKUNKWORKS].preq_tech, faction_id)))
@@ -3433,6 +3436,8 @@ int __cdecl mod_base_production() {
                     mod_base_kill(*CurrentBaseID);
                     draw_map(1);
                     mod_eliminate_player(faction_id, 0);
+                    // Fix 43. [BUG] Abandoning a base after building a colony pod no longer skips
+                    // the base production of the next base.
                     return 1; // non-zero when base removed
                 }
             }
@@ -3712,7 +3717,7 @@ int __cdecl mod_base_production() {
                     } else {
                         snprintf(StrBuffer, StrBufLen, "PROJECT%d", project_id);
                     }
-                    Popup_start(&cur_popup, "BLURBS", StrBuffer, -1, 0, 128, 0);
+                    Popup_start(&cur_popup, "BLURBS", StrBuffer, -1, 0, POPUP_PRE_INIT, 0);
                     BasePop_string(&cur_popup, "^");
                     BasePop_string(&cur_popup, "^------");
                     BasePop_string(&cur_popup, "^");
@@ -3803,19 +3808,16 @@ int __cdecl mod_base_production() {
             BasePop_init(&cur_popup, 0, 0);
             BasePop_set_width(&cur_popup, 600);
             snprintf(StrBuffer, StrBufLen, "PROJECT%d", project_id);
-            Popup_start(&cur_popup, "BLURBS", StrBuffer, -1, 0, 128, 0);
+            Popup_start(&cur_popup, "BLURBS", StrBuffer, -1, 0, POPUP_PRE_INIT, 0);
             if (*ScreenWidth != 800) {
                 BasePop_string(&cur_popup, "^");
             }
             BasePop_string(&cur_popup, "^------");
             BasePop_string(&cur_popup, "^");
-            Popup_start(&cur_popup, "SCRIPT", "PRODUCE2", -1, 0, 128, 0);
+            Popup_start(&cur_popup, "SCRIPT", "PRODUCE2", -1, 0, POPUP_PRE_INIT, 0);
             if (full_game_turn()) {
                 int w = 0, h = 0;
-                if (!Buffer_get_pcx_dimensions("secproj_sm.pcx", &w, &h)
-                && !Sprite_init(&cur_popup.sprite, "secproj_sm.pcx", w, h)) {
-                    cur_popup.sprite_icon = &cur_popup.sprite;
-                }
+                Popup_init_icon(&cur_popup, "secproj_sm.pcx", &w, &h);
                 BasePop_exec_3(&cur_popup, 0, 0);
             }
         }
@@ -4018,6 +4020,8 @@ int __cdecl mod_base_upkeep(int base_id) {
     // to allow rushing the following production item during turn upkeep
     base->state_flags &= ~(BSTATE_PSI_GATE_USED|BSTATE_FACILITY_SCRAPPED|BSTATE_HURRY_PRODUCTION);
     base_compute(1); // Always update
+    // Fix 43. [BUG] Abandoning a base after building a colony pod no longer skips
+    // the base production of the next base.
     if (mod_base_production()) {
         return 1; // Current base was removed
     }
@@ -4548,9 +4552,12 @@ int __cdecl facility_avail(FacilityId item_id, int faction_id, int base_id, int 
     || (item_id >= SP_ID_First && *GameRules & RULES_SCN_NO_BUILDING_SP)) {
         return false; // Skunkworks removed if there are no prototype costs
     }
+    // Fix 25. [BUG][SMAX] Prevent the Caretakers from being given the possibility of building
+    // secret project "Ascent to Transcendence" which goes against their philosophy and would cause
+    // them to declare war on themselves if built.
     if (item_id == FAC_ASCENT_TO_TRANSCENDENCE) { // at top since anyone can build it
         return voice_of_planet() && *GameRules & RULES_VICTORY_TRANSCENDENCE
-            && _stricmp(MFactions[faction_id].filename, "CARETAKE"); // bug fix for Caretakers
+            && _stricmp(MFactions[faction_id].filename, "CARETAKE");
     }
     if (!has_tech(Facility[item_id].preq_tech, faction_id)) { // Check tech for facility + SP
         return false;

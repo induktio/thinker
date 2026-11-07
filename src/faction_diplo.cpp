@@ -2,12 +2,6 @@
 #include "faction_diplo.h"
 
 
-static void parse_tech(size_t index, int tech_id, int incl_category) {
-    clear();
-    say_tech(StrBuffer, tech_id, incl_category);
-    parse_says(index, StrBuffer, -1, -1);
-}
-
 static int range(int input, int min_val, int max_val) {
     return min(max(input, min_val), max(min_val, max_val));
 }
@@ -727,7 +721,7 @@ int __cdecl diplomacy_menu(int faction_id, int faction_id_2) {
     parse_says(0, get_name(faction_id), -1, -1);
     parse_says(1, get_pact_hood(faction_id, faction_id_2), -1, -1);
     diplomacy_caption(faction_id, faction_id_2);
-    Popup_start_2(&cur_popup, PopupScriptFile, "DIPLO", -1, 0, POPUP_UNK_100000);
+    Popup_start_2(&cur_popup, PopupScriptFile, "DIPLO", -1, 0, POPUP_EXTERNAL);
     Popup_load_icon(&cur_popup, FactionPortraits[faction_id_2], 0, 0);
     if (X_text_open(ScriptFile, "DIPLOMENU")) {
         return 0;
@@ -841,7 +835,7 @@ int __cdecl proposal_menu(int faction_id, int faction_id_2) {
     parse_says(1, get_pact_hood(faction_id, faction_id_2), -1, -1);
     parse_num(0, plr.loan_balance[faction_id_2]);
     diplomacy_caption(faction_id, faction_id_2);
-    start_popup("PROPOSAL", POPUP_UNK_100000);
+    start_popup("PROPOSAL", POPUP_EXTERNAL);
     if (X_text_open(ScriptFile, "PROPOSALMENU")) {
         return 0;
     }
@@ -893,7 +887,7 @@ int __cdecl proposal_menu(int faction_id, int faction_id_2) {
     };
 
     if (proposal == DiploProposalJointAttack) {
-        start_popup("PROPOSEATTACK", POPUP_UNK_100000|POPUP_BTN_CANCEL);
+        start_popup("PROPOSEATTACK", POPUP_EXTERNAL|POPUP_BTN_CANCEL);
         if (X_text_open(ScriptFile, "ATTACKSTRING")) {
             cancel_proposal();
         } else {
@@ -926,7 +920,7 @@ int __cdecl proposal_menu(int faction_id, int faction_id_2) {
     }
 
     if (proposal == DiploProposalTradeCommlink) {
-        start_popup("PROPOSECOMMLINK", POPUP_UNK_100000|POPUP_BTN_CANCEL);
+        start_popup("PROPOSECOMMLINK", POPUP_EXTERNAL|POPUP_BTN_CANCEL);
         if (X_text_open(ScriptFile, "ATTACKSTRING")) {
             cancel_proposal();
         } else {
@@ -964,7 +958,7 @@ int __cdecl proposal_menu(int faction_id, int faction_id_2) {
         PlanWin_init(PlanWin, 0);
         PlanWin_back_redraw(PlanWin);
         bool listed = false;
-        start_popup("PROPOSEBASE", POPUP_UNK_100000|POPUP_BTN_CANCEL);
+        start_popup("PROPOSEBASE", POPUP_EXTERNAL|POPUP_BTN_CANCEL);
         for (int i = 0; i < *BaseCount; i++) {
             // Fix: remove unreachable alternative faction_id condition
             if (Bases[i].faction_id == faction_id_2
@@ -1010,7 +1004,7 @@ int __cdecl proposal_menu(int faction_id, int faction_id_2) {
     parse_says(2, get_pact_hood(faction_id, faction_id_2), -1, -1);
     diplomacy_caption(faction_id, faction_id_2);
     snprintf(StrBuffer, StrBufLen, "COUNTER%d", proposal == DiploProposalMakeGift);
-    start_popup(StrBuffer, POPUP_UNK_100000);
+    start_popup(StrBuffer, POPUP_EXTERNAL);
     if (X_text_open(ScriptFile, "COUNTERMENU")) {
         return 0;
     }
@@ -1063,7 +1057,7 @@ int __cdecl proposal_menu(int faction_id, int faction_id_2) {
         PlanWin_init(PlanWin, 0);
         PlanWin_back_redraw(PlanWin);
         bool listed = false;
-        start_popup("COUNTERBASE", POPUP_UNK_100000|POPUP_BTN_CANCEL);
+        start_popup("COUNTERBASE", POPUP_EXTERNAL|POPUP_BTN_CANCEL);
         for (int i = 0; i < *BaseCount; i++) {
             if (Bases[i].faction_id == faction_id && !has_fac_built(FAC_HEADQUARTERS, i)) {
                 StrBuffer[0] = 0;
@@ -1160,7 +1154,7 @@ void __cdecl make_a_proposal(int faction_id, int faction_id_2, int skip_menu) {
             }
             if (*DiploCurrentProposal == DiploProposalCouncilVote) {
                 Popup_start(&cur_popup, PopupScriptFile, "COUNCILMATTER", -1, 0,
-                    POPUP_UNK_100000|POPUP_BTN_CANCEL, 0);
+                    POPUP_EXTERNAL|POPUP_BTN_CANCEL, 0);
                 Sprite* sprite = FactionPortraits[faction_id_2];
                 Popup_load_icon(&cur_popup, sprite, 0, 0);
                 for (int i = 0; i < MaxProposalNum; i++) {
@@ -1207,13 +1201,12 @@ void __cdecl make_a_proposal(int faction_id, int faction_id_2, int skip_menu) {
                     break;
                 }
                 if (proposal_id != PROP_ELECT_PLANETARY_GOVERNOR) {
-                    int value = X_pops_11("COUNCILVOTE", POPUP_UNK_100000, sprite, pop_wait);
+                    int value = X_pops_11("COUNCILVOTE", POPUP_EXTERNAL, sprite, pop_wait);
                     if (value != -1) {
                         buy_council_vote(faction_id, faction_id_2, proposal_id, -1 - value);
                     }
                 } else {
-                    Popup_start(&cur_popup, PopupScriptFile, "COUNCILVOTEGOV", -1, 0,
-                        POPUP_UNK_100000, 0);
+                    Popup_start(&cur_popup, PopupScriptFile, "COUNCILVOTEGOV", -1, 0, POPUP_EXTERNAL, 0);
                     Popup_load_icon(&cur_popup, sprite, 0, 0);
                     for (int i = 1; i < MaxPlayerNum; i++) {
                         if (is_alive(i) && eligible(i)) {
@@ -2325,7 +2318,7 @@ TALK_DEMAND:
                 int value = mod_tech_val(*DiploTradeWantTech1, faction_id, 1);
                 energy_price = 25 * ((value * ((*CurrentTurn + 7) / 8) / holders + 24) / 25);
                 parse_num(0, energy_price);
-                Popup_start_3(&cur_popup, StrBuffer, POPUP_UNK_100000);
+                Popup_start_3(&cur_popup, StrBuffer, POPUP_EXTERNAL);
                 Popup_load_icon(&cur_popup, FactionPortraits[faction_id_2], 0, 0);
                 says("A");
                 if (!X_text_open(ScriptFile, StrBuffer)) {

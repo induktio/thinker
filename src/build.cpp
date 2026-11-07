@@ -11,7 +11,7 @@ static const int GOV_NONE = MaxProtoNum;
 
 static bool skip_facility(BASE* base, int item_id) {
     return base->plr_owner() && item_id >= 1 && item_id <= 64
-        && conf.skip_gov_facility & (1 << (item_id - 1));
+        && (conf.skip_gov_facility & (uint64_t{1} << (item_id - 1)));
 }
 
 static bool check_retool(BASE* base) {

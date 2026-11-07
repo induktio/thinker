@@ -62,16 +62,18 @@ struct StringStruct {
 
 struct StringList : StringStruct {};
 
+struct SpriteStruct : StringStruct {};
+
 struct Heap {
     int err_flags;
-    int base_ptr;
+    void* base_ptr;
     void* current_ptr;
     int base_size;
     int free_size;
 };
 
 struct TexHeap {
-    int base_ptr;
+    void* base_ptr;
     int base_size;
     void* current_ptr;
     uint32_t count;

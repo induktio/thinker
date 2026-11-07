@@ -139,12 +139,9 @@ void __cdecl sat_attack(int faction_id, int faction_id_tgt, int target_id) {
             if (!gsp_count) {
                 return;
             }
-            int w, h;
-            Popup_start(&cur_popup, PopupScriptFile, "WHICHGSP", -1, 0, 64, 0);
-            if (!Buffer_get_pcx_dimensions("satbat_sm.pcx", &w, &h)
-            && !Sprite_init(&cur_popup.sprite, "satbat_sm.pcx", w, h)) {
-                cur_popup.sprite_icon = &cur_popup.sprite;
-            }
+            int w = 0, h = 0;
+            Popup_start(&cur_popup, PopupScriptFile, "WHICHGSP", -1, 0, POPUP_BTN_CANCEL, 0);
+            Popup_init_icon(&cur_popup, "satbat_sm.pcx", &w, &h);
             for (int i = 0; i < *BaseCount; i++) {
                 BASE* base = &Bases[i];
                 if (base->faction_id == faction_id_tgt && has_fac_built(FAC_GEOSYNC_SURVEY_POD, i)) {

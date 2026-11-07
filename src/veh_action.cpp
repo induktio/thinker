@@ -1861,10 +1861,7 @@ int __cdecl order_veh(int veh_id, int offset, int flag) {
                 parse_says(0, Bases[base_id].name, -1, -1);
                 Popup_start(&cur_popup, "SCRIPT", "ARTIFACT", -1, 0, 0, 0);
                 int w = 0, h = 0;
-                if (!Buffer_get_pcx_dimensions("art_dis_sm.pcx", &w, &h)
-                && !Sprite_init(&cur_popup.sprite, "art_dis_sm.pcx", w, h)) {
-                    cur_popup.sprite_icon = &cur_popup.sprite;
-                }
+                Popup_init_icon(&cur_popup, "art_dis_sm.pcx", &w, &h);
                 parse_num(0, Bases[base_id].minerals_accumulated);
                 int item_id = Bases[base_id].queue_items[0];
                 int cost;

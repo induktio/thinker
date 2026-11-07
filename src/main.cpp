@@ -287,13 +287,13 @@ int option_handler(void* user, const char* section, const char* name, const char
         }
     } else if (MATCH("skip_event")) {
         int val = clamp(atoi(value), 0, 32);
-        cf->skip_random_events = (!val ? 0 : cf->skip_random_events | (1 << (val - 1)));
+        cf->skip_random_events = (!val ? 0 : cf->skip_random_events | (1u << (val - 1)));
     } else if (MATCH("skip_faction")) {
         int val = clamp(atoi(value), 0, 32);
-        cf->skip_random_factions = (!val ? 0 : cf->skip_random_factions | (1 << (val - 1)));
+        cf->skip_random_factions = (!val ? 0 : cf->skip_random_factions | (1u << (val - 1)));
     } else if (MATCH("skip_facility")) {
         int val = clamp(atoi(value), 0, 64);
-        cf->skip_gov_facility = (!val ? 0 : cf->skip_gov_facility | (1 << (val - 1)));
+        cf->skip_gov_facility = (!val ? 0 : cf->skip_gov_facility | (uint64_t{1} << (val - 1)));
     } else if (MATCH("crater")) {
         cf->landmarks.crater = max(0, atoi(value));
     } else if (MATCH("volcano")) {
