@@ -81,7 +81,6 @@ int __thiscall mod_MapWin_focus(MapWindow* This, int x, int y);
 void __thiscall mod_MapWin_set_center(MapWindow* This, int x, int y, int flag);
 void __thiscall ReportWin_close_handler(SubInterface* This);
 void __cdecl say_loc(char* dest, int x, int y, int a4, int a5, int a6);
-void __cdecl mod_diplomacy_caption(int faction1, int faction2);
 void __cdecl reset_netmsg_status();
 int __thiscall mod_NetMsg_pop(NetMessage* This, const char* label, int delay, int a4, const char* filename);
 int __thiscall mod_BasePop_start(

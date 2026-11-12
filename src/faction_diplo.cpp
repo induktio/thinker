@@ -84,8 +84,8 @@ void __cdecl diplomacy_check(int faction_id, int faction_id_2, int full_check) {
     if (soc_category >= 0) {
         int soc_model = MFactions[faction_id_2].soc_priority_model;
         if (soc_model) {
-            int current_model = (&plr.SE_Politics_pending)[soc_category];
-            if (current_model && current_model != soc_model) {
+            int current = ((CSocialCategory*)&plr.SE_Politics_pending)->models[soc_category];
+            if (current && current != soc_model) {
                 soc_conflict = 1;
                 if (cmp.diplo_agenda[faction_id] & AGENDA_UNK_1) {
                     soc_conflict = 2;
@@ -1109,17 +1109,7 @@ void __cdecl make_a_proposal(int faction_id, int faction_id_2, int skip_menu) {
         }
         break;
     case DiploProposalTradeMaps:
-        *DiploSecondFaction = faction_id_2;
-        if (((Factions[faction_id].diplo_status[faction_id_2] & DIPLO_PACT) || *DiploFriction <= 0)
-        && *DiploFriction <= 4) {
-            X_dialog("TRADEMAPS", faction_id_2);
-            Factions[faction_id_2].diplo_patience[faction_id] += 2;
-            net_maps(faction_id, faction_id_2, 1);
-            *DiploMapMsg = 1;
-        } else {
-            parse_says(0, get_adjective(faction_id_2), -1, -1);
-            X_dialog("REJMAPS", faction_id_2);
-        }
+        propose_trade_maps(faction_id, faction_id_2);
         break;
     case DiploProposalCloseDialog:
         break;
@@ -1354,14 +1344,14 @@ void __cdecl communicate(int faction_id, int faction_id_2, int flag) {
         if (category >= 0) {
             int model = MFactions[faction_id_2].soc_priority_model;
             if (model) {
-                int current = (&plr.SE_Politics_pending)[category];
+                int current = ((CSocialCategory*)&plr.SE_Politics_pending)->models[category];
                 if (current && current != model) {
                     cause_friction(faction_id_2, faction_id, 3);
                 }
             }
         }
         int effect = MFactions[faction_id_2].soc_priority_effect;
-        if (effect >= 0 && (&plr.SE_economy_pending)[effect] < 0) {
+        if (effect >= 0 && ((CSocialEffect*)&plr.SE_economy_pending)->values[effect] < 0) {
             cause_friction(faction_id_2, faction_id, 3);
         }
     }
@@ -1735,8 +1725,8 @@ void __cdecl communicate(int faction_id, int faction_id_2, int flag) {
                         net_set_treaty(faction_id, enemy_id, DIPLO_UNK_10000000, 1, 0);
                         if (X_dialog(StrBuffer, faction_id_2)) {
                             net_treaty_on(faction_id, faction_id_2, DIPLO_UNK_1000000, 0);
-                            net_tech(faction_id_2, 9999, enemy_id, 1);
-                            net_tech(faction_id, 9999, enemy_id, 1);
+                            net_tech(faction_id_2, Tech_ID_WorldMap, enemy_id, 1);
+                            net_tech(faction_id, Tech_ID_WorldMap, enemy_id, 1);
                             if (plr.energy_credits < price) {
                                 net_tech(faction_id_2, *DiploTradeWantTech1, faction_id, 1);
                             } else {
@@ -2234,7 +2224,7 @@ TALK_DEMAND:
         }
     }
     if (*DiploTradeWantTech1 >= 0
-    && *DiploTradeWantTech1 != 9999
+    && *DiploTradeWantTech1 != Tech_ID_WorldMap
     && !deal_done
     && !refuse_demand
     && !(*GameRules & RULES_SCN_NO_TECH_TRADING)
@@ -2594,7 +2584,7 @@ TALK_DEMAND:
         int category = MFactions[faction_id_2].soc_priority_category;
         int model = MFactions[faction_id_2].soc_priority_model;
         if (category >= 0 && model) {
-            int current = (&plr.SE_Politics_pending)[category];
+            int current = ((CSocialCategory*)&plr.SE_Politics_pending)->models[category];
             if (current && current != model) {
                 wants_to_speak(faction_id, faction_id_2);
                 if (!*DiploCaptionOff) {
@@ -3305,7 +3295,7 @@ TALK_GREET:
             says("SOCIAL");
             say_num(category);
             says("CAT");
-            int current = (&plr.SE_Politics_pending)[category];
+            int current = ((CSocialCategory*)&plr.SE_Politics_pending)->models[category];
             if (current == model) {
                 say_num(model);
                 says("GOOD");

@@ -47,6 +47,7 @@ int hurry_cost(int base_id, int item_id, int hurry_mins);
 int unit_support_plan();
 int unit_support_cost(int SE_support);
 int unit_support_free(int SE_support, int pop_size);
+int base_capture_turns(int base_id, int faction_id_atk);
 int base_unused_space(int base_id);
 int base_growth_goal(int base_id);
 int stockpile_energy(int base_id);

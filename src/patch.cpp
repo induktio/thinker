@@ -403,6 +403,7 @@ bool patch_setup(Config* cf) {
     write_jump(0x421670, (int)has_fac);
     write_jump(0x4243D0, (int)clear_council_notify);
     write_jump(0x4243F0, (int)clear_council_notify_2);
+    write_jump(0x428350, (int)council);
     write_jump(0x4688E0, (int)MapWin_gen_overlays);
     write_jump(0x476A50, (int)monument);
     write_jump(0x476B30, (int)clear_monuments);
@@ -460,6 +461,11 @@ bool patch_setup(Config* cf) {
     write_jump(0x527290, (int)faction_upkeep);
     write_jump(0x52AD30, (int)council_votes);
     write_jump(0x52AE20, (int)eligible);
+    write_jump(0x52AEB0, (int)wants_prop);
+    write_jump(0x52BE60, (int)council_get_vote);
+    write_jump(0x52BF60, (int)council_action);
+    write_jump(0x52C670, (int)can_call_council);
+    write_jump(0x52C880, (int)call_council);
     write_jump(0x52DC70, (int)not_my_turn);
     write_jump(0x539160, (int)auto_contact);
     write_jump(0x5391C0, (int)net_treaty_on);
@@ -494,6 +500,12 @@ bool patch_setup(Config* cf) {
     write_jump(0x53D360, (int)introduce);
     write_jump(0x53DCE0, (int)wants_to_speak);
     write_jump(0x53E470, (int)diplomacy_ends);
+    write_jump(0x53E4C0, (int)demands_withdrawal);
+    write_jump(0x53E5C0, (int)renounce_pact);
+    write_jump(0x53EB50, (int)buy_council_vote);
+    write_jump(0x543A20, (int)trade_maps);
+    write_jump(0x548F80, (int)do_withdrawal);
+    write_jump(0x54CF40, (int)give_a_base);
     write_jump(0x55B760, (int)treaty_off);
     write_jump(0x55B820, (int)agenda_off);
     write_jump(0x55B870, (int)treaty_on);
@@ -764,7 +776,6 @@ bool patch_setup(Config* cf) {
     write_call(0x48CDA4, (int)popb_action_staple);
     write_call(0x4936F4, (int)ProdPicker_calculate_itoa);
     write_call(0x4AED04, (int)SocialWin_social_ai);
-    write_call(0x54814D, (int)mod_diplomacy_caption);
     write_call(0x54F7D7, (int)mod_energy_trade);
     write_call(0x54F77E, (int)mod_base_swap);
     write_call(0x542278, (int)mod_buy_tech);

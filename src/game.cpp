@@ -1669,7 +1669,7 @@ CONF_LOOP:
                 plr_id = choice;
                 bool name_popup = false;
                 if (PickWin->pick_button_id == 261) {
-                    plr_id = random(MaxDefPlrNum) + 1;
+                    plr_id = random(MaxPlayerNum - 1) + 1;
                     Popup_close(ThumbPopup);
                     GraphicWin_close(PickWin);
                     name_popup = true;

@@ -874,7 +874,7 @@ void __cdecl enemy_diplomacy(int faction_id) {
             if (soc_category >= 0) {
                 int soc_model = MFactions[faction_id].soc_priority_model;
                 if (soc_model) {
-                    int their_model = (&Factions[i].SE_Politics_pending)[soc_category];
+                    int their_model = ((CSocialCategory*)&Factions[i].SE_Politics_pending)->models[soc_category];
                     if (their_model == soc_model) {
                         friction--;
                     } else if (their_model) {

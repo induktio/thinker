@@ -727,12 +727,12 @@ int __cdecl steal_tech(int faction_id, int faction_id_tgt, int is_steal) {
     }
     int tech_id = mod_tech_pick(faction_id, 0, faction_id_tgt, is_steal ? "STEALTECH" : "ACQUIRETECH");
     if (tech_id < 0) {
-        tech_id = 9999;
+        tech_id = Tech_ID_WorldMap;
     }
     if (*MultiplayerActive && faction_id == *CurrentPlayerFaction) {
         message_data(0x244C, 0, faction_id, tech_id, faction_id_tgt, 0);
     } else {
-        if (faction_id_tgt == *CurrentPlayerFaction && tech_id != 9999) {
+        if (faction_id_tgt == *CurrentPlayerFaction && tech_id != Tech_ID_WorldMap) {
             parse_says(0, get_noun(faction_id), -1, -1);
             StrBuffer[0] = '\0';
             say_tech(StrBuffer, tech_id, 0);
@@ -740,11 +740,11 @@ int __cdecl steal_tech(int faction_id, int faction_id_tgt, int is_steal) {
             NetMsg_pop(NetMsg, "STOLETECH", 5000, 0, 0);
         }
         tech_achieved(faction_id, tech_id, faction_id_tgt, 0);
-        if (!is_human(faction_id) && tech_id != 9999) {
+        if (!is_human(faction_id) && tech_id != Tech_ID_WorldMap) {
             mod_bases_reset(-1, faction_id, 0);
         }
     }
-    return tech_id == 9999;
+    return tech_id == Tech_ID_WorldMap;
 }
 
 int __cdecl spying(int faction_id) {

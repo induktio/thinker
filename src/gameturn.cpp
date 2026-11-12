@@ -940,16 +940,6 @@ int __cdecl not_my_turn() {
     return 0;
 }
 
-void __cdecl clear_council_notify(int faction_id) {
-    CouncilProposal[faction_id] = 0;
-    CouncilVoteState[faction_id] = 0;
-}
-
-void __cdecl clear_council_notify_2() {
-    memset(CouncilProposal, 0, 0x20u);
-    memset(CouncilVoteState, 0, 0x20u);
-}
-
 void __cdecl random_events(int flag) {
     const uint32_t BEVENT_VISIBLE =
         (BEVENT_CLOUD_COVER|BEVENT_HEAT_WAVE|BEVENT_BUST|BEVENT_INDUSTRY|BEVENT_FAMINE|BEVENT_BUMPER);

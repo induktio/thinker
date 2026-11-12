@@ -26,7 +26,7 @@ void __cdecl say_tech(char* output, int tech_id, int incl_category) {
         snprintf(buf, len, "%s", label_get(TL_NotAvailable));
     } else if (tech_id < 0) {
         snprintf(buf, len, "%s", label_get(TL_NONE));
-    } else if (tech_id == 9999) {
+    } else if (tech_id == Tech_ID_WorldMap) {
         snprintf(buf, len, "%s", label_get(TL_WorldMap));
     } else if (tech_id < Tech_ID_Commlink) {
         if (incl_category) {
@@ -369,7 +369,7 @@ int __cdecl mod_tech_val(int tech_id, int faction_id, int simple_calc) {
         assert(0);
         return 0;
     }
-    if (tech_id == 9999) { // Special case for world maps
+    if (tech_id == Tech_ID_WorldMap) { // Special case before other checks
         return 2;
     }
     if (tech_id < 0 || tech_id >= Tech_ID_Units + MaxProtoNum) {
@@ -717,7 +717,7 @@ void __cdecl tech_achieved(int faction_id, int tech_id, int faction_id_2, int is
     if (is_human(faction_id)) {
         ambience(201);
     }
-    if (tech_id >= 9999) {
+    if (tech_id >= Tech_ID_WorldMap) {
         if (!(faction_id_2 >= 0 && faction_id_2 < MaxPlayerNum)) {
             assert(0);
             return;

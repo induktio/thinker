@@ -1434,19 +1434,6 @@ void __cdecl say_loc(char* dest, int x, int y, int a4, int a5, int a6)
 }
 
 /*
-Fix diplomacy dialog to show the missing response messages (GAVEENERGY) when gifting
-energy credits to another faction. The error happens when the label is written to
-StrBuffer in make_gift but diplomacy_caption overwrites it with other data.
-*/
-void __cdecl mod_diplomacy_caption(int faction1, int faction2)
-{
-    char buf[StrBufLen];
-    strcpy_n(buf, StrBufLen, StrBuffer);
-    diplomacy_caption(faction1, faction2);
-    strcpy_n(StrBuffer, StrBufLen, buf);
-}
-
-/*
 Fix foreign_treaty_popup displaying same treaty changes multiple times per turn.
 In any case, these events will be displayed as a non-persistent message in map window.
 */

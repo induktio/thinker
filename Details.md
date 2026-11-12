@@ -462,7 +462,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 28. Patch Energy Market Crash event to reduce energy reserves only by 1/2 instead of 3/4. The event can also be entirely disabled with skip_event option.
 29. Bases that have sufficient drone control facilities before the growth phase can grow without triggering possible drone riots on the same turn (delay_drone_riots).
 30. Remove drone revolt event due to issues with the original code. Sometimes this caused rioting player-owned bases to join other factions while this did not happen on AI factions. REVOLT faction ability has alternative usage and it can lower the captured base assimilation time.
-31. Patch captured base extra drone effect to last a variable time from 20 to 50 turns depending on the base size and faction modifiers. The AI will also rename captured bases only after they are fully assimilated.
+31. Patch captured base extra drone effect to last a variable time from 20 to 50 turns depending on the base size and faction modifiers. This also applies to bases received through diplomacy threats. The AI will rename captured bases only after they are fully assimilated.
 32. When a base is captured that was previously owned by active third faction and the time to assimilate the base was more than zero, the previous owner is preserved after capture.
 33. Fix diplomacy dialog appearing multiple times when both human and alien factions are involved in a base capture by adjusting the location for spawned colony pods.
 34. Fix missing defender bonus mentioned in the manual "Units in a headquarters base automatically gain +1 Morale when defending".
@@ -516,6 +516,16 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 82. Fix unimplemented dialog checks and remove VENDETTA5X reference for CYBORG faction filename.
 83. Fix issues with AI planet buster dialog when URGENTCOMM "Switching to main viewscreen" message does not open the diplomacy window and PLANETBUSTER0 message appears every time.
 84. Fix game not recentering base swap proposal dialog minimap when another base is selected from the list.
+85. Restore missing dialog for GIMMETECH2 when an AI asks for two techs in return for a pact. It used duplicated labels in script.txt and is now provided by script_label option and modmenu.txt.
+86. Restore BASEGIFT1/BASEGIFT2 dialog responses to base gifts instead of always showing the generic BASEGIFT message.
+87. Fix TURNABOUT counter proposal when demanding withdrawal so that AI units are no longer withdrawn when the player chooses "Never mind. Let our forces remain in place."
+88. Fix pact proposals where a negative computed price could make the AI demand a negative amount of energy credits and transfer credits from the AI to the player.
+89. Fix AI council calls that depend on undefined values when Progenitors are alive and the Supreme Leader motion is available.
+90. Fix AI sometimes choosing the wrong faction to favor in Planetary Governor votes depending on inconsistent checks on faction rankings.
+91. Fix AI personality checks in the energy gift dialog comparing the gifting faction instead of the receiving AI.
+92. Modify Spartan and Believer AI personality checks to behave similarly with energy gifts as in the tech gift dialog.
+93. Fix AI tech valuations in pact and treaty proposals using the player's tech value instead of the AI's. This affected both the price and the friction relief.
+94. Fix Peacekeeper AI scaling the tech bribe thresholds for joint attack proposals too high.
 
 
 Scient's patch

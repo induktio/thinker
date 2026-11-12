@@ -8,7 +8,7 @@ const int RegionBounds = 63;
 
 const int MaxDiffNum = 6;
 const int MaxPlayerNum = 8;
-const int MaxDefPlrNum = 7;
+const int MaxFacRank = 7;
 const int MaxGoalsNum = 75;
 const int MaxSitesNum = 25;
 const int MaxBaseNum = 512;
@@ -85,6 +85,7 @@ const int Tech_ID_First = 0;
 const int Tech_ID_Last = 88;
 const int Tech_ID_Commlink = 89;
 const int Tech_ID_Units = 97;
+const int Tech_ID_WorldMap = 9999;
 
 enum FacilityId {
     FAC_HEADQUARTERS = 1,
@@ -946,6 +947,12 @@ enum CouncilProposal {
     PROP_MELT_POLAR_CAPS = 7,
     PROP_REPEAL_UN_CHARTER = 8,
     PROP_REINSTATE_UN_CHARTER = 9,
+};
+
+enum CouncilVote {
+    COUNC_VOTE_YES = -1,
+    COUNC_VOTE_NO = -2,
+    COUNC_VOTE_ABSTAIN = -3,
 };
 
 enum VictoryType {

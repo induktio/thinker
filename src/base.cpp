@@ -574,27 +574,7 @@ void __cdecl mod_capture_base(int base_id, int faction_id_atk, int is_probe) {
             } else {
                 base->faction_id_former = faction_id;
             }
-            // modify captured base extra drone effect to take into account the base size
-            int num = 0;
-            for (int i = Fac_ID_First; i <= Fac_ID_Last; i++) {
-                if (has_fac_built((FacilityId)i, base_id)) {
-                    num++;
-                }
-            }
-            for (int i = SP_ID_First; i <= SP_ID_Last; i++) {
-                if (project_base((FacilityId)i) == base_id) {
-                    num++;
-                }
-            }
-            int val = 0;
-            if (has_plr_rule(faction_id_atk, RULE_REVOLT, &val, 0)) {
-                val = clamp(100 - val/2, 50, 100);
-                base->assimilation_turns_left =
-                    clamp((((num + base->pop_size) * 5 + 10) * val) / 100, 20, 50);
-            } else {
-                base->assimilation_turns_left =
-                    clamp((num + base->pop_size) * 5 + 10, 20, 50);
-            }
+            base->assimilation_turns_left = base_capture_turns(base_id, faction_id_atk);
         } else { // original penalties for base capture
             base->faction_id_former = faction_id;
             base->assimilation_turns_left = 50;
@@ -4256,6 +4236,32 @@ int unit_support_cost(int SE_support) {
 int unit_support_free(int SE_support, int pop_size) {
     int val = BaseSupportCosts[clamp(SE_support + 4, 0, 7)][1];
     return (val >= 0 ? val : max(abs(val), pop_size));
+}
+
+/*
+Modify captured base extra drone effect to take into account the base size.
+Original game always used 50 turns regardless of any other factors.
+*/
+int base_capture_turns(int base_id, int faction_id_atk) {
+    BASE* base = &Bases[base_id];
+    int num = 0;
+    for (int i = Fac_ID_First; i <= Fac_ID_Last; i++) {
+        if (has_fac_built((FacilityId)i, base_id)) {
+            num++;
+        }
+    }
+    for (int i = SP_ID_First; i <= SP_ID_Last; i++) {
+        if (project_base((FacilityId)i) == base_id) {
+            num++;
+        }
+    }
+    int val = 0;
+    if (has_plr_rule(faction_id_atk, RULE_REVOLT, &val, 0)) {
+        val = clamp(100 - val/2, 50, 100);
+        return clamp((((num + base->pop_size) * 5 + 10) * val) / 100, 20, 50);
+    } else {
+        return clamp((num + base->pop_size) * 5 + 10, 20, 50);
+    }
 }
 
 int base_unused_space(int base_id) {

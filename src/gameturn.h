@@ -11,8 +11,6 @@ void __cdecl net_end_of_turn();
 void __cdecl net_control_turn();
 int __cdecl next_player_turn();
 int __cdecl not_my_turn();
-void __cdecl clear_council_notify(int faction_id);
-void __cdecl clear_council_notify_2();
 void __cdecl random_events(int flag);
 void __cdecl alien_fauna();
 void __cdecl do_fungal_towers();

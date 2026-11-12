@@ -85,6 +85,25 @@ __Governor may produce psych facilities with side effects.
 __Governor may produce secret projects.
 __Governor may HURRY production.
 
+#ASKNUMBER
+#xs 400
+#caption Thinker Mod
+Enter a new value for {$MSG0}.
+
+Value:
+
+#MAPGEN
+#xs 400
+#caption Thinker Mod
+Enter a new value for random map generator.
+
+Value:
+
+#GENERIC
+#xs 400
+#caption $MSG0
+$MSG1
+
 #TOPMENU
 #xs 420
 #itemlist
@@ -116,24 +135,16 @@ EXIT GAME
 #caption $CAPTION7
 "I'm sorry, I cannot grant additional loans at this time."
 
-#ASKNUMBER
-#xs 400
-#caption Thinker Mod Options
-Enter a new value for {$MSG0}.
+#GIMMETECH2
+#xs 440
+#caption $CAPTION7
+"I am intrigued by your offer, but can accept only if it is made
+on the basis of equal access to data. Will you transmit to me all
+of your data on {$TECH2} and {$TECH4} as a token of our future friendship?"
 
-Value:
-
-#MAPGEN
-#xs 400
-#caption Thinker Mod
-Enter a new value for random map generator.
-
-Value:
-
-#GENERIC
-#xs 400
-#caption $MSG0
-$MSG1
+"That information is classified, $TITLE1."
+Transmit data on $TECH2 and $TECH4.
+Consult Datalinks.
 
 #PROBE
 #xs 440
