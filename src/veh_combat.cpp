@@ -1707,6 +1707,8 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
     assert(veh_atk->x != veh_def->x || veh_atk->y != veh_def->y);
     assert(veh_atk->faction_id != veh_def->faction_id);
     assert(veh_atk->is_probe() || veh_def->is_artifact() || at_war(faction_id_atk, faction_id_def));
+    // Fix: reveal attacker to defender even when the battle is not rendered
+    veh_atk->visibility |= (1 << faction_id_def);
 
     if (combat_type == CT_CAN_ARTY) {
         assert(can_arty(veh_atk->unit_id, true));
@@ -1747,7 +1749,6 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
                     combat_type = 0;
                     *VehDrawAttackID = veh_id_atk;
                     *VehDrawDefendID = veh_id_def;
-                    veh_atk->visibility |= (1 << faction_id_def);
                     if (!Console_focus(MapWin, tx, ty, faction_id_atk)) {
                         draw_tile(x, y, 2);
                         draw_tile(tx, ty, 2);
@@ -1819,7 +1820,6 @@ int __cdecl mod_battle_fight_2(int veh_id_atk, int offset, int tx, int ty, int t
         if (*MultiplayerActive && BaseWin->zoom_active) {
             render_base = 1;
         }
-        veh_atk->visibility |= (1 << faction_id_def);
         *VehDrawAttackID = veh_id_atk;
         *VehDrawDefendID = veh_id_def;
         if (!Console_focus(MapWin, tx, ty, faction_id_atk)) {
