@@ -526,6 +526,7 @@ If the line mentions a config variable name in parentheses, the patch can be opt
 92. Modify Spartan and Believer AI personality checks to behave similarly with energy gifts as in the tech gift dialog.
 93. Fix AI tech valuations in pact and treaty proposals using the player's tech value instead of the AI's. This affected both the price and the friction relief.
 94. Fix Peacekeeper AI scaling the tech bribe thresholds for joint attack proposals too high.
+95. Fix artillery duels applying the hasty attack penalty without asking for confirmation like regular attacks.
 
 
 Scient's patch

@@ -1138,6 +1138,10 @@ void __cdecl action_arty(net_int_t veh_id, int tx, int ty) {
                     if (offset >= 0) {
                         if (*MultiplayerActive) {
                             if (!NetDaemon_maybe_lock(NetState, &veh_id, 0, 0, tx, ty, 4)) {
+                                if (arty_hasty_cancel(veh_id, tx, ty)) {
+                                    NetDaemon_unlock_veh(NetState);
+                                    return;
+                                }
                                 *VehAttackFlags = 1;
                                 if (mod_battle_fight(veh_id, offset, 1, 1, 0)) {
                                     NetDaemon_unlock_veh(NetState);
@@ -1146,7 +1150,7 @@ void __cdecl action_arty(net_int_t veh_id, int tx, int ty) {
                                     NetDaemon_await_exec(NetState, 1);
                                 }
                             }
-                        } else {
+                        } else if (!arty_hasty_cancel(veh_id, tx, ty)) {
                             *VehAttackFlags = 3;
                             mod_battle_fight(veh_id, offset, 1, 1, 0);
                         }
