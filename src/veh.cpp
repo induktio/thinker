@@ -3309,6 +3309,14 @@ bool hidden_stack(int x, int y, int faction_id) {
     return true;
 }
 
+/*
+Thinker AI factions do not consider hidden stacks they have not yet spotted.
+*/
+bool ai_hidden_stack(int x, int y, int faction_id) {
+    return conf.ai_respect_cloak && thinker_enabled(faction_id)
+        && !has_pact(faction_id, veh_who(x, y)) && hidden_stack(x, y, faction_id);
+}
+
 int __cdecl want_to_wake(int faction_id, int veh_id, int veh_id2) {
     int triad = Vehs[veh_id].triad();
     if (triad == TRIAD_AIR && Vehs[veh_id].movement_turns && Vehs[veh_id].order == ORDER_MOVE_TO) {

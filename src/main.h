@@ -170,6 +170,7 @@ struct Config {
     int limit_project_start = 0;
     int rival_friction_bias = 0;
     int rival_defiance_bias = 0;
+    int ai_respect_cloak = 1;
     int max_satellites = 20;
     int new_world_builder = 1;
     int world_sea_levels[3] = {46,58,70};

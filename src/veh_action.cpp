@@ -1839,6 +1839,12 @@ int __cdecl order_veh(int veh_id, int offset, int flag) {
     tgt_at_sea = is_ocean(tgt_sq);
     goody_val = goody_at(tgt_x, tgt_y);
 
+    if (offset < 8 && ai_hidden_stack(tgt_x, tgt_y, veh_fc_id)) {
+        Vehs[veh_id].order = ORDER_NONE;
+        spot_stack(stack_veh_id, veh_fc_id);
+        draw_tile(tgt_x, tgt_y, 2);
+        goto MOV_END;
+    }
     while (true) {
         move_delay = 0;
         if (Vehs[veh_id].state & (VSTATE_EXPLORE|VSTATE_ON_ALERT)) {

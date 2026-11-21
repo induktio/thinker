@@ -91,6 +91,7 @@ void __cdecl spot_stack(int veh_id, int faction_id);
 void __cdecl unspot_stack(int veh_id);
 void __cdecl spot_loc(int x, int y, int faction_id);
 bool hidden_stack(int x, int y, int faction_id);
+bool ai_hidden_stack(int x, int y, int faction_id);
 int __cdecl want_to_wake(int faction_id, int veh_id, int veh_id2);
 void __cdecl wake_stack(int veh_id);
 void __cdecl spot_all(int veh_id, int flag);

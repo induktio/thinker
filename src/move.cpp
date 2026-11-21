@@ -359,7 +359,7 @@ bool non_ally_in_tile(int x, int y, int faction_id) {
         nonally_veh_count = *VehCount;
         nonally_faction_id = faction_id;
     }
-    return nonally.count({x, y}) > 0;
+    return nonally.count({x, y}) > 0 && !ai_hidden_stack(x, y, faction_id);
 }
 
 bool allow_move(int x, int y, int faction_id, int triad) {
@@ -425,6 +425,9 @@ bool can_alter_level(int x, int y, int faction_id, bool raise) {
 }
 
 bool stack_search(int x, int y, int faction_id, StackType type, VehWeaponMode mode) {
+    if (ai_hidden_stack(x, y, faction_id)) {
+        return false;
+    }
     bool found = false;
     for (int i = *VehCount - 1; i >= 0; --i) {
         VEH* veh = &Vehs[i];
@@ -888,6 +891,9 @@ void move_upkeep(int faction_id, UpdateMode mode) {
         if (!(sq = mapsq(veh->x, veh->y))) {
             continue;
         }
+        if (veh->faction_id != faction_id && ai_hidden_stack(veh->x, veh->y, faction_id)) {
+            continue;
+        }
         if (veh->order == ORDER_THERMAL_BOREHOLE) {
             mapnodes.insert({veh->x, veh->y, NODE_BOREHOLE});
         }
@@ -1030,7 +1036,7 @@ void move_upkeep(int faction_id, UpdateMode mode) {
             || (near_own_base && m.second.enemy_dist > 0 && m.second.enemy_dist < 8))
             && (sq = mapsq(x, y)) && !sq->is_base()
             && (sq->owner == faction_id || at_war(faction_id, sq->owner))) {
-                int veh_owner = sq->veh_who();
+                int veh_owner = (ai_hidden_stack(x, y, faction_id) ? -1 : sq->veh_who());
                 int score = clamp(m.second.unit_near + 1, 1, 800)
                     * clamp(2*m.second.enemy_rank - min(0, m.second.safety/32), 1, 800)
                     * (near_own_base ? 4 : 1)
@@ -2278,6 +2284,9 @@ bool allow_attack(int faction1, int faction2, bool is_probe, bool is_enhanced) {
 }
 
 bool allow_combat(int x, int y, int faction_id, MAP* sq) {
+    if (ai_hidden_stack(x, y, faction_id)) {
+        return true;
+    }
     for (int i = *VehCount - 1; i >= 0; --i) {
         VEH* veh = &Vehs[i];
         if (veh->x == x && veh->y == y && both_neutral(faction_id, veh->faction_id)

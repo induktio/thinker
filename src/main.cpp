@@ -88,6 +88,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         cf->rival_friction_bias = clamp(atoi(value), -20, 20);
     } else if (MATCH("rival_defiance_bias")) {
         cf->rival_defiance_bias = clamp(atoi(value), -20, 20);
+    } else if (MATCH("ai_respect_cloak")) {
+        cf->ai_respect_cloak = atoi(value);
     } else if (MATCH("max_satellites")) {
         cf->max_satellites = max(0, atoi(value));
     } else if (MATCH("new_world_builder")) {
