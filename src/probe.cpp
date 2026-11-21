@@ -1400,10 +1400,12 @@ MOV_DEFEND:
                 tgt->eliminated_count--;
                 reset_captured_leader(tgt_fc_id, capture_id);
                 if (veh_fc_id == MapWin->cOwner || tgt_fc_id == MapWin->cOwner) {
+                    parse_says(3, get_noun(veh_fc_id), -1, -1);
                     parse_says(0, get_title(capture_id), -1, -1);
                     parse_says(1, get_name(capture_id), -1, -1);
                     parse_says(2, get_noun(capture_id), -1, -1);
-                    NetMsg_pop_2("WILLYFREE", "fac_escape_sm.pcx");
+                    // Fix: original displayed WILLYFREE also to the faction holding the leader
+                    NetMsg_pop_2(veh_fc_id == MapWin->cOwner ? "WILLYFREE" : "WILLYFREE2", "fac_escape_sm.pcx");
                 }
                 if (!(*GameRules & RULES_SCN_NO_TECH_TRADING)) {
                     for (prb_tech_id = 0; prb_tech_id < MaxTechnologyNum; prb_tech_id++) {
