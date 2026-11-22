@@ -167,6 +167,14 @@ Our infiltration on {$MSG0} has been discovered! The spies have been lost.
 #caption Operations Director
 We have discovered and removed {$MSG0} infiltration on our networks!
 
+#WILLYFREE2
+#xs 440
+#wave 19
+#caption Operations Director
+A probe team from the $FACTION3 has broken into our Punishment Sphere and
+freed $TITLE0 $NAME1 of the $FACTION2! The $FACTION2 $<2:has:have> pledged
+allegiance to the $FACTION3.
+
 #BASELIMIT
 #xs 440
 #caption Operations Director
