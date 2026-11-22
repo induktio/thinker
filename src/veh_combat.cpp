@@ -1281,6 +1281,29 @@ int __cdecl interceptor(int faction_id_def, int faction_id_atk, int tx, int ty) 
     return 1;
 }
 
+/*
+Fix: artillery duels have the same hasty attack penalty as move attacks but the player
+was not asked to confirm them. Return true if the attack on the tile is cancelled.
+*/
+bool arty_hasty_cancel(int veh_id, int tx, int ty) {
+    VEH* veh = &Vehs[veh_id];
+    int moves = clamp(veh_speed(veh_id, 0) - veh->moves_spent, 0, 999);
+    // Ask only with less than one full move left
+    if (moves >= Rules->move_rate_roads || veh->faction_id != MapWin->cOwner
+    || !is_human(veh->faction_id) || veh->state & VSTATE_UNK_1000 || !can_arty(veh->unit_id, true)
+    || veh->unit_id == BSC_SPORE_LAUNCHER || veh->unit_id == BSC_MIND_WORMS) {
+        return false;
+    }
+    int def_id = find_defender(stack_fix(veh_at(tx, ty)), veh_id, CT_CAN_ARTY);
+    if (def_id < 0 || !can_arty(Vehs[def_id].unit_id, true)) {
+        return false;
+    }
+    parse_says(0, veh->name(), -1, -1);
+    parse_num(0, moves);
+    parse_num(1, Rules->move_rate_roads);
+    return popp(ScriptFile, "HASTY", 0, "bad_sm.pcx", 0);
+}
+
 int __cdecl mod_battle_fight(int veh_id, int offset, int table_offset, int option, int* def_id)
 {
     VEH* veh = &Vehs[veh_id];
