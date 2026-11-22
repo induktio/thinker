@@ -848,6 +848,14 @@ enum ResType { // bonus_at
     RES_ENERGY = 3,
 };
 
+const int ManifoldHarmonicsBonus[][3] = {
+    {0,0,0}, // Planet < 0
+    {0,0,1}, // Planet = 0
+    {1,0,1}, // Planet = 1
+    {1,1,1}, // Planet = 2
+    {1,1,2}, // Planet > 2
+};
+
 enum AIGoal {
     AI_GOAL_UNUSED = -1,
     AI_GOAL_ATTACK = 0, // 'a', red
@@ -1086,6 +1094,33 @@ enum ReportViewMode {
     REPORT_SAT = 6,
     REPORT_SECURITY = 7,
     REPORT_SCORE = 8,
+};
+
+enum DiploProposal {
+    DiploProposalMakeGift = 1,
+    DiploProposalMakePact = 2,
+    DiploProposalMakeTreaty = 3,
+    DiploProposalTechTrade = 4,
+    DiploProposalBuyTech = 5,
+    DiploProposalNeedEnergy = 6,
+    DiploProposalTradeMaps = 7,
+    DiploProposalJointAttack = 8,
+    DiploProposalBaseSwap = 9,
+    DiploProposalCloseDialog = 10,
+    DiploProposalRepayLoan = 11,
+    DiploProposalCouncilVote = 12,
+    DiploProposalTradeCommlink = 13,
+};
+
+enum DiploCounter {
+    DiploCounterFriendship = 1, // goodwill and friendship
+    DiploCounterNameAPrice = 2, // need but name your price
+    DiploCounterThreaten = 3, // threaten with attack or cancel pact
+    DiploCounterResearchData = 4, // valuable research data
+    DiploCounterEnergyPayment = 5, // modest sum of energy credits
+    DiploCounterLoanPayment = 6, // schedule of loan payments
+    DiploCounterMakeGift = 7, // grant all research data
+    DiploCounterGiveBase = 8, // turn over one of my bases
 };
 
 enum TextLabel {

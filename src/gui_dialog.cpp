@@ -2,7 +2,7 @@
 #include "gui_dialog.h"
 
 
-void Popup_init_icon(Popup* This, const char* filename, int* px, int* py) {
+void __thiscall Popup_init_icon(Popup* This, const char* filename, int* px, int* py) {
     if (!Buffer_get_pcx_dimensions(filename, px, py)) {
         if (!Sprite_init(&This->sprite, filename, *px, *py)) {
             This->sprite_icon = &This->sprite;

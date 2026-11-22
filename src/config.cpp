@@ -195,7 +195,7 @@ int __cdecl text_item_binary() {
 
 int __cdecl text_get_number(int min_val, int max_val) {
     text_get();
-    return clamp(text_item_number(), min_val, max_val);
+    return range(text_item_number(), min_val, max_val);
 }
 
 /*

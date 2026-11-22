@@ -953,6 +953,12 @@ bool patch_setup(Config* cf) {
     write_call(0x5755D3, (int)diplomacy_check); // enemy_move
     write_call(0x5A3E3A, (int)diplomacy_check); // probe
     write_call(0x5A5519, (int)diplomacy_check); // probe
+    write_call(0x53E4D3, (int)commlink_attempter); // demands_withdrawal
+    write_call(0x53E5D4, (int)commlink_attempter); // renounce_pact
+    write_call(0x558DEE, (int)commlink_attempter); // commlink_attempt
+    write_call(0x47805C, (int)commlink_attempt); // MultiWin::on_left_click
+    write_call(0x478512, (int)commlink_attempt); // MultiWin::on_right_click
+    write_call(0x51A4C3, (int)commlink_attempt); // Console::on_key_click
     write_call(0x51F2A3, (int)communicate); // wait_loop
     write_call(0x527FE4, (int)communicate); // control_turn
     write_call(0x558F59, (int)communicate); // commlink_attempt
@@ -1409,15 +1415,6 @@ bool patch_setup(Config* cf) {
     }
 
     /*
-    Prevent the AI from making unnecessary trades where it sells their techs for maps
-    owned by the player. The patch removes TRADETECH4 / TRADETECH5 dialogue paths
-    making the AI usually demand a credit payment for any techs.
-    */
-    {
-        long_jump(0x5414AA); // tech_trade
-    }
-
-    /*
     Patch Stockpile Energy when it enabled double production if the base produces one item
     and then switches to Stockpile Energy on the same turn gaining additional credits.
     */
@@ -1662,18 +1659,6 @@ bool patch_setup(Config* cf) {
     }
     if (cf->cult_early_start) { // config_game > alien_start
         long_jump(0x589097);
-    }
-    if (cf->faction_placement) {
-        const byte asm_find_start[] = {
-            0x8D,0x45,0xF8,0x50,0x8D,0x45,0xFC,0x50,0x8B,0x45,
-            0x08,0x50,0xE8,0x00,0x00,0x00,0x00,0x83,0xC4,0x0C
-        };
-        remove_call(0x5B1DFF);
-        remove_call(0x5B2137);
-        memset((void*)0x5B220F, 0x90, 63);
-        memset((void*)0x5B2257, 0x90, 11);
-        memcpy((void*)0x5B220F, asm_find_start, sizeof(asm_find_start));
-        write_call(0x5B221B, (int)find_start);
     }
     if (!cf->event_perihelion) {
         short_jump(0x51F481);

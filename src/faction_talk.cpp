@@ -1507,17 +1507,32 @@ int __cdecl tech_trade(int faction_id, int faction_id_2, int rival_init, int cou
         && !*DiploMapsTraded
         && !(status_12 & DIPLO_PACT)
         && !map_is_known(faction_id_2)) {
-            int shared_bases = 0;
+            int visible = 0;
             for (int i = 0; i < *BaseCount; i++) {
                 if (Bases[i].faction_id == faction_id
                 && (Bases[i].faction_id == faction_id_2 || (Bases[i].visibility & (1 << faction_id_2)))) {
-                    shared_bases++;
+                    visible++;
                 }
             }
-            bool few_shared = ((*GameRules & RULES_NO_UNITY_SURVEY)
-                ? !shared_bases
-                : shared_bases < (plr.base_count + 1) / 2);
-            if (few_shared && *DiploFriction <= 7) {
+            bool few_visible = ((*GameRules & RULES_NO_UNITY_SURVEY)
+                ? !visible : visible < (plr.base_count + 1) / 2);
+            // Modify TRADETECH4/TRADETECH5 dialog paths to make the AI avoid selling important techs
+            // for maps owned by the player unless additional tech related checks are sufficient.
+            int offer_id = *DiploTradeOfferTech1;
+            bool allow_trade = true;
+            if (offer_id >= 0 && offer_id < MaxTechnologyNum) {
+                int owner_count = tech_owner_count(offer_id);
+                int later_count = 0;
+                for (int i = 0; i < MaxTechnologyNum; i++) {
+                    if (i != offer_id && has_tech(i, faction_id_2)
+                    && (Tech[i].preq_tech1 == offer_id || Tech[i].preq_tech2 == offer_id)) {
+                        later_count++;
+                    }
+                }
+                allow_trade = (owner_count > 1 || later_count > 1 || *DiploFriction <= 2)
+                    && tech_level(offer_id, 0) <= clamp(7 - *DiploFriction, 1, 5);
+            }
+            if (few_visible && *DiploFriction <= 7 && allow_trade) {
                 *DiploTradeWantTech1 = Tech_ID_WorldMap;
             }
         }
@@ -2036,10 +2051,10 @@ int __cdecl propose_pact(int faction_id, int faction_id_2) {
                     parse_says(3, get_noun_phrase(faction_id_2, 9), -1, -1);
                     if (*DiploTradeWantTech2 >= 0) {
                         // Fix: Restore missing dialog for GIMMETECH2. It used duplicated labels
-                        // in script.txt and is now provided by script_label option and modmenu.txt.
+                        // in script.txt and is now provided by modmenu.txt.
                         parse_tech(4, *DiploTradeWantTech2, 1);
                     }
-                    snprintf(StrBuffer, StrBufLen, "GIMMETECH%d", (*DiploTradeWantTech2 < 0 ? random_val(0, 2) : 2));
+                    snprintf(StrBuffer, StrBufLen, "GIMMETECH%d", (*DiploTradeWantTech2 >= 0 ? 2 : random_val(0, 2)));
                     choice = X_dialog(StrBuffer, faction_id_2);
                     if (choice <= 1) {
                         break;

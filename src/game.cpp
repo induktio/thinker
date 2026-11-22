@@ -15,7 +15,7 @@ GUID* const unk_689218 = (GUID*)0x689218;
 void* const unk_6F107C = (void*)0x6F107C;
 int* const dword_90DE8C = (int*)0x90DE8C;
 
-const uint32_t GameRulesOptions[][2] = {
+static const uint32_t GameRulesOptions[][2] = {
     {0x1, RULES_VICTORY_TRANSCENDENCE},
     {0x2, RULES_VICTORY_CONQUEST},
     {0x4, RULES_VICTORY_DIPLOMATIC},
@@ -35,6 +35,10 @@ const uint32_t GameRulesOptions[][2] = {
     // 0x10000, STATE_RAND_FAC_LEADER_PERSONALITIES
     // 0x20000, STATE_RAND_FAC_LEADER_SOCIAL_AGENDA
 };
+
+// Exclude settings that are adjusted in Special Scenario Rules
+static const uint32_t GAME_RULES_MASK = 0x7808FFFF;
+static const uint32_t GAME_MRULES_MASK = 0xFFFFFFF0;
 
 static uint32_t custom_game_rules = 0;
 static uint32_t custom_more_rules = 0;
@@ -170,6 +174,10 @@ int __cdecl parse_says(size_t index, const char* src, int gender, int plural) {
    ParseStrPlurality[index] = plural;
    strcpy_n(ParseStrBuffer[index].str, StrBufLen, src);
    return 0;
+}
+
+int __cdecl range(int input, int min_val, int max_val) {
+    return min(max(input, min_val), max(min_val, max_val));
 }
 
 int __cdecl game_year(int turn) {

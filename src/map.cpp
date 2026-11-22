@@ -1607,13 +1607,6 @@ static void find_reset(int faction_id, int k) {
     spawns.clear();
     natives.clear();
     goodtiles.clear();
-    /*
-    This value defines how many tiles an area needs to have before it's
-    considered sufficiently large to be a faction starting location.
-    Map area square root values: Tiny = 33, Standard = 56, Huge = 90
-    */
-    int limit = clamp(*MapAreaTiles, 1024, 8192) / 40;
-    size_t land_area = 0;
     MAP* sq;
 
     for (int y = 0; y < *MapAreaY; y++) {
@@ -1623,12 +1616,8 @@ static void find_reset(int faction_id, int k) {
             }
             // LM_FRESH landmark is ignored for this check
             if (!is_ocean(sq) && !sq->is_rocky() && !sq->is_fungus()
-            && sq->is_land_region() && !(sq->lm_items() & ~LM_FRESH)
-            && Continents[sq->region].tile_count >= limit) {
+            && !sq->is_pole_tile() && !(sq->lm_items() & ~LM_FRESH)) {
                 goodtiles.insert({x, y});
-            }
-            if (sq->is_land_region()) {
-                land_area++;
             }
         }
     }
@@ -1646,44 +1635,67 @@ static void find_reset(int faction_id, int k) {
             spawns.insert({Bases[i].x, Bases[i].y});
         }
     }
-    if (goodtiles.size() * 3 < land_area) {
-        goodtiles.clear();
-    }
     debug("find_reset x: %d y: %d sqrt: %d tiles: %d good: %d\n",
         *MapAreaX, *MapAreaY, *MapAreaSqRoot, *MapAreaTiles, goodtiles.size());
 }
 
-static bool valid_start(int faction_id, int iter, int x, int y) {
+static bool valid_start(int faction_id, int setup_id, int is_reset, int iter, int x, int y) {
     MAP* sq = mapsq(x, y);
+    assert(sq);
     bool aquatic = MFactions[faction_id].is_aquatic();
     // Minimum spawn range is reduced for later spawns to account for less free space
-    int spawn_limit = max((*BaseCount >= 20 ? 4 : 5 + (*MapAreaTiles >= 1600 ? 2 : 0)), 8 - iter/80);
-    int native_limit = (goodtiles.size() > 0 ? 3 : 2) + ((int)natives.size() < *MapAreaTiles/80);
+    int spawn_limit = max(8 - iter/80, (is_reset ? 2 : 5) + clamp(*MapAreaTiles / 1600, 0, 2));
+    int native_limit = (goodtiles.size() > *MapAreaTiles/8u ? 3 : 2) + (natives.size() < *MapAreaTiles/80u);
 
-    if (!sq || !sq->allow_spawn()) { // Select only tiles where bases can be built
+    if (!sq || !sq->allow_spawn() || aquatic != is_ocean(sq)) {
         return false;
+    }
+    if (iter < 200 && sq->owner > 0 && sq->owner != faction_id) {
+        return false;
+    }
+    if (iter < 200 && setup_id > 0) {
+        int base_id = (aquatic ? base_find(x, y) : base_find_3(x, y, -1, sq->region, -1, -1));
+        if (base_id >= 0 && Bases[base_id].faction_id == setup_id
+        && region_at(Bases[base_id].x, Bases[base_id].y) == sq->region) {
+            return false;
+        }
     }
     // LM_FRESH landmark is incorrectly used on some maps
-    if (aquatic != is_ocean(sq) || ((sq->lm_items() & ~LM_FRESH) && iter < 160)) {
+    if (iter < 160 && (sq->lm_items() & ~LM_FRESH)) {
         return false;
     }
-    if ((goody_at(x, y) || bonus_at(x, y)) && iter < 160) {
+    if (iter < 160 && (goody_at(x, y) || bonus_at(x, y))) {
         return false;
     }
-    if (Continents[sq->region].tile_count < *MapAreaTiles / ((aquatic ? 20 : 40) << (iter/40))) {
+    const int default_tiles = 3200;
+    int area_tiles = clamp(*MapAreaTiles, 256, 12800);
+    int tile_count = Continents[sq->region].tile_count;
+    int64_t area_scale = int64_t{conf.start_area_limit} * (aquatic ? 2 : 1)
+        * (area_tiles - max(0, (area_tiles - default_tiles) / 4));
+    assert(tile_count > 0 && tile_count <= *MapAreaTiles);
+    if (tile_count < (area_scale * max(0, 320 - iter) / 320) / default_tiles) {
         return false;
     }
-    if (min_range(natives, x, y) < max(native_limit, 8 - iter/16)) {
-        return false;
-    }
+    int native_range = min_range(natives, x, y);
     int spawn_range = min_range(spawns, x, y);
-    int min_sc = 80 - iter/4 + 20 * max(0, 12 - spawn_range);
     int max_dst = (*MapAreaTiles >= 6400 ? 7 : 5);
     int dst[4] = {0, 0, 0, 0};
     int sea = 0;
-    int sc = 0;
+    int min_sc = 80 - iter/4 - max(0, iter - 500)/2 + 20 * max(0, 12 - spawn_range);
+    int sc = min(0, -10 * (8 - min(y, *MapAreaY - y - 1)));
+
+    if (native_range < max(native_limit, 8 - iter/16)) {
+        return false;
+    }
     if (spawn_range < clamp(*MapAreaSqRoot/4 + 8 - iter/8, spawn_limit, 32)) {
         return false;
+    }
+    int soft_limit = (int)(area_scale / default_tiles);
+    for (int i = 0; i < 4; ++i) {
+        if (tile_count < soft_limit) {
+            sc -= 20;
+        }
+        soft_limit = (soft_limit * 3) / 4;
     }
     for (auto& m : iterate_tiles(x, y, 0, 45)) {
         int bonus = bonus_at(m.x, m.y);
@@ -1713,7 +1725,7 @@ static bool valid_start(int faction_id, int iter, int x, int y) {
             sc += 10;
         }
         if (m.sq->items & BIT_FUNGUS) {
-            sc -= (m.i < 25 ? 4 : 2) * (is_ocean(m.sq) ? 1 : 2);
+            sc -= (m.i < 25 ? 2 : 1) * (is_ocean(m.sq) ? 1 : 2);
         }
         if (m.sq->items & BIT_MONOLITH) {
             sc += 8;
@@ -1783,6 +1795,7 @@ static void apply_nutrient_bonus(int faction_id, int* x, int* y) {
                     adjust = 0;
                 }
                 if (m.i > 0 && m.i <= adjust
+                && m.sq->allow_spawn()
                 && m.sq->region == region_at(*x, *y)
                 && can_build_base(m.x, m.y, faction_id, TRIAD_LAND)
                 && min_range(spawns, m.x, m.y) >= 8) {
@@ -1861,13 +1874,18 @@ static void apply_supply_pods(int faction_id, int x, int y) {
     }
 }
 
-void __cdecl find_start(int faction_id, int* tx, int* ty) {
+int find_start(int faction_id, int setup_id, int is_reset, int* tx, int* ty) {
+    assert(faction_id >= 0 && faction_id < MaxPlayerNum);
     bool aquatic = MFactions[faction_id].is_aquatic();
+    bool respawn = is_reset || (*CurrentTurn != 0 && setup_id != -282);
+    bool found = false;
     int x = 0;
     int y = 0;
     int i = 0;
-    int k = (*MapAreaY < 80 ? 4 : 8);
-    find_reset(faction_id, k/2);
+    const int k = 4;
+    find_reset(faction_id, k);
+    *tx = -1;
+    *ty = -1;
 
     while (++i <= 1000) {
         if (!aquatic && goodtiles.size() > 0 && i <= 200) {
@@ -1878,28 +1896,30 @@ void __cdecl find_start(int faction_id, int* tx, int* ty) {
             y = (random(*MapAreaY - k*2) + k);
             x = (random(*MapAreaX) & (~1)) + (y&1);
         }
-        if (valid_start(faction_id, i, x, y)) {
-            if (conf.nutrient_bonus > 0) {
+        if (valid_start(faction_id, setup_id, is_reset, i, x, y)) {
+            // Do not adjust nutrient resources or supply pods during respawns
+            if (!respawn && conf.nutrient_bonus > 0) {
                 apply_nutrient_bonus(faction_id, &x, &y);
             }
             // No unity scattering can normally spawn pods at two tile range from the start
-            if (*GameRules & RULES_NO_UNITY_SCATTERING) {
+            if (!respawn && *GameRules & RULES_NO_UNITY_SCATTERING) {
                 apply_supply_pods(faction_id, x, y);
             }
             *tx = x;
             *ty = y;
             site_set(x, y, world_site(x, y, 0));
+            found = true;
             break;
         }
     }
     debug("find_start %d %3d x: %3d y: %3d %s\n",
         faction_id, i, *tx, *ty, MFactions[faction_id].filename);
-    flushlog();
+    return found;
 }
 
-void set_project_owner(FacilityId item_id, int faction_id) {
+static void set_project_owner(FacilityId item_id, int faction_id) {
     for (int i = 0; i < *BaseCount; i++) {
-        if (Bases[i].faction_id == faction_id) {
+        if (item_id >= SP_ID_First && Bases[i].faction_id == faction_id) {
             SecretProjects[item_id - SP_ID_First] = i;
             break;
         }

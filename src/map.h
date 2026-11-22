@@ -2,14 +2,6 @@
 
 #include "main.h"
 
-const int ManifoldHarmonicsBonus[][3] = {
-    {0,0,0}, // Planet < 0
-    {0,0,1}, // Planet = 0
-    {1,0,1}, // Planet = 1
-    {1,1,1}, // Planet = 2
-    {1,1,2}, // Planet > 2
-};
-
 MAP* next_tile(int x, int y, size_t offset, int* tx, int* ty);
 MAP* mapsq(int x, int y);
 int wrap(int x);
@@ -105,6 +97,6 @@ int bonus_yield(int res_type);
 int total_yield(int x, int y, int faction_id);
 int fungus_yield(int faction_id, ResType res_type);
 int item_yield(int x, int y, int faction_id, int bonus, MapItem item);
-void __cdecl find_start(int faction_id, int* tx, int* ty);
+int find_start(int faction_id, int setup_id, int is_reset, int* tx, int* ty);
 void __cdecl mod_time_warp();
 

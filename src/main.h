@@ -193,6 +193,7 @@ struct Config {
     int player_satellites[3] = {0,0,0};
     int computer_satellites[3] = {0,0,0};
     int faction_placement = 1;
+    int start_area_limit = 80;
     int nutrient_bonus = 0;
     int rare_supply_pods = 0;
     int simple_cost_factor = 0;

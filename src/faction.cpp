@@ -1819,44 +1819,181 @@ static void veh_init_stack(int unit_id, int faction_id, int x, int y, int num) {
     }
 }
 
-static int __cdecl setup_values(int faction_id, int a2, int a3) {
-    Faction* f = &Factions[faction_id];
-    int value = setup_player(faction_id, a2, a3);
-    if (!faction_id) {
-        return value;
-    }
-    int num_colony = is_human(faction_id) ? conf.player_colony_pods : conf.computer_colony_pods;
-    int num_former = is_human(faction_id) ? conf.player_formers : conf.computer_formers;
+// Original faction placement from setup_player, returns true if suitable location is found.
+static bool setup_player_find_start(int faction_id, int setup_id, bool is_probe, int* tx, int* ty) {
+    const bool aquatic = MFactions[faction_id].is_aquatic();
+    const bool human = is_human(faction_id);
+    const bool flat = map_is_flat();
+    const bool special_spawn = setup_id == -282;
+    const bool initial_spawn = !*CurrentTurn || special_spawn;
+    int x = 0;
+    int y = 0;
+    int region = 0;
+    int iter = 0;
+    bool failed = false;
 
-    for (int i = 0; i < *VehCount; i++) {
-        VEH* veh = &Vehs[i];
-        if (veh->faction_id == faction_id) {
-            MAP* sq = mapsq(veh->x, veh->y);
-            int colony = (is_ocean(sq) ? BSC_SEA_ESCAPE_POD : BSC_COLONY_POD);
-            int former = (is_ocean(sq) ? BSC_SEA_FORMERS : BSC_FORMERS);
-            for (int j = 0; j < num_colony; j++) {
-                veh_init_free(colony, faction_id, veh->x, veh->y);
+    while (true) {
+        int edge_x = (flat ? clamp(*MapAreaX * (1024 - iter) / 0x2000, 0, 9999) : 0);
+        int edge_y = clamp(*MapAreaY * (1024 - iter) / 0x2000, 0, 9999);
+        x = game_randv(*MapAreaX - 2*edge_x) + edge_x;
+        y = game_randv(*MapAreaY - 2*edge_y) + edge_y;
+        x = (x & ~1) + (y & 1);
+
+        int landmark_dist = 32;
+        for (int dist = 0; dist < 8 && landmark_dist == 32; dist++) {
+            for (auto& m : iterate_tiles(x, y, (dist > 0 ? TableRange[dist-1] : 0), TableRange[dist])) {
+                int code = m.sq->code_at();
+                if (code > 0 && code < 128) {
+                    landmark_dist = dist;
+                    break;
+                }
             }
-            for (int j = 0; j < num_former; j++) {
-                veh_init_free(former, faction_id, veh->x, veh->y);
+        }
+        int score = 0;
+        for (auto& m : iterate_tiles(x, y, 0, 21)) {
+            if (aquatic) {
+                if (!m.sq->is_fungus()) {
+                    score += 2 * (2 - m.sq->alt_level()) + 1;
+                }
+            } else if (!m.sq->is_fungus() && m.sq->alt_level() >= ALT_SHORE_LINE
+            && m.sq->rocky_level() <= LEVEL_ROLLING && !m.sq->is_arid()) {
+                score++;
             }
+        }
+        if (aquatic) {
+            score /= 3;
+        }
+        MAP* sq = mapsq(x, y);
+        assert(sq);
+        region = sq->region;
+        uint32_t nearby = 0;
+        for (int i = 1; i < MaxPlayerNum; i++) {
+            if (Factions[i].region_total_bases[region]) {
+                nearby |= (1 << i);
+            }
+        }
+        int base_id = (aquatic || special_spawn
+            ? base_find(x, y) : base_find_3(x, y, -1, region, -1, -1));
+        if (base_id < 0) {
+            *BaseFindDist = 32;
+        }
+        if (initial_spawn) {
+            for (int i = 0; i < *VehCount; i++) {
+                if (region_at(Vehs[i].x, Vehs[i].y) == region) {
+                    nearby |= (1 << Vehs[i].faction_id);
+                    *BaseFindDist = min(*BaseFindDist, vector_dist(x, y, Vehs[i].x, Vehs[i].y));
+                }
+            }
+        }
+        if (++iter > 1024 && (!human || *CurrentTurn)) {
+            failed = true;
             break;
         }
+        if (aquatic ? sq->alt_level() > ALT_OCEAN_SHELF : sq->alt_level() < ALT_SHORE_LINE) {
+            continue;
+        }
+        if (sq->is_fungus() || (!aquatic && sq->rocky_level() > LEVEL_ROLLING)) {
+            continue;
+        }
+        const int scale = iter / 64;
+        if (*BaseFindDist < (initial_spawn ? 6 : 12) * *MapAreaSqRoot / 56
+        || sq->alt_level() >= ALT_TWO_ABOVE_SEA
+        || sq->anything_at() >= 0) {
+            continue;
+        }
+        if (y < 2 || y >= *MapAreaY - 2 || score < 12 - iter / 80) {
+            continue;
+        }
+        if (*BaseFindDist < *MapAreaSqRoot * (16 - scale) / 56) {
+            continue;
+        }
+        Continent* area = &Continents[region];
+        if (initial_spawn && iter < 900 && area->tile_count < 36 - scale) {
+            continue;
+        }
+        if (!aquatic) {
+            int open_min = (human ? 8 * (6 - *DiffLevel) : 8) + 24 - iter / 16 - *CurrentTurn / 16;
+            if (area->open_terrain * (*MapOceanCoverage + 1) / 2 < open_min) {
+                continue;
+            }
+        }
+        if (area->tile_count < 48 * (5 - (human ? *DiffLevel : 3)) - *CurrentTurn / 16 - iter / 4) {
+            continue;
+        }
+        if (nearby && !special_spawn && area->tile_count / (bit_count(nearby) + 1) < 64 - scale) {
+            continue;
+        }
+        int site = 0;
+        if (!(sq->items & BIT_BASE_RADIUS)) {
+            site = sq->val2 >> 4;
+            if (!site) {
+                site = world_site(x, y, 0);
+                site_set(x, y, site);
+            }
+        }
+        if (site < 15 - scale && !*CurrentTurn && !(*GameRules & RULES_LOOK_FIRST)) {
+            continue;
+        }
+        if (!aquatic && (landmark_dist < (1024 - iter) / 128 || !landmark_dist)) {
+            continue;
+        }
+        if (*CurrentTurn && !special_spawn && sq->owner > 0) {
+            continue;
+        }
+        if (base_id >= 0 && Bases[base_id].faction_id == setup_id
+        && region_at(Bases[base_id].x, Bases[base_id].y) == region) {
+            continue;
+        }
+        break;
     }
-    if (is_human(faction_id)) {
-        f->satellites_nutrient = conf.player_satellites[0];
-        f->satellites_mineral = conf.player_satellites[1];
-        f->satellites_energy = conf.player_satellites[2];
-    } else {
-        f->satellites_nutrient = conf.computer_satellites[0];
-        f->satellites_mineral = conf.computer_satellites[1];
-        f->satellites_energy = conf.computer_satellites[2];
+    // Probe initiated spawns still adjust the last tile even if the search failed
+    if (initial_spawn && (!failed || is_probe)) {
+        int best_site = -1;
+        int best_x = x;
+        int best_y = y;
+        for (auto& m : iterate_tiles(x, y, 0, 21)) {
+            if ((m.sq->alt_level() < ALT_SHORE_LINE) != aquatic
+            || m.sq->region != region
+            || m.sq->alt_level() >= ALT_TWO_ABOVE_SEA
+            || m.sq->is_fungus()
+            || m.sq->anything_at() >= 0) {
+                continue;
+            }
+            base_find(m.x, m.y);
+            for (int i = 0; i < *VehCount; i++) {
+                *BaseFindDist = min(*BaseFindDist, vector_dist(x, y, Vehs[i].x, Vehs[i].y));
+            }
+            if (*BaseFindDist < 6) {
+                continue;
+            }
+            int site = 0;
+            if (!(m.sq->items & BIT_BASE_RADIUS)) {
+                site = m.sq->val2 >> 4;
+                if (!site) {
+                    site = world_site(m.x, m.y, 0);
+                    site_set(m.x, m.y, site);
+                }
+            }
+            for (auto& adj : iterate_tiles(m.x, m.y, 1, 9)) {
+                if (aquatic) {
+                    site += 2 - adj.sq->alt_level();
+                } else if (adj.sq->alt_level() < ALT_SHORE_LINE) {
+                    site++;
+                    break;
+                }
+            }
+            if (site > best_site) {
+                best_site = site;
+                best_x = m.x;
+                best_y = m.y;
+            }
+        }
+        x = best_x;
+        y = best_y;
     }
-    if (!*CurrentTurn) {
-        // Update default governor settings
-        f->base_governor_adv |= GOV_MAY_PROD_NATIVE;
-    }
-    return value;
+    *tx = x;
+    *ty = y;
+    return !failed || is_probe;
 }
 
 static bool has_suffix(const char* str) {
@@ -1874,9 +2011,6 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
     const bool plr_aquatic = m->is_aquatic();
     debug("setup_player %d %d %d %d %s\n", *CurrentTurn, faction_id, setup_id, is_probe, m->filename);
 
-    if (DEBUG && !conf.faction_placement) {
-        return setup_values(faction_id, setup_id, is_probe);
-    }
     // Modify the original version to check by filename if multiple similar factions are active.
     // If any duplicates are found, each one will have their faction_id as name suffix.
     for (int i = 1; i < MaxPlayerNum; i++) {
@@ -1905,7 +2039,7 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
     }
     for (int i = *VehCount - 1; i >= 0; --i) {
         VEH* veh = &Vehs[i];
-        if (veh->faction_id == faction_id && (faction_id || veh->unit_id != BSC_FUNGAL_TOWER)) {
+        if (i < *VehCount && veh->faction_id == faction_id && (faction_id || veh->unit_id != BSC_FUNGAL_TOWER)) {
             kill(i);
         }
     }
@@ -2095,11 +2229,15 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
     int region = 0;
     int x = -1;
     int y = -1;
-    // This replaces the entire old faction placement method
-    if (is_probe || !spawn_flag) {
-        find_start(faction_id, &x, &y);
-        if (!(sq = mapsq(x, y))) {
-            // skipped
+    if (!spawn_flag) {
+        int found;
+        if (DEBUG && !conf.faction_placement) {
+            found = setup_player_find_start(faction_id, setup_id, is_probe, &x, &y);
+        } else {
+            found = find_start(faction_id, setup_id, is_probe, &x, &y);
+        }
+        if (!found || !(sq = mapsq(x, y))) {
+            spawn_skip = true;
         } else {
             region = sq->region;
         }
@@ -2312,13 +2450,14 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
                 // Calculation for nearby opponents is slightly modified from the original to exclude native units
                 uint32_t nearby = 0;
                 for (int i = 1; i < MaxPlayerNum; i++) {
-                    if (Factions[i].region_total_bases[region]) {
-                        nearby |= (1 << Bases[i].faction_id);
+                    if (i != faction_id && Factions[i].region_total_bases[region]) {
+                        nearby |= (1 << i);
                     }
                 }
                 for (int i = 0; i < *VehCount; i++) {
-                    if (Vehs[i].faction_id && region_at(Vehs[i].x, Vehs[i].y) == region) {
-                        nearby |= (1 << Vehs[i].faction_id);
+                    int owner = Vehs[i].faction_id;
+                    if (owner && owner != faction_id && region_at(Vehs[i].x, Vehs[i].y) == region) {
+                        nearby |= (1 << owner);
                     }
                 }
                 int tile_ratio = Continents[region].tile_count / (bit_count(nearby) + 1);
@@ -2367,9 +2506,10 @@ int __cdecl mod_setup_player(int faction_id, int setup_id, int is_probe) {
                     if (unit_id >= 0) {
                         char buf[StrBufLen] = {};
                         mod_make_proto(unit_id, CHS_FOIL, WPN_COLONY_MODULE, ARM_NO_ARMOR, ABL_NONE, REC_FISSION);
+                        Units[unit_id].unit_flags &= ~(UNIT_UNK_40 | UNIT_UNK_80);
+                        Units[unit_id].unit_flags |= UNIT_PROTOTYPED;
                         mod_name_proto(&buf[0], unit_id, faction_id,
                             CHS_FOIL, WPN_COLONY_MODULE, ARM_NO_ARMOR, ABL_NONE, REC_FISSION);
-                        Units[unit_id].unit_flags |= UNIT_PROTOTYPED;
                         Units[unit_id].unit_flags &= ~UNIT_CUSTOM_NAME_SET;
                         strcpy_n(&Units[unit_id].name[0], MaxProtoNameLen, buf);
                     }

@@ -2701,7 +2701,7 @@ typedef void(__thiscall *FWin_on_l_button_down)(Win* This, int a2, int x, int y,
 typedef void(__thiscall *FWin_on_l_button_up)(Win* This, int a2, int a3, uint32_t a4, int a5);
 typedef void(__thiscall *FWin_on_r_button_down)(Win* This, int a2, int a3, int a4, uint32_t a5, int a6);
 typedef void(__thiscall *FWin_on_r_button_up)(Win* This, int a2, int a3, uint32_t a4, int a5);
-typedef int(__thiscall *FWin_on_set_cursor)(Win* This, void* hinstDLL, uint32_t fdwReason, uint32_t lpvReserved);
+typedef int(__thiscall *FWin_on_set_cursor)(Win* This, void* a2, uint32_t a3, uint32_t a4);
 typedef int(__thiscall *FWin_on_sys_command)(Win* This, uint32_t a2, int a3, int a4);
 typedef int(__cdecl *FWin_get_key_window)();
 typedef int(__cdecl *FWin_get_mouse_window)(int* a1, int* a2);
@@ -2718,6 +2718,7 @@ typedef void(__thiscall *FWin_on_mousewheel_up_vert)(Win* This, int a2);
 typedef void(__thiscall *FWin_on_mousewheel_up_horz)(Win* This, int a2);
 typedef void(__thiscall *FWin_on_mousewheel_down)(Win* This, int a2);
 typedef void(__thiscall *FWin_on_mousewheel_up)(Win* This, int a2);
+typedef void*(__thiscall *FWin_scalar_dtor)(Win* This, uint32_t flags);
 
 extern FWin Win_ctor;
 extern FWin Win_close;
@@ -2763,6 +2764,7 @@ extern FWin Win_show_maximize;
 extern FWin_set_caption Win_set_caption;
 extern FWin_UNK6 Win_UNK6;
 extern FWin_UNK7 Win_UNK7;
+extern FWin Win_reset_window_clip;
 extern FWin_set_vert_pos Win_set_vert_pos;
 extern FWin Win_get_vert_pos;
 extern FWin_set_horz_pos Win_set_horz_pos;
@@ -2865,6 +2867,7 @@ extern FWin_on_mousewheel_up_vert Win_on_mousewheel_up_vert;
 extern FWin_on_mousewheel_up_horz Win_on_mousewheel_up_horz;
 extern FWin_on_mousewheel_down Win_on_mousewheel_down;
 extern FWin_on_mousewheel_up Win_on_mousewheel_up;
+extern FWin_scalar_dtor Win_scalar_dtor;
 
 typedef int(__thiscall *FGraphicWin)(GraphicWin* This);
 typedef int(__thiscall *FGraphicWin_init)(GraphicWin* This, int a2, int a3, int width, int height, char* a6, int a7, Win* a8, Menu* a9, BorderSizing* a10);
@@ -2886,6 +2889,7 @@ typedef int(__thiscall *FGraphicWin_on_set_cursor)(GraphicWin* This, void* a2, u
 typedef void(__thiscall *FGraphicWin_on_redraw_nc)(GraphicWin* This, RECT* a2, int a3);
 typedef void(__cdecl *FGraphicWin_set_def_nc_sprites)(NCSprites* a1);
 typedef void(__thiscall *FGraphicWin_overlay_nonclient)(GraphicWin* This, RECT* lprcSrc2);
+typedef void*(__thiscall *FGraphicWin_scalar_dtor)(GraphicWin* This, uint32_t flags);
 typedef void(__thiscall *FGraphicWin_operator_delete)(void* a1, uint32_t a2);
 
 extern FGraphicWin GraphicWin_ctor;
@@ -2915,6 +2919,7 @@ extern FGraphicWin_set_def_nc_sprites GraphicWin_set_def_nc_sprites;
 extern FGraphicWin_overlay_nonclient GraphicWin_overlay_nonclient;
 extern FGraphicWin GraphicWin_load_all_nc_sprites_from_defs;
 extern FGraphicWin GraphicWin_compute_min_size;
+extern FGraphicWin_scalar_dtor GraphicWin_scalar_dtor;
 extern FGraphicWin_operator_delete GraphicWin_operator_delete;
 
 typedef int(__thiscall *FTime)(Time* This);
@@ -3996,8 +4001,8 @@ extern FButtonGroup_add ButtonGroup_add;
 extern FButtonGroup_set ButtonGroup_set;
 extern FButtonGroup_button_click ButtonGroup_button_click;
 
-typedef int(__thiscall *FStringList_fill_entry)(StringList* This, StringStruct* a2);
-typedef void(__thiscall *FStringList_kill_entry)(StringList* This, StringStruct* a2);
+typedef int(__thiscall *FStringList_fill_entry)(StringList* This, StringStructData* a2);
+typedef void(__thiscall *FStringList_kill_entry)(StringList* This, StringStructData* a2);
 typedef void(__thiscall *FStringList_sort)(StringList* This, int a2);
 typedef int(__thiscall *FStringList_load)(StringList* This, char* src_file_id, char* section_id, int a4, void (__cdecl *a5)(char *));
 typedef void(__thiscall *FStringList_add_special)(StringList* This, char* a2);

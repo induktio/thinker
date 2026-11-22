@@ -2,11 +2,6 @@
 
 #include "main.h"
 
-// Always available settings for random maps started from the main menu
-// Select only those settings that are not set in Special Scenario Rules
-const uint32_t GAME_RULES_MASK = 0x7808FFFF;
-const uint32_t GAME_MRULES_MASK = 0xFFFFFFF0;
-
 const char* resource_icon(int res_type, bool ocean, bool add);
 bool un_charter();
 bool global_trade_pact();
@@ -24,6 +19,7 @@ void __cdecl say_num(int value);
 void __cdecl say_year(char* buf);
 int __cdecl parse_num(size_t index, int value);
 int __cdecl parse_says(size_t index, const char* src, int gender, int plural);
+int __cdecl range(int input, int min_val, int max_val);
 int __cdecl game_year(int turn);
 int __cdecl in_box(int x, int y, RECT* rc);
 void __cdecl bitmask(uint32_t input, uint32_t* offset, uint32_t* mask);

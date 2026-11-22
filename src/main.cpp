@@ -134,6 +134,8 @@ int option_handler(void* user, const char* section, const char* name, const char
         opt_list_parse(cf->computer_satellites, buf, 3, 0, 1000);
     } else if (MATCH("faction_placement")) {
         cf->faction_placement = atoi(value);
+    } else if (MATCH("start_area_limit")) {
+        cf->start_area_limit = clamp(atoi(value), 1, 1000);
     } else if (MATCH("nutrient_bonus")) {
         cf->nutrient_bonus = atoi(value);
     } else if (MATCH("rare_supply_pods")) {
@@ -173,7 +175,7 @@ int option_handler(void* user, const char* section, const char* name, const char
     } else if (MATCH("modify_upgrade_cost")) {
         cf->modify_upgrade_cost = atoi(value);
     } else if (MATCH("modify_unit_support")) {
-        cf->modify_unit_support = atoi(value);
+        cf->modify_unit_support = clamp(atoi(value), 0, 2);
     } else if (MATCH("modify_unit_limit")) {
         cf->modify_unit_limit = atoi(value);
     } else if (MATCH("skip_default_balance")) {

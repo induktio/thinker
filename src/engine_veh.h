@@ -323,6 +323,7 @@ enum UnitFlags {
     UNIT_PROTOTYPED = 0x4,
     UNIT_UNK_10 = 0x10,
     UNIT_UNK_20 = 0x20,
+    UNIT_UNK_40 = 0x40,
     UNIT_UNK_80 = 0x80,
     UNIT_UNK_100 = 0x100, // checked in upgrade_any_prototypes
 };

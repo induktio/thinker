@@ -1524,6 +1524,7 @@ FWin Win_show_maximize = (FWin)0x5EDF00;
 FWin_set_caption Win_set_caption = (FWin_set_caption)0x5EDF50;
 FWin_UNK6 Win_UNK6 = (FWin_UNK6)0x5EDFE0;
 FWin_UNK7 Win_UNK7 = (FWin_UNK7)0x5EDFF0;
+FWin Win_reset_window_clip = (FWin)0x5EE020;
 FWin_set_vert_pos Win_set_vert_pos = (FWin_set_vert_pos)0x5EE030;
 FWin Win_get_vert_pos = (FWin)0x5EE050;
 FWin_set_horz_pos Win_set_horz_pos = (FWin_set_horz_pos)0x5EE070;
@@ -1626,6 +1627,7 @@ FWin_on_mousewheel_up_vert Win_on_mousewheel_up_vert = (FWin_on_mousewheel_up_ve
 FWin_on_mousewheel_up_horz Win_on_mousewheel_up_horz = (FWin_on_mousewheel_up_horz)0x5F8590;
 FWin_on_mousewheel_down Win_on_mousewheel_down = (FWin_on_mousewheel_down)0x5F85B0;
 FWin_on_mousewheel_up Win_on_mousewheel_up = (FWin_on_mousewheel_up)0x5F85E0;
+FWin_scalar_dtor Win_scalar_dtor = (FWin_scalar_dtor)0x5F8610;
 
 FGraphicWin GraphicWin_ctor = (FGraphicWin)0x5D4CF0;
 FGraphicWin GraphicWin_dtor = (FGraphicWin)0x5D4DD0;
@@ -1654,6 +1656,7 @@ FGraphicWin_set_def_nc_sprites GraphicWin_set_def_nc_sprites = (FGraphicWin_set_
 FGraphicWin_overlay_nonclient GraphicWin_overlay_nonclient = (FGraphicWin_overlay_nonclient)0x5D6AC0;
 FGraphicWin GraphicWin_load_all_nc_sprites_from_defs = (FGraphicWin)0x5D6F50;
 FGraphicWin GraphicWin_compute_min_size = (FGraphicWin)0x5D7030;
+FGraphicWin_scalar_dtor GraphicWin_scalar_dtor = (FGraphicWin_scalar_dtor)0x5D7140;
 FGraphicWin_operator_delete GraphicWin_operator_delete = (FGraphicWin_operator_delete)0x5D7160;
 
 FTime Time_ctor = (FTime)0x6161D0;

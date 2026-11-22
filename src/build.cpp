@@ -23,16 +23,6 @@ static bool check_retool(BASE* base) {
         && base->minerals_accumulated > Rules->retool_exemption;
 }
 
-static bool check_probe(BASE* base, Triad triad) {
-    for (int i = *VehCount - 1; i >= 0; --i) {
-        VEH* veh = &Vehs[i];
-        if (veh->x == base->x && veh->y == base->y && veh->is_probe() && veh->triad() == triad) {
-            return true;
-        }
-    }
-    return false;
-}
-
 static bool has_retool(int base_id, int item_id, int retool) {
     return retool != -1 && retool != 0 && retool != mod_base_making(item_id, base_id);
 }
@@ -747,32 +737,70 @@ int select_colony(int base_id, int num_colony, bool build_ships) {
 }
 
 int select_combat(int base_id, bool sea_base, bool build_ships) {
-    BASE* base = &Bases[base_id];
-    Faction* f = &Factions[base->faction_id];
-    AIPlans* p = &plans[base->faction_id];
+    BASE* const base = &Bases[base_id];
+    Faction* const f = &Factions[base->faction_id];
+    AIPlans* const p = &plans[base->faction_id];
     int gov = base->gov_config();
     int choice;
     int w_air = 4*p->air_combat_units < f->base_count
         ? 2 : (f->player_flags & PFLAG_EMPHASIZE_AIR_POWER ? 4 : 5);
     int w_sea = 5*p->transport_units < f->base_count + 5
         ? 2 : (3*p->transport_units < f->base_count ? 5 : 8);
-    int w_probes = ((p->probe_units * (conf.modify_unit_support < 2 ? 2 : 4) < f->base_count)
-        ? 3 : 5) + (f->player_flags_ext & PFLAG_EXT_STRAT_LOTS_PROBE_TEAMS ? 0 : 1);
     bool need_ships = (f->player_flags & PFLAG_EMPHASIZE_SEA_POWER ? 4 : 6)
         * p->sea_combat_units < p->land_combat_units;
     bool need_land = f->player_flags & PFLAG_EMPHASIZE_LAND_POWER;
-    bool reserve = conf.modify_unit_support >= 2 || base->mineral_surplus >= base->mineral_intake_2/2;
     bool probes = has_wmode(base->faction_id, WMODE_PROBE) && gov & GOV_MAY_PROD_PROBES;
     bool transports = has_wmode(base->faction_id, WMODE_TRANSPORT) && gov & GOV_MAY_PROD_TRANSPORT;
     bool land = gov & (GOV_MAY_PROD_LAND_COMBAT | GOV_MAY_PROD_LAND_DEFENSE);
     bool sea = gov & (GOV_MAY_PROD_NAVAL_COMBAT | GOV_MAY_PROD_TRANSPORT);
     bool air = gov & (GOV_MAY_PROD_AIR_COMBAT | GOV_MAY_PROD_AIR_DEFENSE);
 
-    if (probes && (!(land || sea || air) || !random(w_probes) || !reserve)) {
+    auto build_probe = [&]() -> bool {
+        int probe_near = 0;
+        int probe_units = 0;
+        int combat_units = 0;
+        for (int i = *VehCount - 1; i >= 0; --i) {
+            VEH* veh = &Vehs[i];
+            if (veh->faction_id == base->faction_id) {
+                if (veh->is_probe()) {
+                    probe_near += (veh->home_base_id == base_id
+                        || (veh->x == base->x && veh->y == base->y));
+                    probe_units++;
+                } else if (veh->plan() <= PLAN_NAVAL_TRANSPORT) {
+                    combat_units++;
+                }
+            }
+        }
+        int w_sup = conf.modify_unit_support < 2;
+        int w_low = w_sup && base->mineral_surplus < base->mineral_intake_2/2;
+        int w_prb = 4 + min(4, probe_near)
+            - (w_low ? 2 : 0)
+            + (conf.modify_unit_support >= 2 && probe_near ? 1 : 0)
+            + (probe_units * (w_sup ? 2 : 3) > f->base_count)
+            + (probe_units * (w_sup ? 3 : 4) > f->base_count)
+            + (probe_units * 4 > combat_units)
+            + (probe_units * 5 > combat_units)
+            - ((f->player_flags_ext & PFLAG_EXT_STRAT_LOTS_PROBE_TEAMS)
+            || base->has_fac_built(FAC_COVERT_OPS_CENTER) ? 2 : 0);
+        return !random(clamp(w_prb, w_low ? 2 : 4, 10));
+    };
+    auto check_probe = [&]() -> bool {
+        for (int i = *VehCount - 1; i >= 0; --i) {
+            VEH* veh = &Vehs[i];
+            if (veh->faction_id == base->faction_id
+            && veh->x == base->x && veh->y == base->y
+            && veh->is_probe() && veh->triad() == TRIAD_LAND) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    if (probes && (!(land || sea || air) || build_probe())) {
         TriadFlag triad = TRFLAG_LAND | TRFLAG_AIR;
         if (build_ships) {
             triad = TRFLAG_SEA | TRFLAG_AIR;
-            if (sea_base && p->contacted_factions && !check_probe(base, TRIAD_LAND)
+            if (sea_base && p->contacted_factions && !check_probe()
             && base->defend_range > 0 && base->defend_range < random(64)) {
                 triad |= TRFLAG_LAND;
             }

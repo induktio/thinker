@@ -2,10 +2,6 @@
 #include "faction_diplo.h"
 
 
-static int range(int input, int min_val, int max_val) {
-    return min(max(input, min_val), max(min_val, max_val));
-}
-
 static int random_val(int min_val, int max_val) {
     return game_random(min_val, max_val);
 }
