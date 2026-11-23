@@ -3270,6 +3270,53 @@ void __cdecl spot_loc(int x, int y, int faction_id) {
     }
 }
 
+static bool is_stealth_veh(int veh_id) {
+    VEH* veh = &Vehs[veh_id];
+    return has_abil(veh->unit_id, ABL_CLOAKED) || has_abil(veh->unit_id, ABL_DEEP_PRESSURE_HULL)
+        || (veh->flags & VFLAG_INVISIBLE);
+}
+
+/*
+Check if every unit in the stack is cloaked, deep pressure hull or invisible, or carried
+by such a transport, and none is visible to the faction. Stacks in bases are never hidden.
+*/
+bool hidden_stack(int x, int y, int faction_id) {
+    MAP* sq = mapsq(x, y);
+    int veh_id;
+    if (!sq || sq->is_base() || (veh_id = veh_at(x, y)) < 0) {
+        return false;
+    }
+    bool carrier = false;
+    for (int i = veh_id; i >= 0; i = Vehs[i].next_veh_id_stack) {
+        if (is_stealth_veh(i) && Units[Vehs[i].unit_id].carry_capacity > 0) {
+            carrier = true;
+        }
+    }
+    for (int i = veh_id; i >= 0; i = Vehs[i].next_veh_id_stack) {
+        VEH* veh = &Vehs[i];
+        if (veh->faction_id == faction_id || veh->is_visible(faction_id)) {
+            return false;
+        }
+        if (!is_stealth_veh(i)) {
+            int id = veh->waypoint_x[0];
+            bool loaded = veh->order == ORDER_SENTRY_BOARD && id >= 0 && id != i
+                && Vehs[id].x == x && Vehs[id].y == y && is_stealth_veh(id);
+            if (!loaded && !(carrier && is_ocean(sq) && veh->triad() == TRIAD_LAND)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+/*
+Thinker AI factions do not consider hidden stacks they have not yet spotted.
+*/
+bool ai_hidden_stack(int x, int y, int faction_id) {
+    return conf.ai_respect_cloak && thinker_enabled(faction_id)
+        && !has_pact(faction_id, veh_who(x, y)) && hidden_stack(x, y, faction_id);
+}
+
 int __cdecl want_to_wake(int faction_id, int veh_id, int veh_id2) {
     int triad = Vehs[veh_id].triad();
     if (triad == TRIAD_AIR && Vehs[veh_id].movement_turns && Vehs[veh_id].order == ORDER_MOVE_TO) {
