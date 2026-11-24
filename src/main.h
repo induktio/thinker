@@ -24,7 +24,7 @@
 #pragma once
 
 #ifdef BUILD_REL
-    #define MOD_VERSION "Thinker Mod v5.5"
+    #define MOD_VERSION "Thinker Mod v5.6"
 #else
     #define MOD_VERSION "Thinker Mod develop build"
 #endif
@@ -99,7 +99,7 @@
 #endif
 #endif
 
-const int8_t NetVersion = 15; // Network multiplayer
+const int8_t NetVersion = 16; // Network multiplayer
 
 enum VideoMode {
     VM_Native = 0,

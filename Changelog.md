@@ -1,6 +1,45 @@
 
 # Thinker mod release changelog
 
+## Version 5.6 (2026-11-24)
+* Add options rival_friction_bias and rival_defiance_bias to adjust diplomacy AI behavior. These take effect immediately without starting a new savegame.
+* Add option start_area_limit to set minimum allowed continent size for faction placement.
+* Minor changes to faction placement related conditions such as location restrictions and late respawns will not trigger nutrient bonus or supply pods placement.
+* All alphax.txt related files are updated to correct inaccurate descriptions and translations.
+* Descriptions indicate that technology and facility AI priorities are not limited to specific interval unlike faction AI priorities.
+* German alphax.txt adds predefined units Trance-Infanterie, Polizei-Garnison, Abwurf-Koloniekapsel.
+* Game warns at startup when parsed labels.txt has fewer lines than the required count to avoid possible game crashes.
+* Governor tries to use more varied choices when selecting combat units and not focus on very few prototypes.
+* Governor may hurry facilities much more often when reserves exceed thousands of credits depending on the base count.
+* Change counter_espionage automatic renewal to not consider player governor status for alien opponent factions.
+* Change bases received through diplomacy threats to have an assimilation time of 20–50 turns as in normal base captures.
+* Modify TRADETECH4/TRADETECH5 dialog paths to make the AI avoid selling important techs for maps owned by the player unless additional tech related checks are sufficient.
+* Restore missing dialog for PROTOPACT when an AI suggests to transfer prototypes. This updated dialog option only transfers the mentioned prototype to the player faction.
+* Restore GIMMETECH2 dialog response when an AI asks for two techs in return for a pact. It used duplicated labels in script.txt and is now provided by modmenu.txt.
+* Restore BASEGIFT1/BASEGIFT2 dialog responses to base gifts instead of always showing the generic BASEGIFT message.
+* Fix possible game crashes related to fungal pop and combat explosion effects rendering code.
+* Fix automate unit shortcut sometimes causing game crashes when no unit is selected.
+* Fix issue with custom movie player not being used when theyTranscend.wve is played.
+* Fix corner energy market foiled popup sometimes not being displayed when HQ was destroyed.
+* Fix inconsistent calculations with faction rankings when Security Nexus counters do not match the actual units present on the map.
+* Fix mistake in rankings calculations that caused any non-PB, non-PSI combat unit not to count towards the rating unless the weapon value is equal to the current maximum across all factions.
+* Fix base obliterate, airdrop/orbital insertion and units drowning popup sometimes not displaying the proper base name.
+* Fix issue where diplomacy dialog sometimes mixed up INTRODUCEENEMY and INTRODUCEENEMYALIEN labels.
+* Fix unimplemented dialog checks and remove VENDETTA5X reference for CYBORG faction filename.
+* Fix issues with AI planet buster dialog when URGENTCOMM "Switching to main viewscreen" message does not open the diplomacy window and PLANETBUSTER0 message appears every time.
+* Fix game not recentering base swap proposal dialog minimap when another base is selected from the list.
+* Fix TURNABOUT counter proposal when demanding withdrawal so that AI units are no longer withdrawn when the player chooses "Never mind. Let our forces remain in place."
+* Fix pact proposals where a negative computed price could make the AI demand a negative amount of energy credits and transfer credits from the AI to the player.
+* Fix AI council calls that depend on undefined values when Progenitors are alive and the Supreme Leader motion is available.
+* Fix AI sometimes choosing the wrong faction to favor in Planetary Governor votes depending on inconsistent checks on faction rankings.
+* Fix AI personality checks in the energy gift dialog comparing the gifting faction instead of the receiving AI.
+* Modify Spartan and Believer AI personality checks to behave similarly with energy gifts as in the tech gift dialog.
+* Fix AI tech valuations in pact and treaty proposals using the player's tech value instead of the AI's. This affected both the price and the friction relief.
+* Fix Peacekeeper AI scaling the tech bribe thresholds for joint attack proposals too high.
+* Fix the faction holding a captured leader being told that it had liberated that leader when another faction's probe team broke into its HQ and freed the leader. This is displayed by modmenu.txt label WILLYFREE2.
+* Fix attacking units being revealed to the defender only when the battle was displayed to the current player.
+
+
 ## Version 5.5 (2026-08-16)
 * Modify main menu screen to also display Change Options button for Thinker features.
 * Add option MovieExtension in Alpha Centauri.ini to choose custom file formats for external video players.
