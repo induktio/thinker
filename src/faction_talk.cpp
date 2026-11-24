@@ -1522,14 +1522,14 @@ int __cdecl tech_trade(int faction_id, int faction_id_2, int rival_init, int cou
             bool allow_trade = true;
             if (offer_id >= 0 && offer_id < MaxTechnologyNum) {
                 int owner_count = tech_owner_count(offer_id);
-                int later_count = 0;
-                for (int i = 0; i < MaxTechnologyNum; i++) {
-                    if (i != offer_id && has_tech(i, faction_id_2)
-                    && (Tech[i].preq_tech1 == offer_id || Tech[i].preq_tech2 == offer_id)) {
-                        later_count++;
+                int avail_count = 0;
+                for (int i = 0; i < MaxSecretProjectNum; i++) {
+                    if (SecretProjects[i] == SP_Unbuilt && Facility[SP_ID_First + i].preq_tech == offer_id
+                    && !(*GameRules & RULES_SCN_NO_BUILDING_SP)) {
+                        avail_count++;
                     }
                 }
-                allow_trade = (owner_count > 1 || later_count > 1 || *DiploFriction <= 2)
+                allow_trade = (owner_count > 1 || (avail_count == 0 && *DiploFriction <= 4))
                     && tech_level(offer_id, 0) <= clamp(7 - *DiploFriction, 1, 5);
             }
             if (few_visible && *DiploFriction <= 7 && allow_trade) {

@@ -13,13 +13,13 @@ By patching the game to use an additional DLL, many new features can be develope
 * Improved automation routines are also available for player factions
 * Includes [Scient's patches](Details.md)
 
-This mod is tested to work with the [GOG version](https://www.gog.com/game/sid_meiers_alpha_centauri) of Alpha Centauri.
+This mod is tested to work with Good Old Games and Steam versions of Alpha Centauri Planetary Pack.
 Note that official Alien Crossfire patch version 2.0 must be installed for the launcher to work with terranx.exe.
 Older game version 1.0 is NOT supported by Thinker. Installing Scient's patch v2 also works since this terranx.exe can be used by the launcher.
-Thinker also includes changes to remove issues on Windows 11 that prevent playing the game expansion due to crashes after ending the turn.
+Thinker also removes issues on Windows 11 update 24H2 and later that prevent playing the game expansion due to crashes after ending the turn.
 
 [See more information](Details.md) about the features and recommended settings.
-It's strongly recommended to read Details.md since many features are added not provided by the original game.
+It's strongly recommended to read Details.md since many added features are not provided by the original game.
 [Discuss here](https://github.com/induktio/thinker/discussions) about anything related to Thinker development.
 Remember also to star and watch the repository to receive notifications about new updates.
 
@@ -34,21 +34,25 @@ These links are the only original source to download binary releases. See also t
 
 Installation
 ------------
-1. Extract the files to Alpha Centauri game folder. Alphax.txt changes are optional.
+1. Extract the files to Alpha Centauri game folder. Changes to alphax.txt are optional.
 2. Check Changelog.md and Details.md for useful information.
 3. Change configuration from thinker.ini or just use the defaults.
 4. Start the game from thinker.exe.
-5. Press ALT+T to open Thinker's options menu. Other option is to check that mod version/build date is visible in the game version menu (CTRL+F4).
-6. If neither of those options display mod version, Thinker is incorrectly installed and not loaded.
+5. Press ALT+T to open Thinker's options menu. Another option is to check that mod version/build date is visible in the game version menu (CTRL+F4).
+6. If neither of those options displays mod version, Thinker is incorrectly installed and not loaded.
 
 
 Troubleshooting
 ---------------
 The launcher requires original Alien Crossfire v2.0 terranx.exe in the same folder but this file is not modified on disk.
-In case of startup problems, make sure the official v2.0 patch is applied on the game, and the mod is actually started
-from same folder with the game. Sometimes startup issues can be fixed by starting the launcher with administrator privileges.
+In case of startup problems, make sure the official v2.0 patch is applied to the game, and the mod is actually started
+from the same folder with the game. Sometimes startup issues can be fixed by starting the launcher with administrator privileges.
 
-When starting the game with screen scaling set to something else than 100% some portion of the window may not be visible due to being
+Missing or blank dialog text after an update usually means that thinker.ini and modmenu.txt are from different versions.
+Many dialog messages are redirected from script.txt to modmenu.txt as specified by script_label lines in thinker.ini.
+These definitions are needed by the game and it should contain the same lines that are used by the current build.
+
+When starting the game with screen scaling set to something other than 100% some portion of the window may not be visible due to being
 clipped out of the screen. The game does not have proper support for screen scaling so as a workaround the scaling should be set to 100%.
 Sometimes opening/secret project video playback errors might be fixed by installing [DDrawCompat](https://github.com/narzoul/DDrawCompat)
 but otherwise it is not necessary.
